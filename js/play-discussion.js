@@ -548,9 +548,15 @@ function _discPostHtml(p, playId, isReply = false) {
     `❓ I have this${sameQCount > 1 ? ` <span class="disc-same-q-count">· ${sameQCount}</span>` : ""}` +
     `</button>`
     : "";
+  const canRewardDiscussion = isStaff && p.authorRole === "player" && !String(p.id || "").startsWith("opt-");
+  const discussionRewardBtn = canRewardDiscussion && isQuestion && !isReply
+    ? `<button class="disc-reward-btn" data-action="coachStageDiscussionReward" data-arg="${escapeHtml(p.id)}::question" title="Stage question points for approval">🏆 Question +</button>`
+    : canRewardDiscussion && isReply
+      ? `<button class="disc-reward-btn" data-action="coachStageDiscussionReward" data-arg="${escapeHtml(p.id)}::answer" title="Stage answer points for approval">🏆 Answer +</button>`
+      : "";
 
   // ── Actions: Reply always visible; edit/delete/moderate in ⋯ more menu ──
-  const inlineActions = replyBtn + sameQBtn;
+  const inlineActions = replyBtn + sameQBtn + discussionRewardBtn;
   const moreItems = [resolveBtn, reopenBtn, pinBtn, copyLinkBtn, editBtn, deleteBtn].filter(Boolean).join("");
   const moreMenu = moreItems
     ? `<details class="disc-more-wrap">` +
@@ -596,7 +602,7 @@ function _discPostHtml(p, playId, isReply = false) {
     (p.questionCategory ? ` data-q-category="${escapeHtml(p.questionCategory)}"` : "") +
     ` data-is-official="${isOfficial ? "1" : "0"}"` +
     ` role="article"` +
-    ` data-author-name="${escapeHtml(p.authorName)}" data-body-text="${escapeHtml((p.body || "").slice(0, 80))}">` +
+    ` data-author-name="${escapeHtml(p.authorName)}" data-author-role="${escapeHtml(p.authorRole || "")}" data-body-text="${escapeHtml((p.body || "").slice(0, 120))}">` +
     `<div class="disc-post-avatar" style="background:${_DISC_ROLE_COLORS[p.authorRole] || "var(--color-text-muted)"}" aria-hidden="true">${escapeHtml(_discInitials(p.authorName))}</div>` +
     `<div class="disc-post-content">` +
     (isOfficial ? `<div class="disc-official-badge">⭐ Official Answer</div>` : "") +

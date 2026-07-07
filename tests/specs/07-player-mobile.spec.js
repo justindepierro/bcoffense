@@ -1104,6 +1104,129 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator("body")).not.toHaveClass(/play-presentation-open/);
   });
 
+  test("stages discussion question and answer rewards for coach approval", async ({ page }) => {
+    await page.route("**/api/threads/**", async (route) => {
+      const now = Math.floor(Date.now() / 1000);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          thread: { id: "thread-rewards", total: 2, locked: false },
+          posts: [{
+            id: "disc-question-1",
+            body: "What should I do if the edge widens?",
+            postType: "question",
+            questionState: "open",
+            questionCategory: "assignment",
+            moderationStatus: "approved",
+            authorName: "Lucas",
+            authorRole: "player",
+            authorId: "lucas-user",
+            reactions: [],
+            replyCount: 1,
+            replies: [{
+              id: "disc-answer-1",
+              body: "Pin it and climb to the linebacker.",
+              postType: "comment",
+              moderationStatus: "approved",
+              authorName: "Marco",
+              authorRole: "player",
+              authorId: "marco-user",
+              reactions: [],
+              replies: [],
+              replyCount: 0,
+              createdAt: now,
+            }],
+            createdAt: now,
+          }],
+          hasMore: false,
+        }),
+      });
+    });
+
+    await login(page, { role: "admin", username: "admin" });
+    await dismissFirstUse(page);
+    await page.evaluate((samplePlays) => {
+      storageManager.set(STORAGE_KEYS.TEAM_ROSTER, [
+        { id: "roster-lucas", name: "Lucas", number: "7", position: "QB", accountUsername: "lucas7" },
+        { id: "roster-marco", name: "Marco", number: "12", position: "H", accountUsername: "marco12" },
+      ]);
+      if (typeof plays !== "undefined") plays = samplePlays.map((play) => ({ ...play }));
+      if (typeof filteredPlays !== "undefined") filteredPlays = plays.slice();
+    }, PLAYER_PLAYS);
+
+    await page.evaluate(async () => {
+      const host = document.createElement("section");
+      host.id = "discussionRewardTestHost";
+      document.body.appendChild(host);
+      await renderDiscussionSection(plays[0], host);
+    });
+
+    const host = page.locator("#discussionRewardTestHost");
+    await expect(host.getByText("What should I do if the edge widens?")).toBeVisible();
+    await expect(host.getByRole("button", { name: /Question \+/i })).toBeVisible();
+    await expect(host.getByRole("button", { name: /Answer \+/i })).toBeVisible();
+
+    await host.getByRole("button", { name: /Question \+/i }).click();
+    await expect(page.getByRole("dialog", { name: /Stage Discussion Reward/i })).toBeVisible();
+    await page.getByRole("button", { name: /^Stage$/i }).click();
+    await host.getByRole("button", { name: /Answer \+/i }).click();
+    await expect(page.getByRole("dialog", { name: /Stage Discussion Reward/i })).toBeVisible();
+    await page.getByRole("button", { name: /^Stage$/i }).click();
+
+    await expect.poll(() => page.evaluate(() => {
+      const events = storageManager.get(STORAGE_KEYS.PLAYER_REWARD_EVENTS, []);
+      return events.map((event) => ({
+        player: event.player,
+        type: event.type,
+        status: event.status,
+        source: event.source,
+        points: event.points,
+      }));
+    })).toEqual([
+      { player: "Lucas", type: "question", status: "pending_approval", source: "discussion", points: 15 },
+      { player: "Marco", type: "answer", status: "pending_approval", source: "discussion", points: 25 },
+    ]);
+    await expect.poll(() => page.evaluate(() => {
+      const summary = _buildCoachQuizLeaderboardSummary();
+      return summary.rows
+        .filter((row) => ["Lucas", "Marco"].includes(row.name))
+        .map((row) => ({ name: row.name, totalPoints: row.totalPoints }));
+    })).toEqual([
+      { name: "Lucas", totalPoints: 0 },
+      { name: "Marco", totalPoints: 0 },
+    ]);
+
+    await goToTab(page, "quizsetup");
+    const awardHistory = page.locator("#coachQuizSetupPage .coach-quiz-award-history-panel");
+    await expect(awardHistory).toContainText("Pending approval");
+    await expect(awardHistory.getByRole("button", { name: /Approve Question reward for Lucas/i })).toBeVisible();
+    await expect(awardHistory.getByRole("button", { name: /Approve Answer reward for Marco/i })).toBeVisible();
+
+    await awardHistory.getByRole("button", { name: /Approve Question reward for Lucas/i }).click();
+    await expect(page.getByRole("dialog", { name: /Approve Reward/i })).toBeVisible();
+    await page.getByRole("button", { name: /^Approve$/i }).click();
+    await awardHistory.getByRole("button", { name: /Approve Answer reward for Marco/i }).click();
+    await expect(page.getByRole("dialog", { name: /Approve Reward/i })).toBeVisible();
+    await page.getByRole("button", { name: /^Approve$/i }).click();
+
+    await expect.poll(() => page.evaluate(() => {
+      const summary = _buildCoachQuizLeaderboardSummary();
+      return summary.rows
+        .filter((row) => ["Lucas", "Marco"].includes(row.name))
+        .map((row) => ({ name: row.name, totalPoints: row.totalPoints }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    })).toEqual([
+      { name: "Lucas", totalPoints: 15 },
+      { name: "Marco", totalPoints: 25 },
+    ]);
+    await expect.poll(() => page.evaluate(() =>
+      storageManager.get(STORAGE_KEYS.PLAYER_REWARD_EVENTS, []).every((event) => event.status === "approved")
+    )).toBe(true);
+    await assertNoHorizontalOverflow(page);
+  });
+
   test("saves coach quiz settings and applies custom scoring", async ({ page }) => {
     await login(page, { role: "admin", username: "admin" });
     await dismissFirstUse(page);

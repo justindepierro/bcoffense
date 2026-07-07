@@ -2197,23 +2197,36 @@ function _renderCoachQuizAwardHistoryPanel(rewardEvents = [], stickerEvents = []
   const pointRows = _renderCoachQuizAwardHistoryRows(
     rewardEvents,
     "No point awards this week.",
-    (event) => `
-      <div class="coach-quiz-award-history-row">
-        <span class="coach-quiz-award-history-icon" aria-hidden="true">+${Math.round(Number(event.points || 0))}</span>
-        <span class="coach-quiz-award-history-main">
-          <strong>${escapeHtml(_normalizeQuizPlayerName(event.player))}</strong>
-          <small>${escapeHtml(_formatQuizQuestionType(event.type || "reward"))} · ${Math.round(Number(event.points || 0))} pts${event.note ? ` · ${escapeHtml(event.note)}` : ""}</small>
-        </span>
-        <span class="coach-quiz-award-history-meta">${escapeHtml(_formatCoachAwardDate(event))}</span>
-        <button type="button"
-          class="btn btn-xs btn-danger"
-          data-action="coachRevokeQuizReward"
-          data-arg="${escapeAttr(event.id || "")}"
-          aria-label="Revoke ${escapeAttr(_formatQuizQuestionType(event.type || "reward"))} reward from ${escapeAttr(_normalizeQuizPlayerName(event.player))}">
-          Revoke
-        </button>
-      </div>
-    `
+    (event) => {
+      const pending = !_isQuizRewardApproved(event);
+      const typeLabel = _formatQuizQuestionType(event.type || "reward");
+      const playerName = _normalizeQuizPlayerName(event.player);
+      return `
+        <div class="coach-quiz-award-history-row${pending ? " is-pending" : ""}">
+          <span class="coach-quiz-award-history-icon" aria-hidden="true">+${Math.round(Number(event.points || 0))}</span>
+          <span class="coach-quiz-award-history-main">
+            <strong>${escapeHtml(playerName)}</strong>
+            <small>${escapeHtml(typeLabel)} · ${Math.round(Number(event.points || 0))} pts${event.note ? ` · ${escapeHtml(event.note)}` : ""}</small>
+          </span>
+          <span class="coach-quiz-award-status${pending ? " is-pending" : " is-approved"}">${pending ? "Pending approval" : "Approved"}</span>
+          <span class="coach-quiz-award-history-meta">${escapeHtml(_formatCoachAwardDate(event))}</span>
+          ${pending ? `<button type="button"
+            class="btn btn-xs btn-primary"
+            data-action="coachApproveQuizReward"
+            data-arg="${escapeAttr(event.id || "")}"
+            aria-label="Approve ${escapeAttr(typeLabel)} reward for ${escapeAttr(playerName)}">
+            Approve
+          </button>` : ""}
+          <button type="button"
+            class="btn btn-xs btn-danger"
+            data-action="coachRevokeQuizReward"
+            data-arg="${escapeAttr(event.id || "")}"
+            aria-label="Revoke ${escapeAttr(typeLabel)} reward from ${escapeAttr(playerName)}">
+            Revoke
+          </button>
+        </div>
+      `;
+    }
   );
   const stickerRows = _renderCoachQuizAwardHistoryRows(
     stickerEvents,
@@ -2296,6 +2309,7 @@ function _quizCurrentCoachName() {
 function _getQuizRewardsForPlayer(player, weekKey = "") {
   const target = _normalizeQuizPlayerName(player);
   return _getPlayerRewardEvents().filter((event) => {
+    if (!_isQuizRewardApproved(event)) return false;
     if (_normalizeQuizPlayerName(event.player) !== target) return false;
     return weekKey ? event.weekKey === weekKey : true;
   });
@@ -2308,8 +2322,12 @@ function _getQuizStickersForPlayer(player) {
 
 function _sumQuizRewards(events, type = "") {
   return (Array.isArray(events) ? events : [])
-    .filter((event) => !type || event.type === type)
+    .filter((event) => _isQuizRewardApproved(event) && (!type || event.type === type))
     .reduce((sum, event) => sum + Number(event.points || 0), 0);
+}
+
+function _isQuizRewardApproved(event = {}) {
+  return !event.status || event.status === "approved";
 }
 
 function _quizPlayerNameFromAttempt(attempt, fallback = "") {
@@ -2374,6 +2392,7 @@ function _quizActivityDateKeys(attempts, rewards, player) {
     if (key) keys.add(key);
   });
   (Array.isArray(rewards) ? rewards : []).forEach((event) => {
+    if (!_isQuizRewardApproved(event)) return;
     if (_normalizeQuizPlayerName(event.player) !== target) return;
     const key = _quizEventDateKey(event);
     if (key) keys.add(key);
@@ -2389,6 +2408,7 @@ function _quizActivityWeekKeys(attempts, rewards, player) {
     if (attempt.weekKey) keys.add(String(attempt.weekKey));
   });
   (Array.isArray(rewards) ? rewards : []).forEach((event) => {
+    if (!_isQuizRewardApproved(event)) return;
     if (_normalizeQuizPlayerName(event.player) !== target) return;
     if (event.weekKey) keys.add(String(event.weekKey));
   });
@@ -2406,6 +2426,7 @@ function _buildQuizLeaderboardRows(attempts, rewards, player, weekKey = "") {
     addPoints(attempt.player || player, attempt.totalPoints || 0);
   });
   (Array.isArray(rewards) ? rewards : []).forEach((event) => {
+    if (!_isQuizRewardApproved(event)) return;
     if (weekKey && event.weekKey !== weekKey) return;
     addPoints(event.player || player, event.points || 0);
   });
@@ -2427,6 +2448,7 @@ function _quizFilteredAttemptsForView(attempts, weekKey, season = false) {
 function _quizFilteredRewardsForView(rewards, weekKey, season = false) {
   return (Array.isArray(rewards) ? rewards : []).filter((event) => {
     if (!event || typeof event !== "object") return false;
+    if (!_isQuizRewardApproved(event)) return false;
     return season || event.weekKey === weekKey;
   });
 }
@@ -4102,6 +4124,120 @@ async function coachAwardQuestionPoints(type = "question") {
   renderCoachQuizSetupPage();
   if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
   showToast(`${player} earned ${points} points${points < requestedPoints ? " after cap" : ""}.`, { type: "success" });
+}
+
+function _quizRewardCapRemainingForPlayer(player, dateKey, weekKey) {
+  const settings = _getPlayerQuizSettings();
+  const playerEvents = _getPlayerRewardEvents()
+    .filter((event) => _isQuizRewardApproved(event))
+    .filter((event) => _normalizeQuizPlayerName(event.player) === _normalizeQuizPlayerName(player));
+  const dailyUsed = _sumQuizRewards(playerEvents.filter((event) => event.dateKey === dateKey));
+  const weeklyUsed = _sumQuizRewards(playerEvents.filter((event) => event.weekKey === weekKey));
+  const dailyRemaining = settings.dailyRewardCap ? Math.max(0, settings.dailyRewardCap - dailyUsed) : 500;
+  const weeklyRemaining = settings.weeklyRewardCap ? Math.max(0, settings.weeklyRewardCap - weeklyUsed) : 500;
+  return Math.min(500, dailyRemaining, weeklyRemaining);
+}
+
+async function coachStageDiscussionReward(arg = "") {
+  const [postId, rawType] = String(arg || "").split("::");
+  const safeType = rawType === "answer" ? "answer" : "question";
+  const postEl = document.getElementById(`disc-post-${postId}`);
+  if (!postEl || typeof _discIsStaff !== "function" || !_discIsStaff()) {
+    showToast("Could not stage that discussion reward.", { type: "warning" });
+    return;
+  }
+  const authorName = postEl.dataset.authorName || "";
+  const rosterPlayer = _getQuizRosterPlayerByName(authorName);
+  const player = rosterPlayer?.name || await _coachPromptRewardPlayer(authorName);
+  if (!player) return;
+  const existing = _getPlayerRewardEvents().find((event) =>
+    event.source === "discussion" &&
+    String(event.sourcePostId || "") === String(postId || "") &&
+    event.type === safeType
+  );
+  if (existing) {
+    showToast(existing.status === "pending_approval" ? "That reward is already pending approval." : "That discussion reward is already recorded.", { type: "info" });
+    return;
+  }
+  const defaults = _getQuizRewardDefaults();
+  const points = Math.max(0, Math.round(Number(defaults[safeType] || 0)));
+  if (!points) {
+    showToast("That reward type is set to 0 points.", { type: "warning" });
+    return;
+  }
+  const ok = typeof showConfirm === "function"
+    ? await showConfirm(`Stage ${points} ${safeType === "answer" ? "answer" : "question"} points for ${player}? Approval is required before it counts on the leaderboard.`, {
+      title: "Stage Discussion Reward",
+      icon: "🏆",
+      confirmText: "Stage",
+      cancelText: "Cancel",
+      danger: false,
+    })
+    : true;
+  if (!ok) return;
+  const now = new Date();
+  const playId = postEl.closest("[data-play-id]")?.dataset?.playId || "";
+  const events = _getPlayerRewardEvents();
+  events.push({
+    id: _quizEventId("reward"),
+    player,
+    type: safeType,
+    label: safeType === "answer" ? "Discussion Answer" : "Discussion Question",
+    points,
+    note: (postEl.dataset.bodyText || "").slice(0, 120),
+    awardedBy: _quizCurrentCoachName(),
+    source: "discussion",
+    sourcePostId: postId,
+    sourcePlayId: playId,
+    status: "pending_approval",
+    createdAt: now.toISOString(),
+    dateKey: _quizDateKey(now),
+    weekKey: _quizWeekKey(now),
+  });
+  _savePlayerRewardEvents(events);
+  _leaderboardSelectedPlayer = player;
+  postEl.classList.add("disc-post--reward-pending");
+  showToast(`${player}'s ${safeType} reward is pending approval.`, { type: "success" });
+  if (document.getElementById("coachQuizSetupPage")?.offsetParent !== null) renderCoachQuizSetupPage();
+}
+
+async function coachApproveQuizReward(rewardId = "") {
+  const events = _getPlayerRewardEvents();
+  const reward = events.find((event) => String(event.id || "") === String(rewardId || ""));
+  if (!reward) {
+    showToast("That reward is no longer available.", { type: "warning" });
+    return;
+  }
+  if (_isQuizRewardApproved(reward)) {
+    showToast("That reward is already approved.", { type: "info" });
+    return;
+  }
+  const remaining = _quizRewardCapRemainingForPlayer(reward.player, reward.dateKey, reward.weekKey);
+  if (remaining <= 0) {
+    showToast(`${_normalizeQuizPlayerName(reward.player)} is at the reward point cap.`, { type: "warning" });
+    return;
+  }
+  const originalPoints = Math.round(Number(reward.points || 0));
+  const approvedPoints = Math.min(originalPoints, remaining);
+  const ok = typeof showConfirm === "function"
+    ? await showConfirm(`Approve ${approvedPoints} points for ${_normalizeQuizPlayerName(reward.player)}?`, {
+      title: "Approve Reward",
+      icon: "✅",
+      confirmText: "Approve",
+      cancelText: "Keep Pending",
+      danger: false,
+    })
+    : true;
+  if (!ok) return;
+  reward.status = "approved";
+  reward.points = approvedPoints;
+  reward.approvedAt = new Date().toISOString();
+  reward.approvedBy = _quizCurrentCoachName();
+  _savePlayerRewardEvents(events);
+  _leaderboardSelectedPlayer = _normalizeQuizPlayerName(reward.player);
+  renderCoachQuizSetupPage();
+  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  showToast(`Approved ${approvedPoints} points for ${_normalizeQuizPlayerName(reward.player)}${approvedPoints < originalPoints ? " after cap" : ""}.`, { type: "success" });
 }
 
 async function coachRevokeQuizReward(rewardId = "") {

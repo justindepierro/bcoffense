@@ -1679,6 +1679,14 @@ body.play-presentation-open .quick-tools {
   background: rgb(255 255 255 / 10%);
   color: var(--color-text-inverse);
 }
+.pp-disc-drawer .disc-reward-btn {
+  border-color: rgb(255 255 255 / 18%);
+  background: rgb(245 158 11 / 18%);
+  color: var(--color-text-inverse);
+}
+.pp-disc-drawer .disc-reward-btn:hover {
+  background: rgb(245 158 11 / 28%);
+}
 
 /* Reply-to banner in dark drawer */
 .pp-disc-drawer .disc-reply-to-banner {

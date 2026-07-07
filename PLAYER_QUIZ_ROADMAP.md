@@ -84,8 +84,8 @@
 - [x] Define weekly points for asking questions, answering teammates, and coach-marked helpful answers.
 - [x] Restrict local coach point awards to active roster players so names stay clean.
 - [x] Include question points in week and season leaderboard totals with a visible source breakdown.
-- [ ] Prevent spam by capping question points per day/week and requiring coach approval for bonus answers. Local reward caps are in place; discussion approval still needs wiring.
-- [ ] Add coach controls for gifting question/answer points from the discussion workflow. Coach staging controls exist; discussion-thread affordances still need wiring.
+- [x] Prevent spam by capping question points per day/week and requiring coach approval for bonus answers. Local reward caps and discussion approval are in place.
+- [x] Add coach controls for gifting question/answer points from the discussion workflow.
 - [x] Add question/answer reward history to the player profile detail modal.
 
 ## Helmet Stickers
@@ -154,10 +154,10 @@
 
 ### Milestone 4 — Discussion Rewards
 
-- [ ] Add coach/admin reward actions directly to player questions and answers.
-- [ ] Require coach approval before question/answer points affect leaderboard totals.
+- [x] Add coach/admin reward actions directly to player questions and answers.
+- [x] Require coach approval before question/answer points affect leaderboard totals.
 - [x] Add daily/weekly reward caps and clear warnings when caps are reached.
-- [ ] Show reward history on player leaderboard detail.
+- [x] Show reward history on player leaderboard detail.
 - [ ] Add tests for approval, cap enforcement, and history display.
 
 ### Milestone 5 — Cloudflare Team Leaderboard

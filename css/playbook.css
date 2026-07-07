@@ -5467,6 +5467,29 @@ body[data-auth-role="player"] .pb-card .pb-present-btn {
   background: var(--color-bg-hover-row);
   color: var(--color-text);
 }
+.disc-reward-btn {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border: 1px solid color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-warning) 11%, var(--color-surface));
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.disc-reward-btn:hover,
+.disc-reward-btn:focus-visible {
+  outline: 0;
+  border-color: color-mix(in srgb, var(--color-warning) 62%, var(--color-border-med));
+  background: color-mix(in srgb, var(--color-warning) 17%, var(--color-surface));
+}
+.disc-post--reward-pending {
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--color-warning) 80%, var(--color-border-light));
+}
 .disc-action-btn--danger:hover,
 .disc-action-btn--danger:focus-visible {
   background: color-mix(in srgb, var(--color-danger) 12%, transparent);
