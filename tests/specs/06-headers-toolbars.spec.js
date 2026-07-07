@@ -290,18 +290,90 @@ test.describe("Header and toolbar contract", () => {
     await seedTinyPlaybook(page);
     await goToTab(page, "playbook");
 
-    await expect(page.getByRole("button", { name: /Filter Plays/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Filters$/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /Present Showing/i })).toBeVisible();
     await expect(page.locator(".pb-player-summary__filter-pill", { hasText: "Game Plan" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Add Play/i })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /Data/i })).toHaveCount(0);
     await assertAppChromeTopLayer(page);
 
-    await page.getByRole("button", { name: /Filter Plays/i }).click();
+    await page.getByRole("button", { name: /^Filters$/i }).click();
     const filterModal = page.locator("#playerPlaybookFilterOverlay");
     await expect(filterModal).toBeVisible();
     await expect(filterModal.locator('[data-filter-group="gamePlan"]')).toBeVisible();
     await expect(filterModal.getByRole("button", { name: /Current Game Plan/i })).toBeVisible();
+  });
+
+  test("player leaderboard keeps the tab bar fully visible", async ({ page }) => {
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await seedTinyPlaybook(page);
+    await goToTab(page, "leaderboard");
+
+    const layout = await page.evaluate(() => {
+      const tabs = document.querySelector("#mainApp .tabs")?.getBoundingClientRect();
+      const tab = document.getElementById("tab-leaderboard")?.getBoundingClientRect();
+      const panel = document.querySelector("#leaderboard.panel.active")?.getBoundingClientRect();
+      const tabEl = document.getElementById("tab-leaderboard");
+      const cx = tab ? Math.round(tab.left + tab.width / 2) : 0;
+      const cy = tab ? Math.round(tab.top + tab.height / 2) : 0;
+      const top = document.elementFromPoint(cx, cy);
+      return tabs && tab && panel
+        ? {
+          tabsHeight: Math.round(tabs.height),
+          tabsBottom: Math.round(tabs.bottom),
+          tabHeight: Math.round(tab.height),
+          tabBottom: Math.round(tab.bottom),
+          panelTop: Math.round(panel.top),
+          topIsTab: Boolean(top && tabEl && (top === tabEl || tabEl.contains(top))),
+          overflow: document.body.scrollWidth > window.innerWidth,
+        }
+        : null;
+    });
+
+    expect(layout).not.toBeNull();
+    expect(layout.tabsHeight).toBeGreaterThanOrEqual(58);
+    expect(layout.tabHeight).toBeGreaterThanOrEqual(40);
+    expect(layout.tabBottom).toBeLessThanOrEqual(layout.panelTop - 1);
+    expect(layout.tabsBottom).toBeLessThanOrEqual(layout.panelTop - 1);
+    expect(layout.topIsTab).toBe(true);
+    expect(layout.overflow).toBe(false);
+  });
+
+  test("call sheet game plan drawer launcher is inset and readable", async ({ page }) => {
+    await login(page, { role: "coach", username: "coach" });
+    await dismissFirstUse(page);
+    await seedTinyPlaybook(page);
+    await seedBusyGamePlan(page);
+    await goToTab(page, "callsheet");
+
+    const launcher = page.locator("#gpDrawerToggleBtn");
+    await expect(launcher).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const btn = document.getElementById("gpDrawerToggleBtn");
+      const rect = btn?.getBoundingClientRect();
+      if (!btn || !rect) return null;
+      const cx = Math.round(rect.left + rect.width / 2);
+      const cy = Math.round(rect.top + rect.height / 2);
+      const top = document.elementFromPoint(cx, cy);
+      return {
+        left: Math.round(rect.left),
+        rightGap: Math.round(window.innerWidth - rect.right),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        topIsLauncher: Boolean(top && (top === btn || btn.contains(top))),
+        overflow: document.body.scrollWidth > window.innerWidth,
+      };
+    });
+
+    expect(layout).not.toBeNull();
+    expect(layout.left).toBeGreaterThanOrEqual(0);
+    expect(layout.rightGap).toBeGreaterThanOrEqual(8);
+    expect(layout.width).toBeGreaterThanOrEqual(32);
+    expect(layout.height).toBeGreaterThanOrEqual(120);
+    expect(layout.topIsLauncher).toBe(true);
+    expect(layout.overflow).toBe(false);
   });
 });
 
@@ -321,7 +393,7 @@ test.describe("Player mobile playbook command surface", () => {
     const summary = page.locator("#playerPlaybookSummary");
     await expect(summary).toBeVisible();
     await expect(page.locator("#playbook .pb-controls")).toBeHidden();
-    await expect(summary.getByRole("button", { name: /Filter Plays/i })).toBeVisible();
+    await expect(summary.getByRole("button", { name: /^Filters$/i })).toBeVisible();
     await expect(summary.getByRole("button", { name: /Present Showing/i })).toBeVisible();
 
     const layout = await page.evaluate(() => {

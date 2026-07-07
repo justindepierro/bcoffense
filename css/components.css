@@ -2447,7 +2447,7 @@ body.is-mobile-screen .toast {
 
 body.is-mobile-screen[data-auth-role="player"] .toast {
   bottom: calc(
-    var(--app-tabs-height, 76px) + env(safe-area-inset-bottom) + 14px
+    var(--player-bottom-nav-height, 76px) + env(safe-area-inset-bottom) + 14px
   );
 }
 

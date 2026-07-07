@@ -8175,7 +8175,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .player-leaderboard-page {
-  min-height: calc(var(--app-vh, 1vh) * 100 - var(--app-header-height, 0px) - var(--tabbar-height, 0px));
+  min-height: calc(
+    var(--app-vh, 1vh) * 100 - var(--app-header-height, 0px) -
+      var(--app-tabs-height, 0px)
+  );
   padding: var(--space-lg);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 7%, var(--color-bg-body)), var(--color-bg-body));
@@ -10539,7 +10542,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   }
 
   .player-leaderboard-page {
-    padding: var(--space-sm) var(--space-sm) calc(86px + env(safe-area-inset-bottom));
+    padding: var(--space-sm) var(--space-sm)
+      calc(var(--player-bottom-nav-height, 76px) + 14px + env(safe-area-inset-bottom));
   }
 
   .player-leaderboard-hero {

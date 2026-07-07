@@ -3476,7 +3476,7 @@ body.shell-phone #callsheet .cs-empty-cat {
   right: 0;
   bottom: 0;
   height: calc(var(--app-vh, 1vh) * 100);
-  width: 380px;
+  width: var(--gp-drawer-width, 380px);
   max-width: 90vw;
   background: var(--color-bg-light);
   border-left: 1px solid var(--color-border);
@@ -3900,7 +3900,7 @@ body.gp-drag-active .hash-column.gp-drag-over {
 .gp-drawer-tab {
   position: fixed;
   top: 50%;
-  right: 0;
+  right: max(10px, env(safe-area-inset-right));
   transform: translateY(-50%);
   z-index: var(
     --z-drawer-scrim
@@ -3910,8 +3910,7 @@ body.gp-drag-active .hash-column.gp-drag-over {
   gap: 6px;
   padding: 10px 8px;
   border: 1px solid var(--color-accent);
-  border-right: none;
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  border-radius: var(--radius-md);
   background: var(--color-accent);
   color: var(--color-text-inverse);
   font-family: var(--font-sans);
@@ -3961,7 +3960,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab {
 
 /* When drawer is open, slide the tab to the drawer's left edge */
 body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
-  right: 380px;
+  right: calc(var(--gp-drawer-width, 380px) + max(10px, env(safe-area-inset-right)));
 }
 @media (max-width: 600px) {
   body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {

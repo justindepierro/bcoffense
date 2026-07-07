@@ -627,8 +627,16 @@ function syncMobileShellState() {
   setMobileShellCssVar(root, "--app-vh", `${Math.max(height * 0.01, 1)}px`);
   setMobileShellCssVar(root, "--app-vw", `${Math.max(width * 0.01, 1)}px`);
 
+  const playerBottomNavActive = authRole === "player" && isMobile;
   if (header) setMobileShellCssVar(root, "--app-header-height", `${headerHeight}px`);
-  if (tabs) setMobileShellCssVar(root, "--app-tabs-height", `${tabsHeight}px`);
+  if (tabs) {
+    setMobileShellCssVar(root, "--app-tabs-height", `${playerBottomNavActive ? 0 : tabsHeight}px`);
+    setMobileShellCssVar(
+      root,
+      "--player-bottom-nav-height",
+      `${playerBottomNavActive ? tabsHeight : 0}px`
+    );
+  }
 
   [root, body].forEach((el) => {
     el.classList.toggle("is-mobile-screen", isMobile);

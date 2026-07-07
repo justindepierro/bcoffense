@@ -415,7 +415,7 @@ body[data-auth-role="player"] .save-status {
 body[data-auth-role="player"] .tabs {
   gap: 10px;
   justify-content: center;
-  padding: 12px 20px 0;
+  padding: 12px 20px 10px;
   border-bottom: 0;
   background: transparent;
   box-shadow: none;
@@ -448,6 +448,30 @@ body[data-auth-role="player"] .tab.active {
   background: var(--gradient-dark);
   border-color: transparent;
   box-shadow: var(--shadow-sm);
+}
+
+body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tabs {
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: 70px;
+  padding-inline: max(20px, env(safe-area-inset-left))
+    max(20px, env(safe-area-inset-right));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-bg-body) 96%, var(--color-surface)),
+      var(--color-bg-body)
+    );
+  border-bottom: 1px solid var(--color-border-light);
+  box-shadow: 0 10px 24px rgb(10 18 42 / 8%);
+  overflow-x: auto;
+  overflow-y: hidden;
+  z-index: var(--z-tab-bar);
+}
+
+body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tab {
+  flex: 0 0 auto;
+  min-height: 42px;
 }
 
 /* Tab badge counts */
@@ -529,9 +553,28 @@ body[data-auth-role="player"] .tab.active {
   }
 }
 
+@media (min-width: 821px) {
+  body.app-ready:not(.is-mobile-screen)[data-active-tab="dashboard"] #mainApp,
+  body.app-ready:not(.is-mobile-screen)[data-active-tab="tendencies"] #mainApp,
+  body.app-ready:not(.is-mobile-screen)[data-active-tab="gameplan"] #mainApp,
+  body.app-ready:not(.is-mobile-screen)[data-active-tab="callsheet"] #mainApp,
+  body.app-ready:not(.is-mobile-screen)[data-active-tab="leaderboard"] #mainApp,
+  body.app-ready:not(.is-mobile-screen)[data-active-tab="quizsetup"] #mainApp,
+  body.app-ready:not(.is-mobile-screen)[data-active-tab="installation"]
+    #mainApp,
+  body.app-ready:not(.is-mobile-screen)[data-active-tab="identity"] #mainApp,
+  body.app-ready:not(.is-mobile-screen)[data-active-tab="offensebuilder"]
+    #mainApp {
+    flex: 0 0 auto;
+    min-height: auto;
+    overflow: visible;
+  }
+}
+
 body[data-auth-role="player"] #dashboard.panel,
 body[data-auth-role="player"] #playbook.panel,
-body[data-auth-role="player"] #script.panel {
+body[data-auth-role="player"] #script.panel,
+body[data-auth-role="player"] #leaderboard.panel {
   margin-top: 12px;
   border: 0;
   background: transparent;

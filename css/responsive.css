@@ -816,7 +816,8 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
 
   body.is-mobile-screen[data-auth-role="player"] .panel {
     padding-bottom: calc(
-      var(--app-tabs-height, 76px) + 24px + env(safe-area-inset-bottom)
+      var(--player-bottom-nav-height, 76px) + 24px +
+        env(safe-area-inset-bottom)
     );
   }
 
