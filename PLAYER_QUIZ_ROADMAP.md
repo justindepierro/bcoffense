@@ -150,7 +150,7 @@
 - [x] Add final recap with strengths, misses, suggested review source, and next quiz CTA.
 - [x] Add player profile detail modal with reward history, stickers, weak areas, and trend.
 - [x] Add focused mobile/WebKit test coverage for opening the player leaderboard profile detail modal.
-- [ ] Add mobile/WebKit screenshots for quiz answer, recap, leaderboard, and profile detail.
+- [x] Add mobile/WebKit screenshots for quiz answer, recap, leaderboard, and profile detail.
 
 ### Milestone 4 — Discussion Rewards
 
@@ -158,7 +158,7 @@
 - [x] Require coach approval before question/answer points affect leaderboard totals.
 - [x] Add daily/weekly reward caps and clear warnings when caps are reached.
 - [x] Show reward history on player leaderboard detail.
-- [ ] Add tests for approval, cap enforcement, and history display.
+- [x] Add tests for approval, cap enforcement, and history display.
 
 ### Milestone 5 — Cloudflare Team Leaderboard
 

@@ -7,6 +7,10 @@
  */
 const { test, expect } = require("@playwright/test");
 const { login, goToTab, dismissFirstUse, assertNoHorizontalOverflow } = require("./helpers");
+const path = require("path");
+const fs = require("fs");
+
+const SCREENSHOTS_DIR = path.join(__dirname, "..", "screenshots");
 
 const PLAYER_PLAYS = [
   {
@@ -1224,6 +1228,241 @@ test.describe("Player mobile experience", () => {
     await expect.poll(() => page.evaluate(() =>
       storageManager.get(STORAGE_KEYS.PLAYER_REWARD_EVENTS, []).every((event) => event.status === "approved")
     )).toBe(true);
+    await assertNoHorizontalOverflow(page);
+  });
+
+  test("enforces discussion reward caps and shows approved reward history", async ({ page }) => {
+    await page.route("**/api/threads/**", async (route) => {
+      const now = Math.floor(Date.now() / 1000);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          thread: { id: "thread-capped-rewards", total: 2, locked: false },
+          posts: [{
+            id: "disc-cap-question",
+            body: "Do I pin the edge or climb if he widens?",
+            postType: "question",
+            questionState: "open",
+            questionCategory: "assignment",
+            moderationStatus: "approved",
+            authorName: "Lucas",
+            authorRole: "player",
+            authorId: "lucas-user",
+            reactions: [],
+            replyCount: 1,
+            replies: [{
+              id: "disc-cap-answer",
+              body: "Pin the edge first, then climb if he folds.",
+              postType: "comment",
+              moderationStatus: "approved",
+              authorName: "Lucas",
+              authorRole: "player",
+              authorId: "lucas-user",
+              reactions: [],
+              replies: [],
+              replyCount: 0,
+              createdAt: now,
+            }],
+            createdAt: now,
+          }],
+          hasMore: false,
+        }),
+      });
+    });
+
+    await login(page, { role: "admin", username: "admin" });
+    await dismissFirstUse(page);
+    await page.evaluate((samplePlays) => {
+      const now = new Date();
+      const dateKey = _quizDateKey(now);
+      const weekKey = _quizWeekKey(now);
+      storageManager.set(STORAGE_KEYS.TEAM_ROSTER, [
+        { id: "roster-lucas", name: "Lucas", number: "7", position: "QB", accountUsername: "lucas7" },
+      ]);
+      storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_SETTINGS, {
+        ...PLAYER_QUIZ_DEFAULT_SETTINGS,
+        questionPoints: 15,
+        answerPoints: 25,
+        dailyRewardCap: 30,
+        weeklyRewardCap: 30,
+      });
+      storageManager.set(STORAGE_KEYS.PLAYER_REWARD_EVENTS, [{
+        id: "existing-approved-gift",
+        player: "Lucas",
+        type: "gift",
+        label: "Coach Gift",
+        points: 20,
+        note: "Existing cap usage",
+        status: "approved",
+        dateKey,
+        weekKey,
+        createdAt: now.toISOString(),
+      }]);
+      if (typeof plays !== "undefined") plays = samplePlays.map((play) => ({ ...play }));
+      if (typeof filteredPlays !== "undefined") filteredPlays = plays.slice();
+    }, PLAYER_PLAYS);
+
+    await page.evaluate(async () => {
+      const host = document.createElement("section");
+      host.id = "discussionCapTestHost";
+      document.body.appendChild(host);
+      await renderDiscussionSection(plays[0], host);
+    });
+
+    const host = page.locator("#discussionCapTestHost");
+    await host.getByRole("button", { name: /Question \+/i }).click();
+    await expect(page.getByRole("dialog", { name: /Stage Discussion Reward/i })).toBeVisible();
+    await page.getByRole("button", { name: /^Stage$/i }).click();
+    await host.getByRole("button", { name: /Answer \+/i }).click();
+    await expect(page.getByRole("dialog", { name: /Stage Discussion Reward/i })).toBeVisible();
+    await page.getByRole("button", { name: /^Stage$/i }).click();
+
+    await goToTab(page, "quizsetup");
+    const awardHistory = page.locator("#coachQuizSetupPage .coach-quiz-award-history-panel");
+    await awardHistory.getByRole("button", { name: /Approve Question reward for Lucas/i }).click();
+    await expect(page.getByRole("dialog", { name: /Approve Reward/i })).toBeVisible();
+    await page.getByRole("button", { name: /^Approve$/i }).click();
+    await awardHistory.getByRole("button", { name: /Approve Answer reward for Lucas/i }).click();
+    await expect(page.locator(".toast, .toast-notification").last()).toContainText(/cap/i);
+
+    await expect.poll(() => page.evaluate(() => {
+      const events = storageManager.get(STORAGE_KEYS.PLAYER_REWARD_EVENTS, []);
+      return events.map((event) => ({
+        sourcePostId: event.sourcePostId || event.id,
+        type: event.type,
+        status: event.status,
+        points: event.points,
+      })).sort((a, b) => a.sourcePostId.localeCompare(b.sourcePostId));
+    })).toEqual([
+      { sourcePostId: "disc-cap-answer", type: "answer", status: "pending_approval", points: 25 },
+      { sourcePostId: "disc-cap-question", type: "question", status: "approved", points: 10 },
+      { sourcePostId: "existing-approved-gift", type: "gift", status: "approved", points: 20 },
+    ]);
+    await expect.poll(() => page.evaluate(() => {
+      const row = _buildCoachQuizLeaderboardSummary().rows.find((item) => item.name === "Lucas");
+      return row && {
+        totalPoints: row.totalPoints,
+        questionPoints: row.questionPoints,
+        answerPoints: row.answerPoints,
+        giftPoints: row.giftPoints,
+      };
+    })).toEqual({ totalPoints: 30, questionPoints: 10, answerPoints: 0, giftPoints: 20 });
+
+    await page.evaluate(() => openPlayerLeaderboardProfile("Lucas"));
+    const profile = page.locator("#playerLeaderboardProfileOverlay");
+    await expect(profile).toBeVisible();
+    const rewardCard = profile.locator(".player-profile-card", { hasText: "Reward history" });
+    await expect(rewardCard).toContainText("Question");
+    await expect(rewardCard).toContainText("10 pts");
+    await expect(rewardCard).toContainText("Gift");
+    await expect(rewardCard).toContainText("20 pts");
+    await expect(rewardCard).not.toContainText("Answer");
+    await assertNoHorizontalOverflow(page);
+  });
+
+  test("captures quiz answer, recap, leaderboard, and profile screenshots @screenshots", async ({ page }, testInfo) => {
+    fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+    const device = testInfo.project.name;
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await page.evaluate(() => {
+      const now = new Date();
+      const dateKey = _quizDateKey(now);
+      const weekKey = _quizWeekKey(now);
+      storageManager.set(STORAGE_KEYS.A2HS_DISMISSED, Date.now());
+      storageManager.set(STORAGE_KEYS.TEAM_ROSTER, [
+        { id: "roster-lucas", name: "Lucas", number: "7", position: "QB", accountUsername: "player" },
+        { id: "roster-marco", name: "Marco", number: "12", position: "H", accountUsername: "marco12" },
+      ]);
+      storageManager.set(STORAGE_KEYS.PLAYER_REWARD_EVENTS, [
+        { id: "screen-question", player: "Lucas", type: "question", points: 25, note: "Asked a sharp edge question.", status: "approved", dateKey, weekKey, createdAt: now.toISOString() },
+        { id: "screen-answer", player: "Lucas", type: "answer", points: 35, note: "Helped a teammate with the rule.", status: "approved", dateKey, weekKey, createdAt: now.toISOString() },
+      ]);
+      storageManager.set(STORAGE_KEYS.PLAYER_HELMET_STICKERS, [{
+        id: "screen-sticker",
+        player: "Lucas",
+        stickerKey: "do-your-job",
+        label: "Do Your Job",
+        icon: "🧠",
+        color: "blue",
+        description: "Handled the assignment without needing extra coaching.",
+        note: "Clean checks all week.",
+        dateKey,
+        weekKey,
+      }]);
+      script = [
+        {
+          personnel: "11",
+          formation: "Trips Rt",
+          play: "Buck Sweep",
+          preferredDown: "1",
+          preferredDistance: "Medium",
+          respQ: "Secure the edge and finish through contact.",
+          respNotes: "If force folds inside, climb now.",
+          playerNotes: "Coach says: your eyes start on the force defender.",
+        },
+        {
+          personnel: "10",
+          formation: "Doubles",
+          play: "Verts",
+          preferredDown: "3",
+          preferredDistance: "Long",
+          respQ: "Win vertical leverage.",
+        },
+        {
+          personnel: "12",
+          formation: "Wing Lt",
+          play: "Power",
+          preferredDown: "2",
+          preferredDistance: "Short",
+          respQ: "Open play side and carry out keep fake.",
+        },
+        {
+          personnel: "11",
+          formation: "Trips Lt",
+          play: "Bubble",
+          preferredDown: "1",
+          preferredDistance: "Short",
+          respQ: "Catch, replace, and get north.",
+        },
+      ];
+      startScriptQuiz({ positionKey: "respQ", title: "Friday Walkthrough Quiz" });
+    });
+
+    const quiz = page.locator("#scriptQuizOverlay");
+    await expect(quiz).toBeVisible();
+    await quiz.locator(".script-quiz-choice:not([data-arg$='::correct'])").first().click();
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Review this one");
+    await quiz.screenshot({ path: path.join(SCREENSHOTS_DIR, `player-quiz-answer-${device}.png`) });
+
+    for (let i = 0; i < 3; i += 1) {
+      await quiz.locator("#scriptQuizNextBtn").click();
+      await quiz.locator(".script-quiz-choice[data-arg$='::correct']").click();
+    }
+    await quiz.locator("#scriptQuizNextBtn").click();
+    await expect(quiz.locator(".sq-result-card")).toContainText("75%");
+    await quiz.screenshot({ path: path.join(SCREENSHOTS_DIR, `player-quiz-recap-${device}.png`) });
+
+    await quiz.getByRole("button", { name: /^Done$/i }).click();
+    await expect(quiz).toBeHidden();
+    await goToTab(page, "leaderboard");
+    const leaderboard = page.locator("#playerLeaderboardPage");
+    await expect(leaderboard).toContainText("Weekly board");
+    const installBanner = page.locator("#playerA2HSBanner");
+    if ((await installBanner.count()) > 0 && await installBanner.isVisible()) {
+      await installBanner.getByRole("button", { name: /Not now/i }).click();
+      await expect(installBanner).toBeHidden();
+    }
+    await leaderboard.screenshot({ path: path.join(SCREENSHOTS_DIR, `player-leaderboard-${device}.png`) });
+    await leaderboard.getByRole("button", { name: /Lucas/i }).click();
+    const profile = page.locator("#playerLeaderboardProfileOverlay");
+    await expect(profile).toBeVisible();
+    await expect(profile).toContainText("Reward history");
+    const rewardHistoryCard = profile.locator(".player-profile-card", { hasText: "Reward history" });
+    await rewardHistoryCard.scrollIntoViewIfNeeded();
+    await rewardHistoryCard.screenshot({ path: path.join(SCREENSHOTS_DIR, `player-profile-detail-${device}.png`) });
     await assertNoHorizontalOverflow(page);
   });
 
