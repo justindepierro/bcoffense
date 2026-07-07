@@ -194,6 +194,21 @@ Fix:
 - Published Practice cards now better highlight the current script, quiz progress, and Swipe View / Quiz actions.
 - Quiz Center and Leaderboard stat cards now use distinct accents for points, streaks, tier, badges, and goals.
 
+### P1 - Practice Pre-Load State Looked Like A Broken Empty Script
+
+Status: fixed in this Safari/iPad follow-up.
+
+Symptoms/risk:
+- On the player Practice page, the published-script picker was visible, but the page still rendered `Script 0`, empty stats, and a blank `Period 1` workspace.
+- Published-script cards were trapped in a short internal scrolling launcher, so card titles/progress could look clipped before a player selected a practice.
+- This made the correct workflow feel secondary: players should first choose a published practice, then study it.
+
+Fix:
+- Player Practice now enters a dedicated awaiting-load state until a real script is opened.
+- In that state, the empty script header, stats bar, timeline, and blank script workspace are hidden.
+- The published-script picker now expands naturally with the page instead of clipping inside a small scroll box.
+- Added regression coverage so the pre-load player Practice page cannot show the old empty workspace again.
+
 ## Verification Commands
 
 - `BASE_URL=http://127.0.0.1:4173 npx playwright test --project=chromium-desktop specs/07-player-mobile.spec.js`

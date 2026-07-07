@@ -763,6 +763,11 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator(".player-script-card").first()).toContainText("1110 pts");
     await expect(page.locator(".player-script-card").first().getByRole("button", { name: /^Quiz$/i })).toBeVisible();
     await expect(page.locator(".script-header-panel")).toBeHidden();
+    await expect(page.locator("#script")).toHaveClass(/script-player-awaiting-load/);
+    await expect(page.locator(".script-section-head")).toBeHidden();
+    await expect(page.locator(".script-stats-bar")).toBeHidden();
+    await expect(page.locator("#scriptPlays")).toBeHidden();
+    await expect(page.locator("#scriptPlays")).not.toContainText("Choose a published practice script above");
     await assertNoHorizontalOverflow(page);
   });
 

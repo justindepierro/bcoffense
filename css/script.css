@@ -63,7 +63,7 @@
 
 .player-script-launcher {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
   gap: 8px;
   padding: 10px;
   border: 1px solid var(--color-border-light);
@@ -73,8 +73,8 @@
   min-width: 0;
   min-height: 0;
   max-width: 100%;
-  max-height: min(230px, calc(var(--app-vh, 1vh) * 32));
-  overflow: hidden;
+  max-height: none;
+  overflow: visible;
   box-sizing: border-box;
 }
 
@@ -96,7 +96,7 @@
   display: grid;
   gap: 8px;
   min-height: 0;
-  overflow-y: auto;
+  overflow: visible;
   overscroll-behavior: contain;
   padding-right: 2px;
   scrollbar-gutter: stable;
@@ -186,6 +186,24 @@
   border-left: 5px solid var(--color-info);
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--color-info) 7%, var(--color-surface)), var(--color-surface) 48%);
+}
+
+body[data-auth-role="player"] #script.script-player-awaiting-load .script-section-head,
+body[data-auth-role="player"] #script.script-player-awaiting-load .script-stats-bar,
+body[data-auth-role="player"] #script.script-player-awaiting-load #scriptTimeline,
+body[data-auth-role="player"] #script.script-player-awaiting-load #scriptPlays {
+  display: none !important;
+}
+
+body[data-auth-role="player"] #script.script-player-awaiting-load .script-list {
+  gap: 12px;
+}
+
+body[data-auth-role="player"] #script.script-player-awaiting-load .player-script-launcher {
+  padding: 14px;
+  border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-border-light));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 6%, var(--color-surface)), var(--color-surface-muted));
 }
 
 .player-script-card.is-current {
@@ -4883,7 +4901,7 @@ body[data-auth-role="player"] #script .script-tools-drawer {
   }
 
   .player-script-launcher {
-    max-height: calc(var(--app-vh, 1vh) * 36);
+    max-height: none;
     padding: 8px;
   }
 

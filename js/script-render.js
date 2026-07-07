@@ -846,6 +846,10 @@ function createScriptRenderContext(opts, showPrintPreview) {
 function renderScriptContent(container, renderContext) {
   const hasPlays = renderContext.renderSummary.hasPlays;
   const playerRole = isPlayerScriptRole();
+  const scriptPanel = document.getElementById("script");
+  if (scriptPanel) {
+    scriptPanel.classList.toggle("script-player-awaiting-load", playerRole && !hasPlays);
+  }
 
   if (script.length === 0) {
     container.innerHTML = "";
@@ -854,6 +858,11 @@ function renderScriptContent(container, renderContext) {
   }
 
   if (!hasPlays) {
+    if (playerRole) {
+      container.classList.add("empty");
+      container.innerHTML = "";
+      return;
+    }
     container.classList.remove("empty");
     container.innerHTML =
       renderScriptEmptyPeriodHeaders() +
