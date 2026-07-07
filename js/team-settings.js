@@ -2,6 +2,45 @@ let teamSettingsAutosaveTimer = null;
 let teamDepthDragState = null;
 let teamSettingsViewState = null;
 
+const TEAM_ROSTER_POSITION_OPTIONS = [
+  { value: "QB", label: "QB" },
+  { value: "RB", label: "RB / T" },
+  { value: "H", label: "H" },
+  { value: "X", label: "X" },
+  { value: "Z", label: "Z" },
+  { value: "Y", label: "Y" },
+  { value: "LT", label: "LT" },
+  { value: "LG", label: "LG" },
+  { value: "C", label: "C" },
+  { value: "RG", label: "RG" },
+  { value: "RT", label: "RT" },
+];
+
+function normalizeTeamRosterPosition(value = "") {
+  const raw = String(value || "").trim().toUpperCase();
+  const aliases = {
+    Q: "QB",
+    T: "RB",
+    TB: "RB",
+    HB: "RB",
+    FB: "H",
+  };
+  const normalized = aliases[raw] || raw;
+  return TEAM_ROSTER_POSITION_OPTIONS.some((option) => option.value === normalized)
+    ? normalized
+    : normalized;
+}
+
+function buildTeamRosterPositionOptions(selectedValue = "", blankLabel = "Position") {
+  const selected = normalizeTeamRosterPosition(selectedValue);
+  return [
+    `<option value=""${selected ? "" : " selected"}>${escapeHtml(blankLabel)}</option>`,
+    ...TEAM_ROSTER_POSITION_OPTIONS.map((option) => (
+      `<option value="${escapeAttr(option.value)}"${option.value === selected ? " selected" : ""}>${escapeHtml(option.label)}</option>`
+    )),
+  ].join("");
+}
+
 function normalizeTeamSettingsCollapsedState(state = {}) {
   return {
     roster: Boolean(state?.roster),
@@ -102,7 +141,7 @@ function buildTeamSettingsRosterSummary(roster) {
   const positionCounts = new Map();
   const linkedCount = roster.filter((player) => player.accountUsername).length;
   roster.forEach((player) => {
-    const key = String(player.position || "UNASSIGNED").trim() || "UNASSIGNED";
+    const key = String(player.primaryPosition || player.position || "UNASSIGNED").trim() || "UNASSIGNED";
     positionCounts.set(key, (positionCounts.get(key) || 0) + 1);
   });
   const topPositions = [...positionCounts.entries()]
@@ -121,7 +160,7 @@ function getTeamRosterHealth(roster) {
     const account = String(player.accountUsername || "").trim().toLowerCase();
     if (account) accountCounts.set(account, (accountCounts.get(account) || 0) + 1);
     if (!account) unlinked.push(player);
-    if (!String(player.position || "").trim()) missingPosition.push(player);
+    if (!String(player.primaryPosition || player.position || "").trim()) missingPosition.push(player);
   });
   const duplicateAccounts = [...accountCounts.entries()]
     .filter(([, count]) => count > 1)
@@ -377,7 +416,12 @@ function renderTeamSettings() {
         <div class="team-roster-row" data-player-id="${escapeAttr(player.id)}">
           <input type="text" class="team-roster-cell team-roster-cell--num" value="${escapeAttr(player.number)}" data-field="teamPlayerNumber" data-player-id="${escapeAttr(player.id)}" placeholder="#" aria-label="Number for ${escapeHtml(player.name)}" />
           <input type="text" class="team-roster-cell team-roster-cell--name" value="${escapeAttr(player.name)}" data-field="teamPlayerName" data-player-id="${escapeAttr(player.id)}" placeholder="Player name" aria-label="Name for ${escapeHtml(player.name)}" />
-          <input type="text" class="team-roster-cell team-roster-cell--pos" value="${escapeAttr(player.position)}" data-field="teamPlayerPosition" data-player-id="${escapeAttr(player.id)}" placeholder="POS" aria-label="Position for ${escapeHtml(player.name)}" />
+          <select class="team-roster-cell team-roster-cell--pos" data-field="teamPlayerPrimaryPosition" data-player-id="${escapeAttr(player.id)}" aria-label="Primary position for ${escapeHtml(player.name)}">
+            ${buildTeamRosterPositionOptions(player.primaryPosition || player.position, "Primary")}
+          </select>
+          <select class="team-roster-cell team-roster-cell--pos" data-field="teamPlayerSecondaryPosition" data-player-id="${escapeAttr(player.id)}" aria-label="Secondary position for ${escapeHtml(player.name)}">
+            ${buildTeamRosterPositionOptions(player.secondaryPosition, "Secondary")}
+          </select>
           <input type="text" class="team-roster-cell team-roster-cell--account" value="${escapeAttr(player.accountUsername)}" data-field="teamPlayerAccount" data-player-id="${escapeAttr(player.id)}" placeholder="login" aria-label="Account username for ${escapeHtml(player.name)}" />
           <select class="team-roster-cell team-roster-cell--group" data-field="teamPlayerPositionGroup" data-player-id="${escapeAttr(player.id)}" aria-label="Position group for ${escapeHtml(player.name)}">
             <option value="" ${player.positionGroup ? "" : "selected"}>Role type</option>
@@ -574,10 +618,13 @@ function addTeamPlayer() {
   const nameEl = document.getElementById("teamPlayerNameInput");
   const numberEl = document.getElementById("teamPlayerNumberInput");
   const positionEl = document.getElementById("teamPlayerPositionInput");
+  const secondaryPositionEl = document.getElementById("teamPlayerSecondaryPositionInput");
   const positionGroupEl = document.getElementById("teamPlayerPositionGroupInput");
   const player = normalizeTeamPlayer({
     name: nameEl?.value,
     number: numberEl?.value,
+    primaryPosition: positionEl?.value,
+    secondaryPosition: secondaryPositionEl?.value,
     position: positionEl?.value,
     positionGroup: positionGroupEl?.value,
   });
@@ -594,6 +641,7 @@ function addTeamPlayer() {
   if (nameEl) nameEl.value = "";
   if (numberEl) numberEl.value = "";
   if (positionEl) positionEl.value = "";
+  if (secondaryPositionEl) secondaryPositionEl.value = "";
   if (positionGroupEl) positionGroupEl.value = "";
 
   syncTeamSettingsDependents();
@@ -830,18 +878,24 @@ function initTeamSettings() {
 
   applyTeamSettingsCollapsedState();
 
-  rosterContainer.addEventListener("input", (event) => {
-    const input = event.target.closest("[data-player-id][data-field]");
-    if (!input) return;
+  const updateRosterField = (control) => {
+    const input = control?.closest?.("[data-player-id][data-field]");
+    if (!input) return false;
     const playerId = input.dataset.playerId;
     const field = input.dataset.field;
     const roster = getTeamRoster();
     const player = roster.find((entry) => entry.id === playerId);
-    if (!player) return;
+    if (!player) return false;
 
     if (field === "teamPlayerNumber") player.number = input.value;
     if (field === "teamPlayerName") player.name = input.value;
-    if (field === "teamPlayerPosition") player.position = input.value.toUpperCase();
+    if (field === "teamPlayerPosition" || field === "teamPlayerPrimaryPosition") {
+      player.primaryPosition = normalizeTeamRosterPosition(input.value);
+      player.position = player.primaryPosition;
+    }
+    if (field === "teamPlayerSecondaryPosition") {
+      player.secondaryPosition = normalizeTeamRosterPosition(input.value);
+    }
     if (field === "teamPlayerAccount") player.accountUsername = input.value.trim();
     if (field === "teamPlayerPositionGroup") player.positionGroup = input.value;
 
@@ -850,10 +904,17 @@ function initTeamSettings() {
     if (typeof currentActiveTab === "string" && currentActiveTab === "script" && typeof renderScript === "function") {
       renderScript();
     }
+    return true;
+  };
+
+  rosterContainer.addEventListener("input", (event) => {
+    updateRosterField(event.target);
   });
 
-  rosterContainer.addEventListener("change", () => {
-    renderTeamSettings();
+  rosterContainer.addEventListener("change", (event) => {
+    if (updateRosterField(event.target)) {
+      renderTeamSettings();
+    }
   });
 
   packageContainer.addEventListener("input", (event) => {
@@ -1066,7 +1127,9 @@ function normalizeTeamPlayer(player = {}) {
   const id = String(player.id || `player-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
   const name = String(player.name || "").trim();
   const number = String(player.number || "").trim();
-  const position = String(player.position || "").trim().toUpperCase();
+  const primaryPosition = normalizeTeamRosterPosition(player.primaryPosition || player.position || "");
+  const secondaryPosition = normalizeTeamRosterPosition(player.secondaryPosition || "");
+  const position = primaryPosition;
   const accountUsername = String(player.accountUsername || player.username || "").trim().toLowerCase();
   const positionGroup = ["skill", "linemen"].includes(String(player.positionGroup || "").trim().toLowerCase())
     ? String(player.positionGroup || "").trim().toLowerCase()
@@ -1079,6 +1142,8 @@ function normalizeTeamPlayer(player = {}) {
     id,
     name,
     number,
+    primaryPosition,
+    secondaryPosition,
     position,
     accountUsername,
     positionGroup,
@@ -1372,9 +1437,13 @@ function getResolvedPlayerAssignments(play) {
 
 function formatTeamPlayerLabel(player) {
   const bits = [];
+  const primaryPosition = player.primaryPosition || player.position || "";
+  const secondaryPosition = player.secondaryPosition || "";
   if (player.number) bits.push(`#${player.number}`);
   if (player.name) bits.push(player.name);
-  if (player.position) bits.push(`(${player.position})`);
+  if (primaryPosition) {
+    bits.push(`(${primaryPosition}${secondaryPosition ? `/${secondaryPosition}` : ""})`);
+  }
   if (player.positionGroup) bits.push(player.positionGroup === "linemen" ? "[Linemen]" : "[Skill]");
   return bits.join(" ") || "Unnamed Player";
 }

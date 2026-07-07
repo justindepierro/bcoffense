@@ -13,6 +13,7 @@
 - [x] Define quiz as its own player workflow, not just a button inside Practice.
 - [x] Keep the existing Practice-tab quiz path working while the new Quiz Center grows.
 - [x] Link local quiz identity to the active team roster through a roster account username field.
+- [x] Add primary and secondary roster positions so player quizzes can default to the correct rule columns.
 - [ ] Add formal coach/admin quiz settings for question mix, scoring weights, goals, tiers, eligible sources, and reward rules. Local settings now control scoring, goals, badges, rewards, caps, source eligibility, and question types; tier-name controls remain pending.
 - [x] Add server-backed attempts/rewards/stickers APIs so leaderboards aggregate across all player accounts.
 
@@ -24,11 +25,13 @@
 - [x] Add a standalone player Leaderboard bottom-nav page with quiz launch access.
 - [x] Add script picker polish: date, play count, readiness, and last-attempt status.
 - [x] Add script-card quiz progress: percent complete, trophy for ace, ribbon for complete, medal for 80%+.
+- [x] Add position plan modes: roster primary, roster secondary, mixed primary+secondary, random skill, random line, and manual chips.
 
 ## Question Engine
 
 - [x] Reuse the existing Kahoot-style multiple-choice runner for the first safe slice.
 - [x] Track quiz source type and selected position inside the runner.
+- [x] Track item-level quiz position keys so mixed/random quizzes keep each question's correct rule column.
 - [x] Prioritize responsibility questions: "On this play, what is your responsibility?"
 - [x] Add play-from-rule questions: "Which play has you kick the EMLOS?"
 - [x] Add source-aware fallback rules so thin scripts/game plans still produce useful quizzes.
@@ -70,6 +73,7 @@
 - [x] Add quiz controls to Game Plan publishing.
 - [x] Add a settings panel for weekly goal, scoring weights, bonus thresholds, reward caps, and enabled question types. Tier names remain fixed for now.
 - [x] Add roster-link health checks: unlinked roster players, duplicate account usernames, and quiz activity from unknown accounts.
+- [x] Replace roster free-text position with normalized primary/secondary dropdowns while preserving the legacy primary `position` field.
 
 ## Learning Readiness
 
@@ -120,6 +124,7 @@
 - [x] Add tests for custom sticker edit/delete flows.
 - [x] Add tests for quiz settings persistence and scoring effects.
 - [x] Add tests for local quiz source publishing controls.
+- [x] Add tests for roster-linked primary/secondary quiz position selection across desktop, iPad, iPhone, WebKit iPhone, and narrow phone.
 - [x] Add tests for player-facing source readiness chips and thin-source status.
 - [x] Add tests for wrong-answer review cards and recap guidance.
 - [x] Add tests for diagram-identification questions and title redaction.

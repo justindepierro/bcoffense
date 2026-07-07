@@ -7793,6 +7793,44 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   font-size: var(--font-size-md);
 }
 
+.player-quiz-position-mode {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.35fr) minmax(0, 1fr);
+  gap: var(--space-xs) var(--space-sm);
+  align-items: center;
+  padding: var(--space-sm);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-border-light));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
+}
+
+.player-quiz-position-mode label {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+}
+
+.player-quiz-position-mode-select {
+  min-height: 42px;
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 9px 11px;
+  font: inherit;
+  font-weight: 800;
+}
+
+.player-quiz-position-mode span {
+  grid-column: 1 / -1;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .player-quiz-position-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
@@ -10494,6 +10532,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     align-items: flex-start;
     flex-direction: column;
     gap: 2px;
+  }
+
+  .player-quiz-position-mode {
+    grid-template-columns: 1fr;
   }
 
   .player-quiz-tier-row {

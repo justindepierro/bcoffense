@@ -1171,7 +1171,7 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
 
 .team-roster-row {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr) 88px minmax(110px, 0.5fr) 122px auto;
+  grid-template-columns: 72px minmax(0, 1fr) 116px 116px minmax(120px, 0.5fr) 122px auto;
   gap: var(--space-sm);
   align-items: center;
   padding: var(--space-sm);
@@ -1182,6 +1182,7 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
 }
 
 .team-roster-cell--group,
+.team-roster-cell--pos,
 .team-roster-cell--account {
   min-width: 0;
 }

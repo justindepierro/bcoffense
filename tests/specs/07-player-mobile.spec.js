@@ -766,6 +766,109 @@ test.describe("Player mobile experience", () => {
     await assertNoHorizontalOverflow(page);
   });
 
+  test("defaults quiz center to linked roster positions and supports secondary rules", async ({ page }) => {
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await page.waitForFunction(() => typeof storageManager !== "undefined");
+    const cleanupDialog = page.getByRole("dialog", { name: /Playbook Data Cleanup/i });
+    if (await cleanupDialog.count()) {
+      await page.evaluate(() => {
+        if (typeof closePlaybookSanitize === "function") closePlaybookSanitize();
+      });
+      await expect(cleanupDialog).toBeHidden({ timeout: 5_000 }).catch(() => {});
+    }
+
+    await page.evaluate(() => {
+      const today = new Date().toISOString().slice(0, 10);
+      const quizPlays = [
+        {
+          personnel: "11",
+          formation: "Trips Rt",
+          play: "Buck Sweep",
+          preferredDown: "1",
+          preferredDistance: "Medium",
+          respH: "Arc release and block the alley player.",
+          respY: "Kick the EMLOS and keep your head inside.",
+        },
+        {
+          personnel: "12",
+          formation: "Wing Rt",
+          play: "Power",
+          preferredDown: "2",
+          preferredDistance: "Short",
+          respH: "Insert on the play-side linebacker.",
+          respY: "Down block the C gap defender.",
+        },
+        {
+          personnel: "11",
+          formation: "Doubles",
+          play: "Counter",
+          preferredDown: "2",
+          preferredDistance: "Medium",
+          respH: "Wrap for the first color inside.",
+          respY: "Secure the backside hinge.",
+        },
+        {
+          personnel: "10",
+          formation: "Trips Lt",
+          play: "Bubble",
+          preferredDown: "1",
+          preferredDistance: "Short",
+          respH: "Lead the perimeter path.",
+          respY: "Stalk the overhang defender.",
+        },
+      ];
+      storageManager.set(STORAGE_KEYS.TEAM_ROSTER, [{
+        id: "roster-lucas",
+        name: "Lucas",
+        number: "7",
+        primaryPosition: "H",
+        secondaryPosition: "Y",
+        position: "H",
+        positionGroup: "skill",
+        accountUsername: "player",
+      }]);
+      storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, [{
+        id: "position-script",
+        name: "Position Install",
+        date: today,
+        playerVisible: true,
+        savedAt: new Date().toISOString(),
+        plays: [
+          { isSeparator: true, id: "period-1", label: "Team", minutes: 10 },
+          ...quizPlays,
+        ],
+      }]);
+      storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS, {
+        "script:position-script": { state: "available", updatedAt: new Date().toISOString() },
+      });
+      storageManager.remove(STORAGE_KEYS.PLAYER_QUIZ_DRAFT);
+      if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
+      if (typeof renderPlayerScriptLauncher === "function") renderPlayerScriptLauncher();
+    });
+
+    await page.evaluate(() => openPlayerQuizHub());
+    const hub = page.locator("#playerQuizHubOverlay");
+    await expect(hub).toBeVisible();
+    await expect(hub.locator("#playerQuizPositionModeSelect")).toHaveValue("primary");
+    await expect(hub.locator("#playerQuizPositionHint")).toContainText("primary position");
+    await expect(hub.locator("#playerQuizPositionPicker").getByRole("button", { name: /^H$/ })).toHaveClass(/is-active/);
+
+    await hub.locator("#playerQuizPositionModeSelect").selectOption("secondary");
+    await expect(hub.locator("#playerQuizPositionHint")).toContainText("secondary position");
+    await expect(hub.locator("#playerQuizPositionPicker").getByRole("button", { name: /^Y$/ })).toHaveClass(/is-active/);
+    await hub.getByRole("button", { name: /Start Script Quiz/i }).click();
+
+    const quiz = page.locator("#scriptQuizOverlay");
+    await expect(quiz).toBeVisible();
+    await expect(quiz.getByText("What's your Y responsibility?")).toBeVisible();
+    await expect(quiz.locator(".script-quiz-choice")).toHaveCount(4);
+    await quiz.getByRole("button", { name: /Close quiz/i }).click();
+    await quiz.getByRole("button", { name: /Save & Close/i }).click();
+    await expect(quiz).toBeHidden();
+    await assertNoHorizontalOverflow(page);
+  });
+
   test("syncs local leaderboard data and merges team-wide ranks", async ({ page }) => {
     let syncBody = null;
     const buildRemoteSummary = (weekKey = "2026-W27") => ({

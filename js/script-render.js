@@ -1449,6 +1449,7 @@ let _quizSourceId = "";
 let _quizSourceWeight = 1;
 let _quizTitle = "Play Quiz";
 let _quizPositionKey = "respQ";
+let _quizPositionMode = "primary";
 let _quizFinished = false;
 let _quizSavedAttemptId = "";
 let _quizExitSummaryOpen = false;
@@ -1809,6 +1810,7 @@ function _savePlayerQuizDraft() {
     sourceId: _quizSourceId,
     sourceWeight: _quizSourceWeight,
     positionKey: _quizPositionKey,
+    positionMode: _quizPositionMode,
     shuffled: _quizShuffled,
     index: _quizIndex,
     score: _quizScore,
@@ -4527,6 +4529,7 @@ function _normalizeQuizItems(items) {
           period: item.period || "",
           scriptIndex: item.scriptIndex ?? index,
           sourceBox: item.sourceBox || "",
+          positionKey: item.positionKey || "",
         };
       }
       return {
@@ -4534,6 +4537,7 @@ function _normalizeQuizItems(items) {
         period: "",
         scriptIndex: index,
         sourceBox: "",
+        positionKey: "",
       };
     })
     .filter((item) => item && item.play && !item.play.isSeparator);
@@ -4565,6 +4569,144 @@ function _getQuizPositions() {
 
 function _getQuizPosition(key = _quizPositionKey) {
   return _getQuizPositions().find((position) => position.key === key) || _getQuizPositions()[0];
+}
+
+function _normalizeQuizPositionMode(mode = "") {
+  const value = String(mode || "").trim();
+  return ["primary", "secondary", "mix", "random-skill", "random-line", "manual"].includes(value)
+    ? value
+    : "primary";
+}
+
+function _quizRosterPositionToKey(position = "") {
+  const raw = String(position || "").trim().toUpperCase();
+  const aliases = {
+    QB: "respQ",
+    Q: "respQ",
+    RB: "respT",
+    T: "respT",
+    TB: "respT",
+    HB: "respT",
+    FB: "respH",
+    H: "respH",
+    Z: "respZ",
+    X: "respX",
+    Y: "respY",
+    LT: "respLT",
+    LG: "respLG",
+    C: "respC",
+    RG: "respRG",
+    RT: "respRT",
+  };
+  const key = aliases[raw] || "";
+  return _getQuizPositions().some((positionOption) => positionOption.key === key) ? key : "";
+}
+
+function _quizPositionKeyIsLine(key = "") {
+  return ["respLT", "respLG", "respC", "respRG", "respRT"].includes(String(key || ""));
+}
+
+function _quizUniquePositionKeys(keys = []) {
+  const available = new Set(_getQuizPositions().map((position) => position.key));
+  return [...new Set(keys.map((key) => String(key || "").trim()).filter((key) => available.has(key)))];
+}
+
+function _getCurrentQuizRosterPositionKeys() {
+  const rosterPlayer = _getQuizRosterPlayerForCurrentUser();
+  const primary = _quizRosterPositionToKey(rosterPlayer?.primaryPosition || rosterPlayer?.position || "");
+  const secondary = _quizRosterPositionToKey(rosterPlayer?.secondaryPosition || "");
+  return { primary, secondary };
+}
+
+function _getQuizPositionModeOptions() {
+  const rosterKeys = _getCurrentQuizRosterPositionKeys();
+  const primaryLabel = rosterKeys.primary ? _getQuizPosition(rosterKeys.primary)?.label : "Primary";
+  const secondaryLabel = rosterKeys.secondary ? _getQuizPosition(rosterKeys.secondary)?.label : "";
+  return [
+    {
+      value: "primary",
+      label: rosterKeys.primary ? `Roster primary (${primaryLabel})` : "Roster primary",
+      hint: rosterKeys.primary ? "Use the primary position linked to your roster account." : "Link this account to a roster player to auto-fill primary.",
+    },
+    {
+      value: "secondary",
+      label: rosterKeys.secondary ? `Roster secondary (${secondaryLabel})` : "Roster secondary",
+      hint: rosterKeys.secondary ? "Use the secondary position linked to your roster account." : "Add a secondary position on the roster to unlock this.",
+      disabled: !rosterKeys.secondary,
+    },
+    {
+      value: "mix",
+      label: rosterKeys.secondary ? `Mix ${primaryLabel} + ${secondaryLabel}` : "Mix primary + secondary",
+      hint: rosterKeys.secondary ? "Rotate questions between both roster positions." : "Needs a secondary roster position; falls back to primary.",
+    },
+    {
+      value: "random-skill",
+      label: "Random skill",
+      hint: "Shuffle between Q, T/RB, H, X, Z, and Y rules.",
+    },
+    {
+      value: "random-line",
+      label: "Random line",
+      hint: "Shuffle between LT, LG, C, RG, and RT rules.",
+    },
+    {
+      value: "manual",
+      label: "Manual chips",
+      hint: "Tap a position chip below to lock the quiz to one rule column.",
+    },
+  ];
+}
+
+function _getQuizPositionModeLabel(mode = _quizPositionMode) {
+  const normalized = _normalizeQuizPositionMode(mode);
+  const option = _getQuizPositionModeOptions().find((entry) => entry.value === normalized);
+  return option?.label || _getQuizPosition()?.label || "Position";
+}
+
+function _resolveQuizPositionKeysForMode(mode = _quizPositionMode) {
+  const normalized = _normalizeQuizPositionMode(mode);
+  const rosterKeys = _getCurrentQuizRosterPositionKeys();
+  const allKeys = _getQuizPositions().map((position) => position.key);
+  const lineKeys = allKeys.filter(_quizPositionKeyIsLine);
+  const skillKeys = allKeys.filter((key) => !_quizPositionKeyIsLine(key));
+  if (normalized === "secondary") {
+    return _quizUniquePositionKeys([rosterKeys.secondary, rosterKeys.primary, _quizPositionKey]);
+  }
+  if (normalized === "mix") {
+    return _quizUniquePositionKeys([rosterKeys.primary, rosterKeys.secondary, _quizPositionKey]);
+  }
+  if (normalized === "random-skill") return skillKeys;
+  if (normalized === "random-line") return lineKeys;
+  if (normalized === "manual") return _quizUniquePositionKeys([_quizPositionKey]);
+  return _quizUniquePositionKeys([rosterKeys.primary, _quizPositionKey]);
+}
+
+function _syncPlayerQuizPositionDefault() {
+  _quizPositionMode = _normalizeQuizPositionMode(_quizPositionMode);
+  const keys = _resolveQuizPositionKeysForMode(_quizPositionMode);
+  if (keys.length) _quizPositionKey = keys[0];
+}
+
+function _prepareQuizItemsForPositionMode(items, mode = _quizPositionMode) {
+  const normalizedMode = _normalizeQuizPositionMode(mode);
+  const candidates = _resolveQuizPositionKeysForMode(normalizedMode);
+  const fallback = _getQuizPosition(_quizPositionKey)?.key || "respQ";
+  const keys = candidates.length ? candidates : [fallback];
+  const randomMode = normalizedMode === "random-skill" || normalizedMode === "random-line";
+  const prepared = _normalizeQuizItems(items).map((item, index) => {
+    const keysWithRules = keys.filter((key) => _quizCleanText(item.play?.[key] || ""));
+    const pool = keysWithRules.length ? keysWithRules : keys;
+    const positionKey = randomMode
+      ? pool[Math.floor(Math.random() * pool.length)]
+      : pool[index % pool.length];
+    return { ...item, positionKey };
+  });
+  if (prepared[0]?.positionKey) _quizPositionKey = prepared[0].positionKey;
+  return prepared;
+}
+
+function _getQuizPositionForItem(item) {
+  return _getQuizPosition(item?.positionKey || _quizPositionKey);
 }
 
 function _getPlayerQuizScriptOptions() {
@@ -4675,6 +4817,26 @@ function _renderPlayerQuizHub() {
   }
   _renderPlayerQuizResumeSlot();
 
+  const modeSelect = document.getElementById("playerQuizPositionModeSelect");
+  const modeHint = document.getElementById("playerQuizPositionHint");
+  if (modeSelect) {
+    const modeOptions = _getQuizPositionModeOptions();
+    if (!modeOptions.some((option) => option.value === _quizPositionMode && !option.disabled)) {
+      _quizPositionMode = "primary";
+      _syncPlayerQuizPositionDefault();
+    }
+    modeSelect.innerHTML = modeOptions.map((option) => `
+      <option value="${escapeAttr(option.value)}"${option.value === _quizPositionMode ? " selected" : ""}${option.disabled ? " disabled" : ""}>
+        ${escapeHtml(option.label)}
+      </option>
+    `).join("");
+    modeSelect.value = _quizPositionMode;
+    if (modeHint) {
+      const selectedOption = modeOptions.find((option) => option.value === _quizPositionMode) || modeOptions[0];
+      modeHint.textContent = selectedOption?.hint || "Choose the rule column for this quiz.";
+    }
+  }
+
   const picker = document.getElementById("playerQuizPositionPicker");
   if (picker) {
     picker.innerHTML = _getQuizPositions()
@@ -4744,6 +4906,7 @@ function _renderPlayerQuizHub() {
 }
 
 function openPlayerQuizHub() {
+  _syncPlayerQuizPositionDefault();
   _renderPlayerQuizHub();
   const overlay = document.getElementById("playerQuizHubOverlay");
   if (!overlay) return;
@@ -4772,6 +4935,13 @@ function setPlayerQuizPosition(key) {
   const next = _getQuizPositions().find((position) => position.key === key);
   if (!next) return;
   _quizPositionKey = next.key;
+  _quizPositionMode = "manual";
+  _renderPlayerQuizHub();
+}
+
+function setPlayerQuizPositionMode(mode) {
+  _quizPositionMode = _normalizeQuizPositionMode(mode);
+  _syncPlayerQuizPositionDefault();
   _renderPlayerQuizHub();
 }
 
@@ -4802,6 +4972,7 @@ function startPlayerQuizHubScript() {
     sourceId: id || "",
     title: "Practice Script Quiz",
     positionKey: _quizPositionKey,
+    positionMode: _quizPositionMode,
   });
 }
 
@@ -4898,6 +5069,7 @@ function startPlayerQuizHubGamePlan() {
     sourceType: "gameplan",
     title: "Game Plan Quiz",
     positionKey: _quizPositionKey,
+    positionMode: _quizPositionMode,
   });
 }
 
@@ -4918,7 +5090,7 @@ function _resetQuizGameState() {
 function _quizItemKey(item) {
   if (!item || !item.play) return "";
   const sig = typeof playSignature === "function" ? playSignature(item.play) : "";
-  return `${item.scriptIndex ?? _quizIndex}::${sig || _quizPlainCall(item.play)}`;
+  return `${item.scriptIndex ?? _quizIndex}::${item.positionKey || _quizPositionKey}::${sig || _quizPlainCall(item.play)}`;
 }
 
 function _quizChoiceKey(item) {
@@ -4971,7 +5143,7 @@ function _quizUniqueChoices(items, getLabel) {
 }
 
 function _buildQuizQuestion(item) {
-  const position = _getQuizPosition();
+  const position = _getQuizPositionForItem(item);
   const enabledTypes = new Set(_getPlayerQuizSettings().enabledQuestionTypes || ["responsibility", "play_from_rule", "diagram", "call"]);
   const positionRule = _quizCleanText(position?.key ? item.play[position.key] : "");
   const rulePool = _quizUniqueChoices(
@@ -5087,8 +5259,10 @@ function _getQuizQuestionAndChoices(item) {
   return { question: _buildQuizQuestion(item), choices };
 }
 
-function _quizCoachDetails(play) {
-  const position = _getQuizPosition();
+function _quizCoachDetails(itemOrPlay) {
+  const item = itemOrPlay?.play ? itemOrPlay : null;
+  const play = item ? item.play : itemOrPlay;
+  const position = _getQuizPositionForItem(item);
   const positionRule = position?.key ? play[position.key] : "";
   const ruleParts = [positionRule, play.respNotes].filter(Boolean);
   const noteParts = [play.playerNotes, play.notes].filter(Boolean);
@@ -5150,7 +5324,7 @@ function _renderQuizWrongReview(item, answer) {
   const context = _getQuizAnswerContext(item, answer);
   if (!context || answer.correct) return "";
   const { play } = item;
-  const { ruleParts, noteParts, position } = _quizCoachDetails(play);
+  const { ruleParts, noteParts, position } = _quizCoachDetails(item);
   const diagramUrl = _quizDiagramUrl(play);
   const correctLabel = context.correctChoice?.label || _quizPlainCall(play);
   const selectedLabel = context.selected?.label || "That answer";
@@ -5218,7 +5392,7 @@ function _renderQuizFeedback(item, answer) {
     ? getFullCall(play, { showEmoji: false })
     : escapeHtml(_quizPlainCall(play));
   const defenseItems = [play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean);
-  const { ruleParts, noteParts, position } = _quizCoachDetails(play);
+  const { ruleParts, noteParts, position } = _quizCoachDetails(item);
   const resultText = answer.correct ? "Correct" : "Not this one";
   const resultClass = answer.correct ? "is-correct" : "is-wrong";
   return `
@@ -5254,10 +5428,15 @@ function startScriptQuiz(options = {}) {
   _quizSourceId = String(opts.sourceId || "");
   _quizSourceWeight = _getQuizSourceWeight(sourceType);
   _quizTitle = opts.title || (sourceType === "gameplan" ? "Game Plan Quiz" : "Practice Script Quiz");
+  if (opts.positionMode) {
+    _quizPositionMode = _normalizeQuizPositionMode(opts.positionMode);
+  }
   if (opts.positionKey && _getQuizPositions().some((position) => position.key === opts.positionKey)) {
     _quizPositionKey = opts.positionKey;
+    if (!opts.positionMode) _quizPositionMode = "manual";
   }
-  _setQuizPlays(normalizedItems, false);
+  _syncPlayerQuizPositionDefault();
+  _setQuizPlays(_prepareQuizItemsForPositionMode(normalizedItems, _quizPositionMode), false);
   _quizIndex = 0;
   _resetQuizGameState();
   _clearPlayerQuizDraft();
@@ -5353,6 +5532,7 @@ function answerScriptQuizChoice(choiceKey) {
   const selected = choices.find((choice) => choice.key === choiceKey);
   if (!selected) return;
   const correct = Boolean(selected.correct);
+  const position = _quizCurrentQuestion?.position || _getQuizPositionForItem(item);
   if (correct) {
     _quizStreak += 1;
     _quizBestStreak = Math.max(_quizBestStreak, _quizStreak);
@@ -5364,6 +5544,8 @@ function answerScriptQuizChoice(choiceKey) {
     choiceKey,
     correct,
     questionType: selected.questionType || "call",
+    positionKey: position?.key || item.positionKey || _quizPositionKey,
+    positionLabel: position?.label || "",
     selectedLabel: selected.label || "",
     correctLabel: choices.find((choice) => choice.correct)?.label || "",
     prompt: _quizCurrentQuestion?.prompt || "",
@@ -5387,6 +5569,8 @@ function _getQuizAnswerReviewRows() {
         correct: Boolean(answer.correct),
         questionType: answer.questionType || context?.questionType || "call",
         questionLabel: _quizQuestionTypeLabel(answer.questionType || context?.questionType || "call"),
+        positionKey: answer.positionKey || item.positionKey || "",
+        positionLabel: answer.positionLabel || context?.question?.position?.label || "",
         prompt: context?.question?.prompt || answer.prompt || "",
         selectedLabel,
         correctLabel,
@@ -5468,7 +5652,8 @@ function _buildQuizAttemptSummary(options = {}) {
     sourceId: _quizSourceId,
     title: _quizTitle,
     positionKey: _quizPositionKey,
-    positionLabel: _getQuizPosition()?.label || "",
+    positionMode: _quizPositionMode,
+    positionLabel: _getQuizPositionModeLabel(_quizPositionMode),
     score: _quizScore,
     bonusPoints,
     totalPoints,
@@ -5611,6 +5796,7 @@ function resumePlayerQuizDraft() {
   _quizSourceId = String(draft.sourceId || "");
   _quizSourceWeight = Number(draft.sourceWeight || 0) || _getQuizSourceWeight(_quizSourceType);
   _quizTitle = draft.title || (_quizSourceType === "gameplan" ? "Game Plan Quiz" : "Practice Script Quiz");
+  _quizPositionMode = _normalizeQuizPositionMode(draft.positionMode || "manual");
   if (draft.positionKey && _getQuizPositions().some((position) => position.key === draft.positionKey)) {
     _quizPositionKey = draft.positionKey;
   }
