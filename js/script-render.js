@@ -1698,6 +1698,9 @@ function _savePlayerQuizAttempts(attempts) {
     .filter((attempt) => attempt && typeof attempt === "object")
     .slice(-150);
   storageManager.set(_getPlayerQuizStorageKey(), normalized);
+  if (typeof window !== "undefined" && typeof window.queuePlayerLeaderboardSync === "function") {
+    window.queuePlayerLeaderboardSync("attempts");
+  }
 }
 
 function _getPlayerRewardEvents() {
@@ -1712,6 +1715,9 @@ function _savePlayerRewardEvents(events) {
     .filter((event) => event && typeof event === "object")
     .slice(-400);
   storageManager.set(_getPlayerRewardStorageKey(), normalized);
+  if (typeof window !== "undefined" && typeof window.queuePlayerLeaderboardSync === "function") {
+    window.queuePlayerLeaderboardSync("rewards");
+  }
 }
 
 function _getPlayerHelmetStickers() {
@@ -1726,6 +1732,9 @@ function _savePlayerHelmetStickers(stickers) {
     .filter((sticker) => sticker && typeof sticker === "object")
     .slice(-500);
   storageManager.set(_getPlayerHelmetStickerStorageKey(), normalized);
+  if (typeof window !== "undefined" && typeof window.queuePlayerLeaderboardSync === "function") {
+    window.queuePlayerLeaderboardSync("stickers");
+  }
 }
 
 function _normalizeHelmetStickerType(sticker = {}, fallback = {}) {
@@ -2421,6 +2430,10 @@ function _buildQuizLeaderboardRows(attempts, rewards, player, weekKey = "") {
     const playerName = _normalizeQuizPlayerName(name);
     totals.set(playerName, (totals.get(playerName) || 0) + Number(points || 0));
   };
+  const mergeRemotePoints = (name, points) => {
+    const playerName = _normalizeQuizPlayerName(name);
+    totals.set(playerName, Math.max(totals.get(playerName) || 0, Number(points || 0)));
+  };
   (Array.isArray(attempts) ? attempts : []).forEach((attempt) => {
     if (weekKey && attempt.weekKey !== weekKey) return;
     addPoints(attempt.player || player, attempt.totalPoints || 0);
@@ -2429,6 +2442,12 @@ function _buildQuizLeaderboardRows(attempts, rewards, player, weekKey = "") {
     if (!_isQuizRewardApproved(event)) return;
     if (weekKey && event.weekKey !== weekKey) return;
     addPoints(event.player || player, event.points || 0);
+  });
+  const remoteRows = typeof window !== "undefined" && typeof window.getRemotePlayerLeaderboardRows === "function"
+    ? window.getRemotePlayerLeaderboardRows(weekKey ? "week" : "season")
+    : [];
+  remoteRows.forEach((row) => {
+    mergeRemotePoints(row.name || row.player, row.points ?? row.totalPoints ?? 0);
   });
   _getQuizRosterPlayers().forEach((rosterPlayer) => addPoints(rosterPlayer.name, 0));
   if (!totals.size) totals.set(_normalizeQuizPlayerName(player), 0);
@@ -2545,6 +2564,24 @@ function _buildCoachQuizLeaderboardSummary() {
     .forEach((sticker) => {
       ensureRow(sticker.player || "Player").stickers += 1;
     });
+  const remoteRows = typeof window !== "undefined" && typeof window.getRemotePlayerLeaderboardRows === "function"
+    ? window.getRemotePlayerLeaderboardRows(isSeason ? "season" : "week")
+    : [];
+  remoteRows.forEach((remote) => {
+    const row = ensureRow(remote.name || remote.player || "Player");
+    const remoteTotal = Number(remote.totalPoints ?? remote.points ?? 0);
+    const remoteQuiz = Number(remote.quizPoints ?? 0);
+    const remoteReward = Number(remote.rewardPoints ?? Math.max(0, remoteTotal - remoteQuiz));
+    row.quizPoints = Math.max(row.quizPoints, remoteQuiz || Math.max(0, remoteTotal - remoteReward));
+    row.rewardPoints = Math.max(row.rewardPoints, remoteReward);
+    row.questionPoints = Math.max(row.questionPoints, Number(remote.questionPoints || 0));
+    row.answerPoints = Math.max(row.answerPoints, Number(remote.answerPoints || 0));
+    row.giftPoints = Math.max(row.giftPoints, Number(remote.giftPoints || 0));
+    row.attempts = Math.max(row.attempts, Number(remote.attempts || 0));
+    row.answered = Math.max(row.answered, Number(remote.answered || 0));
+    row.correct = Math.max(row.correct, Number(remote.correct || 0));
+    row.stickers = Math.max(row.stickers, Number(remote.stickers || 0));
+  });
   _getQuizRosterPlayers().forEach((player) => ensureRow(player.name));
 
   const leaderboardRows = Array.from(rows.values())
@@ -3051,6 +3088,12 @@ function renderPlayerLeaderboardPage() {
   const goalPct = Math.min(100, Math.round((summary.weeklyPoints / settings.weeklyGoal) * 100));
   const remaining = Math.max(0, settings.weeklyGoal - summary.weeklyPoints);
   const badgeFloor = Math.min(settings.honorRollMin, settings.highHonorRollMin, settings.coachesListMin);
+  const syncMeta = typeof window !== "undefined" && typeof window.getRemotePlayerLeaderboardMeta === "function"
+    ? window.getRemotePlayerLeaderboardMeta()
+    : null;
+  const syncLabel = syncMeta?.synced
+    ? "Team synced"
+    : "Local board";
   const recentHtml = recentAttempts.length
     ? recentAttempts.map((attempt) => `
         <div class="player-leaderboard-attempt${attempt.completed === false ? " is-partial" : ""}">
@@ -3121,7 +3164,7 @@ function renderPlayerLeaderboardPage() {
       <section class="player-leaderboard-board">
         <div class="player-leaderboard-section-head">
           <h3>${isSeason ? "Season board" : "Weekly board"}</h3>
-          <span>Tap a name for stickers</span>
+          <span>${escapeHtml(syncLabel)} · tap a name for stickers</span>
         </div>
         <div class="player-quiz-leaderboard-preview">${_renderQuizLeaderRows(viewRows, summary.player)}</div>
       </section>

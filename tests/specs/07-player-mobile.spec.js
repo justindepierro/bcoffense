@@ -766,6 +766,185 @@ test.describe("Player mobile experience", () => {
     await assertNoHorizontalOverflow(page);
   });
 
+  test("syncs local leaderboard data and merges team-wide ranks", async ({ page }) => {
+    let syncBody = null;
+    const buildRemoteSummary = (weekKey = "2026-W27") => ({
+      weekKey,
+      updatedAt: new Date().toISOString(),
+      week: {
+        rows: [
+          {
+            name: "Marco",
+            player: "Marco",
+            rank: 1,
+            points: 1400,
+            totalPoints: 1400,
+            quizPoints: 1250,
+            rewardPoints: 150,
+            questionPoints: 50,
+            answerPoints: 75,
+            giftPoints: 25,
+            attempts: 5,
+            answered: 18,
+            correct: 16,
+            stickers: 2,
+            percent: 89,
+          },
+          {
+            name: "Lucas",
+            player: "Lucas",
+            rank: 2,
+            points: 1275,
+            totalPoints: 1275,
+            quizPoints: 1110,
+            rewardPoints: 165,
+            questionPoints: 25,
+            answerPoints: 40,
+            giftPoints: 100,
+            attempts: 1,
+            answered: 6,
+            correct: 5,
+            stickers: 1,
+            percent: 83,
+          },
+        ],
+        totals: {},
+      },
+      season: {
+        rows: [
+          {
+            name: "Marco",
+            player: "Marco",
+            rank: 1,
+            points: 1725,
+            totalPoints: 1725,
+            quizPoints: 1500,
+            rewardPoints: 225,
+            attempts: 7,
+            answered: 24,
+            correct: 22,
+            stickers: 3,
+            percent: 92,
+          },
+          {
+            name: "Lucas",
+            player: "Lucas",
+            rank: 2,
+            points: 1500,
+            totalPoints: 1500,
+            quizPoints: 1310,
+            rewardPoints: 190,
+            questionPoints: 50,
+            answerPoints: 40,
+            giftPoints: 100,
+            attempts: 2,
+            answered: 10,
+            correct: 9,
+            stickers: 1,
+            percent: 90,
+          },
+        ],
+        totals: {},
+      },
+    });
+
+    await page.route("**/api/leaderboard/summary?**", async (route) => {
+      const url = new URL(route.request().url());
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true, summary: buildRemoteSummary(url.searchParams.get("weekKey") || "2026-W27") }),
+      });
+    });
+    await page.route("**/api/leaderboard/sync", async (route) => {
+      syncBody = JSON.parse(route.request().postData() || "{}");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          synced: {
+            attempts: syncBody.attempts?.length || 0,
+            rewards: syncBody.rewards?.length || 0,
+            stickers: syncBody.stickers?.length || 0,
+          },
+          summary: buildRemoteSummary(syncBody.weekKey || "2026-W27"),
+        }),
+      });
+    });
+
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await seedPlayerPractice(page);
+
+    await page.evaluate(() => {
+      const now = new Date();
+      const dateKey = typeof _quizDateKey === "function" ? _quizDateKey(now) : now.toISOString().slice(0, 10);
+      const weekKey = typeof _quizWeekKey === "function" ? _quizWeekKey(now) : "2026-W27";
+      storageManager.set(STORAGE_KEYS.TEAM_ROSTER, [
+        { id: "roster-lucas", name: "Lucas", number: "7", position: "QB", positionGroup: "skill", accountUsername: "player" },
+        { id: "roster-marco", name: "Marco", number: "12", position: "H", positionGroup: "skill", accountUsername: "marco12" },
+      ]);
+      storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, [{
+        id: "sync-local-quiz",
+        player: "player",
+        sourceType: "script",
+        sourceId: "player-script-today",
+        title: "Friday Walkthrough",
+        totalPoints: 1110,
+        score: 1080,
+        bonusPoints: 30,
+        correct: 5,
+        wrong: 1,
+        answered: 6,
+        totalQuestions: 10,
+        remaining: 4,
+        percent: 83,
+        completed: false,
+        dateKey,
+        weekKey,
+      }]);
+      storageManager.set(STORAGE_KEYS.PLAYER_REWARD_EVENTS, [
+        { id: "sync-reward-question", player: "player", type: "question", points: 25, status: "approved", dateKey, weekKey },
+        { id: "sync-reward-answer", player: "player", type: "answer", points: 40, status: "approved", dateKey, weekKey },
+        { id: "sync-reward-gift", player: "player", type: "gift", points: 100, status: "approved", dateKey, weekKey },
+      ]);
+      storageManager.set(STORAGE_KEYS.PLAYER_HELMET_STICKERS, [{
+        id: "sync-sticker",
+        player: "player",
+        stickerKey: "do-your-job",
+        label: "Do Your Job",
+        icon: "🧠",
+        color: "blue",
+        description: "Handled the assignment.",
+        dateKey,
+        weekKey,
+      }]);
+    });
+
+    await expect.poll(async () => page.evaluate(async () => {
+      const result = await syncPlayerLeaderboardNow({ quiet: false });
+      return result?.ok === true;
+    })).toBe(true);
+    expect(syncBody).toBeTruthy();
+    expect(syncBody.attempts).toHaveLength(1);
+    expect(syncBody.rewards).toHaveLength(3);
+    expect(syncBody.stickers).toHaveLength(1);
+
+    await goToTab(page, "leaderboard");
+    const leaderboard = page.locator("#playerLeaderboardPage");
+    await expect(leaderboard).toContainText("Team synced");
+    await expect(leaderboard).toContainText("Marco");
+    await expect(leaderboard).toContainText("1400 pts");
+    await expect(leaderboard).toContainText("Lucas");
+    await expect(leaderboard).toContainText("1275 pts");
+    await expect(leaderboard).not.toContainText("2550 pts");
+    await leaderboard.getByRole("button", { name: /^Season$/i }).click();
+    await expect(leaderboard).toContainText("1725 pts");
+    await expect(leaderboard).toContainText("1500 pts");
+    await assertNoHorizontalOverflow(page);
+  });
+
   test("starts a Game Plan quiz from populated board assignments", async ({ page }) => {
     await login(page, { role: "player", username: "player" });
     await dismissFirstUse(page);

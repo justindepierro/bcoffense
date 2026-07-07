@@ -6,7 +6,7 @@
 - Player leaderboard is available from the player bottom nav and can launch quizzes.
 - Coach/admin Set Up Quizzes page exists with readiness, preview, rewards, local leaderboard review, custom helmet stickers, and roster-linked reward assignment.
 - Local scoring is intentionally paced: a few questions should not hit the 1000-point weekly standard.
-- Remaining work is split into local polish and server-backed team-wide persistence.
+- Remaining work is split into local polish and server-backed team-wide persistence. Cloudflare leaderboard sync is now in the first shipped slice.
 
 ## Product Contract
 
@@ -14,7 +14,7 @@
 - [x] Keep the existing Practice-tab quiz path working while the new Quiz Center grows.
 - [x] Link local quiz identity to the active team roster through a roster account username field.
 - [ ] Add formal coach/admin quiz settings for question mix, scoring weights, goals, tiers, eligible sources, and reward rules. Local settings now control scoring, goals, badges, rewards, caps, source eligibility, and question types; tier-name controls remain pending.
-- [ ] Add server-backed attempts/rewards/stickers APIs so leaderboards aggregate across all player accounts.
+- [x] Add server-backed attempts/rewards/stickers APIs so leaderboards aggregate across all player accounts.
 
 ## Player Quiz Center
 
@@ -58,7 +58,7 @@
 - [x] Include active roster players in the local leaderboard even before they score.
 - [x] Show roster number, position, linked login, rank, tier, attempts, and sticker detail when opening a player.
 - [x] Add achievements/stars above the 1000-point goal. Local Champion stars now appear every 250 points above the weekly goal.
-- [ ] Move leaderboard data to Cloudflare-backed storage for real cross-player ranking.
+- [x] Move leaderboard data to Cloudflare-backed storage for real cross-player ranking.
 - [x] Add player profile detail modal with season trend, sticker history, best quiz, weak areas, and recent activity.
 
 ## Coach/Admin Workflow
@@ -123,7 +123,7 @@
 - [x] Add tests for player-facing source readiness chips and thin-source status.
 - [x] Add tests for wrong-answer review cards and recap guidance.
 - [x] Add tests for diagram-identification questions and title redaction.
-- [ ] Add tests for server-backed leaderboard sync once APIs exist.
+- [x] Add tests for server-backed leaderboard sync once APIs exist.
 
 ## Remaining Milestones
 
@@ -162,12 +162,12 @@
 
 ### Milestone 5 — Cloudflare Team Leaderboard
 
-- [ ] Add server-backed player quiz attempts storage.
-- [ ] Add server-backed reward events and helmet stickers storage.
-- [ ] Sync local attempts/rewards/stickers to the team account.
-- [ ] Merge local/offline results without duplicate attempts.
-- [ ] Make leaderboard rankings reflect all player accounts, not only one device.
-- [ ] Add deploy verification and end-to-end tests against local/mock API paths.
+- [x] Add server-backed player quiz attempts storage.
+- [x] Add server-backed reward events and helmet stickers storage.
+- [x] Sync local attempts/rewards/stickers to the team account.
+- [x] Merge local/offline results without duplicate attempts.
+- [x] Make leaderboard rankings reflect all player accounts, not only one device.
+- [x] Add deploy verification and end-to-end tests against local/mock API paths.
 
 ## Definition Of Done
 
