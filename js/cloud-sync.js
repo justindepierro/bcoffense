@@ -446,7 +446,7 @@
         lastRemoteUpdatedAt: remote.updatedAt,
         lastRemoteSize: remote.size,
       });
-      reloadAppFromStorage();
+      await reloadAppFromStorage();
 
       if (shouldReload) {
         if (opts.auto) {
@@ -454,16 +454,14 @@
             CLOUD_SYNC_AUTO_PULL_APPLIED_KEY,
             summary.exportDate || remote.updatedAt || new Date().toISOString(),
           );
-          location.reload();
           return true;
         }
         if (shouldNotify) {
           await showModal(
-            `Cloud backup pulled successfully.${restoredImages ? `\nImages restored: ${restoredImages}` : ""}${imageWarning}\nRefreshing...`,
+            `Cloud backup pulled successfully.${restoredImages ? `\nImages restored: ${restoredImages}` : ""}${imageWarning}\nWorkspace updated.`,
             { title: "Cloud Sync", icon: "✅" },
           );
         }
-        location.reload();
         return true;
       }
 

@@ -3,6 +3,14 @@
 // and related render/display constants are defined in callsheet-render.js and loaded before this file
 
 const CALLSHEET_PLAYER_AUTOFILL_MIN = 6;
+const CALLSHEET_PERSONNEL_MARKERS = {
+  navy: "⚓",
+  meat: "🥩",
+};
+const CALLSHEET_PERSONNEL_COLORS = {
+  navy: "#192a51",
+  meat: "#7f1d1d",
+};
 
 function getDefaultCallSheetCategoryOrder() {
   return {
@@ -1018,6 +1026,21 @@ function saveCallSheet() {
   if (typeof saveConstraintsSnapshot === "function") saveConstraintsSnapshot();
   // Record artifact modified timestamp (#38)
   if (typeof recordArtifactModified === "function") recordArtifactModified("callsheet");
+  if (typeof refreshCallSheetGamePlanDrawer === "function") {
+    refreshCallSheetGamePlanDrawer();
+  }
+}
+
+function getCallSheetPlayCoverageValues(play) {
+  if (typeof splitCoverageValues === "function") {
+    return splitCoverageValues(play.practiceCoverage);
+  }
+  const raw = play?.practiceCoverage;
+  if (!raw) return [];
+  return String(raw)
+    .split(/[,|;\/]+/)
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
 }
 
 function undoCallSheet() {

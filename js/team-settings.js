@@ -1518,45 +1518,6 @@ function formatPlayerAssignmentSummary(assignments = {}, options = {}) {
     .join(", ");
 }
 
-function getPersonnelEmoji(personnel, useSquares = false) {
-  if (!personnel) return "";
-
-  const p = String(personnel).toLowerCase().trim();
-
-  const circleMap = {
-    red: "🔴",
-    blue: "🔵",
-    green: "🟢",
-    yellow: "🟡",
-    orange: "🟠",
-    purple: "🟣",
-    brown: "🟤",
-    white: "⚪",
-    black: "⚫",
-    navy: "⚓",
-    meat: "🥩",
-    star: "⭐",
-  };
-
-  const squareMap = {
-    red: "🟥",
-    blue: "🟦",
-    green: "🟩",
-    yellow: "🟨",
-    orange: "🟧",
-    purple: "🟪",
-    brown: "🟫",
-    white: "⬜",
-    black: "⬛",
-    navy: "⚓",
-    meat: "🥩",
-    star: "⭐",
-  };
-
-  const map = useSquares ? squareMap : circleMap;
-  return map[p] || "";
-}
-
 function getTeamName() {
   return storageManager.get(STORAGE_KEYS.TEAM_NAME, "My Team Football");
 }

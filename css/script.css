@@ -3138,7 +3138,8 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
   }
 
   body:not(.is-mobile-screen) #script.panel.active {
-    --script-panel-margin-block: 10px;
+    --script-panel-margin-block: 20px;
+    --script-panel-margin-total-expression: var(--script-panel-margin-block) * 2;
     display: flex;
     flex-direction: column;
     gap: 0;

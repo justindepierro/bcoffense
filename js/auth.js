@@ -1,4 +1,5 @@
 (function () {
+  const AUTH_CORE_PLAYER_TABS = { player: ["dashboard", "playbook", "script"] };
   const AUTH_ROLE_TABS = {
     admin: [
       "playbook",
@@ -26,7 +27,7 @@
       "quizsetup",
       "dashboard",
     ],
-    player: ["dashboard", "playbook", "script", "leaderboard"],
+    player: [...AUTH_CORE_PLAYER_TABS.player, "leaderboard"],
   };
 
   const AUTH_ROLE_DEFAULT_TAB = {
@@ -283,6 +284,11 @@
 
   let currentAuthUser = null;
   let authReady = false;
+  let authReadyResolved = false;
+  let resolveAuthReadyPromise;
+  const authReadyPromise = new Promise((resolve) => {
+    resolveAuthReadyPromise = resolve;
+  });
   let lastBlockedAt = 0;
   const AUTH_SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
   const AUTH_SCAN_SELECTOR =
@@ -292,6 +298,14 @@
 
   if (document.body) {
     document.body.classList.add("auth-locked");
+  }
+
+  function resolveAuthReady() {
+    if (authReadyResolved) return;
+    authReadyResolved = true;
+    if (typeof resolveAuthReadyPromise === "function") {
+      resolveAuthReadyPromise(currentAuthUser);
+    }
   }
 
   function normalizeAuthUser(user) {
@@ -385,18 +399,31 @@
   }
 
   async function fetchAuthSession() {
+    const controller =
+      typeof AbortController === "function" ? new AbortController() : null;
+    const timer = controller
+      ? setTimeout(() => controller.abort(), 3500)
+      : 0;
     try {
       const response = await fetch("/auth/me", {
         credentials: "same-origin",
         headers: { Accept: "application/json" },
+        signal: controller?.signal,
       });
       if (!response.ok) {
         return { user: null, denied: true, offline: false };
       }
       const data = await response.json();
       return { user: normalizeAuthUser(data.user), denied: false, offline: false };
-    } catch (_err) {
-      return { user: null, denied: false, offline: true };
+    } catch (err) {
+      return {
+        user: null,
+        denied: false,
+        offline: true,
+        timedOut: err?.name === "AbortError",
+      };
+    } finally {
+      if (timer) clearTimeout(timer);
     }
   }
 
@@ -803,8 +830,8 @@
           </div>
           <div class="auth-login-role-picker" role="group" aria-label="Choose login role">
             ${Object.entries(AUTH_LOGIN_ROLE_DETAILS).map(([role, details]) => `
-              <button type="button" class="auth-login-role-option${role === "admin" ? " is-active" : ""}"
-                data-login-role="${role}" aria-pressed="${role === "admin" ? "true" : "false"}">
+              <button type="button" class="auth-login-role-option${role === _initialRoleName ? " is-active" : ""}"
+                data-login-role="${role}" aria-pressed="${role === _initialRoleName ? "true" : "false"}">
                 <span>${escapeHtml(details.label)}</span>
                 <small>${escapeHtml(details.eyebrow)}</small>
               </button>
@@ -813,7 +840,7 @@
           <label>
             <span>Username</span>
             <input id="authUsername" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"
-              enterkeyhint="next" data-auth-allow-input="true" required />
+              enterkeyhint="next" data-auth-allow-input="true" value="${_initialRoleName === "admin" || _initialRoleName === "coach" ? escapeAttr(_initialRoleName) : ""}" required />
           </label>
           <label>
             <span>Password</span>
@@ -824,7 +851,7 @@
                 aria-label="Show password" aria-pressed="false"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
             </div>
           </label>
-          <div id="authLoginError" class="auth-login-error${message ? " is-status" : ""}" aria-live="assertive" role="alert">${escapeHtml(message)}</div>
+          <div id="authLoginError" class="auth-login-error${opts.messageIsStatus ? " is-status" : ""}" aria-live="assertive" role="alert">${escapeHtml(message)}</div>
           <button type="submit" class="btn btn-primary auth-login-submit" id="authLoginSubmit">${escapeHtml(initialDetails.submit)}</button>
           <p class="auth-login-help">Need help? Ask a coach or staff member for your login.</p>
           <div class="auth-login-player-shortcut" aria-hidden="true"><span>or</span></div>
@@ -1051,7 +1078,10 @@
   function ensureLoginOverlayVisible() {
     if (currentAuthUser || !document.body) return;
     if (document.getElementById("authLoginOverlay")) return;
-    showLoginOverlay("Secure login required.");
+    showLoginOverlay("", {
+      statusMsg: "Sign in to continue.",
+      messageIsStatus: true,
+    });
   }
 
   async function logoutAuth() {
@@ -1119,6 +1149,9 @@
   }
 
   async function initServerAuth() {
+    if (typeof setStartupLoadingMessage === "function") {
+      setStartupLoadingMessage("Checking secure session...");
+    }
     const session = await fetchAuthSession();
     if (session.user) {
       currentAuthUser = session.user;
@@ -1136,10 +1169,16 @@
 
     authReady = true;
     if (!currentAuthUser) {
-      showLoginOverlay("Secure login required.");
+      showLoginOverlay("", {
+        statusMsg: session.timedOut
+          ? "Session check took too long. Sign in to continue."
+          : "Sign in to unlock this device.",
+        messageIsStatus: true,
+      });
     }
     applyRoleUi();
     scheduleCloudAutoPull();
+    resolveAuthReady();
   }
 
   document.addEventListener("click", handleBlockedInteraction, true);
@@ -1151,6 +1190,7 @@
     // Item 39: hide auth loading skeleton once auth resolves
     const _authSkeleton = document.getElementById("authLoadingSkeleton");
     initServerAuth().finally(() => {
+      resolveAuthReady();
       if (_authSkeleton) {
         _authSkeleton.classList.add("is-done");
         setTimeout(() => (_authSkeleton.hidden = true), 320);
@@ -1173,6 +1213,8 @@
     observer.observe(document.body, { childList: true, subtree: true });
   });
 
+  window.whenAuthReady = () =>
+    authReady ? Promise.resolve(currentAuthUser) : authReadyPromise;
   window.getCurrentAuthUser = () => currentAuthUser;
   window.isAdminUser = isAdminUser;
   window.canEditUser = canEditUser;

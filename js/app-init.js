@@ -1,5 +1,15 @@
 async function initApp() {
   let startupFailed = false;
+  const waitForAuthStartup = () => {
+    if (typeof whenAuthReady !== "function") return Promise.resolve();
+    if (typeof setStartupLoadingMessage === "function") {
+      setStartupLoadingMessage("Checking secure session...");
+    }
+    return Promise.race([
+      whenAuthReady(),
+      new Promise((resolve) => setTimeout(resolve, 4200)),
+    ]);
+  };
   const runOptionalInit = (label, callback) => {
     try {
       callback();
@@ -48,6 +58,7 @@ async function initApp() {
       type: "error",
     });
   } finally {
+    await waitForAuthStartup();
     if (typeof finishStartupLoading === "function") {
       finishStartupLoading({ error: startupFailed, delay: startupFailed ? 400 : 120 });
     } else if (document.body) {

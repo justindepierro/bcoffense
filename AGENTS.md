@@ -144,118 +144,127 @@ CLOUDFLARE_AUTH.md      ← Cloudflare deployment and secret setup notes
 All scripts use `defer` and load in this exact order from index.html:
 
 ```
-1.   js/utils.js                  ← Must stay before shared helper consumers (constants, modals, escapeHtml)
-2.   js/history.js                ← Shared undo/redo history manager; depends on safeDeepClone from utils.js
-3.   js/dom-helpers.js            ← Shared DOM sanitization, context menu, and reorder helpers
-4.   js/lz-string.min.js          ← Local compression library used by storage.js
-5.   js/storage.js                ← Storage keys, migrations, backup/restore state, draft persistence
-6.   js/storage-ui.js             ← Backup/restore UI and storage info overlays
-7.   js/play-images.js            ← IndexedDB play-image storage and backup image import/export
-8.   js/cloud-sync.js             ← Cloudflare-backed complete backup push/pull sync
-9.   js/auth.js                   ← Simple local login and role-based UI restrictions
-10.  js/play-clips.js             ← Remote play video clips (R2-backed) client API
-11.  js/vision.js
-12.  js/team-settings.js
-13.  js/playbook.js
-14.  js/playbook-collections.js
-15.  js/playbook-print.js
-16.  js/playbook-editor.js
-17.  js/playbook-import.js
-18.  js/playbook-export.js
-19.  js/playbook-chrome.js
-20.  js/playbook-reports.js       ← Balance + Situation + Touch report engines
-21.  js/playbook-reports-identity.js ← Constraint Map + Identity Alignment engines
-22.  js/playbook-state.js
-23.  js/playbook-filters.js
-24.  js/playbook-navigation.js
-25.  js/playbook-actions.js
-26.  js/playbook-render.js
-27.  js/playbook-sanitize.js
-28.  js/playbook-analytics.js     ← Data health analysis engine
-29.  js/playbook-analytics-render.js ← Data health report rendering
-30.  js/playbook-identity.js
-31.  js/script-state.js
-32.  js/script-shared.js
-33.  js/script-players.js
-34.  js/script-display-options.js
-35.  js/play-readiness.js
-36.  js/script-add.js
-37.  js/script-sort.js
-38.  js/script-export.js
-39.  js/script-available.js
-40.  js/script-selection.js
-41.  js/script-timeline.js
-42.  js/script-render.js
-43.  js/script-health.js
-44.  js/script-periods.js
-45.  js/script-period-sync.js
-46.  js/script-smart.js
-47.  js/script-storage.js
-48.  js/script-player.js          ← Saved-script / player-facing script functions
-49.  js/script-integrations.js
-50.  js/play-presentation.js
-51.  js/wristband.js
-52.  js/wristband-library.js
-53.  js/wristband-render.js
-54.  js/wristband-cards.js
-55.  js/wristband-export.js
-56.  js/wristband-chrome.js       ← Mode management + player card UI
-57.  js/wristband-logo.js         ← Logo card feature
-58.  js/wristband-search.js
-59.  js/wristband-modals.js
-60.  js/wristband-cell-popup.js
-61.  js/wristband-cell-actions.js
-62.  js/wristband-sort.js
-63.  js/wristband-storage.js
-64.  js/wristband-runtime.js
-65.  js/callsheet-render.js
-66.  js/callsheet.js
-67.  js/callsheet-print.js
-68.  js/callsheet-sort.js
-69.  js/callsheet-filters.js
-70.  js/callsheet-smart.js
-71.  js/callsheet-export.js
-72.  js/callsheet-display.js
-73.  js/callsheet-categories.js
-74.  js/callsheet-metadata.js
-75.  js/callsheet-layout.js
-76.  js/callsheet-templates.js
-77.  js/callsheet-picker-runtime.js
-78.  js/callsheet-gameplan-drawer.js
-79.  js/constraints.js            ← Constraint engine; depends on callsheet.js globals
-80.  js/constraints-ui.js         ← Constraint panel UI, touch analysis, snapshot
-81.  js/script-vision.js
-82.  js/tendencies-render.js
-83.  js/tendencies.js
-84.  js/tendencies-print.js       ← Print/export/import for tendencies
-85.  js/installation-render.js
-86.  js/installation.js
-87.  js/installation-print.js     ← Smart install report print
-88.  js/identity.js
-89.  js/offensebuilder.js
-90.  js/help.js
-91.  js/dashboard-render.js       ← Dashboard render helpers (before dashboard.js)
-92.  js/dashboard.js
-93.  js/gameplan.js               ← Must load before all gameplan-* split files
-94.  js/gameplan-render.js
-95.  js/gameplan-dnd.js
-96.  js/gameplan-actions.js
-97.  js/gameplan-smart.js
-98.  js/gameplan-health.js        ← Health/spotlight/coverage analysis
-99.  js/gameplan-print.js
-100. js/gameplan-integrations.js
-101. js/gameplan-snapshots.js
-102. js/print-studio.js           ← Unified print/export hub
-103. js/script-events.js
-104. js/app-events.js
-105. js/app-command.js            ← Command palette (before app-shell.js)
-106. js/app-shell.js
-107. js/app-session.js
-108. js/app-navigation.js
-109. js/app-module-init.js
-110. js/app-bootstrap.js
-111. js/app-init.js
-112. js/app.js                    ← Must be last; shared global state only
+1.   js/utils.js
+2.   js/history.js
+3.   js/dom-helpers.js
+4.   js/lz-string.min.js
+5.   js/storage.js
+6.   js/storage-ui.js
+7.   js/play-images.js
+8.   js/cloud-sync.js
+9.   js/auth.js
+10.   js/play-clips.js
+11.   js/vision.js
+12.   js/team-settings.js
+13.   js/players-admin.js
+14.   js/play-discussion.js
+15.   js/playbook.js
+16.   js/playbook-collections.js
+17.   js/playbook-print.js
+18.   js/playbook-editor.js
+19.   js/playbook-import.js
+20.   js/playbook-export.js
+21.   js/playbook-chrome.js
+22.   js/playbook-reports.js
+23.   js/playbook-reports-identity.js
+24.   js/playbook-state.js
+25.   js/playbook-filters.js
+26.   js/playbook-navigation.js
+27.   js/playbook-actions.js
+28.   js/playbook-render.js
+29.   js/playbook-sanitize.js
+30.   js/playbook-analytics.js
+31.   js/playbook-analytics-render.js
+32.   js/playbook-identity.js
+33.   js/script-state.js
+34.   js/script-shared.js
+35.   js/script-players.js
+36.   js/script-display-options.js
+37.   js/play-readiness.js
+38.   js/script-add.js
+39.   js/script-sort.js
+40.   js/script-export.js
+41.   js/script-available.js
+42.   js/script-selection.js
+43.   js/script-timeline.js
+44.   js/script-render.js
+45.   js/player-quiz-sync.js
+46.   js/script-health.js
+47.   js/script-periods.js
+48.   js/script-period-sync.js
+49.   js/script-smart.js
+50.   js/script-storage.js
+51.   js/script-player.js
+52.   js/script-integrations.js
+53.   js/play-presentation.js
+54.   js/wristband.js
+55.   js/wristband-library.js
+56.   js/wristband-render.js
+57.   js/wristband-cards.js
+58.   js/wristband-export.js
+59.   js/wristband-chrome.js
+60.   js/wristband-logo.js
+61.   js/wristband-search.js
+62.   js/wristband-modals.js
+63.   js/wristband-cell-popup.js
+64.   js/wristband-cell-actions.js
+65.   js/wristband-sort.js
+66.   js/wristband-storage.js
+67.   js/wristband-runtime.js
+68.   js/callsheet-render.js
+69.   js/callsheet.js
+70.   js/callsheet-print.js
+71.   js/callsheet-sort.js
+72.   js/callsheet-filters.js
+73.   js/callsheet-smart.js
+74.   js/callsheet-export.js
+75.   js/callsheet-display.js
+76.   js/callsheet-categories.js
+77.   js/callsheet-metadata.js
+78.   js/callsheet-layout.js
+79.   js/callsheet-templates.js
+80.   js/callsheet-picker-runtime.js
+81.   js/callsheet-gameplan-drawer.js
+82.   js/constraints.js
+83.   js/constraints-ui.js
+84.   js/script-vision.js
+85.   js/tendencies-render.js
+86.   js/tendencies.js
+87.   js/tendencies-print.js
+88.   js/installation-render.js
+89.   js/installation.js
+90.   js/installation-print.js
+91.   js/identity.js
+92.   js/offensebuilder.js
+93.   js/help.js
+94.   js/dashboard-render.js
+95.   js/dashboard.js
+96.   js/gameplan.js
+97.   js/gameplan-render.js
+98.   js/gameplan-dnd.js
+99.   js/gameplan-actions.js
+100.   js/gameplan-smart.js
+101.   js/gameplan-health.js
+102.   js/gameplan-print.js
+103.   js/gameplan-integrations.js
+104.   js/gameplan-snapshots.js
+105.   js/print-studio.js
+106.   js/script-events.js
+107.   js/anchored-menu.js
+108.   js/app-events.js
+109.   js/app-command.js
+110.   js/page-actions.js
+111.   js/app-notifications.js
+112.   js/push-notifications.js
+113.   js/player-portal.js
+114.   js/dashboard-questions.js
+115.   js/app-shell.js
+116.   js/app-session.js
+117.   js/app-navigation.js
+118.   js/app-module-init.js
+119.   js/app-bootstrap.js
+120.   js/app-init.js
+121.   js/app.js
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -317,6 +326,12 @@ const _ELEMENT_FNS = new Set([
   "moveInstallItemUp",
   "moveInstallItemDown",
   "toggleIdentityCard",
+  // Discussion actions (need both arg + element)
+  "submitDiscPost",
+  "deleteDiscPost",
+  "loadMoreDiscussion",
+  "submitDiscReply",
+  "loadMoreDiscReplies",
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 ```
@@ -366,67 +381,86 @@ Always use `STORAGE_KEYS`; literal keys passed to `storageManager.get/set/remove
 ### STORAGE_KEYS (complete list)
 
 ```js
-PLAYBOOK                   → "playbook"
-SAVED_SCRIPTS              → "savedScripts"
-SAVED_WRISTBANDS           → "savedWristbands"
-WRISTBAND_TEMPLATES        → "wristbandTemplates"
-SORT_PRESETS               → "sortPresets"
-CUSTOM_SORT_ORDERS         → "customSortOrders"
-SCRIPT_CUSTOM_SORT_ORDERS  → "scriptCustomSortOrders"
-PERIOD_TEMPLATES           → "periodTemplates"
-SCRIPT_TEMPLATES           → "scriptTemplates"
-CALL_SHEET                 → "callSheet"
-CALL_SHEET_SETTINGS        → "callSheetSettings"
-COLUMN_VISIBILITY          → "columnVisibility"
-PLAYBOOK_STATE             → "playbookState"
-SCRIPT_DISPLAY_OPTIONS     → "scriptDisplayOptions"
-SCRIPT_CONTROLS_MODE       → "scriptControlsMode"
-PLAY_READINESS             → "playReadiness"
-SCRIPT_DRAFT               → "scriptDraft"
-WRISTBAND_DRAFT            → "wristbandDraft"
-CALLSHEET_DISPLAY_OPTIONS  → "callSheetDisplayOptions"
-CALLSHEET_DISPLAY_PRESETS  → "callSheetDisplayPresets"
-CALLSHEET_DRAFT            → "callSheetDraft"
-CALLSHEET_TEMPLATES        → "callSheetTemplates"
-CALLSHEET_CATEGORY_ORDER   → "callSheetCategoryOrder"
-CALLSHEET_NOTES            → "callSheetNotes"
-CALLSHEET_TARGETS          → "callSheetTargets"
-CALLSHEET_COLLAPSED        → "callSheetCollapsed"
-CALLSHEET_QUICK_ACTIONS_OPEN → "csQuickActionsOpen"
-DEFENSIVE_TENDENCIES       → "defensiveTendencies"
-TENDENCIES_DRAFT           → "tendenciesDraft"
-TENDENCIES_SETTINGS        → "tendenciesSettings"
-GAME_WEEK                  → "gameWeek"
-MOBILE_COACH_LOCK          → "mobileCoachLock"
-INSTALLATION               → "installationData"
-INSTALLATION_TEMPLATES     → "installationTemplates"
-CS_SCOUTING_OVERLAY        → "csScoutingOverlay"
-PLAY_COLLECTIONS           → "playCollections"
-CALLSHEET_CONSTRAINTS      → "callSheetConstraints"
-OB_PLAY_RATINGS            → "ob_playRatings"
-LAST_ACTIVE_TAB            → "lastActiveTab"
-THEME                      → "theme"
-VISION_MODE                → "visionMode"
-SCHEDULE                   → "schedule"
-GAME_PLAN_TAGS             → "gamePlanTags"
-PRINT_STUDIO_SETTINGS      → "printStudioSettings"
-WRISTBAND_SORT_CRITERIA    → "wristbandSortCriteria"
-WRISTBAND_FAVORITES        → "wristbandFavorites"
-WRISTBAND_RECENT_PLAYS     → "wristbandRecentPlays"
-WRISTBAND_LOGO_CARD        → "wristbandLogoCard"
-TEAM_ROSTER                → "teamRoster"
-TEAM_NAME                  → "teamName"
-TEAM_PERSONNEL_PACKAGES    → "teamPersonnelPackages"
-TEAM_SWAP_GROUPS           → "teamSwapGroups"
-TEAM_ASSIGNMENT_LABELS     → "teamAssignmentLabels"
-TEAM_SETTINGS_COLLAPSED    → "teamSettingsCollapsed"
-GAME_PLAN_BOARDS           → "gamePlanBoards"
-GAME_PLAN_SNAPSHOTS        → "gamePlanSnapshots"
-GAME_PLAN_TEMPLATES        → "gamePlanTemplates"
-CALLSHEET_PRINT_OPTIONS    → "callSheetPrintOptions"
-CLOUD_SYNC_SETTINGS        → "cloudSyncSettings"
-COLOR_PRESET               → "colorPreset"
-AUTH_SESSION               → "authSession"
+PLAYBOOK                        → "playbook"
+SAVED_SCRIPTS                   → "savedScripts"
+SAVED_WRISTBANDS                → "savedWristbands"
+WRISTBAND_TEMPLATES             → "wristbandTemplates"
+SORT_PRESETS                    → "sortPresets"
+CUSTOM_SORT_ORDERS              → "customSortOrders"
+SCRIPT_CUSTOM_SORT_ORDERS       → "scriptCustomSortOrders"
+PERIOD_TEMPLATES                → "periodTemplates"
+SCRIPT_TEMPLATES                → "scriptTemplates"
+CALL_SHEET                      → "callSheet"
+CALL_SHEET_SETTINGS             → "callSheetSettings"
+COLUMN_VISIBILITY               → "columnVisibility"
+PLAYBOOK_STATE                  → "playbookState"
+SCRIPT_DISPLAY_OPTIONS          → "scriptDisplayOptions"
+SCRIPT_CONTROLS_MODE            → "scriptControlsMode"
+PLAY_READINESS                  → "playReadiness"
+SCRIPT_DRAFT                    → "scriptDraft"
+WRISTBAND_DRAFT                 → "wristbandDraft"
+CALLSHEET_DISPLAY_OPTIONS       → "callSheetDisplayOptions"
+CALLSHEET_DISPLAY_PRESETS       → "callSheetDisplayPresets"
+CALLSHEET_DRAFT                 → "callSheetDraft"
+CALLSHEET_TEMPLATES             → "callSheetTemplates"
+CALLSHEET_CATEGORY_ORDER        → "callSheetCategoryOrder"
+CALLSHEET_NOTES                 → "callSheetNotes"
+CALLSHEET_TARGETS               → "callSheetTargets"
+CALLSHEET_COLLAPSED             → "callSheetCollapsed"
+CALLSHEET_QUICK_ACTIONS_OPEN    → "csQuickActionsOpen"
+CALLSHEET_SNAPSHOTS             → "callSheetSnapshots"
+PAGE_HELP_OPEN                  → "pageHelpOpen"
+DEFENSIVE_TENDENCIES            → "defensiveTendencies"
+TENDENCIES_DRAFT                → "tendenciesDraft"
+TENDENCIES_SETTINGS             → "tendenciesSettings"
+GAME_WEEK                       → "gameWeek"
+MOBILE_COACH_LOCK               → "mobileCoachLock"
+INSTALLATION                    → "installationData"
+INSTALLATION_TEMPLATES          → "installationTemplates"
+CS_SCOUTING_OVERLAY             → "csScoutingOverlay"
+PLAY_COLLECTIONS                → "playCollections"
+CALLSHEET_CONSTRAINTS           → "callSheetConstraints"
+OB_PLAY_RATINGS                 → "ob_playRatings"
+LAST_ACTIVE_TAB                 → "lastActiveTab"
+THEME                           → "theme"
+VISION_MODE                     → "visionMode"
+SCHEDULE                        → "schedule"
+GAME_PLAN_TAGS                  → "gamePlanTags"
+PRINT_STUDIO_SETTINGS           → "printStudioSettings"
+PRESENTATION_SETUP              → "presentationSetup"
+PRESENTATION_IPAD_HELP_DISMISSED → "presentationIpadHelpDismissed"
+WRISTBAND_SORT_CRITERIA         → "wristbandSortCriteria"
+WRISTBAND_FAVORITES             → "wristbandFavorites"
+WRISTBAND_RECENT_PLAYS          → "wristbandRecentPlays"
+WRISTBAND_LOGO_CARD             → "wristbandLogoCard"
+TEAM_ROSTER                     → "teamRoster"
+TEAM_NAME                       → "teamName"
+TEAM_PERSONNEL_PACKAGES         → "teamPersonnelPackages"
+TEAM_SWAP_GROUPS                → "teamSwapGroups"
+TEAM_ASSIGNMENT_LABELS          → "teamAssignmentLabels"
+TEAM_SETTINGS_COLLAPSED         → "teamSettingsCollapsed"
+GAME_PLAN_BOARDS                → "gamePlanBoards"
+GAME_PLAN_SNAPSHOTS             → "gamePlanSnapshots"
+GAME_PLAN_TEMPLATES             → "gamePlanTemplates"
+CALLSHEET_PRINT_OPTIONS         → "callSheetPrintOptions"
+CLOUD_SYNC_SETTINGS             → "cloudSyncSettings"
+COLOR_PRESET                    → "colorPreset"
+AUTH_SESSION                    → "authSession"
+A2HS_DISMISSED                  → "a2hsDismissed"
+MOTD                            → "motd"
+PLAYER_READY                    → "playerReady"
+PLAYER_PORTAL_BRANDING          → "playerPortalBranding"
+PLAYER_QUIZ_RESULTS             → "playerQuizResults"
+PLAYER_QUIZ_DRAFT               → "playerQuizDraft"
+PLAYER_QUIZ_SETTINGS            → "playerQuizSettings"
+PLAYER_QUIZ_SOURCE_SETTINGS     → "playerQuizSourceSettings"
+PLAYER_REWARD_EVENTS            → "playerRewardEvents"
+PLAYER_HELMET_STICKER_TYPES     → "playerHelmetStickerTypes"
+PLAYER_HELMET_STICKERS          → "playerHelmetStickers"
+PLAYER_LEADERBOARD_REMOTE       → "playerLeaderboardRemote"
+GAME_WEEK_ARCHIVE               → "gameWeekArchive"
+TENDENCIES_REPORTS              → "tendenciesReports"
+FIRST_USE_DISMISSED             → "firstUseDismissed"
 ```
 
 ### Autosave / Draft Pattern

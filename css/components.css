@@ -192,6 +192,7 @@ body.app-layer-locked {
   min-width: 0;
 }
 .auth-login-hero {
+  order: 2;
   display: grid;
   align-content: start;
   gap: var(--space-md);
@@ -252,6 +253,7 @@ body.app-layer-locked {
   line-height: 1.45;
 }
 .auth-login-card {
+  order: 1;
   box-sizing: border-box;
   display: grid;
   gap: var(--space-md);

@@ -37,23 +37,50 @@ const UI_COLORS = {
  * Show an undo toast for destructive actions (replaces confirm + delete pattern)
  * @param {string} message - What happened (e.g. "Script cleared")
  * @param {Function} undoCallback - Called if user clicks Undo within the window
- * @param {number} duration - Time window in ms (default 5000)
+ * @param {number|object} duration - Time window in ms (default 5000), or options
  */
 function showUndoToast(message, undoCallback, duration) {
-  duration = duration || 5000;
+  const opts =
+    duration && typeof duration === "object"
+      ? duration
+      : { duration };
+  duration = opts.duration || 5000;
+  const actionLabel = String(opts.actionLabel || "");
+  const action = typeof opts.action === "function"
+    ? opts.action
+    : String(opts.action || "");
   const existing = document.querySelector(".toast");
   if (existing) existing.remove();
 
   const toast = document.createElement("div");
   toast.className = "toast toast-warning show";
   toast.style.setProperty("--toast-duration", duration + "ms");
-  toast.innerHTML =
-    escapeHtml(message) +
-    ' <button class="btn btn-sm btn-ghost-current btn-inline-offset">Undo</button>';
+  toast.textContent = String(message || "");
+  const undoButton = document.createElement("button");
+  undoButton.type = "button";
+  undoButton.className = "btn btn-sm btn-ghost-current btn-inline-offset";
+  undoButton.textContent = "Undo";
+  toast.appendChild(undoButton);
+  if (actionLabel && action) {
+    const actionButton = document.createElement("button");
+    actionButton.type = "button";
+    actionButton.className = "toast-action";
+    actionButton.textContent = actionLabel;
+    actionButton.addEventListener("click", () => {
+      if (typeof action === "function") {
+        action();
+      } else {
+        const fn = window[action];
+        if (typeof fn === "function") fn();
+      }
+      toast.remove();
+    });
+    toast.appendChild(actionButton);
+  }
   document.body.appendChild(toast);
 
   let undone = false;
-  toast.querySelector("button").addEventListener("click", () => {
+  undoButton.addEventListener("click", () => {
     undone = true;
     undoCallback();
     toast.remove();
@@ -1052,7 +1079,44 @@ function safeDeepClone(obj) {
  * @param {boolean} useSquares - Use square emojis instead of circles
  * @returns {string} Emoji representation
  */
+function getPersonnelEmoji(personnel, useSquares = false) {
+  if (!personnel) return "";
 
+  const p = String(personnel).toLowerCase().trim();
+
+  const circleMap = {
+    red: "🔴",
+    blue: "🔵",
+    green: "🟢",
+    yellow: "🟡",
+    orange: "🟠",
+    purple: "🟣",
+    brown: "🟤",
+    white: "⚪",
+    black: "⚫",
+    navy: "⚓",
+    meat: "🥩",
+    star: "⭐",
+  };
+
+  const squareMap = {
+    red: "🟥",
+    blue: "🟦",
+    green: "🟩",
+    yellow: "🟨",
+    orange: "🟧",
+    purple: "🟪",
+    brown: "🟫",
+    white: "⬜",
+    black: "⬛",
+    navy: "⚓",
+    meat: "🥩",
+    star: "⭐",
+  };
+
+  const map = useSquares ? squareMap : circleMap;
+  return map[p] || "";
+}
 
 /**
  * Remove vowels from a string (for abbreviated display)

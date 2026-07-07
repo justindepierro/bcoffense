@@ -482,13 +482,19 @@ async function pushGamePlanToScript() {
   _gpStorePushReceipt("script", pushed, skipped);
 
   // #126 + #127: counts in undo toast
-  const msg = `${pushed} play${pushed !== 1 ? "s" : ""} added to Script${skipped > 0 ? ` · ${skipped} skipped (duplicates)` : ""}`;
+  const msg = `Practice Script updated: ${pushed} play${pushed !== 1 ? "s" : ""} added${skipped > 0 ? ` · ${skipped} skipped (duplicates)` : ""}`;
   showUndoToast(msg, () => {
     script.splice(0, script.length, ...preSnapshot);
     if (typeof markScriptDirty === "function") markScriptDirty();
     if (typeof renderScript === "function") renderScript();
     showToast("Script push undone", { type: "info", duration: 2000 });
-  }, 8000);
+  }, {
+    duration: 8000,
+    actionLabel: "→ Script",
+    action: () => {
+      if (typeof showTab === "function") showTab("script");
+    },
+  });
   if (pushed > 0 && typeof showTab === "function") showTab("script");
 }
 

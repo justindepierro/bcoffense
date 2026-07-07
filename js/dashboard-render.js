@@ -895,7 +895,7 @@ function renderPlayerDashboardHome() {
   }).format(new Date());
   const teamName =
     (storageManager.get(STORAGE_KEYS.TEAM_NAME, "") || "").trim() ||
-    "Player Practice Portal";
+    "Player Portal";
 
   // Item 46: Coach message of the day
   const _motd = (storageManager.get(STORAGE_KEYS.MOTD, "") || "").trim();

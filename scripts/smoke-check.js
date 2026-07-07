@@ -907,6 +907,7 @@ function checkPlayPresentationContracts() {
 function checkScriptPlayerPublishingContracts() {
   const html = read("index.html");
   const scriptStorage = read("js/script-storage.js");
+  const scriptPlayer = read("js/script-player.js");
   const scriptRender = read("js/script-render.js");
   const scriptDisplay = read("js/script-display-options.js");
   const presentation = read("js/play-presentation.js");
@@ -925,21 +926,21 @@ function checkScriptPlayerPublishingContracts() {
 
   if (
     !/playerVisible:\s*false/.test(scriptStorage) ||
-    !/function renderPlayerScriptLauncher\(\)/.test(scriptStorage) ||
-    !/function renderPlayerLoadedScriptBar\(\)/.test(scriptStorage) ||
-    !/function tracePlayerScriptAction\(/.test(scriptStorage) ||
-    !/function getDefaultPlayerPublishedScript\(/.test(scriptStorage) ||
+    !/function renderPlayerScriptLauncher\(\)/.test(scriptPlayer) ||
+    !/function renderPlayerLoadedScriptBar\(\)/.test(scriptPlayer) ||
+    !/function tracePlayerScriptAction\(/.test(scriptPlayer) ||
+    !/function getDefaultPlayerPublishedScript\(/.test(scriptPlayer) ||
     !/function loadPublishedPlayerScript\(id,\s*opts = \{\}\)/.test(
-      scriptStorage,
+      scriptPlayer,
     ) ||
-    !/function presentPublishedPlayerScript\(id\)/.test(scriptStorage) ||
+    !/function presentPublishedPlayerScript\(id\)/.test(scriptPlayer) ||
     !/function openPlayerCurrentScriptPresentation\(id = ""\)/.test(
-      scriptStorage,
+      scriptPlayer,
     ) ||
-    !/function togglePlayerScriptAccess\(id,\s*event\)/.test(scriptStorage) ||
-    !/data-onchange="togglePlayerScriptAccess"/.test(scriptStorage) ||
-    !/data-action="loadPublishedPlayerScript"/.test(scriptStorage) ||
-    !/data-action="openPlayerCurrentScriptPresentation"/.test(scriptStorage) ||
+    !/function togglePlayerScriptAccess\(id,\s*event\)/.test(scriptPlayer) ||
+    !/data-onchange="togglePlayerScriptAccess"/.test(scriptPlayer) ||
+    !/data-action="loadPublishedPlayerScript"/.test(scriptPlayer) ||
+    !/data-action="openPlayerCurrentScriptPresentation"/.test(scriptPlayer) ||
     !/data-action="openPlayerCurrentScriptPresentation"/.test(html) ||
     !/case "loadPublishedPlayerScript"/.test(appEvents) ||
     !/case "presentPublishedPlayerScript"/.test(appEvents) ||
@@ -957,10 +958,10 @@ function checkScriptPlayerPublishingContracts() {
     !/window\.bcDebugHitTest/.test(appEvents) ||
     !/window\.bcDebugScrollAncestry/.test(appEvents) ||
     !/auth blocked interaction/.test(auth) ||
-    !/lookup miss/.test(scriptStorage) ||
-    !/load start/.test(scriptStorage) ||
-    !/current presentation fallback/.test(scriptStorage) ||
-    !/openScriptPresentation-returned-false/.test(scriptStorage)
+    !/lookup miss/.test(scriptPlayer) ||
+    !/load start/.test(scriptPlayer) ||
+    !/current presentation fallback/.test(scriptPlayer) ||
+    !/openScriptPresentation-returned-false/.test(scriptPlayer)
   ) {
     fail("player action diagnostics are incomplete");
   }
@@ -1161,6 +1162,7 @@ function checkPlayerPortalContracts() {
   const appEvents = read("js/app-events.js");
   const appNavigation = read("js/app-navigation.js");
   const dashboard = read("js/dashboard.js");
+  const dashboardRender = read("js/dashboard-render.js");
   const componentsCss = read("css/components.css");
   const layoutCss = read("css/layout.css");
   const responsiveCss = read("css/responsive.css");
@@ -1206,14 +1208,14 @@ function checkPlayerPortalContracts() {
     fail("player portal markup is incomplete");
   }
   if (
-    !/function renderPlayerDashboardHome\(\)/.test(dashboard) ||
-    !/Player Portal/.test(dashboard) ||
-    !/loadPublishedPlayerScript/.test(dashboard) ||
-    !/openPlayerCurrentScriptPresentation/.test(dashboard) ||
-    !/Open Playbook/.test(dashboard) ||
-    !/player-home-quick-actions/.test(dashboard) ||
-    !/player-home-today-card/.test(dashboard) ||
-    !/class="btn btn-primary player-home-action"/.test(dashboard) ||
+    !/function renderPlayerDashboardHome\(\)/.test(dashboardRender) ||
+    !/Player Portal/.test(dashboardRender) ||
+    !/loadPublishedPlayerScript/.test(dashboardRender) ||
+    !/openPlayerCurrentScriptPresentation/.test(dashboardRender) ||
+    !/Open Playbook/.test(dashboardRender) ||
+    !/player-home-quick-actions/.test(dashboardRender) ||
+    !/player-home-today-card/.test(dashboardRender) ||
+    !/class="btn btn-primary player-home-action"/.test(dashboardRender) ||
     !/function getAppActionHitDiagnostics\(element\)/.test(appEvents) ||
     !/function isAppActionFullTraceEnabled\(\)/.test(appEvents) ||
     !/document\.elementFromPoint\(centerX, centerY\)/.test(appEvents) ||
@@ -1231,10 +1233,10 @@ function checkPlayerPortalContracts() {
     !/function scrollTabStripToTab\(tab\)/.test(appNavigation) ||
     !/strip\.scrollTo\(\{/.test(appNavigation) ||
     !/const savedScriptId = escapeHtml\(String\(savedScript\.id\)\)/.test(
-      dashboard,
+      dashboardRender,
     ) ||
-    !/data-arg="\$\{savedScriptId\}"/.test(dashboard) ||
-    !/data-arg="\$\{featuredScriptId\}"/.test(dashboard)
+    !/data-arg="\$\{savedScriptId\}"/.test(dashboardRender) ||
+    !/data-arg="\$\{featuredScriptId\}"/.test(dashboardRender)
   ) {
     fail("player dashboard home is incomplete");
   }
@@ -1416,7 +1418,7 @@ function checkPlayerPortalContracts() {
     !/\.auth-login-hero\s*\{\s*order:\s*2;/.test(componentsCss) ||
     !/\.player-home-hero/.test(dashboardCss) ||
     !/\.player-home-quick-actions/.test(dashboardCss) ||
-    !/player-home-card--study/.test(dashboard) ||
+    !/player-home-card--study/.test(dashboardRender) ||
     !/\.player-home-today-card/.test(dashboardCss) ||
     !/\.player-dashboard-home[\s\S]*overflow:\s*visible/.test(dashboardCss) ||
     !/\.player-home-card[\s\S]*overflow:\s*clip/.test(dashboardCss) ||
@@ -1902,6 +1904,8 @@ function checkWristbandWorkspaceContracts() {
   const runtime = read("js/wristband-runtime.js");
   const storage = read("js/wristband-storage.js");
   const playerRuntime = read("js/wristband-export.js");
+  const chrome = read("js/wristband-chrome.js");
+  const logo = read("js/wristband-logo.js");
   const css = read("css/wristband.css");
   const printCss = read("css/print.css");
   const responsiveCss = read("css/responsive.css");
@@ -1946,12 +1950,12 @@ function checkWristbandWorkspaceContracts() {
     !/function finalizeWristbandGridRender\(/.test(render) ||
     !/finalizeWristbandGridRender\(grid, cardData, CELLS_PER_CARD\)/.test(render) ||
     !/function shouldRenderWristbandPhoneEditor\(\)/.test(render) ||
-    !/syncWristbandModeSurface\(wristbandType \|\| ""\)/.test(render) ||
+    !/syncWristbandModeSurface\(wristbandType\)/.test(render) ||
     !/traceWristbandAction\("classic render start"/.test(render) ||
     !/traceWristbandAction\("classic render complete"/.test(render) ||
     !/wb-phone-editor-grid/.test(render) ||
     !/wb-phone-editor-row/.test(render) ||
-    !/finalizeWristbandGridRender\(grid, card\.data, WB_ROWS\)/.test(playerRuntime) ||
+    !/finalizeWristbandGridRender\(grid, card\.data, WB_ROWS\)/.test(chrome) ||
     !/role="gridcell" tabindex="0"/.test(render) ||
     !/e\.key === "ArrowDown"/.test(runtime) ||
     !/e\.key === "Delete"/.test(runtime)
@@ -2002,11 +2006,11 @@ function checkWristbandWorkspaceContracts() {
       playerRuntime,
     ) ||
     !/function _getSelectedWbPrintProfile\(/.test(playerRuntime) ||
-    !/function openWbLogoCardModal\(/.test(playerRuntime) ||
+    !/function openWbLogoCardModal\(/.test(logo) ||
     !/function handleWbLogoCardUpload\(/.test(playerRuntime) ||
-    !/function setWbLogoSmartCenter\(/.test(playerRuntime) ||
+    !/function setWbLogoSmartCenter\(/.test(logo) ||
     !/function _createWbSmartCenteredLogoDataUrl\(/.test(playerRuntime) ||
-    !/function printWbLogoCardThree\(/.test(playerRuntime) ||
+    !/function printWbLogoCardThree\(/.test(logo) ||
     !/STORAGE_KEYS\.WRISTBAND_LOGO_CARD/.test(playerRuntime) ||
     !/WRISTBAND_LOGO_CARD:\s*"wristbandLogoCard"/.test(appStorage) ||
     !/STORAGE_KEYS\.WRISTBAND_LOGO_CARD/.test(cloudSync) ||
@@ -2059,6 +2063,7 @@ function checkWristbandWorkspaceContracts() {
 function checkPlayerWristbandRuleOverrides() {
   const wristband = read("js/wristband.js");
   const playerRuntime = read("js/wristband-export.js");
+  const chrome = read("js/wristband-chrome.js");
   const popup = read("js/wristband-cell-popup.js");
   const html = read("index.html");
   const css = read("css/wristband.css");
@@ -2073,10 +2078,10 @@ function checkPlayerWristbandRuleOverrides() {
     fail("player wristband rule overrides are not stored and printed through cell customizations");
   }
   if (
-    !/class="pc-rule-select/.test(playerRuntime) ||
-    !/delete custom\.playerRuleSources\[basePosition\]/.test(playerRuntime) ||
+    !/class="pc-rule-select/.test(chrome) ||
+    !/delete custom\.playerRuleSources\[basePosition\]/.test(chrome) ||
     !/delete custom\.playerAssignmentOverrides\[basePosition\]/.test(
-      playerRuntime,
+      chrome,
     )
   ) {
     fail("player wristband rule source selection or reset behavior is incomplete");
@@ -2098,7 +2103,7 @@ function checkPlayerWristbandRuleOverrides() {
     !/blankPlayerRules/.test(read("js/wristband-render.js")) ||
     !/pc-print-page pc-print-single/.test(playerRuntime) ||
     !/_getWbPrintBlankRules/.test(playerRuntime) ||
-    !/pc-assignment-blank/.test(playerRuntime) ||
+    !/pc-print-assignment-blank/.test(playerRuntime) ||
     !/pc-print-assignment-blank/.test(playerRuntime) ||
     !/blankRules/.test(playerRuntime) ||
     !/\.pc-assignment-cell\.pc-assignment-blank/.test(css) ||

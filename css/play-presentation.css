@@ -2809,6 +2809,10 @@ body.play-presentation-mobile.is-landscape-screen.is-phone-screen
   gap: 6px;
 }
 
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-layout-player {
+  align-items: stretch;
+}
+
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen
   .pp-diagram-frame {
   min-height: 0;
@@ -2977,6 +2981,10 @@ body.play-presentation-mobile.is-landscape-screen.is-phone-screen
   .pp-position-lock-status,
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen
   .pp-resp-notes {
+  display: none;
+}
+
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-controls-head span {
   display: none;
 }
 

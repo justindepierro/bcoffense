@@ -728,10 +728,18 @@
     flex-basis: 76%;
   }
 
+  body.script-packet-printing .script-packet-diagrams-large .script-packet-diagram-image {
+    max-height: 100%;
+  }
+
   body.script-packet-printing
     .script-packet-diagrams-full
     .script-packet-diagram-image {
     flex-basis: 84%;
+  }
+
+  body.script-packet-printing .script-packet-diagrams-full .script-packet-diagram-image {
+    max-height: 100%;
   }
 
   body.script-packet-printing

@@ -85,12 +85,11 @@ function importCompleteBackup(event) {
             imageWarning = "\nPlay image storage is not available in this browser.";
           }
         }
-        reloadAppFromStorage();
-        await showModal(`Backup restored successfully!${restoredImages ? `\nImages restored: ${restoredImages}` : ""}${imageWarning}\nRefreshing...`, {
+        await reloadAppFromStorage();
+        await showModal(`Backup restored successfully!${restoredImages ? `\nImages restored: ${restoredImages}` : ""}${imageWarning}\nWorkspace updated.`, {
           title: "Restored",
           icon: "✅",
         });
-        location.reload();
       }
     } catch (err) {
       await showModal("Error reading backup file: " + err.message, {

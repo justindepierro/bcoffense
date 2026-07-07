@@ -254,9 +254,15 @@ export async function getSessionFromRequest(request, env) {
   }
 }
 
+function safeLoginNext(value) {
+  const target = String(value || "/");
+  if (!target.startsWith("/") || target.startsWith("//")) return "/";
+  return target;
+}
+
 export function renderLoginPage(opts = {}) {
   const message = opts.message || "";
-  const nextPath = opts.next || "/";
+  const nextPath = safeLoginNext(opts.next);
   const escapedMessage = escapeHtml(message);
   const encodedNext = encodeURIComponent(nextPath);
 
@@ -266,73 +272,218 @@ export function renderLoginPage(opts = {}) {
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>BCOffense Login</title>
   <style>
-    :root { color-scheme: light dark; }
+    :root {
+      color-scheme: light;
+      --navy: #0a122a;
+      --navy-2: #132452;
+      --gold: #c7a44c;
+      --ink: #101828;
+      --muted: #64748b;
+      --border: #d8dde7;
+      --surface: #ffffff;
+      --soft: #f4f6f9;
+      --danger: #b42318;
+    }
     * { box-sizing: border-box; }
     body {
       min-height: 100vh;
       margin: 0;
-      display: grid;
-      place-items: center;
-      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: max(18px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: linear-gradient(135deg, #0a122a 0%, #192a51 100%);
-      color: #0a122a;
+      background:
+        linear-gradient(90deg, rgb(255 255 255 / 0.04) 1px, transparent 1px),
+        linear-gradient(rgb(255 255 255 / 0.04) 1px, transparent 1px),
+        linear-gradient(135deg, rgb(5 14 38), rgb(17 39 85));
+      background-size: 26px 26px, 26px 26px, auto;
+      color: var(--ink);
     }
-    form {
-      width: min(100%, 390px);
+    .shell {
+      width: min(980px, 100%);
       display: grid;
-      gap: 14px;
-      padding: 28px;
-      border-radius: 14px;
-      background: #fff;
-      box-shadow: 0 24px 70px rgba(0,0,0,.28);
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+      overflow: hidden;
+      border: 1px solid rgb(255 255 255 / 0.14);
+      border-radius: 28px;
+      background: rgb(255 255 255 / 0.08);
+      box-shadow: 0 24px 80px rgb(4 10 28 / 0.42);
     }
-    .brand {
-      color: #9e8a60;
+    .hero {
+      display: grid;
+      align-content: start;
+      gap: 16px;
+      padding: 34px;
+      color: #fff;
+      background:
+        linear-gradient(180deg, rgb(255 255 255 / 0.08), transparent),
+        linear-gradient(160deg, rgb(8 22 56 / 0.96), rgb(13 34 74 / 0.88));
+    }
+    .brand, .kicker {
+      color: var(--gold);
       font-size: 12px;
-      font-weight: 800;
+      font-weight: 900;
       letter-spacing: .08em;
       text-transform: uppercase;
     }
-    h1 { margin: 0; font-size: 28px; line-height: 1.1; }
-    p { margin: -4px 0 4px; color: #64748b; font-size: 14px; line-height: 1.5; }
-    label { display: grid; gap: 6px; color: #334155; font-size: 13px; font-weight: 700; }
+    h1 {
+      margin: 0;
+      font-size: 48px;
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+    .hero p {
+      max-width: 36ch;
+      margin: 0;
+      color: rgb(255 255 255 / 0.78);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .chips, .highlights {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      padding: 6px 12px;
+      border: 1px solid rgb(255 255 255 / 0.16);
+      border-radius: 999px;
+      background: rgb(255 255 255 / 0.08);
+      color: rgb(255 255 255 / 0.9);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .highlight {
+      flex: 1 1 180px;
+      display: grid;
+      gap: 4px;
+      padding: 14px 16px;
+      border: 1px solid rgb(255 255 255 / 0.1);
+      border-radius: 14px;
+      background: rgb(255 255 255 / 0.07);
+    }
+    .highlight strong { font-size: 14px; }
+    .highlight span {
+      color: rgb(255 255 255 / 0.74);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    form {
+      display: grid;
+      align-content: center;
+      gap: 16px;
+      padding: 34px;
+      background: var(--surface);
+    }
+    form h2 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 28px;
+      line-height: 1.15;
+    }
+    form p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    label {
+      display: grid;
+      gap: 6px;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 800;
+    }
     input {
       width: 100%;
       padding: 12px 14px;
-      border: 2px solid #d0ccd0;
+      border: 2px solid var(--border);
       border-radius: 10px;
       font: inherit;
-      color: #0a122a;
+      color: var(--ink);
       background: #fff;
     }
-    input:focus { outline: none; border-color: #192a51; box-shadow: 0 0 0 3px rgba(25,42,81,.18); }
+    input:focus {
+      outline: none;
+      border-color: var(--navy-2);
+      box-shadow: 0 0 0 3px rgb(25 42 81 / .18);
+    }
     button {
-      min-height: 44px;
+      min-height: 48px;
       border: 0;
       border-radius: 10px;
-      background: #192a51;
+      background: var(--navy-2);
       color: #fff;
       font: inherit;
       font-weight: 800;
       cursor: pointer;
     }
-    .error { min-height: 20px; color: #c62828; font-size: 13px; font-weight: 800; }
+    .error {
+      min-height: 20px;
+      color: var(--danger);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .help {
+      color: #98a2b3;
+      font-size: 12px;
+      text-align: center;
+    }
+    @media (max-width: 720px) {
+      body { align-items: stretch; }
+      .shell {
+        grid-template-columns: 1fr;
+        align-self: center;
+        border-radius: 22px;
+      }
+      .hero { display: none; }
+      form { padding: 24px; }
+      h1 { font-size: 34px; }
+    }
   </style>
 </head>
 <body>
-  <form method="post" action="/auth/login?next=${encodedNext}" autocomplete="off">
-    <div class="brand">BCOffense</div>
-    <h1>Team Login</h1>
-    <p>Sign in with your team username and password.</p>
-    <label>Username <input name="username" type="text" autocomplete="username" required autofocus /></label>
-    <label>Password <input name="password" type="password" autocomplete="current-password" required /></label>
-    <div class="error">${escapedMessage}</div>
-    <button type="submit">Log In</button>
-  </form>
+  <main class="shell">
+    <section class="hero" aria-label="Portal overview">
+      <div class="brand">BCOffense</div>
+      <div class="kicker">Secure staff and player access</div>
+      <h1>Team workspace</h1>
+      <p>Sign in once to open scripts, wristbands, game plans, call sheets, and player-safe practice views.</p>
+      <div class="chips" aria-label="Portal roles">
+        <span class="chip">Admin</span>
+        <span class="chip">Coach</span>
+        <span class="chip">Player</span>
+      </div>
+      <div class="highlights">
+        <div class="highlight">
+          <strong>Admin control</strong>
+          <span>Import data, push backups, and manage staff-only tools.</span>
+        </div>
+        <div class="highlight">
+          <strong>Practice operations</strong>
+          <span>Move directly into the football workspace after login.</span>
+        </div>
+      </div>
+    </section>
+    <form method="post" action="/auth/login?next=${encodedNext}" autocomplete="on">
+      <div class="brand">BCOffense</div>
+      <div>
+        <div class="kicker">Sign in to your portal</div>
+        <h2>Team Login</h2>
+        <p>Use your team username and password.</p>
+      </div>
+      <label>Username <input name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus /></label>
+      <label>Password <input name="password" type="password" autocomplete="current-password" required /></label>
+      <div class="error" role="alert">${escapedMessage}</div>
+      <button type="submit">Continue</button>
+      <div class="help">Need help? Ask a coach or staff member for your login.</div>
+    </form>
+  </main>
 </body>
 </html>`,
       {
@@ -362,7 +513,13 @@ export function loginFailure(request, message, status = 401) {
   if (wantsJson(request)) {
     return authJson({ ok: false, error: message }, { status });
   }
-  return renderLoginPage({ message, status });
+  let next = "/";
+  try {
+    next = new URL(request.url).searchParams.get("next") || "/";
+  } catch (_err) {
+    next = "/";
+  }
+  return renderLoginPage({ message, status, next });
 }
 
 function escapeHtml(value) {

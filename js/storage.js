@@ -746,9 +746,9 @@ const storageManager = {
   });
 })();
 
-function reloadAppFromStorage() {
-  const storedPlaybook = storageManager.get(STORAGE_KEYS.PLAYBOOK, null);
-  if (storedPlaybook) {
+async function reloadAppFromStorage(opts = {}) {
+  const storedPlaybook = await storageManager.getPlaybook();
+  if (Array.isArray(storedPlaybook)) {
     plays = storedPlaybook;
     if (typeof ensurePlaybookPlayIds === "function") {
       const changed = ensurePlaybookPlayIds(plays);
@@ -854,5 +854,34 @@ function reloadAppFromStorage() {
 
   if (typeof restorePlaybookState === "function") {
     restorePlaybookState();
+  }
+
+  if (typeof populateFilters === "function") {
+    populateFilters();
+  }
+  if (typeof filterPlays === "function") {
+    filterPlays();
+  } else if (Array.isArray(plays)) {
+    filteredPlays = [...plays];
+  }
+  if (typeof updateGameWeekBar === "function") {
+    updateGameWeekBar();
+  }
+  if (typeof updateTabBadges === "function") {
+    updateTabBadges();
+  }
+
+  const activeTab =
+    typeof currentActiveTab !== "undefined"
+      ? currentActiveTab
+      : document.body?.dataset.activeTab;
+  if (opts.refreshActiveTab !== false && activeTab && typeof showTab === "function") {
+    showTab(activeTab);
+  } else {
+    if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+    if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
+    if (typeof renderDashboard === "function" && activeTab === "dashboard") {
+      renderDashboard();
+    }
   }
 }

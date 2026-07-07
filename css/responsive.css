@@ -827,6 +827,10 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
     overflow: visible;
   }
 
+  body.is-mobile-screen[data-auth-role="player"] #tab-dashboard::before {
+    content: attr(data-short-label);
+  }
+
   body.is-phone-screen[data-auth-role="player"] .app-header {
     gap: 6px;
     padding-inline: 12px;
@@ -906,8 +910,8 @@ body.shell-tablet.is-staff-mobile-shell #script .script-play-rail.play-list {
     (var(--app-vh, 1vh) * 100) - var(--app-header-height, 50px) -
       var(--app-tabs-height, 44px) - 24px
   );
-  overflow: auto;
   transform: none;
+  overflow: auto;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   box-shadow: none;

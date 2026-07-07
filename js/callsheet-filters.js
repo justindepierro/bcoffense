@@ -224,8 +224,8 @@ function callSheetPlayMatchesCriteria(play, criteria) {
   if (coverages.length > 0) {
     hasCriteria = true;
     const playCoverages =
-      typeof splitCoverageValues === "function"
-        ? splitCoverageValues(play.practiceCoverage)
+      typeof getCallSheetPlayCoverageValues === "function"
+        ? getCallSheetPlayCoverageValues(play)
         : splitPreferredValues(play.practiceCoverage);
     if (
       !coverages.some((target) =>
