@@ -25,8 +25,6 @@ let playPresentationDiagramResizeFrame = 0;
 let playPresentationDiagramSizeKey = "";
 let playPresentationSwipeStart = null;
 
-// Portrait-to-landscape rotate state
-let _ppPortraitRotateActive = false;
 let playPresentationViewportSyncFrame = 0;
 let playPresentationViewportKey = "";
 let playPresentationRotateHintDismissed = false;
@@ -1458,7 +1456,6 @@ function closePlayPresentation() {
   setPlayPresentationTelestrator(false);
   clearPlayPresentationTele();
   setPlayPresentationDetailPanel(false);
-  _ppResetPortraitRotate();
   if (typeof closePresentationDiscussion === "function") closePresentationDiscussion();
   playPresentationState.imageToken += 1;
   cleanupPlayPresentationDiagramRenderer();
@@ -2555,16 +2552,8 @@ function handlePlayPresentationTouchEnd(event) {
   if (elapsed > PLAY_PRESENTATION_SWIPE_MAX_MS) return;
 
   let direction = 0;
-  if (_ppPortraitRotateActive) {
-    // In rotated mode, the overlay is 90° CW. Vertical swipes = landscape-horizontal.
-    // Swipe UP (dy < 0) = landscape "swipe left" = next play.
-    if (absY >= PLAY_PRESENTATION_SWIPE_MIN_DISTANCE && absY >= absX * 1.1) {
-      direction = dy < 0 ? 1 : -1;
-    }
-  } else {
-    if (absX >= PLAY_PRESENTATION_SWIPE_MIN_DISTANCE && absX >= absY * 1.1) {
-      direction = dx < 0 ? 1 : -1;
-    }
+  if (absX >= PLAY_PRESENTATION_SWIPE_MIN_DISTANCE && absX >= absY * 1.1) {
+    direction = dx < 0 ? 1 : -1;
   }
   if (!direction) return;
 
@@ -2723,40 +2712,6 @@ function togglePlayPresentationFullscreen() {
     exitPlayPresentationFullscreen();
   } else {
     enterPlayPresentationFullscreen();
-  }
-}
-
-// ── Portrait Landscape Rotate (works on iOS Safari without fullscreen API) ────
-
-function togglePresentationPortraitRotate() {
-  const overlay = document.getElementById("playPresentationOverlay");
-  if (!overlay) return;
-  _ppPortraitRotateActive = !_ppPortraitRotateActive;
-  overlay.classList.toggle("pp-portrait-rotate", _ppPortraitRotateActive);
-  document.body.classList.toggle("play-presentation-portrait-rotated", _ppPortraitRotateActive);
-  const btn = document.getElementById("playPresentationPortraitBtn");
-  if (btn) {
-    btn.classList.toggle("active", _ppPortraitRotateActive);
-    btn.setAttribute("aria-pressed", _ppPortraitRotateActive ? "true" : "false");
-    btn.setAttribute("aria-label", _ppPortraitRotateActive ? "Exit landscape view" : "Force landscape view");
-    btn.title = _ppPortraitRotateActive ? "Exit landscape view" : "Force landscape view";
-    btn.textContent = _ppPortraitRotateActive ? "⤡" : "⤢";
-  }
-}
-
-function _ppResetPortraitRotate() {
-  if (!_ppPortraitRotateActive) return;
-  _ppPortraitRotateActive = false;
-  const overlay = document.getElementById("playPresentationOverlay");
-  overlay?.classList.remove("pp-portrait-rotate");
-  document.body.classList.remove("play-presentation-portrait-rotated");
-  const btn = document.getElementById("playPresentationPortraitBtn");
-  if (btn) {
-    btn.classList.remove("active");
-    btn.setAttribute("aria-pressed", "false");
-    btn.setAttribute("aria-label", "Force landscape view");
-    btn.title = "Force landscape view";
-    btn.textContent = "⤢";
   }
 }
 

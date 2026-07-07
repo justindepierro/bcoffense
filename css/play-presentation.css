@@ -39,43 +39,12 @@ body.play-presentation-open .quick-tools {
   height: 100%;
 }
 
-/* ── Portrait → Landscape rotation mode ──────────────────────────────────────
- * Rotates the entire overlay 90° so portrait phones see a landscape view.
- * Uses the centered-rotate trick: position at 50%/50%, translate to center,
- * then rotate 90° around the element's own center, swapping vw/vh dimensions.
- * Works on iOS Safari (no fullscreen API required).
- */
-.play-presentation-overlay.pp-portrait-rotate {
-  inset: unset !important;
-  top: 50% !important;
-  left: 50% !important;
-  width: 100dvh !important;
-  height: 100dvw !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  transform-origin: center !important;
-  transform: translate(-50%, -50%) rotate(90deg) !important;
-  overflow: hidden !important;
-}
-
-/* Portrait-only controls: hidden in landscape, shown in portrait */
+/* Portrait-only controls are reserved for non-rotating portrait helpers. */
 .pp-portrait-only {
   display: none !important;
 }
-@media (orientation: portrait) {
-  .pp-portrait-only {
-    display: inline-flex !important;
-  }
-}
 
-/* Highlight the rotate button when active */
-#playPresentationPortraitBtn.active {
-  background: var(--color-primary) !important;
-  color: var(--color-text-inverse) !important;
-  border-color: var(--color-primary) !important;
-}
-
-/* Portrait mode hint banner shown in portrait when not rotated */
+/* Portrait mode hint banner shown in portrait. */
 .pp-portrait-hint {
   display: none;
   align-items: center;
@@ -91,9 +60,6 @@ body.play-presentation-open .quick-tools {
 @media (orientation: portrait) {
   .pp-portrait-hint {
     display: flex;
-  }
-  .play-presentation-overlay.pp-portrait-rotate .pp-portrait-hint {
-    display: none;
   }
 }
 

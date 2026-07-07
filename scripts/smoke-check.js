@@ -2123,7 +2123,9 @@ function checkSevenOnSevenTemplate() {
   const smart = read("js/gameplan-smart.js");
   const callsheet = read("js/callsheet.js");
   const callsheetRender = read("js/callsheet-render.js");
+  const callsheetFilters = read("js/callsheet-filters.js");
   const callsheetPicker = read("js/callsheet-picker-runtime.js");
+  const callsheetTemplates = read("js/callsheet-templates.js");
   const css = read("css/gameplan.css");
   const boxes = snapshots.match(
     /const GP_SEVEN_ON_SEVEN_BOXES\s*=\s*\[([\s\S]*?)\n\];/,
@@ -2209,7 +2211,7 @@ function checkSevenOnSevenTemplate() {
     }
   });
   if (
-    !callsheet.includes(
+    !callsheetTemplates.includes(
       'wristbandAutoCategoryId: "cs-7on7-wristband-passes"',
     ) ||
     !/function syncLoadedWristbandToCallSheetCategory\(/.test(callsheetPicker)
@@ -2218,24 +2220,24 @@ function checkSevenOnSevenTemplate() {
   }
   if (
     !/hiddenCategoryIds:\s*\[[\s\S]*BASE_CALLSHEET_FRONT[\s\S]*BASE_CALLSHEET_BACK/.test(
-      callsheet,
+      callsheetTemplates,
     ) ||
-    !/allowedPlayTypes:\s*\[\.\.\.CS_PASSING_PLAY_TYPES\]/.test(callsheet)
+    !/allowedPlayTypes:\s*\[\.\.\.CS_PASSING_PLAY_TYPES\]/.test(callsheetTemplates)
   ) {
     fail("7-on-7 call sheet template does not isolate its passing-only categories");
   }
   if (
-    !/function callSheetPlayMatchesCriteria\(/.test(callsheet) ||
-    !/function callSheetCoverageMatches\(/.test(callsheet) ||
-    !/function callSheetKeywordMatches\(/.test(callsheet)
+    !/function callSheetPlayMatchesCriteria\(/.test(callsheetFilters) ||
+    !/function callSheetCoverageMatches\(/.test(callsheetFilters) ||
+    !/function callSheetKeywordMatches\(/.test(callsheetFilters)
   ) {
     fail("7-on-7 call sheet criteria matching is incomplete");
   }
   if (
-    !/pages:\s*"front"/.test(callsheet) ||
-    !/columns:\s*4/.test(callsheet) ||
-    !/data-action="loadBuiltInCallSheetTemplate"/.test(callsheet) ||
-    !callsheet.includes('id: "builtin-standard-callsheet"')
+    !/pages:\s*"front"/.test(callsheetTemplates) ||
+    !/columns:\s*4/.test(callsheetTemplates) ||
+    !/data-action="loadBuiltInCallSheetTemplate"/.test(callsheetTemplates) ||
+    !callsheetTemplates.includes('id: "builtin-standard-callsheet"')
   ) {
     fail("7-on-7 call sheet template is missing print, reset, or template-library integration");
   }
