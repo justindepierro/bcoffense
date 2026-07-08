@@ -589,7 +589,6 @@ function renderPlayReadinessScriptWidget(play, index, opts = {}) {
         <button type="button" class="play-readiness-btn play-readiness-btn--edit" data-action="openPlayEditorFromScript" data-arg="${index}">&#9998; Edit</button>
         <button type="button" class="play-readiness-btn play-readiness-btn--primary" data-action="openPlayReadinessLogModal" data-arg="${index}">+ Log Rep</button>
         <button type="button" class="play-readiness-btn play-readiness-btn--ghost" data-action="showPlayReadinessHistory" data-arg="${index}">History</button>
-        ${!hasAnyRecords ? `<button type="button" class="play-readiness-btn play-readiness-btn--ghost" data-action="seedPlayReadinessSampleData">Seed Samples</button>` : ""}
       </div>
 
     </section>`;
@@ -887,11 +886,6 @@ function openPlayReadinessLogModalForPlay(play, context = {}) {
             <label class="pr-log-notes-label">Notes
               <input data-auth-allow-input="true" name="notes" type="text" placeholder="Result, coaching point\u2026" />
             </label>
-            <div class="play-readiness-checks">
-              <label><input data-auth-allow-input="true" type="checkbox" name="explosive" /> &#128293; Explosive</label>
-              <label><input data-auth-allow-input="true" type="checkbox" name="turnover"  /> &#128308; Turnover</label>
-              <label><input data-auth-allow-input="true" type="checkbox" name="penalty"   /> &#129000; Penalty</label>
-            </div>
           </div>
         </details>
 
@@ -938,9 +932,6 @@ function _savePlayReadinessLog(play, form, context = {}) {
       notes: String(data.get("notes") || "").trim(),
       situation: String(data.get("situation") || "").trim(),
       defense: String(data.get("defense") || "").trim(),
-      explosive: data.has("explosive"),
-      turnover: data.has("turnover"),
-      penalty: data.has("penalty"),
       createdAt: new Date().toISOString(),
     });
   });
@@ -995,9 +986,6 @@ function quickScorePlayReadiness(play, rawScore, context = {}) {
       notes: "",
       situation: "",
       defense: "",
-      explosive: score >= 5,
-      turnover: score <= 1,
-      penalty: false,
       createdAt: new Date().toISOString(),
     });
   });

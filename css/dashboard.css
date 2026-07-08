@@ -94,6 +94,39 @@
   color: var(--color-text-muted);
 }
 
+.player-home-state {
+  display: grid;
+  gap: 2px;
+  margin: var(--space-md) 0;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+}
+
+.player-home-state strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.player-home-state span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.player-home-state--new {
+  border-left-color: var(--color-success);
+}
+
+.player-home-state--offline {
+  border-left-color: var(--color-warning);
+}
+
+.player-home-state--loaded {
+  border-left-color: var(--color-info);
+}
+
 /* ── Player push notify button (item 47) ── */
 .player-notify-row {
   display: flex;

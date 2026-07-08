@@ -1479,13 +1479,6 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
   font-size: var(--font-size-sm);
   font-family: inherit;
 }
-.pr-log-step2 .play-readiness-checks {
-  grid-column: 1 / -1;
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
 .play-readiness-modal-sub {
   margin: 0 0 var(--space-sm);
   color: var(--color-text-secondary);
@@ -1526,22 +1519,6 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
 
 .play-readiness-form-wide {
   grid-column: 1 / -1;
-}
-
-.play-readiness-checks {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-  padding: 8px;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-light);
-}
-
-.play-readiness-checks label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .play-readiness-history-summary,
@@ -5030,7 +5007,6 @@ body[data-auth-role="player"] #script .script-tools-drawer {
 
   .play-readiness-actions,
   .play-readiness-form-grid,
-  .play-readiness-checks,
   .play-readiness-history-summary,
   .play-readiness-history-grid,
   .play-readiness-quick-score,

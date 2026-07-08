@@ -547,7 +547,13 @@ async function reconcileScriptWithGamePlan() {
       if (!script[i].isSeparator) { insertIdx = i + 1; break; }
     }
     newPlays.forEach((p) => {
-      script.splice(insertIdx, 0, { ...p, _gpSource: true });
+      script.splice(
+        insertIdx,
+        0,
+        typeof copyPlayWithSourceIdentity === "function"
+          ? copyPlayWithSourceIdentity(p, { _gpSource: true, id: Date.now() + Math.random() })
+          : { ...p, _gpSource: true },
+      );
       insertIdx++;
     });
   }

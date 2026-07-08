@@ -420,7 +420,9 @@ async function createWristbandCardFromGamePlan() {
   // #148: Preserve source order — GP box order is maintained
   const cardData = Array(CELLS_PER_CARD).fill(null);
   sourcePlays.slice(0, CELLS_PER_CARD).forEach((p, i) => {
-    cardData[i] = { ...p, _gpSource: true };
+    cardData[i] = typeof copyPlayWithSourceIdentity === "function"
+      ? copyPlayWithSourceIdentity(p, { _gpSource: true })
+      : { ...p, _gpSource: true };
   });
 
   historyManager.saveState("wristband", getWristbandState());
@@ -639,7 +641,12 @@ async function reconcileWristbandWithSource() {
   let added = 0;
   newPlays.forEach((p, pi) => {
     if (pi >= emptyIndices.length) return;
-    card.data[emptyIndices[pi]] = { ...p, _gpSource: src.type === "gameplan", _scriptSource: src.type === "script" };
+    card.data[emptyIndices[pi]] = typeof copyPlayWithSourceIdentity === "function"
+      ? copyPlayWithSourceIdentity(p, {
+        _gpSource: src.type === "gameplan",
+        _scriptSource: src.type === "script",
+      })
+      : { ...p, _gpSource: src.type === "gameplan", _scriptSource: src.type === "script" };
     added++;
   });
 

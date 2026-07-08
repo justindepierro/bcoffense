@@ -1,7 +1,5 @@
 function createScriptPlayFromPlaybook(play) {
-  return {
-    ...play,
-    playbookId: play.playbookId || play.sourcePlayId || play.id || null,
+  const scriptFields = {
     reps: 1,
     notes: "",
     hash: "",
@@ -12,6 +10,13 @@ function createScriptPlayFromPlaybook(play) {
     playerAssignments: createScriptPlayerAssignments(play),
     id: Date.now() + Math.random(),
   };
+  return typeof copyPlayWithSourceIdentity === "function"
+    ? copyPlayWithSourceIdentity(play, scriptFields)
+    : {
+      ...play,
+      playbookId: play.playbookId || play.sourcePlayId || play.id || null,
+      ...scriptFields,
+    };
 }
 
 function renderScriptSoon(afterPaint) {

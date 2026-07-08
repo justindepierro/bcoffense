@@ -37,6 +37,7 @@ to reintroduce.
 
 - [x] Player Swipe View hides ambiguous legacy diagram keys.
 - [x] Playbook includes Diagram Health for ready, missing, and unsafe diagram keys.
+- [x] Add shared source-identity copy helper for Script, Game Plan, and Wristband handoffs.
 - [ ] Add a round-trip identity check: Playbook -> Script -> Wristband -> Call Sheet -> Game Plan.
 - [ ] Flag downstream artifacts when a source play is edited or deleted.
 - [ ] Add focused fixture coverage for play IDs, `playbookId`, `sourcePlayId`, and legacy tag keys.
@@ -62,6 +63,7 @@ Work left:
 - [ ] Add a keyboard shortcut to open the picker for the focused or last category.
 - [ ] Add "print what you see" for only the current front/back page.
 - [ ] Add a front+back combined print flow.
+- [x] Add live print selection summary for current, front, back, and front+back output.
 - [ ] Add a print preview thumbnail before printing.
 - [ ] Decide whether a compact density preset is worth shipping.
 
@@ -77,7 +79,8 @@ Detailed matrix: `MOBILE_AUDIT.md`.
 
 Work left from the player mobile scan:
 
-- [ ] Notifications/offline polish: opt-in, denied, offline, and newly published practice states should feel clear and non-scary.
+- [x] Add visible Player Home practice status for offline, newly published, loaded, and waiting states.
+- [ ] Notifications/offline polish: opt-in, denied, and deeper notification recovery states should feel clear and non-scary.
 - [ ] iPad player screenshot pass across Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions.
 - [ ] Player delight pass: selective motion/feedback for quiz answers, streaks, sticker awards, and ready confirmation.
 - [ ] Practice/Home polish follow-up with real team data; trim repeated copy.
@@ -133,7 +136,7 @@ P0 model changes:
 P0 UX changes:
 
 - [ ] Replace "Add Rep" plus "Action Report" with one "Log Rep" modal.
-- [ ] Remove yards, manual confidence, and event checkbox clutter from logging.
+- [x] Remove yards, manual confidence, and event checkbox clutter from new logging UI.
 - [ ] Make quick-score 1-5 create a minimal log entry immediately.
 - [ ] Redesign the script widget so score buttons are front-center with one CTA.
 - [ ] Enlarge score buttons for touch.
@@ -143,7 +146,7 @@ P1/P2 polish:
 
 - [ ] Add last rep result inline in the widget header.
 - [ ] Animate score button selection.
-- [ ] Remove "Seed Sample Data" from daily coach UI.
+- [x] Remove "Seed Sample Data" from daily coach UI.
 - [ ] Redesign playbook readiness panel around the readiness score.
 - [ ] Redesign history and presentation coach cards around the new log model.
 - [ ] Remove dead sweet-spot/weekly-weighted/action-metrics paths after migration.

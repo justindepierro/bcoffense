@@ -661,12 +661,16 @@ function checkPersonnelMarkerContracts() {
 
 function checkPlayPresentationContracts() {
   const html = read("index.html");
+  const utils = read("js/utils.js");
   const presenter = read("js/play-presentation.js");
   const playImages = read("js/play-images.js");
   const playbookRender = read("js/playbook-render.js");
   const playbookEditor = read("js/playbook-editor.js");
   const scriptRender = read("js/script-render.js");
   const scriptAdd = read("js/script-add.js");
+  const scriptIntegrations = read("js/script-integrations.js");
+  const gameplanIntegrations = read("js/gameplan-integrations.js");
+  const wristbandChrome = read("js/wristband-chrome.js");
   const scriptExport = read("js/script-export.js");
   const gameplanPrint = read("js/gameplan-print.js");
   const domHelpers = read("js/dom-helpers.js");
@@ -782,6 +786,18 @@ function checkPlayPresentationContracts() {
     !/function storedSignatureForPlay\(play\)/.test(playImages) ||
     !/function storedDisplaySignatureForPlay\(play\)/.test(playImages) ||
     !/return ensureDisplayUrlForPlay\(play\)/.test(playImages) ||
+    !/function getStablePlaySourceId\(play\)/.test(utils) ||
+    !/function copyPlayWithSourceIdentity\(play, overrides = \{\}\)/.test(utils) ||
+    !/copyPlayWithSourceIdentity\(play, scriptFields\)/.test(scriptAdd) ||
+    !/copyPlayWithSourceIdentity\(p, \{ _gpSource: true/.test(
+      scriptIntegrations,
+    ) ||
+    !/copyPlayWithSourceIdentity\(p, \{ _gpSource: true/.test(
+      gameplanIntegrations,
+    ) ||
+    !/copyPlayWithSourceIdentity\(p, \{[\s\S]*?_gpSource:/.test(
+      wristbandChrome,
+    ) ||
     !/playbookId: play\.playbookId \|\| play\.sourcePlayId \|\| play\.id/.test(
       scriptAdd,
     ) ||
@@ -1141,6 +1157,12 @@ function checkPlayReadinessContracts() {
     fail("play readiness script integration or coach permissions are incomplete");
   }
   if (
+    /type="checkbox"\s+name="(?:explosive|turnover|penalty)"/.test(readiness) ||
+    /data-action="seedPlayReadinessSampleData"/.test(readiness)
+  ) {
+    fail("play readiness daily UI still exposes event checkboxes or seed samples");
+  }
+  if (
     !/\.play-readiness-widget/.test(css) ||
     !/\.play-readiness-track/.test(css) ||
     !/\.play-readiness-modal/.test(css) ||
@@ -1230,12 +1252,18 @@ function checkPlayerPortalContracts() {
   }
   if (
     !/function renderPlayerDashboardHome\(\)/.test(dashboardRender) ||
+    !/function getPlayerHomePracticeStatus\(featuredScript, loadedScript, todayValue\)/.test(
+      dashboardRender,
+    ) ||
     !/Player Portal/.test(dashboardRender) ||
     !/loadPublishedPlayerScript/.test(dashboardRender) ||
     !/openPlayerCurrentScriptPresentation/.test(dashboardRender) ||
     !/Open Playbook/.test(dashboardRender) ||
     !/player-home-quick-actions/.test(dashboardRender) ||
     !/player-home-today-card/.test(dashboardRender) ||
+    !/class="player-home-state player-home-state--\$\{escapeHtml\(practiceStatus\.tone\)\}"/.test(
+      dashboardRender,
+    ) ||
     !/class="btn btn-primary player-home-action"/.test(dashboardRender) ||
     !/function getAppActionHitDiagnostics\(element\)/.test(appEvents) ||
     !/function isAppActionFullTraceEnabled\(\)/.test(appEvents) ||
@@ -1438,6 +1466,10 @@ function checkPlayerPortalContracts() {
     !/\.auth-login-card\s*\{\s*order:\s*1;/.test(componentsCss) ||
     !/\.auth-login-hero\s*\{\s*order:\s*2;/.test(componentsCss) ||
     !/\.player-home-hero/.test(dashboardCss) ||
+    !/\.player-home-state/.test(dashboardCss) ||
+    !/\.player-home-state--offline/.test(dashboardCss) ||
+    !/\.player-home-state--new/.test(dashboardCss) ||
+    !/\.player-home-state--loaded/.test(dashboardCss) ||
     !/\.player-home-quick-actions/.test(dashboardCss) ||
     !/player-home-card--study/.test(dashboardRender) ||
     !/\.player-home-today-card/.test(dashboardCss) ||
@@ -1538,6 +1570,7 @@ function checkPlayerPortalContracts() {
 
 function checkCallSheetMobileContracts() {
   const appShell = read("js/app-shell.js");
+  const callsheetPrint = read("js/callsheet-print.js");
   const callsheetRender = read("js/callsheet-render.js");
   const callsheetCss = read("css/callsheet.css");
 
@@ -1573,6 +1606,18 @@ function checkCallSheetMobileContracts() {
     )
   ) {
     fail("call sheet phone card styling is incomplete");
+  }
+
+  if (
+    !/function _csDescribePrintSelection\(opts = \{\}\)/.test(callsheetPrint) ||
+    !/id="csPrintPreviewSummary"/.test(callsheetPrint) ||
+    !/aria-live="polite"/.test(callsheetPrint) ||
+    !/updateSummary\(\)/.test(callsheetPrint) ||
+    !/\.cs-print-preview-summary/.test(callsheetCss) ||
+    !/pages === "current"/.test(callsheetPrint) ||
+    !/pages === "both"/.test(callsheetPrint)
+  ) {
+    fail("call sheet print selection summary is incomplete");
   }
 
   if (

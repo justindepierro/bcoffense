@@ -1448,6 +1448,42 @@ function ensurePlaybookPlayIds(list) {
   return changed;
 }
 
+function getStablePlaySourceId(play) {
+  if (!play || typeof play !== "object") return "";
+  return [
+    play.playbookId,
+    play.sourcePlayId,
+    play.originalPlayId,
+    play.id,
+  ]
+    .map((value) => (value == null ? "" : String(value).trim()))
+    .find(Boolean) || "";
+}
+
+function copyPlayWithSourceIdentity(play, overrides = {}) {
+  if (!play || typeof play !== "object") return { ...overrides };
+  const sourceId = getStablePlaySourceId(play);
+  const sourceIdentityKey =
+    play.sourceIdentityKey ||
+    (typeof getPlayIdentityKey === "function"
+      ? getPlayIdentityKey(play, "tag", { trim: false })
+      : "");
+  const sourceGamePlanKey =
+    play.sourceGamePlanKey ||
+    (typeof getPlayIdentityKey === "function"
+      ? getPlayIdentityKey(play, "gameplan", { trim: false })
+      : "");
+  const copy = { ...play, ...overrides };
+  if (sourceId) {
+    copy.playbookId = sourceId;
+    if (!copy.sourcePlayId) copy.sourcePlayId = sourceId;
+    if (!copy.originalPlayId) copy.originalPlayId = sourceId;
+  }
+  if (sourceIdentityKey) copy.sourceIdentityKey = sourceIdentityKey;
+  if (sourceGamePlanKey) copy.sourceGamePlanKey = sourceGamePlanKey;
+  return copy;
+}
+
 let _playbookRuntimeIndex = null;
 let _playbookRuntimeIndexSource = null;
 

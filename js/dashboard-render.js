@@ -928,6 +928,41 @@ function getPlayerHomeNotificationStatus() {
   };
 }
 
+function getPlayerHomePracticeStatus(featuredScript, loadedScript, todayValue) {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return loadedScript
+      ? {
+        tone: "offline",
+        title: "Offline, practice loaded",
+        body: "Swipe View and the loaded script still work. Coach updates will refresh when you reconnect.",
+      }
+      : {
+        tone: "offline",
+        title: "Offline mode",
+        body: "Reconnect to pull the newest practice. Anything already loaded stays available.",
+      };
+  }
+  if (featuredScript?.date === todayValue && !loadedScript) {
+    return {
+      tone: "new",
+      title: "New practice is ready",
+      body: "Load it once before practice so Swipe View, Quiz, and Questions start from the right script.",
+    };
+  }
+  if (loadedScript) {
+    return {
+      tone: "loaded",
+      title: "Practice loaded",
+      body: "You can jump straight into Swipe View or Quiz from here.",
+    };
+  }
+  return {
+    tone: "waiting",
+    title: "Waiting on practice",
+    body: "Your coach has not published a practice yet. Check Home again before the next session.",
+  };
+}
+
 function renderPlayerDashboardHome() {
   const section = document.getElementById("playerDashboardHome");
   if (!section) return;
@@ -1022,6 +1057,7 @@ function renderPlayerDashboardHome() {
       ? `${loadedScript.stats.playCount} loaded plays are ready in the Practice tab`
       : "Practice will appear here when your coach publishes it.";
   const notificationStatus = getPlayerHomeNotificationStatus();
+  const practiceStatus = getPlayerHomePracticeStatus(featuredScript, loadedScript, todayValue);
   const recentScriptsMarkup = publishedScripts.length
     ? publishedScripts
       .slice(0, 4)
@@ -1073,6 +1109,10 @@ function renderPlayerDashboardHome() {
         <strong>${escapeHtml(statusTitle)}</strong>
         <p>${escapeHtml(statusCopy)}</p>
       </div>
+    </section>
+    <section class="player-home-state player-home-state--${escapeHtml(practiceStatus.tone)}" role="status" aria-live="polite">
+      <strong>${escapeHtml(practiceStatus.title)}</strong>
+      <span>${escapeHtml(practiceStatus.body)}</span>
     </section>
     <section class="player-home-quick-actions" aria-label="Player quick actions">
       <button type="button" class="player-home-quick-action player-home-quick-action--primary"

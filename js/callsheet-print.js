@@ -70,6 +70,37 @@ function _csPrintMarginValue(orientation, margin) {
   return `${base.toFixed(2)}in`;
 }
 
+function _csDescribePrintSelection(opts = {}) {
+  const pages = _csNormalizePrintPages(opts.pages);
+  const currentPage = normalizeCallSheetPage(callSheetSettings?.currentPage);
+  const currentLabel = currentPage === "front" ? "Front" : "Back";
+  const pageLabel =
+    pages === "both"
+      ? "Front + Back, in order"
+      : pages === "current"
+        ? `Current page only (${currentLabel})`
+        : pages === "front"
+          ? "Front only"
+          : "Back only";
+  const paper = opts.paperSize === "legal"
+    ? "Legal"
+    : opts.paperSize === "tabloid"
+      ? "Tabloid"
+      : "Letter";
+  const orientation = opts.orientation === "landscape" ? "landscape" : "portrait";
+  const columns = [2, 3, 4].includes(opts.columns) ? opts.columns : 3;
+  const margin = opts.margin === "tight"
+    ? "tight margins"
+    : opts.margin === "wide"
+      ? "wide margins"
+      : "normal margins";
+  return {
+    pages,
+    title: pageLabel,
+    detail: `${paper} ${orientation} · ${columns} columns · ${margin}`,
+  };
+}
+
 async function openCallSheetPrintModal() {
   const o = getCallSheetPrintOptions();
   // Default the modal to current orientation toggle if user already set one
@@ -130,6 +161,7 @@ async function openCallSheetPrintModal() {
             <p class="cs-print-hint" style="margin:10px 0 0;font-size:12px;color:var(--color-text-muted);">
               💡 <strong>Front + Back</strong> prints two pages in order. Turn on two-sided printing in the print dialog to laminate one sheet.
             </p>
+            <div class="cs-print-preview-summary" id="csPrintPreviewSummary" role="status" aria-live="polite"></div>
           </div>
         </div>
         <div class="custom-modal-actions">
@@ -170,6 +202,27 @@ async function openCallSheetPrintModal() {
       });
       close(opts);
     });
+    const readModalOptions = () => ({
+      paperSize: overlay.querySelector("#csPrintPaper")?.value || o.paperSize,
+      orientation: overlay.querySelector("#csPrintOrientation")?.value || o.orientation,
+      pages: overlay.querySelector("#csPrintPages")?.value || o.pages,
+      columns: parseInt(overlay.querySelector("#csPrintColumns")?.value, 10) || o.columns,
+      margin: overlay.querySelector("#csPrintMargin")?.value || o.margin,
+    });
+    const updateSummary = () => {
+      const summary = _csDescribePrintSelection(readModalOptions());
+      const target = overlay.querySelector("#csPrintPreviewSummary");
+      if (!target) return;
+      target.innerHTML = `
+        <strong>${escapeHtml(summary.title)}</strong>
+        <span>${escapeHtml(summary.detail)}</span>
+        ${summary.pages === "both" ? "<small>Set the browser print dialog to two-sided if you want one laminated sheet.</small>" : ""}
+      `;
+    };
+    overlay.querySelectorAll("#csPrintPaper, #csPrintOrientation, #csPrintPages, #csPrintColumns, #csPrintMargin").forEach((select) => {
+      select.addEventListener("change", updateSummary);
+    });
+    updateSummary();
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) close(null);
     });

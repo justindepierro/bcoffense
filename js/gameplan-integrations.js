@@ -464,12 +464,11 @@ async function pushGamePlanToScript() {
       const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : null;
       if (sig && existingSigs.has(sig)) { skipped++; return; }
       if (sig) existingSigs.add(sig);
-      script.push({
-        ...p,
-        playbookId: p.playbookId || p.sourcePlayId || p.id || null,
-        _gpSource: true,
-        id: Date.now() + Math.random(),
-      });
+      script.push(
+        typeof copyPlayWithSourceIdentity === "function"
+          ? copyPlayWithSourceIdentity(p, { _gpSource: true, id: Date.now() + Math.random() })
+          : { ...p, playbookId: p.playbookId || p.sourcePlayId || p.id || null, _gpSource: true, id: Date.now() + Math.random() },
+      );
       pushed++;
     });
   });
@@ -558,7 +557,13 @@ async function pushGamePlanToWristband() {
     let pi = 0;
     if (!Array.isArray(card.data)) return plays;
     for (let ci = 0; ci < card.data.length && pi < plays.length; ci++) {
-      if (card.data[ci] === null) { card.data[ci] = { ...plays[pi++], _gpSource: true }; added++; }
+      if (card.data[ci] === null) {
+        const play = plays[pi++];
+        card.data[ci] = typeof copyPlayWithSourceIdentity === "function"
+          ? copyPlayWithSourceIdentity(play, { _gpSource: true })
+          : { ...play, _gpSource: true };
+        added++;
+      }
     }
     return plays.slice(pi);
   };
@@ -629,7 +634,11 @@ async function createScriptFromGamePlan() {
       const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : null;
       if (sig && existingSigs.has(sig)) { skipped++; return; }
       if (sig) existingSigs.add(sig);
-      script.push({ ...p, playbookId: p.id || null, _gpSource: true, id: Date.now() + Math.random() });
+      script.push(
+        typeof copyPlayWithSourceIdentity === "function"
+          ? copyPlayWithSourceIdentity(p, { _gpSource: true, id: Date.now() + Math.random() })
+          : { ...p, playbookId: p.id || null, _gpSource: true, id: Date.now() + Math.random() },
+      );
       pushed++;
     });
   });
