@@ -3398,6 +3398,236 @@ function _getCoachQuizGamePlanSources() {
     .filter((source) => source.plays.length || source.id !== "__unassigned__");
 }
 
+function _getCoachQuizScriptSources() {
+  return (typeof getSavedScripts === "function" ? getSavedScripts() : [])
+    .map((savedScript) => {
+      const stats = typeof getSavedScriptStats === "function" ? getSavedScriptStats(savedScript) : {};
+      return {
+        id: String(savedScript.id || ""),
+        title: savedScript.name || "Saved Script",
+        subtitle: savedScript.date || stats.dateStr || "No date",
+        plays: savedScript.plays || [],
+        playerVisible: typeof isSavedScriptPlayerVisible === "function"
+          ? isSavedScriptPlayerVisible(savedScript)
+          : Boolean(savedScript.playerVisible),
+        playCount: stats.playCount || 0,
+        periodCount: stats.periodCount || 0,
+      };
+    });
+}
+
+function _findCoachQuizPlaybookTarget(play) {
+  if (!play || !Array.isArray(plays)) return { play: null, index: -1, match: "" };
+  const source = typeof findPlaybookSourceForPlay === "function"
+    ? findPlaybookSourceForPlay(play, plays)
+    : null;
+  if (source) return { play: source, index: plays.indexOf(source), match: "source-id" };
+
+  const matchIdx = plays.findIndex((candidate) => candidate === play || (typeof playsMatch === "function" && playsMatch(candidate, play)));
+  if (matchIdx >= 0) return { play: plays[matchIdx], index: matchIdx, match: "call-match" };
+  return { play: null, index: -1, match: "" };
+}
+
+function _coachQuizPlayRepairIssues(play) {
+  const issues = [];
+  const sourceStatus = typeof getPlaySourceStatus === "function"
+    ? getPlaySourceStatus(play, plays)
+    : { state: "local" };
+  const target = _findCoachQuizPlaybookTarget(play);
+  const hasDiagram = Boolean(
+    window.playImages &&
+    typeof window.playImages.hasForPlay === "function" &&
+    (window.playImages.hasForPlay(play) || (target.play && window.playImages.hasForPlay(target.play)))
+  );
+
+  if (!hasDiagram) issues.push({ label: "Missing diagram", tone: "danger" });
+  if (!_getQuizPositions().some((position) => String(play?.[position.key] || "").trim())) {
+    issues.push({ label: "Missing player rules", tone: "warning" });
+  }
+  if (!String(play?.playerNotes || play?.respNotes || play?.notes || "").trim()) {
+    issues.push({ label: "Missing coach note", tone: "warning" });
+  }
+  if (!String(play?.preferredDown || play?.preferredDistance || play?.preferredFieldPosition || play?.preferredHash || play?.preferredSituation || "").trim()) {
+    issues.push({ label: "Missing situation", tone: "muted" });
+  }
+  if (!String(play?.practiceFront || play?.practiceDefense || play?.practiceCoverage || play?.practiceBlitz || play?.practiceStunt || "").trim()) {
+    issues.push({ label: "Missing defense", tone: "muted" });
+  }
+  if (sourceStatus.state === "missing") {
+    issues.unshift({ label: "Source missing", tone: "danger" });
+  } else if (sourceStatus.state === "changed") {
+    issues.unshift({ label: "Source updated", tone: "warning" });
+  } else if (!target.play) {
+    issues.unshift({ label: "No playbook match", tone: "danger" });
+  } else if (target.match === "call-match") {
+    issues.push({ label: "Matched by call", tone: "muted" });
+  }
+  return issues;
+}
+
+function _renderCoachQuizRepairRow(play, idx) {
+  const target = _findCoachQuizPlaybookTarget(play);
+  const issues = _coachQuizPlayRepairIssues(play);
+  const issueHtml = issues.length
+    ? issues.map((issue) => `<span class="coach-quiz-repair-chip coach-quiz-repair-chip--${escapeAttr(issue.tone)}">${escapeHtml(issue.label)}</span>`).join("")
+    : `<span class="coach-quiz-repair-chip coach-quiz-repair-chip--ready">Ready</span>`;
+  const call = _quizShortCall(play);
+  const masterCall = target.play ? _quizShortCall(target.play) : "";
+  return `
+    <article class="coach-quiz-repair-row">
+      <div class="coach-quiz-repair-row-main">
+        <strong>${escapeHtml(call)}</strong>
+        <small>${target.play
+    ? `Edits save to Playbook${masterCall && masterCall !== call ? `: ${masterCall}` : ""}.`
+    : "This script copy is not linked to a playbook play."}</small>
+        <div class="coach-quiz-repair-chip-row">${issueHtml}</div>
+      </div>
+      <button type="button"
+        class="btn btn-sm ${target.play ? "btn-primary" : "btn-outline"}"
+        data-action="openCoachQuizRepairPlayEditor"
+        data-arg="${escapeAttr(String(target.index))}"
+        ${target.play ? "" : "disabled"}>
+        Edit Playbook
+      </button>
+    </article>
+  `;
+}
+
+function _renderCoachQuizSourceRepairBody(source) {
+  const stats = _quizCompletenessStats(source?.plays || []);
+  const readiness = _quizReadinessLabel(stats.score);
+  const sourcePlays = _quizUniquePlaysFromList(source?.plays || []);
+  return `
+    <div class="coach-quiz-repair-summary">
+      <span><strong>${stats.score}</strong><small>${escapeHtml(readiness.label)}</small></span>
+      <span><strong>${stats.diagrams}/${stats.playCount}</strong><small>Diagrams</small></span>
+      <span><strong>${stats.rules}/${stats.playCount}</strong><small>Rules</small></span>
+      <span><strong>${stats.notes}/${stats.playCount}</strong><small>Notes</small></span>
+    </div>
+    <p class="coach-quiz-repair-note">Open a play below to fix the master Playbook record. Saved script copies may still need to be republished if they were captured before the playbook was cleaned up.</p>
+    <div class="coach-quiz-repair-list">
+      ${sourcePlays.length
+    ? sourcePlays.map((play, idx) => _renderCoachQuizRepairRow(play, idx)).join("")
+    : `<div class="coach-quiz-empty">No plays found in this script source.</div>`}
+    </div>
+  `;
+}
+
+let _coachQuizRepairSourceArg = "";
+
+function _getCoachQuizSourceFromArg(arg = "") {
+  const [kind, ...rest] = String(arg || "").split(":");
+  const id = rest.join(":");
+  if (kind === "script") {
+    return { kind, source: _getCoachQuizScriptSources().find((source) => String(source.id) === id) || null };
+  }
+  if (kind === "gameplan") {
+    return { kind, source: _getCoachQuizGamePlanSources().find((source) => String(source.id) === id) || null };
+  }
+  return { kind: "", source: null };
+}
+
+function openCoachQuizSourceRepair(arg = "") {
+  const { kind, source } = _getCoachQuizSourceFromArg(arg);
+  if (kind !== "script" || !source) {
+    showToast("Open a saved script source to repair quiz plays.", { type: "warning" });
+    return;
+  }
+  _coachQuizRepairSourceArg = `script:${source.id}`;
+  document.getElementById("coachQuizRepairOverlay")?.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "coachQuizRepairOverlay";
+  overlay.className = "custom-modal-overlay visible coach-quiz-repair-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-labelledby", "coachQuizRepairTitle");
+  overlay.dataset.action = "closeCoachQuizSourceRepairOverlay";
+  setInnerHTML(overlay, `
+    <div class="custom-modal coach-quiz-repair-modal">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">🧩</span>
+        <div>
+          <h3 class="custom-modal-title" id="coachQuizRepairTitle">Fix quiz source plays</h3>
+          <p class="coach-quiz-repair-subtitle">${escapeHtml(source.title)} · ${escapeHtml(source.subtitle || "")}</p>
+        </div>
+        <button type="button" class="btn btn-sm" data-action="closeCoachQuizSourceRepair" aria-label="Close quiz source repair">✕</button>
+      </div>
+      <div class="custom-modal-body coach-quiz-repair-body" id="coachQuizRepairBody">
+        ${_renderCoachQuizSourceRepairBody(source)}
+      </div>
+      <div class="custom-modal-actions">
+        <button type="button" class="btn" data-action="closeCoachQuizSourceRepair">Done</button>
+      </div>
+    </div>
+  `);
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+}
+
+function closeCoachQuizSourceRepair() {
+  const overlay = document.getElementById("coachQuizRepairOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.remove(), 180);
+}
+
+function openCoachQuizRepairPlayEditor(masterIdxStr = "") {
+  const masterIdx = parseInt(masterIdxStr, 10);
+  if (!Number.isFinite(masterIdx) || !Array.isArray(plays) || !plays[masterIdx]) {
+    showToast("Could not find that play in the playbook.", { type: "warning" });
+    return;
+  }
+  const play = plays[masterIdx];
+  let filteredIdx = Array.isArray(filteredPlays) ? filteredPlays.indexOf(play) : -1;
+  if (filteredIdx < 0) {
+    filteredPlays = [...plays];
+    filteredIdx = filteredPlays.indexOf(play);
+  }
+  if (filteredIdx < 0 || typeof openPlayEditor !== "function") return;
+
+  const repairOverlay = document.getElementById("coachQuizRepairOverlay");
+  if (repairOverlay) repairOverlay.classList.remove("visible");
+
+  if (typeof window.closePlayEditor === "function" && !window.closePlayEditor.__coachQuizRepairWrapped) {
+    const originalClose = window.closePlayEditor;
+    const wrapped = function coachQuizRepairPatchedClosePlayEditor(...args) {
+      const result = originalClose.apply(this, args);
+      window.closePlayEditor = originalClose;
+      try {
+        renderCoachQuizSetupPage();
+        const overlay = document.getElementById("coachQuizRepairOverlay");
+        const body = document.getElementById("coachQuizRepairBody");
+        const { source } = _getCoachQuizSourceFromArg(_coachQuizRepairSourceArg);
+        if (overlay && body && source) {
+          setInnerHTML(body, _renderCoachQuizSourceRepairBody(source));
+          overlay.classList.add("visible");
+          if (typeof trapFocus === "function") trapFocus(overlay);
+        }
+      } catch (_e) { /* keep editor close resilient */ }
+      return result;
+    };
+    wrapped.__coachQuizRepairWrapped = true;
+    window.closePlayEditor = wrapped;
+  }
+
+  requestAnimationFrame(() => {
+    openPlayEditor(filteredIdx);
+    requestAnimationFrame(() => {
+      const body = document.getElementById("playEditorBody");
+      const respBody = body?.querySelector(".pb-resp-body");
+      const respToggle = body?.querySelector(".pb-resp-toggle");
+      if (respBody) respBody.classList.remove("collapsed");
+      if (respToggle) {
+        respToggle.setAttribute("aria-expanded", "true");
+        const icon = respToggle.querySelector(".toggle-icon");
+        if (icon) icon.textContent = "▼";
+      }
+      const firstRule = document.getElementById("pe-respQ");
+      if (firstRule) firstRule.scrollIntoView({ block: "center" });
+    });
+  });
+}
+
 function _coachQuizQuestionPreviewStats(playList) {
   const sourcePlays = _quizUniquePlaysFromList(playList);
   const position = _getQuizPosition();
@@ -3518,6 +3748,21 @@ function _renderCoachQuizSourceCard(source, kind) {
   const meta = kind === "script"
     ? `${source.playCount || stats.playCount} plays · ${source.periodCount || 0} periods · ${source.playerVisible ? "Player visible" : "Not player visible"}`
     : `${stats.playCount} plays · ${source.bucketCount || 0} populated buckets`;
+  const canRepair = kind === "script" && ["needs", "thin"].includes(readiness.tone);
+  const scoreRing = canRepair
+    ? `<button type="button"
+        class="coach-quiz-score-ring coach-quiz-score-ring-btn"
+        data-tone="${escapeAttr(readiness.tone)}"
+        data-action="openCoachQuizSourceRepair"
+        data-arg="${escapeAttr(`${kind}:${source.id}`)}"
+        aria-label="Open ${escapeAttr(readiness.label)} play repair list for ${escapeAttr(source.title)}">
+        <strong>${stats.score}</strong>
+        <span>${escapeHtml(readiness.label)}</span>
+      </button>`
+    : `<div class="coach-quiz-score-ring" data-tone="${escapeAttr(readiness.tone)}">
+        <strong>${stats.score}</strong>
+        <span>${escapeHtml(readiness.label)}</span>
+      </div>`;
   return `
     <article class="coach-quiz-source-card coach-quiz-source-card--${escapeAttr(readiness.tone)}">
       <div class="coach-quiz-source-head">
@@ -3526,10 +3771,7 @@ function _renderCoachQuizSourceCard(source, kind) {
           <h3>${escapeHtml(source.title)}</h3>
           <p>${escapeHtml(source.subtitle || meta)}</p>
         </div>
-        <div class="coach-quiz-score-ring" data-tone="${escapeAttr(readiness.tone)}">
-          <strong>${stats.score}</strong>
-          <span>${escapeHtml(readiness.label)}</span>
-        </div>
+        ${scoreRing}
       </div>
       <div class="coach-quiz-source-meta">${escapeHtml(meta)}</div>
       ${_renderCoachQuizSourceControls(source, kind, stats)}
@@ -3547,6 +3789,7 @@ function _renderCoachQuizSourceCard(source, kind) {
         ${actions.length
       ? `<ul>${actions.map((action) => `<li>${escapeHtml(action)}</li>`).join("")}</ul>`
       : `<p>This source is ready for player quizzes.</p>`}
+        ${canRepair ? `<button type="button" class="btn btn-sm btn-outline" data-action="openCoachQuizSourceRepair" data-arg="${escapeAttr(`${kind}:${source.id}`)}">Review plays</button>` : ""}
       </div>
     </article>
   `;
@@ -4458,21 +4701,7 @@ function renderCoachQuizSetupPage() {
   if (window.playImages && typeof window.playImages.loadKeys === "function") {
     window.playImages.loadKeys().catch(() => { });
   }
-  const scripts = (typeof getSavedScripts === "function" ? getSavedScripts() : [])
-    .map((savedScript) => {
-      const stats = typeof getSavedScriptStats === "function" ? getSavedScriptStats(savedScript) : {};
-      return {
-        id: String(savedScript.id || ""),
-        title: savedScript.name || "Saved Script",
-        subtitle: savedScript.date || stats.dateStr || "No date",
-        plays: savedScript.plays || [],
-        playerVisible: typeof isSavedScriptPlayerVisible === "function"
-          ? isSavedScriptPlayerVisible(savedScript)
-          : Boolean(savedScript.playerVisible),
-        playCount: stats.playCount || 0,
-        periodCount: stats.periodCount || 0,
-      };
-    });
+  const scripts = _getCoachQuizScriptSources();
   const gamePlans = _getCoachQuizGamePlanSources();
   const allStats = [...scripts.map((s) => _quizCompletenessStats(s.plays)), ...gamePlans.map((g) => _quizCompletenessStats(g.plays))];
   const avgScore = allStats.length

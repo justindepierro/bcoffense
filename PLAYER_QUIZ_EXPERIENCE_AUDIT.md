@@ -321,6 +321,8 @@ Goal: help coaches make better quizzes without extra work.
   - add Q/H/Y rules,
   - add coach notes to missed plays,
   - simplify long calls.
+- [x] Let coaches open Thin/Needs work saved scripts into a play repair list
+  and edit the linked master Playbook plays from there.
 - [ ] Flag sources that will mostly generate Study Cards.
 - [ ] Add source preview examples that match the actual generator.
 

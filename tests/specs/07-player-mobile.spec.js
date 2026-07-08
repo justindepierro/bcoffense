@@ -2031,6 +2031,70 @@ test.describe("Player mobile experience", () => {
     await assertNoHorizontalOverflow(page);
   });
 
+  test("opens thin coach quiz scripts into a playbook repair list", async ({ page }) => {
+    await login(page, { role: "admin", username: "admin" });
+    await dismissFirstUse(page);
+    await page.evaluate(async () => {
+      const playbookPlay = {
+        id: "pb-repair-buck",
+        type: "Run",
+        personnel: "11",
+        formation: "Trips Rt",
+        play: "Buck Sweep",
+      };
+      plays = [playbookPlay];
+      filteredPlays = plays.slice();
+      await storageManager.setPlaybook(plays);
+      storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, [{
+        id: "script-repair-thin",
+        name: "Repair Thin Script",
+        date: "2026-07-08",
+        playerVisible: true,
+        savedAt: new Date().toISOString(),
+        plays: [{
+          ...playbookPlay,
+          id: "script-copy-buck",
+          playbookId: playbookPlay.id,
+          sourcePlayId: playbookPlay.id,
+        }],
+      }]);
+      if (typeof invalidateFilterCache === "function") invalidateFilterCache();
+    });
+
+    await goToTab(page, "quizsetup");
+    const setup = page.locator("#coachQuizSetupPage");
+    const sourceCard = setup.locator(".coach-quiz-source-card").filter({ hasText: "Repair Thin Script" });
+    await expect(sourceCard).toContainText("Thin");
+    await sourceCard.getByRole("button", { name: /Thin play repair list/i }).click();
+
+    const repair = page.locator("#coachQuizRepairOverlay");
+    await expect(repair).toBeVisible();
+    await expect(repair.getByRole("heading", { name: /Fix quiz source plays/i })).toBeVisible();
+    await expect(repair).toContainText("Buck Sweep");
+    await expect(repair).toContainText("Missing player rules");
+    await expect(repair).toContainText("Missing coach note");
+    await expect(repair).toContainText("Edits save to Playbook");
+    await repair.getByRole("button", { name: /Edit Playbook/i }).click();
+
+    const editor = page.locator("#playEditorOverlay");
+    await expect(editor).toHaveClass(/visible/);
+    await editor.locator("#pe-respQ").fill("Secure the edge and climb now.");
+    await editor.locator("#pe-playerNotes").fill("Read force before the puller turns up.");
+    await editor.getByRole("button", { name: /Save$/i }).click();
+
+    await expect.poll(() => page.evaluate(() => ({
+      respQ: plays[0]?.respQ || "",
+      playerNotes: plays[0]?.playerNotes || "",
+    }))).toEqual({
+      respQ: "Secure the edge and climb now.",
+      playerNotes: "Read force before the puller turns up.",
+    });
+    await expect(repair).toBeVisible();
+    await repair.getByRole("button", { name: /^Done$/i }).click();
+    await expect(repair).toBeHidden();
+    await assertNoHorizontalOverflow(page);
+  });
+
   test("shows coach quiz leaderboard week and season review", async ({ page }) => {
     await login(page, { role: "admin", username: "admin" });
     await dismissFirstUse(page);

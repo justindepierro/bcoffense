@@ -2871,6 +2871,9 @@ function checkPlayerQuizSettingsContracts() {
     "function _quizQuestionQuality",
     "function _selectQuizQuestion",
     "function _buildQuizStudyCardQuestion",
+    "function openCoachQuizSourceRepair",
+    "function openCoachQuizRepairPlayEditor",
+    "function _findCoachQuizPlaybookTarget",
     "diagram_formation",
     "formation_to_play",
     "play_type",
@@ -2900,6 +2903,14 @@ function checkPlayerQuizSettingsContracts() {
     !/function _quizQuestionDistractorItems\(item, question\)[\s\S]*?formation_to_play/.test(scriptRender)
   ) {
     fail("player quiz fair fallback ladder is missing diagram, formation, type, or study-card coverage");
+  }
+
+  if (
+    !/data-action="openCoachQuizSourceRepair"/.test(scriptRender) ||
+    !/data-action="openCoachQuizRepairPlayEditor"/.test(scriptRender) ||
+    !/Edits save to Playbook/.test(scriptRender)
+  ) {
+    fail("coach quiz source repair list is not wired to playbook editing");
   }
 
   if (
