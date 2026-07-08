@@ -54,22 +54,24 @@ function _gpPushPlayIntoCategory(play, categoryId) {
     typeof getWristbandNumberForPlay === "function"
       ? getWristbandNumberForPlay(play)
       : null;
-  const entry = {
-    ...play,
-    playType: play.type,
-    wristbandNumber: wb,
-    highlighted: false,
-    highlightColor: null,
-    borderColor: null,
-    cellBg: null,
-    cellTextColor: null,
-    cellBold: false,
-    cellItalic: false,
-    cellUnderline: false,
-    cellStrikethrough: false,
-    cellFontSize: null,
-    cellNote: null,
-  };
+  const entry = typeof copyPlayForCallSheet === "function"
+    ? copyPlayForCallSheet(play, { wristbandNumber: wb })
+    : {
+      ...play,
+      playType: play.type,
+      wristbandNumber: wb,
+      highlighted: false,
+      highlightColor: null,
+      borderColor: null,
+      cellBg: null,
+      cellTextColor: null,
+      cellBold: false,
+      cellItalic: false,
+      cellUnderline: false,
+      cellStrikethrough: false,
+      cellFontSize: null,
+      cellNote: null,
+    };
   const hash = (play.preferredHash || "").toLowerCase().trim();
   if (hash === "left" || hash === "l") {
     bucket.left.push(entry);
@@ -282,7 +284,11 @@ async function sendDashboardGamePlanToBoxes() {
         if (existing.has(sig)) return;
         const play = _gpFindPlayBySig(sig);
         if (!play || !_gpPlayAllowedOnBoard(play, b)) return;
-        b.assignments[boxId].push({ ...play });
+        b.assignments[boxId].push(
+          typeof copyPlayWithSourceIdentity === "function"
+            ? copyPlayWithSourceIdentity(play)
+            : { ...play },
+        );
         existing.add(sig);
         added += 1;
       });

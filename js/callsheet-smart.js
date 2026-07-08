@@ -210,22 +210,24 @@ function addSuggestionToSheet(categoryId, hash, suggestionIdx) {
   if (!callSheet[categoryId]) callSheet[categoryId] = { left: [], right: [] };
 
   // Clone the play for the call sheet
-  const csPlay = {
-    ...s.play,
-    playType: s.play.type,
-    wristbandNumber: null,
-    highlighted: false,
-    highlightColor: null,
-    borderColor: null,
-    cellBg: null,
-    cellTextColor: null,
-    cellBold: false,
-    cellItalic: false,
-    cellUnderline: false,
-    cellStrikethrough: false,
-    cellFontSize: null,
-    cellNote: null,
-  };
+  const csPlay = typeof copyPlayForCallSheet === "function"
+    ? copyPlayForCallSheet(s.play)
+    : {
+      ...s.play,
+      playType: s.play.type,
+      wristbandNumber: null,
+      highlighted: false,
+      highlightColor: null,
+      borderColor: null,
+      cellBg: null,
+      cellTextColor: null,
+      cellBold: false,
+      cellItalic: false,
+      cellUnderline: false,
+      cellStrikethrough: false,
+      cellFontSize: null,
+      cellNote: null,
+    };
 
   callSheet[categoryId][hash].push(csPlay);
   saveCallSheet();

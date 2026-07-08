@@ -852,7 +852,11 @@ async function loadGamePlanWristband() {
       if (play && (play.formation || play.play)) {
         const wristbandNumber =
           cardIdx * cellsPerCard + cellIdx + WRISTBAND_OFFSET;
-        wristbandPlays.push({ ...play, wristbandNumber });
+        wristbandPlays.push(
+          typeof copyPlayWithSourceIdentity === "function"
+            ? copyPlayWithSourceIdentity(play, { wristbandNumber })
+            : { ...play, wristbandNumber },
+        );
       }
     });
   });

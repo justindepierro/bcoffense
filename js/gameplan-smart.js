@@ -1160,7 +1160,11 @@ function addSmartGamePlanTopPicks() {
         skipped += 1;
         return;
       }
-      list.push({ ...play });
+      list.push(
+        typeof copyPlayWithSourceIdentity === "function"
+          ? copyPlayWithSourceIdentity(play)
+          : { ...play },
+      );
       existing.add(entry.sig);
       added += 1;
     });

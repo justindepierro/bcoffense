@@ -38,9 +38,9 @@ to reintroduce.
 - [x] Player Swipe View hides ambiguous legacy diagram keys.
 - [x] Playbook includes Diagram Health for ready, missing, and unsafe diagram keys.
 - [x] Add shared source-identity copy helper for Script, Game Plan, and Wristband handoffs.
-- [ ] Add a round-trip identity check: Playbook -> Script -> Wristband -> Call Sheet -> Game Plan.
+- [x] Add a round-trip identity check: Playbook -> Script -> Wristband -> Call Sheet -> Game Plan.
 - [ ] Flag downstream artifacts when a source play is edited or deleted.
-- [ ] Add focused fixture coverage for play IDs, `playbookId`, `sourcePlayId`, and legacy tag keys.
+- [x] Add focused fixture coverage for play IDs, `playbookId`, `sourcePlayId`, and legacy tag keys.
 - [ ] Document which diagram keys are player-visible versus local/legacy-only.
 
 Definition of done:

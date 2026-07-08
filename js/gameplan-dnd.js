@@ -421,7 +421,11 @@ function _gpAddSigsToBox(sigs, boxId) {
         restricted += 1;
         return;
       }
-      board.assignments[boxId].push({ ...play });
+      board.assignments[boxId].push(
+        typeof copyPlayWithSourceIdentity === "function"
+          ? copyPlayWithSourceIdentity(play)
+          : { ...play },
+      );
       existingSigs.add(sig);
       added += 1;
     });

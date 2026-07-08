@@ -273,21 +273,23 @@ async function pushPeriodToCallSheet(separatorIndex) {
       const hash = (play.hash || play.preferredHash || "").toUpperCase();
       const side = hash === "R" ? "right" : "left";
 
-      const csPlay = {
-        ...play,
-        playType: play.type,
-        wristbandNumber: null,
-        highlighted: false,
-        borderColor: null,
-        cellBg: null,
-        cellTextColor: null,
-        cellBold: false,
-        cellItalic: false,
-        cellUnderline: false,
-        cellStrikethrough: false,
-        cellFontSize: null,
-        cellNote: null,
-      };
+      const csPlay = typeof copyPlayForCallSheet === "function"
+        ? copyPlayForCallSheet(play)
+        : {
+          ...play,
+          playType: play.type,
+          wristbandNumber: null,
+          highlighted: false,
+          borderColor: null,
+          cellBg: null,
+          cellTextColor: null,
+          cellBold: false,
+          cellItalic: false,
+          cellUnderline: false,
+          cellStrikethrough: false,
+          cellFontSize: null,
+          cellNote: null,
+        };
 
       callSheet[catId][side].push(csPlay);
       placed++;

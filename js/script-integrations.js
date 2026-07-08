@@ -201,7 +201,11 @@ async function sendScriptToGamePlan() {
         ) {
           return;
         }
-        latestBoard.assignments[boxId].push({ ...play });
+        latestBoard.assignments[boxId].push(
+          typeof copyPlayWithSourceIdentity === "function"
+            ? copyPlayWithSourceIdentity(play)
+            : { ...play },
+        );
         existing.add(signature);
         added += 1;
       });

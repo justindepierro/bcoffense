@@ -417,7 +417,9 @@ function populateCallSheetPlayList() {
 function addCallSheetPlayFromPicker(playData) {
   if (!editingCategory || !editingHash) return;
 
-  const play = { ...playData };
+  const play = typeof copyPlayForCallSheet === "function"
+    ? copyPlayForCallSheet(playData)
+    : { ...playData };
   delete play._sourceIdx;
 
   callSheet[editingCategory][editingHash].push(play);
@@ -482,17 +484,20 @@ function syncLoadedWristbandToCallSheetCategory(
 
   callSheet[categoryId] = { left: [], right: [] };
   passingPlays.forEach((play) => {
+    const entry = typeof copyPlayForCallSheet === "function"
+      ? copyPlayForCallSheet(play, { wristbandNumber: play.wristbandNumber || null })
+      : { ...play };
     const hash = String(play.preferredHash || "").trim().toLowerCase();
     if (hash === "left" || hash === "l") {
-      callSheet[categoryId].left.push({ ...play });
+      callSheet[categoryId].left.push(entry);
     } else if (hash === "right" || hash === "r") {
-      callSheet[categoryId].right.push({ ...play });
+      callSheet[categoryId].right.push(entry);
     } else {
       const side =
         callSheet[categoryId].left.length <= callSheet[categoryId].right.length
           ? "left"
           : "right";
-      callSheet[categoryId][side].push({ ...play });
+      callSheet[categoryId][side].push(entry);
     }
   });
 
@@ -523,7 +528,11 @@ function loadWristbandToCallSheet() {
       if (play && (play.formation || play.play)) {
         const wristbandNum =
           cardIdx * cellsPerCard + cellIdx + WRISTBAND_OFFSET;
-        wristbandPlays.push({ ...play, wristbandNumber: wristbandNum });
+        wristbandPlays.push(
+          typeof copyPlayWithSourceIdentity === "function"
+            ? copyPlayWithSourceIdentity(play, { wristbandNumber: wristbandNum })
+            : { ...play, wristbandNumber: wristbandNum },
+        );
       }
     });
   });

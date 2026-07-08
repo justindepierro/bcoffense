@@ -107,7 +107,11 @@ function executeLoadWbToScript() {
     if (!Array.isArray(card?.data)) return;
     card.data.forEach((play) => {
       if (play !== null) {
-        playsToAdd.push({ ...play });
+        playsToAdd.push(
+          typeof copyPlayWithSourceIdentity === "function"
+            ? copyPlayWithSourceIdentity(play, { id: Date.now() + Math.random() })
+            : { ...play },
+        );
       }
     });
   });

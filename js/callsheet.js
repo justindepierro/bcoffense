@@ -194,6 +194,35 @@ function clearCallSheetCellDisplayOverrides(play) {
   });
 }
 
+function copyPlayForCallSheet(play, overrides = {}) {
+  const callSheetFields = {
+    playType: play?.type || "",
+    wristbandNumber: null,
+    highlighted: false,
+    highlightColor: null,
+    borderColor: null,
+    cellBg: null,
+    cellTextColor: null,
+    cellBold: false,
+    cellItalic: false,
+    cellUnderline: false,
+    cellStrikethrough: false,
+    cellFontSize: null,
+    cellNote: null,
+    cellFormationTags: null,
+    cellBackTags: null,
+    ...overrides,
+  };
+  if (typeof copyPlayWithSourceIdentity === "function") {
+    return copyPlayWithSourceIdentity(play, callSheetFields);
+  }
+  return {
+    ...play,
+    playbookId: play?.playbookId || play?.sourcePlayId || play?.id || null,
+    ...callSheetFields,
+  };
+}
+
 function getCallSheetHighlightConfig(play) {
   if (!play) return null;
   const highlightKey = play.highlightColor || (play.highlighted ? "yellow" : "");
@@ -478,10 +507,9 @@ async function autoPopulateCallSheet() {
         seen[catId].add(key);
 
         const hash = (play.preferredHash || "").toLowerCase().trim();
-        const playWithNum = {
-          ...play,
-          wristbandNumber: getWristbandNumberForPlay(play),
-        };
+        const playWithNum = typeof copyPlayForCallSheet === "function"
+          ? copyPlayForCallSheet(play, { wristbandNumber: getWristbandNumberForPlay(play) })
+          : { ...play, wristbandNumber: getWristbandNumberForPlay(play) };
 
         if (hash === "left" || hash === "l") {
           callSheet[catId].left.push(playWithNum);

@@ -380,7 +380,17 @@ function checkStorageKeyUsage() {
 function extractFunctionSource(source, functionName) {
   const start = source.indexOf(`function ${functionName}(`);
   if (start < 0) return "";
-  const bodyStart = source.indexOf("{", start);
+  let bodyStart = -1;
+  let parenDepth = 0;
+  for (let index = source.indexOf("(", start); index < source.length; index += 1) {
+    const ch = source[index];
+    if (ch === "(") parenDepth += 1;
+    else if (ch === ")") parenDepth -= 1;
+    else if (ch === "{" && parenDepth === 0) {
+      bodyStart = index;
+      break;
+    }
+  }
   if (bodyStart < 0) return "";
   let depth = 0;
   for (let index = bodyStart; index < source.length; index += 1) {
@@ -939,6 +949,111 @@ function checkPlayPresentationContracts() {
   }
 
   console.log("play presentation contracts ok");
+}
+
+function checkPlayIdentityHandoffFixtures() {
+  const utils = read("js/utils.js");
+  const callsheet = read("js/callsheet.js");
+  const callsheetPicker = read("js/callsheet-picker-runtime.js");
+  const callsheetSmart = read("js/callsheet-smart.js");
+  const gameplanDnd = read("js/gameplan-dnd.js");
+  const gameplanIntegrations = read("js/gameplan-integrations.js");
+  const gameplanSmart = read("js/gameplan-smart.js");
+  const scriptExport = read("js/script-export.js");
+  const scriptPeriodSync = read("js/script-period-sync.js");
+  const scriptIntegrations = read("js/script-integrations.js");
+
+  if (
+    !/function copyPlayForCallSheet\(play, overrides = \{\}\)/.test(callsheet) ||
+    !/copyPlayWithSourceIdentity\(play, callSheetFields\)/.test(callsheet) ||
+    !/copyPlayForCallSheet\(playData\)/.test(callsheetPicker) ||
+    !/copyPlayForCallSheet\(play, \{ wristbandNumber/.test(callsheetPicker) ||
+    !/copyPlayForCallSheet\(s\.play\)/.test(callsheetSmart) ||
+    !/copyPlayForCallSheet\(play, \{ wristbandNumber: wb \}\)/.test(gameplanIntegrations) ||
+    !/copyPlayForCallSheet\(play\)/.test(scriptPeriodSync) ||
+    !/copyPlayWithSourceIdentity\(play\)/.test(gameplanDnd) ||
+    !/copyPlayWithSourceIdentity\(play\)/.test(gameplanSmart) ||
+    !/copyPlayWithSourceIdentity\(play, \{ id: Date\.now\(\) \+ Math\.random\(\) \}\)/.test(scriptExport) ||
+    !/copyPlayWithSourceIdentity\(play\)/.test(scriptIntegrations)
+  ) {
+    fail("play identity helper is not used across the main handoff paths");
+  }
+
+  const getStableSource = extractFunctionSource(utils, "getStablePlaySourceId");
+  const copySource = extractFunctionSource(utils, "copyPlayWithSourceIdentity");
+  if (!getStableSource || !copySource) {
+    fail("play identity helper sources are missing");
+    return;
+  }
+
+  const getPlayIdentityKey = (play, mode) => {
+    if (Array.isArray(mode)) {
+      return mode.map((field) => String(play[field] || "").trim()).join("|");
+    }
+    if (mode === "gameplan") {
+      return [
+        play.type,
+        play.personnel,
+        play.formation,
+        play.play,
+        play.preferredDown,
+        play.preferredDistance,
+      ].map((value) => String(value || "").trim()).join("|");
+    }
+    return [play.personnel, play.formation, play.play]
+      .map((value) => String(value || "").trim())
+      .join("|");
+  };
+  const { copyPlayWithSourceIdentity } = new Function(
+    "getPlayIdentityKey",
+    `${getStableSource}\n${copySource}\nreturn { copyPlayWithSourceIdentity };`,
+  )(getPlayIdentityKey);
+
+  const playbookPlay = {
+    id: "playbook-123",
+    type: "Pass",
+    personnel: "11",
+    formation: "Right N Over",
+    play: "Viper Sooners",
+    preferredDown: "2",
+    preferredDistance: "Medium",
+  };
+  const scriptPlay = copyPlayWithSourceIdentity(playbookPlay, { id: "script-runtime" });
+  const wristbandPlay = copyPlayWithSourceIdentity(scriptPlay, { _scriptSource: true });
+  const callSheetPlay = copyPlayWithSourceIdentity(wristbandPlay, {
+    playType: wristbandPlay.type,
+    wristbandNumber: 7,
+  });
+  const gamePlanPlay = copyPlayWithSourceIdentity(callSheetPlay, { _gpSource: true });
+  const chain = [scriptPlay, wristbandPlay, callSheetPlay, gamePlanPlay];
+  const expectedSourceIdentity = getPlayIdentityKey(playbookPlay, "tag");
+  const expectedGamePlanIdentity = getPlayIdentityKey(playbookPlay, "gameplan");
+
+  chain.forEach((play, index) => {
+    if (
+      play.playbookId !== playbookPlay.id ||
+      play.sourcePlayId !== playbookPlay.id ||
+      play.originalPlayId !== playbookPlay.id ||
+      play.sourceIdentityKey !== expectedSourceIdentity ||
+      play.sourceGamePlanKey !== expectedGamePlanIdentity
+    ) {
+      fail(`play identity round-trip drifted at handoff ${index + 1}`);
+    }
+  });
+
+  const legacyCopy = copyPlayWithSourceIdentity(
+    { id: "runtime-only", sourcePlayId: "source-abc", play: "Legacy" },
+    { id: "next-runtime" },
+  );
+  if (
+    legacyCopy.playbookId !== "source-abc" ||
+    legacyCopy.sourcePlayId !== "source-abc" ||
+    legacyCopy.originalPlayId !== "source-abc"
+  ) {
+    fail("legacy sourcePlayId is not preferred over runtime ids");
+  }
+
+  console.log("play identity handoff fixtures ok");
 }
 
 function checkScriptPlayerPublishingContracts() {
@@ -3010,6 +3125,7 @@ checkConflictContracts();
 checkWristbandTypography();
 checkPersonnelMarkerContracts();
 checkPlayPresentationContracts();
+checkPlayIdentityHandoffFixtures();
 checkScriptPlayerPublishingContracts();
 checkPlayReadinessContracts();
 checkPlayerPortalContracts();
