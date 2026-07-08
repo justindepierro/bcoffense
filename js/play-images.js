@@ -1026,6 +1026,228 @@
     return deleteForPlay(play);
   };
 
+  function _diagramHealthPlayLabel(play) {
+    return [
+      play?.formation,
+      play?.motion,
+      play?.play,
+      play?.playTag1,
+      play?.playTag2,
+    ].filter(Boolean).join(" ") || "Unnamed play";
+  }
+
+  function _diagramHealthPlayMeta(play) {
+    return [
+      play?.type,
+      play?.personnel ? `${play.personnel} pers` : "",
+      play?.basePlay ? `Base: ${play.basePlay}` : "",
+      play?.preferredDown ? `D${play.preferredDown}` : "",
+      play?.preferredDistance,
+    ].filter(Boolean).join(" · ");
+  }
+
+  function _diagramHealthRow({ play, index, status, detail, sig = "" }) {
+    return `<div class="pb-diagram-health-row pb-diagram-health-row--${escapeAttr(status)}">
+      <div>
+        <button type="button" class="pb-health-play-link" data-action="openPlayDiagramHealthEdit" data-arg="${Number(index)}">
+          #${Number(index) + 1} ${escapeHtml(_diagramHealthPlayLabel(play))}
+        </button>
+        <span>${escapeHtml(_diagramHealthPlayMeta(play) || detail || "No play metadata")}</span>
+        ${sig ? `<code>${escapeHtml(sig)}</code>` : ""}
+      </div>
+      <button type="button" class="btn btn-xs" data-action="openPlayDiagramHealthEdit" data-arg="${Number(index)}">Edit</button>
+    </div>`;
+  }
+
+  function _diagramHealthKeyRow(item) {
+    const label = item.matches.length
+      ? item.matches.slice(0, 3).map((match) => `#${match.index + 1} ${_diagramHealthPlayLabel(match.play)}`).join(", ")
+      : "No current play match";
+    return `<div class="pb-diagram-health-key-row">
+      <div>
+        <strong>${escapeHtml(item.reason)}</strong>
+        <span>${escapeHtml(label)}${item.matches.length > 3 ? ` +${item.matches.length - 3} more` : ""}</span>
+        <code>${escapeHtml(item.key)}</code>
+      </div>
+    </div>`;
+  }
+
+  async function buildPlayDiagramHealthReport() {
+    const playbook = _playbookForImageLookup();
+    const allKeys = await loadKeys();
+    const ready = [];
+    const missing = [];
+    const ambiguousPlays = [];
+    const keyMap = new Map();
+
+    playbook.forEach((play, index) => {
+      const displaySig = storedDisplaySignatureForPlay(play);
+      const broadSig = storedSignatureForPlay(play);
+      if (displaySig) {
+        ready.push({ play, index, sig: displaySig });
+      } else if (broadSig) {
+        ambiguousPlays.push({ play, index, sig: broadSig });
+      } else {
+        missing.push({ play, index });
+      }
+    });
+
+    allKeys.forEach((key) => {
+      const matches = playbook
+        .map((play, index) => ({ play, index }))
+        .filter(({ play }) => signaturesForPlay(play).includes(key));
+      const displayMatches = playbook.filter((play) =>
+        displaySignaturesForPlay(play).includes(key),
+      );
+      if (!displayMatches.length) {
+        keyMap.set(key, {
+          key,
+          matches,
+          reason: matches.length > 1
+            ? "Ambiguous legacy diagram key"
+            : "Diagram key is not player-visible",
+        });
+      }
+    });
+
+    return {
+      totalPlays: playbook.length,
+      totalKeys: allKeys.length,
+      ready,
+      missing,
+      ambiguousPlays,
+      unsafeKeys: Array.from(keyMap.values()),
+    };
+  }
+
+  function _renderPlayDiagramHealth(report) {
+    const healthPct = report.totalPlays
+      ? Math.round((report.ready.length / report.totalPlays) * 100)
+      : 0;
+    const scoreClass = healthPct >= 90
+      ? "is-good"
+      : healthPct >= 65
+        ? "is-warn"
+        : "is-poor";
+    const ambiguousRows = report.ambiguousPlays.slice(0, 10).map((item) =>
+      _diagramHealthRow({
+        ...item,
+        status: "ambiguous",
+        detail: "Has a local diagram key, but it is not safe enough for player display.",
+      }),
+    ).join("");
+    const missingRows = report.missing.slice(0, 12).map((item) =>
+      _diagramHealthRow({
+        ...item,
+        status: "missing",
+        detail: "No player-visible diagram found on this device.",
+      }),
+    ).join("");
+    const unsafeRows = report.unsafeKeys.slice(0, 10).map(_diagramHealthKeyRow).join("");
+    const readyRows = report.ready.slice(0, 8).map((item) =>
+      _diagramHealthRow({
+        ...item,
+        status: "ready",
+        detail: "Player-visible diagram ready.",
+      }),
+    ).join("");
+
+    return `
+      <div class="pb-health-summary pb-diagram-health-summary">
+        <div class="pb-health-score ${scoreClass}">
+          <strong>${healthPct}%</strong>
+          <span>Diagram readiness</span>
+        </div>
+        <div class="pb-health-card"><strong>${report.ready.length}</strong><span>Ready plays</span></div>
+        <div class="pb-health-card"><strong>${report.missing.length}</strong><span>Missing diagrams</span></div>
+        <div class="pb-health-card"><strong>${report.ambiguousPlays.length}</strong><span>Needs reattach</span></div>
+        <div class="pb-health-card"><strong>${report.unsafeKeys.length}</strong><span>Unsafe local keys</span></div>
+      </div>
+      <div class="pb-health-guidance">
+        Player Swipe View only shows exact or unique diagram matches. Ambiguous old diagram keys are hidden so the wrong diagram does not appear on the wrong play.
+      </div>
+      <section class="pb-health-section">
+        <div class="pb-health-section-head">
+          <h4>Needs Reattach</h4>
+          <span>${report.ambiguousPlays.length} plays</span>
+        </div>
+        ${ambiguousRows || `<div class="pb-health-empty">No ambiguous play diagram matches found.</div>`}
+        ${report.ambiguousPlays.length > 10 ? `<div class="pb-health-more">Showing 10 of ${report.ambiguousPlays.length} plays.</div>` : ""}
+      </section>
+      <section class="pb-health-section">
+        <div class="pb-health-section-head">
+          <h4>Missing Diagrams</h4>
+          <span>${report.missing.length} plays</span>
+        </div>
+        ${missingRows || `<div class="pb-health-empty">Every play has a player-visible diagram on this device.</div>`}
+        ${report.missing.length > 12 ? `<div class="pb-health-more">Showing 12 of ${report.missing.length} missing plays.</div>` : ""}
+      </section>
+      <section class="pb-health-section">
+        <div class="pb-health-section-head">
+          <h4>Unsafe Local Diagram Keys</h4>
+          <span>${report.unsafeKeys.length} keys</span>
+        </div>
+        ${unsafeRows || `<div class="pb-health-empty">No orphaned or ambiguous local diagram keys found.</div>`}
+        ${report.unsafeKeys.length > 10 ? `<div class="pb-health-more">Showing 10 of ${report.unsafeKeys.length} keys.</div>` : ""}
+      </section>
+      <section class="pb-health-section">
+        <div class="pb-health-section-head">
+          <h4>Ready Sample</h4>
+          <span>${report.ready.length} plays</span>
+        </div>
+        ${readyRows || `<div class="pb-health-empty">No player-visible diagrams found on this device.</div>`}
+      </section>`;
+  }
+
+  window.openPlayDiagramHealth = async function () {
+    document.getElementById("playDiagramHealthOverlay")?.remove();
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay visible";
+    overlay.id = "playDiagramHealthOverlay";
+    overlay.dataset.action = "closePlayDiagramHealthOverlay";
+    overlay.innerHTML = `
+      <div class="custom-modal pb-health-modal pb-diagram-health-modal" role="dialog" aria-modal="true" aria-labelledby="playDiagramHealthTitle">
+        <div class="custom-modal-header">
+          <span class="custom-modal-icon">🩺</span>
+          <h3 class="custom-modal-title" id="playDiagramHealthTitle">Diagram Health</h3>
+          <button class="modal-close" aria-label="Close" data-action="closePlayDiagramHealth">×</button>
+        </div>
+        <div class="custom-modal-body pb-health-body" id="playDiagramHealthBody">
+          <div class="pb-health-empty">Checking local diagram keys...</div>
+        </div>
+        <div class="custom-modal-actions">
+          <button type="button" class="btn btn-sm" data-action="syncPlayImagesToCloud">Push Diagrams</button>
+          <button type="button" class="btn btn-sm" data-action="closePlayDiagramHealth">Done</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    if (typeof trapFocus === "function") trapFocus(overlay);
+    try {
+      const report = await buildPlayDiagramHealthReport();
+      const body = document.getElementById("playDiagramHealthBody");
+      if (body) body.innerHTML = _renderPlayDiagramHealth(report);
+    } catch (err) {
+      const body = document.getElementById("playDiagramHealthBody");
+      if (body) {
+        body.innerHTML = `<div class="pb-health-empty">Diagram health could not be checked: ${escapeHtml(err?.message || "Unknown error")}</div>`;
+      }
+    }
+  };
+
+  window.closePlayDiagramHealth = function () {
+    document.getElementById("playDiagramHealthOverlay")?.remove();
+  };
+
+  window.openPlayDiagramHealthEdit = function (index) {
+    const idx = Number(index);
+    window.closePlayDiagramHealth();
+    if (typeof openPlaybookHealthEdit === "function") {
+      openPlaybookHealthEdit(idx);
+    } else if (typeof editPlay === "function") {
+      editPlay(idx);
+    }
+  };
+
   // Coach-triggered manual sync — pushes all local images to R2 with progress modal.
   window.syncPlayImagesToCloud = async function () {
     if (!_remoteAvailable()) {

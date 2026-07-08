@@ -4343,6 +4343,47 @@ body[data-auth-role="player"] .pb-card .pb-present-btn {
   background: var(--color-bg-light);
 }
 
+.pb-diagram-health-row,
+.pb-diagram-health-key-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-left: 4px solid var(--color-border-med);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+}
+
+.pb-diagram-health-row > div,
+.pb-diagram-health-key-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.pb-diagram-health-row--ready {
+  border-left-color: var(--color-success);
+}
+
+.pb-diagram-health-row--missing {
+  border-left-color: var(--color-warning);
+}
+
+.pb-diagram-health-row--ambiguous {
+  border-left-color: var(--color-danger);
+}
+
+.pb-diagram-health-row code,
+.pb-diagram-health-key-row code {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .pb-health-vocab-grid {
   display: grid;
   gap: var(--space-sm);

@@ -770,6 +770,10 @@ function checkPlayPresentationContracts() {
     !/function displaySignaturesForPlay\(play\)/.test(playImages) ||
     !/function _sourceIdentityKeyForPlay\(play\)/.test(playImages) ||
     !/function _legacyRemoteIdentityKey\(play\)/.test(playImages) ||
+    !/async function buildPlayDiagramHealthReport\(\)/.test(playImages) ||
+    !/window\.openPlayDiagramHealth/.test(playImages) ||
+    !/window\.openPlayDiagramHealthEdit/.test(playImages) ||
+    !/data-action="openPlayDiagramHealth"/.test(html) ||
     !/PLAY_IMAGE_SOURCE_FIELDS/.test(playImages) ||
     !/play\.playbookId/.test(playImages) ||
     !/getPlayIdentityKey\(sourcePlay, "tag"\)/.test(playImages) ||
