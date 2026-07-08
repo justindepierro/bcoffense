@@ -4,6 +4,7 @@
 .dev.vars
 .wrangler/
 .mobile-debug/
+.stress-audit/
 tests/.env.test
 tests/node_modules/
 node_modules/

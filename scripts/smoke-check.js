@@ -2515,6 +2515,33 @@ function checkCleanupAudit() {
   );
 }
 
+function checkStressAuditHarness() {
+  const pkg = JSON.parse(read("package.json"));
+  const gitignore = read(".gitignore");
+  const harness = read("scripts/stress-seed-audit.mjs");
+
+  if (pkg.scripts?.["stress:audit"] !== "node scripts/stress-seed-audit.mjs") {
+    fail("stress audit harness is not exposed through npm run stress:audit");
+  }
+  if (!/\.stress-audit\//.test(gitignore)) {
+    fail("stress audit reports are not ignored by git");
+  }
+  [
+    /function generateStressData\(opts\)/,
+    /async function seedApp\(page, data\)/,
+    /async function auditRoleViewport\(page, role, viewport, tabs, opts\)/,
+    /function collectIssues\(report, maxIssues\)/,
+    /stress-audit-report\.json/,
+    /stress-audit-report\.md/,
+  ].forEach((pattern) => {
+    if (!pattern.test(harness)) {
+      fail(`stress audit harness is missing ${pattern}`);
+    }
+  });
+
+  console.log("stress audit harness contracts ok");
+}
+
 function checkStartupDiagnosticsAndRenderQueue() {
   const utils = read("js/utils.js");
   const appInit = read("js/app-init.js");
@@ -3146,6 +3173,7 @@ checkCacheBusters();
 checkServiceWorkerLifecycle();
 checkServiceWorkerCachePolicy();
 checkCleanupAudit();
+checkStressAuditHarness();
 checkStartupDiagnosticsAndRenderQueue();
 checkStorageRestoreNormalization();
 checkStartupTabRestoreContracts();

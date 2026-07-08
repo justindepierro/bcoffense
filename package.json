@@ -4,6 +4,7 @@
   "private": true,
   "description": "BCOffense app shell and root test command shortcuts",
   "scripts": {
+    "stress:audit": "node scripts/stress-seed-audit.mjs",
     "test:e2e": "npm --prefix tests test",
     "test:e2e:all": "npm --prefix tests run test:all",
     "test:e2e:phone": "npm --prefix tests run test:phone",

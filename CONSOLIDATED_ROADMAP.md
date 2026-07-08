@@ -172,6 +172,8 @@ Current large JS files from the scan:
 
 Work left:
 
+- [x] Add a local stress seed audit for large playbooks, saved scripts, wristbands, call sheets, game plans, player data, and role/viewport loading checks.
+- [ ] Use stress-audit reports to prioritize the highest-impact loading, overflow, touch-target, and console-error fixes.
 - [ ] Defer non-critical dashboard, tendencies, and remaining callsheet setup until first use.
 - [ ] Reduce unrelated responsibilities still owned by `utils.js`.
 - [ ] Measure large-script render and filter hotspots before optimizing `script-render.js`.
