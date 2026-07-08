@@ -2,6 +2,9 @@
 
 This checklist converts the mobile audit into work items we can execute and verify. Use the item IDs in commits, notes, and follow-up requests.
 
+For current priority and implementation order, use `CONSOLIDATED_ROADMAP.md`.
+This file is the detailed mobile verification matrix and historical evidence log.
+
 ## Status Legend
 
 - `[ ]` Not started
@@ -22,8 +25,8 @@ This checklist converts the mobile audit into work items we can execute and veri
 
 ## Next Heavy Hitters
 
-_All heavy hitters complete._ Remaining presentation polish lives in `M-042`
-(Projector Clean View, Wake Lock, detail panel, telestrator — P1).
+_All original heavy hitters are complete._ Current mobile follow-up work is
+tracked in `CONSOLIDATED_ROADMAP.md` under "Player Mobile Follow-Through".
 
 ---
 
@@ -885,38 +888,25 @@ hidden. All in-scope phone-role capabilities now have a phone surface.
 
 ---
 
-## Current Full Smoke Blockers To Track Separately
+## Current Full Smoke Status
 
-These are not all mobile-audit items, but they keep full `node scripts/smoke-check.js` red:
-
-- `[ ]` `css/dashboard.css` scales font size with viewport width.
-- `[ ]` `js/play-readiness.js`: missing global dispatch target for `data-action="prLogSetScore"`.
-- `[ ]` Call sheet drawer replaces shared render function.
-- `[ ]` Game plan and call sheet do not share coverage splitting.
-- `[ ]` Shared personnel marker contracts do not include Meat steak in all expected surfaces.
-- `[ ]` Player script publishing runtime and diagnostics incomplete.
-- `[ ]` Play readiness scoring model and coach permissions incomplete.
-- `[ ]` Player dashboard home / portal styling / desktop script scroll contracts incomplete.
-- `[ ]` Wristband shared rendering, keyboard navigation, print preview, and one-per-page execution incomplete.
-- `[ ]` Player wristband rule source selection, reset behavior, and print modes incomplete.
-- `[ ]` 7-on-7 call sheet wristband passing-play auto-sync and template integration incomplete.
-- `[ ]` Script packet diagram print styling incomplete.
-- `[ ]` `AGENTS.md` `STORAGE_KEYS` list does not match `js/storage.js`.
+Current status: full `node scripts/smoke-check.js` is green as of 2026-07-08.
+Do not treat the older blocker list below as current work; it was consolidated
+or completed during later hardening passes.
 
 ---
 
-## Recommended Next 10 Items
+## Current Mobile Follow-Up
 
-1. `[x]` M-023 - iPad/tablet responsiveness pass: tablet shell contract verified; touch targets reachable across all iPad viewports (admin/coach/player) with zero small-target warnings.
-2. `[~]` M-032 - Finish Call Sheet phone drawer layer/safe-area QA.
-3. `[~]` M-033 - Finish Wristband phone popup/body-lock and player-card QA.
-4. `[~]` M-012 - Continue shared layer/body lock utility migration.
-5. `[x]` M-041 - True iPad presentation / PWA / fullscreen fallback complete.
-6. `[ ]` M-020 - Write role capability matrix.
-7. `[ ]` M-031 - Add Practice Script touch reordering fallback.
-8. `[~]` M-040 - Finish player presentation orientation/cut-off QA.
-9. `[ ]` M-034 - Build Playbook phone action/filter sheets.
-10. `[~]` M-010 - Finish canonical responsive state migration.
+Use `CONSOLIDATED_ROADMAP.md` as the active queue. The current mobile items are:
+
+1. `[ ]` Notifications/offline polish for opt-in, denied, offline, and newly published practice states.
+2. `[ ]` iPad player screenshot pass across Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions.
+3. `[ ]` Player delight pass for quiz answers, streaks, sticker awards, and ready confirmation.
+4. `[ ]` Practice/Home polish follow-up with real team data.
+5. `[ ]` Safe-area/body-lock QA for full-screen drawers, modal footers, coach dock, and landscape presentation controls.
+6. `[ ]` Decide whether the viewport harness becomes a required ship gate.
+7. `[ ]` Add or document manual coverage for soft-keyboard `visualViewport` resize and 200% text zoom.
 
 ---
 

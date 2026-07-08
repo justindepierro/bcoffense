@@ -2570,7 +2570,7 @@ function checkGracefulLoadingStates() {
 
 function checkPlayerQuizSettingsContracts() {
   const scriptRender = read("js/script-render.js");
-  const roadmap = read("PLAYER_QUIZ_ROADMAP.md");
+  const roadmap = read("CONSOLIDATED_ROADMAP.md");
 
   [
     "PLAYER_QUIZ_TIER_DEFAULTS",
@@ -2599,7 +2599,8 @@ function checkPlayerQuizSettingsContracts() {
 
   if (
     /tier-name controls remain pending|Tier names remain fixed for now/.test(roadmap) ||
-    !/\[x\] Add formal coach\/admin quiz settings/.test(roadmap)
+    !/\[x\] Add formal coach\/admin quiz settings/.test(roadmap) ||
+    !/\[x\] Add editable tier names/.test(roadmap)
   ) {
     fail("player quiz roadmap still marks editable tier names as pending");
   }
