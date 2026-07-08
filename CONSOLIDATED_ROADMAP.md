@@ -112,18 +112,18 @@ Goal: make Quiz Center feel like a fast study game instead of a metadata test.
 
 Work left:
 
-- [ ] Add fair-question quality gates so players are not asked to guess from
+- [x] Add fair-question quality gates so players are not asked to guess from
   tiny or partial metadata.
-- [ ] Prefer diagram and formation recognition fallbacks before full call-ID
+- [x] Prefer diagram and formation recognition fallbacks before full call-ID
   questions.
-- [ ] Add easy fallback types: Diagram to Formation, Formation to Play, Play
+- [x] Add easy fallback types: Diagram to Formation, Formation to Play, Play
   Type, and Study Card.
 - [ ] Add game modes: Quick Hits, Diagram Drill, Know Your Job, Game Plan Check,
   and Missed Plays.
 - [ ] Add lightweight answer feedback, streak milestones, and reward moments
   while respecting reduced-motion.
 - [ ] Split coach source readiness into fun, learning, and context readiness.
-- [ ] Add E2E coverage for diagram-first, formation, play-type, study-card, and
+- [x] Add E2E coverage for diagram-first, formation, play-type, study-card, and
   long-choice fallback behavior.
 
 Definition of done:

@@ -2868,6 +2868,13 @@ function checkPlayerQuizSettingsContracts() {
     "tierNames: { ...PLAYER_QUIZ_DEFAULT_TIER_NAMES }",
     "function _normalizeQuizTierNames",
     "function _getQuizTierName",
+    "function _quizQuestionQuality",
+    "function _selectQuizQuestion",
+    "function _buildQuizStudyCardQuestion",
+    "diagram_formation",
+    "formation_to_play",
+    "play_type",
+    "study_card",
     "coachQuizTierChampion",
     "coachQuizTierBaller",
     "coachQuizTierStarter",
@@ -2885,6 +2892,14 @@ function checkPlayerQuizSettingsContracts() {
 
   if (!/function coachSaveQuizSettings\(\)[\s\S]*?tierNames:\s*{[\s\S]*?champion:\s*_readCoachQuizSettingText\("coachQuizTierChampion"\)[\s\S]*?defense:\s*_readCoachQuizSettingText\("coachQuizTierDefense"\)/.test(scriptRender)) {
     fail("coach quiz settings save does not persist tier names");
+  }
+
+  if (
+    !/candidates\.push\(diagramQuestion, diagramFormationQuestion, formationQuestion, typeQuestion, callQuestion/.test(scriptRender) ||
+    !/\["diagram", "diagram_formation", "study_card"\]\.includes\(question\.type\)/.test(scriptRender) ||
+    !/function _quizQuestionDistractorItems\(item, question\)[\s\S]*?formation_to_play/.test(scriptRender)
+  ) {
+    fail("player quiz fair fallback ladder is missing diagram, formation, type, or study-card coverage");
   }
 
   if (

@@ -235,25 +235,35 @@ This keeps thin sources useful without making kids guess.
 
 Goal: stop low-interest and unfair questions from reaching players.
 
-- [ ] Add a `quizQuestionQuality` helper that scores each candidate question as
+- [x] Add a `quizQuestionQuality` helper that scores each candidate question as
   `playable`, `thin`, or `study_only`.
-- [ ] Add new question types:
+- [x] Add new question types:
   - `diagram_formation`
   - `formation_to_play`
   - `play_type`
   - `study_card`
-- [ ] Change the generator so Diagram questions are preferred, not last resort.
-- [ ] Add choice-quality gates:
+- [x] Change the generator so Diagram questions are preferred, not last resort.
+- [x] Add first-pass choice-quality gates:
   - minimum unique choices,
   - max choice length,
   - avoid choices that only differ by tiny metadata,
   - avoid blank or duplicate answers.
-- [ ] Convert unfair fallback questions into Study Cards.
-- [ ] Update E2E coverage for:
+- [x] Convert unfair fallback questions into Study Cards.
+- [x] Update E2E coverage for:
   - diagram-first fallback,
   - formation fallback,
   - play-type fallback,
   - study-card fallback.
+
+Shipped 2026-07-08:
+
+- The quiz engine now evaluates candidate question quality before showing it.
+- Thin recognition sources fall back through Diagram, Formation, Play Type, and
+  Study Card instead of forcing full-call guesses.
+- Study-card reveal shows the call plus player rule and coach note when
+  available.
+- Focused mobile E2E coverage protects diagram, formation, play-type,
+  study-card, scoring, and source-publishing quiz paths.
 
 Definition of done:
 
@@ -370,4 +380,3 @@ Cache/deploy note:
 - Wrong-answer review includes the diagram when one exists.
 - Reduced-motion mode suppresses celebratory motion.
 - Phone viewport has no horizontal overflow during every mode.
-

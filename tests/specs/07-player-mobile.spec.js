@@ -554,6 +554,98 @@ test.describe("Player mobile experience", () => {
     await assertNoHorizontalOverflow(page);
   });
 
+  test("falls back to formation and play-type questions before full call guesses", async ({ page }) => {
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await page.evaluate(() => {
+      storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_SETTINGS, {
+        enabledQuestionTypes: ["call"],
+      });
+      script = [
+        { personnel: "11", formation: "Trips Rt", play: "Buck Sweep", type: "Run" },
+        { personnel: "10", formation: "Doubles Lt", play: "Verts", type: "Pass" },
+        { personnel: "12", formation: "Wing Lt", play: "Power", type: "Run" },
+      ];
+      startScriptQuiz({ positionKey: "respQ", title: "Formation Quiz" });
+    });
+
+    const quiz = page.locator("#scriptQuizOverlay");
+    await expect(quiz).toBeVisible();
+    await expect(quiz.getByText("Which play starts from this formation?")).toBeVisible();
+    await expect(quiz.locator(".sq-game-pill").filter({ hasText: "Formation Match" })).toBeVisible();
+    await expect(quiz.locator(".sq-scenario-block--quiz-detail")).toContainText("11 Trips Rt");
+    await quiz.getByRole("button", { name: /Buck Sweep/i }).click();
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Correct");
+    await expect.poll(() => page.evaluate(() => {
+      const item = Array.from(_quizAnswers.values()).at(-1);
+      return item?.questionType || "";
+    })).toBe("formation_to_play");
+
+    await quiz.getByRole("button", { name: /Close quiz/i }).click();
+    await quiz.getByRole("button", { name: /Save & Close/i }).click();
+    await expect(quiz).toBeHidden();
+
+    await page.evaluate(() => {
+      storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_SETTINGS, {
+        enabledQuestionTypes: ["call"],
+      });
+      script = [
+        { personnel: "11", formation: "Trips Rt", play: "Buck Sweep", type: "Run" },
+        { personnel: "11", formation: "Trips Rt", play: "Stick", type: "Pass" },
+        { personnel: "11", formation: "Trips Rt", play: "Bubble", type: "Screen" },
+      ];
+      startScriptQuiz({ positionKey: "respQ", title: "Type Quiz" });
+    });
+
+    await expect(quiz).toBeVisible();
+    await expect(quiz.getByText("What type of play is this?")).toBeVisible();
+    await expect(quiz.locator(".sq-game-pill").filter({ hasText: "Play Type" })).toBeVisible();
+    await expect(quiz.locator(".script-quiz-choice")).toHaveCount(3);
+    await quiz.getByRole("button", { name: /^Run$/i }).click();
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Correct");
+    await expect.poll(() => page.evaluate(() => {
+      const item = Array.from(_quizAnswers.values()).at(-1);
+      return item?.questionType || "";
+    })).toBe("play_type");
+    await quiz.getByRole("button", { name: /Close quiz/i }).click();
+    await quiz.getByRole("button", { name: /Save & Close/i }).click();
+    await expect(quiz).toBeHidden();
+    await assertNoHorizontalOverflow(page);
+  });
+
+  test("uses a study card instead of an unfair thin quiz question", async ({ page }) => {
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await page.evaluate(() => {
+      storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_SETTINGS, {
+        enabledQuestionTypes: ["call"],
+      });
+      script = [{
+        personnel: "11",
+        formation: "Trips Rt",
+        play: "Buck Sweep",
+        type: "Run",
+        respQ: "Kick out the force defender.",
+        playerNotes: "Read the edge before climbing.",
+      }];
+      startScriptQuiz({ positionKey: "respQ", title: "Study Card Quiz" });
+    });
+
+    const quiz = page.locator("#scriptQuizOverlay");
+    await expect(quiz).toBeVisible();
+    await expect(quiz.getByText("Study this one.")).toBeVisible();
+    await expect(quiz.locator(".script-quiz-choice")).toHaveCount(0);
+    await expect(quiz.locator(".sq-scenario-block--quiz-detail")).toContainText("No fair multiple choice");
+    await quiz.locator("#scriptQuizRevealBtn").click();
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Buck Sweep");
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Kick out the force defender");
+    await quiz.locator("#scriptQuizNextBtn").click();
+    await expect(quiz.locator(".sq-result-card")).toContainText("0%");
+    await quiz.getByRole("button", { name: /^Done$/i }).click();
+    await expect(quiz).toBeHidden();
+    await assertNoHorizontalOverflow(page);
+  });
+
   test("opens every core player page without staff controls or overflow", async ({ page }) => {
     await page.route("**/api/questions/mine?**", async (route) => {
       await route.fulfill({
@@ -1818,10 +1910,12 @@ test.describe("Player mobile experience", () => {
     });
     const quiz = page.locator("#scriptQuizOverlay");
     await expect(quiz).toBeVisible();
-    await expect(quiz.getByText("What's the call?")).toBeVisible();
+    await expect(quiz.getByText("Which play starts from this formation?")).toBeVisible();
+    await expect(quiz.locator(".sq-game-pill").filter({ hasText: "Formation Match" })).toBeVisible();
     await quiz.getByRole("button", { name: /Buck Sweep/i }).click();
     await quiz.getByRole("button", { name: /Next/i }).click();
-    await expect(quiz.getByText("What's the call?")).toBeVisible();
+    await expect(quiz.getByText("Which play starts from this formation?")).toBeVisible();
+    await expect(quiz.locator(".sq-game-pill").filter({ hasText: "Formation Match" })).toBeVisible();
     await quiz.getByRole("button", { name: /Verts/i }).click();
     await quiz.locator("#scriptQuizNextBtn").click();
     await expect(quiz.locator(".sq-result-card")).toContainText("Coaches List");

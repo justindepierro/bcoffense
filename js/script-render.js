@@ -5219,63 +5219,194 @@ function _quizUniqueChoices(items, getLabel) {
     });
 }
 
+function _quizFormationLabel(play) {
+  return _quizCleanText([
+    play?.personnel,
+    play?.formation,
+    play?.formTag1,
+    play?.formTag2,
+  ].filter(Boolean).join(" "));
+}
+
+function _quizShortCall(play) {
+  return _quizCleanText([
+    play?.personnel,
+    play?.formation,
+    play?.play,
+    play?.playTag1,
+  ].filter(Boolean).join(" ")) || _quizPlainCall(play);
+}
+
+function _quizQuestionChoiceLabel(item, question) {
+  const play = item?.play || item;
+  if (!play) return "";
+  switch (question?.type) {
+    case "responsibility":
+      return _quizCleanText(question.position?.key ? play[question.position.key] : "");
+    case "diagram_formation":
+      return _quizFormationLabel(play);
+    case "play_type":
+      return _quizCleanText(play.type);
+    case "play_from_rule":
+    case "diagram":
+    case "formation_to_play":
+    case "call":
+      return _quizShortCall(play);
+    default:
+      return _quizShortCall(play);
+  }
+}
+
+function _quizQuestionDistractorItems(item, question) {
+  const source = _quizPlays.filter((candidate) => candidate && candidate !== item && candidate?.play);
+  if (question?.type === "formation_to_play") {
+    const correctFormation = _quizFormationLabel(item?.play).toLowerCase();
+    return source.filter((candidate) => _quizFormationLabel(candidate.play).toLowerCase() !== correctFormation);
+  }
+  return source;
+}
+
+function _quizChoiceQuality(label, questionType = "call") {
+  const text = _quizCleanText(label);
+  if (!text) return { ok: false, reason: "blank" };
+  const maxLength = questionType === "responsibility" ? 120 : questionType === "call" ? 72 : 90;
+  if (text.length > maxLength) return { ok: false, reason: "too-long" };
+  return { ok: true, reason: "" };
+}
+
+function _quizQuestionQuality(question, item, opts = {}) {
+  if (!question || !item?.play) return { state: "study_only", reason: "missing-question" };
+  if (question.type === "study_card") return { state: "study_only", reason: "study-card" };
+
+  const correctLabel = _quizQuestionChoiceLabel(item, question);
+  const correctQuality = _quizChoiceQuality(correctLabel, question.type);
+  if (!correctQuality.ok) return { state: "study_only", reason: correctQuality.reason };
+
+  const pool = _quizUniqueChoices(
+    _quizQuestionDistractorItems(item, question),
+    (candidate) => _quizQuestionChoiceLabel(candidate, question),
+  ).filter((entry) => _quizChoiceQuality(entry.label, question.type).ok);
+  const minimumDistractors = Number(opts.minimumDistractors ?? (question.type === "responsibility" ? 3 : 1));
+  if (pool.length < minimumDistractors) {
+    return { state: "study_only", reason: "not-enough-choices", choices: pool.length };
+  }
+  return {
+    state: pool.length >= 3 ? "playable" : "thin",
+    reason: "",
+    choices: pool.length,
+  };
+}
+
+function _buildQuizStudyCardQuestion(item, position, reason = "") {
+  const diagramUrl = _quizDiagramUrl(item?.play);
+  return {
+    type: "study_card",
+    prompt: "Study this one.",
+    detailLabel: "No fair multiple choice",
+    detailValue: reason === "not-enough-choices"
+      ? "Not enough clean answer choices yet. Review the play, then keep going."
+      : "Review the call, diagram, and rule without guessing.",
+    diagramUrl,
+    rule: _quizCleanText(position?.key ? item?.play?.[position.key] : ""),
+    position,
+    quality: { state: "study_only", reason },
+  };
+}
+
+function _selectQuizQuestion(candidates, item) {
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const quality = _quizQuestionQuality(candidate, item, {
+      minimumDistractors: candidate.type === "responsibility" ? 3 : 1,
+    });
+    if (quality.state !== "study_only") {
+      return { ...candidate, quality };
+    }
+  }
+  return null;
+}
+
 function _buildQuizQuestion(item) {
   const position = _getQuizPositionForItem(item);
   const enabledTypes = new Set(_getPlayerQuizSettings().enabledQuestionTypes || ["responsibility", "play_from_rule", "diagram", "call"]);
   const positionRule = _quizCleanText(position?.key ? item.play[position.key] : "");
-  const rulePool = _quizUniqueChoices(
-    _quizPlays.filter((candidate) => candidate?.play && candidate.play !== item.play),
-    (candidate) => position?.key ? candidate.play[position.key] : "",
-  );
-  const callPool = _quizUniqueChoices(
-    _quizPlays.filter((candidate) => candidate?.play && candidate !== item),
-    (candidate) => _quizPlainCall(candidate.play),
-  );
   const positionLabel = position?.label || "your";
   const diagramUrl = _quizDiagramUrl(item.play);
-
-  if (enabledTypes.has("responsibility") && positionRule && rulePool.length >= 3 && _quizIndex % 3 !== 1) {
-    return {
-      type: "responsibility",
-      prompt: `What's your ${positionLabel} responsibility?`,
-      detailLabel: "Call",
-      detailValue: _quizPlainCall(item.play),
-      rule: positionRule,
-      position,
-    };
-  }
-
-  if (enabledTypes.has("play_from_rule") && positionRule && callPool.length >= 1 && _quizIndex % 2 === 1) {
-    return {
-      type: "play_from_rule",
-      prompt: `Which play has this ${positionLabel} rule?`,
-      detailLabel: `${positionLabel} Rule`,
-      detailValue: positionRule,
-      rule: positionRule,
-      position,
-    };
-  }
-
-  if (enabledTypes.has("diagram") && !positionRule && diagramUrl && callPool.length >= 1) {
-    return {
-      type: "diagram",
-      prompt: "What play is this diagram?",
-      detailLabel: "",
-      detailValue: "",
-      diagramUrl,
-      rule: "",
-      position,
-    };
-  }
-
-  return {
+  const canAskRules = enabledTypes.has("responsibility") && positionRule;
+  const canAskRuleToPlay = enabledTypes.has("play_from_rule") && positionRule;
+  const canAskVisual = enabledTypes.has("diagram") && diagramUrl;
+  const canAskRecognition = enabledTypes.has("call");
+  const ruleQuestion = canAskRules ? {
+    type: "responsibility",
+    prompt: `What's your ${positionLabel} responsibility?`,
+    detailLabel: "Call",
+    detailValue: _quizPlainCall(item.play),
+    rule: positionRule,
+    position,
+  } : null;
+  const diagramQuestion = canAskVisual ? {
+    type: "diagram",
+    prompt: "What play is this diagram?",
+    detailLabel: "",
+    detailValue: "",
+    diagramUrl,
+    rule: positionRule,
+    position,
+  } : null;
+  const ruleToPlayQuestion = canAskRuleToPlay ? {
+    type: "play_from_rule",
+    prompt: `Which play has this ${positionLabel} rule?`,
+    detailLabel: `${positionLabel} Rule`,
+    detailValue: positionRule,
+    rule: positionRule,
+    position,
+  } : null;
+  const diagramFormationQuestion = canAskVisual && _quizFormationLabel(item.play) ? {
+    type: "diagram_formation",
+    prompt: "What formation is this diagram?",
+    detailLabel: "",
+    detailValue: "",
+    diagramUrl,
+    rule: positionRule,
+    position,
+  } : null;
+  const formationQuestion = canAskRecognition && _quizFormationLabel(item.play) ? {
+    type: "formation_to_play",
+    prompt: "Which play starts from this formation?",
+    detailLabel: "Formation",
+    detailValue: _quizFormationLabel(item.play),
+    rule: positionRule,
+    position,
+  } : null;
+  const typeQuestion = canAskRecognition && _quizCleanText(item.play.type) ? {
+    type: "play_type",
+    prompt: "What type of play is this?",
+    detailLabel: "Call clue",
+    detailValue: _quizShortCall(item.play),
+    rule: positionRule,
+    position,
+  } : null;
+  const callQuestion = canAskRecognition ? {
     type: "call",
     prompt: "What's the call?",
     detailLabel: "",
     detailValue: "",
     rule: positionRule,
     position,
-  };
+  } : null;
+
+  const candidates = [];
+  if (_quizIndex % 3 !== 1) candidates.push(ruleQuestion);
+  if (_quizIndex % 4 === 0 || !positionRule) candidates.push(diagramQuestion, diagramFormationQuestion);
+  if (_quizIndex % 2 === 1) candidates.push(ruleToPlayQuestion);
+  candidates.push(diagramQuestion, diagramFormationQuestion, formationQuestion, typeQuestion, callQuestion, ruleQuestion, ruleToPlayQuestion);
+
+  const selected = _selectQuizQuestion(candidates, item);
+  if (selected) return selected;
+
+  const attempted = candidates.filter(Boolean)[0];
+  const reason = attempted ? _quizQuestionQuality(attempted, item).reason : "no-candidates";
+  return _buildQuizStudyCardQuestion(item, position, reason);
 }
 
 function _buildQuizChoices(item) {
@@ -5286,9 +5417,11 @@ function _buildQuizChoices(item) {
   }
 
   const question = _buildQuizQuestion(item);
-  const correctLabel = question.type === "responsibility"
-    ? question.rule
-    : _quizPlainCall(item.play);
+  const correctLabel = _quizQuestionChoiceLabel(item, question);
+  if (question.type === "study_card") {
+    _quizChoiceCache.set(questionKey, { question, choices: [] });
+    return [];
+  }
   const correct = {
     key: `${_quizChoiceKey(item)}::${question.type}::correct`,
     play: item.play,
@@ -5297,11 +5430,9 @@ function _buildQuizChoices(item) {
     questionType: question.type,
   };
   const labels = new Set([correctLabel.toLowerCase()]);
-  const pool = _quizShuffle(_quizPlays.filter((candidate) => candidate !== item && candidate?.play))
+  const pool = _quizShuffle(_quizQuestionDistractorItems(item, question))
     .map((candidate) => {
-      const label = question.type === "responsibility"
-        ? _quizCleanText(question.position?.key ? candidate.play[question.position.key] : "")
-        : _quizPlainCall(candidate.play);
+      const label = _quizQuestionChoiceLabel(candidate, question);
       return {
         key: `${_quizChoiceKey(candidate)}::${question.type}`,
         play: candidate.play,
@@ -5313,6 +5444,7 @@ function _buildQuizChoices(item) {
     .filter((choice) => {
       const labelKey = choice.label.toLowerCase();
       if (!labelKey || labels.has(labelKey)) return false;
+      if (!_quizChoiceQuality(choice.label, question.type).ok) return false;
       labels.add(labelKey);
       return true;
     });
@@ -5321,7 +5453,7 @@ function _buildQuizChoices(item) {
     ...choice,
     color: SCRIPT_QUIZ_CHOICE_COLORS[idx % SCRIPT_QUIZ_CHOICE_COLORS.length],
   }));
-  const result = choices.length >= 2 ? choices : [];
+  const result = choices.length >= 2 && _quizChoiceQuality(correctLabel, question.type).ok ? choices : [];
   _quizChoiceCache.set(questionKey, { question, choices: result });
   return result;
 }
@@ -5351,6 +5483,10 @@ function _quizQuestionTypeLabel(type) {
     responsibility: "Responsibility",
     play_from_rule: "Rule to Play",
     diagram: "Diagram ID",
+    diagram_formation: "Formation ID",
+    formation_to_play: "Formation Match",
+    play_type: "Play Type",
+    study_card: "Study Card",
     call: "Call ID",
   };
   return labels[type] || "Quiz";
@@ -5409,7 +5545,13 @@ function _renderQuizWrongReview(item, answer) {
     ? `Study the ${position?.label || "your"} rule and connect it back to the call.`
     : context.questionType === "play_from_rule"
       ? "Match the rule language back to the full call."
-      : "Use the formation, personnel, and tags to identify the call.";
+      : context.questionType === "diagram_formation"
+        ? "Use the formation picture, alignment, and personnel clues."
+        : context.questionType === "formation_to_play"
+          ? "Connect the formation clue back to the play name."
+          : context.questionType === "play_type"
+            ? "Sort the call into run, pass, screen, RPO, or another play family."
+            : "Use the formation, personnel, and tags to identify the call.";
   return `
     <div class="sq-review-card" role="note" aria-label="Wrong answer review">
       <div class="sq-review-kicker">Review this one</div>
@@ -6032,7 +6174,7 @@ function renderScriptQuizPlay() {
   const weightLabel = _quizSourceWeight === 1 ? "1.0x" : `${_quizSourceWeight}x`;
   const question = _quizCurrentQuestion || _buildQuizQuestion(item);
   const detailValue = _quizCleanText(question.detailValue);
-  const diagramPromptHtml = question.type === "diagram"
+  const diagramPromptHtml = ["diagram", "diagram_formation", "study_card"].includes(question.type)
     ? _renderQuizRedactedDiagram(play, question.diagramUrl)
     : "";
 
@@ -6056,7 +6198,7 @@ function renderScriptQuizPlay() {
       <span class="sq-game-pill">Score ${_quizScore}</span>
       <span class="sq-game-pill">Streak ${_quizStreak}</span>
       <span class="sq-game-pill">${escapeHtml(sourceLabel)} · ${escapeHtml(weightLabel)}</span>
-      <span class="sq-game-pill">${escapeHtml(question.type === "responsibility" ? "Rule Match" : question.type === "play_from_rule" ? "Rule to Play" : question.type === "diagram" ? "Diagram ID" : "Call ID")}</span>
+      <span class="sq-game-pill">${escapeHtml(_quizQuestionTypeLabel(question.type))}</span>
     </div>` : ""}
     <div class="sq-scenario-hint">${escapeHtml(question.prompt)}</div>
     ${diagramPromptHtml}
@@ -6090,10 +6232,12 @@ function renderScriptQuizPlay() {
   // Answer — hidden until revealed
   const fullCall = typeof getFullCall === "function" ? getFullCall(play, { showEmoji: false }) : escapeHtml([play.formation, play.play].filter(Boolean).join(" "));
   const defenseItems = [play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean);
+  const { ruleParts, noteParts, position } = _quizCoachDetails(item);
   const answerHtml = `
     <div class="sq-answer-call">${fullCall}</div>
     ${defenseItems.length ? `<div class="sq-answer-defense">vs ${defenseItems.map(escapeHtml).join(" / ")}</div>` : ""}
-    ${play.notes ? `<div class="sq-answer-notes">${escapeHtml(play.notes)}</div>` : ""}
+    ${ruleParts.length ? `<div class="sq-answer-note"><strong>${escapeHtml(position?.label || "Your")} Rule:</strong> ${ruleParts.map(escapeHtml).join(" ")}</div>` : ""}
+    ${noteParts.length ? `<div class="sq-answer-note"><strong>Coach note:</strong> ${noteParts.map(escapeHtml).join(" ")}</div>` : ""}
   `;
   const answerEl = document.getElementById("scriptQuizAnswer");
   if (answerEl) {
