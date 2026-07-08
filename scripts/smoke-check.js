@@ -2438,6 +2438,46 @@ function checkStorageRestoreNormalization() {
   console.log("storage restore normalization contracts ok");
 }
 
+function checkStartupTabRestoreContracts() {
+  const bootstrap = read("js/app-bootstrap.js");
+  const auth = read("js/auth.js");
+
+  [
+    "pendingRestoredStartupTab",
+    "getRestorableStoredTab",
+    "refreshHydratedStartupSurfaces",
+    "applyPendingRestoredStartupTab",
+    "queueRestoredStartupTab",
+    "whenAuthReady()",
+    "window.applyPendingRestoredStartupTab",
+  ].forEach((token) => {
+    if (!bootstrap.includes(token)) {
+      fail(`startup restored-tab contract missing ${token}`);
+    }
+  });
+
+  if (
+    !/restoreStoredPlaybookSession[\s\S]*?const lastTab = getRestorableStoredTab\(\)/.test(
+      bootstrap,
+    ) ||
+    !/restoreStoredPlaybookSession[\s\S]*?queueRestoredStartupTab\(lastTab\)/.test(
+      bootstrap,
+    ) ||
+    !/restoreStoredPlaybookSession[\s\S]*?refreshHydratedStartupSurfaces\(currentActiveTab\)/.test(
+      bootstrap,
+    )
+  ) {
+    fail("stored playbook startup does not defer and refresh restored tabs");
+  }
+
+  const authApplyCount = (auth.match(/applyPendingRestoredStartupTab\(\)/g) || []).length;
+  if (authApplyCount < 3) {
+    fail("auth does not apply pending restored tab after session and login paths");
+  }
+
+  console.log("startup restored-tab contracts ok");
+}
+
 function checkScrollOwnershipContract() {
   const shell = read("js/app-shell.js");
   const domHelpers = read("js/dom-helpers.js");
@@ -2817,6 +2857,7 @@ checkServiceWorkerCachePolicy();
 checkCleanupAudit();
 checkStartupDiagnosticsAndRenderQueue();
 checkStorageRestoreNormalization();
+checkStartupTabRestoreContracts();
 checkScrollOwnershipContract();
 checkTopLevelSymbolOwnership();
 checkWristbandConstantUsage();

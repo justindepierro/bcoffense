@@ -1,4 +1,5 @@
 let mobileEmptyShellInitialized = false;
+let pendingRestoredStartupTab = "";
 
 function isMobileStartupShell() {
   if (document.body?.classList.contains("is-mobile-screen")) return true;
@@ -60,6 +61,82 @@ function ensureMobileStartupSurface() {
   }
 }
 
+function getRestorableStoredTab() {
+  const lastTab = storageManager.get(STORAGE_KEYS.LAST_ACTIVE_TAB);
+  if (
+    lastTab &&
+    lastTab !== "installation" &&
+    typeof TAB_INDEX_MAP !== "undefined" &&
+    TAB_INDEX_MAP[lastTab] !== undefined
+  ) {
+    return lastTab;
+  }
+  return "";
+}
+
+function refreshHydratedStartupSurfaces(tabName = "") {
+  const activeTab =
+    tabName ||
+    (typeof currentActiveTab !== "undefined"
+      ? currentActiveTab
+      : document.body?.dataset.activeTab || "");
+  if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+  if (activeTab === "dashboard" && typeof requestRenderDashboard === "function") {
+    requestRenderDashboard();
+  }
+  if (activeTab === "gameplan" && typeof requestRenderGamePlan === "function") {
+    requestRenderGamePlan();
+  }
+}
+
+function applyPendingRestoredStartupTab(tabName = pendingRestoredStartupTab) {
+  if (!tabName) return false;
+  if (
+    tabName === "installation" ||
+    typeof TAB_INDEX_MAP === "undefined" ||
+    TAB_INDEX_MAP[tabName] === undefined
+  ) {
+    pendingRestoredStartupTab = "";
+    return false;
+  }
+
+  let targetTab = tabName;
+  if (typeof canAccessTab === "function" && !canAccessTab(targetTab)) {
+    const fallback =
+      typeof getDefaultAuthTab === "function" ? getDefaultAuthTab() : "playbook";
+    if (fallback !== targetTab && canAccessTab(fallback)) {
+      targetTab = fallback;
+    } else {
+      pendingRestoredStartupTab = tabName;
+      return false;
+    }
+  }
+
+  pendingRestoredStartupTab = "";
+  if (typeof showTab === "function") {
+    showTab(targetTab);
+  } else {
+    refreshHydratedStartupSurfaces(targetTab);
+  }
+  return true;
+}
+
+function queueRestoredStartupTab(tabName) {
+  if (!tabName) return;
+  pendingRestoredStartupTab = tabName;
+  if (typeof whenAuthReady === "function") {
+    whenAuthReady()
+      .then(() => applyPendingRestoredStartupTab(tabName))
+      .catch(() => { });
+  } else {
+    setTimeout(() => applyPendingRestoredStartupTab(tabName), 0);
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.applyPendingRestoredStartupTab = applyPendingRestoredStartupTab;
+}
+
 function restoreStoredPlaybookSession(storedPlaybook) {
   plays = storedPlaybook;
   if (typeof ensurePlaybookPlayIds === "function") {
@@ -80,14 +157,14 @@ function restoreStoredPlaybookSession(storedPlaybook) {
   initAllModules();
   _syncSortUI();
 
-  const lastTab = storageManager.get(STORAGE_KEYS.LAST_ACTIVE_TAB);
-  if (
-    lastTab &&
-    lastTab !== "installation" &&
-    TAB_INDEX_MAP[lastTab] !== undefined
-  ) {
-    showTab(lastTab);
+  const lastTab = getRestorableStoredTab();
+  if (lastTab) {
+    if (!applyPendingRestoredStartupTab(lastTab)) {
+      queueRestoredStartupTab(lastTab);
+      refreshHydratedStartupSurfaces(currentActiveTab);
+    }
   } else {
+    refreshHydratedStartupSurfaces(currentActiveTab);
     runDraftRestoreCheckForTab(currentActiveTab);
   }
 }

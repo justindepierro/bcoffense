@@ -1013,6 +1013,9 @@
         cleanupLoginFocusTracking();
         overlay.remove();
         applyRoleUi();
+        if (typeof applyPendingRestoredStartupTab === "function") {
+          applyPendingRestoredStartupTab();
+        }
         requestAnimationFrame(() => {
           document.querySelector(".tab[aria-selected='true'], .tab.active, .tabs .tab")?.focus({ preventScroll: true });
         });
@@ -1033,6 +1036,9 @@
             cleanupLoginFocusTracking();
             overlay.remove();
             applyRoleUi();
+            if (typeof applyPendingRestoredStartupTab === "function") {
+              applyPendingRestoredStartupTab();
+            }
             requestAnimationFrame(() => {
               document.querySelector(".tab[aria-selected='true'], .tab.active, .tabs .tab")?.focus({ preventScroll: true });
             });
@@ -1177,6 +1183,9 @@
       });
     }
     applyRoleUi();
+    if (typeof applyPendingRestoredStartupTab === "function") {
+      applyPendingRestoredStartupTab();
+    }
     scheduleCloudAutoPull();
     resolveAuthReady();
   }
