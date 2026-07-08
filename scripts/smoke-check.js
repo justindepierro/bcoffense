@@ -758,15 +758,21 @@ function checkPlayPresentationContracts() {
   });
   if (
     !/function signaturesForPlay\(play\)/.test(playImages) ||
+    !/function displaySignaturesForPlay\(play\)/.test(playImages) ||
+    !/function _sourceIdentityKeyForPlay\(play\)/.test(playImages) ||
+    !/function _legacyRemoteIdentityKey\(play\)/.test(playImages) ||
+    !/PLAY_IMAGE_SOURCE_FIELDS/.test(playImages) ||
     !/play\.playbookId/.test(playImages) ||
     !/getPlayIdentityKey\(sourcePlay, "tag"\)/.test(playImages) ||
     !/async function ensureUrlForPlay\(play\)/.test(playImages) ||
+    !/async function ensureDisplayUrlForPlay\(play\)/.test(playImages) ||
     !/function storedSignatureForPlay\(play\)/.test(playImages) ||
-    !/return ensureUrlForPlay\(play\)/.test(playImages) ||
+    !/function storedDisplaySignatureForPlay\(play\)/.test(playImages) ||
+    !/return ensureDisplayUrlForPlay\(play\)/.test(playImages) ||
     !/playbookId: play\.playbookId \|\| play\.sourcePlayId \|\| play\.id/.test(
       scriptAdd,
     ) ||
-    !/window\.playImages\.storedSignatureForPlay\(play\)/.test(
+    !/window\.playImages\.storedDisplaySignatureForPlay\(play\)/.test(
       playbookRender,
     ) ||
     !/window\.deletePlayImage\(play\)/.test(playbookEditor) ||
@@ -788,6 +794,8 @@ function checkPlayPresentationContracts() {
   }
   if (
     !/async function _putRemoteImage\(identityKey, blob\)/.test(playImages) ||
+    !/const identityKeys = \[[\s\S]*_remoteIdentityKey\(play\),[\s\S]*_legacyRemoteIdentityKey\(play\),/.test(playImages) ||
+    !/_isSourceIdentityKey\(localSig\)/.test(playImages) ||
     !/"X-BC-Auth-Mode": "json"/.test(playImages) ||
     !/credentials: "same-origin"/.test(playImages) ||
     !/const result = \{[\s\S]*pushed: 0,[\s\S]*failed: 0,[\s\S]*errors: \[\]/.test(playImages) ||

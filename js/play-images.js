@@ -17,6 +17,7 @@
      playImages.signaturesForPlay(play)           → current/source/legacy keys
      playImages.storedSignatureForPlay(play)      → first stored compatible key
      playImages.ensureUrlForPlay(play)            → resolve + load compatible image
+     playImages.ensureDisplayUrlForPlay(play)     → strict display-safe image
      playImages.loadKeys()                       → load image keys without blobs
      playImages.prefetchAll()                    → load every blob into URL cache
      playImages.compress(file, opts)             → Blob (resize + JPEG re-encode)
@@ -380,6 +381,92 @@
     return [...new Set(candidates)];
   }
 
+  function _playbookForImageLookup() {
+    return typeof plays !== "undefined" && Array.isArray(plays) ? plays : [];
+  }
+
+  function _isUniqueIdentityKey(identityKey, targetPlay, mode = "tag") {
+    const key = _normalizeSig(identityKey);
+    if (!key || typeof getPlayIdentityKey !== "function") return false;
+    const playbook = _playbookForImageLookup();
+    if (!playbook.length) return true;
+    const matches = playbook.filter(
+      (candidate) => getPlayIdentityKey(candidate, mode) === key,
+    );
+    if (matches.length !== 1) return false;
+    if (!targetPlay) return true;
+    return (
+      matches[0] === targetPlay ||
+      (typeof playsMatch === "function" && playsMatch(matches[0], targetPlay))
+    );
+  }
+
+  function _sourceIdentityKeyForPlay(play) {
+    if (!play || typeof getPlayIdentityKey !== "function") return "";
+    const sourcePlay = _findSourcePlay(play) || play;
+    return getPlayIdentityKey(sourcePlay, PLAY_IMAGE_SOURCE_FIELDS, {
+      trim: false,
+    });
+  }
+
+  function _isSourceIdentityKey(sig) {
+    const key = _normalizeSig(sig);
+    return Boolean(
+      key &&
+      key.includes("|") &&
+      key.split("|").length === PLAY_IMAGE_SOURCE_FIELDS.length
+    );
+  }
+
+  function displaySignaturesForPlay(play) {
+    if (!play || typeof playSignature !== "function") return [];
+    const sourcePlay = _findSourcePlay(play);
+    const exactCandidates = [
+      play.playbookId,
+      play.sourcePlayId,
+      play.originalPlayId,
+      sourcePlay ? sourcePlay.id : "",
+      play.id,
+    ]
+      .map(_normalizeSig)
+      .filter(Boolean);
+
+    const identityCandidates = [];
+    const sourceIdentityKey = _sourceIdentityKeyForPlay(sourcePlay || play);
+    if (
+      sourceIdentityKey &&
+      _isUniqueIdentityKey(
+        sourceIdentityKey,
+        sourcePlay || play,
+        PLAY_IMAGE_SOURCE_FIELDS,
+      )
+    ) {
+      identityCandidates.push(sourceIdentityKey);
+    }
+    if (sourcePlay && typeof getPlayIdentityKey === "function") {
+      const sourceTagKey = getPlayIdentityKey(sourcePlay, "tag");
+      if (_isUniqueIdentityKey(sourceTagKey, sourcePlay, "tag")) {
+        identityCandidates.push(sourceTagKey);
+      }
+    }
+    if (typeof getPlayIdentityKey === "function") {
+      const playTagKey = getPlayIdentityKey(play, "tag");
+      if (_isUniqueIdentityKey(playTagKey, sourcePlay || play, "tag")) {
+        identityCandidates.push(playTagKey);
+      }
+    }
+
+    return [...new Set([...exactCandidates, ...identityCandidates])];
+  }
+
+  function urlForDisplayPlay(play) {
+    for (const signature of displaySignaturesForPlay(play)) {
+      const url = urlFor(signature);
+      if (url) return url;
+    }
+    return null;
+  }
+
   function urlForPlay(play) {
     for (const signature of signaturesForPlay(play)) {
       const url = urlFor(signature);
@@ -401,8 +488,14 @@
   }
 
   function _remoteIdentityKey(play) {
-    if (!play || typeof getPlayIdentityKey !== "function") return "";
-    return getPlayIdentityKey(play, "tag") || "";
+    return _sourceIdentityKeyForPlay(play);
+  }
+
+  function _legacyRemoteIdentityKey(play) {
+    const sourcePlay = _findSourcePlay(play) || play;
+    if (!sourcePlay || typeof getPlayIdentityKey !== "function") return "";
+    const key = getPlayIdentityKey(sourcePlay, "tag") || "";
+    return _isUniqueIdentityKey(key, sourcePlay, "tag") ? key : "";
   }
 
   async function _remoteErrorMessage(res, fallback) {
@@ -446,21 +539,28 @@
 
   async function _fetchRemoteForPlay(play) {
     if (!_remoteAvailable()) return null;
-    const identityKey = _remoteIdentityKey(play);
-    if (!identityKey) return null;
-    try {
-      const res = await fetch(
-        `/images/file?sig=${encodeURIComponent(identityKey)}`,
-      );
-      if (!res.ok) return null;
-      const blob = await res.blob();
-      if (!blob || blob.size === 0) return null;
-      // Cache in IndexedDB under the identity key for future local lookups
-      await set(identityKey, blob);
-      return _urlCache.get(_normalizeSig(identityKey)) || null;
-    } catch (_e) {
-      return null;
+    const identityKeys = [
+      _remoteIdentityKey(play),
+      _legacyRemoteIdentityKey(play),
+    ]
+      .map(_normalizeSig)
+      .filter(Boolean);
+    for (const identityKey of [...new Set(identityKeys)]) {
+      try {
+        const res = await fetch(
+          `/images/file?sig=${encodeURIComponent(identityKey)}`,
+        );
+        if (!res.ok) continue;
+        const blob = await res.blob();
+        if (!blob || blob.size === 0) continue;
+        // Cache in IndexedDB under the identity key for future local lookups
+        await set(identityKey, blob);
+        return _urlCache.get(_normalizeSig(identityKey)) || null;
+      } catch (_e) {
+        // Try the next compatible remote key.
+      }
     }
+    return null;
   }
 
   async function pushRemote(play, blob) {
@@ -526,20 +626,16 @@
     result.total = allKeys.length;
     if (!allKeys.length) return result;
 
-    // Build a reverse map: localSig → identity key for R2
-    // An identity key contains "|" (field separator). UUID-style keys don't.
+    // Build a reverse map: localSig → full identity key for R2.
+    // Old short field-derived keys are only migrated when they map to one play.
     const identityKeyFor = (localSig) => {
-      // If the key is already content-derived (contains "|"), use it directly
-      if (localSig.includes("|")) return localSig;
+      if (_isSourceIdentityKey(localSig)) return localSig;
       // Otherwise find a matching play and derive the identity key
       if (Array.isArray(playsArray)) {
         for (const play of playsArray) {
-          const sigs = signaturesForPlay(play);
+          const sigs = displaySignaturesForPlay(play);
           if (sigs.includes(localSig)) {
-            const ik =
-              typeof getPlayIdentityKey === "function"
-                ? getPlayIdentityKey(play, "tag")
-                : "";
+            const ik = _remoteIdentityKey(play);
             if (ik) return ik;
           }
         }
@@ -601,12 +697,28 @@
     return _fetchRemoteForPlay(play);
   }
 
+  async function ensureDisplayUrlForPlay(play) {
+    for (const signature of displaySignaturesForPlay(play)) {
+      const url = await ensureUrl(signature);
+      if (url) return url;
+    }
+    return _fetchRemoteForPlay(play);
+  }
+
   function hasForPlay(play) {
     return signaturesForPlay(play).some(has);
   }
 
+  function hasDisplayForPlay(play) {
+    return displaySignaturesForPlay(play).some(has);
+  }
+
   function storedSignatureForPlay(play) {
     return signaturesForPlay(play).find(has) || "";
+  }
+
+  function storedDisplaySignatureForPlay(play) {
+    return displaySignaturesForPlay(play).find(has) || "";
   }
 
   async function deleteForPlay(play) {
@@ -875,10 +987,15 @@
     urlFor,
     ensureUrl,
     signaturesForPlay,
+    displaySignaturesForPlay,
     urlForPlay,
+    urlForDisplayPlay,
     ensureUrlForPlay,
+    ensureDisplayUrlForPlay,
     hasForPlay,
+    hasDisplayForPlay,
     storedSignatureForPlay,
+    storedDisplaySignatureForPlay,
     deleteForPlay,
     loadKeys,
     isKeyCacheReady,
@@ -895,13 +1012,13 @@
 
   // Convenience helpers that take a Play object directly
   window.getPlayImageUrl = function (play) {
-    return urlForPlay(play);
+    return urlForDisplayPlay(play);
   };
   window.ensurePlayImageUrl = function (play) {
-    return ensureUrlForPlay(play);
+    return ensureDisplayUrlForPlay(play);
   };
   window.hasPlayImage = function (play) {
-    return hasForPlay(play);
+    return hasDisplayForPlay(play);
   };
   window.deletePlayImage = function (play) {
     // Remove from R2 so all devices reflect the deletion

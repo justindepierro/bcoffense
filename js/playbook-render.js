@@ -124,9 +124,9 @@ function renderPlaybook() {
       if (
         typeof window !== "undefined" &&
         window.playImages &&
-        typeof window.playImages.storedSignatureForPlay === "function"
+        typeof window.playImages.storedDisplaySignatureForPlay === "function"
       ) {
-        return window.playImages.storedSignatureForPlay(play);
+        return window.playImages.storedDisplaySignatureForPlay(play);
       }
       return fallbackSig && window.playImages?.has(fallbackSig)
         ? fallbackSig
