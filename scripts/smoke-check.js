@@ -2882,6 +2882,8 @@ function checkPlayerQuizSettingsContracts() {
     "function _getCoachQuizModeRecommendation",
     "Recommended mode",
     "function _getQuizStreakMoment",
+    "function _getQuizResultRewardMoment",
+    "sq-result-reward-moment",
     "sq-feedback-streak",
     "prefers-reduced-motion: reduce",
     "quizModeLabel",

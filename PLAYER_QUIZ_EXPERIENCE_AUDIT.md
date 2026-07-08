@@ -297,7 +297,7 @@ Goal: answers should feel satisfying without becoming distracting.
 - [x] Add lightweight correct-answer motion under reduced-motion rules.
 - [x] Add streak milestones at 3, 5, and 10.
 - [x] Add a "hot streak" visual state.
-- [ ] Show earned sticker/reward moments inside the result flow.
+- [x] Show earned sticker/reward moments inside the result flow.
 - [x] Add quick positive labels: "Locked in", "Clean read", "Great memory".
 - [ ] Keep wrong-answer feedback calm and useful.
 

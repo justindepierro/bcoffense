@@ -6375,6 +6375,44 @@ function _renderQuizResultReview(summary, review) {
   `;
 }
 
+function _getQuizResultRewardMoment(summary = {}) {
+  if (!summary || summary.completed === false || !Number(summary.answered || 0)) return null;
+  if (Number(summary.bonusPoints || 0) > 0) {
+    return {
+      icon: "⭐",
+      label: `${summary.badge || "Quiz"} reward`,
+      detail: `+${Math.round(summary.bonusPoints)} bonus points added to your week.`,
+    };
+  }
+  if (Number(summary.percent || 0) >= 95 && summary.badge && summary.badge !== "Keep Climbing") {
+    return {
+      icon: "🏅",
+      label: `${summary.badge} finish`,
+      detail: "Badge posted to your quiz profile.",
+    };
+  }
+  if (Number(summary.bestStreak || 0) >= 5) {
+    return {
+      icon: "🔥",
+      label: `${summary.bestStreak}-answer streak`,
+      detail: "That streak is on your attempt summary.",
+    };
+  }
+  return null;
+}
+
+function _renderQuizResultRewardMoment(summary = {}) {
+  const moment = _getQuizResultRewardMoment(summary);
+  if (!moment) return "";
+  return `
+    <div class="sq-result-reward-moment">
+      <span aria-hidden="true">${escapeHtml(moment.icon)}</span>
+      <strong>${escapeHtml(moment.label)}</strong>
+      <small>${escapeHtml(moment.detail)}</small>
+    </div>
+  `;
+}
+
 function _buildQuizAttemptSummary(options = {}) {
   const opts = options && typeof options === "object" ? options : {};
   const partial = Boolean(opts.partial);
@@ -6600,6 +6638,7 @@ function _renderQuizResults(summary) {
         </div>
         ${summary.remaining ? `<div class="sq-result-tier">${summary.remaining} question${summary.remaining === 1 ? "" : "s"} left in this ${summary.sourceType === "gameplan" ? "game plan" : "script"}.</div>` : ""}
         ${summary.bonusPoints ? `<div class="sq-result-bonus">+${summary.bonusPoints} bonus points · ${escapeHtml(summary.badge)}</div>` : ""}
+        ${_renderQuizResultRewardMoment(summary)}
         ${_renderQuizResultReview(summary, review)}
         <div class="sq-result-tier">Weekly tier now: <strong>${escapeHtml(tierAfter)}</strong></div>
         <div class="sq-result-actions">

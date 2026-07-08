@@ -7624,6 +7624,37 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   font-weight: 900;
 }
 
+.sq-result-reward-moment {
+  width: min(100%, 360px);
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  background:
+    radial-gradient(circle at top, color-mix(in srgb, var(--color-warning) 18%, transparent), transparent 58%),
+    var(--color-bg-body);
+  color: var(--color-text);
+}
+
+.sq-result-reward-moment span {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.sq-result-reward-moment strong {
+  font-size: var(--font-size-md);
+  font-weight: 950;
+  line-height: 1.15;
+}
+
+.sq-result-reward-moment small {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+}
+
 .sq-result-review {
   width: 100%;
   display: grid;
