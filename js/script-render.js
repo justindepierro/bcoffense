@@ -1889,6 +1889,13 @@ function _quizDateKey(date = new Date()) {
   return date.toISOString().slice(0, 10);
 }
 
+function _quizAddDaysKey(dateKey, days = 1) {
+  const date = dateKey ? new Date(`${dateKey}T12:00:00`) : new Date();
+  if (Number.isNaN(date.getTime())) return _quizDateKey(new Date());
+  date.setDate(date.getDate() + Number(days || 0));
+  return _quizDateKey(date);
+}
+
 function _quizWeekKey(date = new Date()) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNum = d.getUTCDay() || 7;
@@ -2562,6 +2569,7 @@ function _buildCoachQuizLeaderboardSummary() {
   const rows = new Map();
   const positionTotals = new Map();
   const questionTotals = {};
+  const missedPlayTotals = new Map();
   const ensureRow = (name) => {
     const playerName = _normalizeQuizPlayerName(name || "Player");
     if (!rows.has(playerName)) {
@@ -2597,6 +2605,24 @@ function _buildCoachQuizLeaderboardSummary() {
     pos.answered += Number(attempt.answered || 0);
     pos.correct += Number(attempt.correct || 0);
     _quizAddQuestionBreakdown(questionTotals, attempt.questionBreakdown || {});
+    (Array.isArray(attempt.reviewRows) ? attempt.reviewRows : []).forEach((row) => {
+      if (!row || row.correct) return;
+      const label = _quizCleanText(row.playCall || row.correctLabel || "Unknown play");
+      const key = label.toLowerCase();
+      if (!key) return;
+      if (!missedPlayTotals.has(key)) {
+        missedPlayTotals.set(key, {
+          label,
+          misses: 0,
+          players: new Set(),
+          questionTypes: new Set(),
+        });
+      }
+      const entry = missedPlayTotals.get(key);
+      entry.misses += 1;
+      entry.players.add(row.player || attempt.player || "Player");
+      entry.questionTypes.add(row.questionLabel || _formatQuizQuestionType(row.questionType || "call"));
+    });
   });
 
   viewRewards.forEach((event) => {
@@ -2665,6 +2691,16 @@ function _buildCoachQuizLeaderboardSummary() {
     .sort((a, b) => a.percent - b.percent || b.wrong - a.wrong)
     .slice(0, 4);
 
+  const commonMissedPlays = Array.from(missedPlayTotals.values())
+    .map((item) => ({
+      label: item.label,
+      misses: item.misses,
+      players: item.players.size,
+      questionTypes: Array.from(item.questionTypes).filter(Boolean).slice(0, 3),
+    }))
+    .sort((a, b) => b.misses - a.misses || b.players - a.players || a.label.localeCompare(b.label))
+    .slice(0, 5);
+
   return {
     isSeason,
     weekKey,
@@ -2674,6 +2710,7 @@ function _buildCoachQuizLeaderboardSummary() {
     rows: leaderboardRows,
     weakPositions,
     weakQuestionTypes,
+    commonMissedPlays,
     totals: {
       players: leaderboardRows.length,
       attempts: viewAttempts.length,
@@ -2743,6 +2780,80 @@ function _summarizeQuizAttempts() {
     weeklyLeaderboardRows: _buildQuizLeaderboardRows(attempts, rewards, player, weekKey),
     seasonLeaderboardRows: _buildQuizLeaderboardRows(attempts, rewards, player),
   };
+}
+
+function _getPlayerQuizWeakAreaCards(summary = _summarizeQuizAttempts()) {
+  const attempts = Array.isArray(summary.playerAttempts) ? summary.playerAttempts : [];
+  const questionTotals = {};
+  const positionTotals = new Map();
+  attempts.forEach((attempt) => {
+    _quizAddQuestionBreakdown(questionTotals, attempt.questionBreakdown || {});
+    const rows = Array.isArray(attempt.reviewRows) ? attempt.reviewRows : [];
+    rows.forEach((row) => {
+      const key = row.positionKey || attempt.positionKey || "unknown";
+      const label = row.positionLabel || attempt.positionLabel || _getQuizPositions().find((position) => position.key === key)?.label || "Position";
+      if (!positionTotals.has(key)) {
+        positionTotals.set(key, { key, label, total: 0, correct: 0, wrong: 0 });
+      }
+      const total = positionTotals.get(key);
+      total.total += 1;
+      if (row.correct) {
+        total.correct += 1;
+      } else {
+        total.wrong += 1;
+      }
+    });
+  });
+  const toCard = (item, kind) => ({
+    ...item,
+    kind,
+    percent: item.total ? Math.round((Number(item.correct || 0) / Number(item.total || 0)) * 100) : 0,
+  });
+  return [
+    ...Object.entries(questionTotals).map(([type, stats]) => toCard({
+      key: type,
+      label: _formatQuizQuestionType(type),
+      total: Number(stats.total || 0),
+      correct: Number(stats.correct || 0),
+      wrong: Number(stats.wrong || 0),
+    }, "Question")),
+    ...Array.from(positionTotals.values()).map((item) => toCard(item, "Position")),
+  ]
+    .filter((item) => item.total > 0 && item.wrong > 0)
+    .sort((a, b) => a.percent - b.percent || b.wrong - a.wrong || b.total - a.total)
+    .slice(0, 4);
+}
+
+function _renderPlayerQuizWeakAreaPanel(summary = _summarizeQuizAttempts()) {
+  const cards = _getPlayerQuizWeakAreaCards(summary);
+  if (!cards.length) {
+    return `
+      <section class="player-quiz-hub-section player-quiz-weak-area-panel">
+        <div class="player-quiz-hub-section-head">
+          <h3>Review focus</h3>
+          <span>No weak trend yet. Missed Plays will unlock after quiz attempts.</span>
+        </div>
+        <div class="player-quiz-weak-area-empty">Take a quiz to build your personal review plan.</div>
+      </section>
+    `;
+  }
+  return `
+    <section class="player-quiz-hub-section player-quiz-weak-area-panel">
+      <div class="player-quiz-hub-section-head">
+        <h3>Review focus</h3>
+        <span>Personal weak-area cards from your quiz misses.</span>
+      </div>
+      <div class="player-quiz-weak-area-grid">
+        ${cards.map((card) => `
+          <article class="player-quiz-weak-area-card">
+            <span>${escapeHtml(card.kind)}</span>
+            <strong>${escapeHtml(card.label)}</strong>
+            <small>${Math.round(card.percent)}% · ${Math.round(card.wrong)} miss${Number(card.wrong) === 1 ? "" : "es"} on ${Math.round(card.total)} reps</small>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `;
 }
 
 function _renderPlayerQuizResumeCard(draft, variant = "hub") {
@@ -3261,8 +3372,20 @@ function _quizCompletenessStats(playList) {
     notes: 0,
     situation: 0,
     defense: 0,
+    calls: 0,
+    formations: 0,
+    playTypes: 0,
   };
+  const callSet = new Set();
+  const formationSet = new Set();
+  const typeSet = new Set();
   playsForSource.forEach((play) => {
+    const call = _quizPlainCall(play).toLowerCase();
+    if (call) callSet.add(call);
+    const formation = _quizFormationLabel(play).toLowerCase();
+    if (formation) formationSet.add(formation);
+    const playType = _quizCleanText(play.type).toLowerCase();
+    if (playType) typeSet.add(playType);
     if (
       window.playImages &&
       typeof window.playImages.hasForPlay === "function" &&
@@ -3295,7 +3418,25 @@ function _quizCompletenessStats(playList) {
       totals.defense += 1;
     }
   });
+  totals.calls = callSet.size;
+  totals.formations = formationSet.size;
+  totals.playTypes = typeSet.size;
   const pct = (value) => totals.playCount ? Math.round((value / totals.playCount) * 100) : 0;
+  const choicePct = (value, fullAt = 4) => totals.playCount ? Math.min(100, Math.round((Number(value || 0) / fullAt) * 100)) : 0;
+  const funScore = totals.playCount
+    ? Math.round(
+      pct(totals.diagrams) * 0.42 +
+      choicePct(totals.formations, 3) * 0.24 +
+      choicePct(totals.playTypes, 3) * 0.16 +
+      (totals.calls >= 2 ? 100 : 0) * 0.18,
+    )
+    : 0;
+  const learningScore = totals.playCount
+    ? Math.round(pct(totals.rules) * 0.55 + pct(totals.notes) * 0.35 + (totals.playCount >= 2 ? 100 : 35) * 0.10)
+    : 0;
+  const contextScore = totals.playCount
+    ? Math.round(pct(totals.situation) * 0.50 + pct(totals.defense) * 0.50)
+    : 0;
   const score = totals.playCount
     ? Math.round(
       pct(totals.diagrams) * 0.22 +
@@ -3312,6 +3453,12 @@ function _quizCompletenessStats(playList) {
     notePct: pct(totals.notes),
     situationPct: pct(totals.situation),
     defensePct: pct(totals.defense),
+    callChoicePct: choicePct(totals.calls, 4),
+    formationChoicePct: choicePct(totals.formations, 3),
+    typeChoicePct: choicePct(totals.playTypes, 3),
+    funScore,
+    learningScore,
+    contextScore,
     score,
   };
 }
@@ -3346,6 +3493,45 @@ function _renderQuizCompletenessChips(stats = {}, className = "quiz-completeness
   `;
 }
 
+function _readinessTone(score) {
+  const value = Number(score || 0);
+  if (value >= 80) return "ready";
+  if (value >= 55) return "partial";
+  if (value > 0) return "missing";
+  return "empty";
+}
+
+function _renderCoachQuizReadinessSplit(stats = {}) {
+  const items = [
+    {
+      label: "Fun readiness",
+      score: stats.funScore,
+      detail: `${stats.diagrams}/${stats.playCount} diagrams · ${stats.formations || 0} formations · ${stats.playTypes || 0} types`,
+    },
+    {
+      label: "Learning readiness",
+      score: stats.learningScore,
+      detail: `${stats.rules}/${stats.playCount} rules · ${stats.notes}/${stats.playCount} notes`,
+    },
+    {
+      label: "Context readiness",
+      score: stats.contextScore,
+      detail: `${stats.situation}/${stats.playCount} situations · ${stats.defense}/${stats.playCount} defense tags`,
+    },
+  ];
+  return `
+    <div class="coach-quiz-readiness-split" aria-label="Split quiz source readiness">
+      ${items.map((item) => `
+        <span class="coach-quiz-readiness-split-item coach-quiz-readiness-split-item--${escapeAttr(_readinessTone(item.score))}">
+          <strong>${Math.round(Number(item.score || 0))}</strong>
+          <b>${escapeHtml(item.label)}</b>
+          <small>${escapeHtml(item.detail)}</small>
+        </span>
+      `).join("")}
+    </div>
+  `;
+}
+
 function _quizReadinessLabel(score) {
   if (score >= 88) return { label: "Player ready", tone: "ready" };
   if (score >= 68) return { label: "Close", tone: "close" };
@@ -3356,11 +3542,11 @@ function _quizReadinessLabel(score) {
 function _quizReadinessActions(stats, extras = {}) {
   const actions = [];
   if (!stats.playCount) actions.push("Add plays before publishing a quiz.");
-  if (stats.rulePct < 80) actions.push("Write more player rules by position.");
-  if (stats.diagramPct < 70) actions.push("Attach diagrams so visual questions can work.");
-  if (stats.notePct < 50) actions.push("Add coach notes for teaching feedback.");
-  if (stats.situationPct < 70) actions.push("Fill down, distance, field zone, or hash metadata.");
-  if (stats.defensePct < 60) actions.push("Add defensive front/coverage tags for context.");
+  if (stats.diagramPct < 70) actions.push("Add 3 diagrams to the first uncovered calls.");
+  if (stats.rulePct < 80) actions.push("Add Q/H/Y rules for the plays players will quiz.");
+  if (stats.notePct < 50) actions.push("Add coach notes to missed or high-value plays.");
+  if ((stats.calls || 0) < 2 || stats.callChoicePct < 50) actions.push("Simplify long calls and add distinct answer choices.");
+  if (stats.situationPct < 70 || stats.defensePct < 60) actions.push("Add context tags after the fun and learning gaps are handled.");
   if (extras.needsVisibility) actions.push("Turn on Player login for this script.");
   if (extras.bucketCount !== undefined && extras.bucketCount < 2) actions.push("Add plays to more Game Plan buckets.");
   return actions.slice(0, 4);
@@ -3756,8 +3942,80 @@ function _renderCoachQuizModeRecommendation(source, kind) {
   `;
 }
 
-function _renderCoachQuizQuestionPreview(source) {
+function _coachQuizModeKeyFromRecommendation(recommendation = {}, kind = "script") {
+  if (kind === "gameplan") return "gameplan";
+  const label = String(recommendation.label || "").toLowerCase();
+  if (label.includes("diagram")) return "diagram";
+  if (label.includes("job")) return "job";
+  return "quick";
+}
+
+function _coachQuizGeneratorPreview(source, kind = "script") {
+  const sourceItems = _normalizeQuizItems(source?.plays || []);
+  const recommendation = _getCoachQuizModeRecommendation(source, kind);
+  const modeKey = _coachQuizModeKeyFromRecommendation(recommendation, kind);
+  const sampleItems = _prepareQuizItemsForMode(sourceItems, modeKey).slice(0, 6);
+  const original = {
+    plays: _quizPlays,
+    basePlays: _quizBasePlays,
+    index: _quizIndex,
+    mode: _quizMode,
+    choiceCache: _quizChoiceCache,
+    currentChoices: _quizCurrentChoices,
+    currentQuestion: _quizCurrentQuestion,
+  };
+  const counts = {};
+  const examples = [];
+  try {
+    _quizMode = modeKey;
+    _quizPlays = sampleItems;
+    _quizBasePlays = sampleItems;
+    _quizChoiceCache = new Map();
+    sampleItems.forEach((item, idx) => {
+      _quizIndex = idx;
+      const data = _getQuizQuestionAndChoices(item);
+      const type = data?.question?.type || "study_card";
+      counts[type] = (counts[type] || 0) + 1;
+      if (examples.length < 3) {
+        const correctLabel = _quizQuestionChoiceLabel(item, data.question);
+        examples.push({
+          type,
+          label: _quizQuestionTypeLabel(type),
+          prompt: data?.question?.prompt || "Study this one.",
+          answer: correctLabel || _quizShortCall(item.play),
+          playable: Array.isArray(data?.choices) && data.choices.length >= 2,
+        });
+      }
+    });
+  } finally {
+    _quizPlays = original.plays;
+    _quizBasePlays = original.basePlays;
+    _quizIndex = original.index;
+    _quizMode = original.mode;
+    _quizChoiceCache = original.choiceCache;
+    _quizCurrentChoices = original.currentChoices;
+    _quizCurrentQuestion = original.currentQuestion;
+  }
+  const total = sampleItems.length;
+  const studyCards = Number(counts.study_card || 0);
+  const studyCardPct = total ? Math.round((studyCards / total) * 100) : 0;
+  const bestQuestionType = examples.find((example) => example.playable)?.label || examples[0]?.label || "Study Card";
+  return {
+    recommendation,
+    modeKey,
+    total,
+    counts,
+    examples,
+    studyCards,
+    studyCardPct,
+    mostlyStudyCards: total > 0 && studyCardPct >= 50,
+    bestQuestionType,
+  };
+}
+
+function _renderCoachQuizQuestionPreview(source, kind = "script") {
   const preview = _coachQuizQuestionPreviewStats(source.plays);
+  const actual = _coachQuizGeneratorPreview(source, kind);
   const responsibilityNote = preview.responsibilityReady
     ? `${preview.positionLabel} rules are varied enough for multiple-choice responsibility questions.`
     : preview.playsWithRule
@@ -3769,11 +4027,27 @@ function _renderCoachQuizQuestionPreview(source) {
   const diagramNote = preview.playsWithDiagram
     ? "Redacted diagram questions can fill in when player rules are missing."
     : "Add diagrams before visual questions can work.";
+  const actualRows = actual.examples.length
+    ? actual.examples.map((example) => _coachQuizPreviewRow(
+      example.label,
+      example.playable ? "Play" : "Study",
+      `${example.prompt}${example.answer ? ` Answer: ${example.answer}.` : ""}`,
+      example.playable ? "ready" : "needs",
+    )).join("")
+    : _coachQuizPreviewRow("Study Card", "Study", "No fair generated examples yet.", "needs");
   return `
     <div class="coach-quiz-question-preview">
       <div class="coach-quiz-question-preview-head">
         <strong>Question preview</strong>
-        <span>${escapeHtml(preview.positionLabel)} position</span>
+        <span>Best next: ${escapeHtml(actual.bestQuestionType)} · ${escapeHtml(preview.positionLabel)} position</span>
+      </div>
+      ${actual.mostlyStudyCards ? `
+        <div class="coach-quiz-study-card-warning">
+          Mostly Study Cards: ${actual.studyCardPct}% of sampled reps are not fair multiple-choice yet.
+        </div>
+      ` : ""}
+      <div class="coach-quiz-preview-grid coach-quiz-preview-grid--actual">
+        ${actualRows}
       </div>
       <div class="coach-quiz-preview-grid">
         ${_coachQuizPreviewRow("Responsibility", preview.responsibilityReady, responsibilityNote, preview.responsibilityReady ? "ready" : "needs")}
@@ -3854,6 +4128,7 @@ function _renderCoachQuizSourceCard(source, kind) {
       <div class="coach-quiz-source-meta">${escapeHtml(meta)}</div>
       ${_renderCoachQuizSourceControls(source, kind, stats)}
       ${_renderCoachQuizModeRecommendation(source, kind)}
+      ${_renderCoachQuizReadinessSplit(stats)}
       ${_renderQuizCompletenessChips(stats, "quiz-completeness-chips coach-quiz-completeness-chips")}
       <div class="coach-quiz-metrics">
         ${_quizMetric("Diagrams", stats.diagrams, stats.playCount)}
@@ -3862,9 +4137,9 @@ function _renderCoachQuizSourceCard(source, kind) {
         ${_quizMetric("Situation", stats.situation, stats.playCount)}
         ${_quizMetric("Defense", stats.defense, stats.playCount)}
       </div>
-      ${_renderCoachQuizQuestionPreview(source)}
+      ${_renderCoachQuizQuestionPreview(source, kind)}
       <div class="coach-quiz-next-actions">
-        <strong>Next best work</strong>
+        <strong>Make this quiz better</strong>
         ${actions.length
       ? `<ul>${actions.map((action) => `<li>${escapeHtml(action)}</li>`).join("")}</ul>`
       : `<p>This source is ready for player quizzes.</p>`}
@@ -4087,6 +4362,19 @@ function _renderCoachQuizWeakList(items, emptyText) {
   `).join("");
 }
 
+function _renderCoachQuizCommonMissedPlays(items) {
+  if (!Array.isArray(items) || !items.length) {
+    return `<div class="coach-quiz-weak-empty">No common missed plays yet.</div>`;
+  }
+  return items.map((item) => `
+    <div class="coach-quiz-common-miss-row">
+      <strong>${escapeHtml(item.label)}</strong>
+      <span>${Math.round(item.misses || 0)} miss${Number(item.misses || 0) === 1 ? "" : "es"}</span>
+      <small>${Math.round(item.players || 0)} player${Number(item.players || 0) === 1 ? "" : "s"} · ${escapeHtml((item.questionTypes || []).join(", ") || "Quiz review")}</small>
+    </div>
+  `).join("");
+}
+
 function _renderCoachQuizLeaderboardPanel(summary) {
   const topPlayer = summary.rows[0];
   const selectedPlayer = _leaderboardSelectedPlayer || topPlayer?.name || "";
@@ -4132,6 +4420,13 @@ function _renderCoachQuizLeaderboardPanel(summary) {
             <span>Under 85%</span>
           </div>
           ${_renderCoachQuizWeakList(summary.weakQuestionTypes, "No weak question-type trend yet.")}
+        </div>
+        <div class="coach-quiz-weak-card coach-quiz-common-miss-card">
+          <div class="coach-quiz-weak-head">
+            <strong>Common missed plays</strong>
+            <span>Re-teach targets</span>
+          </div>
+          ${_renderCoachQuizCommonMissedPlays(summary.commonMissedPlays)}
         </div>
       </div>
     </section>
@@ -5146,7 +5441,10 @@ function _quizItemHasPositionRule(itemOrPlay, key = _quizPositionKey) {
   return candidates.some((positionKey) => _quizCleanText(play?.[positionKey] || ""));
 }
 
-function _getRecentMissedQuizItems(limit = 5) {
+function _getRecentMissedQuizItems(limit = 5, options = {}) {
+  const opts = options && typeof options === "object" ? options : {};
+  const dueOnly = opts.dueOnly !== false;
+  const todayKey = opts.todayKey || _quizDateKey(new Date());
   const attempts = _getPlayerQuizAttempts()
     .filter((attempt) => _quizPlayerNameFromAttempt(attempt, _getQuizPlayerName()) === _getQuizPlayerName())
     .sort((a, b) => String(b.completedAt || "").localeCompare(String(a.completedAt || "")));
@@ -5159,6 +5457,10 @@ function _getRecentMissedQuizItems(limit = 5) {
   const seen = new Set();
   const out = [];
   attempts.forEach((attempt) => {
+    const completedDate = attempt.completedAt ? new Date(attempt.completedAt) : null;
+    const attemptDateKey = attempt.dateKey || (completedDate && !Number.isNaN(completedDate.getTime()) ? _quizDateKey(completedDate) : todayKey);
+    const dueDateKey = _quizAddDaysKey(attemptDateKey, 1);
+    if (dueOnly && dueDateKey > todayKey) return;
     (Array.isArray(attempt.reviewRows) ? attempt.reviewRows : []).forEach((row) => {
       if (row.correct) return;
       const call = _quizCleanText(row.playCall || row.correctLabel || "");
@@ -5166,7 +5468,7 @@ function _getRecentMissedQuizItems(limit = 5) {
       const match = sourcePlays.find((play) => play && _quizPlainCall(play).toLowerCase() === call.toLowerCase());
       if (!match) return;
       seen.add(call.toLowerCase());
-      out.push({ play: match, period: "Missed Plays", scriptIndex: out.length });
+      out.push({ play: match, period: dueOnly ? "Spaced Review" : "Missed Plays", scriptIndex: out.length, dueDateKey });
     });
   });
   return out.slice(0, limit);
@@ -5429,6 +5731,11 @@ function _renderPlayerQuizHub() {
   }
   if (scriptPicker) {
     scriptPicker.innerHTML = _renderPlayerQuizScriptPicker(_getPlayerQuizScriptOptions());
+  }
+
+  const weakSlot = document.getElementById("playerQuizWeakAreaSlot");
+  if (weakSlot) {
+    setInnerHTML(weakSlot, _renderPlayerQuizWeakAreaPanel(summary));
   }
 
   const gamePlanBtn = document.getElementById("playerQuizStartGamePlanBtn");
@@ -6373,8 +6680,40 @@ function _renderQuizResultReview(summary, review) {
           </span>
         `).join("")}
       </div>
+      <button type="button" class="btn btn-sm btn-primary sq-result-retry-btn" data-action="startQuizMissRetryFromResult">
+        Retry 3 now
+      </button>
     </div>
   `;
+}
+
+function startQuizMissRetryFromResult() {
+  const missedRows = _getQuizAnswerReviewRows().filter((row) => !row.correct).slice(0, 3);
+  if (!missedRows.length) {
+    showToast("No missed plays to retry from this result.", { type: "info" });
+    return;
+  }
+  const retryItems = missedRows
+    .map((row, idx) => ({
+      play: row.item?.play,
+      period: "3-question retry",
+      scriptIndex: idx,
+      positionKey: row.positionKey || _quizPositionKey,
+    }))
+    .filter((item) => item.play);
+  if (!retryItems.length) {
+    showToast("Those missed plays are no longer available.", { type: "warning" });
+    return;
+  }
+  startScriptQuiz({
+    items: retryItems,
+    sourceType: _quizSourceType,
+    sourceId: _quizSourceId,
+    title: "3-Question Retry",
+    positionKey: retryItems[0]?.positionKey || _quizPositionKey,
+    positionMode: "manual",
+    mode: "retry",
+  });
 }
 
 function _getQuizResultRewardMoment(summary = {}) {

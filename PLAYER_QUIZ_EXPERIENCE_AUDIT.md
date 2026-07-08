@@ -311,20 +311,20 @@ Definition of done:
 
 Goal: help coaches make better quizzes without extra work.
 
-- [ ] Split source readiness into:
+- [x] Split source readiness into:
   - Fun readiness,
   - Learning readiness,
   - Context readiness.
-- [ ] Show "Best next question type" per source.
-- [ ] Add one-click "Make this quiz better" checklist:
+- [x] Show "Best next question type" per source.
+- [x] Add one-click "Make this quiz better" checklist:
   - add 3 diagrams,
   - add Q/H/Y rules,
   - add coach notes to missed plays,
   - simplify long calls.
 - [x] Let coaches open Thin/Needs work saved scripts into a play repair list
   and edit the linked master Playbook plays from there.
-- [ ] Flag sources that will mostly generate Study Cards.
-- [ ] Add source preview examples that match the actual generator.
+- [x] Flag sources that will mostly generate Study Cards.
+- [x] Add source preview examples that match the actual generator.
 
 Definition of done:
 
@@ -336,10 +336,10 @@ Definition of done:
 Goal: quizzes should help kids improve over time.
 
 - [x] Add "Missed Plays" source from recent wrong answers.
-- [ ] Add spaced retry: missed today appears again tomorrow.
-- [ ] Add player weak-area cards by question type and position.
-- [ ] Let players start a 3-question retry from the result screen.
-- [ ] Add coach view of common missed plays across the team.
+- [x] Add spaced retry: missed today appears again tomorrow.
+- [x] Add player weak-area cards by question type and position.
+- [x] Let players start a 3-question retry from the result screen.
+- [x] Add coach view of common missed plays across the team.
 
 Definition of done:
 

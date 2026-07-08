@@ -481,7 +481,12 @@ test.describe("Player mobile experience", () => {
       missedCount: 1,
       missTypes: ["Responsibility"],
     });
-    await quiz.getByRole("button", { name: /^Done$/i }).click();
+    await expect(quiz.getByRole("button", { name: /^Retry 3 now$/i })).toBeVisible();
+    await quiz.getByRole("button", { name: /^Retry 3 now$/i }).click();
+    await expect(quiz).toContainText("3-Question Retry");
+    await expect(quiz.locator("#scriptQuizProgress")).toContainText("1 / 1");
+    await quiz.getByRole("button", { name: /Close quiz/i }).click();
+    await quiz.getByRole("button", { name: /^Save & Close$/i }).click();
     await expect(quiz).toBeHidden();
     await assertNoHorizontalOverflow(page);
   });
@@ -946,6 +951,35 @@ test.describe("Player mobile experience", () => {
       storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS, {
         "script:position-script": { state: "available", updatedAt: new Date().toISOString() },
       });
+      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, [{
+        id: "missed-yesterday",
+        player: "Lucas",
+        sourceType: "script",
+        sourceId: "position-script",
+        title: "Position Install",
+        quizMode: "quick",
+        positionKey: "respH",
+        positionLabel: "H",
+        answered: 1,
+        correct: 0,
+        wrong: 1,
+        percent: 0,
+        totalPoints: 0,
+        questionBreakdown: { responsibility: { total: 1, correct: 0, wrong: 1 } },
+        reviewRows: [{
+          correct: false,
+          questionType: "responsibility",
+          questionLabel: "Responsibility",
+          positionKey: "respH",
+          positionLabel: "H",
+          playCall: "11 Trips Rt Buck Sweep",
+          correctLabel: "Arc release and block the alley player.",
+        }],
+        completedAt: `${yesterday}T12:00:00.000Z`,
+        dateKey: yesterday,
+        weekKey: "2026-W27",
+      }]);
       storageManager.remove(STORAGE_KEYS.PLAYER_QUIZ_DRAFT);
       if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
       if (typeof renderPlayerScriptLauncher === "function") renderPlayerScriptLauncher();
@@ -962,6 +996,10 @@ test.describe("Player mobile experience", () => {
     await expect(hub.locator("#playerQuizModeGrid")).toContainText("Know Your Job");
     await expect(hub.locator("#playerQuizModeGrid")).toContainText("Game Plan Check");
     await expect(hub.locator("#playerQuizModeGrid")).toContainText("Missed Plays");
+    await expect(hub.locator("#playerQuizModeGrid")).toContainText("1 due");
+    await expect(hub.locator("#playerQuizWeakAreaSlot")).toContainText("Review focus");
+    await expect(hub.locator("#playerQuizWeakAreaSlot")).toContainText("Responsibility");
+    await expect(hub.locator("#playerQuizWeakAreaSlot")).toContainText("Position");
 
     await hub.locator("#playerQuizPositionModeSelect").selectOption("secondary");
     await expect(hub.locator("#playerQuizPositionHint")).toContainText("secondary position");
@@ -2026,6 +2064,12 @@ test.describe("Player mobile experience", () => {
     await expect(friday).toContainText("Metadata");
     await expect(friday).toContainText("Recommended mode");
     await expect(friday).toContainText("Know Your Job");
+    await expect(friday).toContainText("Fun readiness");
+    await expect(friday).toContainText("Learning readiness");
+    await expect(friday).toContainText("Context readiness");
+    await expect(friday).toContainText("Best next:");
+    await expect(friday).toContainText("Make this quiz better");
+    await expect(friday).toContainText("Mostly Study Cards");
     await expect(gamePlan).toContainText("Recommended mode");
     await expect(gamePlan).toContainText("Game Plan Check");
 
@@ -2168,6 +2212,15 @@ test.describe("Player mobile experience", () => {
           responsibility: { total: 3, correct: 1, wrong: 2 },
           call: { total: 2, correct: 2, wrong: 0 },
         },
+        reviewRows: [{
+          correct: false,
+          questionType: "responsibility",
+          questionLabel: "Responsibility",
+          positionKey: "respQ",
+          positionLabel: "Q",
+          playCall: "11 Trips Rt Buck Sweep",
+          correctLabel: "Read force and secure the edge.",
+        }],
         dateKey,
         weekKey,
       }, {
@@ -2245,6 +2298,8 @@ test.describe("Player mobile experience", () => {
     await expect(setup).toContainText("Week ");
     await expect(setup).toContainText("Lucas");
     await expect(setup).toContainText("525 pts");
+    await expect(setup).toContainText("Common missed plays");
+    await expect(setup).toContainText("11 Trips Rt Buck Sweep");
     await expect(setup).toContainText("Roster link health");
     await expect(setup).toContainText("Linked accounts");
     await expect(setup).toContainText("Unlinked roster");

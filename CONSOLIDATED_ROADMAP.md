@@ -124,7 +124,7 @@ Work left:
   while respecting reduced-motion.
 - [x] Let coaches click Thin/Needs work saved scripts and repair linked
   Playbook plays from a source-specific list.
-- [ ] Split coach source readiness into fun, learning, and context readiness.
+- [x] Split coach source readiness into fun, learning, and context readiness.
 - [x] Add E2E coverage for diagram-first, formation, play-type, study-card, and
   long-choice fallback behavior.
 
