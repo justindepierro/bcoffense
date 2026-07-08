@@ -649,7 +649,7 @@
         if (!identityKey) {
           result.skipped += 1;
           if (result.errors.length < 5) {
-            result.errors.push({ sig: localSig, error: "No matching play was found for this local diagram." });
+            result.errors.push({ sig: localSig, error: "No unique matching play was found for this local diagram. Reattach it from the correct Playbook row, then push again." });
           }
           return;
         }

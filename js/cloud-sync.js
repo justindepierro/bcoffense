@@ -286,6 +286,23 @@
     }
   }
 
+  function formatDiagramSyncSummary(result) {
+    if (!result) return "";
+    return `Player-visible diagrams: ${Number(result.pushed || 0)} pushed, ${Number(result.skipped || 0)} skipped, ${Number(result.failed || 0)} failed.`;
+  }
+
+  function formatDiagramSyncDetails(result) {
+    if (!result || !Array.isArray(result.errors) || !result.errors.length) return "";
+    return result.errors
+      .slice(0, 5)
+      .map((item) => {
+        const sig = item.sig ? `${item.sig}: ` : "";
+        const status = item.status ? `${item.status}: ` : "";
+        return `- ${sig}${status}${item.error || "Unknown diagram sync issue."}`;
+      })
+      .join("\n");
+  }
+
   async function reducePayloadIfNeeded(backup, payloadText, payloadSize, opts = {}) {
     const interactive = opts.interactive !== false;
     if (payloadSize <= MAX_KV_BACKUP_BYTES) {
@@ -332,6 +349,7 @@
 
     try {
       setCloudSyncBusy(true);
+      let diagramSyncResult = null;
       if (!silent) updateCloudSyncModalStatus("Preparing local data...", "info");
       let backup = await buildCloudBackupPayload({ interactive: !silent });
       let payloadText = JSON.stringify(backup, null, 2);
@@ -352,32 +370,41 @@
         lastRemoteUpdatedAt: data.updatedAt || "",
         lastRemoteSize: payloadSize,
       });
-      if (!silent) {
-        updateCloudSyncModalStatus(
-          `Pushed ${summary.itemCount} items${summary.imageCount ? ` and ${summary.imageCount} images` : ""}. Last push: ${formatCloudDate(nextSettings.lastPushAt)}.`,
-          "ok",
-        );
-        showModal(
-          `Cloud backup pushed.\n\nSize: ${storageManager.formatBytes(payloadSize)}\nItems: ${summary.itemCount}${summary.imageCount ? `\nImages: ${summary.imageCount}` : ""}`,
-          { title: "Cloud Sync", icon: "✅" },
-        );
-      }
       // Also push play images to R2 so players can access diagrams cross-device.
-      // Fire and forget — runs in background after the backup confirms success.
       if (window.playImages && typeof window.playImages.syncToRemote === "function") {
         const _playsRef = typeof plays !== "undefined" ? plays : [];
-        window.playImages
-          .syncToRemote(_playsRef)
-          .then((result) => {
+        if (!silent) {
+          updateCloudSyncModalStatus("Backup pushed. Syncing diagrams to player devices...", "info");
+          diagramSyncResult = await window.playImages.syncToRemote(_playsRef);
+        } else {
+          // Auto-push should never block the app; report issues to the console.
+          window.playImages.syncToRemote(_playsRef).then((result) => {
             if (result && (result.failed || result.skipped)) {
               console.warn("Cloud backup completed, but diagram sync had issues:", result);
             }
-          })
-          .catch((err) => {
+          }).catch((err) => {
             console.warn("Cloud backup completed, but diagram sync failed:", err);
           });
+        }
       }
-      return { backup, summary, size: payloadSize, updatedAt: data.updatedAt || "" };
+      if (!silent) {
+        const diagramLine = formatDiagramSyncSummary(diagramSyncResult);
+        const modalDetails = formatDiagramSyncDetails(diagramSyncResult);
+        updateCloudSyncModalStatus(
+          `Pushed ${summary.itemCount} items${summary.imageCount ? ` and ${summary.imageCount} image backup entries` : ""}.${diagramLine ? ` ${diagramLine}` : ""} Last push: ${formatCloudDate(nextSettings.lastPushAt)}.`,
+          diagramSyncResult && (diagramSyncResult.failed || diagramSyncResult.skipped) ? "warning" : "ok",
+        );
+        showModal(
+          `Cloud sync pushed.\n\nSize: ${storageManager.formatBytes(payloadSize)}\nItems: ${summary.itemCount}${summary.imageCount ? `\nImage backup entries: ${summary.imageCount}` : ""}${diagramLine ? `\n${diagramLine}` : ""}${modalDetails ? `\n\nDiagram issues:\n${modalDetails}` : ""}`,
+          {
+            title: diagramSyncResult && (diagramSyncResult.failed || diagramSyncResult.skipped)
+              ? "Cloud Sync Needs Review"
+              : "Cloud Sync Complete",
+            icon: diagramSyncResult && (diagramSyncResult.failed || diagramSyncResult.skipped) ? "⚠️" : "✅",
+          },
+        );
+      }
+      return { backup, summary, size: payloadSize, updatedAt: data.updatedAt || "", diagramSyncResult };
     } finally {
       setCloudSyncBusy(false);
     }
@@ -698,7 +725,7 @@
         </div>
         <div class="custom-modal-body cloud-sync-body">
           <p>Cloudflare sync is connected. No GitHub token is stored on this device.</p>
-          <p class="cloud-sync-warning">${escapeHtml(canPush ? "Admin changes autosave to cloud after a short delay. Any signed-in device can pull the latest backup." : `${roleLabel || "This login"} can pull the latest team backup. Only admin can push changes.`)}</p>
+          <p class="cloud-sync-warning">${escapeHtml(canPush ? "Push Everything sends this device's team backup and player-visible diagrams to cloud. Pull replaces this device with the latest cloud backup." : `${roleLabel || "This login"} can pull the latest team backup. Only admin can push changes.`)}</p>
           <div id="cloudSyncModalStatus" class="cloud-sync-modal-status cloud-sync-modal-status-info">
             Cloudflare sync ready. Last cloud backup: ${escapeHtml(formatCloudDate(settings.lastRemoteExportDate || settings.lastPushAt || settings.lastPullAt))}.
           </div>
@@ -712,7 +739,7 @@
           <button type="button" class="btn custom-modal-btn custom-modal-cancel" data-action="closeCloudSyncModal">Close</button>
           <button type="button" class="btn btn-secondary custom-modal-btn" data-action="testCloudSyncConnection" data-cloud-sync-action="test">Check</button>
           <button type="button" class="btn btn-secondary custom-modal-btn" data-action="pullCloudBackup" data-cloud-sync-action="pull">Pull</button>
-          ${canPush ? '<button type="button" class="btn btn-primary custom-modal-btn" data-action="pushCloudBackup" data-cloud-sync-action="push" data-auth-admin-only="true">Push</button>' : ""}
+          ${canPush ? '<button type="button" class="btn btn-primary custom-modal-btn" data-action="pushCloudBackup" data-cloud-sync-action="push" data-auth-admin-only="true">Push Everything</button>' : ""}
         </div>
       </div>
     `;

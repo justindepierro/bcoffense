@@ -365,6 +365,15 @@ function checkStorageKeyUsage() {
   if (!cloudSync.includes("STORAGE_KEYS.GAME_PLAN_SNAPSHOTS")) {
     fail("cloud sync omits saved game plan snapshots");
   }
+  if (
+    !/function formatDiagramSyncSummary\(result\)/.test(cloudSync) ||
+    !/function formatDiagramSyncDetails\(result\)/.test(cloudSync) ||
+    !/diagramSyncResult = await window\.playImages\.syncToRemote\(_playsRef\)/.test(cloudSync) ||
+    !/Push Everything/.test(cloudSync) ||
+    !/Pull replaces this device/.test(cloudSync)
+  ) {
+    fail("cloud sync push does not wait for and report diagram sync results");
+  }
   console.log("storage key usage ok");
 }
 
