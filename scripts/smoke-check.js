@@ -2478,6 +2478,18 @@ function checkStartupTabRestoreContracts() {
   console.log("startup restored-tab contracts ok");
 }
 
+function checkStartupRestoreHarness() {
+  const result = spawnSync(process.execPath, ["scripts/startup-restore-harness.mjs"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    fail(`startup restore harness failed\n${result.stderr || result.stdout}`);
+    return;
+  }
+  console.log((result.stdout || "startup restore harness passed").trim());
+}
+
 function checkScrollOwnershipContract() {
   const shell = read("js/app-shell.js");
   const domHelpers = read("js/dom-helpers.js");
@@ -2858,6 +2870,7 @@ checkCleanupAudit();
 checkStartupDiagnosticsAndRenderQueue();
 checkStorageRestoreNormalization();
 checkStartupTabRestoreContracts();
+checkStartupRestoreHarness();
 checkScrollOwnershipContract();
 checkTopLevelSymbolOwnership();
 checkWristbandConstantUsage();
