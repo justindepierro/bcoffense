@@ -173,6 +173,8 @@ body[data-auth-role="player"] .save-status {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 7px 14px;
   border: 1px solid var(--color-white-alpha-20);
   border-radius: var(--radius-pill);
@@ -183,6 +185,7 @@ body[data-auth-role="player"] .save-status {
   cursor: pointer;
   transition: all var(--transition-fast);
   font-family: inherit;
+  line-height: 1;
 }
 @media (hover: hover) {
   .header-action-btn:hover {
@@ -282,6 +285,7 @@ body[data-auth-role="player"] .save-status {
 .tab {
   display: inline-flex;
   align-items: center;
+  min-height: 44px;
   padding: 12px 18px;
   background: transparent;
   border: none;
@@ -387,12 +391,13 @@ body[data-auth-role="player"] .save-status {
 .gw-bar__edit {
   margin-left: auto;
   flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
   background: var(--color-white-alpha-15);
   color: var(--color-text-inverse);
   border: 1px solid var(--color-white-alpha-20);
   padding: 2px 8px;
   font-size: var(--font-size-2xs);
-  min-height: 22px;
   border-radius: var(--radius-sm);
 }
 .gw-bar__edit:hover {

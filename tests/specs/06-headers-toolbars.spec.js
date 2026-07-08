@@ -244,7 +244,8 @@ test.describe("Header and toolbar contract", () => {
       };
     });
     expect(statsLayout.centerSpread).toBeLessThanOrEqual(8);
-    expect(statsLayout.height).toBeLessThanOrEqual(56);
+    // 44px controls plus compact vertical padding should still stay in one row.
+    expect(statsLayout.height).toBeLessThanOrEqual(64);
     expect(statsLayout.overflow).toBe(false);
     await assertAppChromeTopLayer(page);
     await assertNoHorizontalOverflow(page);

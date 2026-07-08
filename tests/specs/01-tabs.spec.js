@@ -28,14 +28,12 @@ test.describe("Tab navigation (#10)", () => {
       await goToTab(page, arg);
 
       // The active tab button should be highlighted
-      const tabBtn = page.locator(`[data-action="showTab"][data-arg="${arg}"]`);
+      const tabBtn = page.locator(`#tab-${arg}`);
       await expect(tabBtn).toHaveClass(/active/);
 
       // The corresponding tab panel should be visible with some content
-      const panel = page.locator(`[data-tab="${arg}"], #${arg}Tab, .tab-panel[data-name="${arg}"]`).first();
-      if (await panel.count() > 0) {
-        await expect(panel).toBeVisible();
-      }
+      const panel = page.locator(`#${arg}.panel.active`).first();
+      await expect(panel).toBeVisible();
 
       // No JS error overlay
       const errorOverlay = page.locator(".fatal-error, #jsErrorBanner");

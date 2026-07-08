@@ -6155,6 +6155,11 @@ body[data-active-tab="script"] .script-display-fab {
   cursor: pointer;
 }
 
+body.is-mobile-screen #script .stat-health-btn {
+  min-height: 44px;
+  padding-block: 8px;
+}
+
 #script .script-stats-bar .ratio {
   justify-content: stretch;
 }

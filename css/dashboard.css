@@ -923,6 +923,7 @@
 }
 
 .dash-search-input {
+  min-height: 44px;
   padding: 8px 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-white-alpha-20);
@@ -937,6 +938,7 @@
 }
 
 .dash-select {
+  min-height: 44px;
   padding: 8px 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-white-alpha-20);
@@ -952,6 +954,7 @@
 }
 
 .dash-week-input {
+  min-height: 44px;
   padding: 8px 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-white-alpha-20);

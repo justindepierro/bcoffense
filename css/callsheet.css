@@ -587,6 +587,11 @@ body.shell-phone #callsheet .cs-empty-cat {
   border: 1px solid var(--color-primary);
 }
 .cs-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   padding: 5px 12px;
   border: none;
   cursor: pointer;
@@ -3925,6 +3930,8 @@ body.gp-drag-active .hash-column.gp-drag-over {
   display: none; /* only visible on the call sheet tab */
   align-items: center;
   gap: 6px;
+  min-width: 44px;
+  width: 44px;
   padding: 10px 8px;
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-md);

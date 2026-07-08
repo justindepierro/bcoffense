@@ -493,6 +493,9 @@ body.app-layer-locked {
   text-align: center;
 }
 .auth-user-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 5px 10px;
   border: 1px solid var(--color-white-alpha-20);
   border-radius: var(--radius-pill);
@@ -1346,7 +1349,7 @@ body.is-short-screen .auth-login-player-shortcut,
 
   .mobile-script-coach-now__score button {
     min-width: 0;
-    min-height: 42px;
+    min-height: 44px;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-sm);
     background: var(--color-bg-light);
@@ -1371,7 +1374,7 @@ body.is-short-screen .auth-login-player-shortcut,
 
   .mobile-script-coach-now__btn {
     min-width: 0;
-    min-height: 42px;
+    min-height: 44px;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-sm);
     background: var(--color-bg-light);
@@ -3262,6 +3265,7 @@ kbd {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-height: 46px;
   padding: 12px 18px;
   border: none;
   border-radius: var(--radius-pill);
@@ -4887,6 +4891,19 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
 .toolbar-status > .btn-sm {
   flex-shrink: 0;
   flex-grow: 0;
+}
+
+.page-header-surface .btn,
+.toolbar-surface .btn,
+.toolbar-primary > .btn,
+.toolbar-primary > .btn-sm,
+.toolbar-secondary > .btn,
+.toolbar-secondary > .btn-sm,
+.toolbar-overflow > .btn,
+.toolbar-overflow > .btn-sm,
+.toolbar-status > .btn,
+.toolbar-status > .btn-sm {
+  min-height: 44px;
 }
 
 /* #248 — Normalize button labels in toolbar context (no wrapping) */

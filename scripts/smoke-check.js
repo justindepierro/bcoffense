@@ -2542,6 +2542,54 @@ function checkStressAuditHarness() {
   console.log("stress audit harness contracts ok");
 }
 
+function checkE2eLocalHarness() {
+  const pkg = JSON.parse(read("package.json"));
+  const testsPkg = JSON.parse(read("tests/package.json"));
+  const config = read("tests/playwright.config.js");
+  const helpers = read("tests/specs/helpers.js");
+  const server = read("scripts/e2e-local-server.mjs");
+
+  if (pkg.scripts?.["test:e2e:local"] !== "npm --prefix tests run test:local") {
+    fail("root package does not expose npm run test:e2e:local");
+  }
+  if (!/BCOFFENSE_E2E_LOCAL=1 playwright test --project=chromium-desktop/.test(testsPkg.scripts?.["test:local"] || "")) {
+    fail("tests package does not expose the local E2E auth harness");
+  }
+  if (
+    !/BCOFFENSE_E2E_LOCAL/.test(config) ||
+    !/webServer: E2E_LOCAL/.test(config) ||
+    !/scripts\/e2e-local-server\.mjs/.test(config)
+  ) {
+    fail("Playwright config is not wired to the local auth server");
+  }
+  if (
+    !/appLogin\.isVisible\(\)/.test(helpers) ||
+    !/ensureLocalWorkspaceReady/.test(helpers) ||
+    !/Login did not complete/.test(helpers) ||
+    !/test:e2e:local/.test(helpers)
+  ) {
+    fail("Playwright login helper does not fail fast with local-harness guidance");
+  }
+  if (
+    !/handleAuthLogin/.test(server) ||
+    !/\/auth\/login/.test(server) ||
+    !/handleApiStub/.test(server) ||
+    !/\/api\/notifications/.test(server)
+  ) {
+    fail("local E2E server is missing auth/API stubs");
+  }
+
+  const result = spawnSync(process.execPath, ["--check", "scripts/e2e-local-server.mjs"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    fail(`scripts/e2e-local-server.mjs failed node --check\n${result.stderr || result.stdout}`);
+  }
+
+  console.log("local E2E auth harness contracts ok");
+}
+
 function checkStartupDiagnosticsAndRenderQueue() {
   const utils = read("js/utils.js");
   const appInit = read("js/app-init.js");
@@ -3174,6 +3222,7 @@ checkServiceWorkerLifecycle();
 checkServiceWorkerCachePolicy();
 checkCleanupAudit();
 checkStressAuditHarness();
+checkE2eLocalHarness();
 checkStartupDiagnosticsAndRenderQueue();
 checkStorageRestoreNormalization();
 checkStartupTabRestoreContracts();

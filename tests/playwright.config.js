@@ -20,7 +20,11 @@ const { defineConfig, devices } = require("@playwright/test");
 // Load .env.test if present (never committed — put BCOFFENSE_USER/BCOFFENSE_PASS there)
 try { require("dotenv").config({ path: ".env.test" }); } catch (_) {}
 
-const BASE_URL = process.env.BASE_URL || "https://bcoffense.pages.dev";
+const E2E_LOCAL = process.env.BCOFFENSE_E2E_LOCAL === "1";
+const LOCAL_PORT = process.env.BCOFFENSE_E2E_PORT || "4177";
+const BASE_URL = process.env.BASE_URL || (
+  E2E_LOCAL ? `http://127.0.0.1:${LOCAL_PORT}` : "https://bcoffense.pages.dev"
+);
 
 module.exports = defineConfig({
   testDir: "./specs",
@@ -29,6 +33,14 @@ module.exports = defineConfig({
   fullyParallel: false,
   retries: 1,
   reporter: [["html", { open: "never" }], ["list"]],
+  webServer: E2E_LOCAL
+    ? {
+        command: `node ../scripts/e2e-local-server.mjs --port=${LOCAL_PORT}`,
+        url: BASE_URL,
+        reuseExistingServer: true,
+        timeout: 15_000,
+      }
+    : undefined,
 
   // Only chromium-desktop runs by default — others need --project=<name>
   project: undefined,

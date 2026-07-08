@@ -201,6 +201,7 @@ table.sortable th {
 /* ── Present button: invisible until row hover ── */
 #playbookTable .pb-present-btn {
   opacity: 0;
+  visibility: hidden;
   min-width: 24px;
   min-height: 22px;
   padding: 0;
@@ -210,12 +211,14 @@ table.sortable th {
 @media (hover: hover) {
   #playbookTable tbody tr:hover .pb-present-btn {
     opacity: 1;
+    visibility: visible;
   }
 }
 
 /* Add-to-week button (#109) */
 #playbookTable .pb-add-week-btn {
   opacity: 0;
+  visibility: hidden;
   min-width: 22px;
   min-height: 22px;
   padding: 0;
@@ -230,9 +233,11 @@ table.sortable th {
     opacity var(--transition-fast),
     color var(--transition-fast);
 }
+
 @media (hover: hover) {
   #playbookTable tbody tr:hover .pb-add-week-btn {
     opacity: 1;
+    visibility: visible;
   }
   #playbookTable .pb-add-week-btn:hover {
     color: var(--color-primary);
@@ -1008,7 +1013,7 @@ table.sortable th {
 .pb-player-summary__filter-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
+  min-height: 44px;
   padding: 0 9px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--color-border-light);
@@ -1034,6 +1039,10 @@ table.sortable th {
 .pb-player-summary__filter-pill {
   cursor: pointer;
   font-family: inherit;
+}
+
+.pb-player-summary .btn {
+  min-height: 44px;
 }
 
 .pb-player-summary__filter-label {
@@ -2976,7 +2985,7 @@ body.shell-phone .pb-action-sheet {
 
 .pb-card-action {
   min-width: 0;
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px 10px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
@@ -3009,6 +3018,14 @@ body.shell-phone .pb-action-sheet {
 
 body[data-auth-role="player"] .pb-card .pb-present-btn {
   display: none;
+}
+
+.pb-card .gp-toggle-btn,
+.pb-card .pb-present-btn {
+  min-width: 44px;
+  width: 44px;
+  min-height: 44px;
+  height: 44px;
 }
 
 .pb-card-pills {
@@ -3259,6 +3276,11 @@ body[data-auth-role="player"] .pb-card .pb-present-btn {
   .pb-player-summary__filter-pill,
   .pb-player-summary__stats span {
     flex: 0 0 auto;
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] .pb-player-summary__filter-pill {
+    min-height: 44px;
+    padding-inline: 14px;
   }
 
   body.is-phone-screen[data-auth-role="player"] .pb-player-summary__filter-label {
