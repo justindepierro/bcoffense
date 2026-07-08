@@ -120,7 +120,7 @@ Work left:
   Type, and Study Card.
 - [x] Add game modes: Quick Hits, Diagram Drill, Know Your Job, Game Plan Check,
   and Missed Plays.
-- [ ] Add lightweight answer feedback, streak milestones, and reward moments
+- [x] Add lightweight answer feedback, streak milestones, and reward moments
   while respecting reduced-motion.
 - [x] Let coaches click Thin/Needs work saved scripts and repair linked
   Playbook plays from a source-specific list.

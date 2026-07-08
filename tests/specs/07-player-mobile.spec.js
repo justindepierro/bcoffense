@@ -455,7 +455,8 @@ test.describe("Player mobile experience", () => {
     const quiz = page.locator("#scriptQuizOverlay");
     await expect(quiz).toBeVisible();
     await quiz.locator(".script-quiz-choice:not([data-arg$='::correct'])").first().click();
-    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Not this one");
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Review this rep");
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("No problem");
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Review this one");
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("You picked");
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Correct answer");

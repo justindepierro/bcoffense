@@ -2885,6 +2885,8 @@ function checkPlayerQuizSettingsContracts() {
     "function _getQuizResultRewardMoment",
     "sq-result-reward-moment",
     "sq-feedback-streak",
+    "sq-feedback-calm",
+    "Review this rep",
     "prefers-reduced-motion: reduce",
     "quizModeLabel",
     "diagram_formation",

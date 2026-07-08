@@ -7333,7 +7333,17 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .sq-feedback.is-wrong .sq-feedback-result {
-  background: var(--color-danger);
+  background: color-mix(in srgb, var(--color-warning) 74%, var(--color-bg-body));
+  color: var(--color-text);
+}
+
+.sq-feedback-calm {
+  justify-self: center;
+  max-width: 34rem;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  line-height: 1.35;
 }
 
 .sq-feedback-moment {
@@ -7439,9 +7449,9 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: var(--space-xs);
   padding: var(--space-sm);
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--color-warning) 45%, var(--color-border-light));
+  border: 1px solid color-mix(in srgb, var(--color-info) 35%, var(--color-border-light));
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-body)), var(--color-bg-body));
+    linear-gradient(135deg, color-mix(in srgb, var(--color-info) 10%, var(--color-bg-body)), var(--color-bg-body));
   text-align: left;
 }
 
@@ -7452,8 +7462,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   align-items: center;
   padding: 2px 9px;
   border-radius: var(--radius-pill);
-  background: var(--color-warning);
-  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-info) 16%, var(--color-bg-light));
+  color: var(--color-info);
   font-size: var(--font-size-xs);
   font-weight: 950;
   text-transform: uppercase;

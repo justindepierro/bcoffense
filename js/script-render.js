@@ -6126,13 +6126,15 @@ function _renderQuizFeedback(item, answer) {
     : escapeHtml(_quizPlainCall(play));
   const defenseItems = [play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean);
   const { ruleParts, noteParts, position } = _quizCoachDetails(item);
-  const resultText = answer.correct ? "Correct" : "Not this one";
+  const resultText = answer.correct ? "Correct" : "Review this rep";
   const resultClass = answer.correct ? "is-correct" : "is-wrong";
   const momentLabel = answer.correct ? (answer.momentLabel || _getQuizCorrectMomentLabel(answer)) : "";
   const streakMoment = answer.correct ? _getQuizStreakMoment(answer.streakAfter) : null;
+  const reviewPrompt = answer.correct ? "" : "No problem. Study the call, rule, and coach note, then try it again later.";
   return `
     <div class="sq-feedback ${resultClass}${streakMoment?.hot ? " is-hot-streak" : ""}">
       <div class="sq-feedback-result">${escapeHtml(resultText)}</div>
+      ${reviewPrompt ? `<div class="sq-feedback-calm">${escapeHtml(reviewPrompt)}</div>` : ""}
       ${momentLabel ? `<div class="sq-feedback-moment">${escapeHtml(momentLabel)}</div>` : ""}
       ${streakMoment ? `
         <div class="sq-feedback-streak">

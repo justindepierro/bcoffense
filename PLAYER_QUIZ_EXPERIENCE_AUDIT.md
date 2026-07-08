@@ -299,7 +299,7 @@ Goal: answers should feel satisfying without becoming distracting.
 - [x] Add a "hot streak" visual state.
 - [x] Show earned sticker/reward moments inside the result flow.
 - [x] Add quick positive labels: "Locked in", "Clean read", "Great memory".
-- [ ] Keep wrong-answer feedback calm and useful.
+- [x] Keep wrong-answer feedback calm and useful.
 
 Definition of done:
 
