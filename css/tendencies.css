@@ -908,6 +908,15 @@
   flex-wrap: wrap;
 }
 
+.td-toolbar .btn {
+  min-height: 44px;
+}
+
+[data-action="importTendenciesJSON"],
+[data-action="importTendenciesCSV"] {
+  min-height: 44px;
+}
+
 /* Search box */
 .td-search-box {
   position: relative;

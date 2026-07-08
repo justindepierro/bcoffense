@@ -213,7 +213,8 @@ body.app-ready:not(.is-mobile-screen)
 }
 
 .wb-library-chip {
-  min-height: 28px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 3px 9px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
@@ -1262,6 +1263,9 @@ body.app-ready:not(.is-mobile-screen)
   margin-bottom: 10px;
 }
 .checkbox-filters-title {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
   width: 100%;
   padding: 0;
   border: 0;
@@ -1856,7 +1860,8 @@ body.app-ready:not(.is-mobile-screen)
 
 .wb-add-play-btn {
   flex: 0 0 auto;
-  min-height: 30px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 4px 9px;
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-pill);
@@ -2101,6 +2106,11 @@ body.app-ready:not(.is-mobile-screen)
 
 /* ── Pinned play star ── */
 .wb-pin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   opacity: 0.4;
   cursor: pointer;
   font-size: var(--font-size-xs);

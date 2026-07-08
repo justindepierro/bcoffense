@@ -1773,6 +1773,7 @@ body.is-short-screen .auth-login-player-shortcut,
   align-items: center;
   justify-content: center;
   gap: 6px;
+  min-height: 44px;
   padding: 9px 18px;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
@@ -1866,15 +1867,17 @@ body.is-short-screen .auth-login-player-shortcut,
 }
 
 .btn-icon {
-  width: 34px;
-  min-width: 34px;
-  height: 34px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
   padding: 0;
   aspect-ratio: 1;
 }
 
 /* ---- Size modifiers ---- */
 .btn-sm {
+  min-width: 44px;
+  min-height: 44px;
   padding: 5px 12px;
   font-size: var(--font-size-xs);
   font-weight: 600;
@@ -1882,6 +1885,8 @@ body.is-short-screen .auth-login-player-shortcut,
 
 .btn-xs,
 .btn-mini {
+  min-width: 44px;
+  min-height: 44px;
   padding: 3px 10px;
   font-size: var(--font-size-xs);
   font-weight: 500;
@@ -3554,7 +3559,7 @@ body.is-mobile-screen[data-auth-role="player"][data-active-tab="playbook"] .page
 }
 
 .segmented-control__item {
-  min-height: 34px;
+  min-height: 44px;
   padding: 6px 12px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-pill);

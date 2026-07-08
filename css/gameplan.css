@@ -199,7 +199,7 @@
   justify-content: space-between;
   gap: var(--space-xs);
   width: 100%;
-  min-height: 36px;
+  min-height: 44px;
   padding: 6px 10px;
   color: var(--color-text);
   background: var(--color-bg-input);
@@ -516,7 +516,8 @@
   padding: 2px 6px;
   font-size: var(--font-size-xs);
   line-height: 1.4;
-  min-width: auto;
+  min-width: 44px;
+  min-height: 44px;
 }
 .gp-box-actions .gp-box-sort {
   padding: 2px 4px;
@@ -979,6 +980,7 @@ body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar-spacer {
   background: var(--color-bg-lighter);
 }
 .gp-library-bulk .btn-sm {
+  min-height: 44px;
   font-size: var(--font-size-xs);
 }
 /* Bulk action sheet affordances — phone only (hidden on larger screens) */
@@ -3253,7 +3255,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   .gp-box-actions .gp-box-sort {
     flex: 0 0 auto;
     max-width: none;
-    min-height: 36px;
+    min-height: 44px;
   }
 
   .gp-dist-strip {

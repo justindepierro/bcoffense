@@ -2869,6 +2869,8 @@
   margin: 0;
 }
 .q-inbox-close {
+  min-width: 44px;
+  min-height: 44px;
   background: none;
   border: none;
   color: var(--color-text-muted);
@@ -2899,6 +2901,7 @@
 .q-sum-badge {
   display: inline-flex;
   align-items: center;
+  min-height: 44px;
   padding: 3px 10px;
   border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);

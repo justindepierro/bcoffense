@@ -29,6 +29,7 @@ th {
   color: var(--color-text-inverse);
   position: sticky;
   top: 0;
+  height: 44px;
   font-weight: 600;
   font-size: var(--font-size-xs);
   text-transform: uppercase;
@@ -72,10 +73,12 @@ table.sortable th {
 
 /* Denser playbook table rows */
 #playbookTable td {
+  height: 44px;
   padding: 5px 10px;
 }
 
 #playbookTable th {
+  height: 44px;
   padding: 5px 10px;
 }
 
@@ -109,7 +112,7 @@ table.sortable th {
 
 /* Compact readiness badge inside playbook table cells */
 #playbookTable .play-readiness-badge {
-  min-height: 22px;
+  min-height: 44px;
   padding: 2px 6px;
 }
 
@@ -248,8 +251,8 @@ table.sortable th {
 /* Ask Coach button on playbook rows */
 #playbookTable .pb-ask-coach-btn {
   opacity: 0;
-  min-width: 22px;
-  min-height: 22px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
   font-size: var(--font-size-xs);
   background: none;
@@ -435,6 +438,7 @@ table.sortable th {
 }
 
 .play-cell .play-readiness-badge--playbook-table {
+  min-width: 44px;
   margin-left: var(--space-xs);
   max-width: 210px;
   padding-block: 2px;
@@ -640,8 +644,10 @@ table.sortable th {
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: var(--font-size-sm);
-  width: 30px;
-  height: 28px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -858,9 +864,10 @@ table.sortable th {
 .stat-item {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   flex: 0 0 auto;
-  min-height: 30px;
+  min-height: 44px;
   padding: 2px 8px;
   background: var(--color-bg-light);
   border: 1px solid var(--color-border-light);
@@ -998,7 +1005,7 @@ table.sortable th {
 }
 
 .pb-player-summary__actions .btn {
-  min-height: 34px;
+  min-height: 44px;
 }
 
 .pb-player-summary__stats {
@@ -1531,12 +1538,12 @@ body[data-auth-role="player"] .gp-card-btn {
 
 .pb-readiness-card .play-readiness-score-btn {
   min-width: 28px;
-  min-height: 28px;
+  min-height: 44px;
   font-size: var(--font-size-2xs);
 }
 
 .pb-readiness-card .play-readiness-btn {
-  min-height: 26px;
+  min-height: 44px;
   padding: 3px 7px;
   font-size: var(--font-size-2xs);
 }
@@ -1652,7 +1659,7 @@ body[data-auth-role="player"] .gp-card-btn {
 
 .pb-shortcuts-hint {
   font-weight: 700;
-  min-width: 24px;
+  min-width: 44px;
   padding: 0 6px;
   opacity: 0.65;
   flex-shrink: 0;
@@ -1746,7 +1753,7 @@ body.is-mobile-screen .pb-shortcuts-hint {
 
 /* Compact buttons inside the meta-bar empty-state card */
 #playbook .pb-readiness-card--empty .play-readiness-btn {
-  min-height: 26px;
+  min-height: 44px;
   padding: 3px 8px;
   font-size: var(--font-size-2xs);
 }
@@ -2043,7 +2050,7 @@ body.shell-phone .pb-action-sheet {
 }
 
 .pb-top-row .btn {
-  min-height: 34px;
+  min-height: 44px;
 }
 
 /* Search */

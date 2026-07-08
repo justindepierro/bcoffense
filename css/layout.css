@@ -476,7 +476,7 @@ body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tabs {
 
 body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tab {
   flex: 0 0 auto;
-  min-height: 42px;
+  min-height: 44px;
 }
 
 /* Tab badge counts */

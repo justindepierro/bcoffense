@@ -1382,7 +1382,7 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
 }
 
 .play-readiness-btn {
-  min-height: 34px;
+  min-height: 44px;
   padding: 6px 10px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
@@ -2249,8 +2249,10 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
   background: var(--color-white-alpha-20);
   border: 1px solid var(--color-white-alpha-20);
   border-radius: var(--radius-pill);
@@ -2305,8 +2307,8 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
 
 /* Compact period-notes textarea on desktop script view */
 #script .ph-notes-input {
-  height: 30px;
-  min-height: 0;
+  height: 44px;
+  min-height: 44px;
   padding: 4px 8px;
 }
 
@@ -2336,6 +2338,8 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
 }
 
 .ph-btn {
+  min-width: 44px;
+  min-height: 44px;
   background: var(--color-white-alpha-20);
   border: none;
   color: var(--color-text-inverse);
@@ -2374,7 +2378,7 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
 
 /* Toolbar button sizes */
 .toolbar-sort-select {
-  min-height: 34px;
+  min-height: 44px;
   font-size: var(--font-size-xs);
   padding: 6px 8px;
   border-radius: var(--radius-pill);
@@ -2752,6 +2756,8 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
   width: 100px;
 }
 .script-item .remove {
+  min-width: 44px;
+  min-height: 44px;
   background: var(--color-danger);
   color: var(--color-text-inverse);
   border: none;
@@ -4012,6 +4018,7 @@ body[data-auth-role="player"] #script .script-tools-drawer {
 
 /* Add Period button */
 .btn-add-period {
+  min-height: 44px;
   background: var(--color-accent);
   color: var(--color-dark);
   border: none;
@@ -4837,8 +4844,8 @@ body[data-auth-role="player"] #script .script-tools-drawer {
   .script-item .remove,
   .script-item .dup-btn,
   .play-item .available-add-menu-btn {
-    min-height: 40px;
-    min-width: 40px;
+    min-height: 44px;
+    min-width: 44px;
     padding: 8px 10px;
   }
 
@@ -5436,7 +5443,7 @@ body[data-active-tab="script"] .script-display-fab {
 
 #script .script-name-input,
 #script .script-date-input {
-  min-height: 36px;
+  min-height: 44px;
   background: var(--color-bg-input);
   color: var(--color-text);
   border-color: var(--color-border-input);
@@ -5495,7 +5502,7 @@ body[data-active-tab="script"] .script-display-fab {
   padding: 4px 6px;
 }
 #script .segmented-control__item {
-  min-height: 28px;
+  min-height: 44px;
   padding: 4px 11px;
 }
 #script .script-workbench-primary-actions .btn {
@@ -5512,7 +5519,7 @@ body[data-active-tab="script"] .script-display-fab {
 }
 
 #script .script-workbench-primary-actions .btn {
-  min-height: 34px;
+  min-height: 44px;
   padding: 6px 12px;
   font-size: var(--font-size-xs);
   font-weight: 900;
@@ -5521,7 +5528,7 @@ body[data-active-tab="script"] .script-display-fab {
 .script-workbench-pill,
 .script-controls-mode-select,
 .script-tools-drawer-close {
-  min-height: 34px;
+  min-height: 44px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-pill);
   font: inherit;
@@ -5950,6 +5957,7 @@ body[data-active-tab="script"] .script-display-fab {
 .script-gp-sync-badge {
   display: inline-flex;
   align-items: center;
+  min-height: 44px;
   padding: 2px 8px;
   border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
@@ -6074,7 +6082,7 @@ body[data-active-tab="script"] .script-display-fab {
 
 #script .period-buttons .btn,
 #script .period-template-quickpick {
-  min-height: 32px;
+  min-height: 44px;
 }
 
 #script .script-stats-bar {
@@ -6103,7 +6111,7 @@ body[data-active-tab="script"] .script-display-fab {
   justify-content: flex-start;
   gap: 5px;
   min-width: 0;
-  min-height: 24px;
+  min-height: 44px;
   padding: 2px 7px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-pill);
@@ -6153,6 +6161,8 @@ body[data-active-tab="script"] .script-display-fab {
 
 #script .stat-health-btn {
   cursor: pointer;
+  min-height: 44px;
+  padding-block: 8px;
 }
 
 body.is-mobile-screen #script .stat-health-btn {

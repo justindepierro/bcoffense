@@ -74,7 +74,7 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
   .td-detail-actions .btn,
   .td-toolbar .btn {
     flex: 1 1 auto;
-    min-height: 42px;
+    min-height: 44px;
   }
   .td-search-input {
     width: 100%;
