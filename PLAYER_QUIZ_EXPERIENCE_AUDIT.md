@@ -43,8 +43,8 @@ What works:
 
 Problems:
 
-- The first screen has challenge modes now, but the coach setup page does not
-  yet recommend which mode will feel best for a thin source.
+- Coach setup now recommends the best mode per source, but it does not yet let
+  coaches publish a source directly into a specific default mode.
 - Thin sources are hidden from player readiness language, but the player can
   still end up with low-interest call-ID questions.
 
@@ -283,7 +283,7 @@ Goal: Quiz Center should feel like choosing a challenge.
   - Missed Plays: retry recent misses.
 - [x] Give each mode a clear time/effort label.
 - [x] Save mode in attempt summaries.
-- [ ] Coach setup can recommend the best mode for each source.
+- [x] Coach setup can recommend the best mode for each source.
 
 Definition of done:
 

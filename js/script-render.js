@@ -3684,6 +3684,78 @@ function _coachQuizPreviewRow(label, count, note, tone = "") {
   `;
 }
 
+function _getCoachQuizModeRecommendation(source, kind = "script") {
+  const playList = source?.plays || [];
+  const stats = _quizCompletenessStats(playList);
+  const preview = _coachQuizQuestionPreviewStats(playList);
+  if (!stats.playCount) {
+    return {
+      label: "Add plays first",
+      tone: "needs",
+      detail: "This source needs at least one play before a player mode can run.",
+      support: [],
+    };
+  }
+  if (kind === "gameplan") {
+    return {
+      label: "Game Plan Check",
+      tone: stats.playCount >= 2 ? "ready" : "planned",
+      detail: stats.playCount >= 2
+        ? "Best fit because players are studying this week's plan."
+        : "Usable, but add one more call for better choices.",
+      support: [
+        `${stats.playCount} game-plan call${stats.playCount === 1 ? "" : "s"}`,
+        stats.rules ? `${stats.rules} with player rules` : "rules optional",
+      ],
+    };
+  }
+  if (preview.playsWithDiagram) {
+    return {
+      label: "Diagram Drill",
+      tone: stats.diagramPct >= 50 ? "ready" : "planned",
+      detail: "Best fit because visual questions are the clearest player rep.",
+      support: [
+        `${preview.playsWithDiagram}/${preview.playCount} with diagrams`,
+        preview.playsWithRule ? `${preview.playsWithRule} with ${preview.positionLabel} rules` : "rule fallback available",
+      ],
+    };
+  }
+  if (preview.playsWithRule) {
+    return {
+      label: "Know Your Job",
+      tone: preview.uniqueRules >= 2 ? "ready" : "planned",
+      detail: `Best fit because ${preview.positionLabel} responsibilities are present.`,
+      support: [
+        `${preview.playsWithRule}/${preview.playCount} with ${preview.positionLabel} rules`,
+        preview.uniqueRules >= 4 ? "multiple-choice ready" : `${preview.uniqueRules} unique rule${preview.uniqueRules === 1 ? "" : "s"}`,
+      ],
+    };
+  }
+  return {
+    label: "Quick Hits",
+    tone: stats.playCount >= 2 ? "planned" : "needs",
+    detail: "Use easy mixed reps until diagrams or player rules are added.",
+    support: [
+      `${stats.playCount} call${stats.playCount === 1 ? "" : "s"}`,
+      stats.playCount >= 2 ? "can run short recognition reps" : "add another call for choices",
+    ],
+  };
+}
+
+function _renderCoachQuizModeRecommendation(source, kind) {
+  const recommendation = _getCoachQuizModeRecommendation(source, kind);
+  return `
+    <div class="coach-quiz-mode-recommendation coach-quiz-mode-recommendation--${escapeAttr(recommendation.tone)}">
+      <span>Recommended mode</span>
+      <strong>${escapeHtml(recommendation.label)}</strong>
+      <small>${escapeHtml(recommendation.detail)}</small>
+      ${recommendation.support.length
+    ? `<div>${recommendation.support.map((item) => `<b>${escapeHtml(item)}</b>`).join("")}</div>`
+    : ""}
+    </div>
+  `;
+}
+
 function _renderCoachQuizQuestionPreview(source) {
   const preview = _coachQuizQuestionPreviewStats(source.plays);
   const responsibilityNote = preview.responsibilityReady
@@ -3781,6 +3853,7 @@ function _renderCoachQuizSourceCard(source, kind) {
       </div>
       <div class="coach-quiz-source-meta">${escapeHtml(meta)}</div>
       ${_renderCoachQuizSourceControls(source, kind, stats)}
+      ${_renderCoachQuizModeRecommendation(source, kind)}
       ${_renderQuizCompletenessChips(stats, "quiz-completeness-chips coach-quiz-completeness-chips")}
       <div class="coach-quiz-metrics">
         ${_quizMetric("Diagrams", stats.diagrams, stats.playCount)}

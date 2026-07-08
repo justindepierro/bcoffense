@@ -2017,6 +2017,10 @@ test.describe("Player mobile experience", () => {
     await expect(friday).toContainText("Rules");
     await expect(friday).toContainText("Diagrams");
     await expect(friday).toContainText("Metadata");
+    await expect(friday).toContainText("Recommended mode");
+    await expect(friday).toContainText("Know Your Job");
+    await expect(gamePlan).toContainText("Recommended mode");
+    await expect(gamePlan).toContainText("Game Plan Check");
 
     await friday.getByRole("button", { name: /^Locked$/i }).click();
     await expect(friday).toContainText("Locked");

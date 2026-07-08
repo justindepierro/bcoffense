@@ -2877,6 +2877,8 @@ function checkPlayerQuizSettingsContracts() {
     "function _getPlayerQuizModes",
     "function setPlayerQuizMode",
     "function _prepareQuizItemsForMode",
+    "function _getCoachQuizModeRecommendation",
+    "Recommended mode",
     "quizModeLabel",
     "diagram_formation",
     "formation_to_play",
