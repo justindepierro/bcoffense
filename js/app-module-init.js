@@ -11,9 +11,16 @@ function ensureScriptWorkspaceReady(force = false) {
 function initAllModules() {
   const tableBody = document.querySelector("#playbookTable tbody");
   if (tableBody && tableBody.children.length === 0) {
-    tableBody.innerHTML = Array(8)
-      .fill('<tr><td colspan="10"><div class="skeleton-row"></div></td></tr>')
-      .join("");
+    if (typeof renderPlaybookLoadingState === "function") {
+      renderPlaybookLoadingState("Restoring playbook...");
+    } else {
+      tableBody.innerHTML = Array(8)
+        .fill('<tr><td colspan="11"><div class="skeleton-row"></div></td></tr>')
+        .join("");
+    }
+  }
+  if (typeof renderDashboardLoadingState === "function") {
+    renderDashboardLoadingState("Restoring dashboard...");
   }
 
   populateFilters();

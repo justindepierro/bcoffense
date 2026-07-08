@@ -79,6 +79,34 @@ table.sortable th {
   padding: 5px 10px;
 }
 
+#playbookTable .pb-loading-row td {
+  padding: var(--space-sm);
+}
+
+.pb-loading-row__content {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) minmax(160px, 1fr);
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.pb-loading-row__text {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-sans);
+  font-weight: 700;
+}
+
+.pb-card--loading {
+  pointer-events: none;
+  color: var(--color-text-secondary);
+}
+
+.pb-card--loading .skeleton-row {
+  height: 20px;
+  margin: 0 0 var(--space-xs);
+}
+
 /* Compact readiness badge inside playbook table cells */
 #playbookTable .play-readiness-badge {
   min-height: 22px;

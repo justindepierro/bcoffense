@@ -1771,6 +1771,28 @@
   margin-bottom: 28px;
 }
 
+.dash-loading-panel {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  box-shadow: var(--shadow-xs);
+}
+
+.dash-loading-panel__title {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  margin-bottom: var(--space-sm);
+}
+
+.dash-loading-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-sm);
+}
+
 .dash-card {
   background: var(--color-white);
   border-radius: var(--radius-lg);
@@ -1810,6 +1832,34 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-placeholder);
   margin-top: 2px;
+}
+
+.dash-card--loading {
+  pointer-events: none;
+}
+
+.dash-card--loading .dash-card-value--loading {
+  width: 76px;
+  min-height: 24px;
+}
+
+.dash-card--loading .skeleton-row {
+  height: 24px;
+  margin: 0;
+}
+
+.dash-loading-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-light) 25%,
+    var(--color-bg-lighter) 50%,
+    var(--color-bg-light) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
 .dash-card-playbook {

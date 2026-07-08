@@ -40,6 +40,64 @@ function _dashBuildScoutCard(label, data, opts = {}) {
   </div>`;
 }
 
+function _dashboardLoadingCard(label, cls = "") {
+  return `<div class="dash-card dash-card--loading ${cls}" data-loading-state="dashboard-card">
+    <div class="dash-card-icon" aria-hidden="true"><div class="dash-loading-dot"></div></div>
+    <div class="dash-card-info">
+      <div class="dash-card-value dash-card-value--loading"><div class="skeleton-row" aria-hidden="true"></div></div>
+      <div class="dash-card-label">${escapeHtml(label)}</div>
+      <div class="dash-card-sub">Restoring workspace</div>
+    </div>
+  </div>`;
+}
+
+function renderDashboardLoadingState(message = "Restoring dashboard...") {
+  const commandEl = document.getElementById("dashCommandCenter");
+  if (commandEl && !commandEl.innerHTML.trim()) {
+    commandEl.innerHTML = `<div class="dash-loading-panel" data-loading-state="dashboard-command">
+      <div class="dash-loading-panel__title">${escapeHtml(message)}</div>
+      <div class="dash-loading-panel__grid">
+        <div class="skeleton-row" aria-hidden="true"></div>
+        <div class="skeleton-row" aria-hidden="true"></div>
+        <div class="skeleton-row" aria-hidden="true"></div>
+      </div>
+    </div>`;
+  }
+
+  const cardsEl = document.getElementById("dashCards");
+  if (cardsEl && !cardsEl.innerHTML.trim()) {
+    cardsEl.innerHTML = [
+      _dashboardLoadingCard("Plays Loaded", "dash-card-playbook"),
+      _dashboardLoadingCard("On Script", "dash-card-script"),
+      _dashboardLoadingCard("Wristband Cards", "dash-card-wristband"),
+      _dashboardLoadingCard("Scouting Plays", "dash-card-tendencies"),
+      _dashboardLoadingCard("On Call Sheet", "dash-card-callsheet"),
+    ].join("");
+  }
+
+  const scheduleEl = document.getElementById("dashScheduleBody");
+  if (scheduleEl && !scheduleEl.innerHTML.trim()) {
+    scheduleEl.innerHTML = `<div class="dash-loading-panel" data-loading-state="dashboard-schedule">
+      <div class="skeleton-row" aria-hidden="true"></div>
+      <div class="skeleton-row" aria-hidden="true"></div>
+    </div>`;
+  }
+
+  [
+    "dashGamePlanSection",
+    "dashCleanupSection",
+    "dashScoutingSection",
+    "dashQuickLinks",
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el || el.innerHTML.trim()) return;
+    el.innerHTML = `<div class="dash-loading-panel" data-loading-state="${id}">
+      <div class="skeleton-row" aria-hidden="true"></div>
+      <div class="skeleton-row" aria-hidden="true"></div>
+    </div>`;
+  });
+}
+
 function _dashFindGameWeekOpponent(gw, opponents) {
   if (!gw || !Array.isArray(opponents)) return null;
   return resolveGameWeekOpponent(opponents, gw).opponent;

@@ -1,5 +1,48 @@
 let _playbookImageKeyRefreshPending = false;
 
+function renderPlaybookLoadingState(message = "Loading playbook...") {
+  const tbody = document.querySelector("#playbookTable tbody");
+  if (tbody && tbody.children.length === 0) {
+    tbody.innerHTML = Array(6)
+      .fill("")
+      .map(
+        () =>
+          `<tr class="pb-loading-row" data-loading-state="playbook">
+            <td colspan="11">
+              <div class="pb-loading-row__content">
+                <span class="pb-loading-row__text">${escapeHtml(message)}</span>
+                <div class="skeleton-row" aria-hidden="true"></div>
+              </div>
+            </td>
+          </tr>`,
+      )
+      .join("");
+  }
+
+  const container = document.getElementById("playbookContainer");
+  if (!container) return;
+  let cardsEl = document.getElementById("pbCards");
+  if (!cardsEl) {
+    cardsEl = document.createElement("div");
+    cardsEl.id = "pbCards";
+    cardsEl.className = "pb-cards";
+    container.insertBefore(cardsEl, container.firstChild);
+  }
+  if (!cardsEl.innerHTML.trim()) {
+    cardsEl.innerHTML = Array(4)
+      .fill("")
+      .map(
+        () =>
+          `<div class="pb-card pb-card--loading" data-loading-state="playbook-card">
+            <div class="skeleton-row" aria-hidden="true"></div>
+            <div class="skeleton-row" aria-hidden="true"></div>
+            <span>${escapeHtml(message)}</span>
+          </div>`,
+      )
+      .join("");
+  }
+}
+
 function ensurePlaybookImageBadgesReady() {
   if (
     typeof window === "undefined" ||

@@ -2490,6 +2490,63 @@ function checkStartupRestoreHarness() {
   console.log((result.stdout || "startup restore harness passed").trim());
 }
 
+function checkGracefulLoadingStates() {
+  const html = read("index.html");
+  const moduleInit = read("js/app-module-init.js");
+  const dashboardRender = read("js/dashboard-render.js");
+  const playbookRender = read("js/playbook-render.js");
+  const dashboardCss = read("css/dashboard.css");
+  const playbookCss = read("css/playbook.css");
+
+  [
+    "data-loading-state=\"dashboard-command\"",
+    "data-loading-state=\"dashboard-card\"",
+    "data-loading-state=\"dashboard-schedule\"",
+    "dash-loading-panel",
+  ].forEach((token) => {
+    if (!html.includes(token)) {
+      fail(`dashboard first-paint loading markup missing ${token}`);
+    }
+  });
+
+  if (
+    !/function renderDashboardLoadingState\(/.test(dashboardRender) ||
+    !/_dashboardLoadingCard/.test(dashboardRender) ||
+    !/Restoring dashboard/.test(dashboardRender)
+  ) {
+    fail("dashboard loading state renderer is missing");
+  }
+  if (
+    !/function renderPlaybookLoadingState\(/.test(playbookRender) ||
+    !/pb-loading-row/.test(playbookRender) ||
+    !/pb-card--loading/.test(playbookRender) ||
+    !/colspan="11"/.test(playbookRender)
+  ) {
+    fail("playbook loading state renderer is missing or does not span all columns");
+  }
+  if (
+    !/renderPlaybookLoadingState\("Restoring playbook/.test(moduleInit) ||
+    !/renderDashboardLoadingState\("Restoring dashboard/.test(moduleInit)
+  ) {
+    fail("module init does not seed graceful loading states");
+  }
+  if (
+    !/\.dash-loading-panel/.test(dashboardCss) ||
+    !/\.dash-card--loading/.test(dashboardCss) ||
+    !/\.dash-loading-dot/.test(dashboardCss)
+  ) {
+    fail("dashboard loading state styles are missing");
+  }
+  if (
+    !/\.pb-loading-row__content/.test(playbookCss) ||
+    !/\.pb-card--loading/.test(playbookCss)
+  ) {
+    fail("playbook loading state styles are missing");
+  }
+
+  console.log("graceful loading states ok");
+}
+
 function checkScrollOwnershipContract() {
   const shell = read("js/app-shell.js");
   const domHelpers = read("js/dom-helpers.js");
@@ -2871,6 +2928,7 @@ checkStartupDiagnosticsAndRenderQueue();
 checkStorageRestoreNormalization();
 checkStartupTabRestoreContracts();
 checkStartupRestoreHarness();
+checkGracefulLoadingStates();
 checkScrollOwnershipContract();
 checkTopLevelSymbolOwnership();
 checkWristbandConstantUsage();
