@@ -2374,6 +2374,70 @@ function checkStartupDiagnosticsAndRenderQueue() {
   console.log("startup diagnostics and dashboard render queue ok");
 }
 
+function checkStorageRestoreNormalization() {
+  const storage = read("js/storage.js");
+
+  [
+    "BACKUP_ARRAY_KEYS",
+    "BACKUP_OBJECT_KEYS",
+    "BACKUP_BOOLEAN_KEYS",
+    "BACKUP_STRING_KEYS",
+    "normalizeBackupValueForRestore",
+  ].forEach((token) => {
+    if (!storage.includes(token)) {
+      fail(`storage restore normalization missing ${token}`);
+    }
+  });
+
+  [
+    "STORAGE_KEYS.PLAYBOOK",
+    "STORAGE_KEYS.SAVED_SCRIPTS",
+    "STORAGE_KEYS.CALLSHEET_TEMPLATES",
+    "STORAGE_KEYS.DEFENSIVE_TENDENCIES",
+    "STORAGE_KEYS.GAME_PLAN_TEMPLATES",
+    "STORAGE_KEYS.PLAYER_QUIZ_RESULTS",
+  ].forEach((token) => {
+    if (!new RegExp(`BACKUP_ARRAY_KEYS[\\s\\S]*?${token.replace(".", "\\.")}`).test(storage)) {
+      fail(`storage restore array contract missing ${token}`);
+    }
+  });
+
+  [
+    "STORAGE_KEYS.CALL_SHEET",
+    "STORAGE_KEYS.CALL_SHEET_SETTINGS",
+    "STORAGE_KEYS.GAME_PLAN_BOARDS",
+    "STORAGE_KEYS.AUTH_SESSION",
+    "STORAGE_KEYS.PLAYER_QUIZ_SETTINGS",
+  ].forEach((token) => {
+    if (!new RegExp(`BACKUP_OBJECT_KEYS[\\s\\S]*?${token.replace(".", "\\.")}`).test(storage)) {
+      fail(`storage restore object contract missing ${token}`);
+    }
+  });
+
+  if (
+    !/validateBackupPayload[\s\S]*?normalizeBackupValueForRestore\(key, parsedValue, result\.warnings\)/.test(
+      storage,
+    )
+  ) {
+    fail("backup validation does not report restore normalization warnings");
+  }
+  if (
+    !/restoreAllData[\s\S]*?normalizeBackupValueForRestore\(key, value, restoreWarnings\)/.test(
+      storage,
+    ) ||
+    !/restoreAllData[\s\S]*?normalizeBackupValueForRestore\(\s*STORAGE_KEYS\.PLAYBOOK/.test(
+      storage,
+    )
+  ) {
+    fail("restoreAllData does not persist normalized backup values");
+  }
+  if (!/storage-restore:normalized/.test(storage)) {
+    fail("storage restore normalization is not instrumented");
+  }
+
+  console.log("storage restore normalization contracts ok");
+}
+
 function checkScrollOwnershipContract() {
   const shell = read("js/app-shell.js");
   const domHelpers = read("js/dom-helpers.js");
@@ -2752,6 +2816,7 @@ checkServiceWorkerLifecycle();
 checkServiceWorkerCachePolicy();
 checkCleanupAudit();
 checkStartupDiagnosticsAndRenderQueue();
+checkStorageRestoreNormalization();
 checkScrollOwnershipContract();
 checkTopLevelSymbolOwnership();
 checkWristbandConstantUsage();

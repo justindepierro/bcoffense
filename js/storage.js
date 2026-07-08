@@ -156,6 +156,194 @@ const MIGRATIONS = {
   },
 };
 
+function _isPlainStorageObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+const BACKUP_ARRAY_KEYS = new Set([
+  STORAGE_KEYS.PLAYBOOK,
+  STORAGE_KEYS.SAVED_SCRIPTS,
+  STORAGE_KEYS.SAVED_WRISTBANDS,
+  STORAGE_KEYS.WRISTBAND_TEMPLATES,
+  STORAGE_KEYS.PERIOD_TEMPLATES,
+  STORAGE_KEYS.SCRIPT_TEMPLATES,
+  STORAGE_KEYS.CALLSHEET_TEMPLATES,
+  STORAGE_KEYS.CALLSHEET_COLLAPSED,
+  STORAGE_KEYS.CALLSHEET_SNAPSHOTS,
+  STORAGE_KEYS.DEFENSIVE_TENDENCIES,
+  STORAGE_KEYS.INSTALLATION_TEMPLATES,
+  STORAGE_KEYS.SCHEDULE,
+  STORAGE_KEYS.WRISTBAND_SORT_CRITERIA,
+  STORAGE_KEYS.WRISTBAND_FAVORITES,
+  STORAGE_KEYS.WRISTBAND_RECENT_PLAYS,
+  STORAGE_KEYS.TEAM_ROSTER,
+  STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES,
+  STORAGE_KEYS.TEAM_SWAP_GROUPS,
+  STORAGE_KEYS.GAME_PLAN_SNAPSHOTS,
+  STORAGE_KEYS.GAME_PLAN_TEMPLATES,
+  STORAGE_KEYS.PLAYER_QUIZ_RESULTS,
+  STORAGE_KEYS.PLAYER_REWARD_EVENTS,
+  STORAGE_KEYS.PLAYER_HELMET_STICKER_TYPES,
+  STORAGE_KEYS.PLAYER_HELMET_STICKERS,
+  STORAGE_KEYS.GAME_WEEK_ARCHIVE,
+  STORAGE_KEYS.TENDENCIES_REPORTS,
+]);
+
+const BACKUP_OBJECT_KEYS = new Set([
+  STORAGE_KEYS.SORT_PRESETS,
+  STORAGE_KEYS.CUSTOM_SORT_ORDERS,
+  STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS,
+  STORAGE_KEYS.CALL_SHEET,
+  STORAGE_KEYS.CALL_SHEET_SETTINGS,
+  STORAGE_KEYS.COLUMN_VISIBILITY,
+  STORAGE_KEYS.PLAYBOOK_STATE,
+  STORAGE_KEYS.SCRIPT_DISPLAY_OPTIONS,
+  STORAGE_KEYS.PLAY_READINESS,
+  STORAGE_KEYS.SCRIPT_DRAFT,
+  STORAGE_KEYS.WRISTBAND_DRAFT,
+  STORAGE_KEYS.CALLSHEET_DISPLAY_OPTIONS,
+  STORAGE_KEYS.CALLSHEET_DISPLAY_PRESETS,
+  STORAGE_KEYS.CALLSHEET_DRAFT,
+  STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER,
+  STORAGE_KEYS.CALLSHEET_NOTES,
+  STORAGE_KEYS.CALLSHEET_TARGETS,
+  STORAGE_KEYS.PAGE_HELP_OPEN,
+  STORAGE_KEYS.TENDENCIES_DRAFT,
+  STORAGE_KEYS.TENDENCIES_SETTINGS,
+  STORAGE_KEYS.GAME_WEEK,
+  STORAGE_KEYS.INSTALLATION,
+  STORAGE_KEYS.PLAY_COLLECTIONS,
+  STORAGE_KEYS.CALLSHEET_CONSTRAINTS,
+  STORAGE_KEYS.OB_PLAY_RATINGS,
+  STORAGE_KEYS.GAME_PLAN_TAGS,
+  STORAGE_KEYS.PRINT_STUDIO_SETTINGS,
+  STORAGE_KEYS.PRESENTATION_SETUP,
+  STORAGE_KEYS.WRISTBAND_LOGO_CARD,
+  STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS,
+  STORAGE_KEYS.TEAM_SETTINGS_COLLAPSED,
+  STORAGE_KEYS.GAME_PLAN_BOARDS,
+  STORAGE_KEYS.CALLSHEET_PRINT_OPTIONS,
+  STORAGE_KEYS.CLOUD_SYNC_SETTINGS,
+  STORAGE_KEYS.AUTH_SESSION,
+  STORAGE_KEYS.PLAYER_READY,
+  STORAGE_KEYS.PLAYER_PORTAL_BRANDING,
+  STORAGE_KEYS.PLAYER_QUIZ_DRAFT,
+  STORAGE_KEYS.PLAYER_QUIZ_SETTINGS,
+  STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS,
+  STORAGE_KEYS.PLAYER_LEADERBOARD_REMOTE,
+]);
+
+const BACKUP_BOOLEAN_KEYS = new Set([
+  STORAGE_KEYS.CALLSHEET_QUICK_ACTIONS_OPEN,
+  STORAGE_KEYS.MOBILE_COACH_LOCK,
+  STORAGE_KEYS.CS_SCOUTING_OVERLAY,
+  STORAGE_KEYS.PRESENTATION_IPAD_HELP_DISMISSED,
+  STORAGE_KEYS.FIRST_USE_DISMISSED,
+]);
+
+const BACKUP_STRING_KEYS = new Set([
+  STORAGE_KEYS.SCRIPT_CONTROLS_MODE,
+  STORAGE_KEYS.LAST_ACTIVE_TAB,
+  STORAGE_KEYS.THEME,
+  STORAGE_KEYS.VISION_MODE,
+  STORAGE_KEYS.TEAM_NAME,
+  STORAGE_KEYS.COLOR_PRESET,
+  STORAGE_KEYS.MOTD,
+]);
+
+const BACKUP_NUMBER_KEYS = new Set([
+  STORAGE_KEYS.A2HS_DISMISSED,
+]);
+
+function _restoreWarning(warnings, message) {
+  if (Array.isArray(warnings) && !warnings.includes(message)) {
+    warnings.push(message);
+  }
+}
+
+function _normalizeRestoredArrayValue(key, value, warnings) {
+  if (Array.isArray(value)) {
+    if (key === STORAGE_KEYS.PLAYBOOK) {
+      const playsOnly = value.filter((item) => _isPlainStorageObject(item));
+      if (playsOnly.length !== value.length) {
+        _restoreWarning(
+          warnings,
+          `${key} contained invalid play records that will be skipped.`,
+        );
+      }
+      return playsOnly;
+    }
+    return value;
+  }
+
+  if (
+    _isPlainStorageObject(value) &&
+    (
+      key === STORAGE_KEYS.SAVED_SCRIPTS ||
+      key === STORAGE_KEYS.SAVED_WRISTBANDS ||
+      key === STORAGE_KEYS.WRISTBAND_TEMPLATES ||
+      key === STORAGE_KEYS.SCRIPT_TEMPLATES ||
+      key === STORAGE_KEYS.GAME_PLAN_TEMPLATES
+    )
+  ) {
+    _restoreWarning(warnings, `${key} used legacy object storage and will be converted.`);
+    return Object.values(value);
+  }
+
+  _restoreWarning(warnings, `${key} was not an array and will be reset.`);
+  return [];
+}
+
+function normalizeBackupValueForRestore(key, value, warnings = []) {
+  if (value === undefined) return { value, repaired: false };
+
+  if (BACKUP_ARRAY_KEYS.has(key)) {
+    const normalized = _normalizeRestoredArrayValue(key, value, warnings);
+    return { value: normalized, repaired: normalized !== value };
+  }
+
+  if (BACKUP_OBJECT_KEYS.has(key)) {
+    if (_isPlainStorageObject(value)) return { value, repaired: false };
+    _restoreWarning(warnings, `${key} was not an object and will be reset.`);
+    return { value: {}, repaired: true };
+  }
+
+  if (BACKUP_BOOLEAN_KEYS.has(key)) {
+    if (typeof value === "boolean") return { value, repaired: false };
+    if (value === "true" || value === 1 || value === "1") {
+      _restoreWarning(warnings, `${key} was normalized to a boolean.`);
+      return { value: true, repaired: true };
+    }
+    if (value === "false" || value === 0 || value === "0" || value === null) {
+      _restoreWarning(warnings, `${key} was normalized to a boolean.`);
+      return { value: false, repaired: true };
+    }
+    _restoreWarning(warnings, `${key} was not a boolean and will be reset.`);
+    return { value: false, repaired: true };
+  }
+
+  if (BACKUP_NUMBER_KEYS.has(key)) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return { value, repaired: false };
+    }
+    const numeric = Number(value || 0);
+    if (Number.isFinite(numeric)) {
+      _restoreWarning(warnings, `${key} was normalized to a number.`);
+      return { value: numeric, repaired: true };
+    }
+    _restoreWarning(warnings, `${key} was not a number and will be reset.`);
+    return { value: 0, repaired: true };
+  }
+
+  if (BACKUP_STRING_KEYS.has(key)) {
+    if (typeof value === "string") return { value, repaired: false };
+    _restoreWarning(warnings, `${key} was normalized to text.`);
+    return { value: value == null ? "" : String(value), repaired: true };
+  }
+
+  return { value, repaired: false };
+}
+
 function validateBackupPayload(backup) {
   const result = {
     valid: true,
@@ -178,20 +366,36 @@ function validateBackupPayload(backup) {
     const value = backup[key];
     if (value === undefined) return;
     result.itemCount += 1;
+    let parsedValue = value;
     if (typeof value === "string") {
       try {
-        JSON.parse(value);
-      } catch (_err) {
+        parsedValue = JSON.parse(value);
+      } catch (err) {
         result.valid = false;
         result.errors.push(`${key} is not valid JSON.`);
+        parsedValue = undefined;
       }
-      return;
+    } else {
+      try {
+        JSON.stringify(value);
+      } catch (_err) {
+        result.valid = false;
+        result.errors.push(`${key} cannot be serialized.`);
+        parsedValue = undefined;
+      }
     }
+
+    if (parsedValue === undefined) return;
+
     try {
-      JSON.stringify(value);
+      const beforeWarnings = result.warnings.length;
+      normalizeBackupValueForRestore(key, parsedValue, result.warnings);
+      if (result.warnings.length > beforeWarnings) {
+        result.warnings.push(`${key} will be normalized during restore.`);
+      }
     } catch (_err) {
       result.valid = false;
-      result.errors.push(`${key} cannot be serialized.`);
+      result.errors.push(`${key} could not be normalized.`);
     }
   });
 
@@ -535,6 +739,8 @@ const storageManager = {
       if (!ok) return false;
     }
 
+    const restoreWarnings = [...validation.warnings];
+
     Object.values(STORAGE_KEYS).forEach((key) => {
       if (key === STORAGE_KEYS.PLAYBOOK) return; // stored in IDB below
       if (backup[key] !== undefined) {
@@ -543,7 +749,8 @@ const storageManager = {
             ? safeJSONParse(backup[key], undefined)
             : backup[key];
         if (value !== undefined) {
-          localStorage.setItem(key, _storedJsonValue(value));
+          const normalized = normalizeBackupValueForRestore(key, value, restoreWarnings);
+          localStorage.setItem(key, _storedJsonValue(normalized.value));
         }
       }
     });
@@ -553,14 +760,25 @@ const storageManager = {
       try {
         const raw = backup[STORAGE_KEYS.PLAYBOOK];
         const parsed = typeof raw === "string" ? safeJSONParse(raw, null) : raw;
-        if (Array.isArray(parsed)) {
-          await _idbSetPlaybook(parsed);
-          _pbEstimatedBytes = new Blob([JSON.stringify(parsed)]).size;
+        const normalized = normalizeBackupValueForRestore(
+          STORAGE_KEYS.PLAYBOOK,
+          parsed,
+          restoreWarnings,
+        );
+        if (Array.isArray(normalized.value)) {
+          await _idbSetPlaybook(normalized.value);
+          _pbEstimatedBytes = new Blob([JSON.stringify(normalized.value)]).size;
           localStorage.removeItem(STORAGE_KEYS.PLAYBOOK);
         }
       } catch (err) {
         console.error("restoreAllData: IDB playbook write failed:", err);
       }
+    }
+
+    if (restoreWarnings.length && typeof appDiagnostics !== "undefined") {
+      appDiagnostics.mark("storage-restore:normalized", {
+        warningCount: restoreWarnings.length,
+      });
     }
 
     this.compactLocalStorage({ removeExpiredDrafts: true });
