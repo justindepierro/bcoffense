@@ -173,6 +173,9 @@ Current large JS files from the scan:
 Work left:
 
 - [x] Add a local stress seed audit for large playbooks, saved scripts, wristbands, call sheets, game plans, player data, and role/viewport loading checks.
+- [x] Add local E2E viewport matrix commands for desktop, phone, and iPad runs.
+- [x] Add local backup/restore integrity E2E coverage for playbook plus downstream artifacts.
+- [x] Add local source-identity E2E coverage for edited/deleted playbook sources.
 - [ ] Use stress-audit reports to prioritize the highest-impact loading, overflow, touch-target, and console-error fixes.
 - [ ] Defer non-critical dashboard, tendencies, and remaining callsheet setup until first use.
 - [ ] Reduce unrelated responsibilities still owned by `utils.js`.

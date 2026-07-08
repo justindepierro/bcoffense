@@ -2547,13 +2547,26 @@ function checkE2eLocalHarness() {
   const testsPkg = JSON.parse(read("tests/package.json"));
   const config = read("tests/playwright.config.js");
   const helpers = read("tests/specs/helpers.js");
+  const dataIntegritySpec = read("tests/specs/08-data-integrity.spec.js");
   const server = read("scripts/e2e-local-server.mjs");
 
   if (pkg.scripts?.["test:e2e:local"] !== "npm --prefix tests run test:local") {
     fail("root package does not expose npm run test:e2e:local");
   }
+  ["phone", "ipad", "all"].forEach((target) => {
+    if (pkg.scripts?.[`test:e2e:local:${target}`] !== `npm --prefix tests run test:local:${target}`) {
+      fail(`root package does not expose npm run test:e2e:local:${target}`);
+    }
+  });
   if (!/BCOFFENSE_E2E_LOCAL=1 playwright test --project=chromium-desktop/.test(testsPkg.scripts?.["test:local"] || "")) {
     fail("tests package does not expose the local E2E auth harness");
+  }
+  if (
+    !/test:local:phone/.test(JSON.stringify(testsPkg.scripts || {})) ||
+    !/--project=ipad-portrait --project=ipad-landscape/.test(testsPkg.scripts?.["test:local:ipad"] || "") ||
+    !/--project=chromium-desktop --project=ipad-portrait --project=ipad-landscape --project=iphone --project=phone-narrow/.test(testsPkg.scripts?.["test:local:all"] || "")
+  ) {
+    fail("tests package does not expose the local viewport E2E matrix");
   }
   if (
     !/BCOFFENSE_E2E_LOCAL/.test(config) ||
@@ -2569,6 +2582,14 @@ function checkE2eLocalHarness() {
     !/test:e2e:local/.test(helpers)
   ) {
     fail("Playwright login helper does not fail fast with local-harness guidance");
+  }
+  if (
+    !/backup and restore preserve playbook plus downstream artifacts/.test(dataIntegritySpec) ||
+    !/source identity metadata makes edited and deleted source plays detectable/.test(dataIntegritySpec) ||
+    !/copyPlayWithSourceIdentity/.test(dataIntegritySpec) ||
+    !/storageManager\.restoreAllData/.test(dataIntegritySpec)
+  ) {
+    fail("local data integrity spec is missing backup/restore or source identity coverage");
   }
   if (
     !/handleAuthLogin/.test(server) ||

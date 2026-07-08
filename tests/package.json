@@ -6,6 +6,9 @@
   "scripts": {
     "test":        "playwright test --project=chromium-desktop",
     "test:local":  "BCOFFENSE_E2E_LOCAL=1 playwright test --project=chromium-desktop",
+    "test:local:phone": "BCOFFENSE_E2E_LOCAL=1 playwright test --project=iphone --project=phone-narrow",
+    "test:local:ipad":  "BCOFFENSE_E2E_LOCAL=1 playwright test --project=ipad-portrait --project=ipad-landscape",
+    "test:local:all":   "BCOFFENSE_E2E_LOCAL=1 playwright test --project=chromium-desktop --project=ipad-portrait --project=ipad-landscape --project=iphone --project=phone-narrow",
     "test:all":    "playwright test",
     "test:ipad":   "playwright test --project=ipad-portrait --project=ipad-landscape",
     "test:phone":  "playwright test --project=iphone --project=phone-narrow",
