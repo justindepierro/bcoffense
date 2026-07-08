@@ -699,8 +699,8 @@
     if (currentAuthUser && typeof currentActiveTab !== "undefined" && !canAccessTab(currentActiveTab)) {
       showTab(getDefaultAuthTab());
     }
-    if (typeof renderDashboard === "function" && currentActiveTab === "dashboard") {
-      renderDashboard();
+    if (typeof requestRenderDashboard === "function" && currentActiveTab === "dashboard") {
+      requestRenderDashboard();
     }
 
     if (typeof renderPlayerScriptLauncher === "function") {

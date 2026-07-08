@@ -57,7 +57,7 @@ function focusDashOpponentSelect() {
 
 function onDashSearchInput(value) {
   dashSearchTerm = value || "";
-  renderDashboard();
+  requestRenderDashboard();
 }
 
 const debouncedOnDashSearchInput =
@@ -170,7 +170,7 @@ function setScheduleActive(element) {
   if (oppIdx < 0) return;
 
   setGameWeek(oppIdx, game.week);
-  renderDashboard();
+  requestRenderDashboard();
   showToast(
     `🏈 Active: ${escapeHtml(game.week)} vs ${escapeHtml(game.opponent)}`,
     { duration: 2500, type: "success" },
@@ -358,7 +358,7 @@ async function onDashOpponentChange(value) {
   const idx = value === "" ? null : parseInt(value, 10);
   const weekLabel = document.getElementById("dashWeekLabel")?.value || "";
   setGameWeek(idx, weekLabel);
-  renderDashboard();
+  requestRenderDashboard();
   const gw = getGameWeek();
   if (gw.opponentName) {
     showToast(`🏈 Active opponent: ${gw.opponentName}`);
@@ -379,7 +379,7 @@ function onDashWeekLabelChange(value) {
   const gw = getGameWeek();
   gw.weekLabel = value;
   storageManager.set(STORAGE_KEYS.GAME_WEEK, gw);
-  renderDashboard();
+  requestRenderDashboard();
 }
 
 /**
@@ -440,7 +440,7 @@ async function startNewGameWeek() {
     { duration: 3500, type: "success" },
   );
 
-  if (typeof renderDashboard === "function") renderDashboard();
+  if (typeof requestRenderDashboard === "function") requestRenderDashboard();
 }
 
 /**
@@ -457,7 +457,7 @@ async function duplicateGameWeek() {
   if (weekLabel === null) return;
   setGameWeek(gw.opponentIndex, weekLabel.trim());
   showToast("Game week duplicated.", { type: "success" });
-  if (typeof renderDashboard === "function") renderDashboard();
+  if (typeof requestRenderDashboard === "function") requestRenderDashboard();
 }
 
 /**
@@ -510,7 +510,7 @@ async function showGameWeekArchive() {
   const { archivedAt, ...gwData } = entry;
   storageManager.set(STORAGE_KEYS.GAME_WEEK, gwData);
   if (typeof updateGameWeekBar === "function") updateGameWeekBar();
-  if (typeof renderDashboard === "function") renderDashboard();
+  if (typeof requestRenderDashboard === "function") requestRenderDashboard();
   showToast("Game week restored.", { type: "success" });
 }
 

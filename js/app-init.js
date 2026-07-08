@@ -19,18 +19,32 @@ async function initApp() {
   };
 
   try {
+    if (typeof appDiagnostics !== "undefined") appDiagnostics.mark("startup:init");
     if (typeof setStartupLoadingMessage === "function") {
       setStartupLoadingMessage("Checking saved data...");
     }
-    runMigrations();
+    if (typeof appDiagnostics !== "undefined") {
+      appDiagnostics.measure("startup:migrations", () => runMigrations());
+    } else {
+      runMigrations();
+    }
 
-    const storedPlaybook = await storageManager.getPlaybook();
+    const storedPlaybook =
+      typeof appDiagnostics !== "undefined"
+        ? await appDiagnostics.measure("startup:get-playbook", () => storageManager.getPlaybook())
+        : await storageManager.getPlaybook();
     storageManager.compactLocalStorage({ removeExpiredDrafts: true });
     if (storedPlaybook) {
       if (typeof setStartupLoadingMessage === "function") {
         setStartupLoadingMessage("Restoring playbook...");
       }
-      restoreStoredPlaybookSession(storedPlaybook);
+      if (typeof appDiagnostics !== "undefined") {
+        appDiagnostics.measure("startup:restore-session", () =>
+          restoreStoredPlaybookSession(storedPlaybook),
+        );
+      } else {
+        restoreStoredPlaybookSession(storedPlaybook);
+      }
     } else if (typeof setStartupLoadingMessage === "function") {
       setStartupLoadingMessage("Preparing upload workspace...");
       if (typeof ensureMobileStartupSurface === "function") {
@@ -47,6 +61,7 @@ async function initApp() {
     initTeamIdentityUi(runOptionalInit);
     if (typeof initPageHelp === "function") initPageHelp();
     if (typeof initToolbarResizeObserver === "function") initToolbarResizeObserver();
+    if (typeof appDiagnostics !== "undefined") appDiagnostics.mark("startup:ui-ready");
     if (typeof maybeShowFirstUseWalkthrough === "function") {
       setTimeout(maybeShowFirstUseWalkthrough, 500);
     }
@@ -59,6 +74,9 @@ async function initApp() {
     });
   } finally {
     await waitForAuthStartup();
+    if (typeof appDiagnostics !== "undefined") {
+      appDiagnostics.mark(startupFailed ? "startup:failed" : "startup:ready");
+    }
     if (typeof finishStartupLoading === "function") {
       finishStartupLoading({ error: startupFailed, delay: startupFailed ? 400 : 120 });
     } else if (document.body) {

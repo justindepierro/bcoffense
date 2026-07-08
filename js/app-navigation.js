@@ -165,9 +165,9 @@ function showTab(tabName) {
   } else if (tabName === "dashboard") {
     // Item 42: defer player dashboard render so tab-switch animation completes first
     if (typeof requestIdleCallback === "function") {
-      requestIdleCallback(() => renderDashboard(), { timeout: 250 });
+      requestIdleCallback(() => requestRenderDashboard(), { timeout: 250 });
     } else {
-      setTimeout(renderDashboard, 0);
+      setTimeout(requestRenderDashboard, 0);
     }
   } else if (tabName === "leaderboard") {
     if (typeof renderPlayerLeaderboardPage === "function") renderPlayerLeaderboardPage();

@@ -747,141 +747,180 @@ const storageManager = {
 })();
 
 async function reloadAppFromStorage(opts = {}) {
-  const storedPlaybook = await storageManager.getPlaybook();
-  if (Array.isArray(storedPlaybook)) {
-    plays = storedPlaybook;
-    if (typeof ensurePlaybookPlayIds === "function") {
-      const changed = ensurePlaybookPlayIds(plays);
-      if (changed > 0) storageManager.setPlaybook(plays);
+  const runReloadStep = async (label, callback) => {
+    const run = () => callback();
+    try {
+      return typeof appDiagnostics !== "undefined"
+        ? await appDiagnostics.measure(`storage-reload:${label}`, run)
+        : await run();
+    } catch (err) {
+      console.error(`reloadAppFromStorage step failed: ${label}`, err);
+      if (typeof appDiagnostics !== "undefined") {
+        appDiagnostics.mark("storage-reload:step-failed", {
+          label,
+          message: err?.message || String(err),
+        });
+      }
+      return null;
     }
-    if (typeof invalidatePlaybookRuntimeIndex === "function") invalidatePlaybookRuntimeIndex();
-    filteredPlays = [...plays];
-  }
+  };
 
-  if (typeof savedSortPresets !== "undefined") {
-    savedSortPresets = storageManager.get(STORAGE_KEYS.SORT_PRESETS, {});
-  }
+  if (typeof appDiagnostics !== "undefined") appDiagnostics.mark("storage-reload:start");
 
-  if (typeof periodTemplates !== "undefined") {
-    periodTemplates = storageManager.get(STORAGE_KEYS.PERIOD_TEMPLATES, []);
-  }
-
-  if (typeof wbCustomSortOrders !== "undefined") {
-    wbCustomSortOrders = storageManager.get(
-      STORAGE_KEYS.CUSTOM_SORT_ORDERS,
-      {},
-    );
-  }
-
-  if (typeof callSheet !== "undefined") {
-    const cs = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
-    if (cs) callSheet = cs;
-  }
-
-  if (typeof callSheetSettings !== "undefined") {
-    const css = storageManager.get(STORAGE_KEYS.CALL_SHEET_SETTINGS, null);
-    if (css) {
-      callSheetSettings =
-        typeof normalizeCallSheetSettings === "function"
-          ? normalizeCallSheetSettings(css)
-          : css;
+  const storedPlaybook = await runReloadStep("get-playbook", () =>
+    storageManager.getPlaybook(),
+  );
+  await runReloadStep("playbook-state", async () => {
+    if (Array.isArray(storedPlaybook)) {
+      plays = storedPlaybook;
+      if (typeof ensurePlaybookPlayIds === "function") {
+        const changed = ensurePlaybookPlayIds(plays);
+        if (changed > 0) await storageManager.setPlaybook(plays);
+      }
+      if (typeof invalidatePlaybookRuntimeIndex === "function") invalidatePlaybookRuntimeIndex();
+      filteredPlays = [...plays];
     }
-  }
+  });
 
-  if (typeof rebuildCallSheetCategoryRegistry === "function") {
-    rebuildCallSheetCategoryRegistry();
-  }
-  if (typeof syncCallSheetCategoryData === "function") {
-    syncCallSheetCategoryData();
-  }
-  if (typeof csCategoryOrder !== "undefined") {
-    csCategoryOrder =
-      typeof normalizeCallSheetCategoryOrder === "function"
-        ? normalizeCallSheetCategoryOrder(
-          storageManager.get(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, null),
-        )
-        : storageManager.get(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, {});
-  }
-  if (typeof csNotes !== "undefined") {
-    csNotes = storageManager.get(STORAGE_KEYS.CALLSHEET_NOTES, {});
-  }
-  if (typeof csTargets !== "undefined") {
-    csTargets = storageManager.get(STORAGE_KEYS.CALLSHEET_TARGETS, {});
-  }
-  if (typeof csCollapsed !== "undefined") {
-    const collapsed = storageManager.get(
-      STORAGE_KEYS.CALLSHEET_COLLAPSED,
-      [],
-    );
-    csCollapsed = new Set(Array.isArray(collapsed) ? collapsed : []);
-  }
+  await runReloadStep("module-state", () => {
+    if (typeof savedSortPresets !== "undefined") {
+      savedSortPresets = storageManager.get(STORAGE_KEYS.SORT_PRESETS, {});
+    }
 
-  if (typeof scriptCustomSortOrders !== "undefined") {
-    scriptCustomSortOrders = storageManager.get(
-      STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS,
-      {},
-    );
-  }
+    if (typeof periodTemplates !== "undefined") {
+      periodTemplates = storageManager.get(STORAGE_KEYS.PERIOD_TEMPLATES, []);
+    }
 
-  if (typeof tendenciesOpponents !== "undefined") {
-    tendenciesOpponents = storageManager.get(
-      STORAGE_KEYS.DEFENSIVE_TENDENCIES,
-      [],
-    );
-  }
+    if (typeof wbCustomSortOrders !== "undefined") {
+      wbCustomSortOrders = storageManager.get(
+        STORAGE_KEYS.CUSTOM_SORT_ORDERS,
+        {},
+      );
+    }
 
-  if (typeof csScoutingOverlayOn !== "undefined") {
-    csScoutingOverlayOn = storageManager.get(
-      STORAGE_KEYS.CS_SCOUTING_OVERLAY,
-      false,
-    );
-  }
+    if (typeof callSheet !== "undefined") {
+      const cs = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
+      if (cs) callSheet = cs;
+    }
 
-  if (typeof restoreCallSheetDisplayOptions === "function") {
-    restoreCallSheetDisplayOptions();
-  }
-  if (typeof resetCallSheetHistoryBaseline === "function") {
-    resetCallSheetHistoryBaseline();
-  }
+    if (typeof callSheetSettings !== "undefined") {
+      const css = storageManager.get(STORAGE_KEYS.CALL_SHEET_SETTINGS, null);
+      if (css) {
+        callSheetSettings =
+          typeof normalizeCallSheetSettings === "function"
+            ? normalizeCallSheetSettings(css)
+            : css;
+      }
+    }
 
-  if (typeof restoreScriptDisplayOptions === "function") {
-    restoreScriptDisplayOptions();
-  }
+    if (typeof rebuildCallSheetCategoryRegistry === "function") {
+      rebuildCallSheetCategoryRegistry();
+    }
+    if (typeof syncCallSheetCategoryData === "function") {
+      syncCallSheetCategoryData();
+    }
+    if (typeof csCategoryOrder !== "undefined") {
+      csCategoryOrder =
+        typeof normalizeCallSheetCategoryOrder === "function"
+          ? normalizeCallSheetCategoryOrder(
+            storageManager.get(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, null),
+          )
+          : storageManager.get(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, {});
+    }
+    if (typeof csNotes !== "undefined") {
+      csNotes = storageManager.get(STORAGE_KEYS.CALLSHEET_NOTES, {});
+    }
+    if (typeof csTargets !== "undefined") {
+      csTargets = storageManager.get(STORAGE_KEYS.CALLSHEET_TARGETS, {});
+    }
+    if (typeof csCollapsed !== "undefined") {
+      const collapsed = storageManager.get(
+        STORAGE_KEYS.CALLSHEET_COLLAPSED,
+        [],
+      );
+      csCollapsed = new Set(Array.isArray(collapsed) ? collapsed : []);
+    }
 
-  if (typeof restoreColumnVisibility === "function") {
-    restoreColumnVisibility();
-  }
+    if (typeof scriptCustomSortOrders !== "undefined") {
+      scriptCustomSortOrders = storageManager.get(
+        STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS,
+        {},
+      );
+    }
 
-  if (typeof restorePlaybookState === "function") {
-    restorePlaybookState();
-  }
+    if (typeof tendenciesOpponents !== "undefined") {
+      tendenciesOpponents = storageManager.get(
+        STORAGE_KEYS.DEFENSIVE_TENDENCIES,
+        [],
+      );
+    }
 
-  if (typeof populateFilters === "function") {
-    populateFilters();
-  }
-  if (typeof filterPlays === "function") {
-    filterPlays();
-  } else if (Array.isArray(plays)) {
-    filteredPlays = [...plays];
-  }
-  if (typeof updateGameWeekBar === "function") {
-    updateGameWeekBar();
-  }
-  if (typeof updateTabBadges === "function") {
-    updateTabBadges();
-  }
+    if (typeof csScoutingOverlayOn !== "undefined") {
+      csScoutingOverlayOn = storageManager.get(
+        STORAGE_KEYS.CS_SCOUTING_OVERLAY,
+        false,
+      );
+    }
+  });
+
+  await runReloadStep("restore-display-state", () => {
+    if (typeof restoreCallSheetDisplayOptions === "function") {
+      restoreCallSheetDisplayOptions();
+    }
+    if (typeof resetCallSheetHistoryBaseline === "function") {
+      resetCallSheetHistoryBaseline();
+    }
+
+    if (typeof restoreScriptDisplayOptions === "function") {
+      restoreScriptDisplayOptions();
+    }
+
+    if (typeof restoreColumnVisibility === "function") {
+      restoreColumnVisibility();
+    }
+
+    if (typeof restorePlaybookState === "function") {
+      restorePlaybookState();
+    }
+  });
+
+  await runReloadStep("refresh-derived-state", () => {
+    if (typeof populateFilters === "function") {
+      populateFilters();
+    }
+    if (typeof filterPlays === "function") {
+      filterPlays();
+    } else if (Array.isArray(plays)) {
+      filteredPlays = [...plays];
+    }
+    if (typeof updateGameWeekBar === "function") {
+      updateGameWeekBar();
+    }
+    if (typeof updateTabBadges === "function") {
+      updateTabBadges();
+    }
+  });
 
   const activeTab =
     typeof currentActiveTab !== "undefined"
       ? currentActiveTab
       : document.body?.dataset.activeTab;
-  if (opts.refreshActiveTab !== false && activeTab && typeof showTab === "function") {
-    showTab(activeTab);
-  } else {
-    if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
-    if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
-    if (typeof renderDashboard === "function" && activeTab === "dashboard") {
-      renderDashboard();
+  await runReloadStep("render-active-surfaces", () => {
+    if (opts.refreshActiveTab !== false && activeTab && typeof showTab === "function") {
+      showTab(activeTab);
+    } else {
+      if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+      if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
+      if (typeof requestRenderDashboard === "function" && activeTab === "dashboard") {
+        requestRenderDashboard();
+      }
     }
+  });
+
+  if (typeof appDiagnostics !== "undefined") {
+    appDiagnostics.mark("storage-reload:done", {
+      activeTab: activeTab || "",
+      playCount: Array.isArray(plays) ? plays.length : 0,
+    });
   }
 }

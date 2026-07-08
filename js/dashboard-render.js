@@ -1639,6 +1639,11 @@ function renderDashboard() {
   }
 }
 
+const requestRenderDashboard =
+  typeof createRAFRenderer === "function"
+    ? createRAFRenderer(renderDashboard)
+    : renderDashboard;
+
 function renderSchedule() {
   const body = document.getElementById("dashScheduleBody");
   if (!body) return;

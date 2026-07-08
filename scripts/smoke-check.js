@@ -2299,6 +2299,81 @@ function checkServiceWorkerLifecycle() {
   console.log("service worker lifecycle preserves active work");
 }
 
+function checkCleanupAudit() {
+  const result = spawnSync(process.execPath, ["scripts/cleanup-audit.mjs", "--json"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    fail(`cleanup audit failed\n${result.stderr || result.stdout}`);
+    return;
+  }
+
+  let audit;
+  try {
+    audit = JSON.parse(result.stdout);
+  } catch (err) {
+    fail(`cleanup audit returned invalid JSON: ${err.message}`);
+    return;
+  }
+
+  [
+    "missingActions",
+    "missingInputHandlers",
+    "indexAssetsMissing",
+    "loadedAssetsNotCached",
+    "cachedAssetsMissing",
+  ].forEach((key) => {
+    if (audit[key]?.length) {
+      fail(`cleanup audit ${key}: ${audit[key].join(", ")}`);
+    }
+  });
+
+  console.log(
+    `cleanup audit ok (${audit.counts.jsFiles} JS files, ${audit.counts.dataActions} actions)`,
+  );
+}
+
+function checkStartupDiagnosticsAndRenderQueue() {
+  const utils = read("js/utils.js");
+  const appInit = read("js/app-init.js");
+  const storage = read("js/storage.js");
+  const dashboardRender = read("js/dashboard-render.js");
+  const appNavigation = read("js/app-navigation.js");
+  const dashboard = read("js/dashboard.js");
+  const auth = read("js/auth.js");
+  const gameplanActions = read("js/gameplan-actions.js");
+
+  if (!/const appDiagnostics\s*=/.test(utils) || !/window\.bcDebugStartup/.test(utils)) {
+    fail("startup diagnostics API is not exposed");
+  }
+  if (!/appDiagnostics\.mark\("startup:init"\)/.test(appInit)) {
+    fail("initApp does not mark startup diagnostics");
+  }
+  if (!/runReloadStep\("get-playbook"/.test(storage) || !/storage-reload:done/.test(storage)) {
+    fail("reloadAppFromStorage is not instrumented by phase");
+  }
+  if (!/const requestRenderDashboard\s*=/.test(dashboardRender)) {
+    fail("dashboard render queue helper is missing");
+  }
+
+  const directDashboardRenderCall =
+    /(renderDashboard\(\)|renderDashboard,\s*\{|\(\)\s*=>\s*renderDashboard\(\)|setTimeout\(renderDashboard)/;
+  [
+    ["js/app-navigation.js", appNavigation],
+    ["js/dashboard.js", dashboard],
+    ["js/auth.js", auth],
+    ["js/gameplan-actions.js", gameplanActions],
+    ["js/storage.js", storage],
+  ].forEach(([file, source]) => {
+    if (directDashboardRenderCall.test(source)) {
+      fail(`${file} calls renderDashboard directly instead of requestRenderDashboard`);
+    }
+  });
+
+  console.log("startup diagnostics and dashboard render queue ok");
+}
+
 function checkScrollOwnershipContract() {
   const shell = read("js/app-shell.js");
   const domHelpers = read("js/dom-helpers.js");
@@ -2675,6 +2750,8 @@ checkGamePlanMediaReadinessContracts();
 checkCacheBusters();
 checkServiceWorkerLifecycle();
 checkServiceWorkerCachePolicy();
+checkCleanupAudit();
+checkStartupDiagnosticsAndRenderQueue();
 checkScrollOwnershipContract();
 checkTopLevelSymbolOwnership();
 checkWristbandConstantUsage();

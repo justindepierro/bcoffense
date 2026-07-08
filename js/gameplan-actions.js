@@ -212,7 +212,7 @@ async function resetCurrentGamePlan() {
   else if (typeof renderPlaybook === "function") renderPlaybook();
   if (typeof renderAvailablePlays === "function") renderAvailablePlays();
   if (typeof populateCallSheetPlayList === "function") populateCallSheetPlayList();
-  if (typeof renderDashboard === "function") renderDashboard();
+  if (typeof requestRenderDashboard === "function") requestRenderDashboard();
 
   showToast(`Reset game plan ${label}`, { type: "success" });
 }
