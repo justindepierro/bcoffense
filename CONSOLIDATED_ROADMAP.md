@@ -104,7 +104,36 @@ Definition of done:
 - Player phone and iPad flows feel like a study app, not a compressed staff app.
 - Mobile regressions have repeatable checks or a clear manual QA note.
 
-### 4. Header and Command-Surface Standardization
+### 4. Player Quiz Experience Pass
+
+Detailed audit: `PLAYER_QUIZ_EXPERIENCE_AUDIT.md`.
+
+Goal: make Quiz Center feel like a fast study game instead of a metadata test.
+
+Work left:
+
+- [ ] Add fair-question quality gates so players are not asked to guess from
+  tiny or partial metadata.
+- [ ] Prefer diagram and formation recognition fallbacks before full call-ID
+  questions.
+- [ ] Add easy fallback types: Diagram to Formation, Formation to Play, Play
+  Type, and Study Card.
+- [ ] Add game modes: Quick Hits, Diagram Drill, Know Your Job, Game Plan Check,
+  and Missed Plays.
+- [ ] Add lightweight answer feedback, streak milestones, and reward moments
+  while respecting reduced-motion.
+- [ ] Split coach source readiness into fun, learning, and context readiness.
+- [ ] Add E2E coverage for diagram-first, formation, play-type, study-card, and
+  long-choice fallback behavior.
+
+Definition of done:
+
+- Thin quiz sources still create fair, useful study reps.
+- Diagram questions feel like a first-class mode, not a last-resort fallback.
+- Players see simple challenges they want to start, and coaches can predict what
+  kind of questions a source will generate.
+
+### 5. Header and Command-Surface Standardization
 
 Target contract:
 
@@ -130,7 +159,7 @@ Definition of done:
 - Player role shows study/practice/presentation actions only.
 - Admin data/storage tools are available but grouped away from daily coaching actions.
 
-### 5. Readiness Reimagined
+### 6. Readiness Reimagined
 
 Goal: simplify play readiness from a complex weighted model into a clearer coach
 workflow.
@@ -168,7 +197,7 @@ Definition of done:
 - The displayed score is explainable without weighted-rep math.
 - Existing saved readiness data migrates or remains readable.
 
-### 6. Startup, Refactor, and Ownership
+### 7. Startup, Refactor, and Ownership
 
 Current large JS files from the scan:
 
@@ -203,7 +232,7 @@ Definition of done:
 - File ownership is obvious from names, load order, and smoke contracts.
 - New features do not land in `utils.js` or another catch-all file by default.
 
-### 7. CSS and Layout Debt
+### 8. CSS and Layout Debt
 
 Current `!important` hotspots from the scan:
 
