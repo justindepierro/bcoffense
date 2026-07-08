@@ -166,6 +166,8 @@
     "openPlayerQuizHub",
     "closePlayerQuizHub",
     "setPlayerQuizPosition",
+    "setPlayerQuizPositionMode",
+    "setPlayerQuizMode",
     "setPlayerQuizScriptSource",
     "startPlayerQuizHubScript",
     "startPlayerQuizHubGamePlan",

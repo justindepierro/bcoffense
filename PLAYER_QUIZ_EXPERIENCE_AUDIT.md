@@ -38,13 +38,13 @@ What works:
 - Resume state works.
 - Script and Game Plan sources are separated.
 - Roster-linked position defaults and secondary position mode exist.
+- Quiz Center now has player-facing challenge modes: Quick Hits, Diagram Drill,
+  Know Your Job, Game Plan Check, and Missed Plays.
 
 Problems:
 
-- The first screen is still mostly "choose a source" and point totals. It does
-  not yet feel like a challenge menu with game modes.
-- Players see source choices, but not a simple promise like "quick visual quiz"
-  or "learn your job."
+- The first screen has challenge modes now, but the coach setup page does not
+  yet recommend which mode will feel best for a thin source.
 - Thin sources are hidden from player readiness language, but the player can
   still end up with low-interest call-ID questions.
 
@@ -275,14 +275,14 @@ Definition of done:
 
 Goal: Quiz Center should feel like choosing a challenge.
 
-- [ ] Add mode cards:
+- [x] Add mode cards:
   - Quick Hits: 5 easy questions.
   - Diagram Drill: visual questions first.
   - Know Your Job: player responsibility focus.
   - Game Plan Check: mixed game-plan questions.
   - Missed Plays: retry recent misses.
-- [ ] Give each mode a clear time/effort label.
-- [ ] Save mode in attempt summaries.
+- [x] Give each mode a clear time/effort label.
+- [x] Save mode in attempt summaries.
 - [ ] Coach setup can recommend the best mode for each source.
 
 Definition of done:
@@ -335,7 +335,7 @@ Definition of done:
 
 Goal: quizzes should help kids improve over time.
 
-- [ ] Add "Missed Plays" source from recent wrong answers.
+- [x] Add "Missed Plays" source from recent wrong answers.
 - [ ] Add spaced retry: missed today appears again tomorrow.
 - [ ] Add player weak-area cards by question type and position.
 - [ ] Let players start a 3-question retry from the result screen.

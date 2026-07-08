@@ -118,7 +118,7 @@ Work left:
   questions.
 - [x] Add easy fallback types: Diagram to Formation, Formation to Play, Play
   Type, and Study Card.
-- [ ] Add game modes: Quick Hits, Diagram Drill, Know Your Job, Game Plan Check,
+- [x] Add game modes: Quick Hits, Diagram Drill, Know Your Job, Game Plan Check,
   and Missed Plays.
 - [ ] Add lightweight answer feedback, streak milestones, and reward moments
   while respecting reduced-motion.

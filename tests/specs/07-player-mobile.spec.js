@@ -950,16 +950,27 @@ test.describe("Player mobile experience", () => {
     await expect(hub.locator("#playerQuizPositionModeSelect")).toHaveValue("primary");
     await expect(hub.locator("#playerQuizPositionHint")).toContainText("primary position");
     await expect(hub.locator("#playerQuizPositionPicker").getByRole("button", { name: /^H$/ })).toHaveClass(/is-active/);
+    await expect(hub.locator("#playerQuizModeGrid")).toContainText("Quick Hits");
+    await expect(hub.locator("#playerQuizModeGrid")).toContainText("Diagram Drill");
+    await expect(hub.locator("#playerQuizModeGrid")).toContainText("Know Your Job");
+    await expect(hub.locator("#playerQuizModeGrid")).toContainText("Game Plan Check");
+    await expect(hub.locator("#playerQuizModeGrid")).toContainText("Missed Plays");
 
     await hub.locator("#playerQuizPositionModeSelect").selectOption("secondary");
     await expect(hub.locator("#playerQuizPositionHint")).toContainText("secondary position");
     await expect(hub.locator("#playerQuizPositionPicker").getByRole("button", { name: /^Y$/ })).toHaveClass(/is-active/);
-    await hub.getByRole("button", { name: /Start Script Quiz/i }).click();
+    const modeGrid = hub.locator("#playerQuizModeGrid");
+    await modeGrid.scrollIntoViewIfNeeded();
+    await modeGrid.getByRole("button", { name: /Know Your Job/i }).click();
+    await expect(modeGrid.getByRole("button", { name: /Know Your Job/i })).toHaveClass(/is-selected/);
+    await hub.getByRole("button", { name: /Start Know Your Job/i }).click();
 
     const quiz = page.locator("#scriptQuizOverlay");
     await expect(quiz).toBeVisible();
+    await expect(quiz).toContainText("Know Your Job: Position Install");
     await expect(quiz.getByText("What's your Y responsibility?")).toBeVisible();
     await expect(quiz.locator(".script-quiz-choice")).toHaveCount(4);
+    await expect.poll(() => page.evaluate(() => _quizMode)).toBe("job");
     await quiz.getByRole("button", { name: /Close quiz/i }).click();
     await quiz.getByRole("button", { name: /Save & Close/i }).click();
     await expect(quiz).toBeHidden();
@@ -1200,7 +1211,11 @@ test.describe("Player mobile experience", () => {
     await expect(hub.locator("#playerQuizGamePlanStatus")).toContainText("Thin source");
     await expect(hub.locator("#playerQuizGamePlanStatus")).toContainText("Rules");
     await expect(hub.locator("#playerQuizGamePlanStatus")).toContainText("Diagrams");
-    await hub.getByRole("button", { name: /Start Game Plan Quiz/i }).click();
+    const modeGrid = hub.locator("#playerQuizModeGrid");
+    await modeGrid.scrollIntoViewIfNeeded();
+    await modeGrid.getByRole("button", { name: /Game Plan Check/i }).click();
+    await expect(modeGrid.getByRole("button", { name: /Game Plan Check/i })).toHaveClass(/is-selected/);
+    await hub.getByRole("button", { name: /Start Game Plan Check/i }).click();
 
     const quiz = page.locator("#scriptQuizOverlay");
     await expect(quiz).toBeVisible();
@@ -1221,12 +1236,16 @@ test.describe("Player mobile experience", () => {
       return {
         sourceType: latest?.sourceType,
         title: latest?.title,
+        quizMode: latest?.quizMode,
+        quizModeLabel: latest?.quizModeLabel,
         totalPoints: latest?.totalPoints,
         completed: latest?.completed,
       };
     })).toEqual({
       sourceType: "gameplan",
-      title: "Game Plan Quiz",
+      title: "Game Plan Check: Game Plan Quiz",
+      quizMode: "gameplan",
+      quizModeLabel: "Game Plan Check",
       totalPoints: 27,
       completed: true,
     });

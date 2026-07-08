@@ -393,10 +393,11 @@ function renderPlayerLoadedScriptBar() {
   queuePlayerScriptImageStatusRefresh();
 }
 
-function startPlayerScriptQuiz(id = "") {
+function startPlayerScriptQuiz(id = "", options = {}) {
+  const opts = options && typeof options === "object" ? options : {};
   const requestedId = id !== undefined && id !== null ? String(id) : "";
   let quizSourceId = requestedId;
-  let quizTitle = "Practice Script Quiz";
+  let quizTitle = opts.title || "Practice Script Quiz";
   const loadedPlayCount = Array.isArray(script)
     ? script.filter((entry) => entry && !entry.isSeparator).length
     : 0;
@@ -409,7 +410,7 @@ function startPlayerScriptQuiz(id = "") {
       return false;
     }
     const requestedScript = getPlayerPublishedScripts().find((savedScript) => String(savedScript.id) === requestedId);
-    if (requestedScript?.name) quizTitle = requestedScript.name;
+    if (requestedScript?.name && !opts.title) quizTitle = requestedScript.name;
     const loaded = loadPublishedPlayerScript(requestedId, {
       skipToast: true,
       toastMessage: "Practice loaded for quiz.",
@@ -440,9 +441,13 @@ function startPlayerScriptQuiz(id = "") {
       quizTitle = document.getElementById("scriptName")?.value || quizTitle;
     }
     startScriptQuiz({
+      items: Array.isArray(opts.items) ? opts.items : undefined,
       sourceType: "script",
       sourceId: quizSourceId,
       title: quizTitle || "Practice Script Quiz",
+      positionKey: opts.positionKey,
+      positionMode: opts.positionMode,
+      mode: opts.mode,
     });
     return true;
   }

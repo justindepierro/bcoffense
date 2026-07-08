@@ -7901,6 +7901,78 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
 }
 
+.player-quiz-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+
+.player-quiz-mode-card {
+  min-width: 0;
+  min-height: 116px;
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-body);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.player-quiz-mode-card:hover,
+.player-quiz-mode-card:focus-visible,
+.player-quiz-mode-card.is-selected {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
+  box-shadow: var(--shadow-xs);
+  outline: none;
+}
+
+.player-quiz-mode-card.is-selected {
+  transform: translateY(-1px);
+}
+
+.player-quiz-mode-card.is-disabled,
+.player-quiz-mode-card:disabled {
+  border-style: dashed;
+  background: var(--color-bg-light);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.player-quiz-mode-card span {
+  width: fit-content;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-light));
+  color: var(--color-text-secondary);
+  font-size: 0.66rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.player-quiz-mode-card strong {
+  color: inherit;
+  font-size: var(--font-size-sm);
+  line-height: 1.15;
+}
+
+.player-quiz-mode-card small {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  line-height: 1.25;
+}
+
 .player-quiz-source-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -10753,9 +10825,14 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   }
 
   .player-quiz-scoreboard,
+  .player-quiz-mode-grid,
   .player-quiz-source-grid,
   .player-leaderboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .player-quiz-mode-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .player-quiz-hub-section-head {

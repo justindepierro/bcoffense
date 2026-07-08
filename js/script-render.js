@@ -1462,6 +1462,8 @@ let _quizSourceType = "script";
 let _quizSourceId = "";
 let _quizSourceWeight = 1;
 let _quizTitle = "Play Quiz";
+let _quizMode = "quick";
+let _playerQuizSelectedMode = "quick";
 let _quizPositionKey = "respQ";
 let _quizPositionMode = "primary";
 let _quizFinished = false;
@@ -1850,6 +1852,7 @@ function _savePlayerQuizDraft() {
     sourceType: _quizSourceType,
     sourceId: _quizSourceId,
     sourceWeight: _quizSourceWeight,
+    quizMode: _quizMode,
     positionKey: _quizPositionKey,
     positionMode: _quizPositionMode,
     shuffled: _quizShuffled,
@@ -2747,12 +2750,15 @@ function _renderPlayerQuizResumeCard(draft, variant = "hub") {
   const title = draft.title || "Quiz in progress";
   const meta = _formatQuizDraftMeta(draft);
   const source = draft.sourceType === "gameplan" ? "Game Plan" : "Practice Script";
+  const modeLabel = draft.quizMode && draft.quizMode !== "full"
+    ? (_getPlayerQuizModes().find((mode) => mode.key === draft.quizMode)?.label || "Quiz")
+    : "";
   return `
     <div class="player-quiz-resume-card player-quiz-resume-card--${escapeAttr(variant)}">
       <div>
         <span class="player-quiz-resume-kicker">Pick up where you left off</span>
         <strong>${escapeHtml(title)}</strong>
-        <small>${escapeHtml(source)} · ${escapeHtml(meta)}</small>
+        <small>${escapeHtml([source, modeLabel, meta].filter(Boolean).join(" · "))}</small>
       </div>
       <div class="player-quiz-resume-actions">
         <button type="button" class="btn btn-primary" data-action="resumePlayerQuizDraft">Resume</button>
@@ -4828,7 +4834,7 @@ function _normalizeQuizItems(items) {
   return (Array.isArray(items) ? items : [])
     .map((item, index) => {
       if (!item) return null;
-      if (item.play) {
+      if (item.play && typeof item.play === "object") {
         return {
           play: item.play,
           period: item.period || "",
@@ -5044,6 +5050,154 @@ function _getPlayerQuizScriptOptions() {
     .filter((option) => option.playerVisible && option.state !== "coach");
 }
 
+function _getPlayerQuizSelectedScriptRecord() {
+  const id = String(_playerQuizSelectedScriptId || "");
+  const savedScripts = typeof getSavedScripts === "function" ? getSavedScripts() : [];
+  return (Array.isArray(savedScripts) ? savedScripts : []).find((savedScript) => String(savedScript?.id || "") === id) || null;
+}
+
+function _quizItemHasDiagram(itemOrPlay) {
+  const play = itemOrPlay?.play || itemOrPlay;
+  return Boolean(
+    play &&
+    window.playImages &&
+    typeof window.playImages.hasForPlay === "function" &&
+    window.playImages.hasForPlay(play)
+  );
+}
+
+function _quizItemHasPositionRule(itemOrPlay, key = _quizPositionKey) {
+  const play = itemOrPlay?.play || itemOrPlay;
+  const keys = _resolveQuizPositionKeysForMode(_quizPositionMode);
+  const candidates = key ? [key, ...keys] : keys;
+  return candidates.some((positionKey) => _quizCleanText(play?.[positionKey] || ""));
+}
+
+function _getRecentMissedQuizItems(limit = 5) {
+  const attempts = _getPlayerQuizAttempts()
+    .filter((attempt) => _quizPlayerNameFromAttempt(attempt, _getQuizPlayerName()) === _getQuizPlayerName())
+    .sort((a, b) => String(b.completedAt || "").localeCompare(String(a.completedAt || "")));
+  const sourcePlays = [
+    ...(_getPlayerQuizSelectedScriptRecord()?.plays || []),
+    ..._buildGamePlanQuizItems().map((item) => item.play),
+    ...((Array.isArray(script) ? script : []).filter((play) => play && !play.isSeparator)),
+    ...((Array.isArray(plays) ? plays : [])),
+  ];
+  const seen = new Set();
+  const out = [];
+  attempts.forEach((attempt) => {
+    (Array.isArray(attempt.reviewRows) ? attempt.reviewRows : []).forEach((row) => {
+      if (row.correct) return;
+      const call = _quizCleanText(row.playCall || row.correctLabel || "");
+      if (!call || seen.has(call.toLowerCase())) return;
+      const match = sourcePlays.find((play) => play && _quizPlainCall(play).toLowerCase() === call.toLowerCase());
+      if (!match) return;
+      seen.add(call.toLowerCase());
+      out.push({ play: match, period: "Missed Plays", scriptIndex: out.length });
+    });
+  });
+  return out.slice(0, limit);
+}
+
+function _getPlayerQuizModes(context = {}) {
+  const scriptSource = context.scriptSource || _getPlayerQuizSelectedScriptRecord();
+  const scriptItems = _normalizeQuizItems(scriptSource?.plays || []);
+  const gamePlanStatus = context.gamePlanStatus || _getActiveGamePlanQuizStatus();
+  const hasDiagram = scriptItems.some(_quizItemHasDiagram);
+  const hasRules = scriptItems.some((item) => _quizItemHasPositionRule(item));
+  const missedItems = _getRecentMissedQuizItems(5);
+  return [
+    {
+      key: "quick",
+      label: "Quick Hits",
+      time: "5 plays",
+      note: "Fast mixed reps from the selected source.",
+      source: "script",
+      disabled: !scriptItems.length,
+    },
+    {
+      key: "diagram",
+      label: "Diagram Drill",
+      time: hasDiagram ? "Visual" : "Fallback",
+      note: hasDiagram ? "Start with plays that have diagrams." : "No diagrams yet; falls back to mixed reps.",
+      source: "script",
+      disabled: !scriptItems.length,
+    },
+    {
+      key: "job",
+      label: "Know Your Job",
+      time: hasRules ? "Rules" : "Fallback",
+      note: hasRules ? "Focus on your position responsibilities." : "No position rules yet; falls back to easier reps.",
+      source: "script",
+      disabled: !scriptItems.length,
+    },
+    {
+      key: "gameplan",
+      label: "Game Plan Check",
+      time: `${gamePlanStatus.stats?.playCount || 0} calls`,
+      note: "Mixed questions from this week's plan.",
+      source: "gameplan",
+      disabled: !gamePlanStatus.available,
+    },
+    {
+      key: "missed",
+      label: "Missed Plays",
+      time: `${missedItems.length || 0} due`,
+      note: "Retry recent misses after feedback.",
+      source: "script",
+      disabled: !missedItems.length,
+    },
+  ];
+}
+
+function _getPlayerQuizMode(key = _playerQuizSelectedMode) {
+  return _getPlayerQuizModes().find((mode) => mode.key === key) || _getPlayerQuizModes()[0];
+}
+
+function _renderPlayerQuizModeCards() {
+  const modes = _getPlayerQuizModes();
+  if (!modes.some((mode) => mode.key === _playerQuizSelectedMode && !mode.disabled)) {
+    _playerQuizSelectedMode = modes.find((mode) => !mode.disabled)?.key || "quick";
+  }
+  return modes.map((mode) => `
+    <button type="button"
+      class="player-quiz-mode-card${mode.key === _playerQuizSelectedMode ? " is-selected" : ""}${mode.disabled ? " is-disabled" : ""}"
+      data-action="setPlayerQuizMode"
+      data-arg="${escapeAttr(mode.key)}"
+      aria-pressed="${mode.key === _playerQuizSelectedMode ? "true" : "false"}"
+      ${mode.disabled ? "disabled" : ""}>
+      <span>${escapeHtml(mode.time)}</span>
+      <strong>${escapeHtml(mode.label)}</strong>
+      <small>${escapeHtml(mode.note)}</small>
+    </button>
+  `).join("");
+}
+
+function _prepareQuizItemsForMode(items, modeKey = _quizMode) {
+  const normalized = _normalizeQuizItems(items);
+  const mode = String(modeKey || "quick");
+  if (mode === "diagram") {
+    const withDiagrams = normalized.filter(_quizItemHasDiagram);
+    return (withDiagrams.length ? withDiagrams : normalized).slice(0, 8);
+  }
+  if (mode === "job") {
+    const withRules = normalized.filter((item) => _quizItemHasPositionRule(item));
+    return (withRules.length ? withRules : normalized).slice(0, 8);
+  }
+  if (mode === "missed") {
+    const missed = _getRecentMissedQuizItems(5);
+    return missed.length ? missed : normalized.slice(0, 5);
+  }
+  if (mode === "quick") return normalized.slice(0, 5);
+  return normalized;
+}
+
+function _quizModeTitle(baseTitle, modeKey = _playerQuizSelectedMode) {
+  const mode = _getPlayerQuizModes().find((entry) => entry.key === modeKey);
+  if (!mode || mode.key === "quick") return baseTitle;
+  return `${mode.label}: ${baseTitle}`;
+}
+
 function _renderPlayerQuizScriptPicker(options) {
   if (!Array.isArray(options) || !options.length) {
     return `<div class="player-quiz-script-empty">Current practice only. Published scripts will appear here when your coach posts them.</div>`;
@@ -5182,21 +5336,36 @@ function _renderPlayerQuizHub() {
     }
     select.hidden = true;
   }
+
+  const gamePlanStatus = _getActiveGamePlanQuizStatus();
+  const modeGrid = document.getElementById("playerQuizModeGrid");
+  if (modeGrid) {
+    modeGrid.innerHTML = _renderPlayerQuizModeCards();
+  }
+
   if (scriptStartBtn) {
     const hasScriptOption = _getPlayerQuizScriptOptions().some((option) => option.playerSelectable);
-    scriptStartBtn.disabled = !hasScriptOption;
-    scriptStartBtn.textContent = hasScriptOption ? "Start Script Quiz" : "Script Quiz Locked";
+    const mode = _getPlayerQuizMode();
+    const modeNeedsGamePlan = mode?.source === "gameplan";
+    scriptStartBtn.disabled = !hasScriptOption || modeNeedsGamePlan;
+    scriptStartBtn.textContent = !hasScriptOption
+      ? "Script Quiz Locked"
+      : modeNeedsGamePlan
+        ? "Use Game Plan"
+        : `Start ${mode?.label || "Script Quiz"}`;
   }
   if (scriptPicker) {
     scriptPicker.innerHTML = _renderPlayerQuizScriptPicker(_getPlayerQuizScriptOptions());
   }
 
-  const gamePlanStatus = _getActiveGamePlanQuizStatus();
   const gamePlanBtn = document.getElementById("playerQuizStartGamePlanBtn");
   const gamePlanStatusEl = document.getElementById("playerQuizGamePlanStatus");
   if (gamePlanBtn) {
+    const mode = _getPlayerQuizMode();
     gamePlanBtn.disabled = !gamePlanStatus.available;
-    gamePlanBtn.textContent = gamePlanStatus.available ? "Start Game Plan Quiz" : gamePlanStatus.label;
+    gamePlanBtn.textContent = gamePlanStatus.available
+      ? `Start ${mode?.key === "gameplan" ? mode.label : "Game Plan Quiz"}`
+      : gamePlanStatus.label;
   }
   if (gamePlanStatusEl) {
     setInnerHTML(gamePlanStatusEl, `
@@ -5251,6 +5420,13 @@ function setPlayerQuizPositionMode(mode) {
   _renderPlayerQuizHub();
 }
 
+function setPlayerQuizMode(modeKey) {
+  const mode = _getPlayerQuizModes().find((entry) => entry.key === String(modeKey || ""));
+  if (!mode || mode.disabled) return;
+  _playerQuizSelectedMode = mode.key;
+  _renderPlayerQuizHub();
+}
+
 function setPlayerQuizScriptSource(id) {
   const target = _getPlayerQuizScriptOptions().find((option) => option.id === String(id || ""));
   if (target && !target.playerSelectable) return;
@@ -5268,17 +5444,29 @@ function startPlayerQuizHubScript() {
     showToast("Coach has not opened that script quiz yet.", { type: "warning" });
     return;
   }
+  const mode = _getPlayerQuizMode();
+  if (mode?.source === "gameplan") {
+    showToast("Use the Game Plan button for that challenge.", { type: "info" });
+    return;
+  }
   closePlayerQuizHub();
+  _quizMode = mode?.key || "quick";
   if (typeof startPlayerScriptQuiz === "function") {
-    startPlayerScriptQuiz(id || "");
+    startPlayerScriptQuiz(id || "", {
+      mode: _quizMode,
+      items: mode?.key === "missed" ? _prepareQuizItemsForMode([], "missed") : undefined,
+      title: _quizModeTitle(selected.name || "Practice Script Quiz", _quizMode),
+    });
     return;
   }
   startScriptQuiz({
+    items: mode?.key === "missed" ? _prepareQuizItemsForMode([], "missed") : undefined,
     sourceType: "script",
     sourceId: id || "",
-    title: "Practice Script Quiz",
+    title: _quizModeTitle("Practice Script Quiz", _quizMode),
     positionKey: _quizPositionKey,
     positionMode: _quizPositionMode,
+    mode: _quizMode,
   });
 }
 
@@ -5370,12 +5558,14 @@ function startPlayerQuizHubGamePlan() {
     return;
   }
   closePlayerQuizHub();
+  _quizMode = _playerQuizSelectedMode === "gameplan" ? "gameplan" : "quick";
   startScriptQuiz({
-    items,
+    items: _prepareQuizItemsForMode(items, _quizMode),
     sourceType: "gameplan",
-    title: "Game Plan Quiz",
+    title: _quizModeTitle("Game Plan Quiz", _quizMode),
     positionKey: _quizPositionKey,
     positionMode: _quizPositionMode,
+    mode: _quizMode,
   });
 }
 
@@ -5625,10 +5815,16 @@ function _buildQuizQuestion(item) {
   } : null;
 
   const candidates = [];
-  if (_quizIndex % 3 !== 1) candidates.push(ruleQuestion);
-  if (_quizIndex % 4 === 0 || !positionRule) candidates.push(diagramQuestion, diagramFormationQuestion);
-  if (_quizIndex % 2 === 1) candidates.push(ruleToPlayQuestion);
-  candidates.push(diagramQuestion, diagramFormationQuestion, formationQuestion, typeQuestion, callQuestion, ruleQuestion, ruleToPlayQuestion);
+  if (_quizMode === "diagram") {
+    candidates.push(diagramQuestion, diagramFormationQuestion, formationQuestion, typeQuestion, callQuestion, ruleQuestion, ruleToPlayQuestion);
+  } else if (_quizMode === "job") {
+    candidates.push(ruleQuestion, ruleToPlayQuestion, diagramQuestion, diagramFormationQuestion, formationQuestion, typeQuestion, callQuestion);
+  } else {
+    if (_quizIndex % 3 !== 1) candidates.push(ruleQuestion);
+    if (_quizIndex % 4 === 0 || !positionRule) candidates.push(diagramQuestion, diagramFormationQuestion);
+    if (_quizIndex % 2 === 1) candidates.push(ruleToPlayQuestion);
+    candidates.push(diagramQuestion, diagramFormationQuestion, formationQuestion, typeQuestion, callQuestion, ruleQuestion, ruleToPlayQuestion);
+  }
 
   const selected = _selectQuizQuestion(candidates, item);
   if (selected) return selected;
@@ -5866,7 +6062,10 @@ function startScriptQuiz(options = {}) {
   const opts = options && typeof options === "object" ? options : {};
   const sourceType = opts.sourceType === "gameplan" ? "gameplan" : "script";
   const items = Array.isArray(opts.items) ? opts.items : _buildQuizPlays(false);
-  const normalizedItems = _normalizeQuizItems(items);
+  _quizMode = String(opts.mode || "full");
+  const normalizedItems = opts.mode
+    ? _prepareQuizItemsForMode(items, _quizMode)
+    : _normalizeQuizItems(items);
   if (!normalizedItems.length) {
     showToast("Add plays to the script before starting a quiz", { type: "warning" });
     return;
@@ -6099,6 +6298,10 @@ function _buildQuizAttemptSummary(options = {}) {
     sourceType: _quizSourceType,
     sourceId: _quizSourceId,
     title: _quizTitle,
+    quizMode: _quizMode,
+    quizModeLabel: _quizMode === "full"
+      ? "Full Quiz"
+      : (_getPlayerQuizModes().find((mode) => mode.key === _quizMode)?.label || "Quiz"),
     positionKey: _quizPositionKey,
     positionMode: _quizPositionMode,
     positionLabel: _getQuizPositionModeLabel(_quizPositionMode),
@@ -6120,6 +6323,7 @@ function _buildQuizAttemptSummary(options = {}) {
       strengthTypes: review.strengthTypes,
       nextReview: review.nextReview,
     },
+    reviewRows,
     completed: !partial,
     completedAt: now.toISOString(),
     dateKey: _quizDateKey(now),
@@ -6244,6 +6448,7 @@ function resumePlayerQuizDraft() {
   _quizSourceId = String(draft.sourceId || "");
   _quizSourceWeight = Number(draft.sourceWeight || 0) || _getQuizSourceWeight(_quizSourceType);
   _quizTitle = draft.title || (_quizSourceType === "gameplan" ? "Game Plan Quiz" : "Practice Script Quiz");
+  _quizMode = String(draft.quizMode || "full");
   _quizPositionMode = _normalizeQuizPositionMode(draft.positionMode || "manual");
   if (draft.positionKey && _getQuizPositions().some((position) => position.key === draft.positionKey)) {
     _quizPositionKey = draft.positionKey;
