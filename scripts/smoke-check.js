@@ -2547,6 +2547,45 @@ function checkGracefulLoadingStates() {
   console.log("graceful loading states ok");
 }
 
+function checkPlayerQuizSettingsContracts() {
+  const scriptRender = read("js/script-render.js");
+  const roadmap = read("PLAYER_QUIZ_ROADMAP.md");
+
+  [
+    "PLAYER_QUIZ_TIER_DEFAULTS",
+    "PLAYER_QUIZ_DEFAULT_TIER_NAMES",
+    "tierNames: { ...PLAYER_QUIZ_DEFAULT_TIER_NAMES }",
+    "function _normalizeQuizTierNames",
+    "function _getQuizTierName",
+    "coachQuizTierChampion",
+    "coachQuizTierBaller",
+    "coachQuizTierStarter",
+    "coachQuizTierContributor",
+    "coachQuizTierDefense",
+  ].forEach((token) => {
+    if (!scriptRender.includes(token)) {
+      fail(`player quiz settings contract missing ${token}`);
+    }
+  });
+
+  if (!/function _getQuizTier\(points, settings = _getPlayerQuizSettings\(\)\)[\s\S]*?_getQuizTierName\("champion", settings\)[\s\S]*?_getQuizTierName\("defense", settings\)/.test(scriptRender)) {
+    fail("player quiz tiers do not resolve through editable tier names");
+  }
+
+  if (!/function coachSaveQuizSettings\(\)[\s\S]*?tierNames:\s*{[\s\S]*?champion:\s*_readCoachQuizSettingText\("coachQuizTierChampion"\)[\s\S]*?defense:\s*_readCoachQuizSettingText\("coachQuizTierDefense"\)/.test(scriptRender)) {
+    fail("coach quiz settings save does not persist tier names");
+  }
+
+  if (
+    /tier-name controls remain pending|Tier names remain fixed for now/.test(roadmap) ||
+    !/\[x\] Add formal coach\/admin quiz settings/.test(roadmap)
+  ) {
+    fail("player quiz roadmap still marks editable tier names as pending");
+  }
+
+  console.log("player quiz settings contracts ok");
+}
+
 function checkScrollOwnershipContract() {
   const shell = read("js/app-shell.js");
   const domHelpers = read("js/dom-helpers.js");
@@ -2929,6 +2968,7 @@ checkStorageRestoreNormalization();
 checkStartupTabRestoreContracts();
 checkStartupRestoreHarness();
 checkGracefulLoadingStates();
+checkPlayerQuizSettingsContracts();
 checkScrollOwnershipContract();
 checkTopLevelSymbolOwnership();
 checkWristbandConstantUsage();

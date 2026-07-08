@@ -14,7 +14,7 @@
 - [x] Keep the existing Practice-tab quiz path working while the new Quiz Center grows.
 - [x] Link local quiz identity to the active team roster through a roster account username field.
 - [x] Add primary and secondary roster positions so player quizzes can default to the correct rule columns.
-- [ ] Add formal coach/admin quiz settings for question mix, scoring weights, goals, tiers, eligible sources, and reward rules. Local settings now control scoring, goals, badges, rewards, caps, source eligibility, and question types; tier-name controls remain pending.
+- [x] Add formal coach/admin quiz settings for question mix, scoring weights, goals, tiers, eligible sources, and reward rules. Local settings now control scoring, goals, badges, rewards, caps, source eligibility, question types, and tier names.
 - [x] Add server-backed attempts/rewards/stickers APIs so leaderboards aggregate across all player accounts.
 
 ## Player Quiz Center
@@ -60,7 +60,7 @@
 - [x] Build coach/admin leaderboard view with week and season toggles. Local weekly reward totals now appear on Set Up Quizzes.
 - [x] Include active roster players in the local leaderboard even before they score.
 - [x] Show roster number, position, linked login, rank, tier, attempts, and sticker detail when opening a player.
-- [x] Add achievements/stars above the 1000-point goal. Local Champion stars now appear every 250 points above the weekly goal.
+- [x] Add achievements/stars above the 1000-point goal. Local top-tier stars now appear every 250 points above the weekly goal.
 - [x] Move leaderboard data to Cloudflare-backed storage for real cross-player ranking.
 - [x] Add player profile detail modal with season trend, sticker history, best quiz, weak areas, and recent activity.
 
@@ -71,7 +71,7 @@
 - [x] Add player attempt review with weak-position and weak-rule summaries.
 - [x] Add quiz controls to saved Practice Script publishing.
 - [x] Add quiz controls to Game Plan publishing.
-- [x] Add a settings panel for weekly goal, scoring weights, bonus thresholds, reward caps, and enabled question types. Tier names remain fixed for now.
+- [x] Add a settings panel for weekly goal, scoring weights, bonus thresholds, reward caps, tier names, and enabled question types.
 - [x] Add roster-link health checks: unlinked roster players, duplicate account usernames, and quiz activity from unknown accounts.
 - [x] Replace roster free-text position with normalized primary/secondary dropdowns while preserving the legacy primary `position` field.
 
