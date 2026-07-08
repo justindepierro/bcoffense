@@ -13,6 +13,12 @@ const COACH_USER = process.env.BCOFFENSE_USER || TEST_ROLE || "coach";
 const COACH_PASS = process.env.BCOFFENSE_PASS || "password";
 const E2E_LOCAL = process.env.BCOFFENSE_E2E_LOCAL === "1";
 
+const RUNTIME_IGNORE_PATTERNS = [
+  /ResizeObserver loop/i,
+  /The play\(\) request was interrupted/i,
+  /requestfailed net::ERR_ABORTED .*\/api\/threads\/batch-counts/i,
+];
+
 const LOCAL_SEED_PLAYS = [
   {
     type: "Run",
@@ -236,4 +242,114 @@ async function getTouchTargetViolations(page) {
   });
 }
 
-module.exports = { login, goToTab, dismissFirstUse, assertNoHorizontalOverflow, getTouchTargetViolations };
+function isIgnoredRuntimeIssue(issue, extraPatterns = []) {
+  const text = [issue.type, issue.message, issue.url, issue.source]
+    .filter(Boolean)
+    .join(" ");
+  return [...RUNTIME_IGNORE_PATTERNS, ...extraPatterns].some((pattern) => pattern.test(text));
+}
+
+async function installRuntimeErrorGuards(page) {
+  page.__bcRuntimeIssues = [];
+  page.__bcMainFrameNavigations = 0;
+
+  await page.addInitScript(() => {
+    window.__bcRuntimeIssues = [];
+    window.addEventListener("error", (event) => {
+      window.__bcRuntimeIssues.push({
+        type: "window-error",
+        message: event.message || String(event.error || ""),
+        source: event.filename || "",
+        line: event.lineno || 0,
+      });
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      window.__bcRuntimeIssues.push({
+        type: "unhandledrejection",
+        message: String(event.reason?.message || event.reason || ""),
+      });
+    });
+  });
+
+  page.on("pageerror", (err) => {
+    page.__bcRuntimeIssues.push({
+      type: "pageerror",
+      message: err?.message || String(err),
+      stack: err?.stack || "",
+    });
+  });
+
+  page.on("console", (msg) => {
+    if (msg.type() !== "error") return;
+    page.__bcRuntimeIssues.push({
+      type: "console",
+      message: msg.text(),
+      location: msg.location(),
+    });
+  });
+
+  page.on("requestfailed", (request) => {
+    const url = request.url();
+    if (/^(data|blob|about):/i.test(url)) return;
+    page.__bcRuntimeIssues.push({
+      type: "requestfailed",
+      message: request.failure()?.errorText || "request failed",
+      url,
+      method: request.method(),
+    });
+  });
+
+  page.on("response", (response) => {
+    const status = response.status();
+    if (status < 400) return;
+    const url = response.url();
+    if (/\/favicon\.ico(?:\?|$)/.test(url)) return;
+    page.__bcRuntimeIssues.push({
+      type: "http",
+      message: `HTTP ${status}`,
+      url,
+    });
+  });
+
+  page.on("framenavigated", (frame) => {
+    if (frame === page.mainFrame()) page.__bcMainFrameNavigations += 1;
+  });
+}
+
+async function resetRuntimeErrorGuards(page) {
+  page.__bcRuntimeIssues = [];
+  page.__bcMainFrameNavigations = 0;
+  await page.evaluate(() => {
+    window.__bcRuntimeIssues = [];
+  }).catch(() => {});
+}
+
+async function getRuntimeIssues(page, opts = {}) {
+  const browserIssues = await page.evaluate(() => window.__bcRuntimeIssues || []).catch(() => []);
+  const all = [...(page.__bcRuntimeIssues || []), ...browserIssues];
+  const ignorePatterns = opts.ignorePatterns || [];
+  return all.filter((issue) => !isIgnoredRuntimeIssue(issue, ignorePatterns));
+}
+
+async function assertRuntimeClean(page, opts = {}) {
+  const issues = await getRuntimeIssues(page, opts);
+  expect(issues, "Unexpected runtime/network issues").toEqual([]);
+  if (opts.maxMainFrameNavigations !== undefined) {
+    expect(
+      page.__bcMainFrameNavigations || 0,
+      "Unexpected repeated main-frame navigation/reload",
+    ).toBeLessThanOrEqual(opts.maxMainFrameNavigations);
+  }
+}
+
+module.exports = {
+  login,
+  goToTab,
+  dismissFirstUse,
+  assertNoHorizontalOverflow,
+  getTouchTargetViolations,
+  installRuntimeErrorGuards,
+  resetRuntimeErrorGuards,
+  getRuntimeIssues,
+  assertRuntimeClean,
+};

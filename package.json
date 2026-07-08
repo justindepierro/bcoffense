@@ -10,6 +10,7 @@
     "test:e2e:local:phone": "npm --prefix tests run test:local:phone",
     "test:e2e:local:ipad": "npm --prefix tests run test:local:ipad",
     "test:e2e:local:all": "npm --prefix tests run test:local:all",
+    "test:e2e:local:hydration": "npm --prefix tests run test:local:hydration",
     "test:e2e:all": "npm --prefix tests run test:all",
     "test:e2e:phone": "npm --prefix tests run test:phone",
     "test:e2e:ipad": "npm --prefix tests run test:ipad",

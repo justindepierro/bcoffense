@@ -2548,6 +2548,7 @@ function checkE2eLocalHarness() {
   const config = read("tests/playwright.config.js");
   const helpers = read("tests/specs/helpers.js");
   const dataIntegritySpec = read("tests/specs/08-data-integrity.spec.js");
+  const hydrationSpec = read("tests/specs/09-first-load-hydration.spec.js");
   const server = read("scripts/e2e-local-server.mjs");
 
   if (pkg.scripts?.["test:e2e:local"] !== "npm --prefix tests run test:local") {
@@ -2558,13 +2559,17 @@ function checkE2eLocalHarness() {
       fail(`root package does not expose npm run test:e2e:local:${target}`);
     }
   });
+  if (pkg.scripts?.["test:e2e:local:hydration"] !== "npm --prefix tests run test:local:hydration") {
+    fail("root package does not expose npm run test:e2e:local:hydration");
+  }
   if (!/BCOFFENSE_E2E_LOCAL=1 playwright test --project=chromium-desktop/.test(testsPkg.scripts?.["test:local"] || "")) {
     fail("tests package does not expose the local E2E auth harness");
   }
   if (
     !/test:local:phone/.test(JSON.stringify(testsPkg.scripts || {})) ||
     !/--project=ipad-portrait --project=ipad-landscape/.test(testsPkg.scripts?.["test:local:ipad"] || "") ||
-    !/--project=chromium-desktop --project=ipad-portrait --project=ipad-landscape --project=iphone --project=phone-narrow/.test(testsPkg.scripts?.["test:local:all"] || "")
+    !/--project=chromium-desktop --project=ipad-portrait --project=ipad-landscape --project=iphone --project=phone-narrow/.test(testsPkg.scripts?.["test:local:all"] || "") ||
+    !/specs\/09-first-load-hydration\.spec\.js/.test(testsPkg.scripts?.["test:local:hydration"] || "")
   ) {
     fail("tests package does not expose the local viewport E2E matrix");
   }
@@ -2578,10 +2583,14 @@ function checkE2eLocalHarness() {
   if (
     !/appLogin\.isVisible\(\)/.test(helpers) ||
     !/ensureLocalWorkspaceReady/.test(helpers) ||
+    !/installRuntimeErrorGuards/.test(helpers) ||
+    !/assertRuntimeClean/.test(helpers) ||
+    !/requestfailed/.test(helpers) ||
+    !/framenavigated/.test(helpers) ||
     !/Login did not complete/.test(helpers) ||
     !/test:e2e:local/.test(helpers)
   ) {
-    fail("Playwright login helper does not fail fast with local-harness guidance");
+    fail("Playwright helpers are missing local login or runtime guard coverage");
   }
   if (
     !/backup and restore preserve playbook plus downstream artifacts/.test(dataIntegritySpec) ||
@@ -2590,6 +2599,17 @@ function checkE2eLocalHarness() {
     !/storageManager\.restoreAllData/.test(dataIntegritySpec)
   ) {
     fail("local data integrity spec is missing backup/restore or source identity coverage");
+  }
+  if (
+    !/Local first-load hydration/.test(hydrationSpec) ||
+    !/installRuntimeErrorGuards/.test(hydrationSpec) ||
+    !/assertRuntimeClean/.test(hydrationSpec) ||
+    !/LAST_ACTIVE_TAB/.test(hydrationSpec) ||
+    !/dashboard/.test(hydrationSpec) ||
+    !/gameplan/.test(hydrationSpec) ||
+    !/callsheet/.test(hydrationSpec)
+  ) {
+    fail("local first-load hydration spec is missing runtime or tab hydration coverage");
   }
   if (
     !/handleAuthLogin/.test(server) ||
