@@ -1422,6 +1422,10 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
     dupeCount > 1
       ? `<span class="badge badge-sm badge-warning cs-dupe-badge" title="Appears in ${dupeCount} categories">×${dupeCount}</span>`
       : "";
+  const sourceStatusBadge =
+    typeof renderPlaySourceStatusBadge === "function"
+      ? renderPlaySourceStatusBadge(play, { compact: true, className: "cs-source-status-badge" })
+      : "";
 
   // Hash swap arrow
   const otherHash = hash === "left" ? "right" : "left";
@@ -1448,6 +1452,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
       ${formatIndicator}
       ${noteBadge}
       ${dupeBadge}
+      ${sourceStatusBadge}
       ${deadVsBadgeHtml}
       ${discWarn}
       ${swapBtn}

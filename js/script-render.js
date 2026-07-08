@@ -590,6 +590,10 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
         scriptIdx: index,
       })
       : "";
+  const sourceStatusBadge =
+    !opts.printStyle && typeof renderPlaySourceStatusBadge === "function"
+      ? renderPlaySourceStatusBadge(play)
+      : "";
   const reps = play.reps ?? 1;
   const itemClasses = [
     "script-item",
@@ -679,6 +683,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
     })()}</span>
           ${playbookSigSet && playbookSigSet.has(playSignature(play)) ? `<button type="button" class="script-pb-chip" data-action="jumpToPlayInPlaybook" data-arg="${index}" title="View this play in the Playbook" aria-label="View ${escapeHtml(playLabel)} in Playbook">📖</button>` : ""}
           ${play._gpSource ? `<span class="script-gp-source-badge" title="Added from Game Plan">🎯 GP</span>` : ""}
+          ${sourceStatusBadge}
           ${readinessBadge}
           ${(() => {
       if (opts.printStyle) return "";

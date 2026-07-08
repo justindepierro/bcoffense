@@ -1484,6 +1484,89 @@ function copyPlayWithSourceIdentity(play, overrides = {}) {
   return copy;
 }
 
+function findPlaybookSourceForPlay(play, list) {
+  const sourceId = getStablePlaySourceId(play);
+  const sourceList = Array.isArray(list)
+    ? list
+    : typeof plays !== "undefined" && Array.isArray(plays)
+      ? plays
+      : [];
+  if (!sourceId || !sourceList.length) return null;
+
+  return sourceList.find((candidate) => candidate && String(candidate.id || "").trim() === sourceId) || null;
+}
+
+function getPlaySourceStatus(play, list) {
+  if (!play || typeof play !== "object" || play.isSeparator || play._blank) {
+    return { state: "local", label: "", title: "", sourceId: "" };
+  }
+
+  const sourceId = getStablePlaySourceId(play);
+  const hasSourceMetadata = Boolean(
+    play.playbookId ||
+    play.sourcePlayId ||
+    play.originalPlayId ||
+    play.sourceIdentityKey ||
+    play.sourceGamePlanKey,
+  );
+  if (!sourceId || !hasSourceMetadata) {
+    return { state: "local", label: "", title: "", sourceId: "" };
+  }
+
+  const source = findPlaybookSourceForPlay(play, list);
+  if (!source) {
+    return {
+      state: "missing",
+      label: "Source missing",
+      title: "This copy points to a playbook play that no longer exists. Review before publishing or printing.",
+      sourceId,
+      source: null,
+    };
+  }
+
+  const currentIdentity = getPlayIdentityKey(source, "tag", { trim: false });
+  const currentGamePlanKey = getPlayIdentityKey(source, "gameplan", { trim: false });
+  const identityChanged = Boolean(play.sourceIdentityKey && currentIdentity !== play.sourceIdentityKey);
+  const gamePlanChanged = Boolean(play.sourceGamePlanKey && currentGamePlanKey !== play.sourceGamePlanKey);
+  if (identityChanged || gamePlanChanged) {
+    return {
+      state: "changed",
+      label: "Source updated",
+      title: "The source playbook call changed after this copy was placed. Refresh from Playbook or keep this local copy intentionally.",
+      sourceId,
+      source,
+      originalIdentity: play.sourceIdentityKey || "",
+      currentIdentity,
+      originalGamePlanKey: play.sourceGamePlanKey || "",
+      currentGamePlanKey,
+    };
+  }
+
+  return {
+    state: "ok",
+    label: "",
+    title: "Source playbook call is current.",
+    sourceId,
+    source,
+  };
+}
+
+function renderPlaySourceStatusBadge(play, options = {}) {
+  const status = getPlaySourceStatus(play, options.sourceList);
+  if (!status || (status.state !== "changed" && status.state !== "missing")) return "";
+  const label = options.compact
+    ? status.state === "missing" ? "Missing" : "Updated"
+    : status.label;
+  const className = [
+    "badge",
+    "badge-sm",
+    "source-status-badge",
+    `source-status-badge--${status.state}`,
+    options.className || "",
+  ].filter(Boolean).join(" ");
+  return `<span class="${className}" data-source-state="${escapeAttr(status.state)}" title="${escapeAttr(status.title)}">${escapeHtml(label)}</span>`;
+}
+
 let _playbookRuntimeIndex = null;
 let _playbookRuntimeIndexSource = null;
 

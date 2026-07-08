@@ -181,10 +181,20 @@ test.describe("Local data integrity", () => {
       const editedPlayA = { ...playA, play: "Buck Sweep Edited" };
       await storageManager.setPlaybook([editedPlayA]);
       const currentPlaybook = await storageManager.getPlaybook();
-      const statuses = collectDownstreamEntries().map((entry) => describeSourceStatus(entry, currentPlaybook));
+      const statuses = collectDownstreamEntries().map((entry) =>
+        typeof getPlaySourceStatus === "function"
+          ? getPlaySourceStatus(entry, currentPlaybook)
+          : describeSourceStatus(entry, currentPlaybook),
+      );
+      const badges = collectDownstreamEntries().map((entry) =>
+        typeof renderPlaySourceStatusBadge === "function"
+          ? renderPlaySourceStatusBadge(entry, { sourceList: currentPlaybook })
+          : "",
+      );
 
       return {
         statuses,
+        badges,
         changedCount: statuses.filter((status) => status.state === "changed").length,
         missingCount: statuses.filter((status) => status.state === "missing").length,
         sourceIds: statuses.map((status) => status.sourceId),
@@ -258,5 +268,7 @@ test.describe("Local data integrity", () => {
     expect(result.sourceIds).toContain("identity-play-b");
     expect(result.changedCount).toBeGreaterThanOrEqual(1);
     expect(result.missingCount).toBeGreaterThanOrEqual(1);
+    expect(result.badges.some((html) => html.includes("source-status-badge--changed"))).toBe(true);
+    expect(result.badges.some((html) => html.includes("source-status-badge--missing"))).toBe(true);
   });
 });

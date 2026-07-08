@@ -809,6 +809,10 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx, renderCtx) {
   const meta = [play.formation, play.personnel].filter(Boolean).join(" • ");
   const matchupBadges = _gpMatchupBadges(play);
   const scoutBadge = _gpScoutBadge(play);
+  const sourceStatusBadge =
+    typeof renderPlaySourceStatusBadge === "function"
+      ? renderPlaySourceStatusBadge(play, { compact: true, className: "gp-source-status-badge" })
+      : "";
   const isSpotlit = _gpPlayMatchesSpotlight(play);
   const wbOn = _gpHasFlag(play, "wb");
   const jvOn = _gpHasFlag(play, "jv");
@@ -839,7 +843,7 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx, renderCtx) {
          data-idx="${idx}"
          data-raw-idx="${stableRawIdx === null ? "" : stableRawIdx}"${discAttr}>
       <div class="gp-box-play-body">
-        <div class="gp-box-play-call">${callHtml}${matchupBadges}</div>
+        <div class="gp-box-play-call">${callHtml}${matchupBadges}${sourceStatusBadge}</div>
         ${meta || scoutBadge ? `<div class="gp-box-play-meta">${meta ? escapeHtml(meta) : ""}${scoutBadge}</div>` : ""}
       </div>
       <div class="gp-box-play-actions">

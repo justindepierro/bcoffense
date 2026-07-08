@@ -39,9 +39,20 @@ to reintroduce.
 - [x] Playbook includes Diagram Health for ready, missing, and unsafe diagram keys.
 - [x] Add shared source-identity copy helper for Script, Game Plan, and Wristband handoffs.
 - [x] Add a round-trip identity check: Playbook -> Script -> Wristband -> Call Sheet -> Game Plan.
-- [ ] Flag downstream artifacts when a source play is edited or deleted.
+- [x] Flag downstream artifacts when a source play is edited or deleted.
 - [x] Add focused fixture coverage for play IDs, `playbookId`, `sourcePlayId`, and legacy tag keys.
-- [ ] Document which diagram keys are player-visible versus local/legacy-only.
+- [x] Document which diagram keys are player-visible versus local/legacy-only.
+
+Diagram key contract:
+
+- Player-visible diagrams use the source play's stable `id` / `playbookId` /
+  `sourcePlayId` plus the current unique source identity key. If a local diagram
+  cannot be tied to exactly one source play, players do not see it.
+- Local/legacy-only diagram keys are older tag/signature matches that may still
+  help a coach recover or reattach a diagram, but they are intentionally hidden
+  from Player Swipe View when ambiguous.
+- Downstream copies now show source status badges in Script, Wristband, Call
+  Sheet, and Game Plan when their playbook source is missing or has changed.
 
 Definition of done:
 

@@ -959,11 +959,17 @@ function checkPlayIdentityHandoffFixtures() {
   const gameplanDnd = read("js/gameplan-dnd.js");
   const gameplanIntegrations = read("js/gameplan-integrations.js");
   const gameplanSmart = read("js/gameplan-smart.js");
+  const gameplanRender = read("js/gameplan-render.js");
   const scriptExport = read("js/script-export.js");
   const scriptPeriodSync = read("js/script-period-sync.js");
   const scriptIntegrations = read("js/script-integrations.js");
+  const scriptRender = read("js/script-render.js");
+  const callsheetRender = read("js/callsheet-render.js");
+  const wristbandRender = read("js/wristband-render.js");
 
   if (
+    !/function getPlaySourceStatus\(play, list\)/.test(utils) ||
+    !/function renderPlaySourceStatusBadge\(play, options = \{\}\)/.test(utils) ||
     !/function copyPlayForCallSheet\(play, overrides = \{\}\)/.test(callsheet) ||
     !/copyPlayWithSourceIdentity\(play, callSheetFields\)/.test(callsheet) ||
     !/copyPlayForCallSheet\(playData\)/.test(callsheetPicker) ||
@@ -977,6 +983,14 @@ function checkPlayIdentityHandoffFixtures() {
     !/copyPlayWithSourceIdentity\(play\)/.test(scriptIntegrations)
   ) {
     fail("play identity helper is not used across the main handoff paths");
+  }
+  if (
+    !/renderPlaySourceStatusBadge\(play\)/.test(scriptRender) ||
+    !/renderPlaySourceStatusBadge\(play, \{ compact: true, className: "cs-source-status-badge" \}\)/.test(callsheetRender) ||
+    !/renderPlaySourceStatusBadge\(play, \{ compact: true, className: "gp-source-status-badge" \}\)/.test(gameplanRender) ||
+    !/renderPlaySourceStatusBadge\(.*?wb-source-status-badge/.test(wristbandRender)
+  ) {
+    fail("source play status badges are not rendered on downstream artifacts");
   }
 
   const getStableSource = extractFunctionSource(utils, "getStablePlaySourceId");
