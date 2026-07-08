@@ -277,7 +277,7 @@ test.describe("Player mobile experience", () => {
     await expect(quiz).toBeVisible();
     await expect(page.locator("body")).toHaveClass(/app-layer-locked/);
     await expect.poll(() => page.evaluate(() => document.body.dataset.scrollOwner)).toBe("layer");
-    await expect(quiz.getByText("What's the call?")).toBeVisible();
+    await expect(quiz.locator("#scriptQuizScenario")).toContainText(/What's the call\?|What play is this diagram\?/);
     await expect(quiz.locator(".script-quiz-choice")).toHaveCount(2);
     await quiz.getByRole("button", { name: /Buck Sweep/i }).click();
     await expect(quiz.locator("#scriptQuizScore")).toContainText("Score");
@@ -340,6 +340,7 @@ test.describe("Player mobile experience", () => {
     await expect(quiz.locator(".script-quiz-choice")).toHaveCount(4);
     await quiz.getByRole("button", { name: /Secure the edge/i }).click();
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Correct");
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Locked in");
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Q Rule");
     await quiz.getByRole("button", { name: /Close quiz/i }).click();
     await expect(quiz.locator(".sq-exit-card")).toContainText("You scored 10 points");
@@ -351,6 +352,9 @@ test.describe("Player mobile experience", () => {
     await quiz.getByRole("button", { name: /Verts/i }).click();
     await quiz.getByRole("button", { name: /Next/i }).click();
     await quiz.getByRole("button", { name: /Open play side/i }).click();
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("3 in a row");
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Keep stacking clean answers");
+    await expect(quiz.locator("#scriptQuizAnswer .sq-feedback")).toHaveClass(/is-hot-streak/);
     await quiz.getByRole("button", { name: /Next/i }).click();
     await quiz.getByRole("button", { name: /Catch, replace/i }).click();
     await quiz.locator("#scriptQuizNextBtn").click();

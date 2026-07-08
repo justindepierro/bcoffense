@@ -2860,6 +2860,8 @@ function checkGracefulLoadingStates() {
 
 function checkPlayerQuizSettingsContracts() {
   const scriptRender = read("js/script-render.js");
+  const scriptCss = read("css/script.css");
+  const quizSurface = `${scriptRender}\n${scriptCss}`;
   const roadmap = read("CONSOLIDATED_ROADMAP.md");
 
   [
@@ -2879,6 +2881,9 @@ function checkPlayerQuizSettingsContracts() {
     "function _prepareQuizItemsForMode",
     "function _getCoachQuizModeRecommendation",
     "Recommended mode",
+    "function _getQuizStreakMoment",
+    "sq-feedback-streak",
+    "prefers-reduced-motion: reduce",
     "quizModeLabel",
     "diagram_formation",
     "formation_to_play",
@@ -2890,7 +2895,7 @@ function checkPlayerQuizSettingsContracts() {
     "coachQuizTierContributor",
     "coachQuizTierDefense",
   ].forEach((token) => {
-    if (!scriptRender.includes(token)) {
+    if (!quizSurface.includes(token)) {
       fail(`player quiz settings contract missing ${token}`);
     }
   });

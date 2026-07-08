@@ -294,11 +294,11 @@ Definition of done:
 
 Goal: answers should feel satisfying without becoming distracting.
 
-- [ ] Add lightweight correct-answer motion under reduced-motion rules.
-- [ ] Add streak milestones at 3, 5, and 10.
-- [ ] Add a "hot streak" visual state.
+- [x] Add lightweight correct-answer motion under reduced-motion rules.
+- [x] Add streak milestones at 3, 5, and 10.
+- [x] Add a "hot streak" visual state.
 - [ ] Show earned sticker/reward moments inside the result flow.
-- [ ] Add quick positive labels: "Locked in", "Clean read", "Great memory".
+- [x] Add quick positive labels: "Locked in", "Clean read", "Great memory".
 - [ ] Keep wrong-answer feedback calm and useful.
 
 Definition of done:

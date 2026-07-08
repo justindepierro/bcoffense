@@ -6102,6 +6102,22 @@ function _getQuizChoiceLengthTone(choices) {
   return "";
 }
 
+function _getQuizCorrectMomentLabel(answer = {}) {
+  const type = answer.questionType || "";
+  if (type === "diagram" || type === "diagram_formation") return "Clean read";
+  if (type === "responsibility" || type === "play_from_rule") return "Locked in";
+  if (type === "formation_to_play" || type === "play_type") return "Great memory";
+  return "Nice rep";
+}
+
+function _getQuizStreakMoment(streak = 0) {
+  const count = Number(streak || 0);
+  if (count >= 10) return { label: "10 in a row", detail: "Playbook locked in.", hot: true };
+  if (count >= 5) return { label: "5 in a row", detail: "Hot streak.", hot: true };
+  if (count >= 3) return { label: "3 in a row", detail: "Keep stacking clean answers.", hot: true };
+  return null;
+}
+
 function _renderQuizFeedback(item, answer) {
   if (!answer) return "";
   const { play } = item;
@@ -6112,9 +6128,17 @@ function _renderQuizFeedback(item, answer) {
   const { ruleParts, noteParts, position } = _quizCoachDetails(item);
   const resultText = answer.correct ? "Correct" : "Not this one";
   const resultClass = answer.correct ? "is-correct" : "is-wrong";
+  const momentLabel = answer.correct ? (answer.momentLabel || _getQuizCorrectMomentLabel(answer)) : "";
+  const streakMoment = answer.correct ? _getQuizStreakMoment(answer.streakAfter) : null;
   return `
-    <div class="sq-feedback ${resultClass}">
-      <div class="sq-feedback-result">${resultText}</div>
+    <div class="sq-feedback ${resultClass}${streakMoment?.hot ? " is-hot-streak" : ""}">
+      <div class="sq-feedback-result">${escapeHtml(resultText)}</div>
+      ${momentLabel ? `<div class="sq-feedback-moment">${escapeHtml(momentLabel)}</div>` : ""}
+      ${streakMoment ? `
+        <div class="sq-feedback-streak">
+          <strong>${escapeHtml(streakMoment.label)}</strong>
+          <span>${escapeHtml(streakMoment.detail)}</span>
+        </div>` : ""}
       <div class="sq-answer-call">${fullCall}</div>
       ${defenseItems.length ? `<div class="sq-answer-defense">vs ${defenseItems.map(escapeHtml).join(" / ")}</div>` : ""}
       ${ruleParts.length ? `<div class="sq-answer-note"><strong>${escapeHtml(position?.label || "Your")} Rule:</strong> ${ruleParts.map(escapeHtml).join(" ")}</div>` : ""}
@@ -6253,6 +6277,7 @@ function answerScriptQuizChoice(choiceKey) {
   if (!selected) return;
   const correct = Boolean(selected.correct);
   const position = _quizCurrentQuestion?.position || _getQuizPositionForItem(item);
+  const questionType = selected.questionType || "call";
   if (correct) {
     _quizStreak += 1;
     _quizBestStreak = Math.max(_quizBestStreak, _quizStreak);
@@ -6263,13 +6288,15 @@ function answerScriptQuizChoice(choiceKey) {
   _quizAnswers.set(questionKey, {
     choiceKey,
     correct,
-    questionType: selected.questionType || "call",
+    questionType,
     positionKey: position?.key || item.positionKey || _quizPositionKey,
     positionLabel: position?.label || "",
     selectedLabel: selected.label || "",
     correctLabel: choices.find((choice) => choice.correct)?.label || "",
     prompt: _quizCurrentQuestion?.prompt || "",
     playCall: _quizPlainCall(item.play),
+    streakAfter: correct ? _quizStreak : 0,
+    momentLabel: correct ? _getQuizCorrectMomentLabel({ questionType }) : "",
   });
   renderScriptQuizPlay();
   _savePlayerQuizDraft();
