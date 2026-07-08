@@ -1885,6 +1885,8 @@ body.shell-phone .pb-top-row > .pb-shortcuts-hint {
 body.shell-phone .pb-filter-toggle-btn,
 body.shell-phone .pb-action-sheet-toggle {
   flex: 0 0 auto;
+  min-height: 44px;
+  padding-block: 10px;
   border-radius: var(--radius-pill);
 }
 body.shell-phone .pb-search-wrap {

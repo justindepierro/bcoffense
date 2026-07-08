@@ -155,6 +155,18 @@ function serveStatic(port) {
       res.end(JSON.stringify({ ok: true }));
       return;
     }
+    if (parsed.pathname === "/api/leaderboard/summary") {
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({
+        ok: true,
+        summary: {
+          weekKey: parsed.searchParams.get("weekKey") || "",
+          week: { rows: [], totals: {} },
+          season: { rows: [], totals: {} },
+        },
+      }));
+      return;
+    }
     if (parsed.pathname === "/auth/login") {
       let body = "";
       req.on("data", (chunk) => {
