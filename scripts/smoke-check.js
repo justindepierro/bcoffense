@@ -1478,6 +1478,9 @@ function checkPlayReadinessContracts() {
     !/\.play-readiness-report-score-controls/.test(css) ||
     !/\.play-readiness-report-delete/.test(css) ||
     !/\.pb-readiness-card/.test(playbookCss) ||
+    !/\.pb-readiness-score-stage/.test(playbookCss) ||
+    !/\.pb-readiness-driver-grid/.test(playbookCss) ||
+    !/\.pb-readiness-last/.test(playbookCss) ||
     !/\.pb-readiness-card--empty/.test(playbookCss) ||
     !/\.pb-readiness-empty-steps/.test(playbookCss) ||
     !/play-readiness-badge--playbook-table/.test(playbookCss) ||

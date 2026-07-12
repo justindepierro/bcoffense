@@ -351,7 +351,7 @@ P1/P2 polish:
 - [x] Add last rep result inline in the widget header.
 - [x] Animate score button selection.
 - [x] Remove "Seed Sample Data" from daily coach UI.
-- [ ] Redesign playbook readiness panel around the readiness score.
+- [x] Redesign playbook readiness panel around the readiness score.
 - [ ] Redesign history and presentation coach cards around the new log model.
 - [ ] Remove dead sweet-spot/weekly-weighted/action-metrics paths after migration.
 

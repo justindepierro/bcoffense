@@ -1261,7 +1261,7 @@ body[data-auth-role="player"] .gp-card-btn {
   position: relative;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 10px;
   padding: 12px 14px;
   border: 1px solid var(--color-border-light);
   border-left: 3px solid var(--color-primary);
@@ -1270,26 +1270,114 @@ body[data-auth-role="player"] .gp-card-btn {
   box-shadow: var(--shadow-xs);
 }
 
+.pb-readiness-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(92px, max-content);
+  align-items: start;
+  gap: 10px;
+  padding-right: 28px;
+  min-width: 0;
+}
+
 /* Score hero: big readiness number */
+.pb-readiness-score-stage {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.38fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
 .pb-readiness-score-hero {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 26%, var(--color-border-light));
+  border-radius: var(--radius-md);
+  background: var(--color-bg-blue-tint);
 }
+
 .pb-readiness-big-number {
   font-size: var(--font-size-4xl);
   font-weight: 950;
   line-height: 1;
   color: var(--color-text);
 }
+
+.pb-readiness-score-hero > span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
 .pb-readiness-score-hero small {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   font-weight: 700;
 }
 
+.pb-readiness-score-details {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pb-readiness-driver-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+}
+
+.pb-readiness-driver,
+.pb-readiness-last {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  line-height: 1.05;
+}
+
+.pb-readiness-driver small,
+.pb-readiness-last small {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-3xs);
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pb-readiness-driver strong,
+.pb-readiness-last strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Mini log list */
+.pb-readiness-log-block {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.pb-readiness-log-heading {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .pb-readiness-log-list {
   display: flex;
   flex-direction: column;
@@ -1517,16 +1605,18 @@ body[data-auth-role="player"] .gp-card-btn {
 /* Score + actions combined into one horizontal row */
 .pb-readiness-action-row {
   grid-column: 1 / -1;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(180px, auto) 1px repeat(4, minmax(68px, auto));
   align-items: center;
-  flex-wrap: wrap;
   gap: 5px;
+  min-width: 0;
 }
 
 .pb-readiness-score-inline {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(34px, 1fr));
   gap: 4px;
-  flex-shrink: 0;
+  min-width: 0;
 }
 
 .pb-readiness-action-sep {
@@ -1649,6 +1739,25 @@ body[data-auth-role="player"] .gp-card-btn {
   .pb-readiness-empty-steps {
     grid-column: 1 / -1;
   }
+
+  .pb-readiness-header,
+  .pb-readiness-score-stage,
+  .pb-readiness-log-block,
+  .pb-readiness-action-row {
+    grid-column: 1 / -1;
+  }
+
+  .pb-readiness-score-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .pb-readiness-action-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pb-readiness-action-sep {
+    display: none;
+  }
 }
 
 @media (max-width: 560px), (pointer: coarse) and (max-width: 820px) {
@@ -1660,6 +1769,19 @@ body[data-auth-role="player"] .gp-card-btn {
 
   .pb-readiness-empty-steps {
     grid-template-columns: 1fr;
+  }
+
+  .pb-readiness-header,
+  .pb-readiness-driver-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pb-readiness-main {
+    grid-column: 1 / -1;
+  }
+
+  .pb-readiness-score-hero {
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
   .pb-readiness-empty-steps span {

@@ -703,7 +703,20 @@ function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
   const summary = getPlayReadinessSummary(play);
   const compact = getPlayReadinessCompactSummary(summary);
   const avgText = summary.scoredRepCount ? summary.avgScore.toFixed(1) : "-";
-  const daysStr = compact.daysText ? ` \u00b7 last ${compact.daysText}` : "";
+  const lastText = summary.lastLog
+    ? `${summary.lastLogScore}/5${compact.daysText ? ` \u00b7 ${compact.daysText}` : ""}`
+    : "No reps yet";
+  const progressLabel = `${summary.progressPct}% toward ${summary.installTierDisplay}`;
+  const driverItems = [
+    ["Avg", `${avgText}/5`],
+    ["Reps", String(summary.repCount)],
+    ["Shown", summary.shownPoints ? `+${summary.shownPoints}` : "0"],
+    ["Trend", compact.trend.short],
+  ].map(([label, value]) => `
+    <span class="pb-readiness-driver">
+      <small>${escapeHtml(label)}</small>
+      <strong>${escapeHtml(value)}</strong>
+    </span>`).join("");
 
   // Last 5 log entries as mini list
   const logRows = summary.logs.slice(0, 5).map((log) => {
@@ -725,22 +738,34 @@ function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
   return `
     <div class="pb-readiness-card" data-auth-player-hide="true">
       <button type="button" class="pr-close-btn pb-readiness-close-btn" data-action="closePlaybookReadinessPanel" title="Close" aria-label="Close readiness panel">&times;</button>
-      <div class="pb-readiness-main">
-        <span class="pb-readiness-eyebrow">Readiness — ${escapeHtml(summary.installTierDisplay)}</span>
-        <h3>${escapeHtml(getPlayReadinessPlayLabel(play))}</h3>
-      </div>
-      <div class="pb-readiness-score-hero">
-        <strong class="pb-readiness-big-number">${summary.confidenceScore}</strong>
-        <span class="pr-confidence pr-confidence--${escapeHtml(compact.tone)}">${escapeHtml(summary.confidenceLabel)}</span>
-        <small>${summary.repCount} reps \u00b7 avg ${escapeHtml(avgText)}/5${summary.shownPoints ? ` \u00b7 +${summary.shownPoints} shown` : ""}${escapeHtml(daysStr)}</small>
-      </div>
-      <div class="pb-readiness-progress">
-        <div class="play-readiness-track" style="--pr-progress:${summary.progressPct}%" aria-label="${summary.progressPct}% toward ${escapeHtml(summary.installTierDisplay)} target">
-          <span class="play-readiness-fill" aria-hidden="true"></span>
+      <div class="pb-readiness-header">
+        <div class="pb-readiness-main">
+          <span class="pb-readiness-eyebrow">Readiness — ${escapeHtml(summary.installTierDisplay)}</span>
+          <h3>${escapeHtml(getPlayReadinessPlayLabel(play))}</h3>
         </div>
+        <span class="pb-readiness-last">
+          <small>Last</small>
+          <strong>${escapeHtml(lastText)}</strong>
+        </span>
       </div>
-      <div class="pb-readiness-log-list" aria-label="Recent reps">
-        ${logRows}
+      <div class="pb-readiness-score-stage">
+        <div class="pb-readiness-score-hero" aria-label="Readiness score ${summary.confidenceScore}">
+          <strong class="pb-readiness-big-number">${summary.confidenceScore}</strong>
+          <span>
+            <span class="pr-confidence pr-confidence--${escapeHtml(compact.tone)}">${escapeHtml(summary.confidenceLabel)}</span>
+            <small>${escapeHtml(progressLabel)}</small>
+          </span>
+        </div>
+        <div class="pb-readiness-score-details">
+          <div class="pb-readiness-driver-grid" aria-label="Readiness score drivers">
+            ${driverItems}
+          </div>
+          <div class="pb-readiness-progress">
+            <div class="play-readiness-track" style="--pr-progress:${summary.progressPct}%" aria-label="${escapeHtml(progressLabel)} target">
+              <span class="play-readiness-fill" aria-hidden="true"></span>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="pb-readiness-action-row">
         <div class="pb-readiness-score-inline" role="group" aria-label="Quick score selected play">
@@ -751,6 +776,12 @@ function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
         <button type="button" class="play-readiness-btn" data-action="showPlayReadinessPlaybookHistory" data-arg="${filteredIndex}">History</button>
         <button type="button" class="play-readiness-btn play-readiness-btn--edit" data-action="openPlayEditor" data-arg="${filteredIndex}">&#9998; Edit</button>
         <button type="button" class="play-readiness-btn play-readiness-btn--ghost" data-action="openPlaybookPresentation" data-arg="${filteredIndex}">Present</button>
+      </div>
+      <div class="pb-readiness-log-block">
+        <span class="pb-readiness-log-heading">Recent reps</span>
+        <div class="pb-readiness-log-list" aria-label="Recent reps">
+          ${logRows}
+        </div>
       </div>
     </div>
   `;
