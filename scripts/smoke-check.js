@@ -151,6 +151,10 @@ function checkPageStyleContracts() {
   const wristbandCss = read("css/wristband.css");
   const callsheetCss = read("css/callsheet.css");
   const dashboardCss = read("css/dashboard.css");
+  const tendenciesCss = read("css/tendencies.css");
+  const installationCss = read("css/installation.css");
+  const identityCss = read("css/identity.css");
+  const offenseBuilderCss = read("css/offense-builder.css");
   const gameplanRender = read("js/gameplan-render.js");
 
   if (
@@ -268,6 +272,40 @@ function checkPageStyleContracts() {
     !/\.dash-link-btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(dashboardCss)
   ) {
     fail("Dashboard quick actions are missing overflow-safe command hierarchy rules");
+  }
+
+  if (
+    !/\.td-toolbar\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(220px,\s*max-content\)[\s\S]*overflow:\s*clip/.test(tendenciesCss) ||
+    !/\.td-detail-actions\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(88px,\s*1fr\)\)/.test(tendenciesCss) ||
+    !/\.td-detail-actions \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(tendenciesCss) ||
+    !/@media \(max-width:\s*560px\)[\s\S]*\.td-section-header,[\s\S]*\.td-toolbar\s*\{[\s\S]*grid-template-columns:\s*1fr/.test(tendenciesCss)
+  ) {
+    fail("Tendencies command cleanup is missing overflow-safe rules");
+  }
+
+  if (
+    !/\.install-header\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(280px,\s*max-content\)[\s\S]*overflow:\s*clip/.test(installationCss) ||
+    !/\.install-header-actions\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(104px,\s*max-content\)\)/.test(installationCss) ||
+    !/\.install-detail-actions\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(180px,\s*1fr\)\s*minmax\(96px,\s*max-content\)/.test(installationCss) ||
+    !/\.install-detail-actions \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(installationCss)
+  ) {
+    fail("Installation command cleanup is missing overflow-safe rules");
+  }
+
+  if (
+    !/#identity \.id-hero\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(180px,\s*max-content\)[\s\S]*overflow:\s*clip/.test(identityCss) ||
+    !/#identity \.id-hero-actions\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(88px,\s*max-content\)\)/.test(identityCss) ||
+    !/#identity \.id-hero-actions \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(identityCss)
+  ) {
+    fail("Identity command cleanup is missing overflow-safe rules");
+  }
+
+  if (
+    !/\.ob-header\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(260px,\s*max-content\)[\s\S]*overflow:\s*clip/.test(offenseBuilderCss) ||
+    !/\.ob-toolbar\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(220px,\s*1fr\)\s*minmax\(120px,\s*max-content\)\s*minmax\(108px,\s*max-content\)\s*minmax\(88px,\s*max-content\)[\s\S]*overflow:\s*clip/.test(offenseBuilderCss) ||
+    !/\.ob-toolbar \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(offenseBuilderCss)
+  ) {
+    fail("Offense Builder command cleanup is missing overflow-safe rules");
   }
 
   console.log("page style contracts ok");

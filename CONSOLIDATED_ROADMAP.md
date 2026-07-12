@@ -312,7 +312,9 @@ Migration order:
 - [x] Dashboard/player portal quick actions: stabilize coach dashboard commands,
   quick links, schedule/game-plan action rows, cleanup actions, and player quick
   action cards with a smoke-check style contract.
-- [ ] Tendencies, Installation, Identity, and Offense Builder cleanup.
+- [x] Tendencies, Installation, Identity, and Offense Builder cleanup: stabilize
+  low-traffic command rows, action clusters, report controls, and builder
+  filters with a smoke-check style contract.
 
 Definition of done:
 

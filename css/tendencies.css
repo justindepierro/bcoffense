@@ -80,13 +80,22 @@
 }
 
 .td-section-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(132px, max-content);
   align-items: center;
+  gap: var(--space-sm);
   margin-bottom: 12px;
 }
 .td-section-header h3 {
+  min-width: 0;
   font-size: var(--font-size-lg);
+}
+
+.td-section-header .btn {
+  min-width: 0;
+  justify-content: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* Opponent cards */
@@ -373,9 +382,19 @@
   margin-top: var(--space-xs);
 }
 .td-ov-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, max-content));
+  gap: var(--space-xs);
   margin-top: var(--space-md);
   padding-top: var(--space-md);
   border-top: 1px solid var(--color-border-light);
+}
+
+.td-ov-actions .btn {
+  min-width: 0;
+  justify-content: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* Confidence dots on bar chart rows */
@@ -482,12 +501,27 @@
   flex-wrap: wrap;
 }
 .td-detail-header h2 {
-  flex: 1;
+  flex: 1 1 260px;
+  min-width: 0;
   font-size: var(--font-size-2xl);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .td-detail-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
   gap: 8px;
+  justify-content: end;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.td-detail-actions .btn {
+  min-width: 0;
+  justify-content: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .td-column-panel {
@@ -587,17 +621,23 @@
   font-size: var(--font-size-xs);
 }
 .td-play-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(32px, max-content));
   gap: 2px;
+  justify-content: end;
+  min-width: 0;
 }
 /* Kebab row-action menu button — phone only (inline buttons used elsewhere) */
 .td-play-menu-btn {
   display: none;
 }
 .td-filter-panel-header-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, max-content));
   align-items: center;
   gap: var(--space-xs);
+  justify-content: end;
+  min-width: 0;
 }
 .td-filter-close {
   display: none;
@@ -889,27 +929,37 @@
 
 /* ============ Toolbar ============ */
 .td-toolbar {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, max-content);
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
-  flex-wrap: wrap;
   background: var(--color-bg-light);
   padding: 10px 14px;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border-light);
+  overflow: clip;
 }
 .td-toolbar-left,
 .td-toolbar-right {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, max-content));
   align-items: center;
+  justify-content: start;
   gap: 8px;
-  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.td-toolbar-right {
+  justify-content: end;
 }
 
 .td-toolbar .btn {
+  min-width: 0;
   min-height: 44px;
+  justify-content: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 [data-action="importTendenciesJSON"],
@@ -1372,6 +1422,23 @@
 
 /* Phone: single-key stats grid, kebab row actions, filter bottom sheet */
 @media (max-width: 560px) {
+  .td-section-header,
+  .td-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .td-detail-header h2 {
+    white-space: normal;
+  }
+
+  .td-detail-actions,
+  .td-toolbar-left,
+  .td-toolbar-right,
+  .td-filter-panel-header-actions {
+    justify-content: stretch;
+    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  }
+
   .td-stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-xs);

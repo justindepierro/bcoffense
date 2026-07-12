@@ -9,14 +9,14 @@
 }
 
 #identity .id-hero {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, max-content);
   align-items: flex-end;
   gap: var(--space-md);
-  flex-wrap: wrap;
   padding-bottom: var(--space-md);
   margin-bottom: var(--space-md);
   border-bottom: 1px solid var(--color-border-light);
+  overflow: clip;
 }
 
 #identity .id-eyebrow {
@@ -42,8 +42,18 @@
 }
 
 #identity .id-hero-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(88px, max-content));
   gap: var(--space-sm);
+  justify-content: end;
+  min-width: 0;
+}
+
+#identity .id-hero-actions .btn {
+  min-width: 0;
+  justify-content: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 #identity .id-grid {
@@ -211,14 +221,14 @@
     padding: var(--space-md) var(--space-sm);
   }
   #identity .id-hero {
-    flex-direction: column;
     align-items: stretch;
+    grid-template-columns: 1fr;
   }
   #identity .id-hero-actions {
-    flex-wrap: wrap;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
   }
   #identity .id-hero-actions .btn {
-    flex: 1 1 auto;
     min-height: 44px;
   }
   #identity .id-card {

@@ -12,15 +12,15 @@
 
 /* Header */
 .ob-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, max-content);
   align-items: flex-start;
   gap: var(--space-md);
   margin-bottom: var(--space-md);
-  flex-wrap: wrap;
+  overflow: clip;
 }
 .ob-header-left {
-  flex: 1;
+  min-width: 0;
 }
 .ob-title {
   font-size: var(--font-size-2xl);
@@ -33,9 +33,12 @@
   margin: 4px 0 0;
 }
 .ob-header-right {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(72px, max-content));
   gap: 20px;
   align-items: center;
+  justify-content: end;
+  min-width: 0;
 }
 .ob-stat {
   text-align: center;
@@ -55,15 +58,16 @@
 
 /* Toolbar */
 .ob-toolbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(120px, max-content) minmax(108px, max-content) minmax(88px, max-content);
   gap: var(--space-sm);
   align-items: center;
   margin-bottom: var(--space-md);
-  flex-wrap: wrap;
+  min-width: 0;
+  overflow: clip;
 }
 .ob-search {
-  flex: 1;
-  min-width: 160px;
+  min-width: 0;
   padding: 6px 12px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -71,6 +75,8 @@
   background: var(--color-bg-input);
 }
 .ob-filter-select {
+  min-width: 0;
+  max-width: 100%;
   padding: 6px 8px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -81,9 +87,18 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   font-size: var(--font-size-sm);
   cursor: pointer;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.ob-toolbar .btn {
+  min-width: 0;
+  justify-content: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* Body layout */
@@ -106,13 +121,14 @@
   .ob-header,
   .ob-toolbar {
     align-items: stretch;
+    grid-template-columns: 1fr;
   }
 
   .ob-header-right {
-    display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-sm);
     width: 100%;
+    justify-content: stretch;
   }
 
   .ob-stat {
