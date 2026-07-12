@@ -115,6 +115,35 @@ Definition of done:
 - A successful pull lands in a useful review surface.
 - Cloud Sync reads as a team-workspace workflow, not a raw backup restore.
 
+### 0B. Player App Update Reliability
+
+Why now: athletes are reporting that after login they sometimes still see old
+practice content or old app behavior. That can come from two different places:
+the team data sync pipeline or the PWA/service-worker app shell cache. We need a
+clear update experience that makes both visible.
+
+- [x] Add an explicit waiting-service-worker update path so new app versions do
+  not sit idle until a tab fully closes.
+- [x] Auto-apply app-shell updates for player sessions when there is no dirty
+  workspace state.
+- [ ] Add a player-facing "Checking for team updates" state on login/dashboard
+  that distinguishes app version updates from practice-data updates.
+- [ ] Add a visible "Updated at" / "Practice version" marker on Player Home.
+- [ ] Add a coach-side publish status showing when player-visible scripts,
+  diagrams, clips, and quiz sources were last changed.
+- [ ] Add a manual "Refresh team app" action for players that updates the app
+  shell and re-renders player data without requiring them to know browser cache
+  steps.
+- [ ] Add a diagnostic tile for admins showing current app cache version,
+  service-worker state, last cloud pull, and last player publish time.
+
+Definition of done:
+
+- Players can reliably get the newest app shell and newest published team data.
+- Coaches can tell whether a report is a cache/app-version issue or a data
+  publish/sync issue.
+- Updating does not interrupt coaches with unsaved local work.
+
 ### 1. Diagram and Play Identity Hardening
 
 Why now: the recent player Swipe View issue proved that diagram identity and
