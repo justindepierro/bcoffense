@@ -255,6 +255,10 @@
   background: color-mix(in srgb, var(--color-info) 7%, var(--color-surface));
 }
 
+.player-home-refresh--checking .player-home-refresh__btn {
+  border-color: color-mix(in srgb, var(--color-info) 44%, var(--color-border-med));
+}
+
 .player-home-refresh--warn,
 .player-home-refresh--offline {
   border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));

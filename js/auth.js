@@ -765,6 +765,13 @@
 
   function scheduleCloudAutoPull() {
     if (!currentAuthUser) return;
+    if (
+      currentAuthUser.role === "player" &&
+      typeof schedulePlayerTeamUpdateCheck === "function"
+    ) {
+      schedulePlayerTeamUpdateCheck();
+      return;
+    }
     setTimeout(() => {
       if (typeof autoPullLatestCloudBackup === "function") {
         autoPullLatestCloudBackup();

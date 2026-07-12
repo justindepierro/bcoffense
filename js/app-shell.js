@@ -2225,9 +2225,12 @@ function _refreshPlayerTeamSurfaces() {
   }
 }
 
-async function refreshPlayerTeamApp() {
+let playerTeamUpdateCheckStarted = false;
+
+async function refreshPlayerTeamApp(opts = {}) {
+  const quiet = Boolean(opts.quiet);
   if (document.body?.getAttribute("data-auth-role") !== "player") {
-    showToast("Refresh team app is for player logins.", { type: "info", duration: 2500 });
+    if (!quiet) showToast("Refresh team app is for player logins.", { type: "info", duration: 2500 });
     return;
   }
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
@@ -2237,14 +2240,16 @@ async function refreshPlayerTeamApp() {
       body: "Reconnect to refresh team data and app updates.",
       updatedAt: new Date().toISOString(),
     });
-    showToast("Offline. Reconnect to refresh team app.", { type: "warning", duration: 3500 });
+    if (!quiet) {
+      showToast("Offline. Reconnect to refresh team app.", { type: "warning", duration: 3500 });
+    }
     return;
   }
 
   _setPlayerTeamRefreshState({
     tone: "checking",
-    title: "Checking for updates",
-    body: "Refreshing app shell and team data...",
+    title: "Checking team updates",
+    body: "Checking app version and team data...",
     busy: true,
   });
 
@@ -2252,11 +2257,23 @@ async function refreshPlayerTeamApp() {
   let appResult = null;
   try {
     if (typeof refreshPlayerCloudBackup === "function") {
+      _setPlayerTeamRefreshState({
+        tone: "checking",
+        title: "Refreshing team data",
+        body: "Checking for the latest practice, quiz, and playbook updates...",
+        busy: true,
+      });
       dataResult = await refreshPlayerCloudBackup();
     }
     _refreshPlayerTeamSurfaces();
 
     if (typeof checkForTeamAppUpdate === "function") {
+      _setPlayerTeamRefreshState({
+        tone: "checking",
+        title: "Checking app version",
+        body: "Looking for a newer team app shell on this device...",
+        busy: true,
+      });
       appResult = await checkForTeamAppUpdate({ apply: true });
       if (appResult?.status === "applying") {
         _setPlayerTeamRefreshState({
@@ -2265,7 +2282,7 @@ async function refreshPlayerTeamApp() {
           body: "The app is applying a new version and will reload.",
           busy: true,
         });
-        showToast("Updating team app...", { type: "info", duration: 2500 });
+        if (!quiet) showToast("Updating team app...", { type: "info", duration: 2500 });
         return;
       }
     }
@@ -2287,7 +2304,7 @@ async function refreshPlayerTeamApp() {
       body,
       updatedAt: new Date().toISOString(),
     });
-    showToast(title, { type: dataOk ? "success" : "warning", duration: 3000 });
+    if (!quiet) showToast(title, { type: dataOk ? "success" : "warning", duration: 3000 });
   } catch (err) {
     _refreshPlayerTeamSurfaces();
     _setPlayerTeamRefreshState({
@@ -2296,11 +2313,29 @@ async function refreshPlayerTeamApp() {
       body: err?.message || "Team app could not refresh right now.",
       updatedAt: new Date().toISOString(),
     });
-    showToast(err?.message || "Team app could not refresh right now.", {
-      type: "warning",
-      duration: 4500,
-    });
+    if (!quiet) {
+      showToast(err?.message || "Team app could not refresh right now.", {
+        type: "warning",
+        duration: 4500,
+      });
+    }
   }
+}
+
+function schedulePlayerTeamUpdateCheck(opts = {}) {
+  if (playerTeamUpdateCheckStarted && !opts.force) return;
+  playerTeamUpdateCheckStarted = true;
+  const delay = Number(opts.delay ?? 350);
+  _setPlayerTeamRefreshState({
+    tone: "checking",
+    title: "Checking team updates",
+    body: "Checking app version and team data...",
+    busy: true,
+  });
+  setTimeout(() => {
+    if (document.body?.getAttribute("data-auth-role") !== "player") return;
+    refreshPlayerTeamApp({ quiet: true });
+  }, Math.max(0, delay));
 }
 
 // Item 38: Pull-to-refresh on player dashboard

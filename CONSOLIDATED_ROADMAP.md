@@ -126,7 +126,7 @@ clear update experience that makes both visible.
   not sit idle until a tab fully closes.
 - [x] Auto-apply app-shell updates for player sessions when there is no dirty
   workspace state.
-- [ ] Add a player-facing "Checking for team updates" state on login/dashboard
+- [x] Add a player-facing "Checking for team updates" state on login/dashboard
   that distinguishes app version updates from practice-data updates.
 - [x] Add a visible "Updated at" / "Practice version" marker on Player Home.
 - [x] Add a coach-side publish status showing when player-visible scripts,
