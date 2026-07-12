@@ -1039,11 +1039,11 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
 
 /* ── Score row (primary action — top of widget) ── */
 .pr-score-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(76px, max-content) minmax(220px, 1fr) minmax(26px, max-content);
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .pr-score-label {
@@ -1051,6 +1051,45 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+}
+
+.pr-last-result {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  line-height: 1.05;
+}
+
+.pr-last-result span {
+  font-size: var(--font-size-3xs);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pr-last-result strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .pr-score-row {
+    grid-template-columns: minmax(0, 1fr) minmax(26px, max-content);
+  }
+
+  .pr-score-row .play-readiness-score-grid {
+    grid-column: 1 / -1;
+    order: 3;
+  }
 }
 
 /* Color-coded by confidence tone — new 4-tier names */
@@ -1128,12 +1167,6 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
   color: var(--color-text-muted);
   font-weight: 700;
 }
-.pr-widget-last {
-  font-size: var(--font-size-2xs);
-  color: var(--color-text-secondary);
-  margin-left: auto;
-}
-
 /* ── Details row (progress + actions — secondary, below score) ── */
 .pr-details-row {
   display: flex;

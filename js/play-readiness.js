@@ -560,6 +560,9 @@ function renderPlayReadinessScriptWidget(play, index, opts = {}) {
   const lastLine = summary.lastLog
     ? `Last: ${summary.lastLogDate}${compact.daysText ? " (" + compact.daysText + ")" : ""} \u00b7 ${summary.lastLogScore}/5`
     : null;
+  const headerLastResult = summary.lastLog
+    ? `${summary.lastLogScore}/5${compact.daysText ? ` \u00b7 ${compact.daysText}` : ""}`
+    : "No reps yet";
   const hasAnyRecords = Object.keys(getPlayReadinessStore().records || {}).length > 0;
 
   return `
@@ -568,6 +571,10 @@ function renderPlayReadinessScriptWidget(play, index, opts = {}) {
 
       <!-- Row 1: Large score buttons -->
       <div class="pr-score-row">
+        <span class="pr-last-result" title="${escapeHtml(lastLine || "No reps logged yet")}">
+          <span>Last</span>
+          <strong>${escapeHtml(headerLastResult)}</strong>
+        </span>
         <div class="play-readiness-score-grid play-readiness-score-grid--large" role="group" aria-label="Score this rep 1 to 5">
           ${renderPlayReadinessScoreButtons("quickPlayReadinessScriptScore", summary.lastLogScore, `data-idx="${index}"`)}
         </div>
@@ -578,7 +585,6 @@ function renderPlayReadinessScriptWidget(play, index, opts = {}) {
       <div class="pr-widget-meta">
         <strong class="pr-confidence pr-confidence--${escapeHtml(compact.tone)}">${escapeHtml(confidenceDisplay)}</strong>
         <span class="pr-widget-stats">${escapeHtml(statsText)}</span>
-        ${lastLine ? `<span class="pr-widget-last">${escapeHtml(lastLine)}</span>` : ""}
         <div class="play-readiness-track" style="--pr-progress:${summary.progressPct}%" aria-label="${summary.progressPct}% toward target">
           <span class="play-readiness-fill" aria-hidden="true"></span>
         </div>

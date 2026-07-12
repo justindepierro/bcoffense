@@ -330,25 +330,25 @@ workflow.
 
 P0 model changes:
 
-- [ ] Unify `reps[]` and `actionReports[]` into one `logs[]` stream.
-- [ ] Simplify rep types into five intensity tiers.
-- [ ] Drop `complexity` from the data model and UI.
-- [ ] Collapse install status to `New`, `Installed`, and `Core`.
-- [ ] Replace the confidence formula with a transparent three-part model.
-- [ ] Replace five confidence labels with four tiers.
+- [x] Unify `reps[]` and `actionReports[]` into one `logs[]` stream.
+- [x] Simplify rep types into five intensity tiers.
+- [x] Drop `complexity` from the data model and UI.
+- [x] Collapse install status to `New`, `Installed`, and `Core`.
+- [x] Replace the confidence formula with a transparent three-part model.
+- [x] Replace five confidence labels with four tiers.
 
 P0 UX changes:
 
-- [ ] Replace "Add Rep" plus "Action Report" with one "Log Rep" modal.
+- [x] Replace "Add Rep" plus "Action Report" with one "Log Rep" modal.
 - [x] Remove yards, manual confidence, and event checkbox clutter from new logging UI.
-- [ ] Make quick-score 1-5 create a minimal log entry immediately.
-- [ ] Redesign the script widget so score buttons are front-center with one CTA.
-- [ ] Enlarge score buttons for touch.
-- [ ] Replace weighted-rep chips with plain-language status.
+- [x] Make quick-score 1-5 create a minimal log entry immediately.
+- [x] Redesign the script widget so score buttons are front-center with one CTA.
+- [x] Enlarge score buttons for touch.
+- [x] Replace weighted-rep chips with plain-language status.
 
 P1/P2 polish:
 
-- [ ] Add last rep result inline in the widget header.
+- [x] Add last rep result inline in the widget header.
 - [ ] Animate score button selection.
 - [x] Remove "Seed Sample Data" from daily coach UI.
 - [ ] Redesign playbook readiness panel around the readiness score.

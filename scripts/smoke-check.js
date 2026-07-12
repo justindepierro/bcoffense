@@ -1414,6 +1414,8 @@ function checkPlayReadinessContracts() {
     !/function renderPlayReadinessPresentationMinimumDock\(play\)/.test(readiness) ||
     !/function renderPlayReadinessPresentationScoreRail\(play\)/.test(readiness) ||
     !/function renderSelectedPlaybookReadinessPanel\(index = selectedRowIndex\)/.test(readiness) ||
+    !/const headerLastResult = summary\.lastLog/.test(readiness) ||
+    !/class="pr-last-result"/.test(readiness) ||
     !/function quickPlayReadinessPlaybookScore\(score\)/.test(readiness) ||
     !/function quickPlayReadinessScriptScore\(score, element\)/.test(readiness) ||
     !/function quickPlayReadinessPresentationScore\(score\)/.test(readiness) ||
@@ -1467,6 +1469,9 @@ function checkPlayReadinessContracts() {
     !/\.play-readiness-badge/.test(css) ||
     !/\.play-readiness-rollup/.test(css) ||
     !/\.play-readiness-quick-score/.test(css) ||
+    !/\.pr-last-result\s*\{[\s\S]*display:\s*grid/.test(css) ||
+    !/\.pr-last-result strong\s*\{[\s\S]*text-overflow:\s*ellipsis/.test(css) ||
+    !/\.pr-score-row\s*\{[\s\S]*grid-template-columns:\s*minmax\(76px,\s*max-content\)\s*minmax\(220px,\s*1fr\)\s*minmax\(26px,\s*max-content\)/.test(css) ||
     !/\.play-readiness-score-grid/.test(css) ||
     !/\.play-readiness-report-score-controls/.test(css) ||
     !/\.play-readiness-report-delete/.test(css) ||
