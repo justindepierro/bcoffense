@@ -251,6 +251,24 @@ function _dashRenderPlayerFreshnessStrip(featuredScript, publishedScripts = []) 
   </section>`;
 }
 
+function _dashRenderPlayerRefreshAction() {
+  const state = window.playerTeamRefreshState || {};
+  const tone = state.tone || "idle";
+  const busy = Boolean(state.busy);
+  const updated = _dashFormatRelativeTime(state.updatedAt);
+  const title = state.title || "Refresh team app";
+  const body = state.body || "Check for the newest app version and team data.";
+  return `<section class="player-home-refresh player-home-refresh--${escapeAttr(tone)}" aria-label="Refresh team app">
+    <div class="player-home-refresh__copy">
+      <strong>${escapeHtml(title)}</strong>
+      <span>${escapeHtml(updated ? `${body} Last checked ${updated}.` : body)}</span>
+    </div>
+    <button type="button" class="player-home-refresh__btn" data-action="refreshPlayerTeamApp" ${busy ? "disabled" : ""}>
+      ${escapeHtml(busy ? "Checking" : "Refresh")}
+    </button>
+  </section>`;
+}
+
 function _dashBuildActivityFeed(gw) {
   const events = [];
 
@@ -1156,6 +1174,7 @@ function renderPlayerDashboardHome() {
   const notificationStatus = getPlayerHomeNotificationStatus();
   const practiceStatus = getPlayerHomePracticeStatus(featuredScript, loadedScript, todayValue);
   const freshnessMarkup = _dashRenderPlayerFreshnessStrip(featuredScript, publishedScripts);
+  const refreshMarkup = _dashRenderPlayerRefreshAction();
   const recentScriptsMarkup = publishedScripts.length
     ? publishedScripts
       .slice(0, 4)
@@ -1213,6 +1232,7 @@ function renderPlayerDashboardHome() {
       <span>${escapeHtml(practiceStatus.body)}</span>
     </section>
     ${freshnessMarkup}
+    ${refreshMarkup}
     <section class="player-home-quick-actions" aria-label="Player quick actions">
       <button type="button" class="player-home-quick-action player-home-quick-action--primary"
         ${practiceAction}>

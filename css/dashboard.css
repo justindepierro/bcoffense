@@ -196,6 +196,71 @@
   background: color-mix(in srgb, var(--color-warning) 12%, var(--color-surface));
 }
 
+.player-home-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 12px 14px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.player-home-refresh__copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.player-home-refresh__copy strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.player-home-refresh__copy span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.35;
+}
+
+.player-home-refresh__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 8px 13px;
+  border: 1px solid var(--color-border-med);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.player-home-refresh__btn:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+
+.player-home-refresh--ready {
+  border-color: color-mix(in srgb, var(--color-success) 34%, var(--color-border-light));
+}
+
+.player-home-refresh--checking {
+  border-color: color-mix(in srgb, var(--color-info) 36%, var(--color-border-light));
+  background: color-mix(in srgb, var(--color-info) 7%, var(--color-surface));
+}
+
+.player-home-refresh--warn,
+.player-home-refresh--offline {
+  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  background: color-mix(in srgb, var(--color-warning) 10%, var(--color-surface));
+}
+
 /* ── Player push notify button (item 47) ── */
 .player-notify-row {
   display: flex;
@@ -825,6 +890,15 @@
 
   .player-home-freshness__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .player-home-refresh {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .player-home-refresh__btn {
+    width: 100%;
   }
 
   .player-home-quick-action {

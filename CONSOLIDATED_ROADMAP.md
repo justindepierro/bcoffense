@@ -131,7 +131,7 @@ clear update experience that makes both visible.
 - [x] Add a visible "Updated at" / "Practice version" marker on Player Home.
 - [x] Add a coach-side publish status showing when player-visible scripts,
   diagrams, clips, and quiz sources were last changed.
-- [ ] Add a manual "Refresh team app" action for players that updates the app
+- [x] Add a manual "Refresh team app" action for players that updates the app
   shell and re-renders player data without requiring them to know browser cache
   steps.
 - [ ] Add a diagnostic tile for admins showing current app cache version,

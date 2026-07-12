@@ -2202,6 +2202,107 @@ function dismissPlayerA2HS() {
   }, { passive: true });
 }());
 
+function _setPlayerTeamRefreshState(state = {}) {
+  window.playerTeamRefreshState = {
+    tone: state.tone || "idle",
+    title: state.title || "Refresh team app",
+    body: state.body || "Check for app and team-data updates.",
+    busy: Boolean(state.busy),
+    updatedAt: state.updatedAt || "",
+  };
+  if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
+}
+
+function _refreshPlayerTeamSurfaces() {
+  if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
+  if (typeof renderPlayerScriptLauncher === "function") renderPlayerScriptLauncher();
+  if (typeof renderPlayerLoadedScriptBar === "function") renderPlayerLoadedScriptBar();
+  if (typeof requestRenderScript === "function") requestRenderScript();
+  if (typeof _renderPlayerQuizHub === "function") _renderPlayerQuizHub();
+  if (document.getElementById("leaderboard")?.classList.contains("active") &&
+    typeof renderPlayerLeaderboardPage === "function") {
+    renderPlayerLeaderboardPage();
+  }
+}
+
+async function refreshPlayerTeamApp() {
+  if (document.body?.getAttribute("data-auth-role") !== "player") {
+    showToast("Refresh team app is for player logins.", { type: "info", duration: 2500 });
+    return;
+  }
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    _setPlayerTeamRefreshState({
+      tone: "offline",
+      title: "Offline",
+      body: "Reconnect to refresh team data and app updates.",
+      updatedAt: new Date().toISOString(),
+    });
+    showToast("Offline. Reconnect to refresh team app.", { type: "warning", duration: 3500 });
+    return;
+  }
+
+  _setPlayerTeamRefreshState({
+    tone: "checking",
+    title: "Checking for updates",
+    body: "Refreshing app shell and team data...",
+    busy: true,
+  });
+
+  let dataResult = null;
+  let appResult = null;
+  try {
+    if (typeof refreshPlayerCloudBackup === "function") {
+      dataResult = await refreshPlayerCloudBackup();
+    }
+    _refreshPlayerTeamSurfaces();
+
+    if (typeof checkForTeamAppUpdate === "function") {
+      appResult = await checkForTeamAppUpdate({ apply: true });
+      if (appResult?.status === "applying") {
+        _setPlayerTeamRefreshState({
+          tone: "checking",
+          title: "Updating app",
+          body: "The app is applying a new version and will reload.",
+          busy: true,
+        });
+        showToast("Updating team app...", { type: "info", duration: 2500 });
+        return;
+      }
+    }
+
+    const dataOk = !dataResult || dataResult.ok;
+    const dataMissing = dataResult?.status === "missing";
+    const appCurrent = !appResult || appResult.status === "current" || appResult.status === "unsupported";
+    const title = dataMissing
+      ? "No cloud update yet"
+      : dataOk && appCurrent
+        ? "Team app refreshed"
+        : "Refresh finished";
+    const body = dataMissing
+      ? "No cloud backup has been pushed yet. This device reloaded its local team data."
+      : dataResult?.message || "This device rechecked app and team data.";
+    _setPlayerTeamRefreshState({
+      tone: dataOk ? "ready" : "warn",
+      title,
+      body,
+      updatedAt: new Date().toISOString(),
+    });
+    showToast(title, { type: dataOk ? "success" : "warning", duration: 3000 });
+  } catch (err) {
+    _refreshPlayerTeamSurfaces();
+    _setPlayerTeamRefreshState({
+      tone: "warn",
+      title: "Refresh needs connection",
+      body: err?.message || "Team app could not refresh right now.",
+      updatedAt: new Date().toISOString(),
+    });
+    showToast(err?.message || "Team app could not refresh right now.", {
+      type: "warning",
+      duration: 4500,
+    });
+  }
+}
+
 // Item 38: Pull-to-refresh on player dashboard
 (function _initPlayerPullToRefresh() {
   let _py = 0, _pa = false;
@@ -2218,9 +2319,12 @@ function dismissPlayerA2HS() {
     if (!_pa) return;
     _pa = false;
     const dy = e.changedTouches[0].clientY - _py;
-    if (dy > 64 && typeof renderPlayerDashboardHome === "function") {
-      renderPlayerDashboardHome();
-      showToast("Refreshed", { duration: 1500, type: "success" });
+    if (dy > 64) {
+      if (typeof refreshPlayerTeamApp === "function") refreshPlayerTeamApp();
+      else if (typeof renderPlayerDashboardHome === "function") {
+        renderPlayerDashboardHome();
+        showToast("Refreshed", { duration: 1500, type: "success" });
+      }
     }
   }, { passive: true });
 }());

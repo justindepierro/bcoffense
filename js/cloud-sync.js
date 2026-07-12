@@ -524,6 +524,39 @@
     }
   }
 
+  async function refreshPlayerCloudBackup() {
+    const remote = await fetchCloudBackup({ allowMissing: true });
+    if (!remote) {
+      return {
+        ok: false,
+        status: "missing",
+        message: "No cloud backup has been pushed yet.",
+      };
+    }
+    const restored = await restoreCloudBackup(remote, {
+      confirm: false,
+      reload: false,
+      notify: false,
+      navigate: false,
+    });
+    if (!restored) {
+      return {
+        ok: false,
+        status: "restore-failed",
+        message: "Team data could not be refreshed.",
+      };
+    }
+    return {
+      ok: true,
+      status: "refreshed",
+      exportDate: remote.summary?.exportDate || "",
+      updatedAt: remote.updatedAt || "",
+      itemCount: remote.summary?.itemCount || 0,
+      imageCount: remote.summary?.imageCount || 0,
+      message: `Team data refreshed from ${formatCloudDate(remote.summary?.exportDate || remote.updatedAt)}.`,
+    };
+  }
+
   function renderCloudSyncStatus() {
     const settings = getCloudSyncSettings();
     const statusEl = document.getElementById("cloudSyncStatus");
@@ -799,6 +832,7 @@
   window.testCloudSyncConnection = testCloudSyncConnection;
   window.pushCloudBackup = pushCloudBackup;
   window.pullCloudBackup = pullCloudBackup;
+  window.refreshPlayerCloudBackup = refreshPlayerCloudBackup;
   window.autoPullLatestCloudBackup = autoPullLatestCloudBackup;
   window.resetCloudSyncAutoPull = resetCloudSyncAutoPull;
   window.queueCloudAutoPush = queueCloudAutoPush;
