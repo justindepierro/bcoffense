@@ -88,13 +88,13 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-xs);
+  overflow: clip;
 }
 .gp-cmd-main {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, max-content);
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  flex-wrap: wrap;
   min-width: 0;
 }
 .gp-cmd-identity {
@@ -102,7 +102,6 @@
   align-items: center;
   gap: var(--space-sm);
   flex-wrap: wrap;
-  flex: 1 1 420px;
   min-width: 0;
 }
 .gp-cmd-title {
@@ -111,22 +110,32 @@
   color: var(--color-text);
   white-space: nowrap;
 }
+.gp-cmd-identity > * {
+  min-width: 0;
+  max-width: 100%;
+}
 .gp-cmd-count {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   white-space: nowrap;
 }
 .gp-cmd-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(86px, max-content));
   align-items: center;
   gap: var(--space-xs);
-  flex-wrap: wrap;
   justify-content: flex-end;
-  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
 }
 .gp-cmd-actions .btn {
+  min-width: 0;
+  max-width: 100%;
   min-height: 44px;
+  justify-content: center;
+  line-height: 1.15;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .gp-filters-btn.is-active {
   background: var(--color-primary);
@@ -182,16 +191,19 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   margin-bottom: var(--space-md);
+  overflow: clip;
 }
 
 .gp-toolbar input[type="search"],
 .gp-toolbar select {
   min-width: 140px;
+  max-width: 100%;
 }
 
 .gp-multi-filter {
   position: relative;
   min-width: 160px;
+  max-width: 100%;
 }
 .gp-multi-filter-btn {
   display: flex;
@@ -199,6 +211,7 @@
   justify-content: space-between;
   gap: var(--space-xs);
   width: 100%;
+  min-width: 0;
   min-height: 44px;
   padding: 6px 10px;
   color: var(--color-text);
@@ -208,6 +221,12 @@
   cursor: pointer;
   font: inherit;
   font-size: var(--font-size-sm);
+}
+.gp-multi-filter-btn span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .gp-multi-filter-btn::after {
   content: "▾";
@@ -295,6 +314,25 @@
 
 .gp-toolbar-spacer {
   flex: 1;
+}
+
+.gp-toolbar-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xxs, 2px);
+  min-width: 0;
+  min-height: 44px;
+  max-width: 100%;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  line-height: 1.15;
+}
+
+.gp-toolbar .btn,
+.gp-toolbar-toggle,
+.gp-matchup-chip {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* Layout: library + boxes */
@@ -681,6 +719,21 @@ body:not(.is-mobile-screen) .gp-command-zone .gp-multi-filter {
 body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar-spacer {
   flex-grow: 0;
   flex-basis: var(--space-xs);
+}
+
+@media (max-width: 1180px) {
+  #gameplan .gp-cmd-main {
+    grid-template-columns: 1fr;
+  }
+
+  #gameplan .gp-cmd-actions {
+    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+    justify-content: stretch;
+  }
+
+  #gameplan .gp-toolbar {
+    gap: var(--space-xs);
+  }
 }
 
 /* Color accent left-border (set via inline --gp-box-accent) */
@@ -3125,7 +3178,8 @@ body.gp-dragging-from-box .gp-trash-zone {
   .gp-header-group,
   .gp-toolbar input[type="search"],
   .gp-toolbar select,
-  .gp-multi-filter {
+  .gp-multi-filter,
+  .gp-toolbar-toggle {
     width: 100%;
     min-width: 0;
   }
@@ -3142,6 +3196,7 @@ body.gp-dragging-from-box .gp-trash-zone {
 
   .gp-header-actions .btn,
   .gp-toolbar .btn,
+  .gp-toolbar-toggle,
   .gp-library-bulk .btn-sm {
     flex: 1 1 140px;
     min-height: 42px;

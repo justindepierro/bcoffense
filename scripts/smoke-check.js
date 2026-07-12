@@ -147,6 +147,8 @@ function checkCssGuardrails() {
 function checkPageStyleContracts() {
   const scriptCss = read("css/script.css");
   const playbookCss = read("css/playbook.css");
+  const gameplanCss = read("css/gameplan.css");
+  const gameplanRender = read("js/gameplan-render.js");
 
   if (
     !/\.script-workbench-controls\s*\{[\s\S]*grid-template-columns:\s*minmax\(220px,\s*1fr\)\s*minmax\(0,\s*1\.15fr\)\s*minmax\(150px,\s*0\.65fr\)/.test(scriptCss) ||
@@ -184,6 +186,26 @@ function checkPageStyleContracts() {
     !/\.pb-player-filter-option\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(playbookCss)
   ) {
     fail("Playbook drawer actions or player filters are missing overflow-safe rules");
+  }
+
+  if (
+    !/\.gp-cmd-bar\s*\{[\s\S]*overflow:\s*clip/.test(gameplanCss) ||
+    !/\.gp-cmd-main\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(320px,\s*max-content\)/.test(gameplanCss) ||
+    !/\.gp-cmd-actions\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(4,\s*minmax\(86px,\s*max-content\)\)/.test(gameplanCss) ||
+    !/\.gp-cmd-actions \.btn\s*\{[\s\S]*min-width:\s*0[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(gameplanCss) ||
+    !/@media \(max-width:\s*1180px\)[\s\S]*#gameplan \.gp-cmd-main\s*\{[\s\S]*grid-template-columns:\s*1fr[\s\S]*#gameplan \.gp-cmd-actions\s*\{[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(92px,\s*1fr\)\)/.test(gameplanCss)
+  ) {
+    fail("Game Plan command bar is missing overflow-safe shared-surface rules");
+  }
+
+  if (
+    !/class="gp-toolbar-toggle"/.test(gameplanRender) ||
+    !/\.gp-toolbar\s*\{[\s\S]*overflow:\s*clip/.test(gameplanCss) ||
+    !/\.gp-multi-filter-btn span:first-child\s*\{[\s\S]*text-overflow:\s*ellipsis/.test(gameplanCss) ||
+    !/\.gp-toolbar-toggle\s*\{[\s\S]*min-width:\s*0[\s\S]*max-width:\s*100%/.test(gameplanCss) ||
+    !/\.gp-toolbar \.btn,[\s\S]*\.gp-toolbar-toggle,[\s\S]*\.gp-matchup-chip\s*\{[\s\S]*overflow-wrap:\s*anywhere/.test(gameplanCss)
+  ) {
+    fail("Game Plan filter toolbar is missing overflow-safe rules");
   }
 
   console.log("page style contracts ok");

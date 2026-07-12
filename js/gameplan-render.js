@@ -246,7 +246,7 @@ function renderGamePlan() {
         title="Toggle advanced filters">
         ⚙️ Advanced${advBadge > 0 ? ` <span class="gp-adv-badge">${advBadge}</span>` : ""}
       </button>
-      <label style="display:inline-flex;align-items:center;gap:var(--space-xxs,2px);font-size:var(--font-size-sm);">
+      <label class="gp-toolbar-toggle">
         <input type="checkbox" ${_gpFilters.hideAssigned ? "checked" : ""}
           data-onchange="updateGamePlanFilter" data-arg="hideAssigned" data-pass="event" />
         Hide already drafted

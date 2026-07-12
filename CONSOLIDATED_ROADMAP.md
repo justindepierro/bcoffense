@@ -302,7 +302,8 @@ Migration order:
   add a smoke-check style contract for the Script page controls.
 - [x] Playbook command surface and player filters: stabilize top controls,
   drawer actions, and player filter pills with a smoke-check style contract.
-- [ ] Game Plan command bar cleanup on shared primitives.
+- [x] Game Plan command bar cleanup on shared primitives: stabilize the
+  identity/actions row and filter toolbar with a smoke-check style contract.
 - [ ] Wristband command hierarchy.
 - [ ] Call Sheet command hierarchy.
 - [ ] Dashboard/player portal quick actions.
