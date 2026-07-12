@@ -63,6 +63,7 @@ let _sanitizeUseFiltered = false;
 let _sanitizeAutosaveTimer = null;
 let _sanitizeVocabCache = null;
 let _sanitizeVocabCacheKey = "";
+let _sanitizeFocus = null;
 
 // Returns the array of plays the cleanup tool should iterate over. When the
 // "Only filtered plays" toggle is on, we walk `filteredPlays` and resolve
@@ -126,6 +127,10 @@ function _sanitizeInvalidateVocab() {
   _sanitizeVocabCacheKey = "";
 }
 
+function _sanitizeDisplayValue(value) {
+  return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
 function _sanitizeComparableValue(value) {
   const spaced = String(value || "")
     .normalize("NFKD")
@@ -139,6 +144,27 @@ function _sanitizeComparableValue(value) {
     spaced,
     compact: spaced.replace(/\s+/g, ""),
   };
+}
+
+function _sanitizeFocusValues() {
+  return Array.isArray(_sanitizeFocus?.values)
+    ? _sanitizeFocus.values.map(_sanitizeDisplayValue).filter(Boolean)
+    : [];
+}
+
+function _sanitizeFocusAppliesTo(def) {
+  return Boolean(_sanitizeFocus && _sanitizeFocus.fieldKey === def.key);
+}
+
+function _sanitizeEntryMatchesFocus(entry, def) {
+  if (!_sanitizeFocusAppliesTo(def)) return true;
+  const values = new Set(_sanitizeFocusValues());
+  if (!values.size) return true;
+  return values.has(_sanitizeDisplayValue(entry.play?.[def.key]));
+}
+
+function _sanitizeClearFocus() {
+  _sanitizeFocus = null;
 }
 
 /** Levenshtein distance with early-exit for large differences. */
@@ -254,12 +280,13 @@ function _sanitizePlayContext(play) {
   return bits.join(" \u2022 ");
 }
 
-function openPlaybookSanitize() {
+function openPlaybookSanitize(options = {}) {
   if (!Array.isArray(plays) || plays.length === 0) {
     showToast("Import a playbook CSV first", { duration: 2500, type: "error" });
     return;
   }
-  _sanitizeUseFiltered = false;
+  if (!options.keepFocus) _sanitizeClearFocus();
+  if (!options.keepFiltered) _sanitizeUseFiltered = false;
   const overlay = document.getElementById("playbookSanitizeOverlay");
   if (!overlay) return;
   overlay.classList.add("visible");
@@ -291,11 +318,29 @@ function openPlaybookSanitizeFiltered() {
       type: "info",
     });
   }
+  _sanitizeClearFocus();
   const overlay = document.getElementById("playbookSanitizeOverlay");
   if (!overlay) return;
   overlay.classList.add("visible");
   _renderSanitizePicker();
   _renderSanitizeList();
+}
+
+function openPlaybookSanitizeFocused(fieldKey, values) {
+  if (!_sanitizeFieldDef(fieldKey)) return;
+  const cleanValues = (Array.isArray(values) ? values : [])
+    .map(_sanitizeDisplayValue)
+    .filter(Boolean)
+    .filter((value, idx, arr) => arr.indexOf(value) === idx);
+  if (!cleanValues.length) return;
+  _sanitizeFieldKey = fieldKey;
+  _sanitizeUseFiltered = false;
+  _sanitizeHideCompleted = false;
+  _sanitizeFocus = {
+    fieldKey,
+    values: cleanValues,
+  };
+  openPlaybookSanitize({ keepFocus: true, keepFiltered: true });
 }
 
 function setPlaybookSanitizeFiltered(eventOrValue) {
@@ -348,6 +393,7 @@ function _renderSanitizePicker() {
 
 function setPlaybookSanitizeField(key) {
   _sanitizeFieldKey = key;
+  _sanitizeClearFocus();
   _renderSanitizePicker();
   _renderSanitizeList();
 }
@@ -369,22 +415,31 @@ function _renderSanitizeList() {
   const entries = _sanitizeSourceEntries();
   const total = entries.length;
   const scopeLabel = _sanitizeScopeLabel();
-  const missingPlays = entries.filter(({ play }) =>
+  const focusActive = _sanitizeFocusAppliesTo(def);
+  const scopedEntries = focusActive
+    ? entries.filter((entry) => _sanitizeEntryMatchesFocus(entry, def))
+    : entries;
+  const missingPlays = scopedEntries.filter(({ play }) =>
     _sanitizeHideCompleted ? _sanitizeIsEmpty(play, def.key) : true,
   );
   const missingCount = entries.filter(({ play }) => _sanitizeIsEmpty(play, def.key)).length;
   if (status) {
-    status.textContent = _sanitizeHideCompleted
-      ? `${missingCount} of ${total} ${scopeLabel} missing ${def.label}`
-      : `${missingCount} of ${total} ${scopeLabel} missing ${def.label} — showing all`;
+    if (focusActive) {
+      status.textContent = `${scopedEntries.length} focused ${scopeLabel} for ${def.label}`;
+    } else {
+      status.textContent = _sanitizeHideCompleted
+        ? `${missingCount} of ${total} ${scopeLabel} missing ${def.label}`
+        : `${missingCount} of ${total} ${scopeLabel} missing ${def.label} — showing all`;
+    }
   }
 
   if (missingPlays.length === 0) {
     body.innerHTML = `
+      ${focusActive ? _renderSanitizeFocusPanel(def, scopedEntries) : ""}
       <div class="pb-sanitize-empty">
         <div class="pb-sanitize-empty-icon">🎉</div>
-        <div class="pb-sanitize-empty-title">All plays have ${escapeHtml(def.label)} filled in.</div>
-        <div class="pb-sanitize-empty-sub">Pick another field above to keep going.</div>
+        <div class="pb-sanitize-empty-title">${focusActive ? "No matching variants found." : `All plays have ${escapeHtml(def.label)} filled in.`}</div>
+        <div class="pb-sanitize-empty-sub">${focusActive ? "The health issue may already be cleaned up." : "Pick another field above to keep going."}</div>
       </div>`;
     return;
   }
@@ -453,8 +508,128 @@ function _renderSanitizeList() {
       </div>`;
   }).join("");
 
-  body.innerHTML = sharedDatalistHtml + rowsHtml;
+  body.innerHTML = sharedDatalistHtml + (focusActive ? _renderSanitizeFocusPanel(def, scopedEntries) : "") + rowsHtml;
+  _bindSanitizeFocusHandlers();
   _bindSanitizeRowHandlers(body);
+}
+
+function _sanitizeFocusCounts(def, entries) {
+  const focusValues = _sanitizeFocusValues();
+  const counts = new Map(focusValues.map((value) => [value, 0]));
+  entries.forEach(({ play }) => {
+    const value = _sanitizeDisplayValue(play?.[def.key]);
+    if (counts.has(value)) counts.set(value, counts.get(value) + 1);
+  });
+  return Array.from(counts.entries())
+    .map(([value, count]) => ({ value, count }))
+    .filter((item) => item.count > 0)
+    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+}
+
+function _renderSanitizeFocusPanel(def, entries) {
+  const counts = _sanitizeFocusCounts(def, entries);
+  const fallbackValues = _sanitizeFocusValues().map((value) => ({ value, count: 0 }));
+  const target = _sanitizeFocus?.target || counts[0]?.value || fallbackValues[0]?.value || "";
+  const focusSet = new Set(_sanitizeFocusValues());
+  const changeCount = entries.filter(({ play }) => {
+    const value = _sanitizeDisplayValue(play?.[def.key]);
+    return focusSet.has(value) && value !== target;
+  }).length;
+  const chips = (counts.length ? counts : fallbackValues)
+    .map((item) => `<span class="pb-sanitize-focus-chip"><strong>${escapeHtml(item.value)}</strong><em>${item.count}</em></span>`)
+    .join("");
+  const options = (counts.length ? counts : fallbackValues)
+    .map((item) => `<option value="${escapeHtml(item.value)}" ${item.value === target ? "selected" : ""}>${escapeHtml(item.value)} (${item.count})</option>`)
+    .join("");
+  return `
+    <div class="pb-sanitize-focus-panel">
+      <div class="pb-sanitize-focus-head">
+        <div>
+          <strong>Focused cleanup: ${escapeHtml(def.label)}</strong>
+          <span>Review these variants before merging.</span>
+        </div>
+        <button type="button" class="btn btn-xs btn-secondary" data-action="clearSanitizeFocus">Show All</button>
+      </div>
+      <div class="pb-sanitize-focus-values">${chips}</div>
+      <div class="pb-sanitize-merge-preview">
+        <label for="pbSanitizeMergeTarget">Merge to</label>
+        <select id="pbSanitizeMergeTarget">${options}</select>
+        <span id="pbSanitizeMergePreview">${changeCount} row${changeCount === 1 ? "" : "s"} will change.</span>
+        <button type="button" class="btn btn-sm btn-primary" data-action="applySanitizeFocusedMerge" ${changeCount ? "" : "disabled"}>Apply Merge</button>
+      </div>
+    </div>`;
+}
+
+function _sanitizeFocusedMergeChangeCount(def, target) {
+  const focusSet = new Set(_sanitizeFocusValues());
+  const entries = _sanitizeSourceEntries().filter((entry) => _sanitizeEntryMatchesFocus(entry, def));
+  return entries.filter(({ play }) => {
+    const value = _sanitizeDisplayValue(play?.[def.key]);
+    return focusSet.has(value) && value !== target;
+  }).length;
+}
+
+function _bindSanitizeFocusHandlers() {
+  const targetEl = document.getElementById("pbSanitizeMergeTarget");
+  if (!targetEl) return;
+  targetEl.addEventListener("change", () => {
+    const def = _sanitizeFieldDef(_sanitizeFieldKey);
+    const target = _sanitizeDisplayValue(targetEl.value || "");
+    if (_sanitizeFocus) _sanitizeFocus.target = target;
+    const changeCount = _sanitizeFocusedMergeChangeCount(def, target);
+    const preview = document.getElementById("pbSanitizeMergePreview");
+    if (preview) {
+      preview.textContent = `${changeCount} row${changeCount === 1 ? "" : "s"} will change.`;
+    }
+    const button = document.querySelector('[data-action="applySanitizeFocusedMerge"]');
+    if (button) button.disabled = changeCount === 0;
+  });
+}
+
+function clearSanitizeFocus() {
+  _sanitizeClearFocus();
+  _renderSanitizePicker();
+  _renderSanitizeList();
+}
+
+async function applySanitizeFocusedMerge() {
+  const def = _sanitizeFieldDef(_sanitizeFieldKey);
+  if (!_sanitizeFocusAppliesTo(def)) return;
+  const targetEl = document.getElementById("pbSanitizeMergeTarget");
+  const target = _sanitizeDisplayValue(targetEl?.value || "");
+  if (!target) return;
+  const focusSet = new Set(_sanitizeFocusValues());
+  const entries = _sanitizeSourceEntries().filter((entry) => _sanitizeEntryMatchesFocus(entry, def));
+  const changes = entries.filter(({ play }) => {
+    const value = _sanitizeDisplayValue(play?.[def.key]);
+    return focusSet.has(value) && value !== target;
+  });
+  if (!changes.length) {
+    showToast("Nothing to merge", { duration: 1800, type: "info" });
+    return;
+  }
+  const ok = await showConfirm(
+    `Update ${changes.length} ${changes.length === 1 ? "row" : "rows"} so ${escapeHtml(def.label)} becomes <strong>${escapeHtml(target)}</strong>?`,
+    {
+      title: "Apply Cleanup Merge",
+      icon: "🧹",
+      confirmText: "Apply Merge",
+    },
+  );
+  if (!ok) return;
+  changes.forEach(({ play }) => {
+    play[def.key] = target;
+  });
+  _sanitizeInvalidateVocab();
+  storageManager.setPlaybook(plays);
+  if (typeof invalidateFilterCache === "function") invalidateFilterCache();
+  if (typeof filterPlays === "function") filterPlays();
+  showToast(`Merged ${changes.length} ${changes.length === 1 ? "row" : "rows"}`, {
+    duration: 2200,
+    type: "success",
+  });
+  _renderSanitizePicker();
+  _renderSanitizeList();
 }
 
 function _bindSanitizeRowHandlers(scope) {

@@ -52,9 +52,9 @@ Cleanup intelligence:
 - [x] Fuzzy cleanup suggestions compare case-insensitive values.
 - [x] Fuzzy cleanup suggestions understand punctuation/hyphen/connected-word
   variants and one-letter misses.
-- [ ] Add one-click merge from a health issue into the field cleanup panel with
+- [x] Add one-click merge from a health issue into the field cleanup panel with
   the suspected variants prefiltered.
-- [ ] Add preview counts before applying any bulk rename.
+- [x] Add preview counts before applying any bulk rename.
 
 Diagram/media workflow:
 

@@ -123,8 +123,36 @@ function _pbHealthRenderVocabSamples(items) {
   return rows ? `<ul>${rows}</ul>` : "";
 }
 
+function _pbHealthCleanupArg(fieldKey, values) {
+  const payload = {
+    fieldKey,
+    values: (values || []).map((value) => String(value || "").trim()).filter(Boolean),
+  };
+  return escapeAttrIfAvailable(encodeURIComponent(JSON.stringify(payload)));
+}
+
+function _pbHealthRenderCleanupButtons(issue, values) {
+  const fieldKeys = (issue.field.keys || [issue.field.sanitizeKey || issue.field.key])
+    .filter(Boolean)
+    .filter((key, idx, arr) => arr.indexOf(key) === idx);
+  const issueValues = issue.variants || issue.values || [];
+  const keysWithItems = fieldKeys.filter((key) =>
+    issueValues.some((value) => (value.items || []).some((item) => item.key === key)),
+  );
+  return (keysWithItems.length ? keysWithItems : [issue.field.sanitizeKey || fieldKeys[0]])
+    .map((key) => {
+      const label = issue.field.keys && issue.field.keys.length > 1
+        ? `Cleanup ${_pbHealthFieldLabel(key)}`
+        : "Cleanup";
+      return `<button type="button" class="btn btn-xs"
+        data-action="openPlaybookSanitizeIssue"
+        data-arg="${_pbHealthCleanupArg(key, values)}">${escapeHtml(label)}</button>`;
+    })
+    .join("");
+}
+
 function _pbHealthRenderCasingIssue(issue) {
-  const sanitizeKey = issue.field.sanitizeKey || issue.field.keys[0];
+  const values = issue.variants.map((variant) => variant.value);
   const valueHtml = issue.variants
     .map(
       (variant) => `<span class="pb-health-vocab-chip">
@@ -140,7 +168,7 @@ function _pbHealthRenderCasingIssue(issue) {
         <strong>Casing / spacing</strong>
         <span>${escapeHtml(issue.field.label)} has ${issue.variants.length} variants</span>
       </div>
-      <button type="button" class="btn btn-xs" data-action="openPlaybookSanitizeField" data-arg="${escapeHtml(sanitizeKey)}">Cleanup</button>
+      ${_pbHealthRenderCleanupButtons(issue, values)}
     </div>
     <div class="pb-health-vocab-values">${valueHtml}</div>
     ${_pbHealthRenderVocabSamples(samples)}
@@ -148,7 +176,7 @@ function _pbHealthRenderCasingIssue(issue) {
 }
 
 function _pbHealthRenderSpellingIssue(issue) {
-  const sanitizeKey = issue.field.sanitizeKey || issue.field.keys[0];
+  const values = issue.values.map((value) => value.value);
   const valueHtml = issue.values
     .map(
       (value) => `<span class="pb-health-vocab-chip">
@@ -164,7 +192,7 @@ function _pbHealthRenderSpellingIssue(issue) {
         <strong>Possible spelling mismatch</strong>
         <span>${escapeHtml(issue.field.label)} values are ${issue.distance} edit${issue.distance === 1 ? "" : "s"} apart</span>
       </div>
-      <button type="button" class="btn btn-xs" data-action="openPlaybookSanitizeField" data-arg="${escapeHtml(sanitizeKey)}">Cleanup</button>
+      ${_pbHealthRenderCleanupButtons(issue, values)}
     </div>
     <div class="pb-health-vocab-values">${valueHtml}</div>
     ${_pbHealthRenderVocabSamples(samples)}
@@ -521,6 +549,25 @@ function openPlaybookSanitizeField(fieldKey) {
   closePlaybookDataHealth();
   _sanitizeFieldKey = fieldKey;
   openPlaybookSanitize();
+}
+
+function openPlaybookSanitizeIssue(encodedPayload) {
+  let payload = null;
+  try {
+    payload = JSON.parse(decodeURIComponent(String(encodedPayload || "")));
+  } catch (_err) {
+    payload = null;
+  }
+  const fieldKey = payload?.fieldKey;
+  const values = Array.isArray(payload?.values) ? payload.values : [];
+  if (!_sanitizeFieldDef(fieldKey) || !values.length) return;
+  closePlaybookDataHealth();
+  if (typeof openPlaybookSanitizeFocused === "function") {
+    openPlaybookSanitizeFocused(fieldKey, values);
+  } else {
+    _sanitizeFieldKey = fieldKey;
+    openPlaybookSanitize();
+  }
 }
 
 function openPlaybookHealthCleanup() {
