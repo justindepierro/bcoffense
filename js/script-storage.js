@@ -347,6 +347,12 @@ async function saveScript() {
           ? isSavedScriptPlayerVisible(existing)
           : Boolean(existing.playerVisible)) {
           existing.playerPublishedAt = existing.savedAt;
+          if (typeof recordPlayerPublishStatus === "function") {
+            recordPlayerPublishStatus("scripts", {
+              updatedAt: existing.playerPublishedAt,
+              label: existing.name || "Practice script",
+            });
+          }
         }
         storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
         loadSavedScriptsList();
@@ -442,6 +448,12 @@ async function overwriteSavedScript(id) {
     ? isSavedScriptPlayerVisible(savedScript)
     : Boolean(savedScript.playerVisible)) {
     savedScript.playerPublishedAt = savedScript.savedAt;
+    if (typeof recordPlayerPublishStatus === "function") {
+      recordPlayerPublishStatus("scripts", {
+        updatedAt: savedScript.playerPublishedAt,
+        label: savedScript.name || "Practice script",
+      });
+    }
   }
   storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
   loadSavedScriptsList();

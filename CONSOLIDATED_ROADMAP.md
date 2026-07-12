@@ -129,7 +129,7 @@ clear update experience that makes both visible.
 - [ ] Add a player-facing "Checking for team updates" state on login/dashboard
   that distinguishes app version updates from practice-data updates.
 - [x] Add a visible "Updated at" / "Practice version" marker on Player Home.
-- [ ] Add a coach-side publish status showing when player-visible scripts,
+- [x] Add a coach-side publish status showing when player-visible scripts,
   diagrams, clips, and quiz sources were last changed.
 - [ ] Add a manual "Refresh team app" action for players that updates the app
   shell and re-renders player data without requiring them to know browser cache
@@ -143,6 +143,35 @@ Definition of done:
 - Coaches can tell whether a report is a cache/app-version issue or a data
   publish/sync issue.
 - Updating does not interrupt coaches with unsaved local work.
+
+### 0C. Notifications, Comments, and Player Alerts
+
+Why now: scripts, quiz availability, play discussions, and coach replies now
+span several player-facing surfaces. Athletes need useful alerts when new team
+work is available, and coaches/admins need one reliable place to see player
+comments and questions instead of missing them inside individual plays.
+
+- [ ] Add a unified notification inbox for coaches/admins covering player play
+  comments, questions, replies, quiz completions, rewards, and moderation items.
+- [ ] Add player notifications for newly published scripts, newly available or
+  unlocked quizzes, coach replies, approved discussion replies, clips/diagrams
+  added to assigned plays, and team announcements.
+- [ ] Add unread counts/badges that roll up from play discussion threads into
+  Dashboard, Playbook, Script, and Game Plan surfaces.
+- [ ] Add a coach review queue for player comments on plays so comments cannot
+  disappear inside a play drawer.
+- [ ] Add notification preference and delivery-state UI for players: allowed,
+  blocked, quiet/offline, and last checked.
+- [ ] Include notification sync status in the player update/freshness experience
+  so athletes know whether alerts are current on their device.
+
+Definition of done:
+
+- Coaches can see and respond to player comments/questions from one inbox.
+- Players get clear alerts for new scripts, quiz work, replies, and important
+  media updates.
+- Notification state is visible enough to tell app-cache, sync, and permission
+  problems apart.
 
 ### 1. Diagram and Play Identity Hardening
 

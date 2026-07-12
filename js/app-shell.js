@@ -1654,6 +1654,12 @@ async function mobileCoachTogglePublish() {
   target.playerVisible = nowPublished;
   if (nowPublished) {
     target.playerPublishedAt = new Date().toISOString();
+    if (typeof recordPlayerPublishStatus === "function") {
+      recordPlayerPublishStatus("scripts", {
+        updatedAt: target.playerPublishedAt,
+        label: target.name || "Practice script",
+      });
+    }
   } else {
     target.playerUnpublishedAt = new Date().toISOString();
   }

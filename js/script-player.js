@@ -180,6 +180,186 @@ function getSavedScriptStats(savedScript) {
   };
 }
 
+function _playerPublishStatusStorageKey() {
+  return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_PUBLISH_STATUS
+    ? STORAGE_KEYS.PLAYER_PUBLISH_STATUS
+    : "playerPublishStatus";
+}
+
+function _playerPublishTimestamp(value) {
+  const parsed = Date.parse(value || "");
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function _formatCoachPublishTime(value) {
+  const ts = _playerPublishTimestamp(value);
+  if (!ts) return "Not tracked yet";
+  return new Date(ts).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function _formatCoachPublishRelative(value) {
+  const ts = _playerPublishTimestamp(value);
+  if (!ts) return "";
+  const delta = Math.max(0, Date.now() - ts);
+  const mins = Math.floor(delta / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function getPlayerPublishStatus() {
+  if (typeof storageManager === "undefined" || typeof storageManager.get !== "function") return {};
+  const raw = storageManager.get(_playerPublishStatusStorageKey(), {});
+  return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+}
+
+function recordPlayerPublishStatus(kind, details = {}) {
+  if (!kind || typeof storageManager === "undefined" || typeof storageManager.set !== "function") return;
+  const status = getPlayerPublishStatus();
+  const previous = status[kind] && typeof status[kind] === "object" ? status[kind] : {};
+  status[kind] = {
+    ...previous,
+    ...details,
+    updatedAt: details.updatedAt || new Date().toISOString(),
+  };
+  storageManager.set(_playerPublishStatusStorageKey(), status);
+  if (typeof renderCoachPublishStatus === "function") renderCoachPublishStatus();
+}
+
+function _getLatestPlayerScriptPublish(savedScripts = getSavedScripts()) {
+  const visible = savedScripts.filter((savedScript) => savedScript.playerVisible);
+  const latest = visible
+    .map((savedScript) => ({
+      savedScript,
+      updatedAt: savedScript.playerPublishedAt || savedScript.savedAt || "",
+    }))
+    .filter((entry) => _playerPublishTimestamp(entry.updatedAt))
+    .sort((a, b) => _playerPublishTimestamp(b.updatedAt) - _playerPublishTimestamp(a.updatedAt))[0];
+  return {
+    count: visible.length,
+    updatedAt: latest?.updatedAt || "",
+    label: latest?.savedScript?.name || "",
+  };
+}
+
+function _getLatestQuizSourcePublish() {
+  let settings = {};
+  if (typeof _getPlayerQuizSourceSettings === "function") {
+    settings = _getPlayerQuizSourceSettings();
+  } else if (typeof storageManager !== "undefined" && typeof storageManager.get === "function") {
+    const key = typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS
+      ? STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS
+      : "playerQuizSourceSettings";
+    settings = storageManager.get(key, {});
+  }
+  const latest = Object.entries(settings && typeof settings === "object" ? settings : {})
+    .map(([key, entry]) => ({
+      key,
+      state: entry?.state || "",
+      updatedAt: entry?.updatedAt || "",
+    }))
+    .filter((entry) => _playerPublishTimestamp(entry.updatedAt))
+    .sort((a, b) => _playerPublishTimestamp(b.updatedAt) - _playerPublishTimestamp(a.updatedAt))[0];
+  return {
+    count: Object.keys(settings && typeof settings === "object" ? settings : {}).length,
+    updatedAt: latest?.updatedAt || "",
+    label: latest ? `${latest.key.replace(":", " ")} (${latest.state || "set"})` : "",
+  };
+}
+
+function _coachPublishStatusItem({ kind, title, updatedAt, label, detail, tone }) {
+  const hasTime = Boolean(_playerPublishTimestamp(updatedAt));
+  const rel = _formatCoachPublishRelative(updatedAt);
+  return `<div class="coach-publish-status-item coach-publish-status-item--${escapeAttr(tone || (hasTime ? "ready" : "empty"))}">
+    <span class="coach-publish-status-item__kind">${escapeHtml(kind)}</span>
+    <strong>${escapeHtml(title)}</strong>
+    <span>${escapeHtml(hasTime ? _formatCoachPublishTime(updatedAt) : "Not tracked yet")}</span>
+    <small>${escapeHtml(label || detail || (rel ? `Changed ${rel}` : "No player-facing update recorded."))}</small>
+  </div>`;
+}
+
+function renderCoachPublishStatus() {
+  const panel = document.getElementById("coachPublishStatusPanel");
+  if (!panel) return;
+  if (typeof canEditUser === "function" && !canEditUser()) {
+    panel.innerHTML = "";
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+  const savedScripts = getSavedScripts();
+  const scriptStatus = _getLatestPlayerScriptPublish(savedScripts);
+  const mediaStatus = getPlayerPublishStatus();
+  const diagramStatus = mediaStatus.diagrams || {};
+  const clipStatus = mediaStatus.clips || {};
+  const quizStatus = _getLatestQuizSourcePublish();
+  const visibleLabel = scriptStatus.count === 1 ? "1 script visible to players" : `${scriptStatus.count} scripts visible to players`;
+  const quizLabel = quizStatus.count === 1 ? "1 quiz source configured" : `${quizStatus.count} quiz sources configured`;
+  panel.innerHTML = `
+    <section class="coach-publish-status" aria-label="Player publish status">
+      <div class="coach-publish-status__head">
+        <div>
+          <span>Player publish status</span>
+          <strong>What players can receive</strong>
+        </div>
+        <small>Use this to separate old-device cache reports from content that has not been published yet.</small>
+      </div>
+      <div class="coach-publish-status__grid">
+        ${_coachPublishStatusItem({
+          kind: "Scripts",
+          title: scriptStatus.updatedAt ? "Last script publish" : "No player script publish",
+          updatedAt: scriptStatus.updatedAt,
+          label: scriptStatus.label ? `${scriptStatus.label} - ${visibleLabel}` : visibleLabel,
+        })}
+        ${_coachPublishStatusItem({
+          kind: "Diagrams",
+          title: diagramStatus.updatedAt ? "Last diagram update" : "No diagram update tracked",
+          updatedAt: diagramStatus.updatedAt,
+          label: diagramStatus.label || (diagramStatus.count ? `${diagramStatus.count} diagrams synced` : "Tracked after next upload or sync."),
+        })}
+        ${_coachPublishStatusItem({
+          kind: "Clips",
+          title: clipStatus.updatedAt ? "Last clip update" : "No clip update tracked",
+          updatedAt: clipStatus.updatedAt,
+          label: clipStatus.label || "Tracked after next clip upload or delete.",
+        })}
+        ${_coachPublishStatusItem({
+          kind: "Quizzes",
+          title: quizStatus.updatedAt ? "Last quiz source change" : "No quiz source changes",
+          updatedAt: quizStatus.updatedAt,
+          label: quizStatus.label || quizLabel,
+        })}
+      </div>
+    </section>
+  `;
+}
+
+function renderSavedScriptPublishMeta(savedScript) {
+  const publishedAt = savedScript.playerPublishedAt || "";
+  const unpublishedAt = savedScript.playerUnpublishedAt || "";
+  if (savedScript.playerVisible && publishedAt) {
+    return `<div class="saved-card-publish-meta saved-card-publish-meta--visible">
+      <span>Published to players</span>
+      <strong>${escapeHtml(_formatCoachPublishTime(publishedAt))}</strong>
+    </div>`;
+  }
+  if (!savedScript.playerVisible && unpublishedAt) {
+    return `<div class="saved-card-publish-meta">
+      <span>Removed from players</span>
+      <strong>${escapeHtml(_formatCoachPublishTime(unpublishedAt))}</strong>
+    </div>`;
+  }
+  return "";
+}
+
 function getPlayerPublishedScripts() {
   return getSavedScripts()
     .filter((savedScript) => savedScript.playerVisible)
@@ -467,6 +647,7 @@ function loadSavedScriptsList() {
 
   if (savedScripts.length === 0) {
     section.classList.add("hidden");
+    renderCoachPublishStatus();
     loadFullDayScriptList();
     renderPlayerScriptLauncher();
     renderPlayerLoadedScriptBar();
@@ -502,6 +683,7 @@ function loadSavedScriptsList() {
 	                    ${restoresWorkspace ? '<span>🧭 Restores workspace</span>' : ""}
 	                    ${stats.savedTime ? `<span>💾 ${stats.savedTime}</span>` : ""}
 	                  </div>
+                    ${renderSavedScriptPublishMeta(savedScript)}
 	                  ${stats.periods ? `<div class="saved-card-periods">${escapeHtml(stats.periods)}</div>` : ""}
 	                </div>
 	                <div class="saved-card-actions">
@@ -521,6 +703,7 @@ function loadSavedScriptsList() {
     })
     .join("");
 
+  renderCoachPublishStatus();
   loadFullDayScriptList();
   renderPlayerScriptLauncher();
   renderPlayerLoadedScriptBar();
@@ -802,6 +985,10 @@ function togglePlayerScriptAccess(id, event) {
   savedScript.playerVisible = Boolean(event?.target?.checked);
   if (savedScript.playerVisible) {
     savedScript.playerPublishedAt = new Date().toISOString();
+    recordPlayerPublishStatus("scripts", {
+      updatedAt: savedScript.playerPublishedAt,
+      label: savedScript.name || "Practice script",
+    });
   } else {
     savedScript.playerUnpublishedAt = new Date().toISOString();
   }

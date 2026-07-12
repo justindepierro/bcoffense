@@ -242,6 +242,14 @@
       throw new Error((data && data.error) || "Upload failed.");
     }
     if (_indexSet) _indexSet.add(sig);
+    if (typeof window.recordPlayerPublishStatus === "function") {
+      window.recordPlayerPublishStatus("clips", {
+        updatedAt: data.clip?.uploadedAt || new Date().toISOString(),
+        label: data.clip?.label
+          ? `Clip uploaded: ${data.clip.label}`
+          : "Video clip uploaded to player devices",
+      });
+    }
     _emitClipChange(sig);
     return data;
   }
@@ -264,6 +272,11 @@
     }
     if (_indexSet && Array.isArray(data.clips) && !data.clips.length) {
       _indexSet.delete(sig);
+    }
+    if (typeof window.recordPlayerPublishStatus === "function") {
+      window.recordPlayerPublishStatus("clips", {
+        label: "Video clip removed from player devices",
+      });
     }
     _emitClipChange(sig);
     return data;

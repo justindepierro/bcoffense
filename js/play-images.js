@@ -575,7 +575,13 @@
       return { ok: false, skipped: true, error: "This play does not have a stable cloud image key." };
     }
     try {
-      return await _putRemoteImage(identityKey, blob);
+      const result = await _putRemoteImage(identityKey, blob);
+      if (result.ok && typeof window.recordPlayerPublishStatus === "function") {
+        window.recordPlayerPublishStatus("diagrams", {
+          label: "Play diagram uploaded to player devices",
+        });
+      }
+      return result;
     } catch (err) {
       return {
         ok: false,
@@ -589,7 +595,7 @@
     const identityKey = _remoteIdentityKey(play);
     if (!identityKey) return;
     try {
-      await fetch(`/images/file?sig=${encodeURIComponent(identityKey)}`, {
+      const response = await fetch(`/images/file?sig=${encodeURIComponent(identityKey)}`, {
         method: "DELETE",
         credentials: "same-origin",
         headers: {
@@ -597,6 +603,11 @@
           "X-BC-Auth-Mode": "json",
         },
       });
+      if (response.ok && typeof window.recordPlayerPublishStatus === "function") {
+        window.recordPlayerPublishStatus("diagrams", {
+          label: "Play diagram removed from player devices",
+        });
+      }
     } catch (_e) {
       // Fire and forget
     }
@@ -685,6 +696,12 @@
         }
       }
     });
+    if (result.pushed > 0 && typeof window.recordPlayerPublishStatus === "function") {
+      window.recordPlayerPublishStatus("diagrams", {
+        count: result.pushed,
+        label: `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} synced to player devices`,
+      });
+    }
     return result;
   }
 

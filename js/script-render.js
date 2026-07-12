@@ -1691,12 +1691,19 @@ function _getQuizSourceSetting(kind, id) {
 }
 
 function _setQuizSourceState(kind, id, state) {
+  const updatedAt = new Date().toISOString();
   const settings = _getPlayerQuizSourceSettings();
   settings[_quizSourceKey(kind, id)] = {
     state: _normalizeQuizSourceState(state),
-    updatedAt: new Date().toISOString(),
+    updatedAt,
   };
   _savePlayerQuizSourceSettings(settings);
+  if (typeof recordPlayerPublishStatus === "function") {
+    recordPlayerPublishStatus("quizzes", {
+      updatedAt,
+      label: `${kind === "gameplan" ? "Game Plan" : "Script"} quiz set to ${state === "coach" ? "coach-only" : state}`,
+    });
+  }
 }
 
 function _getQuizSourceState(kind, source = {}) {
@@ -4792,6 +4799,17 @@ function setCoachQuizSourceState(arg = "") {
     const target = saved.find((scriptRecord) => String(scriptRecord?.id || "") === id);
     if (target) {
       target.playerVisible = state !== "coach";
+      if (target.playerVisible) {
+        target.playerPublishedAt = new Date().toISOString();
+        if (typeof recordPlayerPublishStatus === "function") {
+          recordPlayerPublishStatus("scripts", {
+            updatedAt: target.playerPublishedAt,
+            label: target.name || "Practice script",
+          });
+        }
+      } else {
+        target.playerUnpublishedAt = new Date().toISOString();
+      }
       storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, saved);
       if (typeof loadSavedScriptsList === "function") loadSavedScriptsList();
       if (typeof renderPlayerScriptLauncher === "function") renderPlayerScriptLauncher();
