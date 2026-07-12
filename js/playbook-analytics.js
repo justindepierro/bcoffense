@@ -131,12 +131,23 @@ const PLAYBOOK_HEALTH_CSV_VALUE_RULES = [
 ];
 
 function _pbHealthNorm(value) {
+  if (typeof _sanitizeComparableValue === "function") {
+    return _sanitizeComparableValue(value).spaced;
+  }
   return String(value || "")
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
-    .trim();
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function _pbHealthCompactNorm(value) {
+  if (typeof _sanitizeComparableValue === "function") {
+    return _sanitizeComparableValue(value).compact;
+  }
+  return _pbHealthNorm(value).replace(/\s+/g, "");
 }
 
 function _pbHealthExactKey(play) {
@@ -280,9 +291,17 @@ function _pbHealthDetectSpelling(entries) {
             _pbHealthSpellThreshold(a.norm),
             _pbHealthSpellThreshold(b.norm),
           );
-          if (Math.abs(a.norm.length - b.norm.length) > threshold) continue;
+          const aCompact = _pbHealthCompactNorm(a.value);
+          const bCompact = _pbHealthCompactNorm(b.value);
+          if (
+            Math.abs(a.norm.length - b.norm.length) > threshold &&
+            Math.abs(aCompact.length - bCompact.length) > threshold
+          ) continue;
           if (a.norm.startsWith(b.norm) || b.norm.startsWith(a.norm)) continue;
-          const distance = _sanitizeLevenshtein(a.norm, b.norm, threshold);
+          const distance = Math.min(
+            _sanitizeLevenshtein(a.norm, b.norm, threshold),
+            _sanitizeLevenshtein(aCompact, bCompact, threshold),
+          );
           if (distance <= 0 || distance > threshold) continue;
           fieldIssues.push({
             type: "spelling",

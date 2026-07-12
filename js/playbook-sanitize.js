@@ -126,6 +126,21 @@ function _sanitizeInvalidateVocab() {
   _sanitizeVocabCacheKey = "";
 }
 
+function _sanitizeComparableValue(value) {
+  const spaced = String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+  return {
+    spaced,
+    compact: spaced.replace(/\s+/g, ""),
+  };
+}
+
 /** Levenshtein distance with early-exit for large differences. */
 function _sanitizeLevenshtein(a, b, max) {
   if (a === b) return 0;
@@ -163,23 +178,40 @@ function _sanitizeLevenshtein(a, b, max) {
 function _sanitizeFindSimilar(value, vocab) {
   const v = String(value || "").trim();
   if (!v) return [];
+  const vComparable = _sanitizeComparableValue(v);
   const vLower = v.toLowerCase();
   // Threshold scales with length: short words tolerate fewer typos.
-  const threshold = v.length <= 3 ? 1 : v.length <= 6 ? 2 : 3;
+  const compareLength = Math.max(vComparable.compact.length, vComparable.spaced.length);
+  const threshold = compareLength <= 3 ? 1 : compareLength <= 6 ? 2 : 3;
   const scored = [];
   for (const candidate of vocab) {
     if (candidate === v) continue; // exact match → not a typo
     const cLower = candidate.toLowerCase();
+    const cComparable = _sanitizeComparableValue(candidate);
     if (cLower === vLower) {
       scored.push({ candidate, score: 0 });
       continue;
     }
-    const dist = _sanitizeLevenshtein(vLower, cLower, threshold);
+    if (
+      cComparable.spaced === vComparable.spaced ||
+      cComparable.compact === vComparable.compact
+    ) {
+      scored.push({ candidate, score: 0.1 });
+      continue;
+    }
+    const dist = Math.min(
+      _sanitizeLevenshtein(vComparable.spaced, cComparable.spaced, threshold),
+      _sanitizeLevenshtein(vComparable.compact, cComparable.compact, threshold),
+      _sanitizeLevenshtein(vLower, cLower, threshold),
+    );
     if (dist <= threshold) {
       // Prefer prefixes / contained matches.
       let bonus = 0;
-      if (cLower.startsWith(vLower) || vLower.startsWith(cLower)) bonus -= 0.5;
-      if (cLower.includes(vLower)) bonus -= 0.25;
+      if (
+        cComparable.compact.startsWith(vComparable.compact) ||
+        vComparable.compact.startsWith(cComparable.compact)
+      ) bonus -= 0.5;
+      if (cComparable.compact.includes(vComparable.compact)) bonus -= 0.25;
       scored.push({ candidate, score: dist + bonus });
     }
   }
@@ -720,4 +752,3 @@ function openPlayEditorFromSanitize(masterIdxStr) {
 
   openPlayEditor(filteredIdx);
 }
-

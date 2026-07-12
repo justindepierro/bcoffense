@@ -1847,6 +1847,23 @@ body.is-short-screen .auth-login-player-shortcut,
   border: 1.5px solid var(--color-primary);
 }
 
+[data-theme="dark"] .btn-primary {
+  background: #3865c8;
+  border-color: #3865c8;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .btn-primary:hover {
+  background: #4778dc;
+  border-color: #4778dc;
+}
+
+[data-theme="dark"] .btn-outline:hover {
+  background: #3865c8;
+  border-color: #3865c8;
+  color: #ffffff;
+}
+
 /* ghost (subtle toolbar-style) */
 .btn-ghost {
   background: transparent;

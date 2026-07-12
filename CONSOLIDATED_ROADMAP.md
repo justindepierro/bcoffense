@@ -1,6 +1,6 @@
 # BCOffense Active Roadmap
 
-Last updated: 2026-07-08
+Last updated: 2026-07-12
 
 This is the single active work queue for BCOffense. Older roadmap files were
 scanned in July 2026; completed or superseded docs were removed so we do not
@@ -27,6 +27,67 @@ Deleted as completed or superseded:
 - `REFACTOR_ROADMAP.md` - active refactor order folded below.
 
 ## Current Best Next Work
+
+### 0. Playbook Data Quality, Media, and Signal Collection
+
+Why now: play identity, clean vocabulary, diagrams, clips, and signals are all
+part of the same coach-to-player handoff. If these are treated separately,
+small naming inconsistencies and media gaps keep leaking into Script, Playbook,
+Wristband, and player study workflows.
+
+Data normalization policy:
+
+- [ ] Keep stored playbook text human-readable instead of forcing every field to
+  all caps at write time.
+- [ ] Add canonical compare keys for routing, duplicate detection, matching, and
+  analytics: trim whitespace, collapse punctuation/hyphens, ignore case, and
+  strip accents.
+- [ ] Add an optional display setting for uppercase call rendering where a coach
+  wants a uniform look on print/player views.
+- [ ] Add a bulk "standardize selected field" cleanup action that applies the
+  most common capitalization/spelling variant after review.
+
+Cleanup intelligence:
+
+- [x] Fuzzy cleanup suggestions compare case-insensitive values.
+- [x] Fuzzy cleanup suggestions understand punctuation/hyphen/connected-word
+  variants and one-letter misses.
+- [ ] Add one-click merge from a health issue into the field cleanup panel with
+  the suspected variants prefiltered.
+- [ ] Add preview counts before applying any bulk rename.
+
+Diagram/media workflow:
+
+- [x] Allow image and clip selection while creating a new play; attach/upload the
+  pending media after the play is saved.
+- [x] Presentation diagrams already trim whitespace to the drawn content with a
+  buffer and fit to the screen aspect ratio.
+- [ ] Reuse smart-crop rendering for Playbook cards, editor previews, and any
+  player-facing diagram view that still uses raw `<img>` containment.
+- [ ] Add a small "fit: full / smart crop" control if coaches need to inspect
+  edge labels that the cropper considers whitespace.
+
+Signal collection:
+
+- [ ] Create a new Signals tab available to athletes, coaches, and admins.
+- [ ] Store signal records as short clips under 5 seconds with role-safe viewing
+  and coach/admin management.
+- [ ] Model each signal against a component type: formation, form tag, motion,
+  play name, play tag, protection, line call, or custom.
+- [ ] Let a play resolve related signals by its components so one play can show
+  multiple signals.
+- [ ] Add a Playbook detail surface for "Signals for this play."
+- [ ] Add Script integration so athletes can see the signals for the current
+  scripted play or period.
+- [ ] Decide whether signal media reuses the existing R2 clip pipeline or gets a
+  separate `signals/*` manifest for cleaner permissions and retention.
+
+Definition of done:
+
+- Coaches can clean data without losing the original readable play names.
+- New plays can be created with diagrams/clips in one pass.
+- Signal clips are searchable by component and visible from a play without
+  duplicating media per play.
 
 ### 1. Diagram and Play Identity Hardening
 

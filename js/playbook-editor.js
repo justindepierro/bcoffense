@@ -1,5 +1,7 @@
 /** Index into master `plays` array of the play being edited, or -1 for new */
 let _editingMasterIdx = -1;
+let _pendingPlayEditorImage = null;
+let _pendingPlayEditorClips = [];
 
 /** Responsibility position columns for player wristband printing. */
 const RESP_POSITIONS = [
@@ -17,6 +19,14 @@ const RESP_POSITIONS = [
 ];
 /** Index into `filteredPlays` of the play being edited, for prev/next nav */
 let _editingFilteredIdx = -1;
+
+function _resetPendingPlayEditorMedia() {
+  if (_pendingPlayEditorImage?.url) {
+    try { URL.revokeObjectURL(_pendingPlayEditorImage.url); } catch (_err) { /* ignore */ }
+  }
+  _pendingPlayEditorImage = null;
+  _pendingPlayEditorClips = [];
+}
 
 /**
  * Build a sorted, deduplicated option list from actual playbook values
@@ -307,6 +317,7 @@ function _buildPlayEditorLineupSection(play) {
 }
 
 function openPlayEditor(filteredIdx) {
+  _resetPendingPlayEditorMedia();
   const play = filteredPlays[filteredIdx];
   if (!play) return;
   _editingFilteredIdx = filteredIdx;
@@ -322,6 +333,7 @@ function addNewPlay() {
     showToast("Import a playbook CSV first", { duration: 3000, type: "error" });
     return;
   }
+  _resetPendingPlayEditorMedia();
   _editingMasterIdx = -1;
   _editingFilteredIdx = -1;
   const blank = {};
@@ -591,10 +603,15 @@ function savePlayEditor(opts = {}) {
     if (data.playerAssignments) newPlay.playerAssignments = data.playerAssignments;
     plays.push(newPlay);
     _syncGamePlanCheckbox(newPlay);
+    _editingMasterIdx = plays.length - 1;
     showToast("➕ Play added to playbook", { duration: 2000, type: "success" });
   }
 
   storageManager.setPlaybook(plays);
+  const savedPlay = _editingMasterIdx >= 0 ? plays[_editingMasterIdx] : null;
+  if (wasNew && savedPlay) {
+    _flushPendingPlayEditorMedia(savedPlay);
+  }
   invalidateFilterCache();
   filteredPlays = [...plays];
   filterPlays();
@@ -642,11 +659,13 @@ function closePlayEditor() {
   }
   _editingMasterIdx = -1;
   _editingFilteredIdx = -1;
+  _resetPendingPlayEditorMedia();
 }
 
 // Open editor directly from a play object (e.g. from script row)
 function openPlayEditorForPlay(play) {
   if (!play) return;
+  _resetPendingPlayEditorMedia();
   const filteredIdx = filteredPlays.findIndex((p) => p === play || playsMatch(p, play));
   _editingFilteredIdx = filteredIdx;
   _editingMasterIdx = filteredIdx >= 0
@@ -737,23 +756,77 @@ function _wirePlayEditorImage(play, isNew) {
   const previewEl = document.getElementById("peImagePreview");
   if (!fileInput || !previewEl) return;
 
-  // For brand-new plays, the signature isn't stable until save; keep the controls
-  // disabled so users save first, then add an image on the next open.
+  const trigger = previewEl.parentElement.querySelector('button[data-target="peImageFile"]');
   if (isNew) {
-    if (removeBtn) removeBtn.disabled = true;
-    fileInput.disabled = true;
-    const trigger = previewEl.parentElement.querySelector('button[data-target="peImageFile"]');
-    if (trigger) {
-      trigger.disabled = true;
-      trigger.title = "Save the play first, then re-open to add an image.";
+    const renderPending = () => {
+      if (_pendingPlayEditorImage?.url) {
+        previewEl.innerHTML = `<img src="${_pendingPlayEditorImage.url}" alt="Pending play diagram preview" />`;
+        if (removeBtn) removeBtn.style.display = "";
+        if (trigger) {
+          trigger.textContent = "Replace Image…";
+          trigger.title = "Image will attach when you save this play.";
+        }
+      } else {
+        previewEl.innerHTML = `<div class="pb-editor-image-placeholder">No image</div>`;
+        if (removeBtn) removeBtn.style.display = "none";
+        if (trigger) {
+          trigger.textContent = "Add Image…";
+          trigger.title = "Image will attach when you save this play.";
+        }
+      }
+    };
+    renderPending();
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files && fileInput.files[0];
+      fileInput.value = "";
+      if (!file) return;
+      try {
+        previewEl.classList.add("is-loading");
+        previewEl.setAttribute("aria-busy", "true");
+        previewEl.innerHTML = `<div class="pb-editor-image-placeholder"><strong>Optimizing ${Math.round((file.size || 0) / 1024)} KB image...</strong></div>`;
+        if (trigger) trigger.disabled = true;
+        const blob = await window.playImages.compress(file, {
+          maxDim: 2400,
+          quality: 0.92,
+        });
+        if (_pendingPlayEditorImage?.url) {
+          try { URL.revokeObjectURL(_pendingPlayEditorImage.url); } catch (_err) { /* ignore */ }
+        }
+        _pendingPlayEditorImage = {
+          blob,
+          sourceFile: file,
+          url: URL.createObjectURL(blob),
+        };
+        previewEl.classList.remove("is-loading");
+        previewEl.removeAttribute("aria-busy");
+        if (trigger) trigger.disabled = false;
+        renderPending();
+        showToast("Image ready. Save the play to attach it.", { duration: 2200, type: "success" });
+      } catch (err) {
+        previewEl.classList.remove("is-loading");
+        previewEl.removeAttribute("aria-busy");
+        if (trigger) trigger.disabled = false;
+        renderPending();
+        showToast(err && err.message ? err.message : "Could not prepare that image.", {
+          type: "error",
+          duration: 4000,
+        });
+      }
+    });
+    if (removeBtn) {
+      removeBtn.addEventListener("click", () => {
+        if (_pendingPlayEditorImage?.url) {
+          try { URL.revokeObjectURL(_pendingPlayEditorImage.url); } catch (_err) { /* ignore */ }
+        }
+        _pendingPlayEditorImage = null;
+        renderPending();
+      });
     }
     return;
   }
 
   const sig = (typeof playSignature === "function") ? playSignature(play) : "";
   if (!sig) return;
-
-  const trigger = previewEl.parentElement.querySelector('button[data-target="peImageFile"]');
   const setImageBusy = (message) => {
     previewEl.classList.add("is-loading");
     previewEl.setAttribute("aria-busy", "true");
@@ -868,9 +941,73 @@ function _wirePlayEditorClips(play, isNew) {
   const fileInput = document.getElementById("peClipFile");
   const canManage = window.playClips.canManage();
 
+  const trigger = actionsEl
+    ? actionsEl.querySelector('button[data-target="peClipFile"]')
+    : null;
+
   if (isNew) {
-    listEl.innerHTML = `<div class="pb-editor-clips-empty">Save the play first, then re-open to add clips.</div>`;
-    if (actionsEl) actionsEl.style.display = "none";
+    if (!canManage) {
+      listEl.innerHTML = `<div class="pb-editor-clips-empty">Only coaches can add clips.</div>`;
+      if (actionsEl) actionsEl.style.display = "none";
+      return;
+    }
+    const renderPendingClips = () => {
+      if (countEl) {
+        countEl.textContent = _pendingPlayEditorClips.length
+          ? `(${_pendingPlayEditorClips.length}/${window.playClips.MAX_CLIPS})`
+          : "";
+      }
+      if (!_pendingPlayEditorClips.length) {
+        listEl.innerHTML = `<div class="pb-editor-clips-empty">No clips selected yet.</div>`;
+      } else {
+        listEl.innerHTML = _pendingPlayEditorClips.map((clip, idx) => `
+          <div class="pb-editor-clip" data-pending-clip-idx="${idx}">
+            <div class="pb-editor-clip-meta">
+              <span class="pb-editor-clip-label">${escapeHtml(clip.label || clip.file.name || "Clip")}</span>
+              <span class="pb-editor-clip-sub">${(clip.file.size / (1024 * 1024)).toFixed(1)} MB • uploads when saved</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-danger pb-editor-clip-remove" data-pending-clip-remove="${idx}">Remove</button>
+          </div>
+        `).join("");
+      }
+      if (trigger) {
+        const atMax = _pendingPlayEditorClips.length >= window.playClips.MAX_CLIPS;
+        trigger.disabled = atMax;
+        trigger.textContent = atMax ? "Max 3 clips" : "Add Clip…";
+        trigger.title = "Clips will upload when you save this play.";
+      }
+      listEl.querySelectorAll("[data-pending-clip-remove]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.getAttribute("data-pending-clip-remove"));
+          if (Number.isInteger(idx)) _pendingPlayEditorClips.splice(idx, 1);
+          renderPendingClips();
+        });
+      });
+    };
+    renderPendingClips();
+    if (fileInput) {
+      fileInput.addEventListener("change", async () => {
+        const file = fileInput.files && fileInput.files[0];
+        fileInput.value = "";
+        if (!file) return;
+        if (_pendingPlayEditorClips.length >= window.playClips.MAX_CLIPS) {
+          showToast(`This play can have up to ${window.playClips.MAX_CLIPS} clips.`, {
+            type: "error",
+            duration: 3000,
+          });
+          return;
+        }
+        const label = await showPrompt("Label this clip (optional):", "", {
+          title: "Add Clip",
+          icon: "🎬",
+          placeholder: "e.g. Form signal",
+        });
+        if (label === null) return;
+        _pendingPlayEditorClips.push({ file, label: String(label || "").trim() });
+        renderPendingClips();
+        showToast("Clip ready. Save the play to upload it.", { duration: 2200, type: "success" });
+      });
+    }
     return;
   }
 
@@ -880,10 +1017,6 @@ function _wirePlayEditorClips(play, isNew) {
     if (actionsEl) actionsEl.style.display = "none";
     return;
   }
-
-  const trigger = actionsEl
-    ? actionsEl.querySelector('button[data-target="peClipFile"]')
-    : null;
 
   const requestPlaybookRefresh = () => {
     if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
@@ -993,6 +1126,44 @@ function _wirePlayEditorClips(play, isNew) {
       }
     });
   }
+}
+
+function _flushPendingPlayEditorMedia(play) {
+  const tasks = [];
+  if (_pendingPlayEditorImage?.blob && typeof window.playImages !== "undefined") {
+    const imageBlob = _pendingPlayEditorImage.blob;
+    tasks.push((async () => {
+      const sig = (typeof playSignature === "function") ? playSignature(play) : "";
+      if (!sig) throw new Error("Image could not attach because this play has no stable signature.");
+      await window.playImages.set(sig, imageBlob);
+      if (window.playImages.pushRemote) {
+        const cloudResult = await window.playImages.pushRemote(play, imageBlob);
+        if (cloudResult && cloudResult.ok === false && !cloudResult.skipped) {
+          throw new Error(`Image saved locally, but cloud upload failed: ${cloudResult.error || "Unknown error"}`);
+        }
+      }
+    })());
+  }
+  if (_pendingPlayEditorClips.length && typeof window.playClips !== "undefined") {
+    _pendingPlayEditorClips.forEach((clip) => {
+      tasks.push(window.playClips.upload(play, clip.file, clip.label));
+    });
+  }
+  if (!tasks.length) return;
+  Promise.allSettled(tasks).then((results) => {
+    const failed = results.filter((result) => result.status === "rejected");
+    if (failed.length) {
+      const first = failed[0].reason;
+      showToast(first && first.message ? first.message : "Some media could not attach.", {
+        type: "warning",
+        duration: 7000,
+      });
+    } else {
+      showToast("Media attached to new play", { type: "success", duration: 2400 });
+    }
+    if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+    else if (typeof renderPlaybook === "function") renderPlaybook();
+  });
 }
 
 function playEditorPrev() {
