@@ -608,6 +608,7 @@ function renderPlayReadinessScoreButtons(action, activeScore = 0, extraAttrs = "
       return `<button type="button" class="play-readiness-score-btn${active}"
         data-action="${escapeHtml(action)}" data-arg="${score}" ${extraAttrs}
         title="${score} \u2014 ${label}"
+        aria-pressed="${active ? "true" : "false"}"
         aria-label="Score ${score}/5: ${label}">${score}</button>`;
     })
     .join("");
@@ -909,6 +910,7 @@ function openPlayReadinessLogModalForPlay(play, context = {}) {
     btn.addEventListener("click", () => {
       overlay.querySelectorAll(".pr-log-score-grid .play-readiness-score-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
+      animatePlayReadinessScoreSelection(btn);
       const input = overlay.querySelector("#prLogScoreInput");
       if (input) input.value = btn.dataset.arg;
     });
@@ -974,6 +976,18 @@ function openPlayReadinessPresentationActionModal() { openPlayReadinessPresentat
 
 // ── Quick score (item 11) ─────────────────────────────────────────────────
 
+function animatePlayReadinessScoreSelection(element) {
+  if (!(element instanceof Element)) return false;
+  element.classList.remove("is-score-pulse");
+  // Restart the animation when coaches tap the same score repeatedly.
+  void element.offsetWidth;
+  element.classList.add("is-score-pulse");
+  window.setTimeout(() => {
+    element.classList.remove("is-score-pulse");
+  }, 360);
+  return true;
+}
+
 function quickScorePlayReadiness(play, rawScore, context = {}) {
   if (!play || !isPlayReadinessCoachRole()) return;
   const score = Math.max(1, Math.min(5, parseInt(rawScore, 10) || 3));
@@ -981,6 +995,7 @@ function quickScorePlayReadiness(play, rawScore, context = {}) {
   const repType = getPlayReadinessRepType("scout");
   const logId = createPlayId("quick");
   let undone = false;
+  const didAnimate = animatePlayReadinessScoreSelection(context.element);
 
   upsertPlayReadinessRecord(play, (record) => {
     record.logs = Array.isArray(record.logs) ? record.logs : [];
@@ -995,7 +1010,13 @@ function quickScorePlayReadiness(play, rawScore, context = {}) {
       createdAt: new Date().toISOString(),
     });
   });
-  refreshPlayReadinessSurfaces(context.source);
+
+  const refresh = () => refreshPlayReadinessSurfaces(context.source);
+  if (didAnimate) {
+    window.setTimeout(refresh, 120);
+  } else {
+    refresh();
+  }
 
   showUndoToast(
     `${score}/5 — ${_SCORE_LABELS[score]} logged`,
@@ -1013,17 +1034,17 @@ function quickScorePlayReadiness(play, rawScore, context = {}) {
   );
 }
 
-function quickPlayReadinessPlaybookScore(score) {
-  quickScorePlayReadiness(getPlayReadinessPlaybookPlay(selectedRowIndex), score, { source: "playbook" });
+function quickPlayReadinessPlaybookScore(score, element) {
+  quickScorePlayReadiness(getPlayReadinessPlaybookPlay(selectedRowIndex), score, { source: "playbook", element });
 }
 
 function quickPlayReadinessScriptScore(score, element) {
   const idx = parseInt(element?.dataset?.idx, 10);
-  quickScorePlayReadiness(getPlayReadinessScriptPlay(idx), score, { source: "script", index: idx });
+  quickScorePlayReadiness(getPlayReadinessScriptPlay(idx), score, { source: "script", index: idx, element });
 }
 
-function quickPlayReadinessPresentationScore(score) {
-  quickScorePlayReadiness(getPlayReadinessCurrentPresentationPlay(), score, { source: "presentation" });
+function quickPlayReadinessPresentationScore(score, element) {
+  quickScorePlayReadiness(getPlayReadinessCurrentPresentationPlay(), score, { source: "presentation", element });
 }
 
 // ── History modal (item 26) — unified log timeline ────────────────────────

@@ -1580,6 +1580,13 @@ body[data-auth-role="player"] .gp-card-btn {
   font-size: var(--font-size-sm);
   font-weight: 950;
   touch-action: manipulation;
+  transform: translateZ(0);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .play-readiness-score-btn.active,
@@ -1587,6 +1594,23 @@ body[data-auth-role="player"] .gp-card-btn {
   border-color: var(--color-primary);
   color: var(--color-text-inverse);
   background: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
+}
+
+.play-readiness-score-btn.is-score-pulse {
+  animation: prScoreSelectPulse 0.34s ease-out;
+}
+
+@keyframes prScoreSelectPulse {
+  0% {
+    transform: scale(0.96);
+  }
+  55% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 @media (hover: hover) {
@@ -1599,6 +1623,16 @@ body[data-auth-role="player"] .gp-card-btn {
   .play-readiness-score-btn.active:hover {
     color: var(--color-text-inverse);
     background: var(--color-primary);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play-readiness-score-btn {
+    transition: none;
+  }
+
+  .play-readiness-score-btn.is-score-pulse {
+    animation: none;
   }
 }
 

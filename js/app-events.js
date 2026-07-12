@@ -58,6 +58,8 @@ const _ELEMENT_FNS = new Set([
   "toggleScriptCheckbox",
   "toggleWbCheckbox",
   "quickPlayReadinessScriptScore",
+  "quickPlayReadinessPlaybookScore",
+  "quickPlayReadinessPresentationScore",
   "updatePlayReadinessReportScore",
   "deletePlayReadinessReport",
   "moveSortCriteria",

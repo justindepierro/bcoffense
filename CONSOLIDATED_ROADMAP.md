@@ -349,7 +349,7 @@ P0 UX changes:
 P1/P2 polish:
 
 - [x] Add last rep result inline in the widget header.
-- [ ] Animate score button selection.
+- [x] Animate score button selection.
 - [x] Remove "Seed Sample Data" from daily coach UI.
 - [ ] Redesign playbook readiness panel around the readiness score.
 - [ ] Redesign history and presentation coach cards around the new log model.
