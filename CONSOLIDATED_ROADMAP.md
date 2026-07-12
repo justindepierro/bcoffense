@@ -298,7 +298,8 @@ Migration order:
 
 - [x] Script command surface style pass: stop toolbar/action-button overflow and
   add a smoke-check style contract for the Script page controls.
-- [ ] Playbook command surface and player filters.
+- [x] Playbook command surface and player filters: stabilize top controls,
+  drawer actions, and player filter pills with a smoke-check style contract.
 - [ ] Game Plan command bar cleanup on shared primitives.
 - [ ] Wristband command hierarchy.
 - [ ] Call Sheet command hierarchy.

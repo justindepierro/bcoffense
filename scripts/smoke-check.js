@@ -146,6 +146,7 @@ function checkCssGuardrails() {
 
 function checkPageStyleContracts() {
   const scriptCss = read("css/script.css");
+  const playbookCss = read("css/playbook.css");
 
   if (
     !/\.script-workbench-controls\s*\{[\s\S]*grid-template-columns:\s*minmax\(220px,\s*1fr\)\s*minmax\(0,\s*1\.15fr\)\s*minmax\(150px,\s*0\.65fr\)/.test(scriptCss) ||
@@ -163,6 +164,26 @@ function checkPageStyleContracts() {
     !/@media \(max-width:\s*1180px\)[\s\S]*#script \.script-workbench-controls\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(0,\s*1fr\)[\s\S]*#script \.script-toolbar\s*\{[\s\S]*grid-template-columns:\s*1fr/.test(scriptCss)
   ) {
     fail("Script toolbar is missing overflow-safe responsive style rules");
+  }
+
+  if (
+    !/\.pb-top-row\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:[\s\S]*max-content\s*minmax\(220px,\s*1fr\)\s*minmax\(0,\s*auto\)[\s\S]*overflow:\s*clip/.test(playbookCss) ||
+    !/\.pb-top-row \.btn\s*\{[\s\S]*min-width:\s*0[\s\S]*white-space:\s*normal/.test(playbookCss) ||
+    !/\.pb-utility-group\s*\{[\s\S]*min-width:\s*0[\s\S]*max-width:\s*100%/.test(playbookCss) ||
+    !/@media \(max-width:\s*1180px\)[\s\S]*#playbook \.pb-top-row\s*\{[\s\S]*grid-template-columns:\s*max-content\s*minmax\(0,\s*1fr\)[\s\S]*#playbook \.pb-utility-group\s*\{[\s\S]*grid-column:\s*1\s*\/\s*-1[\s\S]*order:\s*10/.test(playbookCss)
+  ) {
+    fail("Playbook command surface is missing overflow-safe responsive style rules");
+  }
+
+  if (
+    !/\.pb-gp-actions\s*\{[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(96px,\s*1fr\)\)/.test(playbookCss) ||
+    !/\.pb-gp-actions \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(playbookCss) ||
+    !/\.pb-actions-row\s*\{[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(126px,\s*1fr\)\)/.test(playbookCss) ||
+    !/\.pb-action-btn\s*\{[\s\S]*min-width:\s*0[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(playbookCss) ||
+    !/\.pb-player-summary__filter-pill\s*\{[\s\S]*min-width:\s*0[\s\S]*text-overflow:\s*ellipsis/.test(playbookCss) ||
+    !/\.pb-player-filter-option\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(playbookCss)
+  ) {
+    fail("Playbook drawer actions or player filters are missing overflow-safe rules");
   }
 
   console.log("page style contracts ok");

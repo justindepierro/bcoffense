@@ -717,6 +717,7 @@ table.sortable th {
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
+  max-width: 100%;
   transition:
     background var(--transition-fast),
     border-color var(--transition-fast),
@@ -758,15 +759,16 @@ table.sortable th {
 /* Three-column action buttons */
 .pb-gp-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
   gap: 4px;
 }
 .pb-gp-actions .btn {
   justify-content: center;
   font-size: 10px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0;
+  line-height: 1.15;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* Play Editor Game Plan section */
@@ -1046,6 +1048,11 @@ table.sortable th {
 .pb-player-summary__filter-pill {
   cursor: pointer;
   font-family: inherit;
+  min-width: 0;
+  max-width: 100%;
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .pb-player-summary .btn {
@@ -1206,6 +1213,11 @@ table.sortable th {
   font-size: var(--font-size-sm);
   font-weight: 750;
   cursor: pointer;
+  max-width: 100%;
+  line-height: 1.15;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .pb-player-filter-option:hover,
@@ -1869,6 +1881,18 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
   white-space: nowrap;
 }
 
+@media (max-width: 1180px) {
+  #playbook .pb-top-row {
+    grid-template-columns: max-content minmax(0, 1fr) max-content max-content 44px;
+  }
+
+  #playbook .pb-utility-group {
+    grid-column: 1 / -1;
+    order: 10;
+    justify-content: flex-start;
+  }
+}
+
 /* ═══════════════ Phone primary-actions bottom sheet (M-034) ═══════════════ */
 /* Toggle button is phone-only; the full utility group stays on tablet/desktop. */
 .pb-action-sheet-toggle {
@@ -1887,6 +1911,7 @@ body.shell-phone .pb-utility-group {
    Present / Add Play / Help live in the #pbActionSheet, so hide the duplicated
    top-row copies (they otherwise stack full-width and balloon the container). */
 body.shell-phone .pb-top-row {
+  display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
@@ -2039,10 +2064,15 @@ body.shell-phone .pb-action-sheet {
   padding: 4px 8px;
 }
 .pb-top-row {
+  display: grid;
+  grid-template-columns:
+    max-content minmax(220px, 1fr) minmax(0, auto) max-content max-content
+    44px;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
+  overflow: clip;
 }
 
 .pb-top-row.toolbar-surface {
@@ -2051,12 +2081,18 @@ body.shell-phone .pb-action-sheet {
 
 .pb-top-row .btn {
   min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
+  justify-content: center;
+  line-height: 1.15;
+  white-space: normal;
 }
 
 /* Search */
 .pb-search-wrap {
   position: relative;
   flex: 1 1 200px;
+  width: 100%;
   min-width: 150px;
   max-width: 480px;
 }
@@ -2117,6 +2153,7 @@ body.shell-phone .pb-action-sheet {
   background: var(--color-white);
   flex: 1 1 100px;
   min-width: 80px;
+  max-width: 100%;
 }
 .pb-sort-group select:focus {
   border-color: var(--color-primary);
@@ -2160,11 +2197,12 @@ body.shell-phone .pb-action-sheet {
   align-items: center;
   gap: 5px;
   margin-top: 7px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 .pb-sort-preset-row select {
   flex: 1 1 120px;
   min-width: 80px;
+  max-width: 100%;
   padding: 4px 6px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -2187,6 +2225,12 @@ body.shell-phone .pb-action-sheet {
   flex-wrap: wrap;
   justify-content: flex-end;
   min-width: 0;
+  max-width: 100%;
+}
+
+.pb-utility-group .btn {
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Wristband highlight row — inside filter drawer */
@@ -2202,6 +2246,8 @@ body.shell-phone .pb-action-sheet {
 }
 .pb-wristband-filter-row select {
   flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
   padding: 5px 8px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -2413,11 +2459,12 @@ body.shell-phone .pb-action-sheet {
 /* -- Actions row -- */
 .pb-actions-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
   gap: 5px;
   padding: 8px 12px;
   border-top: 1px solid var(--color-border-light);
   background: var(--color-bg-light);
+  min-width: 0;
 }
 .pb-actions-left {
   display: contents; /* flatten into grid */
@@ -2435,7 +2482,10 @@ body.shell-phone .pb-action-sheet {
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  white-space: nowrap;
+  min-width: 0;
+  line-height: 1.15;
+  white-space: normal;
+  overflow-wrap: anywhere;
   transition: all var(--transition-fast);
   color: var(--color-text);
   text-align: center;
