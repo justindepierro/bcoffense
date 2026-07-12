@@ -148,6 +148,7 @@ function checkPageStyleContracts() {
   const scriptCss = read("css/script.css");
   const playbookCss = read("css/playbook.css");
   const gameplanCss = read("css/gameplan.css");
+  const wristbandCss = read("css/wristband.css");
   const gameplanRender = read("js/gameplan-render.js");
 
   if (
@@ -206,6 +207,26 @@ function checkPageStyleContracts() {
     !/\.gp-toolbar \.btn,[\s\S]*\.gp-toolbar-toggle,[\s\S]*\.gp-matchup-chip\s*\{[\s\S]*overflow-wrap:\s*anywhere/.test(gameplanCss)
   ) {
     fail("Game Plan filter toolbar is missing overflow-safe rules");
+  }
+
+  if (
+    !/\.wb-cmd-bar\s*\{[\s\S]*overflow:\s*clip/.test(wristbandCss) ||
+    !/\.wb-cmd-main\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(520px,\s*max-content\)/.test(wristbandCss) ||
+    !/\.wb-cmd-actions\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:[\s\S]*minmax\(88px,\s*max-content\)[\s\S]*repeat\([\s\S]*7,[\s\S]*minmax\(72px,\s*max-content\)/.test(wristbandCss) ||
+    !/\.wb-cmd-actions > \.btn,[\s\S]*\.wb-cmd-actions > \.tool-menu-wrap > \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(wristbandCss) ||
+    !/@media \(max-width:\s*1180px\)[\s\S]*#wristband \.wb-cmd-main\s*\{[\s\S]*grid-template-columns:\s*1fr[\s\S]*#wristband \.wb-cmd-actions\s*\{[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(92px,\s*1fr\)\)/.test(wristbandCss)
+  ) {
+    fail("Wristband command bar is missing overflow-safe shared-surface rules");
+  }
+
+  if (
+    !/\.wb-card-controls\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(116px,\s*max-content\)/.test(wristbandCss) ||
+    !/\.pc-mode-bar\s*\{[\s\S]*grid-template-columns:[\s\S]*auto-fit[\s\S]*minmax\(118px,\s*max-content\)[\s\S]*overflow:\s*clip/.test(wristbandCss) ||
+    !/\.pc-mode-bar \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(wristbandCss) ||
+    !/\.wb-batch-bar\s*\{[\s\S]*overflow:\s*clip/.test(wristbandCss) ||
+    !/\.wb-batch-controls\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(132px,\s*max-content\)\)/.test(wristbandCss)
+  ) {
+    fail("Wristband card, player, or batch controls are missing overflow-safe rules");
   }
 
   console.log("page style contracts ok");

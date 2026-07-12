@@ -304,7 +304,9 @@ Migration order:
   drawer actions, and player filter pills with a smoke-check style contract.
 - [x] Game Plan command bar cleanup on shared primitives: stabilize the
   identity/actions row and filter toolbar with a smoke-check style contract.
-- [ ] Wristband command hierarchy.
+- [x] Wristband command hierarchy: stabilize builder actions, Player Card
+  controls, card tabs, and batch edit controls with a smoke-check style
+  contract.
 - [ ] Call Sheet command hierarchy.
 - [ ] Dashboard/player portal quick actions.
 - [ ] Tendencies, Installation, Identity, and Offense Builder cleanup.
