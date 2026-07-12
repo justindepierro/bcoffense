@@ -269,6 +269,138 @@ function _dashRenderPlayerRefreshAction() {
   </section>`;
 }
 
+function _dashFormatDiagnosticDate(value) {
+  const ts = _dashGetTimestamp(value);
+  if (!ts) return "Not recorded";
+  const rel = _dashFormatRelativeTime(value);
+  const absolute = new Date(ts).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return rel ? `${absolute} (${rel})` : absolute;
+}
+
+function _dashLatestPlayerPublish(savedScripts = []) {
+  const scriptLatest = (Array.isArray(savedScripts) ? savedScripts : [])
+    .filter((savedScript) => savedScript?.playerVisible)
+    .map((savedScript) => ({
+      kind: "Script",
+      label: savedScript.name || "Practice script",
+      updatedAt: savedScript.playerPublishedAt || savedScript.savedAt || "",
+    }));
+  const publishStatus = typeof getPlayerPublishStatus === "function"
+    ? getPlayerPublishStatus()
+    : storageManager.get(STORAGE_KEYS.PLAYER_PUBLISH_STATUS, {});
+  const mediaLatest = Object.entries(
+    publishStatus && typeof publishStatus === "object" ? publishStatus : {},
+  ).map(([kind, entry]) => ({
+    kind: kind.charAt(0).toUpperCase() + kind.slice(1),
+    label: entry?.label || kind,
+    updatedAt: entry?.updatedAt || "",
+  }));
+  return [...scriptLatest, ...mediaLatest]
+    .filter((entry) => _dashGetTimestamp(entry.updatedAt))
+    .sort((a, b) => _dashGetTimestamp(b.updatedAt) - _dashGetTimestamp(a.updatedAt))[0] || null;
+}
+
+function _dashDiagnosticItem(label, value, detail = "", tone = "") {
+  return `<div class="dash-diagnostic-item${tone ? ` dash-diagnostic-item--${escapeAttr(tone)}` : ""}">
+    <span>${escapeHtml(label)}</span>
+    <strong>${escapeHtml(value)}</strong>
+    ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
+  </div>`;
+}
+
+function renderAdminDiagnosticsTile() {
+  const section = document.getElementById("dashDiagnosticsSection");
+  if (!section) return;
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  if (user?.role !== "admin") {
+    section.hidden = true;
+    section.innerHTML = "";
+    return;
+  }
+  section.hidden = false;
+  const cloud = storageManager.get(STORAGE_KEYS.CLOUD_SYNC_SETTINGS, {}) || {};
+  const savedScripts = typeof getSavedScripts === "function"
+    ? getSavedScripts()
+    : storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  const latestPublish = _dashLatestPlayerPublish(savedScripts);
+  const appVersion = _dashGetAppShellVersion() || "Unknown";
+  const serviceWorkerSupported = typeof navigator !== "undefined" && "serviceWorker" in navigator;
+  const controllerState = serviceWorkerSupported
+    ? (navigator.serviceWorker.controller ? "Active" : "Not controlling")
+    : "Unsupported";
+  const cloudDetail = [
+    cloud.lastRemoteExportDate ? `remote ${_dashFormatDiagnosticDate(cloud.lastRemoteExportDate)}` : "",
+    cloud.lastRemoteUpdatedAt ? `updated ${_dashFormatDiagnosticDate(cloud.lastRemoteUpdatedAt)}` : "",
+  ].filter(Boolean).join(" | ");
+  section.innerHTML = `
+    <div class="dash-diagnostics-card">
+      <div class="dash-diagnostics-head">
+        <div>
+          <span>Admin diagnostics</span>
+          <h3>Player update health</h3>
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary" data-action="renderAdminDiagnosticsTile">
+          Refresh
+        </button>
+      </div>
+      <div class="dash-diagnostics-grid">
+        ${_dashDiagnosticItem("App cache", appVersion, "Current loaded asset version", appVersion === "Unknown" ? "warn" : "ready")}
+        ${_dashDiagnosticItem("Service worker", controllerState, "Checking registration...", controllerState === "Active" ? "ready" : "warn")}
+        ${_dashDiagnosticItem("Last cloud pull", _dashFormatDiagnosticDate(cloud.lastPullAt), cloudDetail || "No pull recorded on this device", cloud.lastPullAt ? "ready" : "warn")}
+        ${_dashDiagnosticItem(
+    "Last player publish",
+    latestPublish ? _dashFormatDiagnosticDate(latestPublish.updatedAt) : "Not recorded",
+    latestPublish ? `${latestPublish.kind}: ${latestPublish.label}` : "Publish a script, diagram, clip, or quiz source to populate this.",
+    latestPublish ? "ready" : "warn",
+  )}
+      </div>
+    </div>
+  `;
+  _dashUpdateServiceWorkerDiagnostics();
+}
+
+async function _dashUpdateServiceWorkerDiagnostics() {
+  const section = document.getElementById("dashDiagnosticsSection");
+  if (!section || section.hidden) return;
+  const item = [...section.querySelectorAll(".dash-diagnostic-item")]
+    .find((el) => el.querySelector("span")?.textContent === "Service worker");
+  if (!item) return;
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+    item.querySelector("strong").textContent = "Unsupported";
+    item.querySelector("small").textContent = "Browser does not support service workers.";
+    item.classList.add("dash-diagnostic-item--warn");
+    return;
+  }
+  try {
+    const reg = await navigator.serviceWorker.getRegistration("./");
+    const state = reg?.waiting
+      ? "Update waiting"
+      : reg?.installing
+        ? "Installing"
+        : reg?.active
+          ? "Active"
+          : "Registered";
+    const detail = [
+      navigator.serviceWorker.controller ? "controlling page" : "not controlling page",
+      reg?.waiting ? "new version ready" : "",
+      reg?.active?.state ? `worker ${reg.active.state}` : "",
+    ].filter(Boolean).join(" | ");
+    item.querySelector("strong").textContent = state;
+    item.querySelector("small").textContent = detail || "Registration found.";
+    item.classList.toggle("dash-diagnostic-item--ready", state === "Active");
+    item.classList.toggle("dash-diagnostic-item--warn", state !== "Active");
+  } catch (err) {
+    item.querySelector("strong").textContent = "Check failed";
+    item.querySelector("small").textContent = err?.message || "Could not inspect service worker.";
+    item.classList.add("dash-diagnostic-item--warn");
+  }
+}
+
 function _dashBuildActivityFeed(gw) {
   const events = [];
 
@@ -1710,6 +1842,7 @@ function renderDashboard() {
 
     renderMobileCoachNotesCard(gw, opponents);
     renderGameWeekCommandCenter(gw, opponents);
+    renderAdminDiagnosticsTile();
 
     const cardsEl = document.getElementById("dashCards");
     if (cardsEl) {

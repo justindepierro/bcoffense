@@ -134,7 +134,7 @@ clear update experience that makes both visible.
 - [x] Add a manual "Refresh team app" action for players that updates the app
   shell and re-renders player data without requiring them to know browser cache
   steps.
-- [ ] Add a diagnostic tile for admins showing current app cache version,
+- [x] Add a diagnostic tile for admins showing current app cache version,
   service-worker state, last cloud pull, and last player publish time.
 
 Definition of done:
