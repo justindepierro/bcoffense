@@ -153,6 +153,8 @@ comments and questions instead of missing them inside individual plays.
 
 - [ ] Add a unified notification inbox for coaches/admins covering player play
   comments, questions, replies, quiz completions, rewards, and moderation items.
+- [x] Add a coach/admin Dashboard player inbox for open player questions and
+  recent player comments on play discussion threads.
 - [ ] Add player notifications for newly published scripts, newly available or
   unlocked quizzes, coach replies, approved discussion replies, clips/diagrams
   added to assigned plays, and team announcements.

@@ -93,6 +93,7 @@ export async function onRequest(context) {
     const playSig = String(body.play_signature || "").trim() || null;
     const parentPostId = String(body.parent_post_id || "").trim() || null;
     const questionCategory = String(body.question_category || "").trim() || null;
+    const isStaff = session.role === "coach" || session.role === "admin" || session.role === "assistant";
     // Optional attachment: { id, r2_key, type, caption, sourcePlayId, sizeBytes }
     const attachmentMeta = body.attachment && typeof body.attachment === "object"
       ? body.attachment : null;
@@ -156,7 +157,6 @@ export async function onRequest(context) {
     }
 
     // Auto-answer parent question when a staff member replies (but not for clarifications)
-    const isStaff = session.role === "coach" || session.role === "admin" || session.role === "assistant";
     if (isStaff && parentPostId && postType !== "coach_clarification") {
       const parent = await env.DB.prepare(
         "SELECT post_type, question_state FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1"

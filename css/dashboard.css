@@ -3198,6 +3198,11 @@
   color: var(--color-success);
   border-color: var(--color-success);
 }
+.q-sum-comments {
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
 .q-sum-all {
   background: var(--color-bg-light);
   color: var(--color-text-muted);
@@ -3280,6 +3285,20 @@
 }
 .q-state-reopened {
   background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  color: var(--color-accent);
+}
+.q-type-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+}
+.q-type-question {
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  color: var(--color-warning);
+}
+.q-type-comment {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
   color: var(--color-accent);
 }
 

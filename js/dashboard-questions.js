@@ -1,11 +1,12 @@
 /**
  * dashboard-questions.js
- * Coach Question Inbox — dashboard card + full overlay inbox.
+ * Coach Player Inbox — dashboard card + full overlay inbox.
  *
  * Public API:
  *   refreshQuestionsCard()      — fetch summary, update #dashQuestionsCard
  *   openQuestionInbox(state)    — open overlay with given state filter
  *   closeQuestionInbox()        — close overlay
+ *   qInboxTypeChanged(value)    — type filter select handler
  *   qInboxStateChanged(value)   — state filter select handler
  *   qInboxSortChanged(value)    — sort select handler
  *   loadMoreQInbox()            — pagination
@@ -16,6 +17,7 @@
 
 // ── State ──────────────────────────────────────────────────────────────────────
 let _qState = "open";        // current state filter
+let _qType = "all";          // questions + recent player comments by default
 let _qSort = "newest";       // current sort
 let _qOffset = 0;
 let _qLoading = false;
@@ -35,6 +37,11 @@ function _qStateBadge(state) {
   };
   const m = map[state] || { label: state, cls: "q-state-open" };
   return `<span class="q-state-badge ${m.cls}">${m.label}</span>`;
+}
+
+function _qTypeBadge(postType) {
+  const isQuestion = postType === "question";
+  return `<span class="q-type-badge ${isQuestion ? "q-type-question" : "q-type-comment"}">${isQuestion ? "Question" : "Comment"}</span>`;
 }
 
 // ── Time helper ────────────────────────────────────────────────────────────────
@@ -64,24 +71,28 @@ function _qPlayLabel(playId) {
 function _qItemHtml(q) {
   const playLabel = escapeHtml(_qPlayLabel(q.playId));
   const author = escapeHtml(q.authorName || "Player");
-  const body = escapeHtml(q.body || "").slice(0, 200);
+  const bodyText = String(q.body || "");
+  const body = escapeHtml(bodyText.slice(0, 200));
   const time = _qRelTime(q.createdAt);
-  const sameQ = q.sameQuestionCount > 0
+  const isQuestion = q.postType === "question";
+  const sameQ = isQuestion && q.sameQuestionCount > 0
     ? `<span class="q-same-q-badge" title="Others also asked this">❓×${q.sameQuestionCount}</span>`
     : "";
-  const stateB = _qStateBadge(q.state);
-  const resolveBtn = (q.state !== "resolved")
+  const typeB = _qTypeBadge(q.postType || "question");
+  const stateB = isQuestion ? _qStateBadge(q.state) : "";
+  const resolveBtn = isQuestion && (q.state !== "resolved")
     ? `<button class="btn btn-xs q-resolve-btn" data-action="qInboxResolve" data-arg="${escapeHtml(q.id)}::${escapeHtml(q.playId)}" title="Mark resolved">✓ Resolve</button>`
     : "";
-  const replyBtn = `<button class="btn btn-xs btn-primary q-reply-btn" data-action="qInboxOpenPlay" data-arg="${escapeHtml(q.id)}::${escapeHtml(q.playId)}" title="Reply in play discussion">💬 Reply</button>`;
+  const replyBtn = `<button class="btn btn-xs btn-primary q-reply-btn" data-action="qInboxOpenPlay" data-arg="${escapeHtml(q.id)}::${escapeHtml(q.playId)}" title="Open play discussion">💬 Open</button>`;
 
   return `<li class="q-inbox-item" data-q-id="${escapeHtml(q.id)}">
     <div class="q-inbox-item-meta">
       <span class="q-inbox-play">${playLabel}</span>
+      ${typeB}
       ${stateB}
       ${sameQ}
     </div>
-    <div class="q-inbox-body">${body}${q.body && q.body.length > 200 ? "…" : ""}</div>
+    <div class="q-inbox-body">${body}${bodyText.length > 200 ? "…" : ""}</div>
     <div class="q-inbox-foot">
       <span class="q-inbox-author">👤 ${author}</span>
       <span class="q-inbox-time">${time}</span>
@@ -92,17 +103,26 @@ function _qItemHtml(q) {
 
 // ── Dashboard card HTML ────────────────────────────────────────────────────────
 function _qCardHtml(summary) {
-  const open = summary?.open ?? "—";
+  const open = summary?.open ?? 0;
+  const recentComments = summary?.playerCommentsRecent ?? 0;
+  const needsReview = summary?.needsReview ?? open;
   const today = summary?.today ?? 0;
-  const todayStr = today > 0 ? `<div class="dash-card-sub">${today} asked today</div>` : "";
+  const todayComments = summary?.playerCommentsToday ?? 0;
+  const parts = [
+    `${open} open question${open === 1 ? "" : "s"}`,
+    recentComments ? `${recentComments} recent comment${recentComments === 1 ? "" : "s"}` : "",
+    today || todayComments ? `${today + todayComments} today` : "",
+  ].filter(Boolean);
+  const subText = parts.join(" · ");
+  const subLine = subText ? `<div class="dash-card-sub">${escapeHtml(subText)}</div>` : "";
   return `
     <div class="dash-card dash-card-questions" id="dashQuestionsCard">
       <div class="dash-card-icon">❓</div>
       <div class="dash-card-info">
-        <div class="dash-card-value" id="dashQuestionsValue">${open}</div>
-        <div class="dash-card-label">Open Questions</div>
-        ${todayStr}
-        <button class="dash-card-link" data-action="openQuestionInbox" data-arg="open">Inbox →</button>
+        <div class="dash-card-value" id="dashQuestionsValue">${needsReview}</div>
+        <div class="dash-card-label">Player Inbox</div>
+        ${subLine}
+        <button class="dash-card-link" data-action="openQuestionInbox" data-arg="open">Review →</button>
       </div>
     </div>`;
 }
@@ -130,10 +150,25 @@ async function refreshQuestionsCard() {
       cardsEl.appendChild(div.firstElementChild);
     } else {
       const val = card.querySelector("#dashQuestionsValue");
-      if (val) val.textContent = data.summary.open ?? "—";
-      const sub = card.querySelector(".dash-card-sub");
-      const today = data.summary.today ?? 0;
-      if (sub) sub.textContent = today > 0 ? `${today} asked today` : "";
+      if (val) val.textContent = data.summary.needsReview ?? data.summary.open ?? "—";
+      let sub = card.querySelector(".dash-card-sub");
+      const open = data.summary.open ?? 0;
+      const recentComments = data.summary.playerCommentsRecent ?? 0;
+      const today = (data.summary.today ?? 0) + (data.summary.playerCommentsToday ?? 0);
+      const parts = [
+        `${open} open question${open === 1 ? "" : "s"}`,
+        recentComments ? `${recentComments} recent comment${recentComments === 1 ? "" : "s"}` : "",
+        today ? `${today} today` : "",
+      ].filter(Boolean);
+      if (!sub && parts.length) {
+        const label = card.querySelector(".dash-card-label");
+        if (label) {
+          sub = document.createElement("div");
+          sub.className = "dash-card-sub";
+          label.insertAdjacentElement("afterend", sub);
+        }
+      }
+      if (sub) sub.textContent = parts.join(" · ");
     }
   } catch (_) {
     // Silently ignore — non-critical card
@@ -146,6 +181,7 @@ function openQuestionInbox(state) {
   if (!user || (user.role !== "coach" && user.role !== "admin")) return;
 
   _qState = state || "open";
+  _qType = "all";
   _qSort = "newest";
   _qOffset = 0;
   _qHasMore = false;
@@ -155,8 +191,10 @@ function openQuestionInbox(state) {
 
   // Sync select elements
   const stateSelect = document.getElementById("qInboxStateFilter");
+  const typeSelect = document.getElementById("qInboxTypeFilter");
   const sortSelect = document.getElementById("qInboxSort");
   if (stateSelect) stateSelect.value = _qState;
+  if (typeSelect) typeSelect.value = _qType;
   if (sortSelect) sortSelect.value = _qSort;
 
   overlay.classList.add("is-open");
@@ -192,6 +230,7 @@ async function _loadQInbox(append = false) {
 
   try {
     const params = new URLSearchParams({
+      type: _qType,
       state: _qState,
       sort: _qSort,
       limit: Q_PAGE_SIZE,
@@ -214,7 +253,7 @@ async function _loadQInbox(append = false) {
 
     if (!append) {
       if (questions.length === 0) {
-        list.innerHTML = `<li class="q-inbox-empty">No ${_qState || "active"} questions.</li>`;
+        list.innerHTML = `<li class="q-inbox-empty">No ${_qType === "comments" ? "player comments" : "player inbox items"}.</li>`;
       } else {
         list.innerHTML = questions.map(_qItemHtml).join("");
       }
@@ -243,6 +282,9 @@ function _renderQSummaryBadges(summary) {
   if (!el || !summary) return;
   const parts = [
     `<span class="q-sum-badge q-sum-open" data-action="qInboxStateChanged" data-arg="open" title="Open questions">${summary.open ?? 0} Open</span>`,
+    summary.playerCommentsRecent > 0
+      ? `<span class="q-sum-badge q-sum-comments" data-action="qInboxTypeChanged" data-arg="comments" title="Recent player comments">${summary.playerCommentsRecent} Comments</span>`
+      : "",
     summary.answered > 0
       ? `<span class="q-sum-badge q-sum-answered" data-action="qInboxStateChanged" data-arg="answered" title="Answered, not yet resolved">${summary.answered} Answered</span>`
       : "",
@@ -255,6 +297,13 @@ function _renderQSummaryBadges(summary) {
 }
 
 // ── Filter / sort handlers ─────────────────────────────────────────────────────
+function qInboxTypeChanged(value) {
+  _qType = value || "all";
+  const typeSelect = document.getElementById("qInboxTypeFilter");
+  if (typeSelect) typeSelect.value = _qType;
+  _loadQInbox(false);
+}
+
 function qInboxStateChanged(value) {
   _qState = value ?? "";
   // Sync the select
