@@ -89,6 +89,32 @@ Definition of done:
 - Signal clips are searchable by component and visible from a play without
   duplicating media per play.
 
+### 0A. Cloud Sync and Restore Modernization
+
+Why now: Cloud Sync was built around an older restore model. The app now has
+role-aware startup, richer dashboard surfaces, IndexedDB-backed playbook data,
+player-visible media, and in-memory workspace hydration. Pulling from cloud
+should feel like entering a refreshed team workspace, not like a low-level
+backup utility.
+
+- [x] Manual Cloud Sync pull refreshes the workspace and lands on Dashboard.
+- [ ] Replace the backup-style modal copy with a clearer "Team Workspace Sync"
+  flow that separates Push, Pull, and Last Updated state.
+- [ ] Show a post-pull summary on Dashboard with counts for playbook, scripts,
+  call sheets, wristbands, game plans, diagrams, clips, and player data.
+- [ ] Add stale/local-conflict warnings before replacing a device that has newer
+  local edits.
+- [ ] Add a lightweight sync activity log so coaches can see who pushed/pulled
+  and when.
+- [ ] Decide whether auto-pull should stay silent or become an explicit
+  "new workspace update available" banner for staff devices.
+
+Definition of done:
+
+- Coaches understand what data will change before a pull.
+- A successful pull lands in a useful review surface.
+- Cloud Sync reads as a team-workspace workflow, not a raw backup restore.
+
 ### 1. Diagram and Play Identity Hardening
 
 Why now: the recent player Swipe View issue proved that diagram identity and

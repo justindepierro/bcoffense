@@ -430,6 +430,12 @@
     const shouldConfirm = opts.confirm !== false;
     const shouldReload = opts.reload !== false;
     const shouldNotify = opts.notify !== false;
+    const targetTab =
+      opts.auto || opts.navigate === false
+        ? ""
+        : (typeof canAccessTab !== "function" || canAccessTab("dashboard"))
+          ? "dashboard"
+          : "";
     const summary = remote.summary;
     if (shouldConfirm) {
       const ok = await showConfirm(
@@ -473,7 +479,7 @@
         lastRemoteUpdatedAt: remote.updatedAt,
         lastRemoteSize: remote.size,
       });
-      await reloadAppFromStorage();
+      await reloadAppFromStorage(targetTab ? { targetTab } : {});
 
       if (shouldReload) {
         if (opts.auto) {

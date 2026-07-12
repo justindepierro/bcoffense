@@ -1119,10 +1119,15 @@ async function reloadAppFromStorage(opts = {}) {
     }
   });
 
-  const activeTab =
-    typeof currentActiveTab !== "undefined"
-      ? currentActiveTab
-      : document.body?.dataset.activeTab;
+  const requestedTab = String(opts.targetTab || "").trim();
+  const canUseRequestedTab =
+    requestedTab &&
+    (typeof canAccessTab !== "function" || canAccessTab(requestedTab));
+  const activeTab = canUseRequestedTab
+    ? requestedTab
+    : (typeof currentActiveTab !== "undefined"
+        ? currentActiveTab
+        : document.body?.dataset.activeTab);
   await runReloadStep("render-active-surfaces", () => {
     if (opts.refreshActiveTab !== false && activeTab && typeof showTab === "function") {
       showTab(activeTab);
