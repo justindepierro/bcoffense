@@ -309,7 +309,9 @@ Migration order:
   contract.
 - [x] Call Sheet command hierarchy: stabilize the primary toolbar, quick-action
   groups, and sideline-mode exit controls with a smoke-check style contract.
-- [ ] Dashboard/player portal quick actions.
+- [x] Dashboard/player portal quick actions: stabilize coach dashboard commands,
+  quick links, schedule/game-plan action rows, cleanup actions, and player quick
+  action cards with a smoke-check style contract.
 - [ ] Tendencies, Installation, Identity, and Offense Builder cleanup.
 
 Definition of done:

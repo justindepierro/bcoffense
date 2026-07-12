@@ -150,6 +150,7 @@ function checkPageStyleContracts() {
   const gameplanCss = read("css/gameplan.css");
   const wristbandCss = read("css/wristband.css");
   const callsheetCss = read("css/callsheet.css");
+  const dashboardCss = read("css/dashboard.css");
   const gameplanRender = read("js/gameplan-render.js");
 
   if (
@@ -248,6 +249,25 @@ function checkPageStyleContracts() {
     !/#callsheet\.cs-sideline-mode \.cs-toolbar-left,[\s\S]*#callsheet\.cs-sideline-mode \.cs-toolbar-right > \*:not\(#csSidelineModeBtn\)/.test(callsheetCss)
   ) {
     fail("Call Sheet quick actions or sideline toolbar rules are incomplete");
+  }
+
+  if (
+    !/\.player-home-quick-actions\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(164px,\s*1fr\)\)/.test(dashboardCss) ||
+    !/\.player-home-quick-action\s*\{[\s\S]*grid-template-columns:\s*minmax\(42px,\s*auto\)\s*minmax\(0,\s*1fr\)[\s\S]*max-width:\s*100%/.test(dashboardCss) ||
+    !/body\.is-phone-screen\[data-auth-role="player"\] \.player-home-quick-actions\s*\{[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(dashboardCss)
+  ) {
+    fail("Player portal quick actions are missing overflow-safe action deck rules");
+  }
+
+  if (
+    !/\.dash-command-center\s*\{[\s\S]*overflow:\s*clip/.test(dashboardCss) ||
+    !/\.dash-command-main\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(112px,\s*max-content\)/.test(dashboardCss) ||
+    !/\.dash-command-actions\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(108px,\s*1fr\)\)/.test(dashboardCss) ||
+    !/\.dash-links-grid\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(148px,\s*1fr\)\)/.test(dashboardCss) ||
+    !/\.dash-gameplan-actions\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(144px,\s*max-content\)\)/.test(dashboardCss) ||
+    !/\.dash-link-btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(dashboardCss)
+  ) {
+    fail("Dashboard quick actions are missing overflow-safe command hierarchy rules");
   }
 
   console.log("page style contracts ok");
