@@ -144,6 +144,30 @@ function checkCssGuardrails() {
   console.log(`css guardrails ok (${files.length} files)`);
 }
 
+function checkPageStyleContracts() {
+  const scriptCss = read("css/script.css");
+
+  if (
+    !/\.script-workbench-controls\s*\{[\s\S]*grid-template-columns:\s*minmax\(220px,\s*1fr\)\s*minmax\(0,\s*1\.15fr\)\s*minmax\(150px,\s*0\.65fr\)/.test(scriptCss) ||
+    !/\.script-workbench-controls\s*\{[\s\S]*overflow:\s*clip/.test(scriptCss) ||
+    !/\.script-workbench-primary-actions\s*\{[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(88px,\s*1fr\)\)/.test(scriptCss) ||
+    !/#script \.script-workbench-primary-actions \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(scriptCss)
+  ) {
+    fail("Script workbench action buttons are missing overflow-safe sizing rules");
+  }
+
+  if (
+    !/#script \.script-toolbar\s*\{[\s\S]*grid-template-columns:\s*minmax\(92px,\s*max-content\)\s*minmax\(0,\s*1fr\)\s*minmax\(160px,\s*0\.9fr\)/.test(scriptCss) ||
+    !/#script \.script-toolbar \.btn,[\s\S]*#script \.script-toolbar \.bulk-select-label\s*\{[\s\S]*white-space:\s*normal/.test(scriptCss) ||
+    !/#script \.toolbar-sort-select\s*\{[\s\S]*min-width:\s*0[\s\S]*max-width:\s*100%/.test(scriptCss) ||
+    !/@media \(max-width:\s*1180px\)[\s\S]*#script \.script-workbench-controls\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(0,\s*1fr\)[\s\S]*#script \.script-toolbar\s*\{[\s\S]*grid-template-columns:\s*1fr/.test(scriptCss)
+  ) {
+    fail("Script toolbar is missing overflow-safe responsive style rules");
+  }
+
+  console.log("page style contracts ok");
+}
+
 function checkAppChromeStackingContract() {
   const base = read("css/base.css");
   const valueOf = (name) => {
@@ -3295,6 +3319,7 @@ checkJsSyntax();
 checkServiceWorkerAssets();
 checkIndexReferences();
 checkCssGuardrails();
+checkPageStyleContracts();
 checkAppChromeStackingContract();
 checkAccessibilityBasics();
 checkDeclarativeHandlers();
