@@ -187,6 +187,8 @@ to reintroduce.
 - [x] Flag downstream artifacts when a source play is edited or deleted.
 - [x] Add focused fixture coverage for play IDs, `playbookId`, `sourcePlayId`, and legacy tag keys.
 - [x] Document which diagram keys are player-visible versus local/legacy-only.
+- [x] Make manual diagram sync preflighted and scoped, with a recommended
+  player-visible sync path instead of immediately pushing every local diagram.
 
 Diagram key contract:
 

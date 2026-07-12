@@ -19,6 +19,7 @@
      playImages.ensureUrlForPlay(play)            → resolve + load compatible image
      playImages.ensureDisplayUrlForPlay(play)     → strict display-safe image
      playImages.loadKeys()                       → load image keys without blobs
+     playImages.buildSyncPlan()                  → manual sync scope counts
      playImages.prefetchAll()                    → load every blob into URL cache
      playImages.compress(file, opts)             → Blob (resize + JPEG re-encode)
 */
@@ -614,11 +615,12 @@
   }
   // ────────────────────────────────────────────────────────────────────────
 
-  // Sync all locally-stored images to R2 for cross-device access.
-  // Iterates ALL IndexedDB keys directly — does not rely on play matching.
+  // Sync locally-stored images to R2 for cross-device access.
+  // Defaults to ALL IndexedDB keys, but manual flows can pass a scoped key list
+  // so coaches can avoid uploading old/orphaned diagrams.
   // Returns a detailed result so upload/auth/R2 errors are visible to coaches.
   let _remoteSyncDone = false;
-  async function syncToRemote(playsArray) {
+  async function syncToRemote(playsArray, opts = {}) {
     const result = {
       total: 0,
       attempted: 0,
@@ -634,8 +636,12 @@
     _remoteSyncDone = true;
 
     const allKeys = await loadKeys();
-    result.total = allKeys.length;
-    if (!allKeys.length) return result;
+    const requestedKeys = Array.isArray(opts.keys)
+      ? opts.keys.map(_normalizeSig).filter(Boolean)
+      : allKeys;
+    const scopedKeys = [...new Set(requestedKeys)].filter((sig) => allKeys.includes(sig));
+    result.total = scopedKeys.length;
+    if (!scopedKeys.length) return result;
 
     // Build a reverse map: localSig → full identity key for R2.
     // Old short field-derived keys are only migrated when they map to one play.
@@ -654,7 +660,7 @@
       return "";
     };
 
-    await _withConcurrency(allKeys, 2, async (localSig) => {
+    await _withConcurrency(scopedKeys, 2, async (localSig) => {
       try {
         const identityKey = identityKeyFor(localSig);
         if (!identityKey) {
@@ -703,6 +709,90 @@
       });
     }
     return result;
+  }
+
+  function _playListDiagramKeys(playsArray, allKeys) {
+    if (!Array.isArray(playsArray) || !Array.isArray(allKeys) || !allKeys.length) {
+      return [];
+    }
+    const signatures = new Set();
+    playsArray
+      .filter((play) => play && !play.isSeparator)
+      .forEach((play) => {
+        displaySignaturesForPlay(play).forEach((sig) => signatures.add(_normalizeSig(sig)));
+      });
+    return allKeys.filter((sig) => signatures.has(_normalizeSig(sig)));
+  }
+
+  function _publishedScriptPlays() {
+    if (typeof getPlayerPublishedScripts !== "function") return [];
+    return getPlayerPublishedScripts()
+      .flatMap((savedScript) => Array.isArray(savedScript?.plays) ? savedScript.plays : [])
+      .filter((play) => play && !play.isSeparator);
+  }
+
+  async function buildSyncPlan() {
+    const allKeys = await loadKeys();
+    const currentPlays = typeof plays !== "undefined" && Array.isArray(plays)
+      ? plays.filter((play) => play && !play.isSeparator)
+      : [];
+    const publishedPlays = _publishedScriptPlays();
+    const playerKeys = _playListDiagramKeys(publishedPlays, allKeys);
+    const currentKeys = _playListDiagramKeys(currentPlays, allKeys);
+    const currentOnlyKeys = currentKeys.filter((sig) => !playerKeys.includes(sig));
+    const orphanKeys = allKeys.filter((sig) => !currentKeys.includes(sig) && !playerKeys.includes(sig));
+    const recommendedScope = playerKeys.length
+      ? "player"
+      : currentKeys.length
+        ? "current"
+        : "all";
+    return {
+      allKeys,
+      currentKeys,
+      currentOnlyKeys,
+      orphanKeys,
+      playerKeys,
+      currentPlays,
+      publishedPlays,
+      recommendedScope,
+    };
+  }
+
+  function _diagramCountLabel(count) {
+    return `${count} diagram${count === 1 ? "" : "s"}`;
+  }
+
+  function _diagramVerb(count, singular, plural) {
+    return count === 1 ? singular : plural;
+  }
+
+  function _syncScopeFromChoice(plan, choice) {
+    if (choice === "option2") {
+      return {
+        keys: plan.allKeys,
+        plays: typeof plays !== "undefined" && Array.isArray(plays) ? plays : [],
+        label: `all ${_diagramCountLabel(plan.allKeys.length)} on this device`,
+      };
+    }
+    if (plan.recommendedScope === "player") {
+      return {
+        keys: plan.playerKeys,
+        plays: plan.publishedPlays,
+        label: `${_diagramCountLabel(plan.playerKeys.length)} used by player-visible scripts`,
+      };
+    }
+    if (plan.recommendedScope === "current") {
+      return {
+        keys: plan.currentKeys,
+        plays: plan.currentPlays,
+        label: `${_diagramCountLabel(plan.currentKeys.length)} matching the current playbook`,
+      };
+    }
+    return {
+      keys: plan.allKeys,
+      plays: typeof plays !== "undefined" && Array.isArray(plays) ? plays : [],
+      label: `all ${_diagramCountLabel(plan.allKeys.length)} on this device`,
+    };
   }
 
   async function ensureUrlForPlay(play) {
@@ -1016,6 +1106,7 @@
     deleteForPlay,
     loadKeys,
     isKeyCacheReady,
+    buildSyncPlan,
     prefetchAll,
     compress,
     describeCompression,
@@ -1265,17 +1356,18 @@
     }
   };
 
-  // Coach-triggered manual sync — pushes all local images to R2 with progress modal.
-  window.syncPlayImagesToCloud = async function () {
+  // Coach-triggered manual sync — preflights scope before pushing images to R2.
+  window.syncPlayImagesToCloud = async function (opts = {}) {
     if (!_remoteAvailable()) {
       if (typeof showModal === "function") {
         showModal("Cloud sync is not available. Make sure you are on bcoffense.com (not a file:// URL).", { title: "Sync Diagrams", icon: "⚠️" });
       }
       return;
     }
-    const allKeys = await loadKeys();
+    const plan = await buildSyncPlan();
+    const allKeys = plan.allKeys;
     // eslint-disable-next-line no-console
-    console.log("[Diagrams] Keys on this device:", allKeys.length, allKeys);
+    console.log("[Diagrams] Sync plan:", plan);
     if (!allKeys.length) {
       if (typeof showModal === "function") {
         showModal(
@@ -1285,16 +1377,54 @@
       }
       return;
     }
-    if (typeof showToast === "function") {
-      showToast(`Syncing ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} to cloud…`, { duration: 60000 });
+    let scope = _syncScopeFromChoice(plan, "option1");
+    if (!opts.skipPrompt && typeof showChoice === "function") {
+      const recommendedLabel = plan.recommendedScope === "player"
+        ? `Player Visible (${plan.playerKeys.length})`
+        : plan.recommendedScope === "current"
+          ? `Current Playbook (${plan.currentKeys.length})`
+          : `All Local (${plan.allKeys.length})`;
+      const allLabel = `All Local (${plan.allKeys.length})`;
+      const notes = [
+        `Found ${_diagramCountLabel(plan.allKeys.length)} stored on this device.`,
+        plan.playerKeys.length
+          ? `${_diagramCountLabel(plan.playerKeys.length)} ${_diagramVerb(plan.playerKeys.length, "matches", "match")} player-visible scripts.`
+          : "No stored diagrams currently match player-visible scripts.",
+        plan.currentOnlyKeys.length
+          ? `${_diagramCountLabel(plan.currentOnlyKeys.length)} ${_diagramVerb(plan.currentOnlyKeys.length, "matches", "match")} the current playbook but ${_diagramVerb(plan.currentOnlyKeys.length, "is", "are")} not in a player-visible script.`
+          : "",
+        plan.orphanKeys.length
+          ? `${_diagramCountLabel(plan.orphanKeys.length)} ${_diagramVerb(plan.orphanKeys.length, "looks", "look")} old or unmatched and may take extra time.`
+          : "",
+      ].filter(Boolean).join("\n");
+      const choice = await showChoice(notes, {
+        title: "Sync Diagrams",
+        icon: "🖼️",
+        option1: recommendedLabel,
+        option2: allLabel,
+      });
+      if (!choice) return;
+      scope = _syncScopeFromChoice(plan, choice);
     }
-    const result = await syncToRemote(typeof plays !== "undefined" ? plays : []);
+    if (!scope.keys.length) {
+      if (typeof showModal === "function") {
+        showModal(
+          `No diagrams matched the selected sync scope.\n\nUse All Local if you need to push every diagram stored on this device.`,
+          { title: "Nothing to Sync", icon: "ℹ️" },
+        );
+      }
+      return;
+    }
+    if (typeof showToast === "function") {
+      showToast(`Syncing ${scope.label} to cloud…`, { duration: 60000 });
+    }
+    const result = await syncToRemote(scope.plays, { keys: scope.keys });
     // eslint-disable-next-line no-console
     console.log("[Diagrams] R2 sync result:", result);
     if (typeof showModal === "function") {
       if (result.pushed > 0 && result.failed === 0 && result.skipped === 0) {
         showModal(
-          `${result.pushed} of ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} synced to cloud.\n\nPlayers can now see play diagrams in the swipe view. Have them reload the app if they are already in a session.`,
+          `${result.pushed} of ${scope.keys.length} selected diagram${scope.keys.length === 1 ? "" : "s"} synced to cloud.\n\nPlayers can now see those play diagrams in the swipe view. Have them reload the app if they are already in a session.`,
           { title: "Sync Complete ✓", icon: "🖼️" },
         );
       } else if (result.pushed > 0) {
@@ -1302,7 +1432,7 @@
           .map((item) => `- ${item.status ? `${item.status}: ` : ""}${item.error}`)
           .join("\n");
         showModal(
-          `${result.pushed} of ${allKeys.length} diagrams synced.\n\n${result.failed} failed and ${result.skipped} were skipped.${details ? `\n\nFirst issues:\n${details}` : ""}`,
+          `${result.pushed} of ${scope.keys.length} selected diagrams synced.\n\n${result.failed} failed and ${result.skipped} were skipped.${details ? `\n\nFirst issues:\n${details}` : ""}`,
           { title: "Sync Partially Complete", icon: "⚠️" },
         );
       } else {
@@ -1310,7 +1440,7 @@
           .map((item) => `- ${item.status ? `${item.status}: ` : ""}${item.error}`)
           .join("\n");
         showModal(
-          `Found ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} locally but 0 were pushed to cloud.${details ? `\n\nFirst issues:\n${details}` : ""}`,
+          `Found ${scope.keys.length} selected diagram${scope.keys.length === 1 ? "" : "s"} locally but 0 were pushed to cloud.${details ? `\n\nFirst issues:\n${details}` : ""}`,
           { title: "Sync Issue", icon: "⚠️" },
         );
       }
