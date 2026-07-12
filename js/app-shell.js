@@ -1652,6 +1652,11 @@ async function mobileCoachTogglePublish() {
   if (!target) return;
   const nowPublished = !_isMobileCoachScriptPublished(target);
   target.playerVisible = nowPublished;
+  if (nowPublished) {
+    target.playerPublishedAt = new Date().toISOString();
+  } else {
+    target.playerUnpublishedAt = new Date().toISOString();
+  }
   storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, saved);
   if (typeof loadSavedScriptsList === "function") loadSavedScriptsList();
   _updateMobileCoachPublishStatus();

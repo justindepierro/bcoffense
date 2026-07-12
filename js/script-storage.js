@@ -343,6 +343,11 @@ async function saveScript() {
         existing.plays = safeDeepClone(script);
         existing.workspace = getScriptWorkspaceState();
         existing.savedAt = new Date().toISOString();
+        if (typeof isSavedScriptPlayerVisible === "function"
+          ? isSavedScriptPlayerVisible(existing)
+          : Boolean(existing.playerVisible)) {
+          existing.playerPublishedAt = existing.savedAt;
+        }
         storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
         loadSavedScriptsList();
         markScriptClean();
@@ -433,6 +438,11 @@ async function overwriteSavedScript(id) {
   savedScript.plays = safeDeepClone(script);
   savedScript.workspace = getScriptWorkspaceState();
   savedScript.savedAt = new Date().toISOString();
+  if (typeof isSavedScriptPlayerVisible === "function"
+    ? isSavedScriptPlayerVisible(savedScript)
+    : Boolean(savedScript.playerVisible)) {
+    savedScript.playerPublishedAt = savedScript.savedAt;
+  }
   storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
   loadSavedScriptsList();
   markScriptClean();

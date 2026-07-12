@@ -154,6 +154,103 @@ function _dashGetTimestamp(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function _dashFormatRelativeTime(value) {
+  const ts = _dashGetTimestamp(value);
+  if (!ts) return "";
+  const ms = Date.now() - ts;
+  if (ms < 0) return "";
+  const mins = Math.floor(ms / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(ts).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function _dashGetAppShellVersion() {
+  const scriptEl = document.querySelector('script[src*="app.js?v="]');
+  const match = String(scriptEl?.getAttribute("src") || "").match(/[?&]v=([^&]+)/);
+  return match ? `v${match[1]}` : "";
+}
+
+function _dashGetCloudFreshnessTime() {
+  const settings = storageManager.get(STORAGE_KEYS.CLOUD_SYNC_SETTINGS, {});
+  if (!settings || typeof settings !== "object") return "";
+  return (
+    settings.lastPullAt ||
+    settings.lastRemoteExportDate ||
+    settings.lastRemoteUpdatedAt ||
+    settings.lastPushAt ||
+    ""
+  );
+}
+
+function _dashGetScriptPlayerVersionTime(savedScript) {
+  if (!savedScript) return "";
+  return savedScript.playerPublishedAt || savedScript.savedAt || "";
+}
+
+function _dashRenderPlayerFreshnessStrip(featuredScript, publishedScripts = []) {
+  const appVersion = _dashGetAppShellVersion();
+  const practiceTime = _dashGetScriptPlayerVersionTime(featuredScript);
+  const teamSyncTime = _dashGetCloudFreshnessTime();
+  const latestPublishedTime = (Array.isArray(publishedScripts) ? publishedScripts : [])
+    .map(_dashGetScriptPlayerVersionTime)
+    .filter(Boolean)
+    .sort((a, b) => _dashGetTimestamp(b) - _dashGetTimestamp(a))[0] || "";
+  const connectionOnline =
+    typeof navigator === "undefined" || navigator.onLine !== false;
+  const items = [
+    {
+      label: "App",
+      value: appVersion || "Loaded",
+      tone: "neutral",
+    },
+    {
+      label: "Practice version",
+      value: practiceTime
+        ? `Updated ${_dashFormatRelativeTime(practiceTime)}`
+        : "No published practice",
+      tone: practiceTime ? "ready" : "muted",
+    },
+    {
+      label: "Team data",
+      value: teamSyncTime
+        ? `Synced ${_dashFormatRelativeTime(teamSyncTime)}`
+        : latestPublishedTime
+          ? `Loaded ${_dashFormatRelativeTime(latestPublishedTime)}`
+          : "Not synced yet",
+      tone: teamSyncTime || latestPublishedTime ? "ready" : "muted",
+    },
+    {
+      label: "Connection",
+      value: connectionOnline ? "Online" : "Offline",
+      tone: connectionOnline ? "ready" : "warn",
+    },
+  ];
+  return `<section class="player-home-freshness" aria-label="Team app update status">
+    <div class="player-home-freshness__head">
+      <strong>Update status</strong>
+      <span>${escapeHtml(
+        connectionOnline
+          ? "This device is showing the latest version it has loaded."
+          : "Offline. This device is showing the last version it loaded.",
+      )}</span>
+    </div>
+    <div class="player-home-freshness__grid">
+      ${items.map((item) => `<div class="player-home-freshness__item player-home-freshness__item--${escapeHtml(item.tone)}">
+        <span>${escapeHtml(item.label)}</span>
+        <strong>${escapeHtml(item.value)}</strong>
+      </div>`).join("")}
+    </div>
+  </section>`;
+}
+
 function _dashBuildActivityFeed(gw) {
   const events = [];
 
@@ -1058,6 +1155,7 @@ function renderPlayerDashboardHome() {
       : "Practice will appear here when your coach publishes it.";
   const notificationStatus = getPlayerHomeNotificationStatus();
   const practiceStatus = getPlayerHomePracticeStatus(featuredScript, loadedScript, todayValue);
+  const freshnessMarkup = _dashRenderPlayerFreshnessStrip(featuredScript, publishedScripts);
   const recentScriptsMarkup = publishedScripts.length
     ? publishedScripts
       .slice(0, 4)
@@ -1114,6 +1212,7 @@ function renderPlayerDashboardHome() {
       <strong>${escapeHtml(practiceStatus.title)}</strong>
       <span>${escapeHtml(practiceStatus.body)}</span>
     </section>
+    ${freshnessMarkup}
     <section class="player-home-quick-actions" aria-label="Player quick actions">
       <button type="button" class="player-home-quick-action player-home-quick-action--primary"
         ${practiceAction}>

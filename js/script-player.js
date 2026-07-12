@@ -42,6 +42,8 @@ function normalizeSavedScriptRecord(record, index = 0) {
         ? normalized.workspace
         : null,
     savedAt: normalized.savedAt || "",
+    playerPublishedAt: normalized.playerPublishedAt || "",
+    playerUnpublishedAt: normalized.playerUnpublishedAt || "",
   };
 }
 
@@ -68,7 +70,9 @@ function getSavedScripts() {
         normalized.playerVisible !== isSavedScriptPlayerVisible(record) ||
         normalized.plays !== record?.plays ||
         normalized.workspace !== record?.workspace ||
-        normalized.savedAt !== (record?.savedAt || "")
+        normalized.savedAt !== (record?.savedAt || "") ||
+        normalized.playerPublishedAt !== (record?.playerPublishedAt || "") ||
+        normalized.playerUnpublishedAt !== (record?.playerUnpublishedAt || "")
       );
     });
 
@@ -796,6 +800,11 @@ function togglePlayerScriptAccess(id, event) {
   if (!savedScript) return;
 
   savedScript.playerVisible = Boolean(event?.target?.checked);
+  if (savedScript.playerVisible) {
+    savedScript.playerPublishedAt = new Date().toISOString();
+  } else {
+    savedScript.playerUnpublishedAt = new Date().toISOString();
+  }
   storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
   loadSavedScriptsList();
   showToast(
