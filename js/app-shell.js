@@ -1658,6 +1658,7 @@ async function mobileCoachTogglePublish() {
       recordPlayerPublishStatus("scripts", {
         updatedAt: target.playerPublishedAt,
         label: target.name || "Practice script",
+        id: target.id || "",
       });
     }
   } else {
@@ -2285,6 +2286,16 @@ async function refreshPlayerTeamApp(opts = {}) {
         if (!quiet) showToast("Updating team app...", { type: "info", duration: 2500 });
         return;
       }
+    }
+
+    if (typeof refreshNotificationStatus === "function") {
+      _setPlayerTeamRefreshState({
+        tone: "checking",
+        title: "Checking player alerts",
+        body: "Looking for coach replies, new practices, and quiz work...",
+        busy: true,
+      });
+      await refreshNotificationStatus().catch(() => null);
     }
 
     const dataOk = !dataResult || dataResult.ok;

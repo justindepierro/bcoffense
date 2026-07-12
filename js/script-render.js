@@ -4805,6 +4805,7 @@ function setCoachQuizSourceState(arg = "") {
           recordPlayerPublishStatus("scripts", {
             updatedAt: target.playerPublishedAt,
             label: target.name || "Practice script",
+            id: target.id || "",
           });
         }
       } else {

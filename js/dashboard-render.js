@@ -199,6 +199,9 @@ function _dashRenderPlayerFreshnessStrip(featuredScript, publishedScripts = []) 
   const appVersion = _dashGetAppShellVersion();
   const practiceTime = _dashGetScriptPlayerVersionTime(featuredScript);
   const teamSyncTime = _dashGetCloudFreshnessTime();
+  const notificationState = window.playerNotificationState || {};
+  const notificationChecked = notificationState.checkedAt || "";
+  const notificationUnread = Number(notificationState.unread || 0);
   const latestPublishedTime = (Array.isArray(publishedScripts) ? publishedScripts : [])
     .map(_dashGetScriptPlayerVersionTime)
     .filter(Boolean)
@@ -226,6 +229,21 @@ function _dashRenderPlayerFreshnessStrip(featuredScript, publishedScripts = []) 
           ? `Loaded ${_dashFormatRelativeTime(latestPublishedTime)}`
           : "Not synced yet",
       tone: teamSyncTime || latestPublishedTime ? "ready" : "muted",
+    },
+    {
+      label: "Alerts",
+      value: notificationUnread > 0
+        ? `${notificationUnread} unread`
+        : notificationChecked
+          ? `Checked ${_dashFormatRelativeTime(notificationChecked)}`
+          : "Checking soon",
+      tone: notificationState.error
+        ? "warn"
+        : notificationUnread > 0
+          ? "ready"
+          : notificationChecked
+            ? "ready"
+            : "muted",
     },
     {
       label: "Connection",
@@ -1140,11 +1158,20 @@ function getPlayerDashboardLoadedScriptSummary() {
 }
 
 function getPlayerHomeNotificationStatus() {
+  const state = window.playerNotificationState || {};
+  const unread = Number(state.unread || 0);
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     return {
       tone: "offline",
       title: "Offline Mode",
       body: "Loaded practice still works. Alerts will refresh when you reconnect.",
+    };
+  }
+  if (unread > 0) {
+    return {
+      tone: "on",
+      title: `${unread} New Alert${unread === 1 ? "" : "s"}`,
+      body: "Open updates to see what coach posted.",
     };
   }
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
@@ -1158,7 +1185,9 @@ function getPlayerHomeNotificationStatus() {
     return {
       tone: "on",
       title: "Alerts On",
-      body: "Coach posts and replies can reach this device.",
+      body: state.checkedAt
+        ? `Coach posts can reach this device. Checked ${_dashFormatRelativeTime(state.checkedAt)}.`
+        : "Coach posts and replies can reach this device.",
     };
   }
   if (Notification.permission === "denied") {

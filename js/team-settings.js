@@ -1,6 +1,8 @@
 let teamSettingsAutosaveTimer = null;
 let teamDepthDragState = null;
 let teamSettingsViewState = null;
+let teamPortalMotdNotifyTimer = null;
+let teamPortalMotdLastNotified = "";
 
 const TEAM_ROSTER_POSITION_OPTIONS = [
   { value: "QB", label: "QB" },
@@ -1562,8 +1564,21 @@ function _refreshPortalSettingsFields() {
 }
 
 function savePortalMotd(value) {
-  storageManager.set(STORAGE_KEYS.MOTD, String(value || "").trim());
+  const nextValue = String(value || "").trim();
+  storageManager.set(STORAGE_KEYS.MOTD, nextValue);
   updateTeamSettingsAutosaveStatus();
+  if (teamPortalMotdNotifyTimer) clearTimeout(teamPortalMotdNotifyTimer);
+  if (!nextValue || nextValue === teamPortalMotdLastNotified) return;
+  teamPortalMotdNotifyTimer = setTimeout(() => {
+    teamPortalMotdNotifyTimer = null;
+    if (nextValue === teamPortalMotdLastNotified) return;
+    teamPortalMotdLastNotified = nextValue;
+    if (typeof notifyPlayersOfTeamUpdate === "function") {
+      notifyPlayersOfTeamUpdate("announcements", {
+        label: nextValue.slice(0, 180),
+      }).catch(() => { });
+    }
+  }, 3000);
 }
 
 function savePortalWelcomeMessage(value) {

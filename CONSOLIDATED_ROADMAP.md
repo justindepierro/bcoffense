@@ -155,16 +155,16 @@ comments and questions instead of missing them inside individual plays.
   comments, questions, replies, quiz completions, rewards, and moderation items.
 - [x] Add a coach/admin Dashboard player inbox for open player questions and
   recent player comments on play discussion threads.
-- [ ] Add player notifications for newly published scripts, newly available or
+- [x] Add player notifications for newly published scripts, newly available or
   unlocked quizzes, coach replies, approved discussion replies, clips/diagrams
   added to assigned plays, and team announcements.
-- [ ] Add unread counts/badges that roll up from play discussion threads into
+- [x] Add unread counts/badges that roll up from play discussion threads into
   Dashboard, Playbook, Script, and Game Plan surfaces.
-- [ ] Add a coach review queue for player comments on plays so comments cannot
+- [x] Add a coach review queue for player comments on plays so comments cannot
   disappear inside a play drawer.
-- [ ] Add notification preference and delivery-state UI for players: allowed,
+- [x] Add notification preference and delivery-state UI for players: allowed,
   blocked, quiet/offline, and last checked.
-- [ ] Include notification sync status in the player update/freshness experience
+- [x] Include notification sync status in the player update/freshness experience
   so athletes know whether alerts are current on their device.
 
 Definition of done:

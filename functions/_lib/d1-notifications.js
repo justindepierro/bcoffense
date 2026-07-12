@@ -29,6 +29,59 @@ export async function createNotification(db, { userId, type, title, body = null,
 }
 
 /**
+ * Notify every active player on a team. Used when staff publish player-facing
+ * work that lives in local/cloud backup data rather than D1 rows.
+ */
+export async function notifyTeamPlayers(db, teamId, notification = {}, env = null) {
+  if (!teamId || !notification?.type || !notification?.title) {
+    return { recipients: 0, pushSent: 0, pushTotal: 0 };
+  }
+
+  const rows = await db
+    .prepare(
+      `SELECT id FROM users
+       WHERE (team_id = ? OR team_id IS NULL)
+         AND role = 'player'
+         AND status = 'active'
+       LIMIT 500`,
+    )
+    .bind(teamId)
+    .all();
+
+  let recipients = 0;
+  let pushSent = 0;
+  let pushTotal = 0;
+  const body = notification.body ? String(notification.body).slice(0, 240) : null;
+  const deepLink = notification.deepLink ? String(notification.deepLink).slice(0, 512) : null;
+
+  for (const row of rows.results || []) {
+    await createNotification(db, {
+      userId: row.id,
+      type: notification.type,
+      title: String(notification.title).slice(0, 160),
+      body,
+      deepLink,
+    });
+    recipients += 1;
+
+    if (env) {
+      const result = await sendPushToUser(env, db, row.id, {
+        title: String(notification.title).slice(0, 160),
+        body: body || "",
+        url: "/",
+        tag: notification.tag || `${notification.type}-${deepLink || "team"}`,
+      }).catch(() => null);
+      if (result) {
+        pushSent += result.sent || 0;
+        pushTotal += result.total || 0;
+      }
+    }
+  }
+
+  return { recipients, pushSent, pushTotal };
+}
+
+/**
  * Notify all players who have posted in a thread, when a coach replies.
  * Excludes the poster themselves. Caps at 20 recipients.
  */

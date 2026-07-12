@@ -232,6 +232,9 @@ function recordPlayerPublishStatus(kind, details = {}) {
   };
   storageManager.set(_playerPublishStatusStorageKey(), status);
   if (typeof renderCoachPublishStatus === "function") renderCoachPublishStatus();
+  if (typeof notifyPlayersOfTeamUpdate === "function") {
+    notifyPlayersOfTeamUpdate(kind, details).catch(() => { });
+  }
 }
 
 function _getLatestPlayerScriptPublish(savedScripts = getSavedScripts()) {
@@ -988,6 +991,7 @@ function togglePlayerScriptAccess(id, event) {
     recordPlayerPublishStatus("scripts", {
       updatedAt: savedScript.playerPublishedAt,
       label: savedScript.name || "Practice script",
+      id: savedScript.id || "",
     });
   } else {
     savedScript.playerUnpublishedAt = new Date().toISOString();

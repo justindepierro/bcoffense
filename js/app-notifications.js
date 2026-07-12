@@ -12,7 +12,12 @@ let _notifInitialized = false;
 let _notifDrawerOpen = false;
 let _notifOffset = 0;
 let _notifHasMore = false;
+let _notifLastCheckedAt = "";
+let _notifLastError = "";
+let _notifLastUnread = 0;
+const _notifRecentBroadcasts = new Map();
 const NOTIF_POLL_INTERVAL_MS = 60_000; // 60 s
+const NOTIF_BROADCAST_DEDUPE_MS = 45_000;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -49,9 +54,18 @@ async function _pollUnreadCount() {
     const res = await fetch("/api/notifications/count");
     if (!res.ok) return;
     const data = await res.json();
-    _updateBellBadge(data.unread || 0);
+    _setNotificationState({
+      unread: data.unread || 0,
+      checkedAt: new Date().toISOString(),
+      error: "",
+      online: typeof navigator === "undefined" || navigator.onLine !== false,
+    });
   } catch (_) {
-    // Silent — badge is optional
+    _setNotificationState({
+      checkedAt: new Date().toISOString(),
+      error: "Could not check alerts.",
+      online: typeof navigator === "undefined" || navigator.onLine !== false,
+    });
   }
 }
 
@@ -64,6 +78,24 @@ function _updateBellBadge(count) {
     btn.removeAttribute("data-count");
   }
   btn.setAttribute("aria-label", count > 0 ? `Notifications — ${count} unread` : "Notifications");
+}
+
+function _setNotificationState(state = {}) {
+  if (Object.prototype.hasOwnProperty.call(state, "unread")) {
+    _notifLastUnread = Math.max(0, Number(state.unread) || 0);
+    _updateBellBadge(_notifLastUnread);
+  }
+  if (state.checkedAt) _notifLastCheckedAt = state.checkedAt;
+  if (Object.prototype.hasOwnProperty.call(state, "error")) _notifLastError = state.error || "";
+  window.playerNotificationState = {
+    unread: _notifLastUnread,
+    checkedAt: _notifLastCheckedAt,
+    error: _notifLastError,
+    online: state.online ?? (typeof navigator === "undefined" || navigator.onLine !== false),
+  };
+  if (document.body?.dataset?.authRole === "player" && typeof renderPlayerDashboardHome === "function") {
+    renderPlayerDashboardHome();
+  }
 }
 
 // ── Drawer open/close ─────────────────────────────────────────────────────────
@@ -115,6 +147,11 @@ async function _loadNotifications(append = false) {
   }
 
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    _setNotificationState({
+      checkedAt: new Date().toISOString(),
+      error: "Offline",
+      online: false,
+    });
     listEl.innerHTML = _notifStateHtml({
       icon: "📵",
       title: "You’re offline",
@@ -164,7 +201,12 @@ async function _loadNotifications(append = false) {
     }
 
     // Update unread badge from fresh count
-    _updateBellBadge(data.unread || 0);
+    _setNotificationState({
+      unread: data.unread || 0,
+      checkedAt: new Date().toISOString(),
+      error: "",
+      online: true,
+    });
 
     // Load More button
     if (_notifHasMore) {
@@ -176,6 +218,11 @@ async function _loadNotifications(append = false) {
       document.getElementById("notifDrawerBody")?.appendChild(btn);
     }
   } catch (err) {
+    _setNotificationState({
+      checkedAt: new Date().toISOString(),
+      error: "Could not load alerts.",
+      online: typeof navigator === "undefined" || navigator.onLine !== false,
+    });
     const unavailable = /\b(?:503|404)\b/.test(String(err?.message || ""));
     listEl.innerHTML = _notifStateHtml({
       icon: unavailable ? "🛠️" : "⚠️",
@@ -195,8 +242,14 @@ async function _loadNotifications(append = false) {
 const _NOTIF_ICONS = {
   coach_reply: "💬",
   question_resolved: "✅",
+  official_answer: "✅",
+  reply: "💬",
+  visual_reply: "🖼️",
   script_published: "📋",
   new_quiz: "📝",
+  media_update: "🎞️",
+  team_announcement: "📣",
+  moderation_alert: "⚠️",
 };
 
 function _notifRelTime(unixSec) {
@@ -253,7 +306,7 @@ async function openNotifDeepLink(arg) {
   const sep = String(arg || "").indexOf("::");
   if (sep < 0) return;
   const notifId = arg.slice(0, sep);
-  const playId = arg.slice(sep + 2);
+  const deepLink = arg.slice(sep + 2);
 
   // Mark read optimistically
   const itemEl = document.getElementById(`notif-${notifId}`);
@@ -265,7 +318,28 @@ async function openNotifDeepLink(arg) {
 
   closeNotifDrawer();
 
-  // Navigate to the play's discussion
+  if (deepLink === "script" || deepLink.startsWith("script:")) {
+    const scriptId = deepLink.includes(":") ? deepLink.slice(deepLink.indexOf(":") + 1) : "";
+    if (scriptId && typeof loadPublishedPlayerScript === "function") {
+      loadPublishedPlayerScript(scriptId);
+    } else if (typeof showTab === "function") {
+      showTab("script");
+    }
+    return;
+  }
+
+  if (deepLink === "quiz") {
+    if (typeof openPlayerQuizHub === "function") openPlayerQuizHub();
+    else if (typeof showTab === "function") showTab("dashboard");
+    return;
+  }
+
+  if (deepLink === "questions") {
+    if (typeof openPlayerPortal === "function") openPlayerPortal();
+    return;
+  }
+
+  const playId = deepLink.startsWith("play:") ? deepLink.slice(5) : deepLink;
   if (playId && typeof openDiscussionForPlayId === "function") {
     openDiscussionForPlayId(playId);
   }
@@ -279,7 +353,12 @@ async function markAllNotifsRead() {
       el.classList.remove("notif-item--unread");
       el.querySelector(".notif-unread-dot")?.remove();
     });
-    _updateBellBadge(0);
+    _setNotificationState({
+      unread: 0,
+      checkedAt: new Date().toISOString(),
+      error: "",
+      online: typeof navigator === "undefined" || navigator.onLine !== false,
+    });
   } catch (_) {
     showToast("Couldn't mark as read.", { duration: 2500, type: "error" });
   }
@@ -307,6 +386,88 @@ async function openPlayerNotificationSettings() {
   const drawerBody = document.getElementById("notifDrawerBody");
   if (drawerBody) drawerBody.scrollTop = drawerBody.scrollHeight;
   footer.querySelector("button")?.focus();
+}
+
+async function refreshNotificationStatus() {
+  await _pollUnreadCount();
+  return window.playerNotificationState || null;
+}
+
+function _isStaffNotificationUser() {
+  const role = document.body?.dataset?.authRole || "";
+  return role === "admin" || role === "coach" || role === "assistant" || role === "assistant_coach";
+}
+
+function _notificationPayloadForPublish(kind, details = {}) {
+  const label = String(details.label || details.name || "").trim();
+  const id = String(details.id || details.scriptId || "").trim();
+  if (kind === "scripts") {
+    return {
+      type: "script_published",
+      title: label ? `Coach published ${label}` : "Coach published a practice",
+      body: "Open it before practice and review your calls.",
+      deepLink: id ? `script:${id}` : "script",
+      tag: id ? `script-published-${id}` : "script-published",
+    };
+  }
+  if (kind === "quizzes") {
+    return {
+      type: "new_quiz",
+      title: "Quiz work is available",
+      body: label || "Open Quiz from Player Home when you are ready.",
+      deepLink: "quiz",
+      tag: "new-quiz",
+    };
+  }
+  if (kind === "diagrams" || kind === "clips") {
+    return {
+      type: "media_update",
+      title: kind === "clips" ? "New play video is available" : "New play diagram is available",
+      body: label || "Open your practice or playbook to review the update.",
+      deepLink: "script",
+      tag: `media-update-${kind}`,
+    };
+  }
+  if (kind === "announcements") {
+    return {
+      type: "team_announcement",
+      title: "Coach posted an announcement",
+      body: label || "Open Player Home to read the message.",
+      deepLink: "script",
+      tag: "team-announcement",
+    };
+  }
+  return null;
+}
+
+async function notifyPlayersOfTeamUpdate(kind, details = {}) {
+  if (!_isStaffNotificationUser()) return null;
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return null;
+  if (details.notify === false) return null;
+
+  const payload = _notificationPayloadForPublish(kind, details);
+  if (!payload) return null;
+
+  const key = `${payload.type}|${payload.deepLink}|${payload.body}`;
+  const now = Date.now();
+  const last = _notifRecentBroadcasts.get(key) || 0;
+  if (now - last < NOTIF_BROADCAST_DEDUPE_MS) return null;
+  _notifRecentBroadcasts.set(key, now);
+
+  try {
+    const res = await fetch("/api/notifications/broadcast", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) throw new Error(data.error || "Notification broadcast failed.");
+    return data;
+  } catch (err) {
+    console.warn("[notifications] broadcast skipped", err);
+    return null;
+  }
 }
 
 // ── Deep link handler ─────────────────────────────────────────────────────────

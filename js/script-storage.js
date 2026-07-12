@@ -351,6 +351,7 @@ async function saveScript() {
             recordPlayerPublishStatus("scripts", {
               updatedAt: existing.playerPublishedAt,
               label: existing.name || "Practice script",
+              id: existing.id || "",
             });
           }
         }
@@ -452,6 +453,7 @@ async function overwriteSavedScript(id) {
       recordPlayerPublishStatus("scripts", {
         updatedAt: savedScript.playerPublishedAt,
         label: savedScript.name || "Practice script",
+        id: savedScript.id || "",
       });
     }
   }
