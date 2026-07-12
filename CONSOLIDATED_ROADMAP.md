@@ -307,7 +307,8 @@ Migration order:
 - [x] Wristband command hierarchy: stabilize builder actions, Player Card
   controls, card tabs, and batch edit controls with a smoke-check style
   contract.
-- [ ] Call Sheet command hierarchy.
+- [x] Call Sheet command hierarchy: stabilize the primary toolbar, quick-action
+  groups, and sideline-mode exit controls with a smoke-check style contract.
 - [ ] Dashboard/player portal quick actions.
 - [ ] Tendencies, Installation, Identity, and Offense Builder cleanup.
 

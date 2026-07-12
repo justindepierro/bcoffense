@@ -546,38 +546,48 @@ body.shell-phone #callsheet .cs-empty-cat {
 
 /* Call Sheet Toolbar */
 .cs-toolbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(420px, max-content);
   align-items: center;
-  justify-content: space-between;
   padding: 8px 12px;
   background: var(--color-bg-light);
   border-radius: var(--radius-md);
   margin-bottom: 10px;
   gap: 8px;
-  row-gap: 6px;
   border: 1px solid var(--color-border-light);
-  flex-wrap: wrap;
   box-shadow: var(--shadow-xs);
+  overflow: clip;
 }
 .cs-toolbar-left {
-  display: flex;
+  display: grid;
+  grid-template-columns:
+    minmax(132px, max-content) minmax(94px, max-content)
+    minmax(116px, max-content) minmax(104px, max-content)
+    minmax(96px, max-content);
   align-items: center;
+  justify-content: start;
   gap: 8px;
-  flex-wrap: nowrap;
-  flex-shrink: 0;
+  min-width: 0;
 }
 .cs-toolbar-right {
-  display: flex;
+  display: grid;
+  grid-template-columns:
+    minmax(44px, max-content) minmax(44px, max-content) 1px
+    minmax(116px, max-content) minmax(132px, max-content)
+    minmax(88px, max-content);
   align-items: center;
+  justify-content: end;
   gap: 6px;
-  flex-wrap: nowrap;
-  flex-shrink: 0;
+  min-width: 0;
+  max-width: 100%;
   margin-left: auto;
 }
 
 /* Call Sheet Toggle Groups */
 .cs-toggle-group {
   display: flex;
+  min-width: 0;
+  max-width: 100%;
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -599,6 +609,8 @@ body.shell-phone #callsheet .cs-empty-cat {
   cursor: pointer;
   font-size: var(--font-size-sm);
   font-weight: 500;
+  white-space: normal;
+  overflow-wrap: anywhere;
   transition:
     background var(--transition-fast),
     color var(--transition-fast),
@@ -631,8 +643,26 @@ body.shell-phone #callsheet .cs-empty-cat {
 }
 
 .cs-template-open-btn {
-  flex-shrink: 0;
-  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.cs-toolbar .btn,
+.cs-toolbar .tool-menu-wrap {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.cs-toolbar .btn {
+  justify-content: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.cs-toolbar .tool-menu-wrap > .btn {
+  width: 100%;
 }
 
 /* Call Sheet Display Panel (legacy, kept for script/wristband panels) */
@@ -658,12 +688,14 @@ body.shell-phone #callsheet .cs-empty-cat {
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-xs);
+  overflow: clip;
 }
 
 .cs-toolbar-meta {
   display: grid;
   gap: 4px;
   align-content: start;
+  min-width: 0;
 }
 
 .cs-toolbar-meta strong {
@@ -678,9 +710,11 @@ body.shell-phone #callsheet .cs-empty-cat {
 }
 
 .cs-toolbar-groups {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  align-items: start;
   gap: 10px;
+  min-width: 0;
 }
 
 .cs-tool-group {
@@ -702,12 +736,14 @@ body.shell-phone #callsheet .cs-empty-cat {
 }
 
 .cs-tool-group-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
   gap: 6px;
+  min-width: 0;
 }
 
 .cs-tool-btn {
+  min-width: 0;
   padding: 6px 10px;
   font-size: var(--font-size-xs);
   font-weight: 600;
@@ -716,7 +752,8 @@ body.shell-phone #callsheet .cs-empty-cat {
   background: var(--color-surface);
   color: var(--color-text-muted);
   cursor: pointer;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
   transition:
     background var(--transition-fast),
     border-color var(--transition-fast),
@@ -761,9 +798,9 @@ body.shell-phone #callsheet .cs-empty-cat {
   box-shadow: none;
 }
 .cs-toolbar-secondary-summary {
-  display: flex;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-sm);
   padding: 9px 14px;
   font-size: var(--font-size-sm);
@@ -808,11 +845,13 @@ body.shell-phone #callsheet .cs-empty-cat {
   color: var(--color-text);
 }
 .cs-toolbar-secondary-summary-hint {
-  flex: 1;
-  margin-left: var(--space-sm);
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   font-weight: 400;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ========================================
@@ -4171,9 +4210,43 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   width: 1px;
   height: 22px;
   background: var(--color-border);
-  flex-shrink: 0;
   align-self: center;
 }
+
+@media (max-width: 1180px) {
+  #callsheet .cs-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  #callsheet .cs-toolbar-left,
+  #callsheet .cs-toolbar-right {
+    width: 100%;
+    margin-left: 0;
+    justify-content: stretch;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  }
+
+  #callsheet .cs-title {
+    grid-column: 1 / -1;
+  }
+
+  #callsheet .cs-toggle-group {
+    width: 100%;
+  }
+
+  #callsheet .cs-toggle {
+    flex: 1 1 0;
+  }
+
+  #callsheet .cs-toolbar-divider {
+    display: none;
+  }
+
+  #callsheet .cs-toolbar-secondary {
+    grid-template-columns: 1fr;
+  }
+}
+
 .cs-display-btn {
   color: var(--color-primary);
   border-color: var(--color-primary-light, var(--color-border));
@@ -4550,11 +4623,18 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 
 /* ── Sideline View Mode (#170) ─────────────────────────────── */
 /* Hide most toolbar controls but keep the exit button visible */
-#callsheet.cs-sideline-mode .cs-toolbar > *:not(#csSidelineModeBtn) {
+#callsheet.cs-sideline-mode .cs-toolbar-left,
+#callsheet.cs-sideline-mode .cs-toolbar-right > *:not(#csSidelineModeBtn) {
   display: none;
 }
 #callsheet.cs-sideline-mode .cs-toolbar {
+  grid-template-columns: 1fr;
   justify-content: flex-end;
+}
+#callsheet.cs-sideline-mode .cs-toolbar-right {
+  display: flex;
+  justify-content: flex-end;
+  margin-left: 0;
 }
 #callsheet.cs-sideline-mode .cs-quick-actions-wrap {
   display: none;

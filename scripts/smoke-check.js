@@ -149,6 +149,7 @@ function checkPageStyleContracts() {
   const playbookCss = read("css/playbook.css");
   const gameplanCss = read("css/gameplan.css");
   const wristbandCss = read("css/wristband.css");
+  const callsheetCss = read("css/callsheet.css");
   const gameplanRender = read("js/gameplan-render.js");
 
   if (
@@ -227,6 +228,26 @@ function checkPageStyleContracts() {
     !/\.wb-batch-controls\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(132px,\s*max-content\)\)/.test(wristbandCss)
   ) {
     fail("Wristband card, player, or batch controls are missing overflow-safe rules");
+  }
+
+  if (
+    !/\.cs-toolbar\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(420px,\s*max-content\)[\s\S]*overflow:\s*clip/.test(callsheetCss) ||
+    !/\.cs-toolbar-left\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:[\s\S]*minmax\(132px,\s*max-content\)[\s\S]*minmax\(96px,\s*max-content\)/.test(callsheetCss) ||
+    !/\.cs-toolbar-right\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:[\s\S]*minmax\(44px,\s*max-content\)[\s\S]*minmax\(88px,\s*max-content\)/.test(callsheetCss) ||
+    !/\.cs-toolbar \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(callsheetCss) ||
+    !/@media \(max-width:\s*1180px\)[\s\S]*#callsheet \.cs-toolbar\s*\{[\s\S]*grid-template-columns:\s*1fr[\s\S]*#callsheet \.cs-toolbar-left,[\s\S]*#callsheet \.cs-toolbar-right\s*\{[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(96px,\s*1fr\)\)/.test(callsheetCss)
+  ) {
+    fail("Call Sheet toolbar is missing overflow-safe command hierarchy rules");
+  }
+
+  if (
+    !/\.cs-toolbar-secondary\s*\{[\s\S]*display:\s*grid[\s\S]*overflow:\s*clip/.test(callsheetCss) ||
+    !/\.cs-toolbar-groups\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(168px,\s*1fr\)\)/.test(callsheetCss) ||
+    !/\.cs-tool-group-row\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(96px,\s*1fr\)\)/.test(callsheetCss) ||
+    !/\.cs-tool-btn\s*\{[\s\S]*min-width:\s*0[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(callsheetCss) ||
+    !/#callsheet\.cs-sideline-mode \.cs-toolbar-left,[\s\S]*#callsheet\.cs-sideline-mode \.cs-toolbar-right > \*:not\(#csSidelineModeBtn\)/.test(callsheetCss)
+  ) {
+    fail("Call Sheet quick actions or sideline toolbar rules are incomplete");
   }
 
   console.log("page style contracts ok");
