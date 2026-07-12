@@ -430,12 +430,16 @@
     const shouldConfirm = opts.confirm !== false;
     const shouldReload = opts.reload !== false;
     const shouldNotify = opts.notify !== false;
+    const requestedTargetTab = String(opts.targetTab || "").trim();
     const targetTab =
       opts.auto || opts.navigate === false
         ? ""
-        : (typeof canAccessTab !== "function" || canAccessTab("dashboard"))
-          ? "dashboard"
-          : "";
+        : requestedTargetTab &&
+          (typeof canAccessTab !== "function" || canAccessTab(requestedTargetTab))
+          ? requestedTargetTab
+          : (typeof canAccessTab !== "function" || canAccessTab("dashboard"))
+            ? "dashboard"
+            : "";
     const summary = remote.summary;
     if (shouldConfirm) {
       const ok = await showConfirm(
@@ -480,6 +484,9 @@
         lastRemoteSize: remote.size,
       });
       await reloadAppFromStorage(targetTab ? { targetTab } : {});
+      if (targetTab && typeof setWorkspaceSurface === "function") {
+        setWorkspaceSurface("app", { initModules: false });
+      }
 
       if (shouldReload) {
         if (opts.auto) {
@@ -490,6 +497,7 @@
           return true;
         }
         if (shouldNotify) {
+          closeCloudSyncModal();
           await showModal(
             `Cloud backup pulled successfully.${restoredImages ? `\nImages restored: ${restoredImages}` : ""}${imageWarning}\nWorkspace updated.`,
             { title: "Cloud Sync", icon: "✅" },
@@ -514,6 +522,24 @@
     try {
       setCloudSyncBusy(true);
       updateCloudSyncModalStatus("Fetching cloud backup...", "info");
+      const currentUser =
+        typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+      if (currentUser?.role === "player") {
+        const result = await refreshPlayerCloudBackup({ navigate: true });
+        closeCloudSyncModal();
+        if (result?.ok) {
+          showToast("Team data refreshed. Opening Home.", {
+            type: "success",
+            duration: 3000,
+          });
+        } else {
+          showToast(result?.message || "Team data could not be refreshed.", {
+            type: "warning",
+            duration: 4000,
+          });
+        }
+        return result;
+      }
       const remote = await fetchCloudBackup();
       await restoreCloudBackup(remote);
     } catch (err) {
@@ -524,7 +550,7 @@
     }
   }
 
-  async function refreshPlayerCloudBackup() {
+  async function refreshPlayerCloudBackup(opts = {}) {
     const remote = await fetchCloudBackup({ allowMissing: true });
     if (!remote) {
       return {
@@ -537,7 +563,8 @@
       confirm: false,
       reload: false,
       notify: false,
-      navigate: false,
+      navigate: opts.navigate !== false,
+      targetTab: "dashboard",
     });
     if (!restored) {
       return {

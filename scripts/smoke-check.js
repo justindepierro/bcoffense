@@ -1376,6 +1376,8 @@ function checkPlayerPortalContracts() {
   const html = read("index.html");
   const auth = read("js/auth.js");
   const appShell = read("js/app-shell.js");
+  const appBootstrap = read("js/app-bootstrap.js");
+  const cloudSync = read("js/cloud-sync.js");
   const appEvents = read("js/app-events.js");
   const appNavigation = read("js/app-navigation.js");
   const dashboard = read("js/dashboard.js");
@@ -1405,7 +1407,12 @@ function checkPlayerPortalContracts() {
     !/is-keyboard-open/.test(auth) ||
     !/scrollIntoView\(\{[\s\S]*block:\s*"center"/.test(auth) ||
     !/AUTH_LOGIN_ROLE_DETAILS/.test(auth) ||
-    !/data-login-role/.test(auth)
+    !/data-login-role/.test(auth) ||
+    !/"refreshPlayerTeamApp"/.test(auth) ||
+    /READ_ONLY_ALLOWED_ACTIONS[\s\S]*"openCloudSyncModal"[\s\S]*\]\)/.test(auth) ||
+    /READ_ONLY_ALLOWED_ACTIONS[\s\S]*"pullCloudBackup"[\s\S]*\]\)/.test(auth) ||
+    /READ_ONLY_ALLOWED_ACTIONS[\s\S]*"testCloudSyncConnection"[\s\S]*\]\)/.test(auth) ||
+    !/currentAuthUser\.role === "player"[\s\S]*schedulePlayerTeamUpdateCheck\(\)/.test(auth)
   ) {
     fail("player auth shell or tab permissions are incomplete");
   }
@@ -1416,6 +1423,7 @@ function checkPlayerPortalContracts() {
     !/id="playerPlaybookSummary"/.test(html) ||
     !/id="playerDashboardHome"/.test(html) ||
     !/id="commandPaletteBtn"[^>]*data-auth-player-hide="true"/.test(html) ||
+    !/class="backup-section"[^>]*data-auth-player-hide="true"/.test(html) ||
     !/id="quickTools"[^>]*data-auth-player-hide="true"/.test(html) ||
     !/class="script-header-panel[^"]*"[^>]*data-auth-player-hide="true"/.test(html) ||
     !/class="period-buttons"[^>]*data-auth-player-hide="true"/.test(html) ||
@@ -1462,6 +1470,15 @@ function checkPlayerPortalContracts() {
     !/data-arg="\$\{featuredScriptId\}"/.test(dashboardRender)
   ) {
     fail("player dashboard home is incomplete");
+  }
+  if (
+    !/function ensureMobileStartupSurface\(\)[\s\S]*const isPlayer = currentUser\?\.role === "player"[\s\S]*setWorkspaceSurface\("app"/.test(appBootstrap) ||
+    !/function refreshPlayerCloudBackup\(opts = \{\}\)/.test(cloudSync) ||
+    !/targetTab:\s*"dashboard"/.test(cloudSync) ||
+    !/currentUser\?\.role === "player"[\s\S]*refreshPlayerCloudBackup\(\{ navigate: true \}\)[\s\S]*closeCloudSyncModal\(\)/.test(cloudSync) ||
+    !/setWorkspaceSurface\("app", \{ initModules: false \}\)/.test(cloudSync)
+  ) {
+    fail("player cloud refresh does not land safely on Dashboard");
   }
   if (
     !/window\.visualViewport/.test(appShell) ||

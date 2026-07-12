@@ -38,11 +38,16 @@ function setWorkspaceSurface(surface, opts = {}) {
 }
 
 function ensureMobileStartupSurface() {
-  if (!isMobileStartupShell() || plays.length > 0) return;
-  setWorkspaceSurface("app", { initModules: true });
-
   const currentUser =
     typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  const isPlayer = currentUser?.role === "player";
+  const shouldShowEmptyApp = isPlayer || isMobileStartupShell();
+  if (!shouldShowEmptyApp || (!isPlayer && plays.length > 0)) return;
+
+  const mainApp = document.getElementById("mainApp");
+  const needsInit = Boolean(mainApp?.classList.contains("hidden")) || plays.length === 0;
+  setWorkspaceSurface("app", { initModules: needsInit });
+
   if (!currentUser || typeof showTab !== "function") return;
 
   const defaultTab =

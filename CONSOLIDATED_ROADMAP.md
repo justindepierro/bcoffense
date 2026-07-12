@@ -98,6 +98,8 @@ should feel like entering a refreshed team workspace, not like a low-level
 backup utility.
 
 - [x] Manual Cloud Sync pull refreshes the workspace and lands on Dashboard.
+- [x] Player fresh-device login uses automatic team refresh and Dashboard/Home
+  fallback instead of exposing the staff Cloud Sync pull modal.
 - [ ] Replace the backup-style modal copy with a clearer "Team Workspace Sync"
   flow that separates Push, Pull, and Last Updated state.
 - [ ] Show a post-pull summary on Dashboard with counts for playbook, scripts,
