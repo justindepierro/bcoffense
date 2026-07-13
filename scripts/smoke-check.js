@@ -2940,6 +2940,7 @@ function checkE2eLocalHarness() {
 
 function checkStartupDiagnosticsAndRenderQueue() {
   const appDiagnosticsSource = read("js/app-diagnostics.js");
+  const startupOrchestrator = read("js/startup-orchestrator.js");
   const appInit = read("js/app-init.js");
   const storage = read("js/storage.js");
   const moduleInit = read("js/app-module-init.js");
@@ -2948,9 +2949,33 @@ function checkStartupDiagnosticsAndRenderQueue() {
   const dashboard = read("js/dashboard.js");
   const auth = read("js/auth.js");
   const gameplanActions = read("js/gameplan-actions.js");
+  const cloudSync = read("js/cloud-sync.js");
+  const appShell = read("js/app-shell.js");
+  const playClips = read("js/play-clips.js");
+  const html = read("index.html");
 
   if (!/const appDiagnostics\s*=/.test(appDiagnosticsSource) || !/window\.bcDebugStartup/.test(appDiagnosticsSource)) {
     fail("startup diagnostics API is not exposed");
+  }
+  if (
+    !/const appStartup\s*=/.test(startupOrchestrator) ||
+    !/function queueTask\(/.test(startupOrchestrator) ||
+    !/function shouldSuppressCloudAutoPush\(/.test(startupOrchestrator) ||
+    !/window\.appStartup = appStartup/.test(startupOrchestrator)
+  ) {
+    fail("startup orchestrator API is incomplete");
+  }
+  if (
+    !/window\.appStartup\.markFirstPaintReleased/.test(appShell) ||
+    !/window\.appStartup\.shouldSuppressCloudAutoPush/.test(cloudSync) ||
+    !/window\.appStartup\.runCritical\("storage-reload"/.test(storage) ||
+    !/window\.appStartup\.queueTask\("clip-index-warmup"/.test(playClips) ||
+    !/window\.appStartup\.queueTask\("play-image-key-scan"/.test(moduleInit) ||
+    !/_queueStartupTask\("service-worker-update-check"/.test(html) ||
+    !/queueStartupTask\("cloud-auto-pull"/.test(auth) ||
+    !/queueStartupTask\("player-team-refresh"/.test(auth)
+  ) {
+    fail("startup post-load sync/update tasks are not routed through the orchestrator");
   }
   if (!/appDiagnostics\.mark\("startup:init"\)/.test(appInit)) {
     fail("initApp does not mark startup diagnostics");

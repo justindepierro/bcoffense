@@ -628,6 +628,13 @@
 
   function queueCloudAutoPush(key, reason = "change") {
     if (cloudAutoPushSuppress) return false;
+    if (
+      window.appStartup &&
+      typeof window.appStartup.shouldSuppressCloudAutoPush === "function" &&
+      window.appStartup.shouldSuppressCloudAutoPush(key, reason)
+    ) {
+      return false;
+    }
     if (!shouldAutoPushCloudKey(key)) return false;
     if (!canAutoPushCloudBackup()) return false;
 

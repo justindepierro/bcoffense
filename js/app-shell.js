@@ -175,6 +175,9 @@ function finishStartupLoading(opts = {}) {
     if (opts.error) {
       setStartupLoadingMessage("Startup hit an error. Showing the app anyway.");
     }
+    if (window.appStartup && typeof window.appStartup.markFirstPaintReleased === "function") {
+      window.appStartup.markFirstPaintReleased({ error: Boolean(opts.error) });
+    }
     loader.classList.add("is-hiding");
     loader.setAttribute("aria-hidden", "true");
     setTimeout(() => loader.remove(), 300);
@@ -2337,12 +2340,6 @@ function schedulePlayerTeamUpdateCheck(opts = {}) {
   if (playerTeamUpdateCheckStarted && !opts.force) return;
   playerTeamUpdateCheckStarted = true;
   const delay = Number(opts.delay ?? 350);
-  _setPlayerTeamRefreshState({
-    tone: "checking",
-    title: "Checking team updates",
-    body: "Checking app version and team data...",
-    busy: true,
-  });
   setTimeout(() => {
     if (document.body?.getAttribute("data-auth-role") !== "player") return;
     refreshPlayerTeamApp({ quiet: true });

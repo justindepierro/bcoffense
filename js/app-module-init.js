@@ -79,13 +79,16 @@ function initAllModules() {
 
       // For coach/admin: if this device has local play images, prompt to sync.
       // Gives a visible, actionable toast instead of a silent background push.
-      if (
-        typeof canEditUser === "function" &&
-        canEditUser() &&
-        window.playImages &&
-        typeof window.playImages.loadKeys === "function"
-      ) {
-        window.playImages.loadKeys().then((keys) => {
+      const runPlayImageKeyScan = () => {
+        if (
+          typeof canEditUser !== "function" ||
+          !canEditUser() ||
+          !window.playImages ||
+          typeof window.playImages.loadKeys !== "function"
+        ) {
+          return false;
+        }
+        return window.playImages.loadKeys().then((keys) => {
           if (currentActiveTab === "gameplan" && typeof requestRenderGamePlan === "function") {
             requestRenderGamePlan();
           }
@@ -111,6 +114,14 @@ function initAllModules() {
             );
           }
         }).catch(() => { });
+      };
+      if (window.appStartup && typeof window.appStartup.queueTask === "function") {
+        window.appStartup.queueTask("play-image-key-scan", runPlayImageKeyScan, {
+          delay: 1000,
+          priority: 80,
+        });
+      } else {
+        runPlayImageKeyScan();
       }
     },
     { timeout: 2000 },

@@ -166,6 +166,12 @@ backup utility.
 - [x] Manual Cloud Sync pull refreshes the workspace and lands on Dashboard.
 - [x] Player fresh-device login uses automatic team refresh and Dashboard/Home
   fallback instead of exposing the staff Cloud Sync pull modal.
+- [x] Add a startup coordinator so first render, auth restore, cloud refresh,
+  service-worker update checks, clip index warming, and diagram key scans do not
+  all fire independently.
+- [x] Suppress Cloud autosave during boot, restore, and startup normalization so
+  playbook ID backfills or restored state do not look like coach-initiated
+  uploads.
 - [ ] Replace the backup-style modal copy with a clearer "Team Workspace Sync"
   flow that separates Push, Pull, and Last Updated state.
 - [ ] Show a post-pull summary on Dashboard with counts for playbook, scripts,
@@ -202,6 +208,9 @@ clear update experience that makes both visible.
 - [x] Add a manual "Refresh team app" action for players that updates the app
   shell and re-renders player data without requiring them to know browser cache
   steps.
+- [x] Defer automatic service-worker update checks until after first visible
+  render so clean player sessions can update without racing the initial data
+  refresh.
 - [x] Add a diagnostic tile for admins showing current app cache version,
   service-worker state, last cloud pull, and last player publish time.
 

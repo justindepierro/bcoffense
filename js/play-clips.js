@@ -543,9 +543,19 @@
       }
     });
   }
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", _initClipIndex, { once: true });
-  } else {
+  function _scheduleClipIndexWarmup() {
+    if (window.appStartup && typeof window.appStartup.queueTask === "function") {
+      window.appStartup.queueTask("clip-index-warmup", _initClipIndex, {
+        delay: 700,
+        priority: 70,
+      });
+      return;
+    }
     _initClipIndex();
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", _scheduleClipIndexWarmup, { once: true });
+  } else {
+    _scheduleClipIndexWarmup();
   }
 })();

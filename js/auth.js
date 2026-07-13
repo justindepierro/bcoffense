@@ -765,18 +765,38 @@
 
   function scheduleCloudAutoPull() {
     if (!currentAuthUser) return;
+    const queueStartupTask =
+      window.appStartup && typeof window.appStartup.queueTask === "function"
+        ? window.appStartup.queueTask
+        : null;
     if (
       currentAuthUser.role === "player" &&
       typeof schedulePlayerTeamUpdateCheck === "function"
     ) {
-      schedulePlayerTeamUpdateCheck();
+      if (queueStartupTask) {
+        queueStartupTask("player-team-refresh", () => schedulePlayerTeamUpdateCheck({ delay: 0 }), {
+          delay: 600,
+          priority: 20,
+        });
+      } else {
+        schedulePlayerTeamUpdateCheck();
+      }
       return;
     }
-    setTimeout(() => {
+    const runAutoPull = () => {
       if (typeof autoPullLatestCloudBackup === "function") {
-        autoPullLatestCloudBackup();
+        return autoPullLatestCloudBackup();
       }
-    }, 700);
+      return false;
+    };
+    if (queueStartupTask) {
+      queueStartupTask("cloud-auto-pull", runAutoPull, {
+        delay: 900,
+        priority: 30,
+      });
+    } else {
+      setTimeout(runAutoPull, 700);
+    }
   }
 
   function showLoginOverlay(message = "", opts = {}) {

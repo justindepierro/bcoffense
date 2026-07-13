@@ -969,6 +969,19 @@ const storageManager = {
 })();
 
 async function reloadAppFromStorage(opts = {}) {
+  const run = () => _reloadAppFromStorageInternal(opts);
+  if (
+    window.appStartup &&
+    typeof window.appStartup.runCritical === "function"
+  ) {
+    return window.appStartup.runCritical("storage-reload", run, {
+      suppressCloudAutoPush: true,
+    });
+  }
+  return run();
+}
+
+async function _reloadAppFromStorageInternal(opts = {}) {
   const runReloadStep = async (label, callback) => {
     const run = () => callback();
     try {
