@@ -62,13 +62,17 @@ function selectPeriodPlays(separatorIndex) {
 
 function updateBulkSelectUI() {
   document.querySelectorAll(".bulk-select-cb").forEach((checkbox) => {
-    checkbox.checked = bulkSelectedIndices.includes(
-      parseInt(checkbox.dataset.index, 10),
-    );
+    const index = parseInt(checkbox.dataset.index, 10);
+    const isSelected = bulkSelectedIndices.includes(index);
+    checkbox.checked = isSelected;
+    checkbox.closest(".script-item")?.classList.toggle("bulk-selected", isSelected);
   });
 
   const selectAll = document.getElementById("bulkSelectAll");
-  const playCount = script.filter((play) => !play.isSeparator).length;
+  let playCount = 0;
+  script.forEach((play) => {
+    if (!play.isSeparator) playCount += 1;
+  });
   if (selectAll) {
     selectAll.checked = bulkSelectedIndices.length === playCount && playCount > 0;
     selectAll.indeterminate =
@@ -99,6 +103,7 @@ function applyBulkEdit(field, value) {
   });
 
   clearBulkSelection();
+  requestRenderScript();
   return true;
 }
 
@@ -107,7 +112,6 @@ function clearBulkSelection() {
   const selectAll = document.getElementById("bulkSelectAll");
   if (selectAll) selectAll.checked = false;
   updateBulkSelectUI();
-  requestRenderScript();
   announceScriptA11y("Selection cleared");
 }
 
@@ -305,7 +309,6 @@ function initScriptKeyboard() {
         .map((play, index) => (play.isSeparator ? -1 : index))
         .filter((index) => index >= 0);
       updateBulkSelectUI();
-      _scheduleRenderScript();
       showToast(`Selected ${bulkSelectedIndices.length} play${bulkSelectedIndices.length === 1 ? "" : "s"}`);
       announceScriptA11y(`Selected all ${bulkSelectedIndices.length} plays`);
       return;
@@ -377,7 +380,6 @@ function initScriptKeyboard() {
         .map((play, index) => (play.isSeparator ? -1 : index))
         .filter((index) => index >= 0);
       updateBulkSelectUI();
-      _scheduleRenderScript();
       showToast(`Selected ${bulkSelectedIndices.length} play${bulkSelectedIndices.length === 1 ? "" : "s"}`);
       announceScriptA11y(`Selected all ${bulkSelectedIndices.length} plays`);
       return;

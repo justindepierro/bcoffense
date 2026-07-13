@@ -3370,6 +3370,27 @@ function checkScriptPacketPrintContracts() {
   console.log("script packet print contracts ok");
 }
 
+function checkScriptSelectionRenderContracts() {
+  const selection = read("js/script-selection.js");
+  const updateBulkSelectUi = extractFunctionSource(selection, "updateBulkSelectUI");
+  const clearBulkSelection = extractFunctionSource(selection, "clearBulkSelection");
+
+  if (
+    !/classList\.toggle\("bulk-selected",\s*isSelected\)/.test(updateBulkSelectUi) ||
+    !/closest\("\.script-item"\)/.test(updateBulkSelectUi)
+  ) {
+    fail("script bulk selection does not update row styling without a full render");
+  }
+  if (/requestRenderScript\(\)/.test(clearBulkSelection)) {
+    fail("clearing script bulk selection still forces a full script render");
+  }
+  if (/updateBulkSelectUI\(\);\s*_scheduleRenderScript\(\);/.test(selection)) {
+    fail("script select-all shortcuts still schedule a full script render");
+  }
+
+  console.log("script selection render contracts ok");
+}
+
 function checkGamePlanMediaReadinessContracts() {
   const gameplanRender = read("js/gameplan-render.js");
   const gameplanCss = read("css/gameplan.css");
@@ -3573,6 +3594,7 @@ checkScrollOwnershipContract();
 checkTopLevelSymbolOwnership();
 checkWristbandConstantUsage();
 checkScriptPacketPrintContracts();
+checkScriptSelectionRenderContracts();
 checkGuideContracts();
 checkFunctionShadows();
 

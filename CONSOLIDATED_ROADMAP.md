@@ -386,7 +386,9 @@ Work left:
 - [x] Measure large-script render and filter hotspots before optimizing `script-render.js`.
   - 2026-07-13 `npm run stress:script-perf`: 900-play playbook, 96-play script, 8 periods, 12 render samples.
   - Hotspots measured: full Script render averaged 534.29ms, with `contentMs` at 477.18ms; available-play all-plays rebuild took 270.5ms for 900 plays / 50 rendered rows.
-- [ ] Reduce broad `innerHTML` rebuilds for small Script state changes.
+- [x] Reduce broad `innerHTML` rebuilds for small Script state changes.
+  - Selection-only changes now update checkbox state and `.bulk-selected` row styling directly instead of re-rendering the full Script list on clear/select-all shortcuts.
+  - Bulk field edits still use the full render path because they mutate multiple play rows; next optimization should target `renderScriptContent()` row rebuilds.
 - [ ] Choose the next product-value split between `tendencies.js` and `installation.js`.
 - [ ] Verify split-file ownership claims by grepping for the functions each file claims to own.
 - [ ] Audit intentional `window.X =` exports and document the real public globals.
