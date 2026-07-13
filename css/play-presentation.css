@@ -1018,9 +1018,9 @@ body.play-presentation-open .quick-tools {
 
 .pp-readiness-summary {
   display: grid;
-  grid-template-columns: minmax(120px, 0.42fr) minmax(0, 1fr);
+  grid-template-columns: minmax(104px, 0.32fr) minmax(0, 1fr);
   gap: 8px 10px;
-  align-items: center;
+  align-items: stretch;
 }
 
 .pp-readiness-status {
@@ -1044,6 +1044,53 @@ body.play-presentation-open .quick-tools {
   font-size: var(--font-size-2xs);
   font-weight: 900;
   line-height: 1.1;
+}
+
+.pp-readiness-driver-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+}
+
+.pp-readiness-driver,
+.pp-readiness-last {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  line-height: 1.05;
+}
+
+.pp-readiness-driver small,
+.pp-readiness-last small {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-3xs);
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pp-readiness-driver strong,
+.pp-readiness-last strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pp-readiness-summary > .play-readiness-track {
+  grid-column: 2;
+  align-self: end;
+}
+
+.pp-readiness-last {
+  grid-column: 2;
 }
 
 .pp-readiness-label {
@@ -1100,6 +1147,56 @@ body.play-presentation-open .quick-tools {
   display: grid;
   grid-template-columns: repeat(5, minmax(34px, 1fr));
   gap: 6px;
+}
+
+.pp-readiness-log-strip {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.pp-readiness-log-strip > span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-3xs);
+  font-weight: 950;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.pp-readiness-log-strip > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.pp-readiness-log-row,
+.pp-readiness-log-empty {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  line-height: 1.05;
+}
+
+.pp-readiness-log-row small,
+.pp-readiness-log-row em,
+.pp-readiness-log-empty {
+  overflow: hidden;
+  font-size: var(--font-size-3xs);
+  font-style: normal;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pp-readiness-log-row strong {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
 }
 
 .pp-readiness-actions .play-readiness-btn {
@@ -2411,6 +2508,16 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
     grid-template-columns: 1fr;
   }
 
+  .pp-readiness-driver-grid,
+  .pp-readiness-log-strip > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pp-readiness-summary > .play-readiness-track,
+  .pp-readiness-last {
+    grid-column: 1;
+  }
+
   .pp-coach-call {
     white-space: normal;
   }
@@ -2705,6 +2812,11 @@ body.play-presentation-mobile.is-landscape-screen .pp-readiness-status strong {
 
 body.play-presentation-mobile.is-landscape-screen .pp-readiness-score-grid {
   grid-template-columns: repeat(5, minmax(32px, 1fr));
+}
+
+body.play-presentation-mobile.is-landscape-screen .pp-readiness-driver-grid,
+body.play-presentation-mobile.is-landscape-screen .pp-readiness-log-strip > div {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 body.play-presentation-mobile.is-landscape-screen

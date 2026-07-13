@@ -618,33 +618,61 @@ function renderPlayReadinessPresentationCoachCard(play) {
   if (!isPlayReadinessCoachRole()) return "";
   const summary = getPlayReadinessSummary(play);
   const compact = getPlayReadinessCompactSummary(summary);
+  const avgText = summary.scoredRepCount ? summary.avgScore.toFixed(1) : "-";
+  const lastText = summary.lastLog
+    ? `${summary.lastLogScore}/5${compact.daysText ? ` \u00b7 ${compact.daysText}` : ""}`
+    : "No reps yet";
+  const driverItems = [
+    ["Avg", `${avgText}/5`],
+    ["Reps", String(summary.repCount)],
+    ["Shown", summary.shownPoints ? `+${summary.shownPoints}` : "0"],
+    ["Trend", compact.trend.short],
+  ].map(([label, value]) => `
+    <span class="pp-readiness-driver">
+      <small>${escapeHtml(label)}</small>
+      <strong>${escapeHtml(value)}</strong>
+    </span>`).join("");
+  const recentRows = summary.logs.slice(0, 3).map((log) => {
+    const typeLabel = getPlayReadinessRepType(log.type)?.label || log.type || "Rep";
+    return `<span class="pp-readiness-log-row">
+      <small>${escapeHtml(log.date || "")}</small>
+      <strong>${log._unscored ? "Unscored" : `${log.score}/5`}</strong>
+      <em>${escapeHtml(typeLabel)}</em>
+    </span>`;
+  }).join("") || `<span class="pp-readiness-log-empty">No reps logged yet.</span>`;
+
   return `
     <section class="pp-coach-section pp-coach-section-readiness"
       data-auth-player-hide="true" aria-label="Play readiness scoring">
       <div class="pp-coach-section-head">
         <h3>Readiness Score</h3>
-        <span>Coach table</span>
+        <span>${escapeHtml(summary.installTierDisplay)}</span>
       </div>
       <div class="pp-readiness-summary">
-        <div class="pp-readiness-status">
+        <div class="pp-readiness-status" aria-label="Readiness score ${summary.confidenceScore}">
           <strong class="pp-readiness-score">${summary.confidenceScore}</strong>
           <span class="pr-confidence pr-confidence--${escapeHtml(compact.tone)}">${escapeHtml(summary.confidenceLabel)}</span>
         </div>
-        <div class="pp-readiness-plain-stats">
-          <span>${summary.repCount} reps</span>
-          <span>avg ${summary.avgScore.toFixed(1)}/5</span>
-          ${summary.shownPoints ? `<span>${escapeHtml(summary.shownStatus.label)} +${summary.shownPoints}</span>` : ""}
-          ${compact.daysText ? `<span>last ${escapeHtml(compact.daysText)}</span>` : ""}
+        <div class="pp-readiness-driver-grid" aria-label="Readiness score drivers">
+          ${driverItems}
         </div>
         <div class="play-readiness-track" style="--pr-progress:${summary.progressPct}%" aria-label="${summary.progressPct}% readiness">
           <span class="play-readiness-fill" aria-hidden="true"></span>
         </div>
+        <span class="pp-readiness-last">
+          <small>Last rep</small>
+          <strong>${escapeHtml(lastText)}</strong>
+        </span>
       </div>
       <div class="pp-readiness-score-row">
         <span>Score the rep</span>
         <div class="pp-readiness-score-grid" role="group" aria-label="Quick score this rep">
           ${renderPlayReadinessScoreButtons("quickPlayReadinessPresentationScore", summary.lastLogScore)}
         </div>
+      </div>
+      <div class="pp-readiness-log-strip">
+        <span>Recent reps</span>
+        <div>${recentRows}</div>
       </div>
       <div class="pp-readiness-actions">
         <button type="button" class="play-readiness-btn" data-action="openPlayReadinessPresentationLogModal">
@@ -981,6 +1009,11 @@ function _savePlayReadinessLog(play, form, context = {}) {
 
 // Public entry points
 function openPlayReadinessLogModal(index) {
+  const keyArg = String(index || "");
+  if (keyArg && playReadinessHistoryContext?.key === keyArg && playReadinessHistoryContext.play) {
+    openPlayReadinessLogModalForPlay(playReadinessHistoryContext.play, { source: "history" });
+    return;
+  }
   openPlayReadinessLogModalForPlay(getPlayReadinessScriptPlay(index), { source: "script", index });
 }
 
@@ -1097,6 +1130,7 @@ function renderPlayReadinessReportScoreControls(playKey, log) {
           data-arg="${score}"
           data-play-key="${escapeHtml(playKey)}"
           data-report-id="${escapeHtml(logId)}"
+          aria-pressed="${active ? "true" : "false"}"
           aria-label="Update to ${score}/5">${score}</button>`;
   }).join("")}
       <button type="button" class="play-readiness-report-delete"
@@ -1155,9 +1189,23 @@ async function deletePlayReadinessReport(element) {
 function showPlayReadinessHistoryForPlay(play) {
   if (!play || !isPlayReadinessCoachRole()) return;
   const summary = getPlayReadinessSummary(play);
+  const compact = getPlayReadinessCompactSummary(summary);
   playReadinessHistoryContext = { key: summary.key, play };
 
   const avgText = summary.scoredRepCount ? summary.avgScore.toFixed(1) : "-";
+  const lastText = summary.lastLog
+    ? `${summary.lastLogScore}/5${compact.daysText ? ` \u00b7 ${compact.daysText}` : ""}`
+    : "No reps yet";
+  const driverItems = [
+    ["Avg", `${avgText}/5`],
+    ["Reps", String(summary.repCount)],
+    ["Shown", summary.shownPoints ? `+${summary.shownPoints}` : "0"],
+    ["Trend", compact.trend.short],
+  ].map(([label, value]) => `
+    <div>
+      <strong>${escapeHtml(value)}</strong>
+      <span>${escapeHtml(label)}</span>
+    </div>`).join("");
   const logRows = summary.logs.slice(0, 20).map((log) => {
     const typeLabel = getPlayReadinessRepType(log.type)?.label || log.type || "Rep";
     const icon = _PR_TYPE_ICON(log.type);
@@ -1168,13 +1216,15 @@ function showPlayReadinessHistoryForPlay(play) {
     ].filter(Boolean).join(" ");
     const contextStr = [log.situation, log.defense].filter(Boolean).join(" / ");
     return `<div class="play-readiness-history-row">
-      <span class="pr-hist-icon">${icon}</span>
-      <strong class="pr-hist-date">${escapeHtml(log.date || "")}</strong>
-      <span class="pr-hist-type">${escapeHtml(typeLabel)}</span>
-      <span class="pr-hist-score">${log._unscored ? "(unscored)" : `${log.score}/5`}</span>
-      ${flags ? `<span class="pr-hist-flags">${flags}</span>` : ""}
-      ${contextStr ? `<span class="pr-hist-context">${escapeHtml(contextStr)}</span>` : ""}
-      ${log.notes ? `<em class="pr-hist-note">${escapeHtml(log.notes)}</em>` : ""}
+      <div class="pr-hist-main">
+        <span class="pr-hist-icon">${icon}</span>
+        <strong class="pr-hist-date">${escapeHtml(log.date || "")}</strong>
+        <span class="pr-hist-type">${escapeHtml(typeLabel)}</span>
+        <span class="pr-hist-score">${log._unscored ? "Unscored" : `${log.score}/5`}</span>
+        ${flags ? `<span class="pr-hist-flags">${flags}</span>` : ""}
+        ${contextStr ? `<span class="pr-hist-context">${escapeHtml(contextStr)}</span>` : ""}
+        ${log.notes ? `<em class="pr-hist-note">${escapeHtml(log.notes)}</em>` : ""}
+      </div>
       ${renderPlayReadinessReportScoreControls(summary.key, log)}
     </div>`;
   }).join("") || `<div class="play-readiness-empty">No reps logged yet. Score a rep in the script or playbook panel.</div>`;
@@ -1190,15 +1240,26 @@ function showPlayReadinessHistoryForPlay(play) {
         <h3 id="playReadinessHistoryTitle">Rep History</h3>
         <button type="button" class="modal-close-btn" data-action="closePlayReadinessModal" aria-label="Close">x</button>
       </div>
+      <p class="play-readiness-modal-sub">${escapeHtml(getPlayReadinessPlayLabel(play))}</p>
+      <div class="play-readiness-history-hero">
+        <div class="play-readiness-history-score" aria-label="Readiness score ${summary.confidenceScore}">
+          <strong>${summary.confidenceScore}</strong>
+          <span class="pr-confidence pr-confidence--${escapeHtml(compact.tone)}">${escapeHtml(summary.confidenceLabel)}</span>
+        </div>
+        <div class="play-readiness-history-copy">
+          <span>${escapeHtml(summary.installTierDisplay)} \u00b7 ${summary.progressPct}% to target</span>
+          <strong>Last rep: ${escapeHtml(lastText)}</strong>
+          <div class="play-readiness-track" style="--pr-progress:${summary.progressPct}%" aria-label="${summary.progressPct}% toward target">
+            <span class="play-readiness-fill" aria-hidden="true"></span>
+          </div>
+        </div>
+      </div>
       <div class="play-readiness-history-summary">
-        <div><strong>${summary.confidenceScore}</strong><span>${escapeHtml(summary.confidenceLabel)}</span></div>
-        <div><strong>${summary.repCount}</strong><span>Total reps</span></div>
-        <div><strong>${escapeHtml(avgText)}/5</strong><span>Avg score</span></div>
-        <div><strong>${summary.progressPct}%</strong><span>To target</span></div>
+        ${driverItems}
       </div>
       <div class="play-readiness-history-grid">
-        <section>
-          <h4>Rep Log</h4>
+        <section class="play-readiness-history-log-panel">
+          <h4>Unified Rep Log</h4>
           ${logRows}
         </section>
       </div>

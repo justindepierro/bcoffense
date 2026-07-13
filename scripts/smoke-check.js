@@ -1418,6 +1418,7 @@ function checkPlayReadinessContracts() {
     !/class="pr-last-result"/.test(readiness) ||
     !/function animatePlayReadinessScoreSelection\(element\)/.test(readiness) ||
     !/aria-pressed="\$\{active \? "true" : "false"\}"/.test(readiness) ||
+    !/playReadinessHistoryContext\?\.key === keyArg/.test(readiness) ||
     !/function quickPlayReadinessPlaybookScore\(score, element\)/.test(readiness) ||
     !/function quickPlayReadinessScriptScore\(score, element\)/.test(readiness) ||
     !/function quickPlayReadinessPresentationScore\(score, element\)/.test(readiness) ||
@@ -1467,7 +1468,9 @@ function checkPlayReadinessContracts() {
     !/\.play-readiness-track/.test(css) ||
     !/\.play-readiness-modal/.test(css) ||
     !/\.script-item--printlike \.play-readiness-widget/.test(css) ||
+    !/\.play-readiness-history-hero/.test(css) ||
     !/\.play-readiness-history-summary/.test(css) ||
+    !/\.pr-hist-main/.test(css) ||
     !/\.play-readiness-badge/.test(css) ||
     !/\.play-readiness-rollup/.test(css) ||
     !/\.play-readiness-quick-score/.test(css) ||
@@ -1488,6 +1491,8 @@ function checkPlayReadinessContracts() {
     !/\.play-readiness-score-btn\.is-score-pulse/.test(playbookCss) ||
     !/@keyframes prScoreSelectPulse/.test(playbookCss) ||
     !/\.pp-coach-section-readiness/.test(presentationCss) ||
+    !/\.pp-readiness-driver-grid/.test(presentationCss) ||
+    !/\.pp-readiness-log-strip/.test(presentationCss) ||
     !/\.pp-minimum-readiness-dock/.test(presentationCss) ||
     !/\.pp-readiness-score-rail/.test(presentationCss) ||
     !/\.pp-readiness-rail-buttons/.test(presentationCss) ||

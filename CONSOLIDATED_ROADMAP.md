@@ -352,7 +352,7 @@ P1/P2 polish:
 - [x] Animate score button selection.
 - [x] Remove "Seed Sample Data" from daily coach UI.
 - [x] Redesign playbook readiness panel around the readiness score.
-- [ ] Redesign history and presentation coach cards around the new log model.
+- [x] Redesign history and presentation coach cards around the new log model.
 - [ ] Remove dead sweet-spot/weekly-weighted/action-metrics paths after migration.
 
 Definition of done:
