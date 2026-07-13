@@ -383,7 +383,9 @@ Work left:
 - [x] Use stress-audit reports to prioritize the highest-impact loading, overflow, touch-target, and console-error fixes.
 - [x] Defer non-critical dashboard, tendencies, and remaining callsheet setup until first use.
 - [x] Reduce unrelated responsibilities still owned by `utils.js`.
-- [ ] Measure large-script render and filter hotspots before optimizing `script-render.js`.
+- [x] Measure large-script render and filter hotspots before optimizing `script-render.js`.
+  - 2026-07-13 `npm run stress:script-perf`: 900-play playbook, 96-play script, 8 periods, 12 render samples.
+  - Hotspots measured: full Script render averaged 534.29ms, with `contentMs` at 477.18ms; available-play all-plays rebuild took 270.5ms for 900 plays / 50 rendered rows.
 - [ ] Reduce broad `innerHTML` rebuilds for small Script state changes.
 - [ ] Choose the next product-value split between `tendencies.js` and `installation.js`.
 - [ ] Verify split-file ownership claims by grepping for the functions each file claims to own.

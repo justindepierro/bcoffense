@@ -127,6 +127,8 @@ function parseArgs(argv) {
     outputDir: path.join(root, ".stress-audit"),
     headed: false,
     warnOnly: false,
+    scriptPerf: false,
+    scriptPerfIterations: 12,
     maxConsole: 60,
     maxIssues: 200,
   };
@@ -145,8 +147,10 @@ function parseArgs(argv) {
     else if (arg.startsWith("--output=")) args.outputDir = path.resolve(arg.slice(arg.indexOf("=") + 1));
     else if (arg.startsWith("--max-console=")) args.maxConsole = numberArg(arg, args.maxConsole);
     else if (arg.startsWith("--max-issues=")) args.maxIssues = numberArg(arg, args.maxIssues);
+    else if (arg.startsWith("--script-perf-iterations=")) args.scriptPerfIterations = numberArg(arg, args.scriptPerfIterations);
     else if (arg === "--headed") args.headed = true;
     else if (arg === "--warn-only") args.warnOnly = true;
+    else if (arg === "--script-perf") args.scriptPerf = true;
   });
 
   args.roles = args.roles.filter((role) => ROLE_TABS[role]);
@@ -198,6 +202,8 @@ Options:
   --output=.stress-audit      Report output directory
   --headed                    Show browser
   --warn-only                 Always exit zero
+  --script-perf               Capture Script render/filter performance metrics
+  --script-perf-iterations=12 Render benchmark iterations for --script-perf
   --help                      Show this message`);
 }
 
@@ -739,6 +745,148 @@ async function auditRoleViewport(page, role, viewport, tabs, opts) {
   };
 }
 
+async function collectScriptPerformance(page, viewport, opts) {
+  await page.setViewportSize({ width: viewport.width, height: viewport.height });
+  await loginAs(page, "admin");
+  await page.waitForTimeout(250);
+
+  return page.evaluate(async ({ viewportName, iterations }) => {
+    const waitFrames = async (count = 1) => {
+      for (let index = 0; index < count; index += 1) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
+    };
+    const round = (value) => Number((Number(value) || 0).toFixed(2));
+    const clearFiltersForMeasurement = () => {
+      scriptSelectedTypes = [];
+      scriptSelectedSituation = [];
+      scriptSelectedDown = [];
+      scriptSelectedDistance = [];
+      scriptSelectedHash = [];
+      scriptSelectedFieldPos = [];
+      scriptSelectedPersonnel = [];
+      scriptAvailPage = 0;
+      const ids = [
+        "scriptFilterFormation",
+        "scriptFilterBasePlay",
+        "scriptSearchPlay",
+        "scriptGamePlanFilter",
+        "scriptJvFilter",
+      ];
+      ids.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el.type === "checkbox") el.checked = false;
+        else el.value = "";
+      });
+      if (typeof syncScriptCheckboxFilterSelections === "function") {
+        syncScriptCheckboxFilterSelections();
+      }
+      if (typeof syncScriptSearchClearButton === "function") {
+        syncScriptSearchClearButton();
+      }
+      if (typeof updateActiveFilterCount === "function") {
+        updateActiveFilterCount();
+      }
+    };
+    const availableSnapshot = () => ({
+      availableCount: Number(document.getElementById("availablePlayCount")?.textContent || 0),
+      pageItemCount: document.querySelectorAll("#availablePlays .play-item").length,
+    });
+    const timeAvailableFilter = async (label, setup) => {
+      clearFiltersForMeasurement();
+      if (typeof setup === "function") setup();
+      if (typeof updateActiveFilterCount === "function") updateActiveFilterCount();
+      const startedAt = performance.now();
+      renderAvailablePlays();
+      await waitFrames(1);
+      return {
+        label,
+        durationMs: round(performance.now() - startedAt),
+        ...availableSnapshot(),
+      };
+    };
+    const optionValue = (selector) =>
+      document.querySelector(`${selector} option[value]:not([value=""])`)?.value || "";
+
+    if (typeof showTab === "function") showTab("script");
+    await waitFrames(3);
+
+    const savedScripts = typeof getSavedScripts === "function" ? getSavedScripts() : [];
+    const largestScript = savedScripts
+      .slice()
+      .sort((a, b) => (b.plays?.length || 0) - (a.plays?.length || 0))[0] || null;
+    if (largestScript && typeof loadSavedScriptRecord === "function") {
+      loadSavedScriptRecord(largestScript, { skipToast: true });
+      await waitFrames(3);
+    }
+
+    const renderSummary =
+      typeof runScriptRenderProfileBenchmark === "function"
+        ? runScriptRenderProfileBenchmark(iterations)
+        : null;
+    const renderSamples =
+      typeof getScriptRenderProfileHistory === "function"
+        ? getScriptRenderProfileHistory()
+        : [];
+
+    const formationValue = optionValue("#scriptFilterFormation");
+    const basePlayValue = optionValue("#scriptFilterBasePlay");
+    const filterTimings = [
+      await timeAvailableFilter("all plays", null),
+      await timeAvailableFilter("search: viper", () => {
+        const input = document.getElementById("scriptSearchPlay");
+        if (input) input.value = "viper";
+      }),
+      await timeAvailableFilter("formation", () => {
+        const select = document.getElementById("scriptFilterFormation");
+        if (select) select.value = formationValue;
+      }),
+      await timeAvailableFilter("base play", () => {
+        const select = document.getElementById("scriptFilterBasePlay");
+        if (select) select.value = basePlayValue;
+      }),
+      await timeAvailableFilter("type: Run", () => {
+        scriptSelectedTypes = ["Run"];
+        if (typeof syncScriptCheckboxFilterSelections === "function") {
+          syncScriptCheckboxFilterSelections();
+        }
+      }),
+    ];
+    clearFiltersForMeasurement();
+    renderAvailablePlays();
+
+    const stageKeys = renderSummary
+      ? Object.keys(renderSummary).filter((key) => key.endsWith("Ms") && key !== "totalMs")
+      : [];
+    const slowestRenderStage = stageKeys
+      .map((key) => ({ stage: key, durationMs: renderSummary[key] || 0 }))
+      .sort((a, b) => b.durationMs - a.durationMs)[0] || null;
+    const slowestFilter = filterTimings
+      .slice()
+      .sort((a, b) => b.durationMs - a.durationMs)[0] || null;
+
+    return {
+      viewport: viewportName,
+      iterations,
+      loadedScript: largestScript
+        ? {
+          id: String(largestScript.id || ""),
+          name: largestScript.name || "",
+          rows: largestScript.plays?.length || 0,
+          plays: (largestScript.plays || []).filter((item) => item && !item.isSeparator).length,
+          periods: (largestScript.plays || []).filter((item) => item?.isSeparator).length,
+        }
+        : null,
+      renderSummary,
+      renderSamples,
+      slowestRenderStage,
+      filterTimings,
+      slowestFilter,
+    };
+  }, { viewportName: viewport.name, iterations: opts.scriptPerfIterations });
+}
+
 async function auditTab(page, tab, opts) {
   const beforeErrors = await page.evaluate(() => window.__stressConsoleErrors?.length || 0).catch(() => 0);
   const result = await page.evaluate(async (tabName) => {
@@ -866,6 +1014,22 @@ function collectIssues(report, maxIssues) {
   return issues.slice(0, maxIssues);
 }
 
+function formatScriptPerfLine(perf) {
+  const loaded = perf.loadedScript
+    ? `${perf.loadedScript.plays} plays / ${perf.loadedScript.periods} periods`
+    : "no saved script loaded";
+  const render = perf.renderSummary
+    ? `${perf.renderSummary.totalMs}ms avg total`
+    : "render benchmark unavailable";
+  const stage = perf.slowestRenderStage
+    ? `${perf.slowestRenderStage.stage} ${Number(perf.slowestRenderStage.durationMs).toFixed(2)}ms`
+    : "unknown stage";
+  const filter = perf.slowestFilter
+    ? `${perf.slowestFilter.label} ${Number(perf.slowestFilter.durationMs).toFixed(2)}ms`
+    : "unknown filter";
+  return `${perf.viewport}: ${loaded}; render ${render}; slowest stage ${stage}; slowest filter ${filter}`;
+}
+
 function buildMarkdown(report) {
   const failures = report.issues.filter((issue) => issue.severity === "fail");
   const warnings = report.issues.filter((issue) => issue.severity === "warn");
@@ -911,6 +1075,20 @@ function buildMarkdown(report) {
   slowest.forEach((tab) => {
     lines.push(`- ${tab.role} ${tab.viewport} ${tab.tab}: ${tab.durationMs}ms`);
   });
+
+  if (report.scriptPerformance?.length) {
+    lines.push("", "## Script Render And Filter Performance", "");
+    report.scriptPerformance.forEach((perf) => {
+      lines.push(`- ${formatScriptPerfLine(perf)}`);
+      if (perf.filterTimings?.length) {
+        perf.filterTimings.forEach((timing) => {
+          lines.push(
+            `  - ${timing.label}: ${timing.durationMs}ms, ${timing.availableCount} available, ${timing.pageItemCount} rendered`,
+          );
+        });
+      }
+    });
+  }
   lines.push("");
   return `${lines.join("\n")}\n`;
 }
@@ -977,6 +1155,18 @@ async function main() {
     const storage = await inspectStorage(page);
     storage.seedStorageInfo = seedStorageInfo;
 
+    const scriptPerformance = [];
+    if (args.scriptPerf) {
+      for (const viewport of args.viewports) {
+        process.stdout.write(`script perf ${viewport.name}... `);
+        const perf = await collectScriptPerformance(page, viewport, args);
+        scriptPerformance.push(perf);
+        const renderTotal = perf.renderSummary?.totalMs ?? "n/a";
+        const filterTotal = perf.slowestFilter?.durationMs ?? "n/a";
+        console.log(`render ${renderTotal}ms, filter ${filterTotal}ms`);
+      }
+    }
+
     const runs = [];
     for (const viewport of args.viewports) {
       for (const role of args.roles) {
@@ -1003,6 +1193,7 @@ async function main() {
       },
       storage,
       runs,
+      scriptPerformance,
       issues: [],
     };
     report.issues = collectIssues(report, args.maxIssues);

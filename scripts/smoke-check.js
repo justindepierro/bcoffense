@@ -2737,6 +2737,9 @@ function checkStressAuditHarness() {
   if (pkg.scripts?.["stress:audit"] !== "node scripts/stress-seed-audit.mjs") {
     fail("stress audit harness is not exposed through npm run stress:audit");
   }
+  if (!/--script-perf/.test(pkg.scripts?.["stress:script-perf"] || "")) {
+    fail("script performance stress shortcut is missing");
+  }
   if (!/\.stress-audit\//.test(gitignore)) {
     fail("stress audit reports are not ignored by git");
   }
@@ -2744,7 +2747,12 @@ function checkStressAuditHarness() {
     /function generateStressData\(opts\)/,
     /async function seedApp\(page, data\)/,
     /async function auditRoleViewport\(page, role, viewport, tabs, opts\)/,
+    /async function collectScriptPerformance\(page, viewport, opts\)/,
     /function collectIssues\(report, maxIssues\)/,
+    /function formatScriptPerfLine\(perf\)/,
+    /runScriptRenderProfileBenchmark\(iterations\)/,
+    /filterTimings/,
+    /scriptPerformance/,
     /stress-audit-report\.json/,
     /stress-audit-report\.md/,
   ].forEach((pattern) => {
