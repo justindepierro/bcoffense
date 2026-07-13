@@ -1299,7 +1299,30 @@ const PLAY_IDENTITY_FIELDS = {
   ],
 };
 
+function normalizePlayCompareValue(value, options = {}) {
+  const raw = value == null ? "" : String(value);
+  const spaced = raw
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+  return options.spaced ? spaced : spaced.replace(/\s+/g, "");
+}
+
+function normalizePlayCompareKey(value, options = {}) {
+  return String(value || "")
+    .split("|")
+    .map((part) => normalizePlayCompareValue(part, options))
+    .join("|");
+}
+
 function normalizePlayIdentityValue(value, options = {}) {
+  if (options.canonical || options.compare) {
+    return normalizePlayCompareValue(value, options);
+  }
   const raw = value == null ? "" : String(value);
   const trimmed = options.trim === false ? raw : raw.trim();
   return options.normalizeCase ? trimmed.toLowerCase() : trimmed;
@@ -1313,6 +1336,10 @@ function getPlayIdentityKey(play, mode = "core", options = {}) {
   return fields
     .map((field) => normalizePlayIdentityValue(play[field], options))
     .join("|");
+}
+
+function getPlayCompareKey(play, mode = "core", options = {}) {
+  return getPlayIdentityKey(play, mode, { ...options, canonical: true });
 }
 
 function createPlayId(prefix = "play") {
@@ -1524,35 +1551,60 @@ function getPlaybookRuntimeIndex() {
   const byId = new Map();
   const byGamePlanSig = new Map();
   const byTagSig = new Map();
+  const byGamePlanCompareKey = new Map();
+  const byTagCompareKey = new Map();
   const byPlay = new WeakMap();
   list.forEach((play, index) => {
     if (!play) return;
     const gpSig = getPlayIdentityKey(play, "gameplan", { trim: false });
     const tagSig = playSignature(play);
+    const gpCompareKey = getPlayCompareKey(play, "gameplan");
+    const tagCompareKey = getPlayCompareKey(play, "tag");
     const searchText = PLAYBOOK_RUNTIME_SEARCH_FIELDS
       .map((field) => play[field])
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
-    const entry = { play, index, gpSig, tagSig, searchText };
+    const entry = { play, index, gpSig, tagSig, gpCompareKey, tagCompareKey, searchText };
     byPlay.set(play, entry);
     if (play.id) byId.set(String(play.id), entry);
     if (gpSig && !byGamePlanSig.has(gpSig)) byGamePlanSig.set(gpSig, entry);
     if (tagSig && !byTagSig.has(tagSig)) byTagSig.set(tagSig, entry);
+    if (gpCompareKey && !byGamePlanCompareKey.has(gpCompareKey)) {
+      byGamePlanCompareKey.set(gpCompareKey, entry);
+    }
+    if (tagCompareKey && !byTagCompareKey.has(tagCompareKey)) {
+      byTagCompareKey.set(tagCompareKey, entry);
+    }
   });
-  _playbookRuntimeIndex = { byId, byGamePlanSig, byTagSig, byPlay, size: list.length };
+  _playbookRuntimeIndex = {
+    byId,
+    byGamePlanSig,
+    byTagSig,
+    byGamePlanCompareKey,
+    byTagCompareKey,
+    byPlay,
+    size: list.length,
+  };
   _playbookRuntimeIndexSource = list;
   return _playbookRuntimeIndex;
 }
 
 function findPlayByGamePlanSignature(sig) {
   if (!sig) return null;
-  const hit = getPlaybookRuntimeIndex().byGamePlanSig.get(sig);
+  const index = getPlaybookRuntimeIndex();
+  const hit =
+    index.byGamePlanSig.get(sig) ||
+    index.byGamePlanCompareKey.get(normalizePlayCompareKey(sig));
   return hit ? hit.play : null;
 }
 
 function playsHaveSameIdentity(p1, p2, mode = "core", options = {}) {
   return getPlayIdentityKey(p1, mode, options) === getPlayIdentityKey(p2, mode, options);
+}
+
+function playsHaveSameCompareKey(p1, p2, mode = "core", options = {}) {
+  return getPlayCompareKey(p1, mode, options) === getPlayCompareKey(p2, mode, options);
 }
 
 /**
@@ -1567,7 +1619,9 @@ function playsMatch(p1, p2) {
   // Preserve the historic matching order while sharing the key builder.
   if (playsHaveSameIdentity(p1, p2, "core", { trim: false })) return true;
   if (playsHaveSameIdentity(p1, p2, "name", { trim: false })) return true;
-  return playsHaveSameIdentity(p1, p2, "name", { normalizeCase: true });
+  if (playsHaveSameIdentity(p1, p2, "name", { normalizeCase: true })) return true;
+  if (playsHaveSameCompareKey(p1, p2, "core")) return true;
+  return playsHaveSameCompareKey(p1, p2, "name");
 }
 
 // ============ Defense Taxonomy / Normalization ============

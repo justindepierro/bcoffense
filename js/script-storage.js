@@ -768,6 +768,12 @@ function _scriptUsageKeys(play) {
     if (core) keys.push(`core:${core}`);
     const name = getPlayIdentityKey(play, "name", { normalizeCase: true });
     if (name) keys.push(`name:${name}`);
+    if (typeof getPlayCompareKey === "function") {
+      const compareCore = getPlayCompareKey(play, "core");
+      if (compareCore) keys.push(`ccore:${compareCore}`);
+      const compareName = getPlayCompareKey(play, "name");
+      if (compareName) keys.push(`cname:${compareName}`);
+    }
   } else if (play.play || play.formation) {
     keys.push(`name:${String(play.formation || "").toLowerCase()}|${String(play.play || "").toLowerCase()}`);
   }

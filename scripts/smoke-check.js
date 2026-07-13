@@ -767,6 +767,67 @@ function checkConflictContracts() {
   console.log("cross-module conflict contracts ok");
 }
 
+function checkPlayCompareKeyContracts() {
+  const utils = read("js/utils.js");
+  const callSheet = read("js/callsheet.js");
+  const playbookAnalytics = read("js/playbook-analytics.js");
+  const playbookSanitize = read("js/playbook-sanitize.js");
+  const playbookFilters = read("js/playbook-filters.js");
+  const scriptStorage = read("js/script-storage.js");
+  const scriptIntegrations = read("js/script-integrations.js");
+  const gameplan = read("js/gameplan.js");
+
+  const fieldsSource = utils.match(/const PLAY_IDENTITY_FIELDS = \{[\s\S]*?\n\};/)?.[0];
+  const requiredFns = [
+    "normalizePlayCompareValue",
+    "normalizePlayCompareKey",
+    "normalizePlayIdentityValue",
+    "getPlayIdentityKey",
+    "getPlayCompareKey",
+    "playsHaveSameIdentity",
+    "playsHaveSameCompareKey",
+    "playsMatch",
+  ];
+  const sources = requiredFns.map((name) => extractFunctionSource(utils, name));
+  if (!fieldsSource || sources.some((source) => !source)) {
+    fail("canonical play compare helpers are missing from utils.js");
+    return;
+  }
+
+  const api = new Function(
+    `${fieldsSource}\n${sources.join("\n")}\nreturn { normalizePlayCompareValue, normalizePlayCompareKey, getPlayIdentityKey, getPlayCompareKey, playsHaveSameCompareKey, playsMatch };`,
+  )();
+  const a = { type: "Run", personnel: "11", formation: "Tríps-Right", play: "Buck Sweep" };
+  const b = { type: "run", personnel: "11", formation: "tripsright", play: "buck-sweep" };
+  if (api.normalizePlayCompareValue("Tríps-Right") !== "tripsright") {
+    fail("canonical compare value does not strip accents/case/punctuation");
+  }
+  if (api.normalizePlayCompareKey("Run|11|Tríps-Right") !== "run|11|tripsright") {
+    fail("canonical compare key does not preserve field boundaries");
+  }
+  if (api.getPlayIdentityKey(a, "name", { trim: false }) === api.getPlayIdentityKey(b, "name", { trim: false })) {
+    fail("stored play identity keys should remain human-readable/exact");
+  }
+  if (!api.playsHaveSameCompareKey(a, b, "name") || !api.playsMatch(a, b)) {
+    fail("playsMatch does not use canonical compare keys");
+  }
+
+  if (
+    !/function csPlayKey\(play\)[\s\S]*getPlayCompareKey\(play, "core"\)/.test(callSheet) ||
+    !/function _pbHealthExactKey\(play\)[\s\S]*getPlayCompareKey\(play, "tag"\)/.test(playbookAnalytics) ||
+    !/function _pbHealthNorm\(value\)[\s\S]*normalizePlayCompareValue\(value, \{ spaced: true \}\)/.test(playbookAnalytics) ||
+    !/function _sanitizeComparableValue\(value\)[\s\S]*normalizePlayCompareValue\(value, \{ spaced: true \}\)/.test(playbookSanitize) ||
+    !/ccore:\$\{getPlayCompareKey\(play, "core"\)\}/.test(playbookFilters) ||
+    !/const compareName = getPlayCompareKey\(play, "name"\);[\s\S]*keys\.push\(`cname:\$\{compareName\}`\)/.test(scriptStorage) ||
+    !/getPlayCompareKey\(play, SCRIPT_WRISTBAND_IDENTITY_FIELDS\)/.test(scriptIntegrations) ||
+    !/getPlayCompareKey\(play, "core"\)/.test(gameplan)
+  ) {
+    fail("canonical compare keys are not wired through duplicate/matching surfaces");
+  }
+
+  console.log("play compare key contracts ok");
+}
+
 function checkWristbandTypography() {
   const css = read("css/wristband.css");
   const printCss = read("css/print.css");
@@ -3703,6 +3764,7 @@ checkMigrationRetry();
 checkSafeUiRendering();
 checkHistoryContracts();
 checkConflictContracts();
+checkPlayCompareKeyContracts();
 checkWristbandTypography();
 checkPersonnelMarkerContracts();
 checkPlayPresentationContracts();

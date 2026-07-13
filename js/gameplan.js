@@ -887,6 +887,15 @@ function _gpWristbandNumberFor(play, board = null) {
   const lw = sourceBoard.loadedWristband;
   if (!lw || !Array.isArray(lw.plays) || lw.plays.length === 0) return null;
   const list = lw.plays;
+  if (typeof getPlayCompareKey === "function") {
+    const coreKey = getPlayCompareKey(play, "core");
+    const nameKey = getPlayCompareKey(play, "name");
+    let match = list.find((wp) => coreKey && getPlayCompareKey(wp, "core") === coreKey);
+    if (!match) {
+      match = list.find((wp) => nameKey && getPlayCompareKey(wp, "name") === nameKey);
+    }
+    if (match) return match.wristbandNumber;
+  }
   let m = list.find((wp) =>
     wp.formation === play.formation && wp.play === play.play && wp.personnel === play.personnel,
   );

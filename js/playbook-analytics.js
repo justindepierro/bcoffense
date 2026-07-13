@@ -131,6 +131,9 @@ const PLAYBOOK_HEALTH_CSV_VALUE_RULES = [
 ];
 
 function _pbHealthNorm(value) {
+  if (typeof normalizePlayCompareValue === "function") {
+    return normalizePlayCompareValue(value, { spaced: true });
+  }
   if (typeof _sanitizeComparableValue === "function") {
     return _sanitizeComparableValue(value).spaced;
   }
@@ -144,6 +147,9 @@ function _pbHealthNorm(value) {
 }
 
 function _pbHealthCompactNorm(value) {
+  if (typeof normalizePlayCompareValue === "function") {
+    return normalizePlayCompareValue(value);
+  }
   if (typeof _sanitizeComparableValue === "function") {
     return _sanitizeComparableValue(value).compact;
   }
@@ -155,8 +161,11 @@ function _pbHealthExactKey(play) {
     (key) => _pbHealthNorm(play?.[key]),
   );
   if (!hasIdentity) return "";
+  if (typeof getPlayCompareKey === "function") {
+    return getPlayCompareKey(play, "tag");
+  }
   if (typeof getPlayIdentityKey === "function") {
-    return getPlayIdentityKey(play, "tag", { normalizeCase: true });
+    return getPlayIdentityKey(play, "tag", { canonical: true });
   }
   return ["formation", "play", "personnel", "type"]
     .map((key) => _pbHealthNorm(play?.[key]))
@@ -167,7 +176,7 @@ function _pbHealthNearKey(play) {
   const formation = _pbHealthNorm(play?.formation);
   const playName = _pbHealthNorm(play?.play);
   if (!formation || !playName) return "";
-  return `${formation}|${playName}`;
+  return `${_pbHealthCompactNorm(play?.formation)}|${_pbHealthCompactNorm(play?.play)}`;
 }
 
 function _pbHealthGroupBy(entries, keyFn) {

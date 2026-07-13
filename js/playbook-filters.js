@@ -62,6 +62,10 @@ function _addHighlightedWristbandKeys(play) {
   highlightedWristbandPlayKeys.add(
     `iname:${getPlayIdentityKey(play, "name", { normalizeCase: true })}`,
   );
+  if (typeof getPlayCompareKey === "function") {
+    highlightedWristbandPlayKeys.add(`ccore:${getPlayCompareKey(play, "core")}`);
+    highlightedWristbandPlayKeys.add(`cname:${getPlayCompareKey(play, "name")}`);
+  }
 }
 
 function isPlayOnHighlightedWristband(play) {
@@ -70,7 +74,14 @@ function isPlayOnHighlightedWristband(play) {
     return (
       highlightedWristbandPlayKeys.has(`core:${getPlayIdentityKey(play, "core", { trim: false })}`) ||
       highlightedWristbandPlayKeys.has(`name:${getPlayIdentityKey(play, "name", { trim: false })}`) ||
-      highlightedWristbandPlayKeys.has(`iname:${getPlayIdentityKey(play, "name", { normalizeCase: true })}`)
+      highlightedWristbandPlayKeys.has(`iname:${getPlayIdentityKey(play, "name", { normalizeCase: true })}`) ||
+      (
+        typeof getPlayCompareKey === "function" &&
+        (
+          highlightedWristbandPlayKeys.has(`ccore:${getPlayCompareKey(play, "core")}`) ||
+          highlightedWristbandPlayKeys.has(`cname:${getPlayCompareKey(play, "name")}`)
+        )
+      )
     );
   }
 

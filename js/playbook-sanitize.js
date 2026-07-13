@@ -132,17 +132,23 @@ function _sanitizeDisplayValue(value) {
 }
 
 function _sanitizeComparableValue(value) {
-  const spaced = String(value || "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .replace(/\s+/g, " ");
+  const spaced =
+    typeof normalizePlayCompareValue === "function"
+      ? normalizePlayCompareValue(value, { spaced: true })
+      : String(value || "")
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/&/g, " and ")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim()
+        .replace(/\s+/g, " ");
   return {
     spaced,
-    compact: spaced.replace(/\s+/g, ""),
+    compact:
+      typeof normalizePlayCompareValue === "function"
+        ? normalizePlayCompareValue(value)
+        : spaced.replace(/\s+/g, ""),
   };
 }
 

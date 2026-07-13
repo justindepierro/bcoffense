@@ -1209,7 +1209,9 @@ async function checkCallSheetDraft() {
  * Build a unique key for a play (for duplicate detection)
  */
 function csPlayKey(play) {
-  return getPlayIdentityKey(play, "core", { normalizeCase: true, trim: false });
+  return typeof getPlayCompareKey === "function"
+    ? getPlayCompareKey(play, "core")
+    : getPlayIdentityKey(play, "core", { normalizeCase: true, trim: false });
 }
 
 function getCallSheetUsedPlayKeys() {

@@ -40,6 +40,13 @@ function _scriptIntegrationPlaySnapshot(scriptPlay) {
     ) ||
     playbookPlays.find(
       (candidate) =>
+        tagKey &&
+        typeof getPlayCompareKey === "function" &&
+        getPlayCompareKey(candidate, "tag") ===
+          normalizePlayCompareKey(tagKey),
+    ) ||
+    playbookPlays.find(
+      (candidate) =>
         typeof playsMatch === "function" && playsMatch(candidate, scriptPlay),
     );
   const snapshot = {
@@ -221,9 +228,12 @@ async function sendScriptToGamePlan() {
 }
 
 function _scriptIntegrationCallIdentity(play) {
+  if (typeof getPlayCompareKey === "function") {
+    return getPlayCompareKey(play, SCRIPT_WRISTBAND_IDENTITY_FIELDS);
+  }
   if (typeof getPlayIdentityKey === "function") {
     return getPlayIdentityKey(play, SCRIPT_WRISTBAND_IDENTITY_FIELDS, {
-      trim: false,
+      canonical: true,
     });
   }
   return [

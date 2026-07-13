@@ -37,11 +37,13 @@ Wristband, and player study workflows.
 
 Data normalization policy:
 
-- [ ] Keep stored playbook text human-readable instead of forcing every field to
+- [x] Keep stored playbook text human-readable instead of forcing every field to
   all caps at write time.
-- [ ] Add canonical compare keys for routing, duplicate detection, matching, and
+- [x] Add canonical compare keys for routing, duplicate detection, matching, and
   analytics: trim whitespace, collapse punctuation/hyphens, ignore case, and
   strip accents.
+  - Added shared canonical compare helpers while preserving exact stored identity strings for readable play names and stable saved data.
+  - Wired canonical keys through call sheet duplicate keys, playbook health duplicates, cleanup similarity normalization, wristband highlighting, Script usage, Script integrations, and Game Plan wristband matching.
 - [ ] Add an optional display setting for uppercase call rendering where a coach
   wants a uniform look on print/player views.
 - [ ] Add a bulk "standardize selected field" cleanup action that applies the
