@@ -82,7 +82,8 @@ the data-quality work so labels can stay readable while matching remains stable.
 
 Signal categories:
 
-- `CORE`: personnel, formation, play name, base play.
+- `CORE`: personnel, play name, base play; formation stays in play identity but
+  is treated as a verbal/board cue, not an expected video signal.
 - `TAGS`: form tag 1/2, play tag 1/2, one-word call.
 - `BLOCKING`: protection, line call, back, under.
 - `MOTIONS`: shift, motion.
@@ -91,6 +92,9 @@ Phase 0 - data and media architecture:
 
 - [x] Define `SIGNAL_COMPONENTS` with category, component type, source playbook
   fields, label, and canonical compare-key behavior.
+- [x] Mark formation as a non-video cue because formations are yelled or shown
+  on picture boards, so missing formation clips do not count against signal
+  coverage or signal-video quiz readiness.
 - [x] Define the stored signal record shape:
   `id`, `category`, `componentType`, `componentValue`, `compareKey`,
   `clipKey`, `durationMs`, `visibility`, `createdBy`, `updatedAt`, and
@@ -141,7 +145,8 @@ Phase 4 - player study extensions:
 - [x] Add signal availability to player-facing play detail and current-practice
   study surfaces.
 - [x] Add future quiz hooks so players can be asked to identify the signal for a
-  motion, tag, formation, or play name.
+  motion, tag, or play name, while formation recognition remains diagram/board
+  based.
 - [x] Add simple coach/admin coverage reporting: components with signals,
   components missing signals, and most-used play components without clips.
 
@@ -151,7 +156,8 @@ Phase 5 - Signal games and leaderboards:
   30 fps, 4-5 seconds, preferably Most Compatible/H.264, with the same 5 second
   and 25 MB Signal limits enforced before upload.
 - [x] Build a signal-only quiz item source from published signal clips, grouped
-  by `CORE`, `TAGS`, `BLOCKING`, and `MOTIONS`.
+  by `CORE`, `TAGS`, `BLOCKING`, and `MOTIONS`, excluding non-video formation
+  cues.
 - [x] Add `100 Second Signal Sprint` as a playable Signal mode: players answer
   as many signal clips as they can in 100 seconds, with timed attempt metadata
   saved for ranking.
@@ -175,7 +181,9 @@ Phase 5 - Signal games and leaderboards:
 - [ ] Add a future `Full Play Call` signal game: pull a play from the practice
   script or game plan, queue its component signal clips, then ask athletes to
   identify the full play call with smart distractors like same formation,
-  different play, missing motion, missing shift, or near-match tags.
+  different play, missing motion, missing shift, or near-match tags; formation
+  can be shown as the normal board/diagram cue instead of requiring a formation
+  signal video.
 
 First build slice:
 

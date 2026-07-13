@@ -4166,6 +4166,9 @@ function checkSignalPlayIntegrationContracts() {
     !/function openSignalClip\(recordId\)/.test(signals) ||
     !/function closeSignalSelector\(\)/.test(signals) ||
     !/function _sigNormalizeClipList\(data\)/.test(signals) ||
+    !/componentType: "formation"[\s\S]*requiresVideo: false[\s\S]*cueLabel: "Verbal \/ board cue"/.test(signals) ||
+    !/function _sigComponentRequiresVideo\(componentType\)/.test(signals) ||
+    !/function _sigSummaryRequiresVideo\(summary\)/.test(signals) ||
     !/async function getSignalQuizItems\(options = \{\}\)/.test(signals) ||
     !/function getSignalQuizStats\(options = \{\}\)/.test(signals) ||
     !/window\.getSignalQuizItems = getSignalQuizItems/.test(signals) ||
@@ -4188,6 +4191,7 @@ function checkSignalPlayIntegrationContracts() {
 
   if (
     !/if \(!_sigCanManage\(\)\) return "";/.test(signals) ||
+    !/if \(component\.requiresVideo === false\) return;/.test(signals) ||
     !/topMissing: missing[\s\S]*\.slice\(0, 8\)/.test(signals) ||
     !/Most-used missing signals/.test(signals) ||
     !/_sigRenderCoverageReport\(summariesByComponent\)/.test(signals)
@@ -4325,6 +4329,7 @@ function checkSignalPlayIntegrationContracts() {
 
   if (
     !/- \[x\] Add a Playbook detail surface for "Signals for this play"/.test(roadmap) ||
+    !/- \[x\] Mark formation as a non-video cue because formations are yelled/.test(roadmap) ||
     !/- \[x\] Add a small `Signals` button to Practice Script play rows\/cards/.test(roadmap) ||
     !/- \[x\] Add the same signal selector to Script Swipe View \/ presentation-style/.test(roadmap) ||
     !/- \[x\] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and/.test(roadmap) ||
@@ -4334,7 +4339,7 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Add simple coach\/admin coverage reporting: components with signals,/.test(roadmap) ||
     !/Phase 5 - Signal games and leaderboards:/.test(roadmap) ||
     !/- \[x\] Document the coach capture standard at upload time: iPhone 1080p HD,/.test(roadmap) ||
-    !/- \[x\] Build a signal-only quiz item source from published signal clips, grouped/.test(roadmap) ||
+    !/- \[x\] Build a signal-only quiz item source from published signal clips, grouped[\s\S]*excluding non-video formation/.test(roadmap) ||
     !/- \[x\] Add `100 Second Signal Sprint` as a playable Signal mode/.test(roadmap) ||
     !/- \[x\] Add Signal Sprint leaderboard ranking by correct answers/.test(roadmap) ||
     !/- \[x\] Add `6 Seconds of Battle`/.test(roadmap) ||

@@ -9,7 +9,7 @@ const SIGNAL_CATEGORIES = [
 
 const SIGNAL_COMPONENTS = [
   { category: "CORE", componentType: "personnel", label: "Personnel", fields: ["personnel"] },
-  { category: "CORE", componentType: "formation", label: "Formation", fields: ["formation"] },
+  { category: "CORE", componentType: "formation", label: "Formation", fields: ["formation"], requiresVideo: false, cueLabel: "Verbal / board cue" },
   { category: "CORE", componentType: "play", label: "Play Name", fields: ["play"] },
   { category: "CORE", componentType: "basePlay", label: "Base Play", fields: ["basePlay"] },
   { category: "TAGS", componentType: "formTag", label: "Form Tag", fields: ["formTag1", "formTag2"] },
@@ -58,6 +58,11 @@ function _sigClipKey(componentType, compareKey) {
 
 function _sigComponentByType(componentType) {
   return SIGNAL_COMPONENTS.find((item) => item.componentType === componentType) || null;
+}
+
+function _sigComponentRequiresVideo(componentType) {
+  const component = _sigComponentByType(componentType);
+  return component?.requiresVideo !== false;
 }
 
 function _sigNormalizeRecord(record) {
@@ -359,9 +364,14 @@ function _sigHasPublishedClip(summary) {
   return Boolean(record && record.visibility === "published" && Number(record.clipCount || 0) > 0);
 }
 
+function _sigSummaryRequiresVideo(summary) {
+  return _sigComponentRequiresVideo(summary?.componentType);
+}
+
 function _sigBuildCoverageReport(summariesByComponent) {
   const all = [];
   SIGNAL_COMPONENTS.forEach((component) => {
+    if (component.requiresVideo === false) return;
     (summariesByComponent.get(component.componentType) || []).forEach((summary) => {
       all.push({
         ...summary,
@@ -521,7 +531,9 @@ function _sigRenderDetailSkeleton(summary, record) {
   const visibility = record?.visibility || "published";
   const notes = record?.notes || "";
   const manage = _sigCanManage();
-  const upload = manage
+  const component = summary ? _sigComponentByType(summary.componentType) : null;
+  const requiresVideo = summary ? _sigSummaryRequiresVideo(summary) : true;
+  const upload = manage && requiresVideo
     ? `
       <div class="signals-upload-row">
         <input id="signalClipFile" type="file" accept="video/mp4,video/quicktime,video/*" class="hidden"
@@ -532,6 +544,12 @@ function _sigRenderDetailSkeleton(summary, record) {
         <span class="signals-upload-hint">Max ${SIGNAL_MAX_DURATION_SEC}s, ${_sigFormatMegabytes(SIGNAL_MAX_BYTES)}. ${escapeHtml(SIGNAL_IPHONE_CAPTURE_HINT)}</span>
       </div>
     `
+    : manage && !requiresVideo
+      ? `
+        <div class="signals-upload-row signals-upload-row--cue">
+          <span class="signals-upload-hint">${escapeHtml(component?.label || "This component")} is handled as a ${escapeHtml(component?.cueLabel || "non-video cue")} and is not counted as a missing signal clip.</span>
+        </div>
+      `
     : "";
   const editor = manage
     ? `
@@ -568,15 +586,18 @@ function _sigRenderDetailSkeleton(summary, record) {
         </div>
       </div>
       ${upload}
-      <div id="signalClipList" class="signals-clip-list">
-        <div class="signals-clip-loading">Loading clips...</div>
-      </div>
+      ${requiresVideo ? `
+        <div id="signalClipList" class="signals-clip-list">
+          <div class="signals-clip-loading">Loading clips...</div>
+        </div>
+      ` : ""}
       ${editor}
     </div>
   `;
 }
 
 async function _sigRenderRemoteClips(summary, record, token) {
+  if (summary && !_sigSummaryRequiresVideo(summary)) return;
   const listEl = document.getElementById("signalClipList");
   if (!listEl || !summary || token !== _sigLastRenderToken) return;
   const sig = _sigClipKey(summary.componentType, summary.compareKey);
@@ -929,6 +950,7 @@ async function getSignalQuizItems(options = {}) {
   );
   const records = _sigLoadRecords()
     .filter((record) => record.visibility === "published" && Number(record.clipCount || 0) > 0)
+    .filter((record) => _sigComponentRequiresVideo(record.componentType))
     .filter((record) => !categoryFilter.size || categoryFilter.has(String(record.category || "").toUpperCase()));
   const items = [];
   for (const record of records) {
@@ -973,6 +995,7 @@ function getSignalQuizStats(options = {}) {
   );
   const records = _sigLoadRecords()
     .filter((record) => record.visibility === "published" && Number(record.clipCount || 0) > 0)
+    .filter((record) => _sigComponentRequiresVideo(record.componentType))
     .filter((record) => !categoryFilter.size || categoryFilter.has(String(record.category || "").toUpperCase()));
   const byCategory = SIGNAL_CATEGORIES.map((category) => ({
     ...category,
