@@ -4303,6 +4303,12 @@ function checkSignalPlayIntegrationContracts() {
 
   if (
     !/function _sigConfigureLoopVideos\(root = document\)/.test(signals) ||
+    !/const SIGNAL_SILENT_UPLOAD_FPS = 30/.test(signals) ||
+    !/function _sigCreateSilentVideoFile\(file, durationSec = 0\)/.test(signals) ||
+    !/canvas\.captureStream\(SIGNAL_SILENT_UPLOAD_FPS\)/.test(signals) ||
+    !/new MediaRecorder\(stream, \{ mimeType \}\)/.test(signals) ||
+    !/Removing audio before signal upload/.test(signals) ||
+    !/window\.playClips\.uploadForSig\(sig, silentFile/.test(signals) ||
     !/video\.defaultMuted = true/.test(signals) ||
     !/video\.playsInline = true/.test(signals) ||
     !/SIGNAL_IPHONE_CAPTURE_HINT/.test(signals) ||
@@ -4333,7 +4339,9 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Add Signal Sprint leaderboard ranking by correct answers/.test(roadmap) ||
     !/- \[x\] Add `6 Seconds of Battle`/.test(roadmap) ||
     !/- \[ \] Add `Heat Check`/.test(roadmap) ||
-    !/- \[ \] Add a dedicated Signal Leaderboard with three tabs/.test(roadmap)
+    !/- \[ \] Add Signal game category selection before launch/.test(roadmap) ||
+    !/- \[ \] Add a dedicated Signal Leaderboard with three tabs/.test(roadmap) ||
+    !/- \[ \] Add a future `Full Play Call` signal game/.test(roadmap)
   ) {
     fail("signals roadmap checklist is not updated for the play selector slice");
   }

@@ -162,6 +162,9 @@ Phase 5 - Signal games and leaderboards:
   answers under pressure and average reaction time.
 - [ ] Add `Heat Check`: endless signal reps until the player misses; leaderboard
   ranks best correct streak, with total correct as the tie-breaker.
+- [ ] Add Signal game category selection before launch: `CORE`, `TAGS`,
+  `BLOCKING`, and `MOTIONS` checkboxes, with higher point multipliers as
+  players include more categories and `ALL` worth double.
 - [ ] Add a dedicated Signal Leaderboard with three tabs for the three game
   modes so these scores do not get buried inside normal play-call quiz totals.
 - [ ] Sync Signal game attempts through the existing leaderboard pipeline with
@@ -169,6 +172,10 @@ Phase 5 - Signal games and leaderboards:
   game mode.
 - [ ] Give coaches controls for eligible categories, minimum published signal
   count, and whether to include draft/private clips in staff-only testing.
+- [ ] Add a future `Full Play Call` signal game: pull a play from the practice
+  script or game plan, queue its component signal clips, then ask athletes to
+  identify the full play call with smart distractors like same formation,
+  different play, missing motion, missing shift, or near-match tags.
 
 First build slice:
 
