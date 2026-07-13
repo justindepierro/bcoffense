@@ -3237,6 +3237,12 @@ function checkPlayerQuizSettingsContracts() {
     "diagram_formation",
     "formation_to_play",
     "play_type",
+    "signal",
+    "Signal ID",
+    "coachQuizTypeSignal",
+    "function _quizSignalRecordsForPlay",
+    "function _quizPickSignalRecord",
+    "function _quizSignalRecordForQuestion",
     "study_card",
     "coachQuizTierChampion",
     "coachQuizTierBaller",
@@ -3258,11 +3264,13 @@ function checkPlayerQuizSettingsContracts() {
   }
 
   if (
-    !/candidates\.push\(diagramQuestion, diagramFormationQuestion, formationQuestion, typeQuestion, callQuestion/.test(scriptRender) ||
+    !/candidates\.push\(diagramQuestion, diagramFormationQuestion, formationQuestion, signalQuestion, typeQuestion, callQuestion/.test(scriptRender) ||
+    !/candidates\.push\(ruleQuestion, ruleToPlayQuestion, signalQuestion/.test(scriptRender) ||
     !/\["diagram", "diagram_formation", "study_card"\]\.includes\(question\.type\)/.test(scriptRender) ||
-    !/function _quizQuestionDistractorItems\(item, question\)[\s\S]*?formation_to_play/.test(scriptRender)
+    !/function _quizQuestionDistractorItems\(item, question\)[\s\S]*?formation_to_play/.test(scriptRender) ||
+    !/function _quizQuestionDistractorItems\(item, question\)[\s\S]*?question\?\.type === "signal"/.test(scriptRender)
   ) {
-    fail("player quiz fair fallback ladder is missing diagram, formation, type, or study-card coverage");
+    fail("player quiz fair fallback ladder is missing diagram, signal, formation, type, or study-card coverage");
   }
 
   if (
@@ -3790,6 +3798,7 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Add the same signal selector to Script Swipe View \/ presentation-style/.test(roadmap) ||
     !/- \[x\] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and/.test(roadmap) ||
     !/- \[x\] Add signal availability to player-facing play detail and current-practice/.test(roadmap) ||
+    !/- \[x\] Add future quiz hooks so players can be asked to identify the signal/.test(roadmap) ||
     !/- \[x\] Add simple coach\/admin coverage reporting: components with signals,/.test(roadmap)
   ) {
     fail("signals roadmap checklist is not updated for the play selector slice");

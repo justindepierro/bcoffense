@@ -1543,9 +1543,10 @@ const PLAYER_QUIZ_DEFAULT_SETTINGS = {
   giftPoints: PLAYER_QUIZ_REWARD_POINT_DEFAULTS.gift,
   dailyRewardCap: 125,
   weeklyRewardCap: 350,
-  enabledQuestionTypes: ["responsibility", "play_from_rule", "diagram", "call"],
+  enabledQuestionTypes: ["responsibility", "play_from_rule", "diagram", "signal", "call"],
   tierNames: { ...PLAYER_QUIZ_DEFAULT_TIER_NAMES },
 };
+const PLAYER_QUIZ_QUESTION_TYPES = ["responsibility", "play_from_rule", "diagram", "signal", "call"];
 const DEFAULT_PLAYER_HELMET_STICKER_TYPES = [
   { key: "sure-hands", label: "Sure Hands", icon: "🤲", color: "green", description: "Caught the ball, finished the rep, or protected possession." },
   { key: "do-your-job", label: "Do Your Job", icon: "🧠", color: "blue", description: "Handled the assignment without needing extra coaching." },
@@ -1609,7 +1610,7 @@ function _normalizePlayerQuizSettings(raw = {}) {
   const src = raw && typeof raw === "object" ? raw : {};
   const defaults = PLAYER_QUIZ_DEFAULT_SETTINGS;
   const enabled = Array.isArray(src.enabledQuestionTypes)
-    ? src.enabledQuestionTypes.filter((type) => ["responsibility", "play_from_rule", "diagram", "call"].includes(type))
+    ? src.enabledQuestionTypes.filter((type) => PLAYER_QUIZ_QUESTION_TYPES.includes(type))
     : defaults.enabledQuestionTypes;
   return {
     weeklyGoal: _clampQuizNumber(src.weeklyGoal, defaults.weeklyGoal, 250, 5000, { integer: true }),
@@ -3860,6 +3861,8 @@ function _coachQuizQuestionPreviewStats(playList) {
   const rules = new Set();
   let playsWithRule = 0;
   let playsWithDiagram = 0;
+  let playsWithSignals = 0;
+  const signalAnswers = new Set();
   sourcePlays.forEach((play) => {
     const call = _quizPlainCall(play).toLowerCase();
     if (call) calls.add(call);
@@ -3875,9 +3878,18 @@ function _coachQuizQuestionPreviewStats(playList) {
     ) {
       playsWithDiagram += 1;
     }
+    const signalRecords = _quizSignalRecordsForPlay(play);
+    if (signalRecords.length) {
+      playsWithSignals += 1;
+      signalRecords.forEach((record) => {
+        const label = _quizSignalAnswerLabel(record).toLowerCase();
+        if (label) signalAnswers.add(label);
+      });
+    }
   });
   const responsibilityReady = rules.size >= 4 ? playsWithRule : 0;
   const playFromRuleReady = playsWithRule && calls.size >= 2 ? playsWithRule : 0;
+  const signalReady = playsWithSignals && signalAnswers.size >= 2 ? playsWithSignals : 0;
   return {
     positionLabel,
     playCount: sourcePlays.length,
@@ -3885,8 +3897,11 @@ function _coachQuizQuestionPreviewStats(playList) {
     playsWithRule,
     uniqueRules: rules.size,
     playsWithDiagram,
+    playsWithSignals,
+    uniqueSignals: signalAnswers.size,
     responsibilityReady,
     playFromRuleReady,
+    signalReady,
     callIdReady: sourcePlays.length,
   };
 }
@@ -4058,6 +4073,11 @@ function _renderCoachQuizQuestionPreview(source, kind = "script") {
   const diagramNote = preview.playsWithDiagram
     ? "Redacted diagram questions can fill in when player rules are missing."
     : "Add diagrams before visual questions can work.";
+  const signalNote = preview.signalReady
+    ? "Players can identify published formation, motion, tag, or play signals."
+    : preview.playsWithSignals
+      ? `Needs at least 2 distinct signal answers; currently ${preview.uniqueSignals}.`
+      : "Publish signal clips before signal questions can work.";
   const actualRows = actual.examples.length
     ? actual.examples.map((example) => _coachQuizPreviewRow(
       example.label,
@@ -4083,6 +4103,7 @@ function _renderCoachQuizQuestionPreview(source, kind = "script") {
       <div class="coach-quiz-preview-grid">
         ${_coachQuizPreviewRow("Responsibility", preview.responsibilityReady, responsibilityNote, preview.responsibilityReady ? "ready" : "needs")}
         ${_coachQuizPreviewRow("Rule → Play", preview.playFromRuleReady, ruleToPlayNote, preview.playFromRuleReady ? "ready" : "needs")}
+        ${_coachQuizPreviewRow("Signal ID", preview.signalReady, signalNote, preview.signalReady ? "ready" : "needs")}
         ${_coachQuizPreviewRow("Call ID", preview.callIdReady, "Fallback for thin sources; works with distinct calls.", preview.callIdReady ? "ready" : "needs")}
         ${_coachQuizPreviewRow("Diagram ID", preview.playsWithDiagram, diagramNote, preview.playsWithDiagram ? "ready" : "needs")}
       </div>
@@ -4307,6 +4328,7 @@ function _renderCoachQuizSettingsPanel(settings = _getPlayerQuizSettings()) {
         ${toggle("coachQuizTypeResponsibility", "Responsibility", "responsibility", "Player matches their rule on a known call.")}
         ${toggle("coachQuizTypeRuleToPlay", "Rule to Play", "play_from_rule", "Player sees a rule and picks the call.")}
         ${toggle("coachQuizTypeDiagram", "Diagram ID", "diagram", "Player sees a redacted diagram and picks the call.")}
+        ${toggle("coachQuizTypeSignal", "Signal ID", "signal", "Player identifies a formation, motion, tag, or play signal.")}
         ${toggle("coachQuizTypeCall", "Call ID", "call", "Fallback that keeps thin sources usable.")}
       </div>
       <div class="coach-quiz-settings-actions">
@@ -4755,6 +4777,7 @@ function coachSaveQuizSettings() {
     ["coachQuizTypeResponsibility", "responsibility"],
     ["coachQuizTypeRuleToPlay", "play_from_rule"],
     ["coachQuizTypeDiagram", "diagram"],
+    ["coachQuizTypeSignal", "signal"],
     ["coachQuizTypeCall", "call"],
   ]
     .filter(([id]) => document.getElementById(id)?.checked)
@@ -6087,6 +6110,8 @@ function _quizQuestionChoiceLabel(item, question) {
       return _quizCleanText(question.position?.key ? play[question.position.key] : "");
     case "diagram_formation":
       return _quizFormationLabel(play);
+    case "signal":
+      return _quizSignalAnswerLabel(_quizSignalRecordForQuestion(play, question));
     case "play_type":
       return _quizCleanText(play.type);
     case "play_from_rule":
@@ -6099,11 +6124,61 @@ function _quizQuestionChoiceLabel(item, question) {
   }
 }
 
+function _quizSignalRecordsForPlay(play) {
+  if (!play || typeof resolveSignalsForPlay !== "function") return [];
+  const groups = resolveSignalsForPlay(play);
+  const categories =
+    typeof SIGNAL_CATEGORIES !== "undefined" && Array.isArray(SIGNAL_CATEGORIES)
+      ? SIGNAL_CATEGORIES
+      : Object.keys(groups || {}).map((id) => ({ id, label: id }));
+  const records = [];
+  categories.forEach((category) => {
+    (groups?.[category.id] || []).forEach((record) => {
+      records.push({
+        ...record,
+        groupLabel: category.label || record.category || "",
+      });
+    });
+  });
+  return records;
+}
+
+function _quizSignalAnswerLabel(record) {
+  return _quizCleanText(record?.value || record?.componentValue || record?.compareKey || "");
+}
+
+function _quizPickSignalRecord(item) {
+  const records = _quizSignalRecordsForPlay(item?.play || item);
+  if (!records.length) return null;
+  const priority = ["MOTIONS", "TAGS", "CORE", "BLOCKING"];
+  const sorted = records.slice().sort((a, b) => {
+    const aPriority = priority.indexOf(a.category);
+    const bPriority = priority.indexOf(b.category);
+    return (aPriority < 0 ? 99 : aPriority) - (bPriority < 0 ? 99 : bPriority);
+  });
+  return sorted[_quizIndex % sorted.length] || sorted[0];
+}
+
+function _quizSignalRecordForQuestion(play, question) {
+  const target = question?.signal || {};
+  return _quizSignalRecordsForPlay(play).find((record) => {
+    if (target.componentType && record.componentType !== target.componentType) return false;
+    return true;
+  }) || null;
+}
+
 function _quizQuestionDistractorItems(item, question) {
   const source = _quizPlays.filter((candidate) => candidate && candidate !== item && candidate?.play);
   if (question?.type === "formation_to_play") {
     const correctFormation = _quizFormationLabel(item?.play).toLowerCase();
     return source.filter((candidate) => _quizFormationLabel(candidate.play).toLowerCase() !== correctFormation);
+  }
+  if (question?.type === "signal") {
+    const correctLabel = _quizQuestionChoiceLabel(item, question).toLowerCase();
+    return source.filter((candidate) => {
+      const candidateLabel = _quizQuestionChoiceLabel(candidate, question).toLowerCase();
+      return candidateLabel && candidateLabel !== correctLabel;
+    });
   }
   return source;
 }
@@ -6170,13 +6245,15 @@ function _selectQuizQuestion(candidates, item) {
 
 function _buildQuizQuestion(item) {
   const position = _getQuizPositionForItem(item);
-  const enabledTypes = new Set(_getPlayerQuizSettings().enabledQuestionTypes || ["responsibility", "play_from_rule", "diagram", "call"]);
+  const enabledTypes = new Set(_getPlayerQuizSettings().enabledQuestionTypes || PLAYER_QUIZ_DEFAULT_SETTINGS.enabledQuestionTypes);
   const positionRule = _quizCleanText(position?.key ? item.play[position.key] : "");
   const positionLabel = position?.label || "your";
   const diagramUrl = _quizDiagramUrl(item.play);
+  const signalRecord = enabledTypes.has("signal") ? _quizPickSignalRecord(item) : null;
   const canAskRules = enabledTypes.has("responsibility") && positionRule;
   const canAskRuleToPlay = enabledTypes.has("play_from_rule") && positionRule;
   const canAskVisual = enabledTypes.has("diagram") && diagramUrl;
+  const canAskSignal = Boolean(signalRecord);
   const canAskRecognition = enabledTypes.has("call");
   const ruleQuestion = canAskRules ? {
     type: "responsibility",
@@ -6228,6 +6305,19 @@ function _buildQuizQuestion(item) {
     rule: positionRule,
     position,
   } : null;
+  const signalQuestion = canAskSignal ? {
+    type: "signal",
+    prompt: `Which ${signalRecord.label || signalRecord.componentType || "signal"} belongs to this play?`,
+    detailLabel: `${signalRecord.groupLabel || signalRecord.category || "Signal"} Signal`,
+    detailValue: signalRecord.label || signalRecord.componentType || "",
+    rule: positionRule,
+    position,
+    signal: {
+      category: signalRecord.category || "",
+      componentType: signalRecord.componentType || "",
+      label: signalRecord.label || "",
+    },
+  } : null;
   const callQuestion = canAskRecognition ? {
     type: "call",
     prompt: "What's the call?",
@@ -6239,14 +6329,15 @@ function _buildQuizQuestion(item) {
 
   const candidates = [];
   if (_quizMode === "diagram") {
-    candidates.push(diagramQuestion, diagramFormationQuestion, formationQuestion, typeQuestion, callQuestion, ruleQuestion, ruleToPlayQuestion);
+    candidates.push(diagramQuestion, diagramFormationQuestion, formationQuestion, signalQuestion, typeQuestion, callQuestion, ruleQuestion, ruleToPlayQuestion);
   } else if (_quizMode === "job") {
-    candidates.push(ruleQuestion, ruleToPlayQuestion, diagramQuestion, diagramFormationQuestion, formationQuestion, typeQuestion, callQuestion);
+    candidates.push(ruleQuestion, ruleToPlayQuestion, signalQuestion, diagramQuestion, diagramFormationQuestion, formationQuestion, typeQuestion, callQuestion);
   } else {
     if (_quizIndex % 3 !== 1) candidates.push(ruleQuestion);
     if (_quizIndex % 4 === 0 || !positionRule) candidates.push(diagramQuestion, diagramFormationQuestion);
+    if (_quizIndex % 5 === 2) candidates.push(signalQuestion);
     if (_quizIndex % 2 === 1) candidates.push(ruleToPlayQuestion);
-    candidates.push(diagramQuestion, diagramFormationQuestion, formationQuestion, typeQuestion, callQuestion, ruleQuestion, ruleToPlayQuestion);
+    candidates.push(diagramQuestion, diagramFormationQuestion, formationQuestion, signalQuestion, typeQuestion, callQuestion, ruleQuestion, ruleToPlayQuestion);
   }
 
   const selected = _selectQuizQuestion(candidates, item);
@@ -6333,6 +6424,7 @@ function _quizQuestionTypeLabel(type) {
     diagram: "Diagram ID",
     diagram_formation: "Formation ID",
     formation_to_play: "Formation Match",
+    signal: "Signal ID",
     play_type: "Play Type",
     study_card: "Study Card",
     call: "Call ID",
@@ -6397,6 +6489,8 @@ function _renderQuizWrongReview(item, answer) {
         ? "Use the formation picture, alignment, and personnel clues."
         : context.questionType === "formation_to_play"
           ? "Connect the formation clue back to the play name."
+          : context.questionType === "signal"
+            ? "Connect the play component to the short signal clip you studied."
           : context.questionType === "play_type"
             ? "Sort the call into run, pass, screen, RPO, or another play family."
             : "Use the formation, personnel, and tags to identify the call.";
