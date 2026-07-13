@@ -7423,7 +7423,14 @@ function _buildQuizQuestion(item) {
   const positionRule = _quizCleanText(position?.key ? item.play[position.key] : "");
   const positionLabel = position?.label || "your";
   const diagramUrl = _quizDiagramUrl(item.play);
-  const signalRecord = enabledTypes.has("signal") ? _quizPickSignalRecord(item) : null;
+  const forceSignalQuestion =
+    _quizSourceType === "signal" ||
+    _quizMode === "signal-study" ||
+    _isSignalAutoAdvanceMode() ||
+    Boolean(item.signalRecord);
+  const signalRecord = enabledTypes.has("signal") || forceSignalQuestion
+    ? _quizPickSignalRecord(item)
+    : null;
   const canAskRules = enabledTypes.has("responsibility") && positionRule;
   const canAskRuleToPlay = enabledTypes.has("play_from_rule") && positionRule;
   const canAskVisual = enabledTypes.has("diagram") && diagramUrl;
@@ -8661,6 +8668,8 @@ function renderScriptQuizPlay() {
   const scenarioClasses = [
     "script-quiz-scenario",
     gameMode ? "script-quiz-scenario--game" : "",
+    question.type === "signal" ? "script-quiz-scenario--signal-video" : "",
+    question.type === "signal_full_call" ? "script-quiz-scenario--signal-sequence" : "",
     choiceLengthTone ? `script-quiz-scenario--${choiceLengthTone}-choices` : "",
   ].filter(Boolean).join(" ");
 

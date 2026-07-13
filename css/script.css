@@ -11633,6 +11633,41 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     font-size: 0.66rem;
   }
 
+  .script-quiz-scenario--signal-video .sq-signal-prompt {
+    border-radius: var(--radius-sm);
+  }
+
+  .script-quiz-scenario--signal-video .sq-signal-prompt video {
+    max-height: min(34vh, 220px);
+  }
+
+  .script-quiz-scenario--signal-video .sq-scenario-block--situation,
+  .script-quiz-scenario--signal-video .sq-scenario-block--call-meta,
+  .script-quiz-scenario--signal-video .sq-scenario-block--defense {
+    display: none;
+  }
+
+  .script-quiz-scenario--signal-video .sq-scenario-block--quiz-detail {
+    padding: 5px 8px;
+  }
+
+  .script-quiz-scenario--signal-video .sq-scenario-block--quiz-detail .sq-scenario-value {
+    font-size: var(--font-size-xs);
+    line-height: 1.15;
+  }
+
+  .script-quiz-scenario--signal-sequence .sq-signal-sequence-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .script-quiz-scenario--signal-sequence .sq-signal-sequence-item {
+    padding: 3px;
+  }
+
+  .script-quiz-scenario--signal-sequence .sq-signal-sequence-item video {
+    max-height: 18vh;
+  }
+
   .sq-scenario-block--quiz-detail {
     padding: 8px 10px;
   }
