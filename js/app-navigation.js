@@ -1,14 +1,15 @@
 const TAB_INDEX_MAP = {
   playbook: 0,
-  script: 1,
-  wristband: 2,
-  tendencies: 3,
-  gameplan: 4,
-  callsheet: 5,
-  installation: 6,
-  identity: 7,
-  offensebuilder: 8,
-  dashboard: 9,
+  signals: 1,
+  script: 2,
+  wristband: 3,
+  tendencies: 4,
+  gameplan: 5,
+  callsheet: 6,
+  installation: 7,
+  identity: 8,
+  offensebuilder: 9,
+  dashboard: 10,
 };
 
 // Timer for debounced last-tab persistence per opponent (#28)
@@ -101,6 +102,8 @@ function showTab(tabName) {
     initInstallation();
   } else if (tabName === "playbook") {
     if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+  } else if (tabName === "signals") {
+    if (typeof initSignals === "function") initSignals();
   } else if (tabName === "identity") {
     if (typeof renderIdentity === "function") renderIdentity();
   } else if (tabName === "script") {
@@ -190,6 +193,7 @@ function showTab(tabName) {
 
   const TAB_TITLES = {
     playbook: "Playbook",
+    signals: "Signals",
     script: "Script Builder",
     wristband: "Wristband",
     tendencies: "Tendencies",

@@ -71,6 +71,9 @@ function initAllModules() {
       if (currentActiveTab === "script") {
         ensureScriptWorkspaceReady();
       }
+      if (currentActiveTab === "signals" && typeof initSignals === "function") {
+        initSignals();
+      }
 
       updateTabBadges();
 

@@ -469,7 +469,7 @@ async function probeScrollOwners(page) {
 
 // Walk the major tabs available to the role and probe scroll ownership on each.
 async function probeTabsScrollOwnership(page) {
-  const TABS = ["playbook", "script", "wristband", "callsheet", "tendencies", "gameplan", "dashboard"];
+  const TABS = ["playbook", "signals", "script", "wristband", "callsheet", "tendencies", "gameplan", "dashboard"];
   const out = [];
   for (const tab of TABS) {
     const switched = await page.evaluate((t) => {
@@ -578,9 +578,9 @@ async function probeRoleRestrictions(page) {
   return page.evaluate(() => {
     const role = document.body && document.body.dataset.authRole ? document.body.dataset.authRole : "";
     const ROLE_TABS = {
-      admin: ["playbook", "script", "wristband", "tendencies", "gameplan", "callsheet", "installation", "identity", "offensebuilder", "dashboard"],
-      coach: ["playbook", "script", "wristband", "tendencies", "gameplan", "callsheet", "installation", "identity", "offensebuilder", "dashboard"],
-      player: ["dashboard", "playbook", "script"],
+      admin: ["playbook", "signals", "script", "wristband", "tendencies", "gameplan", "callsheet", "installation", "identity", "offensebuilder", "dashboard"],
+      coach: ["playbook", "signals", "script", "wristband", "tendencies", "gameplan", "callsheet", "installation", "identity", "offensebuilder", "dashboard"],
+      player: ["dashboard", "playbook", "signals", "script"],
     };
     // Controls each role must never see.
     const FORBIDDEN = {
@@ -618,9 +618,9 @@ async function probeRoleRestrictions(page) {
 async function probeTapDispatch(page) {
   const role = await page.evaluate(() => document.body?.dataset.authRole || "");
   const tabsByRole = {
-    admin: ["playbook", "script", "wristband", "callsheet"],
-    coach: ["playbook", "script", "wristband", "callsheet"],
-    player: ["dashboard", "playbook", "script"],
+    admin: ["playbook", "signals", "script", "wristband", "callsheet"],
+    coach: ["playbook", "signals", "script", "wristband", "callsheet"],
+    player: ["dashboard", "playbook", "signals", "script"],
   };
   const taps = [];
 

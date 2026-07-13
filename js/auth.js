@@ -1,8 +1,9 @@
 (function () {
-  const AUTH_CORE_PLAYER_TABS = { player: ["dashboard", "playbook", "script"] };
+  const AUTH_CORE_PLAYER_TABS = { player: ["dashboard", "playbook", "signals", "script"] };
   const AUTH_ROLE_TABS = {
     admin: [
       "playbook",
+      "signals",
       "script",
       "wristband",
       "tendencies",
@@ -16,6 +17,7 @@
     ],
     coach: [
       "playbook",
+      "signals",
       "script",
       "wristband",
       "tendencies",
@@ -477,6 +479,7 @@
     if (portalBtn) portalBtn.hidden = !isPlayer;
     [
       ["tab-playbook", "Playbook", "Playbook"],
+      ["tab-signals", "Signals", "Signals"],
       ["tab-dashboard", "📊 Dashboard", "Home"],
       ["tab-script", "Practice Script Builder", "Practice"],
       ["tab-leaderboard", "Leaderboard", "Leaderboard"],

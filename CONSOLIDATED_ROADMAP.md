@@ -86,34 +86,34 @@ Signal categories:
 
 Phase 0 - data and media architecture:
 
-- [ ] Define `SIGNAL_COMPONENTS` with category, component type, source playbook
+- [x] Define `SIGNAL_COMPONENTS` with category, component type, source playbook
   fields, label, and canonical compare-key behavior.
-- [ ] Define the stored signal record shape:
+- [x] Define the stored signal record shape:
   `id`, `category`, `componentType`, `componentValue`, `compareKey`,
   `clipKey`, `durationMs`, `visibility`, `createdBy`, `updatedAt`, and
   optional notes.
-- [ ] Decide the media namespace before implementation. Recommended first pass:
+- [x] Decide the media namespace before implementation. Recommended first pass:
   reuse the existing remote clip upload path, but store signal media under a
   separate `signals/{componentType}/{compareKey}` namespace so permissions,
   retention, and cleanup can diverge later.
-- [ ] Enforce short clips under 5 seconds at upload/attach time, with a clear
+- [x] Enforce short clips under 5 seconds at upload/attach time, with a clear
   coach-facing error when clips are too long.
 
 Phase 1 - dedicated Signals tab:
 
-- [ ] Create a top-level Signals tab available to athletes, coaches, and admins.
-- [ ] Render the four category groups: `CORE`, `TAGS`, `BLOCKING`, `MOTIONS`.
-- [ ] Build chips from real playbook vocabulary for each component type, using
+- [x] Create a top-level Signals tab available to athletes, coaches, and admins.
+- [x] Render the four category groups: `CORE`, `TAGS`, `BLOCKING`, `MOTIONS`.
+- [x] Build chips from real playbook vocabulary for each component type, using
   canonical compare keys to group variants while displaying the chosen readable
   value.
-- [ ] Let coaches/admins click a chip to open a signal detail panel with upload,
+- [x] Let coaches/admins click a chip to open a signal detail panel with upload,
   preview, replace, delete, notes, and visibility controls.
-- [ ] Let players view only signal clips that are visible/published; no editing
+- [x] Let players view only signal clips that are visible/published; no editing
   controls.
 
 Phase 2 - play resolution:
 
-- [ ] Add a resolver that takes a play and returns matching signal records by
+- [x] Add a resolver that takes a play and returns matching signal records by
   component, grouped under `CORE`, `TAGS`, `BLOCKING`, and `MOTIONS`.
 - [ ] Add a Playbook detail surface for "Signals for this play" that shows only
   components with signal clips attached.
@@ -142,11 +142,11 @@ Phase 4 - player study extensions:
 
 First build slice:
 
-- [ ] Ship `MOTIONS` first in the new Signals tab because motion signals are
+- [x] Ship `MOTIONS` first in the new Signals tab because motion signals are
   easy for athletes to understand, high value in practice, and a clean proof of
   the component-level model.
-- [ ] Use one component type, one upload/preview path, and one play-resolution
-  entry point before expanding to all categories.
+- [x] Use one upload/preview path and one play-resolution entry point before
+  expanding into Script and Playbook surfaces.
 
 Definition of done:
 

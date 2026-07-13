@@ -1601,7 +1601,7 @@ function checkPlayerPortalContracts() {
   const presentationCss = read("css/play-presentation.css");
 
   if (
-    !/player:\s*\["dashboard",\s*"playbook",\s*"script"\]/.test(auth) ||
+    !/player:\s*\["dashboard",\s*"playbook",\s*"signals",\s*"script"\]/.test(auth) ||
     !/player:\s*"dashboard"/.test(auth) ||
     !/function syncPlayerPortalChrome\(\)/.test(auth) ||
     !/function canEditUser\(\)/.test(auth) ||
@@ -2248,10 +2248,11 @@ function checkPrimaryNavContract() {
     }
   }
 
-  // The six core tools must remain primary role="tab" buttons.
+  // The core tools must remain primary role="tab" buttons.
   for (const id of [
     "tab-playbook",
     "tab-tendencies",
+    "tab-signals",
     "tab-gameplan",
     "tab-script",
     "tab-wristband",

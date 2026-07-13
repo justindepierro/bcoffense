@@ -30,6 +30,7 @@ css/
   layout.css            ← Header, tab bar, panels, upload screen
   components.css        ← Buttons, modals, toast, badges, utilities
   playbook.css          ← Playbook table, collections, print panel
+  signals.css           ← Signal collection tab and component clip UI
   script.css            ← Practice script builder
   play-presentation.css ← Shared landscape play presenter for Playbook and Script
   wristband.css         ← Wristband maker, cards, grid
@@ -55,6 +56,7 @@ js/
   cloud-sync.js         ← Cloudflare-backed complete backup push/pull sync
   auth.js               ← Simple local login and role-based UI restrictions
   play-clips.js         ← Remote play video clips (R2-backed) client API
+  signals.js            ← Component-level signal clip collection and resolver
   vision.js             ← Vision mode UI state
   team-settings.js      ← Team identity, roster, packages, depth chart runtime
   playbook.js           ← Shared playbook helpers and compatibility surface
@@ -156,117 +158,118 @@ All scripts use `defer` and load in this exact order from index.html:
 9.   js/cloud-sync.js
 10.   js/auth.js
 11.   js/play-clips.js
-12.   js/vision.js
-13.   js/team-settings.js
-14.   js/players-admin.js
-15.   js/play-discussion.js
-16.   js/playbook.js
-17.   js/playbook-collections.js
-18.   js/playbook-print.js
-19.   js/playbook-editor.js
-20.   js/playbook-import.js
-21.   js/playbook-export.js
-22.   js/playbook-chrome.js
-23.   js/playbook-reports.js
-24.   js/playbook-reports-identity.js
-25.   js/playbook-state.js
-26.   js/playbook-filters.js
-27.   js/playbook-navigation.js
-28.   js/playbook-actions.js
-29.   js/playbook-render.js
-30.   js/playbook-sanitize.js
-31.   js/playbook-analytics.js
-32.   js/playbook-analytics-render.js
-33.   js/playbook-identity.js
-34.   js/script-state.js
-35.   js/script-shared.js
-36.   js/script-players.js
-37.   js/script-display-options.js
-38.   js/play-readiness.js
-39.   js/script-add.js
-40.   js/script-sort.js
-41.   js/script-export.js
-42.   js/script-available.js
-43.   js/script-selection.js
-44.   js/script-timeline.js
-45.   js/script-render.js
-46.   js/player-quiz-sync.js
-47.   js/script-health.js
-48.   js/script-periods.js
-49.   js/script-period-sync.js
-50.   js/script-smart.js
-51.   js/script-storage.js
-52.   js/script-player.js
-53.   js/script-integrations.js
-54.   js/play-presentation.js
-55.   js/wristband.js
-56.   js/wristband-library.js
-57.   js/wristband-render.js
-58.   js/wristband-cards.js
-59.   js/wristband-export.js
-60.   js/wristband-chrome.js
-61.   js/wristband-logo.js
-62.   js/wristband-search.js
-63.   js/wristband-modals.js
-64.   js/wristband-cell-popup.js
-65.   js/wristband-cell-actions.js
-66.   js/wristband-sort.js
-67.   js/wristband-storage.js
-68.   js/wristband-runtime.js
-69.   js/callsheet-render.js
-70.   js/callsheet.js
-71.   js/callsheet-print.js
-72.   js/callsheet-sort.js
-73.   js/callsheet-filters.js
-74.   js/callsheet-smart.js
-75.   js/callsheet-export.js
-76.   js/callsheet-display.js
-77.   js/callsheet-categories.js
-78.   js/callsheet-metadata.js
-79.   js/callsheet-layout.js
-80.   js/callsheet-templates.js
-81.   js/callsheet-picker-runtime.js
-82.   js/callsheet-gameplan-drawer.js
-83.   js/constraints.js
-84.   js/constraints-ui.js
-85.   js/script-vision.js
-86.   js/tendencies-render.js
-87.   js/tendencies.js
-88.   js/tendencies-print.js
-89.   js/installation-render.js
-90.   js/installation.js
-91.   js/installation-print.js
-92.   js/identity.js
-93.   js/offensebuilder.js
-94.   js/help.js
-95.   js/dashboard-render.js
-96.   js/dashboard.js
-97.   js/gameplan.js
-98.   js/gameplan-render.js
-99.   js/gameplan-dnd.js
-100.   js/gameplan-actions.js
-101.   js/gameplan-smart.js
-102.   js/gameplan-health.js
-103.   js/gameplan-print.js
-104.   js/gameplan-integrations.js
-105.   js/gameplan-snapshots.js
-106.   js/print-studio.js
-107.   js/script-events.js
-108.   js/anchored-menu.js
-109.   js/app-events.js
-110.   js/app-command.js
-111.   js/page-actions.js
-112.   js/app-notifications.js
-113.   js/push-notifications.js
-114.   js/player-portal.js
-115.   js/dashboard-questions.js
-116.   js/app-shell.js
-117.   js/app-session.js
-118.   js/app-navigation.js
-119.   js/app-module-init.js
-120.   js/app-bootstrap.js
-121.   js/app-init.js
-122.   js/app.js
+12.   js/signals.js
+13.   js/vision.js
+14.   js/team-settings.js
+15.   js/players-admin.js
+16.   js/play-discussion.js
+17.   js/playbook.js
+18.   js/playbook-collections.js
+19.   js/playbook-print.js
+20.   js/playbook-editor.js
+21.   js/playbook-import.js
+22.   js/playbook-export.js
+23.   js/playbook-chrome.js
+24.   js/playbook-reports.js
+25.   js/playbook-reports-identity.js
+26.   js/playbook-state.js
+27.   js/playbook-filters.js
+28.   js/playbook-navigation.js
+29.   js/playbook-actions.js
+30.   js/playbook-render.js
+31.   js/playbook-sanitize.js
+32.   js/playbook-analytics.js
+33.   js/playbook-analytics-render.js
+34.   js/playbook-identity.js
+35.   js/script-state.js
+36.   js/script-shared.js
+37.   js/script-players.js
+38.   js/script-display-options.js
+39.   js/play-readiness.js
+40.   js/script-add.js
+41.   js/script-sort.js
+42.   js/script-export.js
+43.   js/script-available.js
+44.   js/script-selection.js
+45.   js/script-timeline.js
+46.   js/script-render.js
+47.   js/player-quiz-sync.js
+48.   js/script-health.js
+49.   js/script-periods.js
+50.   js/script-period-sync.js
+51.   js/script-smart.js
+52.   js/script-storage.js
+53.   js/script-player.js
+54.   js/script-integrations.js
+55.   js/play-presentation.js
+56.   js/wristband.js
+57.   js/wristband-library.js
+58.   js/wristband-render.js
+59.   js/wristband-cards.js
+60.   js/wristband-export.js
+61.   js/wristband-chrome.js
+62.   js/wristband-logo.js
+63.   js/wristband-search.js
+64.   js/wristband-modals.js
+65.   js/wristband-cell-popup.js
+66.   js/wristband-cell-actions.js
+67.   js/wristband-sort.js
+68.   js/wristband-storage.js
+69.   js/wristband-runtime.js
+70.   js/callsheet-render.js
+71.   js/callsheet.js
+72.   js/callsheet-print.js
+73.   js/callsheet-sort.js
+74.   js/callsheet-filters.js
+75.   js/callsheet-smart.js
+76.   js/callsheet-export.js
+77.   js/callsheet-display.js
+78.   js/callsheet-categories.js
+79.   js/callsheet-metadata.js
+80.   js/callsheet-layout.js
+81.   js/callsheet-templates.js
+82.   js/callsheet-picker-runtime.js
+83.   js/callsheet-gameplan-drawer.js
+84.   js/constraints.js
+85.   js/constraints-ui.js
+86.   js/script-vision.js
+87.   js/tendencies-render.js
+88.   js/tendencies.js
+89.   js/tendencies-print.js
+90.   js/installation-render.js
+91.   js/installation.js
+92.   js/installation-print.js
+93.   js/identity.js
+94.   js/offensebuilder.js
+95.   js/help.js
+96.   js/dashboard-render.js
+97.   js/dashboard.js
+98.   js/gameplan.js
+99.   js/gameplan-render.js
+100.   js/gameplan-dnd.js
+101.   js/gameplan-actions.js
+102.   js/gameplan-smart.js
+103.   js/gameplan-health.js
+104.   js/gameplan-print.js
+105.   js/gameplan-integrations.js
+106.   js/gameplan-snapshots.js
+107.   js/print-studio.js
+108.   js/script-events.js
+109.   js/anchored-menu.js
+110.   js/app-events.js
+111.   js/app-command.js
+112.   js/page-actions.js
+113.   js/app-notifications.js
+114.   js/push-notifications.js
+115.   js/player-portal.js
+116.   js/dashboard-questions.js
+117.   js/app-shell.js
+118.   js/app-session.js
+119.   js/app-navigation.js
+120.   js/app-module-init.js
+121.   js/app-bootstrap.js
+122.   js/app-init.js
+123.   js/app.js
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -300,6 +303,8 @@ window.applyRoleUi
 window.autoPullLatestCloudBackup
 window.BC_SHELL_SCROLL_TRACE
 window.BC_WRISTBAND_TRACE
+window.SIGNAL_CATEGORIES
+window.SIGNAL_COMPONENTS
 window.bcAuditWristband
 window.bcDebugHitTest
 window.bcDebugMobileOverflow
@@ -324,6 +329,7 @@ window.closePlayDiagramHealth
 window.closePlayEditor
 window.debouncedFilterScriptItems
 window.debouncedOnDashSearchInput
+window.deleteSignalClip
 window.deletePlayImage
 window.ensurePlayImageUrl
 window.flushCloudAutoPush
@@ -335,10 +341,12 @@ window.getRemotePlayerLeaderboardRows
 window.getScriptVisiblePlayerSummary
 window.hasPlayImage
 window.initScriptEvents
+window.initSignals
 window.isActionAllowedForRole
 window.isAdminUser
 window.logoutAuth
 window.openCloudSyncModal
+window.openSignalComponent
 window.openPlaybookClipViewer
 window.openPlayClipViewer
 window.openPlayDiagramHealth
@@ -358,10 +366,14 @@ window.refreshPlayerCloudBackup
 window.refreshPlayerLeaderboardSummary
 window.resetAnchoredMenu
 window.resetCloudSyncAutoPull
+window.renderSignals
+window.resolveSignalsForPlay
 window.saveCloudSyncSettings
+window.saveSignalDetails
 window.syncPlayerLeaderboardNow
 window.syncPlayImagesToCloud
 window.testCloudSyncConnection
+window.uploadSelectedSignalClip
 window.whenAuthReady
 ```
 
@@ -553,6 +565,7 @@ PLAYER_QUIZ_DRAFT               → "playerQuizDraft"
 PLAYER_QUIZ_SETTINGS            → "playerQuizSettings"
 PLAYER_QUIZ_SOURCE_SETTINGS     → "playerQuizSourceSettings"
 PLAYER_PUBLISH_STATUS           → "playerPublishStatus"
+SIGNALS                         → "signals"
 PLAYER_REWARD_EVENTS            → "playerRewardEvents"
 PLAYER_HELMET_STICKER_TYPES     → "playerHelmetStickerTypes"
 PLAYER_HELMET_STICKERS          → "playerHelmetStickers"

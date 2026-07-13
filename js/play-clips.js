@@ -7,6 +7,9 @@
      playClips.sigForPlay(play)            → canonical signature string ("" if none)
      await playClips.list(play)            → [{ id, label, contentType, size, duration, uploadedAt }]
      await playClips.upload(play, file, label, opts) → { ok, clip } | throws Error(message)
+     await playClips.uploadForSig(sig, file, label, opts) → upload to a stable signature
+     await playClips.listForSig(sig)       → [{ id, label, contentType, size, duration, uploadedAt, url }]
+     await playClips.removeForSig(sig, id) → { ok, clips }
      await playClips.remove(play, id)      → { ok, clips }
      playClips.fileUrl(play, id)           → streaming URL for a <video> src
      playClips.canManage()                 → bool (admin/coach)
@@ -142,6 +145,16 @@
   // stored under the canonical content key are found regardless of which device
   // (coach/player) is viewing. Each clip is decorated with its resolved `sig`
   // and a ready-to-use `url` for a <video> src.
+  async function listForSig(sig) {
+    if (!sig) return [];
+    const clips = await fetchManifest(sig);
+    return clips.map((clip) => ({
+      ...clip,
+      sig,
+      url: fileUrlForSig(sig, clip.id),
+    }));
+  }
+
   async function list(play) {
     const cands = candidateSigs(play);
     if (!cands.length) return [];
@@ -194,13 +207,12 @@
     });
   }
 
-  async function upload(play, file, label) {
+  async function uploadForSig(sig, file, label, opts = {}) {
     if (!canManage()) {
       throw new Error("Only admin or coach can upload clips.");
     }
-    const sig = sigForPlay(play);
     if (!sig) {
-      throw new Error("This play has no stable signature to attach a clip to.");
+      throw new Error("Missing stable clip signature.");
     }
     if (!file || !(file instanceof Blob)) {
       throw new Error("No clip file selected.");
@@ -215,15 +227,20 @@
       );
     }
 
-    const existing = await list(play);
+    const existing = await listForSig(sig);
     if (existing.length >= MAX_CLIPS) {
       throw new Error(`This play already has the maximum of ${MAX_CLIPS} clips.`);
     }
 
     const duration = await probeDuration(file);
-    if (duration && duration > MAX_DURATION_SEC + DURATION_GRACE_SEC) {
+    const maxDurationSec = Number(opts.maxDurationSec || MAX_DURATION_SEC);
+    const durationGraceSec =
+      opts.durationGraceSec == null
+        ? DURATION_GRACE_SEC
+        : Number(opts.durationGraceSec) || 0;
+    if (duration && duration > maxDurationSec + durationGraceSec) {
       throw new Error(
-        `Clip is ${Math.round(duration)}s — keep clips to about ${MAX_DURATION_SEC}s.`,
+        `Clip is ${Math.round(duration)}s — keep clips to about ${maxDurationSec}s.`,
       );
     }
 
@@ -243,7 +260,7 @@
     }
     if (_indexSet) _indexSet.add(sig);
     if (typeof window.recordPlayerPublishStatus === "function") {
-      window.recordPlayerPublishStatus("clips", {
+      window.recordPlayerPublishStatus(opts.publishType || "clips", {
         updatedAt: data.clip?.uploadedAt || new Date().toISOString(),
         label: data.clip?.label
           ? `Clip uploaded: ${data.clip.label}`
@@ -254,11 +271,14 @@
     return data;
   }
 
-  async function remove(play, id) {
+  async function upload(play, file, label, opts = {}) {
+    return uploadForSig(sigForPlay(play), file, label, opts);
+  }
+
+  async function removeForSig(sig, id, opts = {}) {
     if (!canManage()) {
       throw new Error("Only admin or coach can delete clips.");
     }
-    const sig = resolveStoredSig(play);
     if (!sig || !id) {
       throw new Error("Missing clip reference.");
     }
@@ -274,12 +294,16 @@
       _indexSet.delete(sig);
     }
     if (typeof window.recordPlayerPublishStatus === "function") {
-      window.recordPlayerPublishStatus("clips", {
+      window.recordPlayerPublishStatus(opts.publishType || "clips", {
         label: "Video clip removed from player devices",
       });
     }
     _emitClipChange(sig);
     return data;
+  }
+
+  async function remove(play, id) {
+    return removeForSig(resolveStoredSig(play), id);
   }
 
   // ---------------------------------------------------------------------------
@@ -493,8 +517,11 @@
     canManage,
     fileUrl,
     fileUrlForSig,
+    listForSig,
     list,
+    uploadForSig,
     upload,
+    removeForSig,
     remove,
     loadIndex,
     has,

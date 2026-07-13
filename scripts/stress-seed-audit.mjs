@@ -34,6 +34,7 @@ const ROLE_TABS = {
   admin: [
     "dashboard",
     "playbook",
+    "signals",
     "script",
     "wristband",
     "callsheet",
@@ -46,6 +47,7 @@ const ROLE_TABS = {
   coach: [
     "dashboard",
     "playbook",
+    "signals",
     "script",
     "wristband",
     "callsheet",
@@ -55,7 +57,7 @@ const ROLE_TABS = {
     "identity",
     "offensebuilder",
   ],
-  player: ["dashboard", "playbook", "script"],
+  player: ["dashboard", "playbook", "signals", "script"],
 };
 
 const CALLSHEET_FRONT = [
