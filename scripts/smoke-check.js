@@ -641,6 +641,11 @@ function checkSafeUiRendering() {
   if (!/name\.startsWith\("on"\)/.test(domHelpers)) {
     fail("sanitized internal templates do not strip inline handlers");
   }
+  ["autoplay", "controls", "loop", "muted", "playsinline", "preload"].forEach((attr) => {
+    if (!new RegExp(`"${attr}"`).test(domHelpers)) {
+      fail(`sanitized internal media templates strip ${attr}`);
+    }
+  });
   console.log("shared UI rendering safety ok");
 }
 

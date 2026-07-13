@@ -53,6 +53,13 @@ const SAFE_ATTRS = new Set([
   "multiple",
   "required",
   "readonly",
+  "autoplay",
+  "controls",
+  "loop",
+  "muted",
+  "playsinline",
+  "poster",
+  "preload",
 ]);
 
 function sanitizeHTML(html) {
