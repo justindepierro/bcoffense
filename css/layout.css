@@ -169,6 +169,121 @@ body[data-auth-role="player"] .save-status {
 .save-status.unsaved {
   color: var(--color-warning);
 }
+
+.workspace-sync-dock {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right, 18px));
+  bottom: max(18px, env(safe-area-inset-bottom, 18px));
+  z-index: var(--z-toast);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 8px 13px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+  transition: opacity 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.workspace-sync-dock__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-sync-dock__dot,
+.workspace-sync-dock__spinner {
+  flex: 0 0 auto;
+}
+
+.workspace-sync-dock__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-border-med);
+}
+
+.workspace-sync-dock__spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in srgb, var(--color-primary) 22%, transparent);
+  border-top-color: var(--color-primary);
+  border-radius: 999px;
+  animation: workspaceSyncSpin 0.78s linear infinite;
+}
+
+.workspace-sync-dock--dirty,
+.workspace-sync-dock--queued,
+.workspace-sync-dock--saving,
+.workspace-sync-dock--syncing,
+.workspace-sync-dock--saved,
+.workspace-sync-dock--error {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.workspace-sync-dock--saving,
+.workspace-sync-dock--syncing {
+  border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border));
+}
+
+.workspace-sync-dock--saving .workspace-sync-dock__dot,
+.workspace-sync-dock--syncing .workspace-sync-dock__dot {
+  display: none;
+}
+
+.workspace-sync-dock--saving .workspace-sync-dock__spinner,
+.workspace-sync-dock--syncing .workspace-sync-dock__spinner {
+  display: inline-block;
+}
+
+.workspace-sync-dock--dirty,
+.workspace-sync-dock--queued {
+  border-color: color-mix(in srgb, var(--color-warning) 46%, var(--color-border));
+}
+
+.workspace-sync-dock--dirty .workspace-sync-dock__dot,
+.workspace-sync-dock--queued .workspace-sync-dock__dot {
+  background: var(--color-warning);
+}
+
+.workspace-sync-dock--saved {
+  border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-border));
+}
+
+.workspace-sync-dock--saved .workspace-sync-dock__dot {
+  background: var(--color-success);
+}
+
+.workspace-sync-dock--error {
+  border-color: color-mix(in srgb, var(--color-danger) 48%, var(--color-border));
+}
+
+.workspace-sync-dock--error .workspace-sync-dock__dot {
+  background: var(--color-danger);
+}
+
+body[data-auth-role="player"] .workspace-sync-dock {
+  display: none;
+}
+
+@keyframes workspaceSyncSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .header-action-btn {
   display: flex;
   align-items: center;

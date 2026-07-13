@@ -344,6 +344,7 @@ window.getRemotePlayerLeaderboardRows
 window.getScriptVisiblePlayerSummary
 window.getSignalAvailabilityForPlay
 window.getSignalCountForPlay
+window.hasWorkspaceSyncWork
 window.hasPlayImage
 window.initScriptEvents
 window.initSignals
@@ -379,6 +380,7 @@ window.renderSignalAvailabilityForPlay
 window.resolveSignalsForPlay
 window.saveCloudSyncSettings
 window.saveSignalDetails
+window.setWorkspaceSyncStatus
 window.syncPlayerLeaderboardNow
 window.syncPlayImagesToCloud
 window.testCloudSyncConnection

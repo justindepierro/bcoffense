@@ -619,16 +619,25 @@
     if (cloudAutoPushSaving) {
       statusEl.textContent = "Cloud autosave running...";
       statusEl.className = "cloud-sync-status cloud-sync-status-ready";
+      if (typeof window.setWorkspaceSyncStatus === "function") {
+        window.setWorkspaceSyncStatus("cloud", "syncing", { label: "Syncing team cloud..." });
+      }
       return;
     }
     if (cloudAutoPushPending) {
       statusEl.textContent = "Cloud autosave pending...";
       statusEl.className = "cloud-sync-status cloud-sync-status-warn";
+      if (typeof window.setWorkspaceSyncStatus === "function") {
+        window.setWorkspaceSyncStatus("cloud", "queued", { label: "Cloud sync queued" });
+      }
       return;
     }
     if (cloudAutoPushLastError) {
       statusEl.textContent = `Cloud autosave failed - ${cloudAutoPushLastError}`;
       statusEl.className = "cloud-sync-status cloud-sync-status-warn";
+      if (typeof window.setWorkspaceSyncStatus === "function") {
+        window.setWorkspaceSyncStatus("cloud", "error", { label: "Cloud sync needs attention" });
+      }
       return;
     }
     const lastText = settings.lastPushAt
@@ -640,6 +649,9 @@
           : "no sync yet";
     statusEl.textContent = `Cloudflare sync ready - ${lastText}`;
     statusEl.className = "cloud-sync-status cloud-sync-status-ready";
+    if (typeof window.setWorkspaceSyncStatus === "function") {
+      window.setWorkspaceSyncStatus("cloud", "synced", { label: "Team cloud synced" });
+    }
   }
 
   function shouldAutoPushCloudKey(key) {
@@ -669,6 +681,9 @@
     cloudAutoPushDirtyKeys.add(key);
     cloudAutoPushPending = true;
     cloudAutoPushLastError = "";
+    if (key === "playImages" && typeof window.setWorkspaceSyncStatus === "function") {
+      window.setWorkspaceSyncStatus("media", "queued", { label: "Media upload queued" });
+    }
     if (!cloudAutoPushFirstQueuedAt) cloudAutoPushFirstQueuedAt = Date.now();
 
     if (cloudAutoPushSaving) {
@@ -681,12 +696,6 @@
     scheduleCloudAutoPushTimer(delay);
     renderCloudSyncStatus();
 
-    if (reason === "play-images") {
-      showToast("Play image changed. Cloud autosave queued.", {
-        type: "info",
-        duration: 2000,
-      });
-    }
     return true;
   }
 
@@ -705,6 +714,10 @@
     cloudAutoPushSaving = true;
     cloudAutoPushPending = false;
     cloudAutoPushFirstQueuedAt = 0;
+    const syncingMedia = cloudAutoPushDirtyKeys.has("playImages");
+    if (syncingMedia && typeof window.setWorkspaceSyncStatus === "function") {
+      window.setWorkspaceSyncStatus("media", "syncing", { label: "Uploading media..." });
+    }
     renderCloudSyncStatus();
 
     try {
@@ -714,16 +727,21 @@
       cloudAutoPushRetryCount = 0;
       if (!moreChangesQueued) {
         cloudAutoPushDirtyKeys.clear();
+        if (syncingMedia && typeof window.setWorkspaceSyncStatus === "function") {
+          window.setWorkspaceSyncStatus("media", "synced", { label: "Media published" });
+        }
       } else {
         cloudAutoPushFirstQueuedAt = Date.now();
         scheduleCloudAutoPushTimer(CLOUD_AUTO_PUSH_DELAY_MS);
       }
-      showToast("Cloud autosaved", { type: "success", duration: 2200 });
       return true;
     } catch (err) {
       cloudAutoPushPending = true;
       cloudAutoPushLastError = err.message || "Unknown error";
       cloudAutoPushRetryCount += 1;
+      if (syncingMedia && typeof window.setWorkspaceSyncStatus === "function") {
+        window.setWorkspaceSyncStatus("media", "error", { label: "Media upload needs retry" });
+      }
       showToast(`Cloud autosave failed: ${cloudAutoPushLastError}`, {
         type: "warning",
         duration: 6000,

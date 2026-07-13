@@ -642,6 +642,11 @@
     const scopedKeys = [...new Set(requestedKeys)].filter((sig) => allKeys.includes(sig));
     result.total = scopedKeys.length;
     if (!scopedKeys.length) return result;
+    if (typeof window.setWorkspaceSyncStatus === "function") {
+      window.setWorkspaceSyncStatus("media", "syncing", {
+        label: `Uploading ${scopedKeys.length} diagram${scopedKeys.length === 1 ? "" : "s"}...`,
+      });
+    }
 
     // Build a reverse map: localSig → full identity key for R2.
     // Old short field-derived keys are only migrated when they map to one play.
@@ -707,6 +712,18 @@
         count: result.pushed,
         label: `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} synced to player devices`,
       });
+    }
+    if (typeof window.setWorkspaceSyncStatus === "function") {
+      const hasUploadIssues = result.failed > 0 || result.skipped > 0;
+      window.setWorkspaceSyncStatus(
+        "media",
+        hasUploadIssues ? "error" : "synced",
+        {
+          label: hasUploadIssues
+            ? "Some media uploads need retry"
+            : `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} published`,
+        },
+      );
     }
     return result;
   }

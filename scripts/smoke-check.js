@@ -3275,6 +3275,97 @@ function checkGracefulLoadingStates() {
   console.log("graceful loading states ok");
 }
 
+function checkWorkspaceSyncContracts() {
+  const roadmap = read("WORKSPACE_SYNC_ROADMAP.md");
+  const shell = read("js/app-shell.js");
+  const layout = read("css/layout.css");
+  const cloudSync = read("js/cloud-sync.js");
+  const playImages = read("js/play-images.js");
+  const appSession = read("js/app-session.js");
+
+  [
+    "# BCOffense Workspace Sync Roadmap",
+    "- [x] Add a bottom coach-facing Workspace Sync dock",
+    "- [x] Route existing local dirty/saving/saved state into the dock",
+    "- [x] Route existing Cloud autosave pending/running/error state into the dock",
+    "- [x] Route play-image/media queue state into the dock",
+    "- [x] Warn before exit while local, cloud, or media work is pending",
+  ].forEach((token) => {
+    if (!roadmap.includes(token)) {
+      fail(`workspace sync roadmap missing ${token}`);
+    }
+  });
+
+  [
+    "const WORKSPACE_SYNC_STATES =",
+    "let workspaceSyncClearTimer = 0",
+    "function ensureWorkspaceSyncDock()",
+    "dock.id = \"workspaceSyncDock\"",
+    "function getWorkspaceSyncSummary()",
+    "function setWorkspaceSyncStatus(channel, state, opts = {})",
+    "function hasWorkspaceSyncWork()",
+    "window.setWorkspaceSyncStatus = setWorkspaceSyncStatus",
+    "window.hasWorkspaceSyncWork = hasWorkspaceSyncWork",
+    "setWorkspaceSyncStatus(\"local\", \"saved\"",
+    "setWorkspaceSyncStatus(\"local\", \"saving\"",
+    "setWorkspaceSyncStatus(\"local\", \"dirty\"",
+  ].forEach((token) => {
+    if (!shell.includes(token)) {
+      fail(`workspace sync shell contract missing ${token}`);
+    }
+  });
+
+  [
+    ".workspace-sync-dock",
+    ".workspace-sync-dock--saving",
+    ".workspace-sync-dock--syncing",
+    ".workspace-sync-dock--saved",
+    ".workspace-sync-dock--error",
+    "body[data-auth-role=\"player\"] .workspace-sync-dock",
+    "@keyframes workspaceSyncSpin",
+  ].forEach((token) => {
+    if (!layout.includes(token)) {
+      fail(`workspace sync dock style missing ${token}`);
+    }
+  });
+
+  [
+    "setWorkspaceSyncStatus(\"cloud\", \"syncing\"",
+    "setWorkspaceSyncStatus(\"cloud\", \"queued\"",
+    "setWorkspaceSyncStatus(\"cloud\", \"error\"",
+    "setWorkspaceSyncStatus(\"cloud\", \"synced\"",
+    "setWorkspaceSyncStatus(\"media\", \"queued\"",
+    "setWorkspaceSyncStatus(\"media\", \"syncing\"",
+    "setWorkspaceSyncStatus(\"media\", \"synced\"",
+    "setWorkspaceSyncStatus(\"media\", \"error\"",
+  ].forEach((token) => {
+    if (!cloudSync.includes(token)) {
+      fail(`workspace sync cloud/media contract missing ${token}`);
+    }
+  });
+
+  if (/Cloud autosaved/.test(cloudSync) || /Play image changed\. Cloud autosave queued\./.test(cloudSync)) {
+    fail("cloud autosave still uses noisy success/queued toasts instead of the workspace dock");
+  }
+
+  if (
+    !/setWorkspaceSyncStatus\("media", "syncing"[\s\S]*Uploading \$\{scopedKeys\.length\} diagram/.test(playImages) ||
+    !/const hasUploadIssues = result\.failed > 0 \|\| result\.skipped > 0/.test(playImages) ||
+    !/hasUploadIssues \? "error" : "synced"/.test(playImages)
+  ) {
+    fail("play image sync does not route media upload progress and skipped items into workspace status");
+  }
+
+  if (
+    !/const workspaceSyncPending =[\s\S]*window\.hasWorkspaceSyncWork/.test(appSession) ||
+    !/scriptDirty \|\| wristbandDirty \|\| workspaceSyncPending/.test(appSession)
+  ) {
+    fail("beforeunload does not protect pending workspace sync work");
+  }
+
+  console.log("workspace sync contracts ok");
+}
+
 function checkPlayerQuizSettingsContracts() {
   const scriptRender = read("js/script-render.js");
   const scriptCss = read("css/script.css");
@@ -4057,6 +4148,7 @@ checkStorageRestoreNormalization();
 checkStartupTabRestoreContracts();
 checkStartupRestoreHarness();
 checkGracefulLoadingStates();
+checkWorkspaceSyncContracts();
 checkPlayerQuizSettingsContracts();
 checkScrollOwnershipContract();
 checkTopLevelSymbolOwnership();

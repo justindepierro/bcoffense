@@ -1041,17 +1041,133 @@ document.addEventListener("keydown", (e) => {
 });
 
 // ── Autosave status indicator ──
+const WORKSPACE_SYNC_STATES = {
+  local: { state: "idle", label: "" },
+  cloud: { state: "idle", label: "" },
+  media: { state: "idle", label: "" },
+};
+let workspaceSyncClearTimer = 0;
+
+function ensureWorkspaceSyncDock() {
+  if (!document.body) return null;
+  let dock = document.getElementById("workspaceSyncDock");
+  if (dock) return dock;
+  dock = document.createElement("div");
+  dock.id = "workspaceSyncDock";
+  dock.className = "workspace-sync-dock workspace-sync-dock--idle";
+  dock.setAttribute("role", "status");
+  dock.setAttribute("aria-live", "polite");
+  dock.innerHTML = `
+    <span class="workspace-sync-dock__spinner" aria-hidden="true"></span>
+    <span class="workspace-sync-dock__dot" aria-hidden="true"></span>
+    <span class="workspace-sync-dock__text">Workspace ready</span>
+  `;
+  document.body.appendChild(dock);
+  return dock;
+}
+
+function getWorkspaceSyncSummary() {
+  const entries = Object.entries(WORKSPACE_SYNC_STATES);
+  const stateFor = (state) => entries.find(([, item]) => item.state === state);
+  const active =
+    stateFor("error") ||
+    stateFor("syncing") ||
+    stateFor("saving") ||
+    stateFor("queued") ||
+    stateFor("dirty");
+  if (active) {
+    const [channel, item] = active;
+    const fallback = channel === "media"
+      ? "Uploading media..."
+      : channel === "cloud"
+        ? "Syncing team cloud..."
+        : "Saving workspace...";
+    return {
+      state: item.state,
+      channel,
+      label: item.label || fallback,
+    };
+  }
+  const synced = stateFor("synced") || stateFor("saved");
+  if (synced) {
+    return {
+      state: "saved",
+      channel: synced[0],
+      label: synced[1].label || "All changes saved",
+    };
+  }
+  return { state: "idle", channel: "", label: "Workspace ready" };
+}
+
+function renderWorkspaceSyncDock() {
+  const dock = ensureWorkspaceSyncDock();
+  if (!dock) return;
+  if (workspaceSyncClearTimer) {
+    clearTimeout(workspaceSyncClearTimer);
+    workspaceSyncClearTimer = 0;
+  }
+  const summary = getWorkspaceSyncSummary();
+  dock.className = `workspace-sync-dock workspace-sync-dock--${summary.state}`;
+  dock.dataset.syncState = summary.state;
+  dock.querySelector(".workspace-sync-dock__text").textContent = summary.label;
+  if (summary.state === "saved") {
+    workspaceSyncClearTimer = setTimeout(() => {
+      Object.keys(WORKSPACE_SYNC_STATES).forEach((channel) => {
+        if (["saved", "synced"].includes(WORKSPACE_SYNC_STATES[channel].state)) {
+          WORKSPACE_SYNC_STATES[channel] = { state: "idle", label: "" };
+        }
+      });
+      workspaceSyncClearTimer = 0;
+      renderWorkspaceSyncDock();
+    }, 2600);
+  }
+}
+
+function setWorkspaceSyncStatus(channel, state, opts = {}) {
+  if (!WORKSPACE_SYNC_STATES[channel]) return;
+  WORKSPACE_SYNC_STATES[channel] = {
+    state: state || "idle",
+    label: opts.label || "",
+    updatedAt: new Date().toISOString(),
+  };
+  renderWorkspaceSyncDock();
+}
+
+function hasWorkspaceSyncWork() {
+  return Object.values(WORKSPACE_SYNC_STATES).some((item) =>
+    ["dirty", "queued", "saving", "syncing", "error"].includes(item.state),
+  );
+}
+
 function updateSaveStatus(state) {
   const el = document.getElementById("saveStatus");
-  if (!el) return;
-  el.className = "save-status " + state;
-  el.textContent =
-    state === "saved"
-      ? "✓ Saved"
-      : state === "saving"
-        ? "⏳ Saving…"
-        : "● Unsaved";
+  if (el) {
+    el.className = "save-status " + state;
+    el.textContent =
+      state === "saved"
+        ? "✓ Saved"
+        : state === "saving"
+          ? "⏳ Saving…"
+          : "● Unsaved";
+  }
+  if (state === "saved") {
+    setWorkspaceSyncStatus("local", "saved", { label: "Saved locally" });
+  } else if (state === "saving") {
+    setWorkspaceSyncStatus("local", "saving", { label: "Saving workspace..." });
+  } else if (state === "unsaved") {
+    setWorkspaceSyncStatus("local", "dirty", { label: "Unsaved local changes" });
+  }
 }
+
+if (typeof window !== "undefined") {
+  window.setWorkspaceSyncStatus = setWorkspaceSyncStatus;
+  window.hasWorkspaceSyncWork = hasWorkspaceSyncWork;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  ensureWorkspaceSyncDock();
+  renderWorkspaceSyncDock();
+});
 
 // ── Offline connectivity banner (item 49: player-aware message) ──
 (function _initOfflineBanner() {

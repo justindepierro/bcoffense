@@ -63,7 +63,10 @@ function markWristbandClean() {
 }
 
 window.addEventListener("beforeunload", (e) => {
-  if (scriptDirty || wristbandDirty) {
+  const workspaceSyncPending =
+    typeof window.hasWorkspaceSyncWork === "function" &&
+    window.hasWorkspaceSyncWork();
+  if (scriptDirty || wristbandDirty || workspaceSyncPending) {
     e.preventDefault();
     e.returnValue = "";
   }
