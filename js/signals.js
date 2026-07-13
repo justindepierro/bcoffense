@@ -797,7 +797,8 @@ async function getSignalQuizItems(options = {}) {
       .filter(Boolean),
   );
   const records = _sigLoadRecords()
-    .filter((record) => record.visibility === "published" && Number(record.clipCount || 0) > 0)
+    .filter((record) => Number(record.clipCount || 0) > 0)
+    .filter((record) => record.visibility === "published" || (opts.includeDraft === true && _sigCanManage()))
     .filter((record) => _sigComponentRequiresVideo(record.componentType))
     .filter((record) => !categoryFilter.size || categoryFilter.has(String(record.category || "").toUpperCase()));
   const items = [];
@@ -842,7 +843,8 @@ function getSignalQuizStats(options = {}) {
       .filter(Boolean),
   );
   const records = _sigLoadRecords()
-    .filter((record) => record.visibility === "published" && Number(record.clipCount || 0) > 0)
+    .filter((record) => Number(record.clipCount || 0) > 0)
+    .filter((record) => record.visibility === "published" || (opts.includeDraft === true && _sigCanManage()))
     .filter((record) => _sigComponentRequiresVideo(record.componentType))
     .filter((record) => !categoryFilter.size || categoryFilter.has(String(record.category || "").toUpperCase()));
   const byCategory = SIGNAL_CATEGORIES.map((category) => ({

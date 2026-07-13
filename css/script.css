@@ -9964,6 +9964,20 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   line-height: 1.25;
 }
 
+.coach-quiz-type-toggle--wide {
+  grid-column: 1 / -1;
+}
+
+.coach-quiz-signal-category-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+
+.coach-quiz-signal-settings-card {
+  align-content: start;
+}
+
 .coach-quiz-settings-actions {
   display: flex;
   flex-wrap: wrap;

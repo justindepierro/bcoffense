@@ -3699,6 +3699,11 @@ function checkPlayerQuizSettingsContracts() {
     "coachQuizTierStarter",
     "coachQuizTierContributor",
     "coachQuizTierDefense",
+    "SIGNAL_GAME_DEFAULT_SETTINGS",
+    "function _normalizeSignalGameSettings",
+    "function _canUseStaffSignalClips",
+    "coachSignalMinClipCount",
+    "coachSignalIncludeDraft",
   ].forEach((token) => {
     if (!quizSurface.includes(token)) {
       fail(`player quiz settings contract missing ${token}`);
@@ -3711,6 +3716,14 @@ function checkPlayerQuizSettingsContracts() {
 
   if (!/function coachSaveQuizSettings\(\)[\s\S]*?tierNames:\s*{[\s\S]*?champion:\s*_readCoachQuizSettingText\("coachQuizTierChampion"\)[\s\S]*?defense:\s*_readCoachQuizSettingText\("coachQuizTierDefense"\)/.test(scriptRender)) {
     fail("coach quiz settings save does not persist tier names");
+  }
+
+  if (
+    !/function coachSaveQuizSettings\(\)[\s\S]*?eligibleCategories = SIGNAL_GAME_CATEGORY_OPTIONS[\s\S]*?_saveSignalGameSettings\(\{[\s\S]*?minClipCount:\s*_readCoachQuizSettingNumber\("coachSignalMinClipCount"\)[\s\S]*?includeDraftForStaff/.test(scriptRender) ||
+    !/function _getSignalQuizStatus\(\)[\s\S]*?getSignalQuizStats\(\{[\s\S]*?categories: settings\.eligibleCategories[\s\S]*?includeDraft/.test(scriptRender) ||
+    !/getSignalQuizItems\(\{[\s\S]*?includeDraft: _canUseStaffSignalClips\(signalSettings\)/.test(scriptRender)
+  ) {
+    fail("coach signal game settings do not drive signal quiz availability and launch");
   }
 
   if (
@@ -4172,6 +4185,7 @@ function checkSignalPlayIntegrationContracts() {
     !/function _sigSummaryRequiresVideo\(summary\)/.test(signals) ||
     !/async function getSignalQuizItems\(options = \{\}\)/.test(signals) ||
     !/function getSignalQuizStats\(options = \{\}\)/.test(signals) ||
+    !/record\.visibility === "published" \|\| \(opts\.includeDraft === true && _sigCanManage\(\)\)/.test(signals) ||
     !/window\.getSignalQuizItems = getSignalQuizItems/.test(signals) ||
     !/window\.getSignalQuizStats = getSignalQuizStats/.test(signals) ||
     !/function _sigBuildCoverageReport\(summariesByComponent\)/.test(signals) ||
@@ -4250,7 +4264,7 @@ function checkSignalPlayIntegrationContracts() {
     !/function _isSignalAutoAdvanceMode\(mode = _quizMode\)/.test(scriptRender) ||
     !/function _getSignalGameSettings\(status = null\)/.test(scriptRender) ||
     !/function toggleSignalGameCategory\(categoryId\)/.test(scriptRender) ||
-    !/function _getSignalCategoryMultiplier\(categories = _quizSignalCategories\)/.test(scriptRender) ||
+    !/function _getSignalCategoryMultiplier\(categories = _quizSignalCategories, eligibleCategories = SIGNAL_GAME_DEFAULT_SETTINGS\.eligibleCategories\)/.test(scriptRender) ||
     !/function _buildSignalSprintItems\(items, targetCount = SIGNAL_SPRINT_TARGET_REPS\)/.test(scriptRender) ||
     !/function _buildSignalBattleItems\(items, targetCount = SIGNAL_BATTLE_TARGET_REPS\)/.test(scriptRender) ||
     !/function _buildSignalHeatCheckItems\(items, targetCount = SIGNAL_HEAT_CHECK_TARGET_REPS\)/.test(scriptRender) ||
@@ -4285,7 +4299,7 @@ function checkSignalPlayIntegrationContracts() {
     !/averageAnswerMs/.test(scriptRender) ||
     !/timedOut/.test(scriptRender) ||
     !/async function startPlayerQuizHubSignals\(\)/.test(scriptRender) ||
-    !/getSignalQuizItems\(\{ requireClip: true, categories: signalCategories \}\)/.test(scriptRender) ||
+    !/getSignalQuizItems\(\{[\s\S]*?requireClip: true,[\s\S]*?categories: signalCategories,[\s\S]*?includeDraft: _canUseStaffSignalClips\(signalSettings\)/.test(scriptRender) ||
     !/signalCategoryMultiplier/.test(scriptRender) ||
     !/signalGame: _quizSourceType === "signal"/.test(scriptRender) ||
     !/sourceType:\s*"signal"/.test(scriptRender) ||
@@ -4376,6 +4390,7 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Add Signal game category selection before launch/.test(roadmap) ||
     !/- \[x\] Add a dedicated Signal Leaderboard with three tabs/.test(roadmap) ||
     !/- \[x\] Sync Signal game attempts through the existing leaderboard pipeline/.test(roadmap) ||
+    !/- \[x\] Give coaches controls for eligible categories/.test(roadmap) ||
     !/- \[ \] Add a future `Full Play Call` signal game/.test(roadmap)
   ) {
     fail("signals roadmap checklist is not updated for the play selector slice");

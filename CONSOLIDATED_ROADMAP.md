@@ -178,7 +178,7 @@ Phase 5 - Signal games and leaderboards:
 - [x] Sync Signal game attempts through the existing leaderboard pipeline with
   `sourceType: signal` and distinct `quizMode` values, then filter the UI by
   game mode.
-- [ ] Give coaches controls for eligible categories, minimum published signal
+- [x] Give coaches controls for eligible categories, minimum published signal
   count, and whether to include draft/private clips in staff-only testing.
 - [ ] Add a future `Full Play Call` signal game: pull a play from the practice
   script or game plan, queue its component signal clips, then ask athletes to

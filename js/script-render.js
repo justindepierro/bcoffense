@@ -1519,6 +1519,12 @@ const SIGNAL_GAME_CATEGORY_OPTIONS = [
   { id: "BLOCKING", label: "Blocking" },
   { id: "MOTIONS", label: "Motions" },
 ];
+const SIGNAL_GAME_DEFAULT_SETTINGS = {
+  categories: SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => category.id),
+  eligibleCategories: SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => category.id),
+  minClipCount: 2,
+  includeDraftForStaff: false,
+};
 const PLAYER_QUIZ_WEEKLY_GOAL = 1000;
 const PLAYER_QUIZ_BASE_CORRECT_POINTS = 10;
 const PLAYER_QUIZ_STREAK_STEP_POINTS = 1;
@@ -1731,41 +1737,59 @@ function _normalizeSignalGameCategories(categories) {
   return Array.from(new Set(clean));
 }
 
-function _getSignalGameSettings(status = null) {
+function _clampSignalGameMinClipCount(value) {
+  return _clampQuizNumber(value, SIGNAL_GAME_DEFAULT_SETTINGS.minClipCount, 2, 50, { integer: true });
+}
+
+function _normalizeSignalGameSettings(raw = {}, status = null) {
+  const src = raw && typeof raw === "object" ? raw : {};
+  const allCategories = SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => category.id);
   const available = new Set(
     (Array.isArray(status?.categories) ? status.categories : [])
       .filter((category) => Number(category.count || 0) > 0)
       .map((category) => String(category.id || "").trim().toUpperCase())
       .filter(Boolean),
   );
-  const fallback = available.size
-    ? SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => category.id).filter((id) => available.has(id))
-    : SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => category.id);
-  const raw = typeof storageManager !== "undefined" && typeof storageManager.get === "function"
-    ? storageManager.get(_getPlayerSignalGameSettingsStorageKey(), {})
-    : {};
-  const categories = _normalizeSignalGameCategories(raw?.categories);
+  const eligibleCategories = _normalizeSignalGameCategories(src.eligibleCategories).length
+    ? _normalizeSignalGameCategories(src.eligibleCategories)
+    : allCategories;
+  const selectable = eligibleCategories.filter((id) => !available.size || available.has(id));
+  const fallbackCategories = selectable.length ? selectable : eligibleCategories;
+  const categories = _normalizeSignalGameCategories(src.categories)
+    .filter((id) => eligibleCategories.includes(id))
+    .filter((id) => !available.size || available.has(id));
   return {
-    categories: categories.length ? categories : fallback,
+    categories: categories.length ? categories : fallbackCategories,
+    eligibleCategories,
+    minClipCount: _clampSignalGameMinClipCount(src.minClipCount),
+    includeDraftForStaff: src.includeDraftForStaff === true,
   };
 }
 
+function _getSignalGameSettings(status = null) {
+  const raw = typeof storageManager !== "undefined" && typeof storageManager.get === "function"
+    ? storageManager.get(_getPlayerSignalGameSettingsStorageKey(), {})
+    : {};
+  return _normalizeSignalGameSettings(raw, status);
+}
+
 function _saveSignalGameSettings(settings = {}) {
-  const normalized = {
-    categories: _normalizeSignalGameCategories(settings.categories),
-  };
-  if (!normalized.categories.length) {
-    normalized.categories = SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => category.id);
-  }
+  const current = _getSignalGameSettings();
+  const normalized = _normalizeSignalGameSettings({ ...current, ...settings });
   if (typeof storageManager !== "undefined" && typeof storageManager.set === "function") {
     storageManager.set(_getPlayerSignalGameSettingsStorageKey(), normalized);
   }
   return normalized;
 }
 
-function _getSignalCategoryMultiplier(categories = _quizSignalCategories) {
+function _canUseStaffSignalClips(settings = _getSignalGameSettings()) {
+  return Boolean(settings.includeDraftForStaff && typeof canEditUser === "function" && canEditUser());
+}
+
+function _getSignalCategoryMultiplier(categories = _quizSignalCategories, eligibleCategories = SIGNAL_GAME_DEFAULT_SETTINGS.eligibleCategories) {
   const count = _normalizeSignalGameCategories(categories).length;
-  if (count >= SIGNAL_GAME_CATEGORY_OPTIONS.length) return 2;
+  const eligibleCount = Math.max(1, _normalizeSignalGameCategories(eligibleCategories).length || SIGNAL_GAME_CATEGORY_OPTIONS.length);
+  if (count >= eligibleCount) return 2;
   if (count <= 1) return 1;
   return Number((1 + ((count - 1) * 0.25)).toFixed(2));
 }
@@ -4914,6 +4938,18 @@ function _renderCoachCustomStickerManager() {
 
 function _renderCoachQuizSettingsPanel(settings = _getPlayerQuizSettings()) {
   const enabled = new Set(settings.enabledQuestionTypes || []);
+  const signalSettings = _getSignalGameSettings();
+  const signalEligible = new Set(signalSettings.eligibleCategories);
+  const signalStats = typeof getSignalQuizStats === "function"
+    ? getSignalQuizStats({
+      categories: signalSettings.eligibleCategories,
+      includeDraft: _canUseStaffSignalClips(signalSettings),
+    })
+    : { total: 0, categories: [] };
+  const signalCountByCategory = new Map(
+    (Array.isArray(signalStats.categories) ? signalStats.categories : [])
+      .map((category) => [String(category.id || "").trim().toUpperCase(), Number(category.count || 0)]),
+  );
   const field = (id, label, value, attrs = "") => `
     <label class="coach-quiz-setting-field" for="${escapeAttr(id)}">
       <span>${escapeHtml(label)}</span>
@@ -4935,6 +4971,18 @@ function _renderCoachQuizSettingsPanel(settings = _getPlayerQuizSettings()) {
       </span>
     </label>
   `;
+  const signalToggle = (category) => {
+    const count = signalCountByCategory.get(category.id) || 0;
+    return `
+      <label class="coach-quiz-type-toggle" for="coachSignalCategory${escapeAttr(category.id)}">
+        <input id="coachSignalCategory${escapeAttr(category.id)}" type="checkbox" value="${escapeAttr(category.id)}" ${signalEligible.has(category.id) ? "checked" : ""}>
+        <span>
+          <strong>${escapeHtml(category.label)}</strong>
+          <small>${count} playable clip${count === 1 ? "" : "s"}</small>
+        </span>
+      </label>
+    `;
+  };
   return `
     <section class="coach-quiz-setup-section coach-quiz-settings-panel" aria-label="Quiz settings">
       <div class="coach-quiz-section-head">
@@ -4965,6 +5013,22 @@ function _renderCoachQuizSettingsPanel(settings = _getPlayerQuizSettings()) {
           <div class="coach-quiz-setting-fields">
             ${field("coachQuizScriptWeight", "Script weight", settings.scriptWeight, 'min="0.25" max="5" step="0.05"')}
             ${field("coachQuizGameplanWeight", "Game Plan weight", settings.gameplanWeight, 'min="0.25" max="5" step="0.05"')}
+          </div>
+        </article>
+        <article class="coach-quiz-signal-settings-card">
+          <span>Signal games</span>
+          <div class="coach-quiz-setting-fields">
+            ${field("coachSignalMinClipCount", "Minimum clips to unlock", signalSettings.minClipCount, 'min="2" max="50" step="1"')}
+            <label class="coach-quiz-type-toggle coach-quiz-type-toggle--wide" for="coachSignalIncludeDraft">
+              <input id="coachSignalIncludeDraft" type="checkbox" ${signalSettings.includeDraftForStaff ? "checked" : ""}>
+              <span>
+                <strong>Staff testing includes draft clips</strong>
+                <small>Players still only get published clips.</small>
+              </span>
+            </label>
+          </div>
+          <div class="coach-quiz-signal-category-settings">
+            ${SIGNAL_GAME_CATEGORY_OPTIONS.map(signalToggle).join("")}
           </div>
         </article>
         <article>
@@ -5489,15 +5553,23 @@ function coachSaveQuizSettings() {
       defense: _readCoachQuizSettingText("coachQuizTierDefense"),
     },
   });
+  const eligibleCategories = SIGNAL_GAME_CATEGORY_OPTIONS
+    .filter((category) => document.getElementById(`coachSignalCategory${category.id}`)?.checked)
+    .map((category) => category.id);
+  const signalSettings = _saveSignalGameSettings({
+    eligibleCategories: eligibleCategories.length ? eligibleCategories : SIGNAL_GAME_DEFAULT_SETTINGS.eligibleCategories,
+    minClipCount: _readCoachQuizSettingNumber("coachSignalMinClipCount"),
+    includeDraftForStaff: document.getElementById("coachSignalIncludeDraft")?.checked === true,
+  });
   renderCoachQuizSetupPage();
   _renderPlayerQuizHub();
   if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
-  showToast(`Quiz settings saved. Weekly goal is ${settings.weeklyGoal}.`, { type: "success" });
+  showToast(`Quiz settings saved. Weekly goal is ${settings.weeklyGoal}; signal games unlock at ${signalSettings.minClipCount} clips.`, { type: "success" });
 }
 
 async function coachResetQuizSettings() {
   const ok = typeof showConfirm === "function"
-    ? await showConfirm("Reset quiz goals, scoring, rewards, tiers, and question types to defaults?", {
+    ? await showConfirm("Reset quiz goals, scoring, rewards, signal game controls, tiers, and question types to defaults?", {
       title: "Reset Quiz Settings",
       icon: "⚙️",
       confirmText: "Reset",
@@ -5507,6 +5579,7 @@ async function coachResetQuizSettings() {
     : true;
   if (!ok) return;
   _savePlayerQuizSettings(PLAYER_QUIZ_DEFAULT_SETTINGS);
+  _saveSignalGameSettings(SIGNAL_GAME_DEFAULT_SETTINGS);
   renderCoachQuizSetupPage();
   _renderPlayerQuizHub();
   if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
@@ -6331,14 +6404,15 @@ function _renderPlayerQuizModeCards() {
 
 function _renderSignalGameCategorySelector(status = _getSignalQuizStatus()) {
   const settings = _getSignalGameSettings(status);
+  const eligibleOptions = SIGNAL_GAME_CATEGORY_OPTIONS.filter((category) => settings.eligibleCategories.includes(category.id));
   const selected = new Set(settings.categories);
   const selectedCount = selected.size;
-  const multiplier = _getSignalCategoryMultiplier(settings.categories);
+  const multiplier = _getSignalCategoryMultiplier(settings.categories, settings.eligibleCategories);
   const countByCategory = new Map(
     (Array.isArray(status?.categories) ? status.categories : [])
       .map((category) => [String(category.id || "").trim().toUpperCase(), Number(category.count || 0)]),
   );
-  const allSelected = selectedCount >= SIGNAL_GAME_CATEGORY_OPTIONS.length;
+  const allSelected = eligibleOptions.length > 0 && selectedCount >= eligibleOptions.length;
   return `
     <div class="signal-game-category-panel" aria-label="Signal game categories">
       <div class="signal-game-category-head">
@@ -6354,7 +6428,7 @@ function _renderSignalGameCategorySelector(status = _getSignalQuizStatus()) {
           <span>All</span>
           <small>2x</small>
         </button>
-        ${SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => {
+        ${eligibleOptions.map((category) => {
           const checked = selected.has(category.id);
           const count = countByCategory.get(category.id) || 0;
           return `
@@ -6376,13 +6450,16 @@ function _renderSignalGameCategorySelector(status = _getSignalQuizStatus()) {
 function toggleSignalGameCategory(categoryId) {
   const id = String(categoryId || "").trim().toUpperCase();
   const current = _getSignalGameSettings(_getSignalQuizStatus());
+  const eligible = current.eligibleCategories.length
+    ? current.eligibleCategories
+    : SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => category.id);
   let categories = _normalizeSignalGameCategories(current.categories);
   if (id === "ALL") {
-    categories = categories.length >= SIGNAL_GAME_CATEGORY_OPTIONS.length
-      ? [SIGNAL_GAME_CATEGORY_OPTIONS[SIGNAL_GAME_CATEGORY_OPTIONS.length - 1].id]
-      : SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => category.id);
+    categories = categories.length >= eligible.length
+      ? [eligible[eligible.length - 1]]
+      : eligible;
   } else {
-    const allowed = SIGNAL_GAME_CATEGORY_OPTIONS.some((category) => category.id === id);
+    const allowed = eligible.includes(id);
     if (!allowed) return;
     categories = categories.includes(id)
       ? categories.filter((category) => category !== id)
@@ -6770,14 +6847,18 @@ async function startPlayerQuizHubSignals() {
   try {
     const mode = _getPlayerQuizMode();
     const signalMode = ["signal-sprint", "signal-battle", "signal-heat"].includes(mode?.key) ? mode.key : "signal-study";
-    const signalSettings = _getSignalGameSettings(status);
+    const signalSettings = status.settings || _getSignalGameSettings(status);
     const signalCategories = signalSettings.categories;
-    const signalMultiplier = _getSignalCategoryMultiplier(signalCategories);
+    const signalMultiplier = _getSignalCategoryMultiplier(signalCategories, signalSettings.eligibleCategories);
     const items = typeof getSignalQuizItems === "function"
-      ? await getSignalQuizItems({ requireClip: true, categories: signalCategories })
+      ? await getSignalQuizItems({
+        requireClip: true,
+        categories: signalCategories,
+        includeDraft: _canUseStaffSignalClips(signalSettings),
+      })
       : [];
-    if (!Array.isArray(items) || items.length < 2) {
-      showToast("That signal category selection needs at least two playable clips.", { type: "warning" });
+    if (!Array.isArray(items) || items.length < signalSettings.minClipCount) {
+      showToast(`That signal category selection needs at least ${signalSettings.minClipCount} playable clips.`, { type: "warning" });
       return;
     }
     const quizItems = signalMode === "signal-sprint"
@@ -6827,8 +6908,13 @@ function _getActiveGamePlanQuizSourceId() {
 }
 
 function _getSignalQuizStatus() {
+  const settings = _getSignalGameSettings();
+  const includeDraft = _canUseStaffSignalClips(settings);
   const stats = typeof getSignalQuizStats === "function"
-    ? getSignalQuizStats()
+    ? getSignalQuizStats({
+      categories: settings.eligibleCategories,
+      includeDraft,
+    })
     : { total: 0, categories: [] };
   const count = Number(stats?.total || 0);
   const categories = Array.isArray(stats?.categories)
@@ -6840,11 +6926,14 @@ function _getSignalQuizStatus() {
   return {
     count,
     categories,
-    available: count >= 2 && typeof getSignalQuizItems === "function",
-    label: count >= 2 ? "Start Signal Study" : "Signals Need Clips",
-    detail: count >= 2
-      ? `${count} published signal clip${count === 1 ? "" : "s"} ready. ${categoryLabel}`
-      : "Publish at least two signal clips to unlock Signal Study.",
+    settings,
+    includeDraft,
+    minClipCount: settings.minClipCount,
+    available: count >= settings.minClipCount && typeof getSignalQuizItems === "function",
+    label: count >= settings.minClipCount ? "Start Signal Study" : "Signals Need Clips",
+    detail: count >= settings.minClipCount
+      ? `${count} ${includeDraft ? "staff-test" : "published"} signal clip${count === 1 ? "" : "s"} ready. ${categoryLabel}`
+      : `Publish at least ${settings.minClipCount} eligible signal clips to unlock Signal Study.`,
   };
 }
 
@@ -7566,7 +7655,7 @@ function startScriptQuiz(options = {}) {
   _quizSourceId = String(opts.sourceId || "");
   _quizSignalCategories = sourceType === "signal" ? _normalizeSignalGameCategories(opts.signalCategories) : [];
   _quizSignalMultiplier = sourceType === "signal"
-    ? _getSignalCategoryMultiplier(_quizSignalCategories)
+    ? _getSignalCategoryMultiplier(_quizSignalCategories, _getSignalGameSettings().eligibleCategories)
     : 1;
   if (sourceType === "signal" && Number(opts.signalCategoryMultiplier || 0) > 0) {
     _quizSignalMultiplier = Number(opts.signalCategoryMultiplier);
@@ -8168,7 +8257,7 @@ function resumePlayerQuizDraft() {
   _quizSourceWeight = Number(draft.sourceWeight || 0) || _getQuizSourceWeight(_quizSourceType);
   _quizSignalCategories = _quizSourceType === "signal" ? _normalizeSignalGameCategories(draft.signalCategories) : [];
   _quizSignalMultiplier = _quizSourceType === "signal"
-    ? Number(draft.signalCategoryMultiplier || 0) || _getSignalCategoryMultiplier(_quizSignalCategories)
+    ? Number(draft.signalCategoryMultiplier || 0) || _getSignalCategoryMultiplier(_quizSignalCategories, _getSignalGameSettings().eligibleCategories)
     : 1;
   _quizTitle = draft.title || (_quizSourceType === "gameplan" ? "Game Plan Quiz" : _quizSourceType === "signal" ? "Signal Study" : "Practice Script Quiz");
   _quizMode = String(draft.quizMode || "full");
