@@ -604,7 +604,41 @@ FIRST_USE_DISMISSED             → "firstUseDismissed"
 - **Draft expiry:** `DRAFT_EXPIRY_MS = 86400000` (24 hours)
 - Each module has its own timer: `scriptAutosaveTimer`, `callSheetAutosaveTimer`, `wristbandAutosaveTimer`, `tendenciesAutosaveTimer`
 - Dirty tracking: `scriptDirty` / `wristbandDirty` booleans with `markScriptDirty()` / `markScriptClean()` etc.
-- `beforeunload` warns if any dirty flag is set
+- `beforeunload` warns if any dirty flag or `hasWorkspaceSyncWork()` queue state is pending/error
+
+### Workspace Sync / Player Publish Architecture
+
+The app treats save and publish as one write tree: local save -> cloud data
+publish -> media publish -> player readiness update.
+
+1. Local save/draft writes stay module-owned through `storageManager`, module
+   save helpers, dirty flags, and autosave timers.
+2. `js/workspace-sync.js` owns the shared bottom status dock and the visible
+   queue surface. Use `queueWorkspaceSyncJob()`, `startWorkspaceSyncJob()`,
+   `completeWorkspaceSyncJob()`, `failWorkspaceSyncJob()`,
+   `retryWorkspaceSyncWork()`, `setWorkspaceSyncStatus()`, and
+   `hasWorkspaceSyncWork()` instead of adding module-specific sync UI.
+3. `js/cloud-sync.js` queues Cloud autosave/push work into the shared dock.
+   Manual Cloud Sync is an advanced fallback, not the daily coach workflow.
+4. `Publish Media` is the coach default for player-visible scripts. It uploads
+   stale/unpublished player-visible diagrams, reports clip gaps, and leaves
+   already-cloud-published clips alone.
+5. Player-facing diagram surfaces prefer the local cached diagram, then check
+   `/images/manifest?sig=...`, then fetch `/images/file?sig=...` when the
+   manifest says the diagram is published.
+
+Rules:
+
+- Do not add noisy success/progress toasts for routine autosave, Cloud autosave,
+  diagram sync, or player publish work. Route normal work into the workspace
+  dock and reserve toasts for explicit user actions or failures that need
+  attention.
+- Keep manual `Cloud Sync` and `Sync Diagrams` available as fallback/retry
+  actions, but do not make them the primary first-run or daily workflow.
+- Player-facing diagram copy must distinguish checking, unpublished, offline,
+  and load-error states. Avoid generic "ask coach to sync diagrams" copy.
+- Exit guards must include both local dirty flags and `hasWorkspaceSyncWork()`
+  so pending or failed cloud/media/player work cannot be missed.
 
 ### Undo/Redo (historyManager)
 

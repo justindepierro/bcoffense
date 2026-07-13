@@ -59,12 +59,12 @@ workflow.
 
 ## Phase 4 - Architecture Cleanup
 
-- [ ] Document the single write tree: local save -> cloud data publish -> media
+- [x] Document the single write tree: local save -> cloud data publish -> media
   publish -> player readiness update.
-- [ ] Remove redundant sync toasts once the dock owns the status surface.
-- [ ] Consolidate module-specific save indicators onto shared primitives where
+- [x] Remove redundant sync toasts once the dock owns the status surface.
+- [x] Consolidate module-specific save indicators onto shared primitives where
   they are still needed.
-- [ ] Add smoke contracts for the unified status events and before-exit warning.
+- [x] Add smoke contracts for the unified status events and before-exit warning.
 
 ## Definition Of Done
 

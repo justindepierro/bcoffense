@@ -3287,6 +3287,7 @@ function checkWorkspaceSyncContracts() {
   const scriptPlayer = read("js/script-player.js");
   const appSession = read("js/app-session.js");
   const html = read("index.html");
+  const agentGuide = read("AGENTS.md");
 
   [
     "# BCOffense Workspace Sync Roadmap",
@@ -3303,6 +3304,10 @@ function checkWorkspaceSyncContracts() {
     "- [x] Show active player-visible script media coverage: ready, missing, stale,",
     "- [x] Upload only stale/unpublished player-visible diagrams; report clip gaps",
     "- [x] Show result summary and failed items with exact next steps.",
+    "- [x] Document the single write tree: local save -> cloud data publish -> media",
+    "- [x] Remove redundant sync toasts once the dock owns the status surface.",
+    "- [x] Consolidate module-specific save indicators onto shared primitives where",
+    "- [x] Add smoke contracts for the unified status events and before-exit warning.",
   ].forEach((token) => {
     if (!roadmap.includes(token)) {
       fail(`workspace sync roadmap missing ${token}`);
@@ -3440,6 +3445,27 @@ function checkWorkspaceSyncContracts() {
     !/scriptDirty \|\| wristbandDirty \|\| workspaceSyncPending/.test(appSession)
   ) {
     fail("beforeunload does not protect pending workspace sync work");
+  }
+
+  [
+    "### Workspace Sync / Player Publish Architecture",
+    "local save -> cloud data",
+    "publish -> media publish -> player readiness update",
+    "queueWorkspaceSyncJob()",
+    "setWorkspaceSyncStatus()",
+    "hasWorkspaceSyncWork()",
+    "Publish Media",
+    "/images/manifest?sig=...",
+    "Manual Cloud Sync is an advanced fallback",
+    "Keep manual `Cloud Sync` and `Sync Diagrams` available as fallback/retry",
+  ].forEach((token) => {
+    if (!agentGuide.includes(token)) {
+      fail(`agent workspace sync guide missing ${token}`);
+    }
+  });
+
+  if (/`beforeunload` warns if any dirty flag is set/.test(agentGuide)) {
+    fail("agent guide still documents beforeunload as dirty-flags-only");
   }
 
   console.log("workspace sync contracts ok");
