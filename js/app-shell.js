@@ -2223,8 +2223,16 @@ function _refreshPlayerTeamSurfaces() {
 }
 
 let playerTeamUpdateCheckStarted = false;
+let playerTeamRefreshPromise = null;
 
 async function refreshPlayerTeamApp(opts = {}) {
+  if (playerTeamRefreshPromise) {
+    if (!opts.quiet) {
+      showToast("Already checking team updates.", { type: "info", duration: 1800 });
+    }
+    return playerTeamRefreshPromise;
+  }
+
   const quiet = Boolean(opts.quiet);
   const startup = Boolean(opts.startup);
   const quietStartup = quiet && startup;
@@ -2246,95 +2254,104 @@ async function refreshPlayerTeamApp(opts = {}) {
     return;
   }
 
-  _setPlayerTeamRefreshState({
-    tone: "checking",
-    title: startup ? "Getting team app ready" : "Checking team updates",
-    body: startup
-      ? "Opening Home while we quietly check for the newest practice."
-      : "Checking app version and team data...",
-    busy: true,
-  });
+  const runRefresh = async () => {
+    _setPlayerTeamRefreshState({
+      tone: "checking",
+      title: startup ? "Home is ready" : "Checking team updates",
+      body: startup
+        ? "Checking for coach updates in the background."
+        : "Checking app version and team data...",
+      busy: true,
+    });
 
-  let dataResult = null;
-  let appResult = null;
-  try {
-    if (typeof refreshPlayerCloudBackup === "function") {
-      _setPlayerTeamRefreshState({
-        tone: "checking",
-        title: "Refreshing team data",
-        body: "Checking for the latest practice, quiz, and playbook updates...",
-        busy: true,
-      }, phaseStateOpts);
-      dataResult = await refreshPlayerCloudBackup({
-        navigate: !quietStartup,
-        skipIfCurrent: true,
-      });
-    }
-    if (!quietStartup) _refreshPlayerTeamSurfaces();
-
-    if (typeof checkForTeamAppUpdate === "function") {
-      _setPlayerTeamRefreshState({
-        tone: "checking",
-        title: "Checking app version",
-        body: "Looking for a newer team app shell on this device...",
-        busy: true,
-      }, phaseStateOpts);
-      appResult = await checkForTeamAppUpdate({ apply: true });
-      if (appResult?.status === "applying") {
+    let dataResult = null;
+    let appResult = null;
+    try {
+      if (typeof refreshPlayerCloudBackup === "function") {
         _setPlayerTeamRefreshState({
           tone: "checking",
-          title: "Updating app",
-          body: "The app is applying a new version and will reload.",
+          title: "Refreshing team data",
+          body: "Checking for the latest practice, quiz, and playbook updates...",
           busy: true,
+        }, phaseStateOpts);
+        dataResult = await refreshPlayerCloudBackup({
+          navigate: !quietStartup,
+          skipIfCurrent: true,
         });
-        if (!quiet) showToast("Updating team app...", { type: "info", duration: 2500 });
-        return;
       }
-    }
+      if (!quietStartup) _refreshPlayerTeamSurfaces();
 
-    if (typeof refreshNotificationStatus === "function") {
+      if (typeof checkForTeamAppUpdate === "function") {
+        _setPlayerTeamRefreshState({
+          tone: "checking",
+          title: "Checking app version",
+          body: "Looking for a newer team app shell on this device...",
+          busy: true,
+        }, phaseStateOpts);
+        appResult = await checkForTeamAppUpdate({ apply: true });
+        if (appResult?.status === "applying") {
+          _setPlayerTeamRefreshState({
+            tone: "checking",
+            title: "Updating app",
+            body: "The app is applying a new version and will reload.",
+            busy: true,
+          });
+          if (!quiet) showToast("Updating team app...", { type: "info", duration: 2500 });
+          return { ok: true, status: "applying" };
+        }
+      }
+
+      if (typeof refreshNotificationStatus === "function") {
+        _setPlayerTeamRefreshState({
+          tone: "checking",
+          title: "Checking player alerts",
+          body: "Looking for coach replies, new practices, and quiz work...",
+          busy: true,
+        }, phaseStateOpts);
+        await refreshNotificationStatus({ render: !quietStartup }).catch(() => null);
+      }
+
+      const dataOk = !dataResult || dataResult.ok;
+      const dataMissing = dataResult?.status === "missing";
+      const appCurrent = !appResult || appResult.status === "current" || appResult.status === "unsupported";
+      const title = dataMissing
+        ? "Waiting on coach update"
+        : dataOk && appCurrent
+          ? "Team app ready"
+          : "Refresh finished";
+      const body = dataMissing
+        ? "No team workspace has been pushed yet. This device is showing its saved local practice."
+        : dataResult?.message || "This device rechecked app and team data.";
       _setPlayerTeamRefreshState({
-        tone: "checking",
-        title: "Checking player alerts",
-        body: "Looking for coach replies, new practices, and quiz work...",
-        busy: true,
-      }, phaseStateOpts);
-      await refreshNotificationStatus({ render: !quietStartup }).catch(() => null);
-    }
-
-    const dataOk = !dataResult || dataResult.ok;
-    const dataMissing = dataResult?.status === "missing";
-    const appCurrent = !appResult || appResult.status === "current" || appResult.status === "unsupported";
-    const title = dataMissing
-      ? "No cloud update yet"
-      : dataOk && appCurrent
-        ? "Team app refreshed"
-        : "Refresh finished";
-    const body = dataMissing
-      ? "No cloud backup has been pushed yet. This device reloaded its local team data."
-      : dataResult?.message || "This device rechecked app and team data.";
-    _setPlayerTeamRefreshState({
-      tone: dataOk ? "ready" : "warn",
-      title,
-      body,
-      updatedAt: new Date().toISOString(),
-    });
-    if (!quiet) showToast(title, { type: dataOk ? "success" : "warning", duration: 3000 });
-  } catch (err) {
-    _refreshPlayerTeamSurfaces();
-    _setPlayerTeamRefreshState({
-      tone: "warn",
-      title: "Refresh needs connection",
-      body: err?.message || "Team app could not refresh right now.",
-      updatedAt: new Date().toISOString(),
-    });
-    if (!quiet) {
-      showToast(err?.message || "Team app could not refresh right now.", {
-        type: "warning",
-        duration: 4500,
+        tone: dataOk ? "ready" : "warn",
+        title,
+        body,
+        updatedAt: new Date().toISOString(),
       });
+      if (!quiet) showToast(title, { type: dataOk ? "success" : "warning", duration: 3000 });
+      return { ok: dataOk, data: dataResult, app: appResult };
+    } catch (err) {
+      _refreshPlayerTeamSurfaces();
+      _setPlayerTeamRefreshState({
+        tone: "warn",
+        title: "Refresh needs connection",
+        body: err?.message || "Team app could not refresh right now.",
+        updatedAt: new Date().toISOString(),
+      });
+      if (!quiet) {
+        showToast(err?.message || "Team app could not refresh right now.", {
+          type: "warning",
+          duration: 4500,
+        });
+      }
+      return { ok: false, error: err };
+    } finally {
+      playerTeamRefreshPromise = null;
     }
-  }
+  };
+
+  playerTeamRefreshPromise = runRefresh();
+  return playerTeamRefreshPromise;
 }
 
 function schedulePlayerTeamUpdateCheck(opts = {}) {

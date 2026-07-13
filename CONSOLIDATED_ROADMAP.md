@@ -230,6 +230,9 @@ clear update experience that makes both visible.
     first player Dashboard redraw, quiet startup refresh waits until after first
     paint, skips cloud restore when the export is already current, and collapses
     internal cloud/app/alert phases into one visible status plus final ready.
+- [x] First-15s polish pass: player team refresh is single-flight, manual refresh
+  taps do not launch duplicate startup work, and Home copy says the app is ready
+  while coach updates check in the background.
 
 Definition of done:
 

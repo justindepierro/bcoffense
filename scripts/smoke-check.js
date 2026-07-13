@@ -3053,6 +3053,14 @@ function checkStartupDiagnosticsAndRenderQueue() {
     !/currentAuthUser\.role !== "player"[\s\S]*Logged in as/.test(auth) ||
     !/schedulePlayerTeamUpdateCheck\(\{ delay: 700, startup: true \}\)/.test(auth) ||
     !/function refreshPlayerTeamApp\(opts = \{\}\)[\s\S]*const quietStartup = quiet && startup/.test(appShell) ||
+    !/let playerTeamRefreshPromise = null/.test(appShell) ||
+    !/if \(playerTeamRefreshPromise\)/.test(appShell) ||
+    !/Already checking team updates/.test(appShell) ||
+    !/title: startup \? "Home is ready" : "Checking team updates"/.test(appShell) ||
+    !/Checking for coach updates in the background/.test(appShell) ||
+    !/Waiting on coach update/.test(appShell) ||
+    !/Team app ready/.test(appShell) ||
+    !/No team workspace has been pushed yet/.test(appShell) ||
     !/phaseStateOpts = quietStartup \? \{ render: false \}/.test(appShell) ||
     !/refreshPlayerCloudBackup\(\{[\s\S]*navigate: !quietStartup,[\s\S]*skipIfCurrent: true/.test(appShell) ||
     !/refreshNotificationStatus\(\{ render: !quietStartup \}\)/.test(appShell) ||
@@ -3063,6 +3071,9 @@ function checkStartupDiagnosticsAndRenderQueue() {
     !/opts\.skipIfCurrent !== false && isCloudRemoteAlreadyKnown\(remote\)/.test(cloudSync)
   ) {
     fail("player first-impression startup refresh is not ordered and quiet");
+  }
+  if (/No cloud backup has been pushed yet/.test(appShell) || /Getting team app ready/.test(appShell)) {
+    fail("player first-impression startup copy still exposes backup/getting-ready language");
   }
   if (!/appDiagnostics\.mark\("startup:init"\)/.test(appInit)) {
     fail("initApp does not mark startup diagnostics");
