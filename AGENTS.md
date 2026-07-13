@@ -271,6 +271,100 @@ All scripts use `defer` and load in this exact order from index.html:
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
 
+### Intentional Window Exports
+
+Direct `window.X =` assignments are a public/global contract, even when the
+property is only a debug helper or internal scratch flag. Prefer top-level
+function declarations for delegated actions. Add a `window` export only when
+code must be callable from a different lexical scope, from browser diagnostics,
+or by async/runtime patching.
+
+The manifest below is smoke-checked against direct assignments in `js/*.js`.
+If a new `window.X =` export is intentional, add it here in sorted order and
+explain the purpose in the owning file.
+
+```window-export-manifest
+window.__bcErrorHandlerInstalled
+window.__bcErrors
+window.__bcLastActionTrace
+window.__bcWristbandTrace
+window.__startupLoaderFinished
+window._gpDrawerVisiblePlays
+window._gpKeydownBound
+window._reorderClear
+window._reorderClose
+window._reorderSave
+window.appDiagnostics
+window.applyPendingRestoredStartupTab
+window.applyRoleUi
+window.autoPullLatestCloudBackup
+window.BC_SHELL_SCROLL_TRACE
+window.BC_WRISTBAND_TRACE
+window.bcAuditWristband
+window.bcDebugHitTest
+window.bcDebugMobileOverflow
+window.bcDebugScrollAncestry
+window.bcDebugShellScroll
+window.bcDebugStartup
+window.bcDebugWristband
+window.bcDisableWristbandTrace
+window.bcEnableShellScrollTrace
+window.bcEnableWristbandTrace
+window.bcErrors
+window.bcIntegrityCheck
+window.bcRepairShellScroll
+window.bcSelfCheck
+window.buildPlayerLeaderboardSyncPayload
+window.canAccessTab
+window.canEditUser
+window.canManageSettings
+window.closeAnchoredMenu
+window.closeCloudSyncModal
+window.closePlayDiagramHealth
+window.closePlayEditor
+window.debouncedFilterScriptItems
+window.debouncedOnDashSearchInput
+window.deletePlayImage
+window.ensurePlayImageUrl
+window.flushCloudAutoPush
+window.getCurrentAuthUser
+window.getDefaultAuthTab
+window.getPlayImageUrl
+window.getRemotePlayerLeaderboardMeta
+window.getRemotePlayerLeaderboardRows
+window.getScriptVisiblePlayerSummary
+window.hasPlayImage
+window.initScriptEvents
+window.isActionAllowedForRole
+window.isAdminUser
+window.logoutAuth
+window.openCloudSyncModal
+window.openPlaybookClipViewer
+window.openPlayClipViewer
+window.openPlayDiagramHealth
+window.openPlayDiagramHealthEdit
+window.openScriptClipViewer
+window.perfMonitor
+window.playClips
+window.playerNotificationState
+window.playerTeamRefreshState
+window.playImages
+window.positionAnchoredMenu
+window.pullCloudBackup
+window.pushCloudBackup
+window.queueCloudAutoPush
+window.queuePlayerLeaderboardSync
+window.refreshPlayerCloudBackup
+window.refreshPlayerLeaderboardSummary
+window.resetAnchoredMenu
+window.resetCloudSyncAutoPull
+window.saveCloudSyncSettings
+window.syncPlayerLeaderboardNow
+window.syncPlayImagesToCloud
+window.testCloudSyncConnection
+window.whenAuthReady
+```
+
 ---
 
 ## Event Delegation Pattern

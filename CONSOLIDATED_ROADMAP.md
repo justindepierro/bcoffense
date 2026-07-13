@@ -396,7 +396,9 @@ Work left:
 - [x] Verify split-file ownership claims by grepping for the functions each file claims to own.
   - `Owns:` comments now use backticked top-level symbols, and smoke verifies each claimed function/constant is declared in the same split file.
   - Covered current split ownership headers in call sheet, tendencies render, and installation render files.
-- [ ] Audit intentional `window.X =` exports and document the real public globals.
+- [x] Audit intentional `window.X =` exports and document the real public globals.
+  - Added a smoke-checked `window-export-manifest` in `AGENTS.md` covering all direct `window.X =` assignments in `js/*.js`.
+  - New exports now require explicit documentation instead of silently expanding the browser-global surface.
 - [ ] Establish helper naming conventions by module prefix.
 
 Definition of done:

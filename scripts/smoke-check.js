@@ -3347,6 +3347,44 @@ function checkSplitFileOwnershipClaims() {
   console.log("split-file ownership claims ok");
 }
 
+function checkWindowExportManifest() {
+  const guide = read("AGENTS.md");
+  const manifest = guide.match(/```window-export-manifest\n([\s\S]*?)```/);
+  if (!manifest) {
+    fail("AGENTS.md is missing the window-export-manifest block");
+    return;
+  }
+
+  const documented = unique(
+    manifest[1]
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => line.replace(/^window\./, "")),
+  ).sort();
+  const actual = unique(
+    walk("js")
+      .filter((file) => file.endsWith(".js") && !file.endsWith(".min.js"))
+      .flatMap((file) => {
+        const source = read(file);
+        return [...source.matchAll(/window\.([A-Za-z_$][\w$]*)\s*=(?!=)/g)].map(
+          (match) => match[1],
+        );
+      }),
+  ).sort();
+  const missing = actual.filter((name) => !documented.includes(name));
+  const stale = documented.filter((name) => !actual.includes(name));
+
+  if (missing.length || stale.length) {
+    fail(
+      `window export manifest drifted` +
+      `${missing.length ? `; missing: ${missing.join(", ")}` : ""}` +
+      `${stale.length ? `; stale: ${stale.join(", ")}` : ""}`,
+    );
+  }
+  console.log(`window export manifest ok (${actual.length} exports)`);
+}
+
 function checkWristbandConstantUsage() {
   const files = [
     ...walk("js").filter((file) => /^js\/wristband.*\.js$/.test(file)),
@@ -3636,6 +3674,7 @@ checkPlayerQuizSettingsContracts();
 checkScrollOwnershipContract();
 checkTopLevelSymbolOwnership();
 checkSplitFileOwnershipClaims();
+checkWindowExportManifest();
 checkWristbandConstantUsage();
 checkScriptPacketPrintContracts();
 checkScriptSelectionRenderContracts();
