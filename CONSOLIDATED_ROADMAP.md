@@ -393,7 +393,9 @@ Work left:
   - Decision: split `tendencies.js` next, not `installation.js`.
   - First target: extract a `js/tendencies-intel.js` module for the shared scout-intel engine: `queryTendencies()`, `getTendenciesForCategory()`, `scorePlayForSituation()`, and closely related situation/scoring helpers.
   - Reason: `installation.js` is already relatively small with render/print extracted; `tendencies.js` still owns cross-module intelligence consumed by Call Sheet, Game Plan, Dashboard, Script shared surfaces, and Tendencies reports.
-- [ ] Verify split-file ownership claims by grepping for the functions each file claims to own.
+- [x] Verify split-file ownership claims by grepping for the functions each file claims to own.
+  - `Owns:` comments now use backticked top-level symbols, and smoke verifies each claimed function/constant is declared in the same split file.
+  - Covered current split ownership headers in call sheet, tendencies render, and installation render files.
 - [ ] Audit intentional `window.X =` exports and document the real public globals.
 - [ ] Establish helper naming conventions by module prefix.
 

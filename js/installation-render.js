@@ -1,5 +1,8 @@
 // Installation Render Functions
-// Owns: All UI rendering, helper calculations, and display logic
+// Owns: `extractComponentsFromPlaybook`, `getSmartBasePlayName`,
+// `getRawPlayNamesForBase`, `getPlayInstallRating`, `renderStarRating`,
+// `getInstallRatingClass`, `renderInstallation`, `renderInstallCategoryDetail`,
+// `showReadinessModal`, `getPlayStarBadge`, `getPlayInstallTooltip`.
 
 function extractComponentsFromPlaybook() {
   try {

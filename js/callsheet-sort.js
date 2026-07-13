@@ -1,5 +1,7 @@
 // Call Sheet Sort Logic
-// Owns: sort modal, multi-criteria sort, custom value order, sort execution
+// Owns: `CS_SORT_FIELDS`, `csSortCriteria`, `openCsSortModal`,
+// `renderCsSortCriteria`, `addCsSortCriteria`, `removeCsSortCriteria`,
+// `openCsCustomOrderModal`, `applyCsSort`, `sortPlaysByCriteria`.
 // Depends on: callsheet.js globals (callSheet, callSheetSettings, CALLSHEET_CATEGORIES,
 //             getCallSheetCategoriesForPage, getCategoryDisplayName, csCategoryOrder,
 //             saveCallSheet, renderCallSheet)

@@ -1,5 +1,9 @@
 // Tendencies Render Functions
-// Owns: All UI rendering and templating
+// Owns: `renderTendenciesLoading`, `renderTendenciesError`,
+// `renderTendenciesHome`, `renderScoutOverview`, `renderOpponentDetail`,
+// `renderPlayLog`, `renderStatsDashboard`, `renderRapidChart`, `renderWizard`,
+// `filterPlaybookForScout`, `sendScoutRecsToGamePlan`,
+// `createPracticeFromTendency`, `addScoutNoteToCallSheet`.
 
 function renderTendenciesLoading() {
   const container = document.getElementById("tendenciesContent");

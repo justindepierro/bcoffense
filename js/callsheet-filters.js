@@ -1,9 +1,12 @@
 // ============================================================
 // callsheet-filters.js — call sheet auto-populate helpers
 //
-// Owns: wristband number lookup, play-matching predicates,
-// coverage / keyword / key-player matching, category matching,
-// and player-specific auto-fill target builders.
+// Owns: `getWristbandNumberForPlay`, `splitPreferredValues`,
+// `getCanonicalCallSheetPlayType`, `isCallSheetPlayAllowed`,
+// `isCallSheetPassingPlay`, `getCallSheetCoverageAliases`,
+// `callSheetCoverageMatches`, `callSheetKeywordMatches`,
+// `callSheetKeyPlayerMatches`, `callSheetPlayMatchesCriteria`,
+// `findMatchingCategories`, `buildPlayerCategoryAutoFillTargets`.
 //
 // Loaded after callsheet.js (all helpers are called at runtime).
 // ============================================================

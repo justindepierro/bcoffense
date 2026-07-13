@@ -1,5 +1,8 @@
 // Call Sheet Print Logic
-// Owns: print modal, print option persistence, print rendering (live and print paths)
+// Owns: `printCallSheet`, `getCallSheetPrintOptions`,
+// `setCallSheetPrintOptions`, `openCallSheetPrintModal`, `_csRunPrint`,
+// `renderCallSheetPrintPage`, `renderPrintCategory`,
+// `getCallSheetPrintDensityClass`, `renderPrintPlay`.
 // Depends on: callsheet.js globals (callSheet, callSheetSettings, CALLSHEET_CATEGORIES,
 //             getCallSheetCategoriesForPage, buildCallSheetColumns, buildCallSheetPlayParts,
 //             getCallSheetPlayDisplayOptions, getCallSheetDisplayOptions, getPersonnelCode,

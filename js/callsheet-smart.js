@@ -1,8 +1,8 @@
 // ============================================================
 // callsheet-smart.js — scouting overlay + smart suggestions
 //
-// Owns: toggleScoutingOverlay, toggleScouting, buildScoutingBadge,
-// buildDeadVsBadge, openSmartSuggestionsModal, addSuggestionToSheet.
+// Owns: `toggleScoutingOverlay`, `toggleScouting`, `buildScoutingBadge`,
+// `buildDeadVsBadge`, `openSmartSuggestionsModal`, `addSuggestionToSheet`.
 //
 // Loaded after callsheet.js (depends on callSheet, callSheetSettings,
 // CALLSHEET_CATEGORIES, and CALLSHEET_FRONT/BACK globals).

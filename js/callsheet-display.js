@@ -1,10 +1,10 @@
 // ============================================================
 // callsheet-display.js — call sheet display options panel + presets
 //
-// Owns: csSelectAllFields, BUILTIN_PRESETS, loadDisplayPreset,
-// saveDisplayPreset, refreshPresetDropdown, manageDisplayPresets,
-// deleteDisplayPreset, saveCallSheetDisplayOptions,
-// restoreCallSheetDisplayOptions, openDisplayPanel, closeDisplayPanel.
+// Owns: `csSelectAllFields`, `BUILTIN_PRESETS`, `loadDisplayPreset`,
+// `saveDisplayPreset`, `refreshPresetDropdown`, `manageDisplayPresets`,
+// `deleteDisplayPreset`, `saveCallSheetDisplayOptions`,
+// `restoreCallSheetDisplayOptions`, `openDisplayPanel`, `closeDisplayPanel`.
 //
 // Loaded after callsheet.js and callsheet-render.js.
 // ============================================================

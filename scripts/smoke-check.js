@@ -3304,6 +3304,49 @@ function checkTopLevelSymbolOwnership() {
   console.log(`top-level symbol ownership ok (${locations.size} symbols)`);
 }
 
+function checkSplitFileOwnershipClaims() {
+  const files = walk("js").filter((file) => file.endsWith(".js") && !file.endsWith(".min.js"));
+  const violations = [];
+
+  files.forEach((file) => {
+    const source = read(file);
+    if (!/^\/\/\s*Owns:/m.test(source)) return;
+
+    const declared = new Set([
+      ...[...source.matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)].map((match) => match[1]),
+      ...[...source.matchAll(/^(?:const|let|var|class)\s+([A-Za-z_$][\w$]*)\b/gm)].map((match) => match[1]),
+    ]);
+    const lines = source.split("\n");
+    const claimed = new Set();
+
+    for (let index = 0; index < lines.length; index += 1) {
+      if (!/^\/\/\s*Owns:/.test(lines[index])) continue;
+      for (let cursor = index; cursor < lines.length; cursor += 1) {
+        const line = lines[cursor];
+        if (!line.startsWith("//")) break;
+        if (cursor > index && /^\/\/\s*(?:Loaded|Depends|=|-)/.test(line)) break;
+        [...line.matchAll(/`([A-Za-z_$][\w$]*)`/g)].forEach((match) => claimed.add(match[1]));
+      }
+    }
+
+    if (!claimed.size) {
+      violations.push(`${file}: Owns comment has no backticked symbols`);
+      return;
+    }
+
+    [...claimed].forEach((name) => {
+      if (!declared.has(name)) {
+        violations.push(`${file}: claims ${name} but does not declare it`);
+      }
+    });
+  });
+
+  if (violations.length) {
+    fail(`split-file ownership claims drifted: ${violations.join(" | ")}`);
+  }
+  console.log("split-file ownership claims ok");
+}
+
 function checkWristbandConstantUsage() {
   const files = [
     ...walk("js").filter((file) => /^js\/wristband.*\.js$/.test(file)),
@@ -3592,6 +3635,7 @@ checkGracefulLoadingStates();
 checkPlayerQuizSettingsContracts();
 checkScrollOwnershipContract();
 checkTopLevelSymbolOwnership();
+checkSplitFileOwnershipClaims();
 checkWristbandConstantUsage();
 checkScriptPacketPrintContracts();
 checkScriptSelectionRenderContracts();
