@@ -507,10 +507,10 @@ body.shell-phone #callsheet .callsheet-play .cs-hash-swap {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  min-height: 36px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
   opacity: 1;
 }
 
@@ -2131,6 +2131,8 @@ body.shell-phone #callsheet .cs-empty-cat {
   color: var(--color-primary);
   cursor: pointer;
   padding: 0 3px;
+  min-width: 44px;
+  min-height: 44px;
   font-size: var(--font-size-2xs);
   border-radius: var(--radius-sm);
   flex-shrink: 0;

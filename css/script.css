@@ -2500,6 +2500,8 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
 
 .toolbar-btn-xs {
   padding: 6px 9px;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .script-toolbar-label {
@@ -6493,6 +6495,12 @@ body.is-mobile-screen #script .stat-health-btn {
   min-width: 0;
   line-height: 1.15;
   white-space: normal;
+}
+
+#script .script-toolbar .toolbar-btn-xs {
+  flex: 0 0 44px;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 #script .toolbar-sort-select {

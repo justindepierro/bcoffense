@@ -2729,6 +2729,10 @@ function checkStressAuditHarness() {
   const pkg = JSON.parse(read("package.json"));
   const gitignore = read(".gitignore");
   const harness = read("scripts/stress-seed-audit.mjs");
+  const playbookCss = read("css/playbook.css");
+  const scriptCss = read("css/script.css");
+  const callsheetCss = read("css/callsheet.css");
+  const dashboardCss = read("css/dashboard.css");
 
   if (pkg.scripts?.["stress:audit"] !== "node scripts/stress-seed-audit.mjs") {
     fail("stress audit harness is not exposed through npm run stress:audit");
@@ -2748,6 +2752,14 @@ function checkStressAuditHarness() {
       fail(`stress audit harness is missing ${pattern}`);
     }
   });
+  if (
+    !/\.pb-shortcuts-hint\s*\{[\s\S]*width:\s*44px[\s\S]*min-height:\s*44px/.test(playbookCss) ||
+    !/#script \.script-toolbar \.toolbar-btn-xs\s*\{[\s\S]*flex:\s*0 0 44px[\s\S]*min-width:\s*44px[\s\S]*min-height:\s*44px/.test(scriptCss) ||
+    !/body\.shell-phone #callsheet \.callsheet-play \.remove-play,[\s\S]*body\.shell-phone #callsheet \.callsheet-play \.cs-hash-swap\s*\{[\s\S]*width:\s*44px[\s\S]*min-height:\s*44px/.test(callsheetCss) ||
+    !/\.player-home-refresh__btn\s*\{[\s\S]*min-height:\s*44px/.test(dashboardCss)
+  ) {
+    fail("stress audit touch-target fixes are missing");
+  }
 
   console.log("stress audit harness contracts ok");
 }
