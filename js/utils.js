@@ -1129,6 +1129,38 @@ function removeVowels(str) {
   return str[0] + str.slice(1).replace(/[aeiouAEIOU]/g, "");
 }
 
+function shouldForceUppercaseCall(options = {}) {
+  return Boolean(options.forceUppercase || options.uppercase || options.allCaps);
+}
+
+function formatPlayCallText(value, options = {}) {
+  if (value === null || value === undefined || value === "") return "";
+  let text = String(value);
+  if (options.noVowels) text = removeVowels(text);
+  if (shouldForceUppercaseCall(options)) text = text.toUpperCase();
+  return text;
+}
+
+function transformHtmlTextSegments(html, transform) {
+  return String(html || "").replace(/([^<>]+)(?=<|$)/g, (segment) =>
+    segment.replace(
+      /&(?:#\d+|#x[\da-fA-F]+|[a-zA-Z][a-zA-Z\d]+);|[^&]+/g,
+      (token) => token.startsWith("&") ? token : transform(token),
+    ),
+  );
+}
+
+function transformPlayCallHtml(html, options = {}) {
+  let output = String(html || "");
+  if (options.noVowels) {
+    output = transformHtmlTextSegments(output, (text) => removeVowels(text));
+  }
+  if (shouldForceUppercaseCall(options)) {
+    output = transformHtmlTextSegments(output, (text) => text.toUpperCase());
+  }
+  return output;
+}
+
 function splitCoverageValues(value) {
   if (!value) return [];
   const values = [];
@@ -1165,12 +1197,16 @@ function getFullCall(play, options = {}) {
     italicMotions = false,
     redMotions = false,
     noVowels = false,
+    forceUppercase = false,
+    uppercase = false,
+    allCaps = false,
     showLineCall = true,
     hideProtection = false,
     highlightHuddle = false,
     highlightCandy = false,
     wrapPlayName = false,
   } = options;
+  const textOptions = { noVowels, forceUppercase, uppercase, allCaps };
 
   // Check if play has "Under" - check the under column or legacy formTag locations
   const hasUnder =
@@ -1221,16 +1257,9 @@ function getFullCall(play, options = {}) {
 
   let fullCall = parts.join(" ");
 
-  // Remove vowels if requested (but preserve HTML tags)
-  if (noVowels) {
-    fullCall = fullCall.replace(/([^<>]+)(?=<|$)/g, (match) =>
-      removeVowels(match),
-    );
-  }
-
   // Add line call in brackets
   if (showLineCall && play.lineCall) {
-    const rawLc = noVowels ? removeVowels(play.lineCall) : play.lineCall;
+    const rawLc = formatPlayCallText(play.lineCall, textOptions);
     const lc = escapeHtml(rawLc);
     fullCall += ` <span class="line-call">[${lc}]</span>`;
   }
@@ -1244,6 +1273,7 @@ function getFullCall(play, options = {}) {
     prefix += "🍑 ";
   }
 
+  fullCall = transformPlayCallHtml(fullCall, textOptions);
   if (prefix) fullCall = prefix + fullCall;
 
   return fullCall.trim();

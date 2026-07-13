@@ -469,7 +469,7 @@ function getScriptFullCall(play, options = {}) {
   if (!displayPlay) return "";
   const oneWordCall = String(displayPlay.oneWord || "").trim();
   if (options.showOneWordOnly && oneWordCall) {
-    const text = options.noVowels ? removeVowels(oneWordCall) : oneWordCall;
+    const text = formatPlayCallText(oneWordCall, options);
     const oneWordParts = [];
     if (options.showEmoji && displayPlay.personnel) {
       oneWordParts.push(getPersonnelEmoji(displayPlay.personnel, options.useSquares));

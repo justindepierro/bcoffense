@@ -596,9 +596,11 @@ function buildWristbandCellTokens(play, custom = {}, opts = {}) {
     italicMotions = false,
     redMotions = false,
     noVowels = false,
+    forceUppercase = false,
     showLineCall = true,
     hideProtection = false,
   } = opts;
+  const textOptions = { noVowels, forceUppercase };
 
   const hasUnder =
     (play?.under && String(play.under).trim() !== "") ||
@@ -607,9 +609,7 @@ function buildWristbandCellTokens(play, custom = {}, opts = {}) {
 
   const txt = (value) => {
     if (value === null || value === undefined || value === "") return "";
-    let str = escapeHtml(value);
-    if (noVowels) str = removeVowels(str);
-    return str;
+    return escapeHtml(formatPlayCallText(value, textOptions));
   };
 
   // Markers
@@ -674,7 +674,7 @@ function buildWristbandCellTokens(play, custom = {}, opts = {}) {
   }
 
   const lineCallHtml = showLineCall && play?.lineCall
-    ? `<span class="line-call">[${noVowels ? escapeHtml(removeVowels(play.lineCall)) : escapeHtml(play.lineCall)}]</span>`
+    ? `<span class="line-call">[${escapeHtml(formatPlayCallText(play.lineCall, textOptions))}]</span>`
     : "";
 
   return {
@@ -1455,6 +1455,7 @@ function getWbDisplayOptionIds() {
     "wbItalicMotions",
     "wbRedMotions",
     "wbRemoveVowels",
+    "wbForceUppercase",
     "wbShowLineCall",
     "wbLineCallOnly",
     "wbBlankPlayerRules",
@@ -1474,6 +1475,7 @@ const WB_DISPLAY_PRESETS = {
     wbItalicMotions: false,
     wbRedMotions: false,
     wbRemoveVowels: false,
+    wbForceUppercase: false,
     wbShowLineCall: true,
     wbLineCallOnly: false,
     wbBlankPlayerRules: false,
@@ -1490,6 +1492,7 @@ const WB_DISPLAY_PRESETS = {
     wbItalicMotions: false,
     wbRedMotions: false,
     wbRemoveVowels: false,
+    wbForceUppercase: false,
     wbShowLineCall: true,
     wbLineCallOnly: false,
     wbBlankPlayerRules: false,
@@ -1506,6 +1509,7 @@ const WB_DISPLAY_PRESETS = {
     wbItalicMotions: true,
     wbRedMotions: true,
     wbRemoveVowels: false,
+    wbForceUppercase: false,
     wbShowLineCall: true,
     wbLineCallOnly: false,
     wbBlankPlayerRules: false,

@@ -44,8 +44,9 @@ Data normalization policy:
   strip accents.
   - Added shared canonical compare helpers while preserving exact stored identity strings for readable play names and stable saved data.
   - Wired canonical keys through call sheet duplicate keys, playbook health duplicates, cleanup similarity normalization, wristband highlighting, Script usage, Script integrations, and Game Plan wristband matching.
-- [ ] Add an optional display setting for uppercase call rendering where a coach
+- [x] Add an optional display setting for uppercase call rendering where a coach
   wants a uniform look on print/player views.
+  - Added render-only ALL CAPS controls for Script, Playbook print, Wristband, and Call Sheet display paths without mutating stored playbook text.
 - [x] Add a bulk "standardize selected field" cleanup action that applies the
   most common capitalization/spelling variant after review.
   - The Playbook cleanup modal now detects canonical variants for the selected field, previews row counts, lets coaches choose the readable standard, and applies after confirmation.

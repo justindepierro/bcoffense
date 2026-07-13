@@ -840,6 +840,66 @@ function checkPlayCompareKeyContracts() {
   console.log("play compare key contracts ok");
 }
 
+function checkUppercaseCallRenderingContracts() {
+  const utils = read("js/utils.js");
+  const index = read("index.html");
+  const scriptDisplay = read("js/script-display-options.js");
+  const scriptShared = read("js/script-shared.js");
+  const playbookPrint = read("js/playbook-print.js");
+  const wristbandRender = read("js/wristband-render.js");
+  const wristbandStorage = read("js/wristband-storage.js");
+  const wristband = read("js/wristband.js");
+  const callSheet = read("js/callsheet.js");
+  const callSheetRender = read("js/callsheet-render.js");
+  const callSheetDisplay = read("js/callsheet-display.js");
+  const roadmap = read("CONSOLIDATED_ROADMAP.md");
+
+  if (
+    !/function shouldForceUppercaseCall\(options = \{\}\)/.test(utils) ||
+    !/function formatPlayCallText\(value, options = \{\}\)[\s\S]*text\.toUpperCase\(\)/.test(utils) ||
+    !/function transformHtmlTextSegments\(html, transform\)/.test(utils) ||
+    !/function transformPlayCallHtml\(html, options = \{\}\)[\s\S]*text\.toUpperCase\(\)/.test(utils) ||
+    !/forceUppercase = false/.test(utils)
+  ) {
+    fail("shared uppercase call rendering helpers are missing");
+  }
+
+  [
+    "pbForceUppercase",
+    "wbForceUppercase",
+    "callsheetForceUppercase",
+    "scriptForceUppercase",
+  ].forEach((id) => {
+    if (!new RegExp(`id="${id}"`).test(index)) {
+      fail(`missing uppercase display checkbox ${id}`);
+    }
+  });
+
+  if (
+    !/"scriptForceUppercase"/.test(scriptDisplay) ||
+    !/forceUppercase:[\s\S]*scriptForceUppercase/.test(scriptDisplay) ||
+    !/formatPlayCallText\(oneWordCall, options\)/.test(scriptShared) ||
+    !/forceUppercase:[\s\S]*pbForceUppercase/.test(playbookPrint) ||
+    !/\["wbForceUppercase", "pbForceUppercase"\]/.test(playbookPrint) ||
+    !/forceUppercase:[\s\S]*wbForceUppercase/.test(wristbandRender) ||
+    !/setCheckbox\("wbForceUppercase", displaySettings\.forceUppercase\)/.test(wristbandStorage) ||
+    !/"wbForceUppercase"/.test(wristband) ||
+    !/formatPlayCallText\(value, textOptions\)/.test(wristband) ||
+    !/formatPlayCallText\(text, options\)/.test(callSheet) ||
+    !/"callsheetForceUppercase"/.test(callSheetRender) ||
+    !/forceUppercase:[\s\S]*callsheetForceUppercase/.test(callSheetRender) ||
+    !/"callsheetForceUppercase"/.test(callSheetDisplay)
+  ) {
+    fail("uppercase call rendering is not wired through all display surfaces");
+  }
+
+  if (!/- \[x\] Add an optional display setting for uppercase call rendering/.test(roadmap)) {
+    fail("roadmap does not mark uppercase call rendering complete");
+  }
+
+  console.log("uppercase call rendering contracts ok");
+}
+
 function checkWristbandTypography() {
   const css = read("css/wristband.css");
   const printCss = read("css/print.css");
@@ -3942,6 +4002,7 @@ checkSafeUiRendering();
 checkHistoryContracts();
 checkConflictContracts();
 checkPlayCompareKeyContracts();
+checkUppercaseCallRenderingContracts();
 checkWristbandTypography();
 checkPersonnelMarkerContracts();
 checkPlayPresentationContracts();

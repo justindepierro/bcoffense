@@ -7,6 +7,7 @@ const SCRIPT_DISPLAY_CHECKBOX_IDS = [
   "scriptItalicMotions",
   "scriptRedMotions",
   "scriptRemoveVowels",
+  "scriptForceUppercase",
   "scriptShowLineCall",
   "scriptShowOneWordOnly",
   "scriptHighlightHuddle",
@@ -74,6 +75,8 @@ function getScriptDisplayOptions() {
       document.getElementById("scriptRedMotions")?.checked || false,
     noVowels:
       document.getElementById("scriptRemoveVowels")?.checked || false,
+    forceUppercase:
+      document.getElementById("scriptForceUppercase")?.checked || false,
     showLineCall:
       document.getElementById("scriptShowLineCall")?.checked !== false,
     showOneWordOnly:

@@ -64,6 +64,7 @@ function getWristbandDisplayOptions() {
     italicMotions: document.getElementById("wbItalicMotions")?.checked || false,
     redMotions: document.getElementById("wbRedMotions")?.checked || false,
     noVowels: document.getElementById("wbRemoveVowels")?.checked || false,
+    forceUppercase: document.getElementById("wbForceUppercase")?.checked || false,
     showLineCall: document.getElementById("wbShowLineCall")?.checked || false,
     lineCallOnly: document.getElementById("wbLineCallOnly")?.checked || false,
     blankPlayerRules: document.getElementById("wbBlankPlayerRules")?.checked || false,

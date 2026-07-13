@@ -535,6 +535,7 @@ const CALLSHEET_DISPLAY_IDS = [
   "callsheetItalicMotions",
   "callsheetRedMotions",
   "callsheetRemoveVowels",
+  "callsheetForceUppercase",
   "callsheetHighlightHuddle",
   "callsheetHighlightCandy",
   "callsheetRedBorder",
@@ -1216,6 +1217,8 @@ function getCallSheetDisplayOptions() {
       document.getElementById("callsheetRedMotions")?.checked ?? false,
     noVowels:
       document.getElementById("callsheetRemoveVowels")?.checked ?? false,
+    forceUppercase:
+      document.getElementById("callsheetForceUppercase")?.checked ?? false,
     highlightHuddle:
       document.getElementById("callsheetHighlightHuddle")?.checked ?? false,
     highlightCandy:
@@ -1471,7 +1474,7 @@ function buildCallSheetPlayParts(play, options) {
   const playParts = [];
   const formatTagText = (value) => {
     if (!value) return "";
-    return escapeHtml(options.noVowels ? removeVowels(value) : value);
+    return escapeHtml(formatPlayCallText(value, options));
   };
   const oneWordCall = formatTagText(play.oneWord);
   const formationTags = [play.formTag1, play.formTag2]
@@ -1517,10 +1520,7 @@ function buildCallSheetPlayParts(play, options) {
   }
 
   if (options.showFormation && play.formation) {
-    let formText = options.noVowels
-      ? removeVowels(play.formation)
-      : play.formation;
-    playParts.push(escapeHtml(formText));
+    playParts.push(formatTagText(play.formation));
   }
 
   if (options.showFormationTags) {
@@ -1538,9 +1538,7 @@ function buildCallSheetPlayParts(play, options) {
 
   // Handle shift with bold/red options
   if (play.shift && !options.hideShift) {
-    let shiftText = escapeHtml(
-      options.noVowels ? removeVowels(play.shift) : play.shift,
-    );
+    let shiftText = formatTagText(play.shift);
     if (options.boldShifts) shiftText = `<b>${shiftText}</b>`;
     if (options.redShifts)
       shiftText = `<span class="cs-red-text">${shiftText}</span>`;
@@ -1549,9 +1547,7 @@ function buildCallSheetPlayParts(play, options) {
 
   // Handle motion with italic/red options
   if (options.showMotion && play.motion) {
-    let motionText = escapeHtml(
-      options.noVowels ? removeVowels(play.motion) : play.motion,
-    );
+    let motionText = formatTagText(play.motion);
     if (options.italicMotions) motionText = `<i>${motionText}</i>`;
     if (options.redMotions)
       motionText = `<span class="cs-red-text">${motionText}</span>`;
@@ -1559,20 +1555,15 @@ function buildCallSheetPlayParts(play, options) {
   }
 
   if (options.showProtection && play.protection) {
-    let protText = options.noVowels
-      ? removeVowels(play.protection)
-      : play.protection;
-    playParts.push(escapeHtml(protText));
+    playParts.push(formatTagText(play.protection));
   }
 
   if (options.showBack && play.back) {
-    const backText = options.noVowels ? removeVowels(play.back) : play.back;
-    playParts.push(escapeHtml(backText));
+    playParts.push(formatTagText(play.back));
   }
 
   if (options.showPlayName && play.play) {
-    let playText = options.noVowels ? removeVowels(play.play) : play.play;
-    playParts.push(escapeHtml(playText));
+    playParts.push(formatTagText(play.play));
   }
 
   if (options.showTags) {
@@ -1583,9 +1574,7 @@ function buildCallSheetPlayParts(play, options) {
 
   // Add line call in brackets
   if (options.showLineCall && play.lineCall) {
-    const lc = escapeHtml(
-      options.noVowels ? removeVowels(play.lineCall) : play.lineCall,
-    );
+    const lc = formatTagText(play.lineCall);
     playParts.push(`<i class="cs-line-call">[${lc}]</i>`);
   }
 

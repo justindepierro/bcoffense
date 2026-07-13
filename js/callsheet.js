@@ -242,7 +242,7 @@ function getCallSheetCustomTagMarkup(values, variant, options = {}) {
   return values.map(
     (entry) => {
       const text = formatSharedCustomTagEntryText(entry);
-      const displayText = options.noVowels ? removeVowels(text) : text;
+      const displayText = formatPlayCallText(text, options);
       return `<span class="cs-inline-tag cs-inline-tag--${variant}">(${escapeHtml(displayText)})</span>`;
     },
   );

@@ -149,6 +149,7 @@ function _getPbPrintOptions() {
     italicMotions: document.getElementById("pbItalicMotions")?.checked || false,
     redMotions: document.getElementById("pbRedMotions")?.checked || false,
     noVowels: document.getElementById("pbRemoveVowels")?.checked || false,
+    forceUppercase: document.getElementById("pbForceUppercase")?.checked || false,
     showLineCall: document.getElementById("pbShowLineCall")?.checked || false,
     highlightHuddle:
       document.getElementById("pbHighlightHuddle")?.checked || false,
@@ -167,6 +168,7 @@ function syncFromWristbandOptions() {
     ["wbItalicMotions", "pbItalicMotions"],
     ["wbRedMotions", "pbRedMotions"],
     ["wbRemoveVowels", "pbRemoveVowels"],
+    ["wbForceUppercase", "pbForceUppercase"],
     ["wbShowLineCall", "pbShowLineCall"],
     ["wbHighlightHuddle", "pbHighlightHuddle"],
     ["wbHighlightCandy", "pbHighlightCandy"],

@@ -14,6 +14,7 @@ function applyWristbandDisplaySettings(displaySettings) {
   setCheckbox("wbItalicMotions", displaySettings.italicMotions);
   setCheckbox("wbRedMotions", displaySettings.redMotions);
   setCheckbox("wbRemoveVowels", displaySettings.noVowels || displaySettings.removeVowels);
+  setCheckbox("wbForceUppercase", displaySettings.forceUppercase);
   setCheckbox("wbShowLineCall", displaySettings.showLineCall);
   setCheckbox("wbLineCallOnly", displaySettings.lineCallOnly);
   setCheckbox("wbBlankPlayerRules", displaySettings.blankPlayerRules);
