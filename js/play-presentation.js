@@ -258,6 +258,15 @@ function getPlayPresentationDetailPanelMarkup(item) {
     return `<p class="pp-detail-panel-empty">No play selected.</p>`;
   }
   const play = item.play;
+  const signalAvailability =
+    typeof renderSignalAvailabilityForPlay === "function"
+      ? renderSignalAvailabilityForPlay(play, {
+        className: "signal-availability--presentation-detail",
+        title: "Signals for this play",
+        action: "openPlayPresentationSignals",
+        buttonLabel: "Watch",
+      })
+      : "";
   const { callRows, situationRows, defenseRows, coachingRows } =
     getPlayPresentationDetailRowGroups(play);
   const assignmentMarkup = getPlayPresentationPositions()
@@ -272,6 +281,7 @@ function getPlayPresentationDetailPanelMarkup(item) {
     )
     .join("");
   const sections = [
+    signalAvailability,
     getPlayPresentationCoachSection(
       "Call Structure",
       "Formation, motion, and call mechanics",
@@ -2124,6 +2134,15 @@ function getPlayPresentationPlayerMarkup(item) {
   const assignment = String(play[selected.key] || "").trim();
   const responsibilityNotes = String(play.respNotes || "").trim();
   const playerNotes = String(play.playerNotes || "").trim();
+  const signalAvailability =
+    typeof renderSignalAvailabilityForPlay === "function"
+      ? renderSignalAvailabilityForPlay(play, {
+        className: "signal-availability--presentation-player",
+        title: "Signals ready",
+        action: "openPlayPresentationSignals",
+        buttonLabel: "Watch",
+      })
+      : "";
   const playerChips = [
     play.type,
     play.personnel ? `${play.personnel} pers` : "",
@@ -2156,6 +2175,7 @@ function getPlayPresentationPlayerMarkup(item) {
           <span><strong>2</strong> Rule</span>
           <span><strong>3</strong> Ask</span>
         </div>
+        ${signalAvailability}
         ${getPlayPresentationPlayerStatusMarkup({
       assignment,
       selected,

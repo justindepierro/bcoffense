@@ -133,7 +133,7 @@ Phase 3 - Practice Script and Swipe View integration:
 
 Phase 4 - player study extensions:
 
-- [ ] Add signal availability to player-facing play detail and current-practice
+- [x] Add signal availability to player-facing play detail and current-practice
   study surfaces.
 - [ ] Add future quiz hooks so players can be asked to identify the signal for a
   motion, tag, formation, or play name.

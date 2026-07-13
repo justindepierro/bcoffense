@@ -3698,6 +3698,8 @@ function checkSignalPlayIntegrationContracts() {
     !/function resolveSignalsForPlay\(play\)/.test(signals) ||
     !/const seen = new Set\(\)/.test(signals) ||
     !/function getSignalCountForPlay\(play\)/.test(signals) ||
+    !/function getSignalAvailabilityForPlay\(play\)/.test(signals) ||
+    !/function renderSignalAvailabilityForPlay\(play, options = \{\}\)/.test(signals) ||
     !/function openSignalSelectorForPlay\(play, options = \{\}\)/.test(signals) ||
     !/function openPlaybookSignalSelector\(idx\)/.test(signals) ||
     !/typeof filteredPlays !== "undefined" && Array\.isArray\(filteredPlays\)/.test(signals) ||
@@ -3708,6 +3710,16 @@ function checkSignalPlayIntegrationContracts() {
     !/function _sigRenderCoverageReport\(summariesByComponent\)/.test(signals)
   ) {
     fail("signal play selector API is incomplete");
+  }
+
+  if (
+    !/signal-availability/.test(signals) ||
+    !/signal-availability-action/.test(signals) ||
+    !/renderSignalAvailabilityForPlay\(play, \{[\s\S]*className: "signal-availability--script-player"[\s\S]*action: "openScriptSignalSelector"/.test(scriptRender) ||
+    !/renderSignalAvailabilityForPlay\(play, \{[\s\S]*className: "signal-availability--presentation-detail"[\s\S]*action: "openPlayPresentationSignals"/.test(presentation) ||
+    !/renderSignalAvailabilityForPlay\(play, \{[\s\S]*className: "signal-availability--presentation-player"[\s\S]*action: "openPlayPresentationSignals"/.test(presentation)
+  ) {
+    fail("player-facing signal availability surfaces are incomplete");
   }
 
   if (
@@ -3763,6 +3775,9 @@ function checkSignalPlayIntegrationContracts() {
     !/\.pb-signal-badge/.test(signalsCss) ||
     !/\.signals-coverage/.test(signalsCss) ||
     !/\.signals-coverage-missing/.test(signalsCss) ||
+    !/\.signal-availability/.test(signalsCss) ||
+    !/\.signal-availability-groups/.test(signalsCss) ||
+    !/\.signal-availability-action/.test(signalsCss) ||
     !/z-index:\s*calc\(var\(--z-skip-link\) \+ 2\)/.test(signalsCss) ||
     !/\.pp-signals-btn/.test(presentationCss)
   ) {
@@ -3774,6 +3789,7 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Add a small `Signals` button to Practice Script play rows\/cards/.test(roadmap) ||
     !/- \[x\] Add the same signal selector to Script Swipe View \/ presentation-style/.test(roadmap) ||
     !/- \[x\] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and/.test(roadmap) ||
+    !/- \[x\] Add signal availability to player-facing play detail and current-practice/.test(roadmap) ||
     !/- \[x\] Add simple coach\/admin coverage reporting: components with signals,/.test(roadmap)
   ) {
     fail("signals roadmap checklist is not updated for the play selector slice");

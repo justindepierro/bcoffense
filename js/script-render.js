@@ -622,6 +622,16 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
   if (isPlayerScriptRole()) {
     const metaItems = getPlayerScriptMetaItems(play, reps);
     const focusText = String(play.respNotes || play.notes || "").trim();
+    const signalAvailability =
+      signalCount && typeof renderSignalAvailabilityForPlay === "function"
+        ? renderSignalAvailabilityForPlay(play, {
+          className: "signal-availability--script-player",
+          title: "Signals for this play",
+          action: "openScriptSignalSelector",
+          arg: index,
+          buttonLabel: "Watch",
+        })
+        : "";
     const playerItemClasses = [
       "script-item",
       "script-item--player",
@@ -673,6 +683,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
               </div>`
         : ""
       }
+        ${signalAvailability}
       </article>
       ${showPrintPreview ? renderScriptPrintPreviewRow(play, playNumber, fullCall, playerSummary, reps) : ""}
     `;

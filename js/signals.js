@@ -668,6 +668,66 @@ function getSignalCountForPlay(play) {
   return _sigFlattenPlayGroups(resolveSignalsForPlay(play)).length;
 }
 
+function getSignalAvailabilityForPlay(play) {
+  const groups = resolveSignalsForPlay(play);
+  const categories = SIGNAL_CATEGORIES.map((category) => {
+    const items = groups[category.id] || [];
+    return {
+      ...category,
+      items,
+      count: items.length,
+    };
+  }).filter((category) => category.count > 0);
+  return {
+    total: categories.reduce((sum, category) => sum + category.count, 0),
+    categories,
+  };
+}
+
+function renderSignalAvailabilityForPlay(play, options = {}) {
+  const availability = getSignalAvailabilityForPlay(play);
+  if (!availability.total) return "";
+  const className = options.className ? ` ${escapeAttr(options.className)}` : "";
+  const title = String(options.title || "Signals available").trim();
+  const buttonLabel = String(options.buttonLabel || `Watch ${availability.total}`).trim();
+  const action = String(options.action || "").trim();
+  const argAttr =
+    Object.prototype.hasOwnProperty.call(options, "arg") && options.arg != null
+      ? ` data-arg="${escapeAttr(options.arg)}"`
+      : "";
+  const actionButton = action
+    ? `<button type="button" class="signal-availability-action" data-action="${escapeAttr(action)}"${argAttr}>${escapeHtml(buttonLabel)}</button>`
+    : "";
+  const groups = availability.categories
+    .map((category) => {
+      const labels = category.items
+        .slice(0, 3)
+        .map(_sigSelectorRecordLabel)
+        .filter(Boolean)
+        .join(", ");
+      const more = category.items.length > 3 ? ` +${category.items.length - 3}` : "";
+      return `
+        <span class="signal-availability-group">
+          <strong>${escapeHtml(category.label)}</strong>
+          <em>${category.count}</em>
+          <small>${escapeHtml(labels)}${escapeHtml(more)}</small>
+        </span>`;
+    })
+    .join("");
+
+  return `
+    <section class="signal-availability${className}" aria-label="Signals available for this play">
+      <div class="signal-availability-head">
+        <div>
+          <span>${escapeHtml(title)}</span>
+          <strong>${availability.total} clip${availability.total === 1 ? "" : "s"}</strong>
+        </div>
+        ${actionButton}
+      </div>
+      <div class="signal-availability-groups">${groups}</div>
+    </section>`;
+}
+
 function _sigPlayLabel(play) {
   if (typeof getPlayPresentationPlayLabel === "function") {
     return getPlayPresentationPlayLabel(play);
@@ -844,6 +904,12 @@ window.uploadSelectedSignalClip = uploadSelectedSignalClip;
 window.saveSignalDetails = saveSignalDetails;
 window.deleteSignalClip = deleteSignalClip;
 window.resolveSignalsForPlay = resolveSignalsForPlay;
+window.getSignalCountForPlay = getSignalCountForPlay;
+window.getSignalAvailabilityForPlay = getSignalAvailabilityForPlay;
+window.renderSignalAvailabilityForPlay = renderSignalAvailabilityForPlay;
+window.openSignalSelectorForPlay = openSignalSelectorForPlay;
+window.openPlaybookSignalSelector = openPlaybookSignalSelector;
+window.openScriptSignalSelector = openScriptSignalSelector;
 
 window.addEventListener("play-clips-changed", (event) => {
   const sig = String(event?.detail?.sig || "");

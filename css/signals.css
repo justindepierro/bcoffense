@@ -223,6 +223,127 @@
   font-weight: 800;
 }
 
+.signal-availability {
+  display: grid;
+  gap: var(--space-xs);
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-bg-light));
+}
+
+.signal-availability-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.signal-availability-head > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.signal-availability-head span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.signal-availability-head strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signal-availability-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  padding: 5px 11px;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.signal-availability-action:hover,
+.signal-availability-action:focus-visible {
+  background: var(--color-primary-dark);
+  outline: none;
+}
+
+.signal-availability-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.signal-availability-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 6px;
+  min-width: 0;
+  min-height: 42px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  background: var(--color-bg-body);
+}
+
+.signal-availability-group strong,
+.signal-availability-group small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signal-availability-group strong {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+}
+
+.signal-availability-group em {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-2xs);
+  font-style: normal;
+  font-weight: 950;
+}
+
+.signal-availability-group small {
+  grid-column: 1 / -1;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 800;
+}
+
 .signals-category-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -748,6 +869,19 @@
   .signals-coverage-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .signal-availability-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .signal-availability-action {
+    width: 100%;
+  }
+
+  .signal-availability-groups {
+    grid-template-columns: 1fr;
   }
 
   .signals-clip {

@@ -342,6 +342,8 @@ window.getPlayImageUrl
 window.getRemotePlayerLeaderboardMeta
 window.getRemotePlayerLeaderboardRows
 window.getScriptVisiblePlayerSummary
+window.getSignalAvailabilityForPlay
+window.getSignalCountForPlay
 window.hasPlayImage
 window.initScriptEvents
 window.initSignals
@@ -354,7 +356,10 @@ window.openPlaybookClipViewer
 window.openPlayClipViewer
 window.openPlayDiagramHealth
 window.openPlayDiagramHealthEdit
+window.openPlaybookSignalSelector
 window.openScriptClipViewer
+window.openScriptSignalSelector
+window.openSignalSelectorForPlay
 window.perfMonitor
 window.playClips
 window.playerNotificationState
@@ -370,6 +375,7 @@ window.refreshPlayerLeaderboardSummary
 window.resetAnchoredMenu
 window.resetCloudSyncAutoPull
 window.renderSignals
+window.renderSignalAvailabilityForPlay
 window.resolveSignalsForPlay
 window.saveCloudSyncSettings
 window.saveSignalDetails
