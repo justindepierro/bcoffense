@@ -69,6 +69,35 @@
   let cloudAutoPushSuppress = false;
   const cloudAutoPushDirtyKeys = new Set();
 
+  function _cloudQueueJob(channel, id, opts = {}) {
+    if (typeof window.queueWorkspaceSyncJob !== "function") return "";
+    return window.queueWorkspaceSyncJob(channel, id, {
+      retry: () => flushCloudAutoPush(),
+      ...opts,
+    });
+  }
+
+  function _cloudStartJob(key, opts = {}) {
+    if (key && typeof window.startWorkspaceSyncJob === "function") {
+      window.startWorkspaceSyncJob(key, opts);
+    }
+  }
+
+  function _cloudCompleteJob(key, opts = {}) {
+    if (key && typeof window.completeWorkspaceSyncJob === "function") {
+      window.completeWorkspaceSyncJob(key, opts);
+    }
+  }
+
+  function _cloudFailJob(key, err, opts = {}) {
+    if (key && typeof window.failWorkspaceSyncJob === "function") {
+      window.failWorkspaceSyncJob(key, err, {
+        retry: () => flushCloudAutoPush(),
+        ...opts,
+      });
+    }
+  }
+
   function getCloudSyncSettings() {
     const stored = storageManager.get(STORAGE_KEYS.CLOUD_SYNC_SETTINGS, {});
     const source = stored && typeof stored === "object" ? stored : {};
@@ -624,19 +653,19 @@
       }
       return;
     }
-    if (cloudAutoPushPending) {
-      statusEl.textContent = "Cloud autosave pending...";
-      statusEl.className = "cloud-sync-status cloud-sync-status-warn";
-      if (typeof window.setWorkspaceSyncStatus === "function") {
-        window.setWorkspaceSyncStatus("cloud", "queued", { label: "Cloud sync queued" });
-      }
-      return;
-    }
     if (cloudAutoPushLastError) {
       statusEl.textContent = `Cloud autosave failed - ${cloudAutoPushLastError}`;
       statusEl.className = "cloud-sync-status cloud-sync-status-warn";
       if (typeof window.setWorkspaceSyncStatus === "function") {
         window.setWorkspaceSyncStatus("cloud", "error", { label: "Cloud sync needs attention" });
+      }
+      return;
+    }
+    if (cloudAutoPushPending) {
+      statusEl.textContent = "Cloud autosave pending...";
+      statusEl.className = "cloud-sync-status cloud-sync-status-warn";
+      if (typeof window.setWorkspaceSyncStatus === "function") {
+        window.setWorkspaceSyncStatus("cloud", "queued", { label: "Cloud sync queued" });
       }
       return;
     }
@@ -681,8 +710,19 @@
     cloudAutoPushDirtyKeys.add(key);
     cloudAutoPushPending = true;
     cloudAutoPushLastError = "";
-    if (key === "playImages" && typeof window.setWorkspaceSyncStatus === "function") {
-      window.setWorkspaceSyncStatus("media", "queued", { label: "Media upload queued" });
+    _cloudQueueJob("cloud", "auto-push", {
+      queuedLabel: "Cloud sync queued",
+      runningLabel: "Syncing team cloud...",
+      doneLabel: "Team cloud synced",
+      errorLabel: "Cloud sync needs attention",
+    });
+    if (key === "playImages") {
+      _cloudQueueJob("media", "auto-push", {
+        queuedLabel: "Media upload queued",
+        runningLabel: "Uploading media...",
+        doneLabel: "Media published",
+        errorLabel: "Media upload needs retry",
+      });
     }
     if (!cloudAutoPushFirstQueuedAt) cloudAutoPushFirstQueuedAt = Date.now();
 
@@ -715,9 +755,22 @@
     cloudAutoPushPending = false;
     cloudAutoPushFirstQueuedAt = 0;
     const syncingMedia = cloudAutoPushDirtyKeys.has("playImages");
-    if (syncingMedia && typeof window.setWorkspaceSyncStatus === "function") {
-      window.setWorkspaceSyncStatus("media", "syncing", { label: "Uploading media..." });
-    }
+    const cloudJobKey = _cloudQueueJob("cloud", "auto-push", {
+      queuedLabel: "Cloud sync queued",
+      runningLabel: "Syncing team cloud...",
+      doneLabel: "Team cloud synced",
+      errorLabel: "Cloud sync needs attention",
+    });
+    const mediaJobKey = syncingMedia
+      ? _cloudQueueJob("media", "auto-push", {
+        queuedLabel: "Media upload queued",
+        runningLabel: "Uploading media...",
+        doneLabel: "Media published",
+        errorLabel: "Media upload needs retry",
+      })
+      : "";
+    _cloudStartJob(cloudJobKey, { label: "Syncing team cloud..." });
+    _cloudStartJob(mediaJobKey, { label: "Uploading media..." });
     renderCloudSyncStatus();
 
     try {
@@ -725,11 +778,10 @@
       const moreChangesQueued = cloudAutoPushPending;
       cloudAutoPushLastError = "";
       cloudAutoPushRetryCount = 0;
+      _cloudCompleteJob(cloudJobKey, { label: "Team cloud synced" });
       if (!moreChangesQueued) {
         cloudAutoPushDirtyKeys.clear();
-        if (syncingMedia && typeof window.setWorkspaceSyncStatus === "function") {
-          window.setWorkspaceSyncStatus("media", "synced", { label: "Media published" });
-        }
+        _cloudCompleteJob(mediaJobKey, { label: "Media published" });
       } else {
         cloudAutoPushFirstQueuedAt = Date.now();
         scheduleCloudAutoPushTimer(CLOUD_AUTO_PUSH_DELAY_MS);
@@ -739,9 +791,8 @@
       cloudAutoPushPending = true;
       cloudAutoPushLastError = err.message || "Unknown error";
       cloudAutoPushRetryCount += 1;
-      if (syncingMedia && typeof window.setWorkspaceSyncStatus === "function") {
-        window.setWorkspaceSyncStatus("media", "error", { label: "Media upload needs retry" });
-      }
+      _cloudFailJob(cloudJobKey, err, { label: "Cloud sync needs attention" });
+      _cloudFailJob(mediaJobKey, err, { label: "Media upload needs retry" });
       showToast(`Cloud autosave failed: ${cloudAutoPushLastError}`, {
         type: "warning",
         duration: 6000,

@@ -223,6 +223,17 @@ function getPlayerPublishStatus() {
 
 function recordPlayerPublishStatus(kind, details = {}) {
   if (!kind || typeof storageManager === "undefined" || typeof storageManager.set !== "function") return;
+  const publishJobKey = typeof window.queueWorkspaceSyncJob === "function"
+    ? window.queueWorkspaceSyncJob("player", kind, {
+      queuedLabel: "Player publish update queued",
+      runningLabel: "Updating player publish...",
+      doneLabel: "Player publish updated",
+      errorLabel: "Player publish needs attention",
+    })
+    : "";
+  if (publishJobKey && typeof window.startWorkspaceSyncJob === "function") {
+    window.startWorkspaceSyncJob(publishJobKey, { label: "Updating player publish..." });
+  }
   const status = getPlayerPublishStatus();
   const previous = status[kind] && typeof status[kind] === "object" ? status[kind] : {};
   status[kind] = {
@@ -231,6 +242,9 @@ function recordPlayerPublishStatus(kind, details = {}) {
     updatedAt: details.updatedAt || new Date().toISOString(),
   };
   storageManager.set(_playerPublishStatusStorageKey(), status);
+  if (publishJobKey && typeof window.completeWorkspaceSyncJob === "function") {
+    window.completeWorkspaceSyncJob(publishJobKey, { label: "Player publish updated" });
+  }
   if (typeof renderCoachPublishStatus === "function") renderCoachPublishStatus();
   if (typeof notifyPlayersOfTeamUpdate === "function") {
     notifyPlayersOfTeamUpdate(kind, details).catch(() => { });

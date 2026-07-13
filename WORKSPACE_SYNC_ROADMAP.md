@@ -33,11 +33,11 @@ workflow.
 
 ## Phase 1 - Save/Publish Queue
 
-- [ ] Create one queue abstraction for local save, cloud push, media upload, and
+- [x] Create one queue abstraction for local save, cloud push, media upload, and
   player publish metadata.
-- [ ] Deduplicate repeated writes so rapid edits become one visible save cycle.
-- [ ] Expose retry for failed cloud/media work from the dock.
-- [ ] Keep manual Cloud Sync and Sync Diagrams as advanced fallback actions.
+- [x] Deduplicate repeated writes so rapid edits become one visible save cycle.
+- [x] Expose retry for failed cloud/media work from the dock.
+- [x] Keep manual Cloud Sync and Sync Diagrams as advanced fallback actions.
 
 ## Phase 2 - Coach Media Publish
 

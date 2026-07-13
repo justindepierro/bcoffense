@@ -201,6 +201,31 @@ body[data-auth-role="player"] .save-status {
   white-space: nowrap;
 }
 
+.workspace-sync-dock__retry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 3px 9px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.workspace-sync-dock__retry[hidden] {
+  display: none;
+}
+
+.workspace-sync-dock__retry:hover,
+.workspace-sync-dock__retry:focus-visible {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
 .workspace-sync-dock__dot,
 .workspace-sync-dock__spinner {
   flex: 0 0 auto;

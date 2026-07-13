@@ -642,8 +642,17 @@
     const scopedKeys = [...new Set(requestedKeys)].filter((sig) => allKeys.includes(sig));
     result.total = scopedKeys.length;
     if (!scopedKeys.length) return result;
-    if (typeof window.setWorkspaceSyncStatus === "function") {
-      window.setWorkspaceSyncStatus("media", "syncing", {
+    const syncJobKey = typeof window.queueWorkspaceSyncJob === "function"
+      ? window.queueWorkspaceSyncJob("media", opts.keys ? "diagram-scope" : "diagram-all", {
+        queuedLabel: `${scopedKeys.length} diagram${scopedKeys.length === 1 ? "" : "s"} queued`,
+        runningLabel: `Uploading ${scopedKeys.length} diagram${scopedKeys.length === 1 ? "" : "s"}...`,
+        doneLabel: `${scopedKeys.length} diagram${scopedKeys.length === 1 ? "" : "s"} published`,
+        errorLabel: "Some media uploads need retry",
+        retry: () => syncToRemote(playsArray, opts),
+      })
+      : "";
+    if (syncJobKey && typeof window.startWorkspaceSyncJob === "function") {
+      window.startWorkspaceSyncJob(syncJobKey, {
         label: `Uploading ${scopedKeys.length} diagram${scopedKeys.length === 1 ? "" : "s"}...`,
       });
     }
@@ -715,15 +724,26 @@
     }
     if (typeof window.setWorkspaceSyncStatus === "function") {
       const hasUploadIssues = result.failed > 0 || result.skipped > 0;
-      window.setWorkspaceSyncStatus(
-        "media",
-        hasUploadIssues ? "error" : "synced",
-        {
-          label: hasUploadIssues
-            ? "Some media uploads need retry"
-            : `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} published`,
-        },
-      );
+      if (syncJobKey && hasUploadIssues && typeof window.failWorkspaceSyncJob === "function") {
+        window.failWorkspaceSyncJob(syncJobKey, new Error("Some media uploads need retry"), {
+          label: "Some media uploads need retry",
+          retry: () => syncToRemote(playsArray, opts),
+        });
+      } else if (syncJobKey && typeof window.completeWorkspaceSyncJob === "function") {
+        window.completeWorkspaceSyncJob(syncJobKey, {
+          label: `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} published`,
+        });
+      } else {
+        window.setWorkspaceSyncStatus(
+          "media",
+          hasUploadIssues ? "error" : "synced",
+          {
+            label: hasUploadIssues
+              ? "Some media uploads need retry"
+              : `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} published`,
+          },
+        );
+      }
     }
     return result;
   }

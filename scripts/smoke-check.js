@@ -3277,11 +3277,14 @@ function checkGracefulLoadingStates() {
 
 function checkWorkspaceSyncContracts() {
   const roadmap = read("WORKSPACE_SYNC_ROADMAP.md");
+  const workspaceSync = read("js/workspace-sync.js");
   const shell = read("js/app-shell.js");
   const layout = read("css/layout.css");
   const cloudSync = read("js/cloud-sync.js");
   const playImages = read("js/play-images.js");
+  const scriptPlayer = read("js/script-player.js");
   const appSession = read("js/app-session.js");
+  const html = read("index.html");
 
   [
     "# BCOffense Workspace Sync Roadmap",
@@ -3290,33 +3293,57 @@ function checkWorkspaceSyncContracts() {
     "- [x] Route existing Cloud autosave pending/running/error state into the dock",
     "- [x] Route play-image/media queue state into the dock",
     "- [x] Warn before exit while local, cloud, or media work is pending",
+    "- [x] Create one queue abstraction for local save, cloud push, media upload, and",
+    "- [x] Deduplicate repeated writes so rapid edits become one visible save cycle.",
+    "- [x] Expose retry for failed cloud/media work from the dock.",
+    "- [x] Keep manual Cloud Sync and Sync Diagrams as advanced fallback actions.",
   ].forEach((token) => {
     if (!roadmap.includes(token)) {
       fail(`workspace sync roadmap missing ${token}`);
     }
   });
 
+  if (!/js\/workspace-sync\.js[\s\S]*js\/play-images\.js[\s\S]*js\/cloud-sync\.js/.test(html)) {
+    fail("workspace-sync.js must load before play image and cloud sync modules");
+  }
+
   [
+    "const WORKSPACE_SYNC_CHANNELS = [\"local\", \"cloud\", \"media\", \"player\"]",
     "const WORKSPACE_SYNC_STATES =",
+    "const workspaceSyncJobs = new Map()",
     "let workspaceSyncClearTimer = 0",
     "function ensureWorkspaceSyncDock()",
     "dock.id = \"workspaceSyncDock\"",
+    "data-action=\"retryWorkspaceSyncWork\"",
     "function getWorkspaceSyncSummary()",
     "function setWorkspaceSyncStatus(channel, state, opts = {})",
     "function hasWorkspaceSyncWork()",
+    "function queueWorkspaceSyncJob(channel, id, opts = {})",
+    "function startWorkspaceSyncJob(key, opts = {})",
+    "function completeWorkspaceSyncJob(key, opts = {})",
+    "function failWorkspaceSyncJob(key, error, opts = {})",
+    "function retryWorkspaceSyncWork()",
+    "function runWorkspaceSyncJob(channel, id, runner, opts = {})",
+    "window.workspaceSync =",
     "window.setWorkspaceSyncStatus = setWorkspaceSyncStatus",
     "window.hasWorkspaceSyncWork = hasWorkspaceSyncWork",
-    "setWorkspaceSyncStatus(\"local\", \"saved\"",
-    "setWorkspaceSyncStatus(\"local\", \"saving\"",
-    "setWorkspaceSyncStatus(\"local\", \"dirty\"",
   ].forEach((token) => {
-    if (!shell.includes(token)) {
-      fail(`workspace sync shell contract missing ${token}`);
+    if (!workspaceSync.includes(token)) {
+      fail(`workspace sync queue contract missing ${token}`);
     }
   });
 
+  if (
+    !/window\.setWorkspaceSyncStatus\("local", "saved"/.test(shell) ||
+    !/window\.setWorkspaceSyncStatus\("local", "saving"/.test(shell) ||
+    !/window\.setWorkspaceSyncStatus\("local", "dirty"/.test(shell)
+  ) {
+    fail("app shell does not route local save status through workspace sync");
+  }
+
   [
     ".workspace-sync-dock",
+    ".workspace-sync-dock__retry",
     ".workspace-sync-dock--saving",
     ".workspace-sync-dock--syncing",
     ".workspace-sync-dock--saved",
@@ -3330,14 +3357,19 @@ function checkWorkspaceSyncContracts() {
   });
 
   [
+    "function _cloudQueueJob(channel, id, opts = {})",
+    "window.queueWorkspaceSyncJob(channel, id",
+    "window.startWorkspaceSyncJob(key, opts)",
+    "window.completeWorkspaceSyncJob(key, opts)",
+    "window.failWorkspaceSyncJob(key, err",
     "setWorkspaceSyncStatus(\"cloud\", \"syncing\"",
     "setWorkspaceSyncStatus(\"cloud\", \"queued\"",
     "setWorkspaceSyncStatus(\"cloud\", \"error\"",
     "setWorkspaceSyncStatus(\"cloud\", \"synced\"",
-    "setWorkspaceSyncStatus(\"media\", \"queued\"",
-    "setWorkspaceSyncStatus(\"media\", \"syncing\"",
-    "setWorkspaceSyncStatus(\"media\", \"synced\"",
-    "setWorkspaceSyncStatus(\"media\", \"error\"",
+    "_cloudQueueJob(\"media\", \"auto-push\"",
+    "_cloudStartJob(mediaJobKey",
+    "_cloudCompleteJob(mediaJobKey",
+    "_cloudFailJob(mediaJobKey",
   ].forEach((token) => {
     if (!cloudSync.includes(token)) {
       fail(`workspace sync cloud/media contract missing ${token}`);
@@ -3349,11 +3381,22 @@ function checkWorkspaceSyncContracts() {
   }
 
   if (
-    !/setWorkspaceSyncStatus\("media", "syncing"[\s\S]*Uploading \$\{scopedKeys\.length\} diagram/.test(playImages) ||
+    !/queueWorkspaceSyncJob\("media", opts\.keys \? "diagram-scope" : "diagram-all"/.test(playImages) ||
+    !/startWorkspaceSyncJob\(syncJobKey/.test(playImages) ||
+    !/failWorkspaceSyncJob\(syncJobKey/.test(playImages) ||
+    !/completeWorkspaceSyncJob\(syncJobKey/.test(playImages) ||
     !/const hasUploadIssues = result\.failed > 0 \|\| result\.skipped > 0/.test(playImages) ||
     !/hasUploadIssues \? "error" : "synced"/.test(playImages)
   ) {
     fail("play image sync does not route media upload progress and skipped items into workspace status");
+  }
+
+  if (
+    !/queueWorkspaceSyncJob\("player", kind/.test(scriptPlayer) ||
+    !/startWorkspaceSyncJob\(publishJobKey/.test(scriptPlayer) ||
+    !/completeWorkspaceSyncJob\(publishJobKey/.test(scriptPlayer)
+  ) {
+    fail("player publish metadata does not route through workspace sync queue");
   }
 
   if (
