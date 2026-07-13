@@ -168,14 +168,14 @@ Phase 5 - Signal games and leaderboards:
 - [x] Add `6 Seconds of Battle`: the clip plays, then the video turns off and
   players have 6 seconds to identify the component; leaderboard ranks correct
   answers under pressure and average reaction time.
-- [ ] Add `Heat Check`: endless signal reps until the player misses; leaderboard
+- [x] Add `Heat Check`: endless signal reps until the player misses; leaderboard
   ranks best correct streak, with total correct as the tie-breaker.
-- [ ] Add Signal game category selection before launch: `CORE`, `TAGS`,
+- [x] Add Signal game category selection before launch: `CORE`, `TAGS`,
   `BLOCKING`, and `MOTIONS` checkboxes, with higher point multipliers as
   players include more categories and `ALL` worth double.
-- [ ] Add a dedicated Signal Leaderboard with three tabs for the three game
+- [x] Add a dedicated Signal Leaderboard with three tabs for the three game
   modes so these scores do not get buried inside normal play-call quiz totals.
-- [ ] Sync Signal game attempts through the existing leaderboard pipeline with
+- [x] Sync Signal game attempts through the existing leaderboard pipeline with
   `sourceType: signal` and distinct `quizMode` values, then filter the UI by
   game mode.
 - [ ] Give coaches controls for eligible categories, minimum published signal

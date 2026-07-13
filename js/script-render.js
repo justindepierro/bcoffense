@@ -1487,6 +1487,8 @@ let _quizSourceId = "";
 let _quizSourceWeight = 1;
 let _quizTitle = "Play Quiz";
 let _quizMode = "quick";
+let _quizSignalCategories = [];
+let _quizSignalMultiplier = 1;
 let _playerQuizSelectedMode = "quick";
 let _quizPositionKey = "respQ";
 let _quizPositionMode = "primary";
@@ -1510,6 +1512,13 @@ const SIGNAL_SPRINT_TARGET_REPS = 100;
 const SIGNAL_BATTLE_CLIP_MS = 5000;
 const SIGNAL_BATTLE_ANSWER_MS = 6000;
 const SIGNAL_BATTLE_TARGET_REPS = 20;
+const SIGNAL_HEAT_CHECK_TARGET_REPS = 200;
+const SIGNAL_GAME_CATEGORY_OPTIONS = [
+  { id: "CORE", label: "Core" },
+  { id: "TAGS", label: "Tags" },
+  { id: "BLOCKING", label: "Blocking" },
+  { id: "MOTIONS", label: "Motions" },
+];
 const PLAYER_QUIZ_WEEKLY_GOAL = 1000;
 const PLAYER_QUIZ_BASE_CORRECT_POINTS = 10;
 const PLAYER_QUIZ_STREAK_STEP_POINTS = 1;
@@ -1573,6 +1582,7 @@ const DEFAULT_PLAYER_HELMET_STICKER_TYPES = [
 ];
 let _leaderboardSelectedPlayer = "";
 let _playerLeaderboardView = "week";
+let _signalLeaderboardMode = "signal-sprint";
 let _coachQuizLeaderboardView = "week";
 let _playerQuizSelectedScriptId = "";
 
@@ -1598,6 +1608,12 @@ function _getPlayerQuizSourceSettingsStorageKey() {
   return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS
     ? STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS
     : "playerQuizSourceSettings";
+}
+
+function _getPlayerSignalGameSettingsStorageKey() {
+  return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_SIGNAL_GAME_SETTINGS
+    ? STORAGE_KEYS.PLAYER_SIGNAL_GAME_SETTINGS
+    : "playerSignalGameSettings";
 }
 
 function _getPlayerRewardStorageKey() {
@@ -1694,8 +1710,73 @@ function _isSignalBattleMode(mode = _quizMode) {
   return String(mode || "") === "signal-battle";
 }
 
+function _isSignalHeatCheckMode(mode = _quizMode) {
+  return String(mode || "") === "signal-heat";
+}
+
 function _isTimedSignalGameMode(mode = _quizMode) {
   return _isSignalSprintMode(mode) || _isSignalBattleMode(mode);
+}
+
+function _isSignalAutoAdvanceMode(mode = _quizMode) {
+  return _isTimedSignalGameMode(mode) || _isSignalHeatCheckMode(mode);
+}
+
+function _normalizeSignalGameCategories(categories) {
+  const allowed = new Set(SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => category.id));
+  const selected = Array.isArray(categories) ? categories : [];
+  const clean = selected
+    .map((category) => String(category || "").trim().toUpperCase())
+    .filter((category) => allowed.has(category));
+  return Array.from(new Set(clean));
+}
+
+function _getSignalGameSettings(status = null) {
+  const available = new Set(
+    (Array.isArray(status?.categories) ? status.categories : [])
+      .filter((category) => Number(category.count || 0) > 0)
+      .map((category) => String(category.id || "").trim().toUpperCase())
+      .filter(Boolean),
+  );
+  const fallback = available.size
+    ? SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => category.id).filter((id) => available.has(id))
+    : SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => category.id);
+  const raw = typeof storageManager !== "undefined" && typeof storageManager.get === "function"
+    ? storageManager.get(_getPlayerSignalGameSettingsStorageKey(), {})
+    : {};
+  const categories = _normalizeSignalGameCategories(raw?.categories);
+  return {
+    categories: categories.length ? categories : fallback,
+  };
+}
+
+function _saveSignalGameSettings(settings = {}) {
+  const normalized = {
+    categories: _normalizeSignalGameCategories(settings.categories),
+  };
+  if (!normalized.categories.length) {
+    normalized.categories = SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => category.id);
+  }
+  if (typeof storageManager !== "undefined" && typeof storageManager.set === "function") {
+    storageManager.set(_getPlayerSignalGameSettingsStorageKey(), normalized);
+  }
+  return normalized;
+}
+
+function _getSignalCategoryMultiplier(categories = _quizSignalCategories) {
+  const count = _normalizeSignalGameCategories(categories).length;
+  if (count >= SIGNAL_GAME_CATEGORY_OPTIONS.length) return 2;
+  if (count <= 1) return 1;
+  return Number((1 + ((count - 1) * 0.25)).toFixed(2));
+}
+
+function _formatSignalCategories(categories = _quizSignalCategories) {
+  const selected = _normalizeSignalGameCategories(categories);
+  if (selected.length >= SIGNAL_GAME_CATEGORY_OPTIONS.length) return "All categories";
+  return SIGNAL_GAME_CATEGORY_OPTIONS
+    .filter((category) => selected.includes(category.id))
+    .map((category) => category.label)
+    .join(" + ") || "No categories";
 }
 
 function _clearQuizTimer() {
@@ -2091,7 +2172,7 @@ function _getPlayerQuizDraft() {
 
 function _savePlayerQuizDraft() {
   if (!_quizPlays.length || _quizFinished) return null;
-  if (_quizTimeLimitMs || _isSignalBattleMode()) return null;
+  if (_quizTimeLimitMs || _isSignalAutoAdvanceMode()) return null;
   if (typeof storageManager === "undefined" || typeof storageManager.set !== "function") return null;
   const draft = {
     savedAt: new Date().toISOString(),
@@ -2099,6 +2180,8 @@ function _savePlayerQuizDraft() {
     sourceType: _quizSourceType,
     sourceId: _quizSourceId,
     sourceWeight: _quizSourceWeight,
+    signalCategories: _quizSignalCategories,
+    signalCategoryMultiplier: _quizSignalMultiplier,
     quizMode: _quizMode,
     positionKey: _quizPositionKey,
     positionMode: _quizPositionMode,
@@ -2767,6 +2850,17 @@ function _isSignalBattleAttempt(attempt = {}) {
   return attempt?.sourceType === "signal" && attempt?.quizMode === "signal-battle";
 }
 
+function _isSignalHeatCheckAttempt(attempt = {}) {
+  return attempt?.sourceType === "signal" && attempt?.quizMode === "signal-heat";
+}
+
+function _signalAttemptMatchesMode(attempt = {}, mode = _signalLeaderboardMode) {
+  const normalized = String(mode || "").trim();
+  if (normalized === "signal-battle") return _isSignalBattleAttempt(attempt);
+  if (normalized === "signal-heat") return _isSignalHeatCheckAttempt(attempt);
+  return _isSignalSprintAttempt(attempt);
+}
+
 function _getSignalSprintAttemptAverageMs(attempt = {}) {
   const direct = Number(attempt.averageAnswerMs || attempt.review?.gameStats?.averageAnswerMs || 0);
   if (direct > 0) return direct;
@@ -2796,6 +2890,16 @@ function _compareSignalBattleRows(a, b) {
   return (
     Number(b.correct || 0) - Number(a.correct || 0) ||
     Number(a.averageReactionMs || Number.MAX_SAFE_INTEGER) - Number(b.averageReactionMs || Number.MAX_SAFE_INTEGER) ||
+    Number(b.percent || 0) - Number(a.percent || 0) ||
+    _quizEventTimestamp(b.attempt || b) - _quizEventTimestamp(a.attempt || a) ||
+    String(a.name || "").localeCompare(String(b.name || ""))
+  );
+}
+
+function _compareSignalHeatCheckRows(a, b) {
+  return (
+    Number(b.bestStreak || 0) - Number(a.bestStreak || 0) ||
+    Number(b.correct || 0) - Number(a.correct || 0) ||
     Number(b.percent || 0) - Number(a.percent || 0) ||
     _quizEventTimestamp(b.attempt || b) - _quizEventTimestamp(a.attempt || a) ||
     String(a.name || "").localeCompare(String(b.name || ""))
@@ -2849,6 +2953,55 @@ function _buildSignalSprintLeaderboardRows(attempts, player, weekKey = "") {
   }
   return Array.from(bestByPlayer.values())
     .sort(_compareSignalSprintRows)
+    .slice(0, 10)
+    .map((row, idx) => ({ ...row, rank: idx + 1 }));
+}
+
+function _buildSignalHeatCheckLeaderboardRows(attempts, player, weekKey = "") {
+  const bestByPlayer = new Map();
+  (Array.isArray(attempts) ? attempts : [])
+    .filter((attempt) => _isSignalHeatCheckAttempt(attempt))
+    .filter((attempt) => !weekKey || attempt.weekKey === weekKey)
+    .forEach((attempt) => {
+      const name = _quizPlayerNameFromAttempt(attempt, player);
+      const answered = Math.max(0, Number(attempt.answered || 0));
+      const correct = Math.max(0, Number(attempt.correct || 0));
+      const row = {
+        name,
+        attempt,
+        attempts: 1,
+        answered,
+        correct,
+        wrong: Math.max(0, answered - correct),
+        percent: answered ? Math.round((correct / answered) * 100) : 0,
+        bestStreak: Math.max(0, Number(attempt.bestStreak || 0)),
+        multiplier: Number(attempt.signalCategoryMultiplier || 1),
+        completedAt: attempt.completedAt || "",
+      };
+      const existing = bestByPlayer.get(name);
+      if (!existing || _compareSignalHeatCheckRows(row, existing) < 0) {
+        row.attempts = (existing?.attempts || 0) + 1;
+        bestByPlayer.set(name, row);
+      } else if (existing) {
+        existing.attempts += 1;
+      }
+    });
+  if (!bestByPlayer.size) {
+    const name = _normalizeQuizPlayerName(player || _getQuizPlayerName());
+    return [{
+      name,
+      rank: 1,
+      attempts: 0,
+      answered: 0,
+      correct: 0,
+      wrong: 0,
+      percent: 0,
+      bestStreak: 0,
+      empty: true,
+    }];
+  }
+  return Array.from(bestByPlayer.values())
+    .sort(_compareSignalHeatCheckRows)
     .slice(0, 10)
     .map((row, idx) => ({ ...row, rank: idx + 1 }));
 }
@@ -3103,6 +3256,7 @@ function _buildCoachQuizLeaderboardSummary() {
     commonMissedPlays,
     signalSprintRows: _buildSignalSprintLeaderboardRows(viewAttempts, _getQuizPlayerName()),
     signalBattleRows: _buildSignalBattleLeaderboardRows(viewAttempts, _getQuizPlayerName()),
+    signalHeatRows: _buildSignalHeatCheckLeaderboardRows(viewAttempts, _getQuizPlayerName()),
     totals: {
       players: leaderboardRows.length,
       attempts: viewAttempts.length,
@@ -3175,6 +3329,8 @@ function _summarizeQuizAttempts() {
     seasonSignalSprintRows: _buildSignalSprintLeaderboardRows(attempts, player),
     weeklySignalBattleRows: _buildSignalBattleLeaderboardRows(attempts, player, weekKey),
     seasonSignalBattleRows: _buildSignalBattleLeaderboardRows(attempts, player),
+    weeklySignalHeatRows: _buildSignalHeatCheckLeaderboardRows(attempts, player, weekKey),
+    seasonSignalHeatRows: _buildSignalHeatCheckLeaderboardRows(attempts, player),
   };
 }
 
@@ -3351,6 +3507,92 @@ function _renderSignalBattleLeaderboardRows(rows, player, variant = "player") {
       </button>
     `;
   }).join("");
+}
+
+function _renderSignalHeatCheckLeaderboardRows(rows, player, variant = "player") {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  if (!safeRows.length || safeRows.every((row) => row.empty)) {
+    return `<div class="${variant === "coach" ? "coach-quiz-empty" : "player-leaderboard-empty"}">No Heat Check attempts yet. Start a streak to set the first score.</div>`;
+  }
+  return safeRows.map((row) => {
+    const isCurrent = _normalizeQuizPlayerName(row.name) === _normalizeQuizPlayerName(player || "");
+    const attrs = variant === "coach"
+      ? `data-action="selectCoachQuizLeaderboardPlayer" data-arg="${escapeAttr(row.name)}"`
+      : `data-action="openPlayerLeaderboardDetail" data-arg="${escapeAttr(row.name)}"`;
+    return `
+      <button type="button" class="signal-sprint-leader-row signal-heat-leader-row${isCurrent ? " is-current" : ""}" ${attrs}>
+        <span class="signal-sprint-rank">#${row.rank}</span>
+        <strong>${escapeHtml(row.name)}</strong>
+        <span class="signal-sprint-score">${Math.round(row.bestStreak || 0)} streak</span>
+        <span>${Math.round(row.correct || 0)} correct</span>
+        <span>${Math.round(row.percent || 0)}%</span>
+      </button>
+    `;
+  }).join("");
+}
+
+function _getSignalLeaderboardConfig(mode = _signalLeaderboardMode) {
+  const normalized = String(mode || "").trim();
+  if (normalized === "signal-battle") {
+    return {
+      mode: "signal-battle",
+      label: "6 Seconds",
+      title: "6 Seconds of Battle",
+      meta: "correct, reaction time",
+      render: _renderSignalBattleLeaderboardRows,
+    };
+  }
+  if (normalized === "signal-heat") {
+    return {
+      mode: "signal-heat",
+      label: "Heat Check",
+      title: "Heat Check",
+      meta: "best streak, total correct",
+      render: _renderSignalHeatCheckLeaderboardRows,
+    };
+  }
+  return {
+    mode: "signal-sprint",
+    label: "Sprint",
+    title: "100 Second Signal Sprint",
+    meta: "correct, accuracy, speed",
+    render: _renderSignalSprintLeaderboardRows,
+  };
+}
+
+function _renderSignalLeaderboardTabs() {
+  const modes = ["signal-sprint", "signal-battle", "signal-heat"];
+  return `
+    <div class="signal-leaderboard-tabs" role="group" aria-label="Signal leaderboard mode">
+      ${modes.map((mode) => {
+        const config = _getSignalLeaderboardConfig(mode);
+        return `
+          <button type="button"
+            class="${config.mode === _signalLeaderboardMode ? "is-active" : ""}"
+            data-action="setSignalLeaderboardMode"
+            data-arg="${escapeAttr(config.mode)}">
+            ${escapeHtml(config.label)}
+          </button>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function _getSignalLeaderboardRowsForMode(summary, isSeason, mode = _signalLeaderboardMode) {
+  if (mode === "signal-battle") return isSeason ? summary.seasonSignalBattleRows : summary.weeklySignalBattleRows;
+  if (mode === "signal-heat") return isSeason ? summary.seasonSignalHeatRows : summary.weeklySignalHeatRows;
+  return isSeason ? summary.seasonSignalSprintRows : summary.weeklySignalSprintRows;
+}
+
+function setSignalLeaderboardMode(mode) {
+  _signalLeaderboardMode = _getSignalLeaderboardConfig(mode).mode;
+  if (document.getElementById("leaderboard")?.classList.contains("active")) {
+    renderPlayerLeaderboardPage();
+  }
+  if (document.getElementById("coachQuizSetupPage")?.offsetParent) {
+    renderCoachQuizSetupPage();
+  }
 }
 
 function _quizEventTimestamp(event = {}) {
@@ -3693,8 +3935,8 @@ function renderPlayerLeaderboardPage() {
   const viewGiftPoints = isSeason ? summary.seasonGiftPoints : summary.weeklyGiftPoints;
   const viewPoints = isSeason ? summary.seasonPoints : summary.weeklyPoints;
   const viewRows = isSeason ? summary.seasonLeaderboardRows : summary.weeklyLeaderboardRows;
-  const signalSprintRows = isSeason ? summary.seasonSignalSprintRows : summary.weeklySignalSprintRows;
-  const signalBattleRows = isSeason ? summary.seasonSignalBattleRows : summary.weeklySignalBattleRows;
+  const signalConfig = _getSignalLeaderboardConfig();
+  const signalRows = _getSignalLeaderboardRowsForMode(summary, isSeason, signalConfig.mode);
   const viewTier = _getQuizTier(viewPoints, settings);
   const achievement = _getQuizAchievementSummary(summary.weeklyPoints, settings);
   const championName = _getQuizTierName("champion", settings);
@@ -3782,19 +4024,13 @@ function renderPlayerLeaderboardPage() {
         </div>
         <div class="player-quiz-leaderboard-preview">${_renderQuizLeaderRows(viewRows, summary.player)}</div>
       </section>
-      <section class="player-leaderboard-board player-signal-sprint-board">
+      <section class="player-leaderboard-board player-signal-leaderboard-board">
         <div class="player-leaderboard-section-head">
-          <h3>100 Second Signal Sprint</h3>
-          <span>${escapeHtml(viewLabel)} · correct, accuracy, speed</span>
+          <h3>Signal Leaderboard</h3>
+          <span>${escapeHtml(viewLabel)} · ${escapeHtml(signalConfig.meta)}</span>
         </div>
-        <div class="signal-sprint-leaderboard">${_renderSignalSprintLeaderboardRows(signalSprintRows, summary.player)}</div>
-      </section>
-      <section class="player-leaderboard-board player-signal-battle-board">
-        <div class="player-leaderboard-section-head">
-          <h3>6 Seconds of Battle</h3>
-          <span>${escapeHtml(viewLabel)} · correct, reaction time</span>
-        </div>
-        <div class="signal-sprint-leaderboard signal-battle-leaderboard">${_renderSignalBattleLeaderboardRows(signalBattleRows, summary.player)}</div>
+        ${_renderSignalLeaderboardTabs()}
+        <div class="signal-sprint-leaderboard signal-leaderboard-list signal-leaderboard-list--${escapeAttr(signalConfig.mode)}">${signalConfig.render(signalRows, summary.player)}</div>
       </section>
       ${_renderPlayerLeaderboardDetail(_leaderboardSelectedPlayer, summary)}
       <section class="player-leaderboard-board">
@@ -4861,6 +5097,12 @@ function _renderCoachQuizLeaderboardPanel(summary) {
   const topPlayer = summary.rows[0];
   const selectedPlayer = _leaderboardSelectedPlayer || topPlayer?.name || "";
   const selected = summary.rows.find((row) => _normalizeQuizPlayerName(row.name) === _normalizeQuizPlayerName(selectedPlayer));
+  const signalConfig = _getSignalLeaderboardConfig();
+  const signalRows = signalConfig.mode === "signal-battle"
+    ? summary.signalBattleRows
+    : signalConfig.mode === "signal-heat"
+      ? summary.signalHeatRows
+      : summary.signalSprintRows;
   const selectedMeta = selected
     ? `${selected.attempts} attempt${selected.attempts === 1 ? "" : "s"} · ${Math.round(selected.quizPoints)} quiz pts · ${Math.round(selected.rewardPoints)} reward pts`
     : "Select a player to stage reward prompts faster.";
@@ -4912,20 +5154,12 @@ function _renderCoachQuizLeaderboardPanel(summary) {
         </div>
         <div class="coach-quiz-weak-card coach-quiz-signal-sprint-card">
           <div class="coach-quiz-weak-head">
-            <strong>Signal Sprint</strong>
-            <span>Correct · accuracy · speed</span>
+            <strong>Signal Leaderboard</strong>
+            <span>${escapeHtml(signalConfig.meta)}</span>
           </div>
+          ${_renderSignalLeaderboardTabs()}
           <div class="signal-sprint-leaderboard signal-sprint-leaderboard--coach">
-            ${_renderSignalSprintLeaderboardRows(summary.signalSprintRows, selectedPlayer, "coach")}
-          </div>
-        </div>
-        <div class="coach-quiz-weak-card coach-quiz-signal-battle-card">
-          <div class="coach-quiz-weak-head">
-            <strong>6 Seconds of Battle</strong>
-            <span>Correct · reaction</span>
-          </div>
-          <div class="signal-sprint-leaderboard signal-battle-leaderboard--coach">
-            ${_renderSignalBattleLeaderboardRows(summary.signalBattleRows, selectedPlayer, "coach")}
+            ${signalConfig.render(signalRows, selectedPlayer, "coach")}
           </div>
         </div>
       </div>
@@ -6061,6 +6295,14 @@ function _getPlayerQuizModes(context = {}) {
       source: "signal",
       disabled: !signalStatus.available,
     },
+    {
+      key: "signal-heat",
+      label: "Heat Check",
+      time: "Streak",
+      note: "Keep answering signal clips until the first miss.",
+      source: "signal",
+      disabled: !signalStatus.available,
+    },
   ];
 }
 
@@ -6085,6 +6327,70 @@ function _renderPlayerQuizModeCards() {
       <small>${escapeHtml(mode.note)}</small>
     </button>
   `).join("");
+}
+
+function _renderSignalGameCategorySelector(status = _getSignalQuizStatus()) {
+  const settings = _getSignalGameSettings(status);
+  const selected = new Set(settings.categories);
+  const selectedCount = selected.size;
+  const multiplier = _getSignalCategoryMultiplier(settings.categories);
+  const countByCategory = new Map(
+    (Array.isArray(status?.categories) ? status.categories : [])
+      .map((category) => [String(category.id || "").trim().toUpperCase(), Number(category.count || 0)]),
+  );
+  const allSelected = selectedCount >= SIGNAL_GAME_CATEGORY_OPTIONS.length;
+  return `
+    <div class="signal-game-category-panel" aria-label="Signal game categories">
+      <div class="signal-game-category-head">
+        <strong>Signal categories</strong>
+        <span>${selectedCount || 0} selected · ${multiplier.toFixed(2)}x</span>
+      </div>
+      <div class="signal-game-category-grid">
+        <button type="button"
+          class="signal-game-category-chip signal-game-category-chip--all${allSelected ? " is-selected" : ""}"
+          data-action="toggleSignalGameCategory"
+          data-arg="ALL"
+          aria-pressed="${allSelected ? "true" : "false"}">
+          <span>All</span>
+          <small>2x</small>
+        </button>
+        ${SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => {
+          const checked = selected.has(category.id);
+          const count = countByCategory.get(category.id) || 0;
+          return `
+            <button type="button"
+              class="signal-game-category-chip${checked ? " is-selected" : ""}${!count ? " is-empty" : ""}"
+              data-action="toggleSignalGameCategory"
+              data-arg="${escapeAttr(category.id)}"
+              aria-pressed="${checked ? "true" : "false"}">
+              <span>${escapeHtml(category.label)}</span>
+              <small>${count} clip${count === 1 ? "" : "s"}</small>
+            </button>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function toggleSignalGameCategory(categoryId) {
+  const id = String(categoryId || "").trim().toUpperCase();
+  const current = _getSignalGameSettings(_getSignalQuizStatus());
+  let categories = _normalizeSignalGameCategories(current.categories);
+  if (id === "ALL") {
+    categories = categories.length >= SIGNAL_GAME_CATEGORY_OPTIONS.length
+      ? [SIGNAL_GAME_CATEGORY_OPTIONS[SIGNAL_GAME_CATEGORY_OPTIONS.length - 1].id]
+      : SIGNAL_GAME_CATEGORY_OPTIONS.map((category) => category.id);
+  } else {
+    const allowed = SIGNAL_GAME_CATEGORY_OPTIONS.some((category) => category.id === id);
+    if (!allowed) return;
+    categories = categories.includes(id)
+      ? categories.filter((category) => category !== id)
+      : [...categories, id];
+    if (!categories.length) categories = [id];
+  }
+  _saveSignalGameSettings({ categories });
+  _renderPlayerQuizHub();
 }
 
 function _prepareQuizItemsForMode(items, modeKey = _quizMode) {
@@ -6319,6 +6625,7 @@ function _renderPlayerQuizHub() {
     setInnerHTML(signalStatusEl, `
       <span>${escapeHtml(signalStatus.detail)}</span>
       ${categoryChips}
+      ${signalStatus.available ? _renderSignalGameCategorySelector(signalStatus) : ""}
     `);
     signalStatusEl.hidden = !signalStatus.detail;
   }
@@ -6445,6 +6752,10 @@ function _buildSignalBattleItems(items, targetCount = SIGNAL_BATTLE_TARGET_REPS)
   return _buildSignalSprintItems(items, targetCount);
 }
 
+function _buildSignalHeatCheckItems(items, targetCount = SIGNAL_HEAT_CHECK_TARGET_REPS) {
+  return _buildSignalSprintItems(items, targetCount);
+}
+
 async function startPlayerQuizHubSignals() {
   const status = _getSignalQuizStatus();
   if (!status.available) {
@@ -6458,18 +6769,23 @@ async function startPlayerQuizHubSignals() {
   }
   try {
     const mode = _getPlayerQuizMode();
-    const signalMode = ["signal-sprint", "signal-battle"].includes(mode?.key) ? mode.key : "signal-study";
+    const signalMode = ["signal-sprint", "signal-battle", "signal-heat"].includes(mode?.key) ? mode.key : "signal-study";
+    const signalSettings = _getSignalGameSettings(status);
+    const signalCategories = signalSettings.categories;
+    const signalMultiplier = _getSignalCategoryMultiplier(signalCategories);
     const items = typeof getSignalQuizItems === "function"
-      ? await getSignalQuizItems({ requireClip: true })
+      ? await getSignalQuizItems({ requireClip: true, categories: signalCategories })
       : [];
     if (!Array.isArray(items) || items.length < 2) {
-      showToast("Signal Study needs at least two playable signal clips.", { type: "warning" });
+      showToast("That signal category selection needs at least two playable clips.", { type: "warning" });
       return;
     }
     const quizItems = signalMode === "signal-sprint"
       ? _buildSignalSprintItems(items)
       : signalMode === "signal-battle"
         ? _buildSignalBattleItems(items)
+        : signalMode === "signal-heat"
+          ? _buildSignalHeatCheckItems(items)
       : items;
     closePlayerQuizHub();
     _quizMode = signalMode;
@@ -6481,10 +6797,14 @@ async function startPlayerQuizHubSignals() {
         ? "100 Second Signal Sprint"
         : signalMode === "signal-battle"
           ? "6 Seconds of Battle"
+          : signalMode === "signal-heat"
+            ? "Heat Check"
           : "Signal Study",
       positionKey: _quizPositionKey,
       positionMode: _quizPositionMode,
       timeLimitMs: signalMode === "signal-sprint" ? SIGNAL_SPRINT_DURATION_MS : 0,
+      signalCategories,
+      signalCategoryMultiplier: signalMultiplier,
       mode: _quizMode,
     });
   } catch (err) {
@@ -6638,6 +6958,8 @@ function _resetQuizGameState() {
   _quizTimeLimitMs = 0;
   _quizStartedAt = 0;
   _quizFinishedAt = 0;
+  _quizSignalCategories = [];
+  _quizSignalMultiplier = 1;
 }
 
 function _quizItemKey(item) {
@@ -6924,11 +7246,11 @@ function _buildQuizQuestion(item) {
   } : null;
   const signalQuestion = canAskSignal ? {
     type: "signal",
-    prompt: _quizMode === "signal-study" || _isTimedSignalGameMode()
+    prompt: _quizMode === "signal-study" || _isSignalAutoAdvanceMode()
       ? `Which ${signalRecord.label || signalRecord.componentType || "signal"} is shown?`
       : `Which ${signalRecord.label || signalRecord.componentType || "signal"} belongs to this play?`,
     detailLabel: `${signalRecord.groupLabel || signalRecord.category || "Signal"} Signal`,
-    detailValue: _quizMode === "signal-study" || _isTimedSignalGameMode()
+    detailValue: _quizMode === "signal-study" || _isSignalAutoAdvanceMode()
       ? signalRecord.groupLabel || signalRecord.category || "Signal"
       : signalRecord.label || signalRecord.componentType || "",
     rule: positionRule,
@@ -6951,7 +7273,7 @@ function _buildQuizQuestion(item) {
   } : null;
 
   const candidates = [];
-  if (_quizMode === "signal-study" || _isTimedSignalGameMode()) {
+  if (_quizMode === "signal-study" || _isSignalAutoAdvanceMode()) {
     candidates.push(signalQuestion);
   } else if (_quizMode === "diagram") {
     candidates.push(diagramQuestion, diagramFormationQuestion, formationQuestion, signalQuestion, typeQuestion, callQuestion, ruleQuestion, ruleToPlayQuestion);
@@ -7242,7 +7564,14 @@ function startScriptQuiz(options = {}) {
   _quizShuffled = false;
   _quizSourceType = sourceType;
   _quizSourceId = String(opts.sourceId || "");
-  _quizSourceWeight = _getQuizSourceWeight(sourceType);
+  _quizSignalCategories = sourceType === "signal" ? _normalizeSignalGameCategories(opts.signalCategories) : [];
+  _quizSignalMultiplier = sourceType === "signal"
+    ? _getSignalCategoryMultiplier(_quizSignalCategories)
+    : 1;
+  if (sourceType === "signal" && Number(opts.signalCategoryMultiplier || 0) > 0) {
+    _quizSignalMultiplier = Number(opts.signalCategoryMultiplier);
+  }
+  _quizSourceWeight = _getQuizSourceWeight(sourceType) * _quizSignalMultiplier;
   _quizTitle = opts.title || (sourceType === "gameplan" ? "Game Plan Quiz" : sourceType === "signal" ? "Signal Study" : "Practice Script Quiz");
   if (opts.positionMode) {
     _quizPositionMode = _normalizeQuizPositionMode(opts.positionMode);
@@ -7256,7 +7585,7 @@ function startScriptQuiz(options = {}) {
   _quizIndex = 0;
   _resetQuizGameState();
   _quizTimeLimitMs = Math.max(0, Number(opts.timeLimitMs || 0));
-  _quizStartedAt = _quizTimeLimitMs || _isSignalBattleMode() ? Date.now() : 0;
+  _quizStartedAt = _quizTimeLimitMs || _isSignalAutoAdvanceMode() ? Date.now() : 0;
   _quizFinishedAt = 0;
   _clearPlayerQuizDraft();
 
@@ -7279,7 +7608,7 @@ function startScriptQuiz(options = {}) {
 function closeScriptQuiz() {
   const overlay = document.getElementById("scriptQuizOverlay");
   if (!overlay) return;
-  if (!_quizFinished && (_quizTimeLimitMs || _isSignalBattleMode()) && _quizPlays.length) {
+  if (!_quizFinished && (_quizTimeLimitMs || _isSignalAutoAdvanceMode()) && _quizPlays.length) {
     endScriptQuiz();
     return;
   }
@@ -7300,8 +7629,8 @@ function closeScriptQuiz() {
 }
 
 function toggleScriptQuizShuffle() {
-  if (_quizTimeLimitMs || _isSignalBattleMode()) {
-    showToast("Timed signal games stay in fixed order.", { type: "info" });
+  if (_quizTimeLimitMs || _isSignalAutoAdvanceMode()) {
+    showToast("Signal games stay in fixed order.", { type: "info" });
     return;
   }
   _quizShuffled = !_quizShuffled;
@@ -7352,9 +7681,17 @@ function prevScriptQuizPlay() {
 }
 
 function _advanceSignalGameAfterAnswer(questionKey) {
-  if (!_isTimedSignalGameMode() || _quizFinished) return;
+  if (!_isSignalAutoAdvanceMode() || _quizFinished) return;
   if (_isSignalSprintMode() && _getQuizRemainingMs() <= 0) {
     finishScriptQuiz({ timedOut: true });
+    return;
+  }
+  const answer = _quizAnswers.get(questionKey);
+  if (_isSignalHeatCheckMode() && answer && !answer.correct) {
+    setTimeout(() => {
+      if (_quizFinished) return;
+      finishScriptQuiz();
+    }, 650);
     return;
   }
   if (_quizIndex >= _quizPlays.length - 1) {
@@ -7362,12 +7699,19 @@ function _advanceSignalGameAfterAnswer(questionKey) {
     return;
   }
   setTimeout(() => {
-    if (!_isTimedSignalGameMode() || _quizFinished) return;
+    if (!_isSignalAutoAdvanceMode() || _quizFinished) return;
     const item = _quizPlays[_quizIndex];
     if (!item || _quizItemKey(item) !== questionKey) return;
     if (_isSignalSprintMode() && _getQuizRemainingMs() <= 0) {
       finishScriptQuiz({ timedOut: true });
       return;
+    }
+    if (_isSignalHeatCheckMode()) {
+      const latest = _quizAnswers.get(questionKey);
+      if (latest && !latest.correct) {
+        finishScriptQuiz();
+        return;
+      }
     }
     _quizIndex++;
     _resetQuizRoundState();
@@ -7600,6 +7944,18 @@ function _renderQuizBattleStats(summary = {}) {
   `;
 }
 
+function _renderQuizHeatCheckStats(summary = {}) {
+  if (summary.quizMode !== "signal-heat") return "";
+  return `
+    <div class="sq-result-sprint sq-result-sprint--heat">
+      <span><strong>${summary.bestStreak}</strong><small>Best streak</small></span>
+      <span><strong>${summary.correct}</strong><small>Total correct</small></span>
+      <span><strong>${summary.answered}</strong><small>Answered</small></span>
+      <span><strong>${Number(summary.signalCategoryMultiplier || 1).toFixed(2)}x</strong><small>${escapeHtml(summary.signalCategoryLabel || "Signals")}</small></span>
+    </div>
+  `;
+}
+
 function _buildQuizAttemptSummary(options = {}) {
   const opts = options && typeof options === "object" ? options : {};
   const partial = Boolean(opts.partial);
@@ -7645,6 +8001,10 @@ function _buildQuizAttemptSummary(options = {}) {
     positionMode: _quizPositionMode,
     positionLabel: _getQuizPositionModeLabel(_quizPositionMode),
     score: _quizScore,
+    sourceWeight: _quizSourceWeight,
+    signalCategories: _quizSignalCategories,
+    signalCategoryLabel: _formatSignalCategories(_quizSignalCategories),
+    signalCategoryMultiplier: _quizSignalMultiplier,
     bonusPoints,
     totalPoints,
     answered,
@@ -7668,6 +8028,12 @@ function _buildQuizAttemptSummary(options = {}) {
       strengthTypes: review.strengthTypes,
       nextReview: review.nextReview,
       gameStats,
+      signalGame: _quizSourceType === "signal" ? {
+        mode: _quizMode,
+        categories: _quizSignalCategories,
+        categoryLabel: _formatSignalCategories(_quizSignalCategories),
+        multiplier: _quizSignalMultiplier,
+      } : null,
     },
     reviewRows,
     completed: !partial,
@@ -7754,7 +8120,7 @@ function resumeScriptQuiz() {
 }
 
 function saveAndCloseScriptQuiz() {
-  if ((_quizTimeLimitMs || _isSignalBattleMode()) && !_quizFinished) {
+  if ((_quizTimeLimitMs || _isSignalAutoAdvanceMode()) && !_quizFinished) {
     endScriptQuiz();
     return;
   }
@@ -7800,6 +8166,10 @@ function resumePlayerQuizDraft() {
   _quizSourceType = ["gameplan", "signal"].includes(draft.sourceType) ? draft.sourceType : "script";
   _quizSourceId = String(draft.sourceId || "");
   _quizSourceWeight = Number(draft.sourceWeight || 0) || _getQuizSourceWeight(_quizSourceType);
+  _quizSignalCategories = _quizSourceType === "signal" ? _normalizeSignalGameCategories(draft.signalCategories) : [];
+  _quizSignalMultiplier = _quizSourceType === "signal"
+    ? Number(draft.signalCategoryMultiplier || 0) || _getSignalCategoryMultiplier(_quizSignalCategories)
+    : 1;
   _quizTitle = draft.title || (_quizSourceType === "gameplan" ? "Game Plan Quiz" : _quizSourceType === "signal" ? "Signal Study" : "Practice Script Quiz");
   _quizMode = String(draft.quizMode || "full");
   _quizPositionMode = _normalizeQuizPositionMode(draft.positionMode || "manual");
@@ -7858,6 +8228,7 @@ function _renderQuizResults(summary) {
         </div>
         ${_renderQuizSprintStats(summary)}
         ${_renderQuizBattleStats(summary)}
+        ${_renderQuizHeatCheckStats(summary)}
         ${summary.remaining ? `<div class="sq-result-tier">${summary.remaining} question${summary.remaining === 1 ? "" : "s"} left in this ${escapeHtml(_getQuizSourceLabel(summary.sourceType, "sentence"))}.</div>` : ""}
         ${summary.bonusPoints ? `<div class="sq-result-bonus">+${summary.bonusPoints} bonus points · ${escapeHtml(summary.badge)}</div>` : ""}
         ${_renderQuizResultRewardMoment(summary)}
@@ -7949,7 +8320,7 @@ function renderScriptQuizPlay() {
   // Progress
   const progressEl = document.getElementById("scriptQuizProgress");
   if (progressEl) {
-    progressEl.textContent = _quizTimeLimitMs || _isSignalBattleMode()
+    progressEl.textContent = _quizTimeLimitMs || _isSignalAutoAdvanceMode()
       ? `${_quizIndex + 1} / ${_quizPlays.length} · ${clockLabel}`
       : `${_quizIndex + 1} / ${_quizPlays.length}`;
   }
@@ -7964,17 +8335,19 @@ function renderScriptQuizPlay() {
   // Nav buttons
   const prevBtn = document.getElementById("scriptQuizPrevBtn");
   const nextBtn = document.getElementById("scriptQuizNextBtn");
-  if (prevBtn) prevBtn.disabled = _quizIndex === 0 || _isSignalBattleMode();
+  if (prevBtn) prevBtn.disabled = _quizIndex === 0 || _isSignalAutoAdvanceMode();
   if (nextBtn) {
-    nextBtn.disabled = _isSignalBattleMode() || (gameMode && !answer);
+    nextBtn.disabled = _isSignalAutoAdvanceMode() || (gameMode && !answer);
     nextBtn.textContent = _isSignalBattleMode()
       ? (battleLocked ? "Watch" : "Battle")
+      : _isSignalHeatCheckMode()
+        ? "Heat Check"
       : _quizIndex === _quizPlays.length - 1 ? "Finish" : "Next ▶";
   }
   const shuffleBtn = document.getElementById("scriptQuizShuffleBtn");
   if (shuffleBtn) {
-    shuffleBtn.disabled = Boolean(_quizTimeLimitMs || _isSignalBattleMode());
-    shuffleBtn.classList.toggle("active", _quizShuffled && !_quizTimeLimitMs && !_isSignalBattleMode());
+    shuffleBtn.disabled = Boolean(_quizTimeLimitMs || _isSignalAutoAdvanceMode());
+    shuffleBtn.classList.toggle("active", _quizShuffled && !_quizTimeLimitMs && !_isSignalAutoAdvanceMode());
   }
 
   // Score / context
@@ -8032,6 +8405,7 @@ function renderScriptQuizPlay() {
       <span class="sq-game-pill">Streak ${_quizStreak}</span>
       ${clockLabel ? `<span class="sq-game-pill sq-game-pill--timer" id="scriptQuizTimerPill">${escapeHtml(clockLabel)}</span>` : ""}
       <span class="sq-game-pill">${escapeHtml(sourceLabel)} · ${escapeHtml(weightLabel)}</span>
+      ${_quizSourceType === "signal" && _quizSignalCategories.length ? `<span class="sq-game-pill">${escapeHtml(_formatSignalCategories(_quizSignalCategories))}</span>` : ""}
       <span class="sq-game-pill">${escapeHtml(_quizQuestionTypeLabel(question.type))}</span>
     </div>` : ""}
     <div class="sq-scenario-hint">${escapeHtml(question.prompt)}</div>

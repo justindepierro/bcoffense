@@ -8888,6 +8888,82 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: var(--space-xs);
 }
 
+.signal-leaderboard-tabs,
+.signal-game-category-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.signal-leaderboard-tabs {
+  margin: 0 0 var(--space-sm);
+}
+
+.signal-leaderboard-tabs button,
+.signal-game-category-chip {
+  min-height: 36px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-light);
+  color: var(--color-text-muted);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.signal-leaderboard-tabs button {
+  padding: 0 var(--space-md);
+}
+
+.signal-leaderboard-tabs button.is-active,
+.signal-leaderboard-tabs button:hover,
+.signal-leaderboard-tabs button:focus-visible,
+.signal-game-category-chip.is-selected {
+  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border-light));
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  outline: 0;
+}
+
+.signal-game-category-panel {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-bg-light) 72%, var(--color-surface));
+}
+
+.signal-game-category-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.signal-game-category-head span {
+  color: var(--color-primary);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.signal-game-category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--space-sm);
+}
+
+.signal-game-category-chip small {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.signal-game-category-chip.is-empty:not(.is-selected) {
+  opacity: 0.68;
+}
+
 .signal-sprint-leader-row {
   min-height: 48px;
   display: grid;
@@ -11648,6 +11724,18 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   .signal-sprint-leader-row {
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: var(--space-xs);
+  }
+
+  .signal-leaderboard-tabs,
+  .signal-game-category-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .signal-leaderboard-tabs button,
+  .signal-game-category-chip {
+    justify-content: center;
+    min-width: 0;
   }
 
   .player-quiz-leader-row > span:not(.player-quiz-rank) {
