@@ -2119,43 +2119,31 @@ let _a2hsPromptEvent = null;
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   _a2hsPromptEvent = e;
+  if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
 });
 
-function showPlayerA2HSBannerIfNeeded() {
-  if (document.body?.getAttribute("data-auth-role") !== "player") return;
-  if (!document.body?.classList.contains("is-mobile-screen")) return;
-  const dismissed = storageManager.get(STORAGE_KEYS.A2HS_DISMISSED, 0);
-  if (dismissed && Date.now() - dismissed < 7 * 24 * 3600 * 1000) return;
+function getPlayerA2HSActionState() {
   const standalone =
     window.matchMedia("(display-mode: standalone)").matches ||
     !!navigator.standalone;
-  if (standalone) return;
+  if (standalone) return { available: false, reason: "installed" };
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  if (!_a2hsPromptEvent && !isIOS) return;
-  let banner = document.getElementById("playerA2HSBanner");
-  if (!banner) {
-    banner = document.createElement("div");
-    banner.id = "playerA2HSBanner";
-    banner.className = "player-a2hs-banner";
-    banner.setAttribute("role", "region");
-    banner.setAttribute("aria-label", "Add to home screen");
-    const msg =
-      isIOS && !_a2hsPromptEvent
-        ? "Tap Share \u2192 Add to Home Screen for the best experience"
-        : "Add BCOffense to your home screen for the best experience";
-    const addBtn =
-      !isIOS || _a2hsPromptEvent
-        ? `<button type="button" class="btn btn-sm btn-primary" data-action="installPlayerA2HS">Add to Home Screen</button>`
-        : "";
-    banner.innerHTML = `
-      <p class="player-a2hs-banner__text">${escapeHtml(msg)}</p>
-      <div class="player-a2hs-banner__actions">
-        ${addBtn}
-        <button type="button" class="btn btn-sm btn-ghost" data-action="dismissPlayerA2HS">Not now</button>
-      </div>`;
-    document.body.appendChild(banner);
+  if (!_a2hsPromptEvent && !isIOS) return { available: false, reason: "unsupported" };
+  return {
+    available: true,
+    isIOS,
+    label: isIOS && !_a2hsPromptEvent ? "Install help" : "Install app",
+  };
+}
+
+function showPlayerA2HSInstallHelp() {
+  const msg =
+    "On iPhone or iPad, tap Share, then choose Add to Home Screen. That keeps BCOffense available like an app without taking over this page.";
+  if (typeof showModal === "function") {
+    return showModal(msg, { title: "Install BCOffense", icon: "📱" });
   }
-  banner.hidden = false;
+  showToast("Use Share, then Add to Home Screen.", { type: "info", duration: 5000 });
+  return Promise.resolve();
 }
 
 function installPlayerA2HS() {
@@ -2166,16 +2154,11 @@ function installPlayerA2HS() {
       dismissPlayerA2HS();
     });
   } else {
-    dismissPlayerA2HS();
+    showPlayerA2HSInstallHelp();
   }
 }
 
 function dismissPlayerA2HS() {
-  const banner = document.getElementById("playerA2HSBanner");
-  if (banner) {
-    banner.classList.add("is-hiding");
-    setTimeout(() => banner.remove(), 300);
-  }
   storageManager.set(STORAGE_KEYS.A2HS_DISMISSED, Date.now());
 }
 

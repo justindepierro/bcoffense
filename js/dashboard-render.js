@@ -276,14 +276,27 @@ function _dashRenderPlayerRefreshAction() {
   const updated = _dashFormatRelativeTime(state.updatedAt);
   const title = state.title || "Refresh team app";
   const body = state.body || "Check for the newest app version and team data.";
+  const installState =
+    typeof getPlayerA2HSActionState === "function"
+      ? getPlayerA2HSActionState()
+      : { available: false };
+  const installAction = installState.available
+    ? `<button type="button" class="player-home-refresh__install" data-action="installPlayerA2HS">${escapeHtml(installState.label || "Install app")}</button>`
+    : "";
+  const actionClass = installAction
+    ? "player-home-refresh__actions"
+    : "player-home-refresh__actions player-home-refresh__actions--single";
   return `<section class="player-home-refresh player-home-refresh--${escapeAttr(tone)}" aria-label="Refresh team app">
     <div class="player-home-refresh__copy">
       <strong>${escapeHtml(title)}</strong>
       <span>${escapeHtml(updated ? `${body} Last checked ${updated}.` : body)}</span>
     </div>
-    <button type="button" class="player-home-refresh__btn" data-action="refreshPlayerTeamApp" ${busy ? "disabled" : ""}>
-      ${escapeHtml(busy ? "Checking" : "Refresh")}
-    </button>
+    <div class="${actionClass}">
+      ${installAction}
+      <button type="button" class="player-home-refresh__btn" data-action="refreshPlayerTeamApp" ${busy ? "disabled" : ""}>
+        ${escapeHtml(busy ? "Checking" : "Refresh")}
+      </button>
+    </div>
   </section>`;
 }
 
@@ -1544,9 +1557,6 @@ function renderPlayerDashboardHome() {
     );
     _heroObs.observe(_hero);
   }
-
-  // Item 34: A2HS install banner prompt
-  if (typeof showPlayerA2HSBannerIfNeeded === "function") showPlayerA2HSBannerIfNeeded();
 
   // Item 22: Show NEW badge on Practice tab when today's script is available and not yet loaded
   const _newBadge = document.getElementById("scriptTabNewBadge");

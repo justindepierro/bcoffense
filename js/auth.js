@@ -92,6 +92,7 @@
     "loadMorePlayerPortal",
     "pportOpenDiscussion",
     "refreshPlayerTeamApp",
+    "installPlayerA2HS",
     "closePlayPreview",
     "closeCellPopup",
     "closeWbHelpOverlay",

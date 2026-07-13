@@ -68,6 +68,8 @@ Diagram/media workflow:
   buffer and fit to the screen aspect ratio.
 - [ ] Reuse smart-crop rendering for Playbook cards, editor previews, and any
   player-facing diagram view that still uses raw `<img>` containment.
+  - Paused until the player login/startup refresh path is calm and diagrams
+    reliably load after auth and team refresh.
 - [ ] Add a small "fit: full / smart crop" control if coaches need to inspect
   edge labels that the cropper considers whitespace.
 
@@ -216,6 +218,14 @@ clear update experience that makes both visible.
   refresh.
 - [x] Add a diagnostic tile for admins showing current app cache version,
   service-worker state, last cloud pull, and last player publish time.
+- [x] Move the Add-to-Home-Screen prompt out of the automatic login/dashboard
+  flow and tuck it behind an explicit player Update Status action.
+- [ ] Deep-audit the player login sequence for repeated visible refreshes:
+  auth restore, first Dashboard render, automatic cloud refresh, service-worker
+  update checks, notification polling, and player surface re-renders should have
+  one clear order and one visible status path.
+- [ ] Decide whether automatic player team refresh should run immediately after
+  login or wait for the first stable Dashboard paint with a manual fallback.
 
 Definition of done:
 

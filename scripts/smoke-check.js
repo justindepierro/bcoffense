@@ -1676,10 +1676,11 @@ function checkPlayerPortalContracts() {
     !/ensureAuthFocusedControlVisible/.test(auth) ||
     !/is-keyboard-open/.test(auth) ||
     !/scrollIntoView\(\{[\s\S]*block:\s*"center"/.test(auth) ||
-    !/AUTH_LOGIN_ROLE_DETAILS/.test(auth) ||
-    !/data-login-role/.test(auth) ||
-    !/"refreshPlayerTeamApp"/.test(auth) ||
-    /READ_ONLY_ALLOWED_ACTIONS[\s\S]*"openCloudSyncModal"[\s\S]*\]\)/.test(auth) ||
+	    !/AUTH_LOGIN_ROLE_DETAILS/.test(auth) ||
+	    !/data-login-role/.test(auth) ||
+	    !/"refreshPlayerTeamApp"/.test(auth) ||
+	    !/"installPlayerA2HS"/.test(auth) ||
+	    /READ_ONLY_ALLOWED_ACTIONS[\s\S]*"openCloudSyncModal"[\s\S]*\]\)/.test(auth) ||
     /READ_ONLY_ALLOWED_ACTIONS[\s\S]*"pullCloudBackup"[\s\S]*\]\)/.test(auth) ||
     /READ_ONLY_ALLOWED_ACTIONS[\s\S]*"testCloudSyncConnection"[\s\S]*\]\)/.test(auth) ||
     !/currentAuthUser\.role === "player"[\s\S]*schedulePlayerTeamUpdateCheck\(\)/.test(auth)
@@ -1711,8 +1712,11 @@ function checkPlayerPortalContracts() {
     !/loadPublishedPlayerScript/.test(dashboardRender) ||
     !/openPlayerCurrentScriptPresentation/.test(dashboardRender) ||
     !/Open Playbook/.test(dashboardRender) ||
-    !/player-home-quick-actions/.test(dashboardRender) ||
-    !/player-home-today-card/.test(dashboardRender) ||
+	    !/player-home-quick-actions/.test(dashboardRender) ||
+	    !/getPlayerA2HSActionState/.test(dashboardRender) ||
+	    !/data-action="installPlayerA2HS"/.test(dashboardRender) ||
+	    /showPlayerA2HSBannerIfNeeded\(\)/.test(dashboardRender) ||
+	    !/player-home-today-card/.test(dashboardRender) ||
     !/class="player-home-state player-home-state--\$\{escapeHtml\(practiceStatus\.tone\)\}"/.test(
       dashboardRender,
     ) ||
@@ -1722,7 +1726,7 @@ function checkPlayerPortalContracts() {
     !/document\.elementFromPoint\(centerX, centerY\)/.test(appEvents) ||
     !/function getAppElementsFromPointDiagnostics\(x, y\)/.test(appEvents) ||
     !/function traceAppInputEvent\(phase, event\)/.test(appEvents) ||
-    !/window\.bcDebugHitTest/.test(appEvents) ||
+	    !/window\.bcDebugHitTest/.test(appEvents) ||
     !/window\.bcDebugScrollAncestry/.test(appEvents) ||
     !/\["pointerdown", "pointerup", "touchstart", "touchend", "click"\]\.forEach/.test(appEvents) ||
     /mobileTapSyntheticClick/.test(appEvents) ||
@@ -2899,10 +2903,11 @@ function checkStressAuditHarness() {
   });
   if (
     !/\.pb-shortcuts-hint\s*\{[\s\S]*width:\s*44px[\s\S]*min-height:\s*44px/.test(playbookCss) ||
-    !/#script \.script-toolbar \.toolbar-btn-xs\s*\{[\s\S]*flex:\s*0 0 44px[\s\S]*min-width:\s*44px[\s\S]*min-height:\s*44px/.test(scriptCss) ||
-    !/body\.shell-phone #callsheet \.callsheet-play \.remove-play,[\s\S]*body\.shell-phone #callsheet \.callsheet-play \.cs-hash-swap\s*\{[\s\S]*width:\s*44px[\s\S]*min-height:\s*44px/.test(callsheetCss) ||
-    !/\.player-home-refresh__btn\s*\{[\s\S]*min-height:\s*44px/.test(dashboardCss)
-  ) {
+	    !/#script \.script-toolbar \.toolbar-btn-xs\s*\{[\s\S]*flex:\s*0 0 44px[\s\S]*min-width:\s*44px[\s\S]*min-height:\s*44px/.test(scriptCss) ||
+	    !/body\.shell-phone #callsheet \.callsheet-play \.remove-play,[\s\S]*body\.shell-phone #callsheet \.callsheet-play \.cs-hash-swap\s*\{[\s\S]*width:\s*44px[\s\S]*min-height:\s*44px/.test(callsheetCss) ||
+	    !/\.player-home-refresh__btn\s*\{[\s\S]*min-height:\s*44px/.test(dashboardCss) ||
+	    !/\.player-home-refresh__install\s*\{[\s\S]*min-height:\s*38px/.test(dashboardCss)
+	  ) {
     fail("stress audit touch-target fixes are missing");
   }
 

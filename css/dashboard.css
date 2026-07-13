@@ -225,6 +225,13 @@
   line-height: 1.35;
 }
 
+.player-home-refresh__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex: 0 0 auto;
+}
+
 .player-home-refresh__btn {
   display: inline-flex;
   align-items: center;
@@ -239,6 +246,26 @@
   font-size: var(--font-size-sm);
   font-weight: 800;
   white-space: nowrap;
+}
+
+.player-home-refresh__install {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.player-home-refresh__install:hover {
+  background: var(--color-bg-light);
+  color: var(--color-text);
 }
 
 .player-home-refresh__btn:disabled {
@@ -903,7 +930,20 @@
     flex-direction: column;
   }
 
+  .player-home-refresh__actions {
+    display: grid;
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr);
+  }
+
+  .player-home-refresh__actions--single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .player-home-refresh__btn {
+    width: 100%;
+  }
+
+  .player-home-refresh__install {
     width: 100%;
   }
 
@@ -3060,42 +3100,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--color-text);
-}
-
-/* ======= Player Portal: A2HS install banner (item 34) ======= */
-.player-a2hs-banner {
-  position: fixed;
-  left: max(12px, env(safe-area-inset-left, 12px));
-  right: max(12px, env(safe-area-inset-right, 12px));
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 10px);
-  z-index: var(--z-toast);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 14px 16px;
-  display: grid;
-  gap: var(--space-sm);
-  animation: authShellIn 0.22s ease-out both;
-  pointer-events: none;
-}
-
-.player-a2hs-banner.is-hiding {
-  animation: authShellOut 0.25s ease-in both;
-}
-
-.player-a2hs-banner__text {
-  margin: 0;
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
-  line-height: 1.4;
-}
-
-.player-a2hs-banner__actions {
-  display: flex;
-  gap: var(--space-xs);
-  justify-content: flex-end;
-  pointer-events: auto;
 }
 
 /* ======= Player Portal: empty state (item 29) ======= */
