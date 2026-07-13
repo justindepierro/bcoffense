@@ -62,6 +62,37 @@
     },
   };
 
+  const AUTH_LOGIN_VARIANT_DEFAULT_ROLE = {
+    desktop: "admin",
+    tablet: "admin",
+    mobile: "player",
+  };
+
+  function getAuthLoginVariant() {
+    const width =
+      window.innerWidth ||
+      document.documentElement?.clientWidth ||
+      window.visualViewport?.width ||
+      1024;
+    const body = document.body;
+    if (body?.classList.contains("is-phone-screen") || width <= 640) {
+      return "mobile";
+    }
+    if (
+      body?.classList.contains("shell-tablet") ||
+      body?.classList.contains("is-tablet-screen") ||
+      (body?.classList.contains("is-mobile-screen") && width <= 1100) ||
+      width <= 1024
+    ) {
+      return "tablet";
+    }
+    return "desktop";
+  }
+
+  function getDefaultLoginRoleForVariant(variant) {
+    return AUTH_LOGIN_VARIANT_DEFAULT_ROLE[variant] || "admin";
+  }
+
   const READ_ONLY_ALLOWED_ACTIONS = new Set([
     "showTab",
     "toggleDarkMode",
@@ -804,6 +835,7 @@
   function showLoginOverlay(message = "", opts = {}) {
     document.getElementById("authLoginOverlay")?.remove();
     document.body.classList.add("auth-locked");
+    const _loginVariant = getAuthLoginVariant();
 
     const teamName = (() => {
       try {
@@ -815,19 +847,20 @@
       try { return new URLSearchParams(window.location.search).get("role") || ""; } catch (_e) { return ""; }
     })();
     const _urlRole = AUTH_LOGIN_ROLE_DETAILS[_urlRoleRaw] ? _urlRoleRaw : null;
-    const _initialRoleName = _urlRole || "admin";
+    const _initialRoleName = _urlRole || getDefaultLoginRoleForVariant(_loginVariant);
 
     const overlay = document.createElement("div");
     overlay.id = "authLoginOverlay";
-    overlay.className = "auth-login-overlay";
+    overlay.className = `auth-login-overlay auth-login-overlay--${_loginVariant}`;
+    overlay.dataset.loginVariant = _loginVariant;
     const initialDetails = getLoginRoleDetails(_initialRoleName);
     overlay.innerHTML = `
-      <div class="auth-login-shell">
+      <div class="auth-login-shell" data-login-variant="${escapeAttr(_loginVariant)}">
         <section class="auth-login-hero" aria-label="Portal overview">
           <div class="auth-login-brand">${escapeHtml(teamName)}</div>
           <div class="auth-login-hero-kicker">Secure staff and player access</div>
-          <h2 id="authLoginHeroTitle">${escapeHtml(initialDetails.title)}</h2>
-          <p id="authLoginHeroSummary">${escapeHtml(initialDetails.summary)}</p>
+          <h2>Team workspace</h2>
+          <p>One secure sign-in for staff tools, player practice views, scripts, wristbands, and game-day planning.</p>
           <div class="auth-login-role-strip" aria-label="Portal roles">
             <span class="auth-login-role-chip">Admin</span>
             <span class="auth-login-role-chip">Coach</span>
@@ -906,8 +939,6 @@
     const formEl = overlay.querySelector("#authLoginForm");
     const roleSummaryEl = overlay.querySelector("#authLoginRoleSummary");
     const roleEyebrowEl = overlay.querySelector("#authLoginRoleEyebrow");
-    const heroTitleEl = overlay.querySelector("#authLoginHeroTitle");
-    const heroSummaryEl = overlay.querySelector("#authLoginHeroSummary");
     const focusController =
       typeof AbortController === "function" ? new AbortController() : null;
     const focusSignal = focusController ? { signal: focusController.signal } : {};
@@ -949,8 +980,6 @@
       });
       if (roleEyebrowEl) roleEyebrowEl.textContent = details.eyebrow;
       if (roleSummaryEl) roleSummaryEl.textContent = details.summary;
-      if (heroTitleEl) heroTitleEl.textContent = details.title;
-      if (heroSummaryEl) heroSummaryEl.textContent = details.summary;
       if (submitEl) submitEl.textContent = details.submit;
       if (opts.fillUsername && usernameEl) usernameEl.value = role;
     };

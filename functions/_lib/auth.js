@@ -313,6 +313,9 @@ export function renderLoginPage(opts = {}) {
       background: rgb(255 255 255 / 0.08);
       box-shadow: 0 24px 80px rgb(4 10 28 / 0.42);
     }
+    .login-shell {
+      isolation: isolate;
+    }
     .hero {
       display: grid;
       align-content: start;
@@ -434,11 +437,33 @@ export function renderLoginPage(opts = {}) {
       font-size: 12px;
       text-align: center;
     }
-    @media (max-width: 720px) {
-      body { align-items: stretch; }
+    @media (max-width: 1024px) {
+      body { align-items: center; }
       .shell {
         grid-template-columns: 1fr;
         align-self: center;
+        width: min(720px, 100%);
+        border-radius: 26px;
+      }
+      .hero {
+        gap: 12px;
+        padding: 24px 28px;
+      }
+      .hero p { max-width: 54ch; }
+      h1 { font-size: 36px; }
+      .highlights {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      form {
+        align-content: start;
+        padding: 30px;
+      }
+    }
+    @media (max-width: 640px) {
+      body { align-items: stretch; }
+      .shell {
+        width: min(100%, 540px);
         border-radius: 22px;
       }
       .hero { display: none; }
@@ -448,7 +473,7 @@ export function renderLoginPage(opts = {}) {
   </style>
 </head>
 <body>
-  <main class="shell">
+  <main class="shell login-shell">
     <section class="hero" aria-label="Portal overview">
       <div class="brand">BCOffense</div>
       <div class="kicker">Secure staff and player access</div>

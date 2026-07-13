@@ -233,6 +233,9 @@ clear update experience that makes both visible.
 - [x] First-15s polish pass: player team refresh is single-flight, manual refresh
   taps do not launch duplicate startup work, and Home copy says the app is ready
   while coach updates check in the background.
+- [x] Normalize auth login into one deterministic desktop, tablet, and mobile
+  shell across the Cloudflare login page and the in-app overlay so logout/login
+  does not feel like a different screen on the same device.
 
 Definition of done:
 

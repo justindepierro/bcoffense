@@ -1651,6 +1651,7 @@ function checkPlayerPortalContracts() {
   const html = read("index.html");
   const auth = read("js/auth.js");
   const appShell = read("js/app-shell.js");
+  const serverAuth = read("functions/_lib/auth.js");
   const appBootstrap = read("js/app-bootstrap.js");
   const cloudSync = read("js/cloud-sync.js");
   const appEvents = read("js/app-events.js");
@@ -1677,6 +1678,11 @@ function checkPlayerPortalContracts() {
     !/document\.body\.dataset\.authCanEdit = canEditUser\(\) \? "true" : "false"/.test(auth) ||
     !/window\.canEditUser = canEditUser/.test(auth) ||
     !/auth-login-shell/.test(auth) ||
+    !/function getAuthLoginVariant\(\)/.test(auth) ||
+    !/function getDefaultLoginRoleForVariant\(variant\)/.test(auth) ||
+    !/overlay\.dataset\.loginVariant = _loginVariant/.test(auth) ||
+    !/auth-login-overlay--\$\{_loginVariant\}/.test(auth) ||
+    !/const _initialRoleName = _urlRole \|\| getDefaultLoginRoleForVariant\(_loginVariant\)/.test(auth) ||
     !/authPasswordToggle/.test(auth) ||
     !/ensureAuthFocusedControlVisible/.test(auth) ||
     !/is-keyboard-open/.test(auth) ||
@@ -1915,15 +1921,22 @@ function checkPlayerPortalContracts() {
     !/\(pointer: coarse\) and \(max-width: 820px\)/.test(responsiveCss) ||
     !/body\[data-auth-role="player"\] #playbook\.panel/.test(layoutCss) ||
     !/\.auth-login-overlay/.test(componentsCss) ||
+    !/\.auth-login-overlay--desktop \.auth-login-shell/.test(componentsCss) ||
+    !/\.auth-login-overlay--tablet \.auth-login-shell/.test(componentsCss) ||
+    !/\.auth-login-overlay--mobile \.auth-login-shell/.test(componentsCss) ||
+    !/\.auth-login-overlay--mobile \.auth-login-hero[\s\S]*display:\s*none/.test(componentsCss) ||
     !/function removeLoginOverlayIfAuthenticated\(\)/.test(auth) ||
     !/removeLoginOverlayIfAuthenticated\(\);[\s\S]*ensureLoginOverlayVisible\(\);/.test(auth) ||
     !/"startClassicWristband"/.test(appEvents) ||
     !/"startPlayerWristband"/.test(appEvents) ||
-    !/body\.is-short-screen \.auth-login-overlay/.test(componentsCss) ||
+    !/body\.is-short-screen \.auth-login-overlay--mobile/.test(componentsCss) ||
     !/\.auth-login-overlay\.is-keyboard-open/.test(componentsCss) ||
-    !/body\.is-short-screen \.auth-login-hero,[\s\S]*\.auth-login-overlay\.is-keyboard-open \.auth-login-hero[\s\S]*display:\s*none/.test(
+    !/body\.is-short-screen \.auth-login-overlay--mobile \.auth-login-hero,[\s\S]*\.auth-login-overlay\.is-keyboard-open:not\(\.auth-login-overlay--desktop\) \.auth-login-hero[\s\S]*display:\s*none/.test(
       componentsCss,
     ) ||
+    !/class="shell login-shell"/.test(serverAuth) ||
+    !/@media \(max-width: 1024px\)/.test(serverAuth) ||
+    !/@media \(max-width: 640px\)/.test(serverAuth) ||
     !/\.auth-login-role-picker/.test(componentsCss) ||
     !/\.auth-login-role-option\.is-active/.test(componentsCss) ||
     !/auth-login-submit[\s\S]*touch-action:\s*manipulation/.test(componentsCss) ||
