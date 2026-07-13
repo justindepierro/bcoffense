@@ -727,7 +727,7 @@
     const bellBtn = document.getElementById("notifBellBtn");
     if (bellBtn) bellBtn.hidden = !currentAuthUser;
     if (currentAuthUser && typeof initNotifications === "function") {
-      initNotifications();
+      initNotifications({ deferFirstPoll: currentAuthUser.role === "player" });
     }
     if (currentAuthUser && typeof initPushNotifications === "function") {
       initPushNotifications();
@@ -776,12 +776,12 @@
       typeof schedulePlayerTeamUpdateCheck === "function"
     ) {
       if (queueStartupTask) {
-        queueStartupTask("player-team-refresh", () => schedulePlayerTeamUpdateCheck({ delay: 0 }), {
-          delay: 600,
-          priority: 20,
+        queueStartupTask("player-team-refresh", () => schedulePlayerTeamUpdateCheck({ delay: 700, startup: true }), {
+          delay: 1000,
+          priority: 40,
         });
       } else {
-        schedulePlayerTeamUpdateCheck();
+        schedulePlayerTeamUpdateCheck({ delay: 1200, startup: true });
       }
       return;
     }
@@ -1050,7 +1050,9 @@
         requestAnimationFrame(() => {
           document.querySelector(".tab[aria-selected='true'], .tab.active, .tabs .tab")?.focus({ preventScroll: true });
         });
-        showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
+        if (currentAuthUser.role !== "player") {
+          showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
+        }
         if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
         scheduleCloudAutoPull();
       } catch (err) {
@@ -1073,7 +1075,9 @@
             requestAnimationFrame(() => {
               document.querySelector(".tab[aria-selected='true'], .tab.active, .tabs .tab")?.focus({ preventScroll: true });
             });
-            showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
+            if (currentAuthUser.role !== "player") {
+              showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
+            }
             if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
             scheduleCloudAutoPull();
             return;

@@ -1683,7 +1683,7 @@ function checkPlayerPortalContracts() {
 	    /READ_ONLY_ALLOWED_ACTIONS[\s\S]*"openCloudSyncModal"[\s\S]*\]\)/.test(auth) ||
     /READ_ONLY_ALLOWED_ACTIONS[\s\S]*"pullCloudBackup"[\s\S]*\]\)/.test(auth) ||
     /READ_ONLY_ALLOWED_ACTIONS[\s\S]*"testCloudSyncConnection"[\s\S]*\]\)/.test(auth) ||
-    !/currentAuthUser\.role === "player"[\s\S]*schedulePlayerTeamUpdateCheck\(\)/.test(auth)
+	    !/currentAuthUser\.role === "player"[\s\S]*schedulePlayerTeamUpdateCheck\(\{ delay: 700, startup: true \}\)/.test(auth)
   ) {
     fail("player auth shell or tab permissions are incomplete");
   }
@@ -3016,6 +3016,7 @@ function checkStartupDiagnosticsAndRenderQueue() {
   const gameplanActions = read("js/gameplan-actions.js");
   const cloudSync = read("js/cloud-sync.js");
   const appShell = read("js/app-shell.js");
+  const appNotifications = read("js/app-notifications.js");
   const playClips = read("js/play-clips.js");
   const html = read("index.html");
 
@@ -3035,12 +3036,28 @@ function checkStartupDiagnosticsAndRenderQueue() {
     !/window\.appStartup\.shouldSuppressCloudAutoPush/.test(cloudSync) ||
     !/window\.appStartup\.runCritical\("storage-reload"/.test(storage) ||
     !/window\.appStartup\.queueTask\("clip-index-warmup"/.test(playClips) ||
-    !/window\.appStartup\.queueTask\("play-image-key-scan"/.test(moduleInit) ||
-    !/_queueStartupTask\("service-worker-update-check"/.test(html) ||
-    !/queueStartupTask\("cloud-auto-pull"/.test(auth) ||
-    !/queueStartupTask\("player-team-refresh"/.test(auth)
+	    !/window\.appStartup\.queueTask\("play-image-key-scan"/.test(moduleInit) ||
+	    !/_queueStartupTask\("service-worker-update-check"/.test(html) ||
+	    !/queueStartupTask\("cloud-auto-pull"/.test(auth) ||
+	    !/queueStartupTask\("player-team-refresh"[\s\S]*delay: 1000[\s\S]*priority: 40/.test(auth)
+	  ) {
+	    fail("startup post-load sync/update tasks are not routed through the orchestrator");
+	  }
+  if (
+    !/initNotifications\(\{ deferFirstPoll: currentAuthUser\.role === "player" \}\)/.test(auth) ||
+    !/currentAuthUser\.role !== "player"[\s\S]*Logged in as/.test(auth) ||
+    !/schedulePlayerTeamUpdateCheck\(\{ delay: 700, startup: true \}\)/.test(auth) ||
+    !/function refreshPlayerTeamApp\(opts = \{\}\)[\s\S]*const quietStartup = quiet && startup/.test(appShell) ||
+    !/phaseStateOpts = quietStartup \? \{ render: false \}/.test(appShell) ||
+    !/refreshPlayerCloudBackup\(\{[\s\S]*navigate: !quietStartup,[\s\S]*skipIfCurrent: true/.test(appShell) ||
+    !/refreshNotificationStatus\(\{ render: !quietStartup \}\)/.test(appShell) ||
+    !/function initNotifications\(opts = \{\}\)/.test(appNotifications) ||
+    !/if \(!opts\.deferFirstPoll\) _pollUnreadCount\(\)/.test(appNotifications) ||
+    !/function refreshNotificationStatus\(opts = \{\}\)[\s\S]*_pollUnreadCount\(opts\)/.test(appNotifications) ||
+    !/function isCloudRemoteAlreadyKnown\(remote/.test(cloudSync) ||
+    !/opts\.skipIfCurrent !== false && isCloudRemoteAlreadyKnown\(remote\)/.test(cloudSync)
   ) {
-    fail("startup post-load sync/update tasks are not routed through the orchestrator");
+    fail("player first-impression startup refresh is not ordered and quiet");
   }
   if (!/appDiagnostics\.mark\("startup:init"\)/.test(appInit)) {
     fail("initApp does not mark startup diagnostics");

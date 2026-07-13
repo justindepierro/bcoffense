@@ -94,6 +94,18 @@
     return safeSettings;
   }
 
+  function isCloudRemoteAlreadyKnown(remote, settings = getCloudSyncSettings()) {
+    if (!remote?.summary) return false;
+    const remoteTime = getCloudTime(remote.summary.exportDate || remote.updatedAt);
+    const knownTime = getCloudTime(
+      settings.lastRemoteExportDate ||
+      settings.lastRemoteUpdatedAt ||
+      settings.lastPullAt ||
+      settings.lastPushAt,
+    );
+    return Number.isFinite(remoteTime) && Number.isFinite(knownTime) && remoteTime <= knownTime + 500;
+  }
+
   function clearLegacyCloudSyncTokens() {
     localStorage.removeItem(LEGACY_CLOUD_SYNC_TOKEN_KEY);
     sessionStorage.removeItem(LEGACY_CLOUD_SYNC_SESSION_TOKEN_KEY);
@@ -557,6 +569,22 @@
         ok: false,
         status: "missing",
         message: "No cloud backup has been pushed yet.",
+      };
+    }
+    if (opts.skipIfCurrent !== false && isCloudRemoteAlreadyKnown(remote)) {
+      saveCloudSyncSettingsObject({
+        lastRemoteExportDate: remote.summary?.exportDate || "",
+        lastRemoteUpdatedAt: remote.updatedAt || "",
+        lastRemoteSize: remote.size,
+      });
+      return {
+        ok: true,
+        status: "current",
+        exportDate: remote.summary?.exportDate || "",
+        updatedAt: remote.updatedAt || "",
+        itemCount: remote.summary?.itemCount || 0,
+        imageCount: remote.summary?.imageCount || 0,
+        message: `Team data is current from ${formatCloudDate(remote.summary?.exportDate || remote.updatedAt)}.`,
       };
     }
     const restored = await restoreCloudBackup(remote, {

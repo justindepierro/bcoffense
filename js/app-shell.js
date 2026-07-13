@@ -2189,7 +2189,7 @@ function dismissPlayerA2HS() {
   }, { passive: true });
 }());
 
-function _setPlayerTeamRefreshState(state = {}) {
+function _setPlayerTeamRefreshState(state = {}, opts = {}) {
   window.playerTeamRefreshState = {
     tone: state.tone || "idle",
     title: state.title || "Refresh team app",
@@ -2197,7 +2197,9 @@ function _setPlayerTeamRefreshState(state = {}) {
     busy: Boolean(state.busy),
     updatedAt: state.updatedAt || "",
   };
-  if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
+  if (opts.render !== false && typeof renderPlayerDashboardHome === "function") {
+    renderPlayerDashboardHome();
+  }
 }
 
 function _refreshPlayerTeamSurfaces() {
@@ -2216,6 +2218,9 @@ let playerTeamUpdateCheckStarted = false;
 
 async function refreshPlayerTeamApp(opts = {}) {
   const quiet = Boolean(opts.quiet);
+  const startup = Boolean(opts.startup);
+  const quietStartup = quiet && startup;
+  const phaseStateOpts = quietStartup ? { render: false } : {};
   if (document.body?.getAttribute("data-auth-role") !== "player") {
     if (!quiet) showToast("Refresh team app is for player logins.", { type: "info", duration: 2500 });
     return;
@@ -2235,8 +2240,10 @@ async function refreshPlayerTeamApp(opts = {}) {
 
   _setPlayerTeamRefreshState({
     tone: "checking",
-    title: "Checking team updates",
-    body: "Checking app version and team data...",
+    title: startup ? "Getting team app ready" : "Checking team updates",
+    body: startup
+      ? "Opening Home while we quietly check for the newest practice."
+      : "Checking app version and team data...",
     busy: true,
   });
 
@@ -2249,10 +2256,13 @@ async function refreshPlayerTeamApp(opts = {}) {
         title: "Refreshing team data",
         body: "Checking for the latest practice, quiz, and playbook updates...",
         busy: true,
+      }, phaseStateOpts);
+      dataResult = await refreshPlayerCloudBackup({
+        navigate: !quietStartup,
+        skipIfCurrent: true,
       });
-      dataResult = await refreshPlayerCloudBackup();
     }
-    _refreshPlayerTeamSurfaces();
+    if (!quietStartup) _refreshPlayerTeamSurfaces();
 
     if (typeof checkForTeamAppUpdate === "function") {
       _setPlayerTeamRefreshState({
@@ -2260,7 +2270,7 @@ async function refreshPlayerTeamApp(opts = {}) {
         title: "Checking app version",
         body: "Looking for a newer team app shell on this device...",
         busy: true,
-      });
+      }, phaseStateOpts);
       appResult = await checkForTeamAppUpdate({ apply: true });
       if (appResult?.status === "applying") {
         _setPlayerTeamRefreshState({
@@ -2280,8 +2290,8 @@ async function refreshPlayerTeamApp(opts = {}) {
         title: "Checking player alerts",
         body: "Looking for coach replies, new practices, and quiz work...",
         busy: true,
-      });
-      await refreshNotificationStatus().catch(() => null);
+      }, phaseStateOpts);
+      await refreshNotificationStatus({ render: !quietStartup }).catch(() => null);
     }
 
     const dataOk = !dataResult || dataResult.ok;
@@ -2322,10 +2332,10 @@ async function refreshPlayerTeamApp(opts = {}) {
 function schedulePlayerTeamUpdateCheck(opts = {}) {
   if (playerTeamUpdateCheckStarted && !opts.force) return;
   playerTeamUpdateCheckStarted = true;
-  const delay = Number(opts.delay ?? 350);
+  const delay = Number(opts.delay ?? (opts.startup ? 700 : 350));
   setTimeout(() => {
     if (document.body?.getAttribute("data-auth-role") !== "player") return;
-    refreshPlayerTeamApp({ quiet: true });
+    refreshPlayerTeamApp({ quiet: true, startup: Boolean(opts.startup) });
   }, Math.max(0, delay));
 }
 

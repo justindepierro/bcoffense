@@ -25,14 +25,14 @@ const NOTIF_BROADCAST_DEDUPE_MS = 45_000;
  * Call once after login is confirmed. Starts the unread poll and wires
  * the bell button.
  */
-function initNotifications() {
+function initNotifications(opts = {}) {
   if (_notifInitialized) {
     // Already running — just trigger an immediate poll for fresh count
-    _pollUnreadCount();
+    if (!opts.deferFirstPoll) _pollUnreadCount();
     return;
   }
   _notifInitialized = true;
-  _pollUnreadCount();
+  if (!opts.deferFirstPoll) _pollUnreadCount();
   clearInterval(_notifPollInterval);
   _notifPollInterval = setInterval(_pollUnreadCount, NOTIF_POLL_INTERVAL_MS);
 
@@ -49,7 +49,7 @@ function initNotifications() {
 
 // ── Badge ─────────────────────────────────────────────────────────────────────
 
-async function _pollUnreadCount() {
+async function _pollUnreadCount(opts = {}) {
   try {
     const res = await fetch("/api/notifications/count");
     if (!res.ok) return;
@@ -59,13 +59,13 @@ async function _pollUnreadCount() {
       checkedAt: new Date().toISOString(),
       error: "",
       online: typeof navigator === "undefined" || navigator.onLine !== false,
-    });
+    }, opts);
   } catch (_) {
     _setNotificationState({
       checkedAt: new Date().toISOString(),
       error: "Could not check alerts.",
       online: typeof navigator === "undefined" || navigator.onLine !== false,
-    });
+    }, opts);
   }
 }
 
@@ -80,7 +80,7 @@ function _updateBellBadge(count) {
   btn.setAttribute("aria-label", count > 0 ? `Notifications — ${count} unread` : "Notifications");
 }
 
-function _setNotificationState(state = {}) {
+function _setNotificationState(state = {}, opts = {}) {
   if (Object.prototype.hasOwnProperty.call(state, "unread")) {
     _notifLastUnread = Math.max(0, Number(state.unread) || 0);
     _updateBellBadge(_notifLastUnread);
@@ -93,7 +93,11 @@ function _setNotificationState(state = {}) {
     error: _notifLastError,
     online: state.online ?? (typeof navigator === "undefined" || navigator.onLine !== false),
   };
-  if (document.body?.dataset?.authRole === "player" && typeof renderPlayerDashboardHome === "function") {
+  if (
+    opts.render !== false &&
+    document.body?.dataset?.authRole === "player" &&
+    typeof renderPlayerDashboardHome === "function"
+  ) {
     renderPlayerDashboardHome();
   }
 }
@@ -388,8 +392,8 @@ async function openPlayerNotificationSettings() {
   footer.querySelector("button")?.focus();
 }
 
-async function refreshNotificationStatus() {
-  await _pollUnreadCount();
+async function refreshNotificationStatus(opts = {}) {
+  await _pollUnreadCount(opts);
   return window.playerNotificationState || null;
 }
 

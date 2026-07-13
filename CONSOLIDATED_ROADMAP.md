@@ -220,12 +220,16 @@ clear update experience that makes both visible.
   service-worker state, last cloud pull, and last player publish time.
 - [x] Move the Add-to-Home-Screen prompt out of the automatic login/dashboard
   flow and tuck it behind an explicit player Update Status action.
-- [ ] Deep-audit the player login sequence for repeated visible refreshes:
+- [x] Deep-audit the player login sequence for repeated visible refreshes:
   auth restore, first Dashboard render, automatic cloud refresh, service-worker
   update checks, notification polling, and player surface re-renders should have
   one clear order and one visible status path.
-- [ ] Decide whether automatic player team refresh should run immediately after
+- [x] Decide whether automatic player team refresh should run immediately after
   login or wait for the first stable Dashboard paint with a manual fallback.
+  - Player login no longer shows a success toast, notification polling defers its
+    first player Dashboard redraw, quiet startup refresh waits until after first
+    paint, skips cloud restore when the export is already current, and collapses
+    internal cloud/app/alert phases into one visible status plus final ready.
 
 Definition of done:
 
