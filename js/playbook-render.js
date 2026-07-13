@@ -521,6 +521,15 @@ function hydratePlayerPlaybookThumbnails(root = document) {
       }
       img.src = url;
       img.hidden = false;
+      if (typeof window.playImages.renderSmartDiagramImage === "function") {
+        window.playImages
+          .renderSmartDiagramImage(img, url, {
+            canvasClass: "smart-diagram-canvas pb-card-media__canvas",
+          })
+          .catch(() => {
+            img.hidden = false;
+          });
+      }
       media.dataset.pbThumbLoaded = "true";
       media.classList.add("is-loaded");
       if (state) state.textContent = "Open diagram";

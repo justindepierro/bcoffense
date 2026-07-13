@@ -66,10 +66,11 @@ Diagram/media workflow:
   pending media after the play is saved.
 - [x] Presentation diagrams already trim whitespace to the drawn content with a
   buffer and fit to the screen aspect ratio.
-- [ ] Reuse smart-crop rendering for Playbook cards, editor previews, and any
+- [x] Reuse smart-crop rendering for Playbook cards, editor previews, and any
   player-facing diagram view that still uses raw `<img>` containment.
-  - Paused until the player login/startup refresh path is calm and diagrams
-    reliably load after auth and team refresh.
+  - Added shared smart diagram canvas hydration and wired it through Playbook
+    player cards, play editor image previews, quiz diagram prompts, and quiz
+    review diagrams while preserving raw image fallback.
 - [ ] Add a small "fit: full / smart crop" control if coaches need to inspect
   edge labels that the cropper considers whitespace.
 

@@ -430,7 +430,7 @@ function _populateEditorForm(play, isNew) {
     <div class="pb-editor-image-row">
       <div class="pb-editor-image-preview" id="peImagePreview">
         ${_peImgUrl
-      ? `<img src="${_peImgUrl}" alt="Play diagram preview" />`
+      ? `<img src="${_peImgUrl}" alt="Play diagram preview" data-smart-diagram="true" />`
       : `<div class="pb-editor-image-placeholder">No image</div>`}
       </div>
       <div class="pb-editor-image-actions">
@@ -749,6 +749,14 @@ function _syncGamePlanCheckbox(play) {
   }
 }
 
+function _renderPlayEditorImagePreview(previewEl, url, alt = "Play diagram preview") {
+  if (!previewEl || !url) return;
+  previewEl.innerHTML = `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" data-smart-diagram="true" />`;
+  if (window.playImages && typeof window.playImages.hydrateSmartDiagramImages === "function") {
+    requestAnimationFrame(() => window.playImages.hydrateSmartDiagramImages(previewEl));
+  }
+}
+
 function _wirePlayEditorImage(play, isNew) {
   if (typeof window.playImages === "undefined") return;
   const fileInput = document.getElementById("peImageFile");
@@ -760,7 +768,7 @@ function _wirePlayEditorImage(play, isNew) {
   if (isNew) {
     const renderPending = () => {
       if (_pendingPlayEditorImage?.url) {
-        previewEl.innerHTML = `<img src="${_pendingPlayEditorImage.url}" alt="Pending play diagram preview" />`;
+        _renderPlayEditorImagePreview(previewEl, _pendingPlayEditorImage.url, "Pending play diagram preview");
         if (removeBtn) removeBtn.style.display = "";
         if (trigger) {
           trigger.textContent = "Replace Image…";
@@ -852,7 +860,7 @@ function _wirePlayEditorImage(play, isNew) {
       ? await ensurePlayImageUrl(play)
       : ((typeof getPlayImageUrl === "function") ? getPlayImageUrl(play) : null);
     if (url) {
-      previewEl.innerHTML = `<img src="${url}" alt="Play diagram preview" />`;
+      _renderPlayEditorImagePreview(previewEl, url, "Play diagram preview");
       if (removeBtn) removeBtn.style.display = "";
       if (trigger) trigger.textContent = "Replace Image…";
     } else {

@@ -7661,7 +7661,7 @@ function _renderQuizRedactedDiagram(play, diagramUrl = _quizDiagramUrl(play)) {
   return `
     <figure class="sq-diagram-prompt" aria-label="Redacted play diagram">
       <div class="sq-diagram-prompt__stage">
-        <img src="${escapeAttr(diagramUrl)}" alt="Redacted diagram for quiz question" loading="lazy">
+        <img src="${escapeAttr(diagramUrl)}" alt="Redacted diagram for quiz question" loading="lazy" data-smart-diagram="true">
         <span class="sq-diagram-redaction-band" aria-hidden="true"></span>
       </div>
       <figcaption>Top title band hidden for quiz</figcaption>
@@ -7704,7 +7704,7 @@ function _renderQuizWrongReview(item, answer) {
       ${noteParts.length ? `<div class="sq-review-detail"><strong>Coach note:</strong> ${noteParts.map(escapeHtml).join(" ")}</div>` : ""}
       ${diagramUrl ? `
         <figure class="sq-review-diagram">
-          <img src="${escapeAttr(diagramUrl)}" alt="Correct play diagram" loading="lazy">
+          <img src="${escapeAttr(diagramUrl)}" alt="Correct play diagram" loading="lazy" data-smart-diagram="true">
           <figcaption>Diagram to study</figcaption>
         </figure>
       ` : ""}
@@ -8702,6 +8702,9 @@ function renderScriptQuizPlay() {
   if (scenarioEl) {
     scenarioEl.className = scenarioClasses;
     setInnerHTML(scenarioEl, scenarioHtml);
+    if (window.playImages && typeof window.playImages.hydrateSmartDiagramImages === "function") {
+      requestAnimationFrame(() => window.playImages.hydrateSmartDiagramImages(scenarioEl));
+    }
   }
 
   // Answer — hidden until revealed
@@ -8718,6 +8721,9 @@ function renderScriptQuizPlay() {
   if (answerEl) {
     setInnerHTML(answerEl, gameMode ? _renderQuizFeedback(item, answer) : answerHtml);
     answerEl.classList.toggle("hidden", gameMode ? !answer : true);
+    if (window.playImages && typeof window.playImages.hydrateSmartDiagramImages === "function") {
+      requestAnimationFrame(() => window.playImages.hydrateSmartDiagramImages(answerEl));
+    }
   }
   const revealRow = document.querySelector(".script-quiz-reveal-row");
   if (revealRow) revealRow.classList.toggle("hidden", gameMode);

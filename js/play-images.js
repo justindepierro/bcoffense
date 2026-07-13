@@ -1423,6 +1423,244 @@
     }
   }
 
+  const SMART_DIAGRAM_SAMPLE_MAX = 480;
+  const SMART_DIAGRAM_MAX_RENDER_PIXELS = 4_000_000;
+  const SMART_DIAGRAM_MAX_RENDER_EDGE = 2048;
+
+  function _loadSmartDiagramImage(url, alt = "Play diagram") {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.alt = alt;
+      img.decoding = "async";
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Play diagram could not be decoded"));
+      img.src = url;
+      if (img.complete && img.naturalWidth) resolve(img);
+    });
+  }
+
+  function _smartDiagramBackgroundColor(data, width, height) {
+    const bins = new Map();
+    const edgeStep = Math.max(1, Math.floor(Math.min(width, height) / 80));
+    const addPixel = (x, y) => {
+      const index = (y * width + x) * 4;
+      const alpha = data[index + 3];
+      if (alpha < 24) return;
+      const red = data[index];
+      const green = data[index + 1];
+      const blue = data[index + 2];
+      const key = `${red >> 5}|${green >> 5}|${blue >> 5}`;
+      const bin = bins.get(key) || { count: 0, red: 0, green: 0, blue: 0 };
+      bin.count += 1;
+      bin.red += red;
+      bin.green += green;
+      bin.blue += blue;
+      bins.set(key, bin);
+    };
+    for (let x = 0; x < width; x += edgeStep) {
+      addPixel(x, 0);
+      addPixel(x, height - 1);
+    }
+    for (let y = 0; y < height; y += edgeStep) {
+      addPixel(0, y);
+      addPixel(width - 1, y);
+    }
+    const background = [...bins.values()].sort((a, b) => b.count - a.count)[0];
+    if (!background?.count) return { red: 255, green: 255, blue: 255 };
+    return {
+      red: background.red / background.count,
+      green: background.green / background.count,
+      blue: background.blue / background.count,
+    };
+  }
+
+  function getSmartDiagramContentBounds(image) {
+    const sourceWidth = image.naturalWidth || image.width || 0;
+    const sourceHeight = image.naturalHeight || image.height || 0;
+    if (!sourceWidth || !sourceHeight) return null;
+    const sampleScale = Math.min(
+      1,
+      SMART_DIAGRAM_SAMPLE_MAX / Math.max(sourceWidth, sourceHeight),
+    );
+    const sampleWidth = Math.max(1, Math.round(sourceWidth * sampleScale));
+    const sampleHeight = Math.max(1, Math.round(sourceHeight * sampleScale));
+    const sample = document.createElement("canvas");
+    sample.width = sampleWidth;
+    sample.height = sampleHeight;
+    const context = sample.getContext("2d", { willReadFrequently: true });
+    if (!context) return null;
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.drawImage(image, 0, 0, sampleWidth, sampleHeight);
+    let pixels;
+    try {
+      pixels = context.getImageData(0, 0, sampleWidth, sampleHeight).data;
+    } catch (_err) {
+      return null;
+    }
+    const background = _smartDiagramBackgroundColor(pixels, sampleWidth, sampleHeight);
+    const rowCounts = new Uint32Array(sampleHeight);
+    const columnCounts = new Uint32Array(sampleWidth);
+    for (let y = 0; y < sampleHeight; y++) {
+      for (let x = 0; x < sampleWidth; x++) {
+        const index = (y * sampleWidth + x) * 4;
+        const alpha = pixels[index + 3];
+        if (alpha < 24) continue;
+        const distance = Math.max(
+          Math.abs(pixels[index] - background.red),
+          Math.abs(pixels[index + 1] - background.green),
+          Math.abs(pixels[index + 2] - background.blue),
+        );
+        if (distance < 28) continue;
+        rowCounts[y] += 1;
+        columnCounts[x] += 1;
+      }
+    }
+    const minimumRowPixels = Math.max(3, Math.round(sampleWidth * 0.006));
+    const minimumColumnPixels = Math.max(3, Math.round(sampleHeight * 0.006));
+    const top = rowCounts.findIndex((count) => count >= minimumRowPixels);
+    let bottom = sampleHeight - 1;
+    while (bottom >= 0 && rowCounts[bottom] < minimumRowPixels) bottom -= 1;
+    const left = columnCounts.findIndex((count) => count >= minimumColumnPixels);
+    let right = sampleWidth - 1;
+    while (right >= 0 && columnCounts[right] < minimumColumnPixels) right -= 1;
+    if (top < 0 || left < 0 || bottom <= top || right <= left) return null;
+    const scaleX = sourceWidth / sampleWidth;
+    const scaleY = sourceHeight / sampleHeight;
+    const paddingX = sourceWidth * 0.032;
+    const paddingY = sourceHeight * 0.032;
+    const bounds = {
+      x: Math.max(0, left * scaleX - paddingX),
+      y: Math.max(0, top * scaleY - paddingY),
+      width: Math.min(sourceWidth, (right + 1) * scaleX + paddingX),
+      height: Math.min(sourceHeight, (bottom + 1) * scaleY + paddingY),
+    };
+    bounds.width -= bounds.x;
+    bounds.height -= bounds.y;
+    if (bounds.width < sourceWidth * 0.2 || bounds.height < sourceHeight * 0.2) return null;
+    return bounds;
+  }
+
+  function getSmartDiagramAspectCrop(image, contentBounds, targetAspect) {
+    const sourceWidth = image.naturalWidth || image.width;
+    const sourceHeight = image.naturalHeight || image.height;
+    const full = { x: 0, y: 0, width: sourceWidth, height: sourceHeight };
+    if (!contentBounds || !targetAspect) return { ...full, smartFit: false };
+    const crop = { ...contentBounds };
+    const contentAspect = crop.width / crop.height;
+    if (contentAspect < targetAspect) {
+      const desiredWidth = crop.height * targetAspect;
+      if (desiredWidth > sourceWidth) return { ...crop, smartFit: false, whitespaceTrimmed: true };
+      crop.x = Math.max(0, Math.min(sourceWidth - desiredWidth, crop.x + crop.width / 2 - desiredWidth / 2));
+      crop.width = desiredWidth;
+    } else if (contentAspect > targetAspect) {
+      const desiredHeight = crop.width / targetAspect;
+      if (desiredHeight > sourceHeight) return { ...crop, smartFit: false, whitespaceTrimmed: true };
+      crop.y = Math.max(0, Math.min(sourceHeight - desiredHeight, crop.y + crop.height / 2 - desiredHeight / 2));
+      crop.height = desiredHeight;
+    }
+    return { ...crop, smartFit: true };
+  }
+
+  function _smartDiagramCanvasSize(frame) {
+    const rect = frame.getBoundingClientRect();
+    const cssWidth = Math.max(1, Math.round(rect.width || frame.clientWidth || 1));
+    const cssHeight = Math.max(1, Math.round(rect.height || frame.clientHeight || 1));
+    let scale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+    scale = Math.min(
+      scale,
+      SMART_DIAGRAM_MAX_RENDER_EDGE / cssWidth,
+      SMART_DIAGRAM_MAX_RENDER_EDGE / cssHeight,
+      Math.sqrt(SMART_DIAGRAM_MAX_RENDER_PIXELS / (cssWidth * cssHeight)),
+    );
+    return {
+      cssWidth,
+      cssHeight,
+      pixelWidth: Math.max(1, Math.round(cssWidth * scale)),
+      pixelHeight: Math.max(1, Math.round(cssHeight * scale)),
+      pixelRatio: scale,
+    };
+  }
+
+  function drawSmartDiagram(canvas, frame, image, options = {}) {
+    const size = _smartDiagramCanvasSize(frame);
+    if (canvas.width !== size.pixelWidth || canvas.height !== size.pixelHeight) {
+      canvas.width = size.pixelWidth;
+      canvas.height = size.pixelHeight;
+    }
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Smart diagram canvas could not be created");
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = options.background || "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.filter = options.filter || "contrast(1.045) saturate(1.015)";
+    const bounds = getSmartDiagramContentBounds(image);
+    const targetAspect = size.cssWidth / size.cssHeight;
+    const crop = getSmartDiagramAspectCrop(image, bounds, targetAspect);
+    const cropAspect = crop.width / crop.height;
+    let drawWidth = canvas.width;
+    let drawHeight = canvas.height;
+    let drawX = 0;
+    let drawY = 0;
+    if (!crop.smartFit && Math.abs(cropAspect - targetAspect) > 0.01) {
+      const containScale = Math.min(canvas.width / crop.width, canvas.height / crop.height);
+      drawWidth = crop.width * containScale;
+      drawHeight = crop.height * containScale;
+      drawX = (canvas.width - drawWidth) / 2;
+      drawY = (canvas.height - drawHeight) / 2;
+    }
+    context.drawImage(image, crop.x, crop.y, crop.width, crop.height, drawX, drawY, drawWidth, drawHeight);
+    context.filter = "none";
+    canvas.dataset.smartFit = crop.smartFit
+      ? "fill"
+      : crop.whitespaceTrimmed
+        ? "trimmed-contain"
+        : "contain";
+    canvas.dataset.sourceSize = `${image.naturalWidth || image.width}x${image.naturalHeight || image.height}`;
+    canvas.dataset.renderSize = `${canvas.width}x${canvas.height}`;
+    canvas.dataset.pixelRatio = size.pixelRatio.toFixed(2);
+    return crop;
+  }
+
+  async function renderSmartDiagramImage(img, url = img?.currentSrc || img?.src || "", options = {}) {
+    if (!img || !url || typeof document === "undefined") return null;
+    const frame = options.frame || img.parentElement;
+    if (!frame) return null;
+    const alt = options.alt || img.getAttribute("alt") || "Play diagram";
+    const image = await _loadSmartDiagramImage(url, alt);
+    const canvas = document.createElement("canvas");
+    canvas.className = options.canvasClass || "smart-diagram-canvas";
+    canvas.setAttribute("role", "img");
+    canvas.setAttribute("aria-label", alt);
+    canvas.dataset.smartDiagramCanvas = "true";
+    drawSmartDiagram(canvas, frame, image, options);
+    const previous = frame.querySelector(":scope > canvas[data-smart-diagram-canvas='true']");
+    if (previous) previous.remove();
+    img.dataset.smartDiagramSource = "true";
+    img.hidden = true;
+    frame.appendChild(canvas);
+    return canvas;
+  }
+
+  function hydrateSmartDiagramImages(root = document) {
+    if (!root || typeof root.querySelectorAll !== "function") return;
+    root.querySelectorAll("img[data-smart-diagram='true']").forEach((img) => {
+      if (img.dataset.smartDiagramHydrating === "true") return;
+      const url = img.currentSrc || img.src || img.getAttribute("src") || "";
+      if (!url) return;
+      img.dataset.smartDiagramHydrating = "true";
+      renderSmartDiagramImage(img, url)
+        .catch(() => {
+          img.hidden = false;
+        })
+        .finally(() => {
+          img.dataset.smartDiagramHydrating = "false";
+        });
+    });
+  }
+
   window.playImages = {
     ready,
     set,
@@ -1457,6 +1695,11 @@
     pushRemote,
     deleteRemote,
     syncToRemote,
+    getSmartDiagramContentBounds,
+    getSmartDiagramAspectCrop,
+    drawSmartDiagram,
+    renderSmartDiagramImage,
+    hydrateSmartDiagramImages,
   };
 
   // Convenience helpers that take a Play object directly
