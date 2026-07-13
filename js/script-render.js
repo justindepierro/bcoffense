@@ -2623,6 +2623,80 @@ function _buildQuizLeaderboardRows(attempts, rewards, player, weekKey = "") {
     .map(([name, points], idx) => ({ name, points, rank: idx + 1, tier: _getQuizTier(points, settings) }));
 }
 
+function _isSignalSprintAttempt(attempt = {}) {
+  return attempt?.sourceType === "signal" && attempt?.quizMode === "signal-sprint";
+}
+
+function _getSignalSprintAttemptAverageMs(attempt = {}) {
+  const direct = Number(attempt.averageAnswerMs || attempt.review?.gameStats?.averageAnswerMs || 0);
+  if (direct > 0) return direct;
+  const duration = Number(attempt.durationMs || attempt.review?.gameStats?.durationMs || 0);
+  const answered = Number(attempt.answered || 0);
+  return duration > 0 && answered > 0 ? Math.round(duration / answered) : 0;
+}
+
+function _compareSignalSprintRows(a, b) {
+  return (
+    Number(b.correct || 0) - Number(a.correct || 0) ||
+    Number(b.percent || 0) - Number(a.percent || 0) ||
+    Number(a.averageAnswerMs || Number.MAX_SAFE_INTEGER) - Number(b.averageAnswerMs || Number.MAX_SAFE_INTEGER) ||
+    Number(b.answered || 0) - Number(a.answered || 0) ||
+    _quizEventTimestamp(b.attempt || b) - _quizEventTimestamp(a.attempt || a) ||
+    String(a.name || "").localeCompare(String(b.name || ""))
+  );
+}
+
+function _buildSignalSprintLeaderboardRows(attempts, player, weekKey = "") {
+  const bestByPlayer = new Map();
+  (Array.isArray(attempts) ? attempts : [])
+    .filter((attempt) => _isSignalSprintAttempt(attempt))
+    .filter((attempt) => !weekKey || attempt.weekKey === weekKey)
+    .forEach((attempt) => {
+      const name = _quizPlayerNameFromAttempt(attempt, player);
+      const answered = Math.max(0, Number(attempt.answered || 0));
+      const correct = Math.max(0, Number(attempt.correct || 0));
+      const percent = answered ? Math.round((correct / answered) * 100) : 0;
+      const row = {
+        name,
+        attempt,
+        attempts: 1,
+        answered,
+        correct,
+        wrong: Math.max(0, answered - correct),
+        percent,
+        averageAnswerMs: _getSignalSprintAttemptAverageMs(attempt),
+        durationMs: Number(attempt.durationMs || attempt.review?.gameStats?.durationMs || 0),
+        completedAt: attempt.completedAt || "",
+      };
+      const existing = bestByPlayer.get(name);
+      if (!existing || _compareSignalSprintRows(row, existing) < 0) {
+        row.attempts = (existing?.attempts || 0) + 1;
+        bestByPlayer.set(name, row);
+      } else if (existing) {
+        existing.attempts += 1;
+      }
+    });
+  if (!bestByPlayer.size) {
+    const name = _normalizeQuizPlayerName(player || _getQuizPlayerName());
+    return [{
+      name,
+      rank: 1,
+      attempts: 0,
+      answered: 0,
+      correct: 0,
+      wrong: 0,
+      percent: 0,
+      averageAnswerMs: 0,
+      durationMs: 0,
+      empty: true,
+    }];
+  }
+  return Array.from(bestByPlayer.values())
+    .sort(_compareSignalSprintRows)
+    .slice(0, 10)
+    .map((row, idx) => ({ ...row, rank: idx + 1 }));
+}
+
 function _quizFilteredAttemptsForView(attempts, weekKey, season = false) {
   return (Array.isArray(attempts) ? attempts : []).filter((attempt) => {
     if (!attempt || typeof attempt !== "object") return false;
@@ -2822,6 +2896,7 @@ function _buildCoachQuizLeaderboardSummary() {
     weakPositions,
     weakQuestionTypes,
     commonMissedPlays,
+    signalSprintRows: _buildSignalSprintLeaderboardRows(viewAttempts, _getQuizPlayerName()),
     totals: {
       players: leaderboardRows.length,
       attempts: viewAttempts.length,
@@ -2890,6 +2965,8 @@ function _summarizeQuizAttempts() {
     tier: _getQuizTier(weeklyPoints, settings),
     weeklyLeaderboardRows: _buildQuizLeaderboardRows(attempts, rewards, player, weekKey),
     seasonLeaderboardRows: _buildQuizLeaderboardRows(attempts, rewards, player),
+    weeklySignalSprintRows: _buildSignalSprintLeaderboardRows(attempts, player, weekKey),
+    seasonSignalSprintRows: _buildSignalSprintLeaderboardRows(attempts, player),
   };
 }
 
@@ -3017,6 +3094,33 @@ function _renderQuizLeaderRows(rows, player) {
       `;
     })
     .join("");
+}
+
+function _formatSignalSprintPace(ms) {
+  const value = Number(ms || 0);
+  return value > 0 ? `${(value / 1000).toFixed(1)}s` : "-";
+}
+
+function _renderSignalSprintLeaderboardRows(rows, player, variant = "player") {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  if (!safeRows.length || safeRows.every((row) => row.empty)) {
+    return `<div class="${variant === "coach" ? "coach-quiz-empty" : "player-leaderboard-empty"}">No Signal Sprint attempts yet. Run the 100 Second Sprint to set the first score.</div>`;
+  }
+  return safeRows.map((row) => {
+    const isCurrent = _normalizeQuizPlayerName(row.name) === _normalizeQuizPlayerName(player || "");
+    const attrs = variant === "coach"
+      ? `data-action="selectCoachQuizLeaderboardPlayer" data-arg="${escapeAttr(row.name)}"`
+      : `data-action="openPlayerLeaderboardDetail" data-arg="${escapeAttr(row.name)}"`;
+    return `
+      <button type="button" class="signal-sprint-leader-row${isCurrent ? " is-current" : ""}" ${attrs}>
+        <span class="signal-sprint-rank">#${row.rank}</span>
+        <strong>${escapeHtml(row.name)}</strong>
+        <span class="signal-sprint-score">${Math.round(row.correct || 0)} correct</span>
+        <span>${Math.round(row.percent || 0)}%</span>
+        <span>${escapeHtml(_formatSignalSprintPace(row.averageAnswerMs))} avg</span>
+      </button>
+    `;
+  }).join("");
 }
 
 function _quizEventTimestamp(event = {}) {
@@ -3359,6 +3463,7 @@ function renderPlayerLeaderboardPage() {
   const viewGiftPoints = isSeason ? summary.seasonGiftPoints : summary.weeklyGiftPoints;
   const viewPoints = isSeason ? summary.seasonPoints : summary.weeklyPoints;
   const viewRows = isSeason ? summary.seasonLeaderboardRows : summary.weeklyLeaderboardRows;
+  const signalSprintRows = isSeason ? summary.seasonSignalSprintRows : summary.weeklySignalSprintRows;
   const viewTier = _getQuizTier(viewPoints, settings);
   const achievement = _getQuizAchievementSummary(summary.weeklyPoints, settings);
   const championName = _getQuizTierName("champion", settings);
@@ -3445,6 +3550,13 @@ function renderPlayerLeaderboardPage() {
           <span>${escapeHtml(syncLabel)} · tap a name for stickers</span>
         </div>
         <div class="player-quiz-leaderboard-preview">${_renderQuizLeaderRows(viewRows, summary.player)}</div>
+      </section>
+      <section class="player-leaderboard-board player-signal-sprint-board">
+        <div class="player-leaderboard-section-head">
+          <h3>100 Second Signal Sprint</h3>
+          <span>${escapeHtml(viewLabel)} · correct, accuracy, speed</span>
+        </div>
+        <div class="signal-sprint-leaderboard">${_renderSignalSprintLeaderboardRows(signalSprintRows, summary.player)}</div>
       </section>
       ${_renderPlayerLeaderboardDetail(_leaderboardSelectedPlayer, summary)}
       <section class="player-leaderboard-board">
@@ -4559,6 +4671,15 @@ function _renderCoachQuizLeaderboardPanel(summary) {
             <span>Re-teach targets</span>
           </div>
           ${_renderCoachQuizCommonMissedPlays(summary.commonMissedPlays)}
+        </div>
+        <div class="coach-quiz-weak-card coach-quiz-signal-sprint-card">
+          <div class="coach-quiz-weak-head">
+            <strong>Signal Sprint</strong>
+            <span>Correct · accuracy · speed</span>
+          </div>
+          <div class="signal-sprint-leaderboard signal-sprint-leaderboard--coach">
+            ${_renderSignalSprintLeaderboardRows(summary.signalSprintRows, selectedPlayer, "coach")}
+          </div>
         </div>
       </div>
     </section>
