@@ -350,6 +350,8 @@ window.getRemotePlayerLeaderboardRows
 window.getScriptVisiblePlayerSummary
 window.getSignalAvailabilityForPlay
 window.getSignalCountForPlay
+window.getSignalQuizItems
+window.getSignalQuizStats
 window.getTeamWorkspacePullSummary
 window.hasWorkspaceSyncWork
 window.hasPlayImage

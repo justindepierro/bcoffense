@@ -202,6 +202,7 @@
     "setPlayerQuizScriptSource",
     "startPlayerQuizHubScript",
     "startPlayerQuizHubGamePlan",
+    "startPlayerQuizHubSignals",
     "startPlayerScriptQuiz",
     "startScriptQuiz",
     "closeScriptQuiz",

@@ -757,6 +757,81 @@ function _sigSelectorRecordLabel(record) {
   return String(record?.value || record?.componentValue || record?.compareKey || "Signal").trim();
 }
 
+function _sigRecordToQuizPlay(record) {
+  const component = _sigComponentByType(record?.componentType);
+  return {
+    type: "Signal",
+    personnel: record?.category || "",
+    formation: component?.label || record?.componentType || "Signal",
+    play: _sigSelectorRecordLabel(record),
+    notes: record?.notes || "",
+  };
+}
+
+async function getSignalQuizItems(options = {}) {
+  const opts = options && typeof options === "object" ? options : {};
+  const categoryFilter = new Set(
+    (Array.isArray(opts.categories) ? opts.categories : [])
+      .map((category) => String(category || "").trim().toUpperCase())
+      .filter(Boolean),
+  );
+  const records = _sigLoadRecords()
+    .filter((record) => record.visibility === "published" && Number(record.clipCount || 0) > 0)
+    .filter((record) => !categoryFilter.size || categoryFilter.has(String(record.category || "").toUpperCase()));
+  const items = [];
+  for (const record of records) {
+    const component = _sigComponentByType(record.componentType);
+    const category = SIGNAL_CATEGORIES.find((item) => item.id === record.category);
+    let clip = null;
+    if (window.playClips && typeof window.playClips.listForSig === "function") {
+      try {
+        clip = _sigNormalizeClipList(await window.playClips.listForSig(record.clipKey))[0] || null;
+      } catch (_err) {
+        clip = null;
+      }
+    }
+    if (opts.requireClip !== false && !clip?.url) continue;
+    const value = _sigSelectorRecordLabel(record);
+    items.push({
+      play: _sigRecordToQuizPlay(record),
+      period: category?.label || record.category || "Signals",
+      scriptIndex: items.length,
+      sourceBox: "signals",
+      signalRecord: {
+        ...record,
+        label: component?.label || record.componentType || "Signal",
+        groupLabel: category?.label || record.category || "Signals",
+        value,
+        clipUrl: clip?.url || "",
+        clipId: clip?.id || "",
+        clipSig: record.clipKey,
+        answerLabel: value,
+      },
+    });
+  }
+  return items;
+}
+
+function getSignalQuizStats(options = {}) {
+  const opts = options && typeof options === "object" ? options : {};
+  const categoryFilter = new Set(
+    (Array.isArray(opts.categories) ? opts.categories : [])
+      .map((category) => String(category || "").trim().toUpperCase())
+      .filter(Boolean),
+  );
+  const records = _sigLoadRecords()
+    .filter((record) => record.visibility === "published" && Number(record.clipCount || 0) > 0)
+    .filter((record) => !categoryFilter.size || categoryFilter.has(String(record.category || "").toUpperCase()));
+  const byCategory = SIGNAL_CATEGORIES.map((category) => ({
+    ...category,
+    count: records.filter((record) => record.category === category.id).length,
+  }));
+  return {
+    total: records.length,
+    categories: byCategory,
+  };
+}
+
 function _sigConfigureLoopVideos(root = document) {
   root.querySelectorAll?.(".signals-play-video, .signals-clip video").forEach((video) => {
     video.controls = true;
@@ -951,6 +1026,8 @@ window.renderSignalAvailabilityForPlay = renderSignalAvailabilityForPlay;
 window.openSignalSelectorForPlay = openSignalSelectorForPlay;
 window.openPlaybookSignalSelector = openPlaybookSignalSelector;
 window.openScriptSignalSelector = openScriptSignalSelector;
+window.getSignalQuizItems = getSignalQuizItems;
+window.getSignalQuizStats = getSignalQuizStats;
 
 window.addEventListener("play-clips-changed", (event) => {
   const sig = String(event?.detail?.sig || "");

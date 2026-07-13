@@ -4150,6 +4150,7 @@ function checkSignalPlayIntegrationContracts() {
   const appEvents = read("js/app-events.js");
   const auth = read("js/auth.js");
   const signalsCss = read("css/signals.css");
+  const scriptCss = read("css/script.css");
   const roadmap = read("CONSOLIDATED_ROADMAP.md");
 
   if (
@@ -4165,6 +4166,10 @@ function checkSignalPlayIntegrationContracts() {
     !/function openSignalClip\(recordId\)/.test(signals) ||
     !/function closeSignalSelector\(\)/.test(signals) ||
     !/function _sigNormalizeClipList\(data\)/.test(signals) ||
+    !/async function getSignalQuizItems\(options = \{\}\)/.test(signals) ||
+    !/function getSignalQuizStats\(options = \{\}\)/.test(signals) ||
+    !/window\.getSignalQuizItems = getSignalQuizItems/.test(signals) ||
+    !/window\.getSignalQuizStats = getSignalQuizStats/.test(signals) ||
     !/function _sigBuildCoverageReport\(summariesByComponent\)/.test(signals) ||
     !/function _sigRenderCoverageReport\(summariesByComponent\)/.test(signals)
   ) {
@@ -4209,14 +4214,28 @@ function checkSignalPlayIntegrationContracts() {
 
   if (
     !/id="playPresentationSignalsBtn"[\s\S]*data-action="openPlayPresentationSignals"/.test(html) ||
+    !/id="playerQuizStartSignalsBtn"[\s\S]*data-action="startPlayerQuizHubSignals"/.test(html) ||
+    !/player-quiz-source-card--signals/.test(html) ||
     !/function updatePlayPresentationSignalsButton\(\)/.test(presentation) ||
     !/getSignalCountForPlay\(item\.play\)/.test(presentation) ||
     !/function openPlayPresentationSignals\(\)/.test(presentation) ||
     !/openSignalSelectorForPlay\(item\.play, \{ sourceLabel: "Swipe View Signals" \}\)/.test(presentation) ||
     !/updatePlayPresentationSignalsButton\(\);/.test(presentation) ||
-    !/["']openPlayPresentationSignals["']/.test(auth)
+    !/["']openPlayPresentationSignals["']/.test(auth) ||
+    !/["']startPlayerQuizHubSignals["']/.test(auth)
   ) {
     fail("presentation signal selector entry point is incomplete");
+  }
+
+  if (
+    !/key:\s*"signal-study"[\s\S]*label:\s*"Signal Study"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
+    !/async function startPlayerQuizHubSignals\(\)/.test(scriptRender) ||
+    !/sourceType:\s*"signal"/.test(scriptRender) ||
+    !/function _getSignalQuizStatus\(\)/.test(scriptRender) ||
+    !/signalClipUrl/.test(scriptRender) ||
+    !/function _getQuizSourceLabel\(sourceType = _quizSourceType/.test(scriptRender)
+  ) {
+    fail("signal quiz study mode is incomplete");
   }
 
   if (
@@ -4238,7 +4257,9 @@ function checkSignalPlayIntegrationContracts() {
     !/\.signal-availability-groups/.test(signalsCss) ||
     !/\.signal-availability-action/.test(signalsCss) ||
     !/z-index:\s*calc\(var\(--z-skip-link\) \+ 2\)/.test(signalsCss) ||
-    !/\.pp-signals-btn/.test(presentationCss)
+    !/\.pp-signals-btn/.test(presentationCss) ||
+    !/\.player-quiz-source-card--signals/.test(scriptCss) ||
+    !/\.sq-signal-prompt/.test(scriptCss)
   ) {
     fail("signal selector styling is incomplete");
   }
@@ -4270,6 +4291,7 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Add simple coach\/admin coverage reporting: components with signals,/.test(roadmap) ||
     !/Phase 5 - Signal games and leaderboards:/.test(roadmap) ||
     !/- \[x\] Document the coach capture standard at upload time: iPhone 1080p HD,/.test(roadmap) ||
+    !/- \[x\] Build a signal-only quiz item source from published signal clips, grouped/.test(roadmap) ||
     !/- \[ \] Add `100 Second Signal Sprint`/.test(roadmap) ||
     !/- \[ \] Add `6 Seconds of Battle`/.test(roadmap) ||
     !/- \[ \] Add `Heat Check`/.test(roadmap) ||

@@ -1503,6 +1503,7 @@ const PLAYER_QUIZ_MIN_BONUS_ANSWERS = 5;
 const PLAYER_QUIZ_SOURCE_WEIGHTS = {
   script: 1,
   gameplan: 1.25,
+  signal: 1,
 };
 const PLAYER_QUIZ_TIER_DEFAULTS = [
   { key: "champion", label: "Champion" },
@@ -1659,7 +1660,15 @@ function _getQuizTierName(key, settings = _getPlayerQuizSettings()) {
 
 function _getQuizSourceWeight(sourceType = _quizSourceType) {
   const settings = _getPlayerQuizSettings();
-  return sourceType === "gameplan" ? settings.gameplanWeight : settings.scriptWeight;
+  if (sourceType === "gameplan") return settings.gameplanWeight;
+  return PLAYER_QUIZ_SOURCE_WEIGHTS[sourceType] || settings.scriptWeight;
+}
+
+function _getQuizSourceLabel(sourceType = _quizSourceType, variant = "title") {
+  const normalized = String(sourceType || "").trim();
+  if (normalized === "gameplan") return variant === "sentence" ? "game plan" : "Game Plan";
+  if (normalized === "signal") return variant === "sentence" ? "signal set" : "Signals";
+  return variant === "sentence" ? "script" : "Script";
 }
 
 function _getQuizBadges() {
@@ -2892,7 +2901,7 @@ function _renderPlayerQuizResumeCard(draft, variant = "hub") {
   if (!draft) return "";
   const title = draft.title || "Quiz in progress";
   const meta = _formatQuizDraftMeta(draft);
-  const source = draft.sourceType === "gameplan" ? "Game Plan" : "Practice Script";
+  const source = _getQuizSourceLabel(draft.sourceType);
   const modeLabel = draft.quizMode && draft.quizMode !== "full"
     ? (_getPlayerQuizModes().find((mode) => mode.key === draft.quizMode)?.label || "Quiz")
     : "";
@@ -3298,7 +3307,7 @@ function renderPlayerLeaderboardPage() {
         <div class="player-leaderboard-attempt${attempt.completed === false ? " is-partial" : ""}">
           <div>
             <strong>${escapeHtml(attempt.title || "Quiz")}</strong>
-            <small>${escapeHtml(attempt.sourceType === "gameplan" ? "Game Plan" : "Script")} · ${attempt.correct}/${attempt.answered} right${attempt.remaining ? ` · ${attempt.remaining} left` : ""}</small>
+            <small>${escapeHtml(_getQuizSourceLabel(attempt.sourceType))} · ${attempt.correct}/${attempt.answered} right${attempt.remaining ? ` · ${attempt.remaining} left` : ""}</small>
           </div>
           <span>${Math.round(attempt.totalPoints || 0)} pts</span>
         </div>
@@ -5275,6 +5284,7 @@ function _normalizeQuizItems(items) {
           scriptIndex: item.scriptIndex ?? index,
           sourceBox: item.sourceBox || "",
           positionKey: item.positionKey || "",
+          signalRecord: item.signalRecord || null,
         };
       }
       return {
@@ -5544,6 +5554,7 @@ function _getPlayerQuizModes(context = {}) {
   const scriptSource = context.scriptSource || _getPlayerQuizSelectedScriptRecord();
   const scriptItems = _normalizeQuizItems(scriptSource?.plays || []);
   const gamePlanStatus = context.gamePlanStatus || _getActiveGamePlanQuizStatus();
+  const signalStatus = context.signalStatus || _getSignalQuizStatus();
   const hasDiagram = scriptItems.some(_quizItemHasDiagram);
   const hasRules = scriptItems.some((item) => _quizItemHasPositionRule(item));
   const missedItems = _getRecentMissedQuizItems(5);
@@ -5587,6 +5598,14 @@ function _getPlayerQuizModes(context = {}) {
       note: "Retry recent misses after feedback.",
       source: "script",
       disabled: !missedItems.length,
+    },
+    {
+      key: "signal-study",
+      label: "Signal Study",
+      time: `${signalStatus.count || 0} clips`,
+      note: "Watch a short signal clip and identify the component.",
+      source: "signal",
+      disabled: !signalStatus.available,
     },
   ];
 }
@@ -5788,12 +5807,15 @@ function _renderPlayerQuizHub() {
     const hasScriptOption = _getPlayerQuizScriptOptions().some((option) => option.playerSelectable);
     const mode = _getPlayerQuizMode();
     const modeNeedsGamePlan = mode?.source === "gameplan";
-    scriptStartBtn.disabled = !hasScriptOption || modeNeedsGamePlan;
+    const modeNeedsSignal = mode?.source === "signal";
+    scriptStartBtn.disabled = !hasScriptOption || modeNeedsGamePlan || modeNeedsSignal;
     scriptStartBtn.textContent = !hasScriptOption
       ? "Script Quiz Locked"
       : modeNeedsGamePlan
         ? "Use Game Plan"
-        : `Start ${mode?.label || "Script Quiz"}`;
+        : modeNeedsSignal
+          ? "Use Signals"
+          : `Start ${mode?.label || "Script Quiz"}`;
   }
   if (scriptPicker) {
     scriptPicker.innerHTML = _renderPlayerQuizScriptPicker(_getPlayerQuizScriptOptions());
@@ -5806,6 +5828,9 @@ function _renderPlayerQuizHub() {
 
   const gamePlanBtn = document.getElementById("playerQuizStartGamePlanBtn");
   const gamePlanStatusEl = document.getElementById("playerQuizGamePlanStatus");
+  const signalStatus = _getSignalQuizStatus();
+  const signalBtn = document.getElementById("playerQuizStartSignalsBtn");
+  const signalStatusEl = document.getElementById("playerQuizSignalsStatus");
   if (gamePlanBtn) {
     const mode = _getPlayerQuizMode();
     gamePlanBtn.disabled = !gamePlanStatus.available;
@@ -5819,6 +5844,26 @@ function _renderPlayerQuizHub() {
       ${_renderQuizCompletenessChips(gamePlanStatus.stats, "quiz-completeness-chips player-quiz-source-chips")}
     `);
     gamePlanStatusEl.hidden = !gamePlanStatus.detail;
+  }
+  if (signalBtn) {
+    signalBtn.disabled = !signalStatus.available;
+    signalBtn.textContent = signalStatus.available ? "Start Signal Study" : signalStatus.label;
+  }
+  if (signalStatusEl) {
+    const categoryChips = signalStatus.categories.length
+      ? `<div class="quiz-completeness-chips player-quiz-source-chips">
+          ${signalStatus.categories.map((category) => `
+            <span class="quiz-completeness-chip quiz-completeness-chip--ready">
+              <strong>${escapeHtml(category.label || category.id)}</strong>
+              <small>${Number(category.count || 0)} clips</small>
+            </span>`).join("")}
+        </div>`
+      : "";
+    setInnerHTML(signalStatusEl, `
+      <span>${escapeHtml(signalStatus.detail)}</span>
+      ${categoryChips}
+    `);
+    signalStatusEl.hidden = !signalStatus.detail;
   }
 
   if (document.getElementById("leaderboard")?.classList.contains("active")) {
@@ -5891,6 +5936,10 @@ function startPlayerQuizHubScript() {
     return;
   }
   const mode = _getPlayerQuizMode();
+  if (mode?.source === "signal") {
+    startPlayerQuizHubSignals();
+    return;
+  }
   if (mode?.source === "gameplan") {
     showToast("Use the Game Plan button for that challenge.", { type: "info" });
     return;
@@ -5916,10 +5965,73 @@ function startPlayerQuizHubScript() {
   });
 }
 
+async function startPlayerQuizHubSignals() {
+  const status = _getSignalQuizStatus();
+  if (!status.available) {
+    showToast(status.detail || "Signal Study is not ready yet.", { type: "warning" });
+    return;
+  }
+  const button = document.getElementById("playerQuizStartSignalsBtn");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Loading Signals...";
+  }
+  try {
+    const items = typeof getSignalQuizItems === "function"
+      ? await getSignalQuizItems({ requireClip: true })
+      : [];
+    if (!Array.isArray(items) || items.length < 2) {
+      showToast("Signal Study needs at least two playable signal clips.", { type: "warning" });
+      return;
+    }
+    closePlayerQuizHub();
+    _quizMode = "signal-study";
+    startScriptQuiz({
+      items,
+      sourceType: "signal",
+      sourceId: "signals",
+      title: "Signal Study",
+      positionKey: _quizPositionKey,
+      positionMode: _quizPositionMode,
+      mode: _quizMode,
+    });
+  } catch (err) {
+    showToast(err?.message || "Could not start Signal Study.", { type: "error", duration: 3500 });
+  } finally {
+    if (button) {
+      const nextStatus = _getSignalQuizStatus();
+      button.disabled = !nextStatus.available;
+      button.textContent = nextStatus.available ? "Start Signal Study" : nextStatus.label;
+    }
+  }
+}
+
 function _getActiveGamePlanQuizSourceId() {
   if (typeof _gpActiveOpponentKey === "function") return _gpActiveOpponentKey();
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   return gw?.opponentName || "__unassigned__";
+}
+
+function _getSignalQuizStatus() {
+  const stats = typeof getSignalQuizStats === "function"
+    ? getSignalQuizStats()
+    : { total: 0, categories: [] };
+  const count = Number(stats?.total || 0);
+  const categories = Array.isArray(stats?.categories)
+    ? stats.categories.filter((category) => Number(category.count || 0) > 0)
+    : [];
+  const categoryLabel = categories.length
+    ? categories.map((category) => `${category.label || category.id}: ${category.count}`).join(" · ")
+    : "";
+  return {
+    count,
+    categories,
+    available: count >= 2 && typeof getSignalQuizItems === "function",
+    label: count >= 2 ? "Start Signal Study" : "Signals Need Clips",
+    detail: count >= 2
+      ? `${count} published signal clip${count === 1 ? "" : "s"} ready. ${categoryLabel}`
+      : "Publish at least two signal clips to unlock Signal Study.",
+  };
 }
 
 function _getActiveGamePlanQuizStatus() {
@@ -6031,6 +6143,9 @@ function _resetQuizGameState() {
 
 function _quizItemKey(item) {
   if (!item || !item.play) return "";
+  if (item.signalRecord?.id) {
+    return `signal::${item.signalRecord.id}::${item.signalRecord.clipId || item.signalRecord.clipSig || ""}`;
+  }
   const sig = typeof playSignature === "function" ? playSignature(item.play) : "";
   return `${item.scriptIndex ?? _quizIndex}::${item.positionKey || _quizPositionKey}::${sig || _quizPlainCall(item.play)}`;
 }
@@ -6111,6 +6226,7 @@ function _quizQuestionChoiceLabel(item, question) {
     case "diagram_formation":
       return _quizFormationLabel(play);
     case "signal":
+      if (item?.signalRecord) return _quizSignalAnswerLabel(item.signalRecord);
       return _quizSignalAnswerLabel(_quizSignalRecordForQuestion(play, question));
     case "play_type":
       return _quizCleanText(play.type);
@@ -6148,6 +6264,7 @@ function _quizSignalAnswerLabel(record) {
 }
 
 function _quizPickSignalRecord(item) {
+  if (item?.signalRecord) return item.signalRecord;
   const records = _quizSignalRecordsForPlay(item?.play || item);
   if (!records.length) return null;
   const priority = ["MOTIONS", "TAGS", "CORE", "BLOCKING"];
@@ -6161,6 +6278,7 @@ function _quizPickSignalRecord(item) {
 
 function _quizSignalRecordForQuestion(play, question) {
   const target = question?.signal || {};
+  if (target.record) return target.record;
   return _quizSignalRecordsForPlay(play).find((record) => {
     if (target.componentType && record.componentType !== target.componentType) return false;
     return true;
@@ -6307,15 +6425,21 @@ function _buildQuizQuestion(item) {
   } : null;
   const signalQuestion = canAskSignal ? {
     type: "signal",
-    prompt: `Which ${signalRecord.label || signalRecord.componentType || "signal"} belongs to this play?`,
+    prompt: _quizMode === "signal-study"
+      ? `Which ${signalRecord.label || signalRecord.componentType || "signal"} is shown?`
+      : `Which ${signalRecord.label || signalRecord.componentType || "signal"} belongs to this play?`,
     detailLabel: `${signalRecord.groupLabel || signalRecord.category || "Signal"} Signal`,
-    detailValue: signalRecord.label || signalRecord.componentType || "",
+    detailValue: _quizMode === "signal-study"
+      ? signalRecord.groupLabel || signalRecord.category || "Signal"
+      : signalRecord.label || signalRecord.componentType || "",
     rule: positionRule,
     position,
+    signalClipUrl: signalRecord.clipUrl || "",
     signal: {
       category: signalRecord.category || "",
       componentType: signalRecord.componentType || "",
       label: signalRecord.label || "",
+      record: signalRecord,
     },
   } : null;
   const callQuestion = canAskRecognition ? {
@@ -6328,7 +6452,9 @@ function _buildQuizQuestion(item) {
   } : null;
 
   const candidates = [];
-  if (_quizMode === "diagram") {
+  if (_quizMode === "signal-study") {
+    candidates.push(signalQuestion);
+  } else if (_quizMode === "diagram") {
     candidates.push(diagramQuestion, diagramFormationQuestion, formationQuestion, signalQuestion, typeQuestion, callQuestion, ruleQuestion, ruleToPlayQuestion);
   } else if (_quizMode === "job") {
     candidates.push(ruleQuestion, ruleToPlayQuestion, signalQuestion, diagramQuestion, diagramFormationQuestion, formationQuestion, typeQuestion, callQuestion);
@@ -6603,7 +6729,8 @@ function isScriptQuizAwaitingAnswer() {
 
 function startScriptQuiz(options = {}) {
   const opts = options && typeof options === "object" ? options : {};
-  const sourceType = opts.sourceType === "gameplan" ? "gameplan" : "script";
+  const requestedSourceType = String(opts.sourceType || "").trim();
+  const sourceType = ["gameplan", "signal"].includes(requestedSourceType) ? requestedSourceType : "script";
   const items = Array.isArray(opts.items) ? opts.items : _buildQuizPlays(false);
   _quizMode = String(opts.mode || "full");
   const normalizedItems = opts.mode
@@ -6617,7 +6744,7 @@ function startScriptQuiz(options = {}) {
   _quizSourceType = sourceType;
   _quizSourceId = String(opts.sourceId || "");
   _quizSourceWeight = _getQuizSourceWeight(sourceType);
-  _quizTitle = opts.title || (sourceType === "gameplan" ? "Game Plan Quiz" : "Practice Script Quiz");
+  _quizTitle = opts.title || (sourceType === "gameplan" ? "Game Plan Quiz" : sourceType === "signal" ? "Signal Study" : "Practice Script Quiz");
   if (opts.positionMode) {
     _quizPositionMode = _normalizeQuizPositionMode(opts.positionMode);
   }
@@ -6790,7 +6917,7 @@ function _summarizeQuizReviewRows(rows) {
 
 function _renderQuizResultReview(summary, review) {
   const data = review || _summarizeQuizReviewRows(_getQuizAnswerReviewRows());
-  const sourceLabel = summary.sourceType === "gameplan" ? "game plan" : "script";
+  const sourceLabel = _getQuizSourceLabel(summary.sourceType, "sentence");
   if (!data.misses.length) {
     const strengthText = data.strengthTypes.length
       ? `You were strongest on ${data.strengthTypes.slice(0, 2).join(" and ")} questions.`
@@ -7000,7 +7127,7 @@ function _renderQuizExitSummary() {
       <div class="sq-exit-card">
         <div class="sq-exit-kicker">Quiz paused</div>
         <h3>You scored ${Math.round(summary.totalPoints)} points</h3>
-        <p>${summary.correct} right · ${summary.wrong} wrong · ${summary.remaining} question${summary.remaining === 1 ? "" : "s"} left in this ${summary.sourceType === "gameplan" ? "game plan" : "script"}.</p>
+        <p>${summary.correct} right · ${summary.wrong} wrong · ${summary.remaining} question${summary.remaining === 1 ? "" : "s"} left in this ${escapeHtml(_getQuizSourceLabel(summary.sourceType, "sentence"))}.</p>
         <div class="sq-exit-grid">
           <span><strong>${summary.answered}</strong><small>Answered</small></span>
           <span><strong>${summary.totalQuestions}</strong><small>Total</small></span>
@@ -7060,10 +7187,10 @@ function resumePlayerQuizDraft() {
   _quizPlays = playsFromDraft;
   _quizIndex = Math.max(0, Math.min(Number(draft.index || 0), _quizPlays.length - 1));
   _quizShuffled = Boolean(draft.shuffled);
-  _quizSourceType = draft.sourceType === "gameplan" ? "gameplan" : "script";
+  _quizSourceType = ["gameplan", "signal"].includes(draft.sourceType) ? draft.sourceType : "script";
   _quizSourceId = String(draft.sourceId || "");
   _quizSourceWeight = Number(draft.sourceWeight || 0) || _getQuizSourceWeight(_quizSourceType);
-  _quizTitle = draft.title || (_quizSourceType === "gameplan" ? "Game Plan Quiz" : "Practice Script Quiz");
+  _quizTitle = draft.title || (_quizSourceType === "gameplan" ? "Game Plan Quiz" : _quizSourceType === "signal" ? "Signal Study" : "Practice Script Quiz");
   _quizMode = String(draft.quizMode || "full");
   _quizPositionMode = _normalizeQuizPositionMode(draft.positionMode || "manual");
   if (draft.positionKey && _getQuizPositions().some((position) => position.key === draft.positionKey)) {
@@ -7098,7 +7225,7 @@ function _renderQuizResults(summary) {
   const scenarioEl = document.getElementById("scriptQuizScenario");
   const answerEl = document.getElementById("scriptQuizAnswer");
   const revealRow = document.querySelector(".script-quiz-reveal-row");
-  const sourceLabel = summary.sourceType === "gameplan" ? "Game Plan" : "Script";
+  const sourceLabel = _getQuizSourceLabel(summary.sourceType);
   const statusLabel = summary.completed === false ? `${sourceLabel} Ended` : `${sourceLabel} Complete`;
   const tierAfter = _getQuizTier(_summarizeQuizAttempts().weeklyPoints);
   const review = _summarizeQuizReviewRows(_getQuizAnswerReviewRows());
@@ -7114,7 +7241,7 @@ function _renderQuizResults(summary) {
           <span><strong>${summary.bestStreak}</strong><small>Best streak</small></span>
           <span><strong>${Math.round(summary.totalPoints)}</strong><small>Total points</small></span>
         </div>
-        ${summary.remaining ? `<div class="sq-result-tier">${summary.remaining} question${summary.remaining === 1 ? "" : "s"} left in this ${summary.sourceType === "gameplan" ? "game plan" : "script"}.</div>` : ""}
+        ${summary.remaining ? `<div class="sq-result-tier">${summary.remaining} question${summary.remaining === 1 ? "" : "s"} left in this ${escapeHtml(_getQuizSourceLabel(summary.sourceType, "sentence"))}.</div>` : ""}
         ${summary.bonusPoints ? `<div class="sq-result-bonus">+${summary.bonusPoints} bonus points · ${escapeHtml(summary.badge)}</div>` : ""}
         ${_renderQuizResultRewardMoment(summary)}
         ${_renderQuizResultReview(summary, review)}
@@ -7221,12 +7348,19 @@ function renderScriptQuizPlay() {
   const personnelLabel = play.personnel ? play.personnel : "";
   const tempoLabel = play.tempo ? play.tempo : "";
   const typeLabel = play.type ? play.type : "";
-  const sourceLabel = _quizSourceType === "gameplan" ? "Game Plan" : "Script";
+  const sourceLabel = _getQuizSourceLabel(_quizSourceType);
   const weightLabel = _quizSourceWeight === 1 ? "1.0x" : `${_quizSourceWeight}x`;
   const question = _quizCurrentQuestion || _buildQuizQuestion(item);
   const detailValue = _quizCleanText(question.detailValue);
   const diagramPromptHtml = ["diagram", "diagram_formation", "study_card"].includes(question.type)
     ? _renderQuizRedactedDiagram(play, question.diagramUrl)
+    : "";
+  const signalPromptHtml = question.type === "signal" && question.signalClipUrl
+    ? `
+      <figure class="sq-signal-prompt" aria-label="Signal video prompt">
+        <video src="${escapeAttr(question.signalClipUrl)}" autoplay loop muted playsinline controls preload="metadata"></video>
+        <figcaption>${escapeHtml(question.signal?.label || "Signal clip")}</figcaption>
+      </figure>`
     : "";
 
   const situationParts = [downLabel && distLabel ? `${downLabel} ${distLabel}` : downLabel || distLabel, posLabel, hashLabel, situationLabel].filter(Boolean);
@@ -7253,6 +7387,7 @@ function renderScriptQuizPlay() {
     </div>` : ""}
     <div class="sq-scenario-hint">${escapeHtml(question.prompt)}</div>
     ${diagramPromptHtml}
+    ${signalPromptHtml}
     ${detailValue ? `
     <div class="sq-scenario-block sq-scenario-block--quiz-detail">
       <div class="sq-scenario-label">${escapeHtml(question.detailLabel)}</div>

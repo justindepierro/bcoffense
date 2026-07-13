@@ -7514,6 +7514,34 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   text-align: center;
 }
 
+.sq-signal-prompt {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--color-accent) 36%, var(--color-border-light));
+  border-radius: var(--radius-md);
+  background: var(--color-bg-body);
+  box-shadow: var(--shadow-sm);
+}
+
+.sq-signal-prompt video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 260px;
+  background: #000;
+  object-fit: contain;
+}
+
+.sq-signal-prompt figcaption {
+  padding: 0 8px 7px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  text-align: center;
+}
+
 .script-quiz-choices {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -8470,7 +8498,7 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 .player-quiz-source-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-sm);
 }
 
@@ -8496,6 +8524,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .player-quiz-source-card--gameplan {
   --player-quiz-source-accent: var(--color-success);
   border-top: 5px solid var(--color-success);
+}
+
+.player-quiz-source-card--signals {
+  --player-quiz-source-accent: var(--color-accent);
+  border-top: 5px solid var(--color-accent);
 }
 
 .player-quiz-source-icon {

@@ -150,7 +150,7 @@ Phase 5 - Signal games and leaderboards:
 - [x] Document the coach capture standard at upload time: iPhone 1080p HD,
   30 fps, 4-5 seconds, preferably Most Compatible/H.264, with the same 5 second
   and 25 MB Signal limits enforced before upload.
-- [ ] Build a signal-only quiz item source from published signal clips, grouped
+- [x] Build a signal-only quiz item source from published signal clips, grouped
   by `CORE`, `TAGS`, `BLOCKING`, and `MOTIONS`.
 - [ ] Add `100 Second Signal Sprint`: players answer as many signal clips as
   they can in 100 seconds; leaderboard ranks correct answers, then accuracy,
