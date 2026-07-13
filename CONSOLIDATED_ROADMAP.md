@@ -1,6 +1,6 @@
 # BCOffense Active Roadmap
 
-Last updated: 2026-07-12
+Last updated: 2026-07-13
 
 This is the single active work queue for BCOffense. Older roadmap files were
 scanned in July 2026; completed or superseded docs were removed so we do not
@@ -70,20 +70,83 @@ Diagram/media workflow:
 - [ ] Add a small "fit: full / smart crop" control if coaches need to inspect
   edge labels that the cropper considers whitespace.
 
-Signal collection:
+Signal collection roadmap:
 
-- [ ] Create a new Signals tab available to athletes, coaches, and admins.
-- [ ] Store signal records as short clips under 5 seconds with role-safe viewing
-  and coach/admin management.
-- [ ] Model each signal against a component type: formation, form tag, motion,
-  play name, play tag, protection, line call, or custom.
-- [ ] Let a play resolve related signals by its components so one play can show
-  multiple signals.
-- [ ] Add a Playbook detail surface for "Signals for this play."
-- [ ] Add Script integration so athletes can see the signals for the current
-  scripted play or period.
-- [ ] Decide whether signal media reuses the existing R2 clip pipeline or gets a
-  separate `signals/*` manifest for cleaner permissions and retention.
+Core concept: Signals are short component-level clips, not play-level clips. A
+single signal for `motion: Jet` should automatically resolve for every play
+that uses Jet motion. Signal matching must use the canonical compare keys from
+the data-quality work so labels can stay readable while matching remains stable.
+
+Signal categories:
+
+- `CORE`: personnel, formation, play name, base play.
+- `TAGS`: form tag 1/2, play tag 1/2, one-word call.
+- `BLOCKING`: protection, line call, back, under.
+- `MOTIONS`: shift, motion.
+
+Phase 0 - data and media architecture:
+
+- [ ] Define `SIGNAL_COMPONENTS` with category, component type, source playbook
+  fields, label, and canonical compare-key behavior.
+- [ ] Define the stored signal record shape:
+  `id`, `category`, `componentType`, `componentValue`, `compareKey`,
+  `clipKey`, `durationMs`, `visibility`, `createdBy`, `updatedAt`, and
+  optional notes.
+- [ ] Decide the media namespace before implementation. Recommended first pass:
+  reuse the existing remote clip upload path, but store signal media under a
+  separate `signals/{componentType}/{compareKey}` namespace so permissions,
+  retention, and cleanup can diverge later.
+- [ ] Enforce short clips under 5 seconds at upload/attach time, with a clear
+  coach-facing error when clips are too long.
+
+Phase 1 - dedicated Signals tab:
+
+- [ ] Create a top-level Signals tab available to athletes, coaches, and admins.
+- [ ] Render the four category groups: `CORE`, `TAGS`, `BLOCKING`, `MOTIONS`.
+- [ ] Build chips from real playbook vocabulary for each component type, using
+  canonical compare keys to group variants while displaying the chosen readable
+  value.
+- [ ] Let coaches/admins click a chip to open a signal detail panel with upload,
+  preview, replace, delete, notes, and visibility controls.
+- [ ] Let players view only signal clips that are visible/published; no editing
+  controls.
+
+Phase 2 - play resolution:
+
+- [ ] Add a resolver that takes a play and returns matching signal records by
+  component, grouped under `CORE`, `TAGS`, `BLOCKING`, and `MOTIONS`.
+- [ ] Add a Playbook detail surface for "Signals for this play" that shows only
+  components with signal clips attached.
+- [ ] Keep empty states quiet: if no signals exist for a play, the play detail
+  should not feel broken or unfinished.
+
+Phase 3 - Practice Script and Swipe View integration:
+
+- [ ] Add a small `Signals` button to Practice Script play rows/cards when the
+  current play resolves at least one signal.
+- [ ] Add the same signal selector to Script Swipe View / presentation-style
+  study views so athletes can open signals while studying the current play.
+- [ ] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and
+  `MOTIONS`; tapping a chip plays the very short clip.
+- [ ] Keep the main play view clean. Signals should open in a compact selector,
+  drawer, or lightweight modal rather than occupying permanent space.
+
+Phase 4 - player study extensions:
+
+- [ ] Add signal availability to player-facing play detail and current-practice
+  study surfaces.
+- [ ] Add future quiz hooks so players can be asked to identify the signal for a
+  motion, tag, formation, or play name.
+- [ ] Add simple coach/admin coverage reporting: components with signals,
+  components missing signals, and most-used play components without clips.
+
+First build slice:
+
+- [ ] Ship `MOTIONS` first in the new Signals tab because motion signals are
+  easy for athletes to understand, high value in practice, and a clean proof of
+  the component-level model.
+- [ ] Use one component type, one upload/preview path, and one play-resolution
+  entry point before expanding to all categories.
 
 Definition of done:
 
