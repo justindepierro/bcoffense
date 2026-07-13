@@ -46,8 +46,9 @@ Data normalization policy:
   - Wired canonical keys through call sheet duplicate keys, playbook health duplicates, cleanup similarity normalization, wristband highlighting, Script usage, Script integrations, and Game Plan wristband matching.
 - [ ] Add an optional display setting for uppercase call rendering where a coach
   wants a uniform look on print/player views.
-- [ ] Add a bulk "standardize selected field" cleanup action that applies the
+- [x] Add a bulk "standardize selected field" cleanup action that applies the
   most common capitalization/spelling variant after review.
+  - The Playbook cleanup modal now detects canonical variants for the selected field, previews row counts, lets coaches choose the readable standard, and applies after confirmation.
 
 Cleanup intelligence:
 

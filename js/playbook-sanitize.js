@@ -429,6 +429,7 @@ function _renderSanitizeList() {
     _sanitizeHideCompleted ? _sanitizeIsEmpty(play, def.key) : true,
   );
   const missingCount = entries.filter(({ play }) => _sanitizeIsEmpty(play, def.key)).length;
+  const standardizePanel = focusActive ? "" : _renderSanitizeStandardizePanel(def, scopedEntries);
   if (status) {
     if (focusActive) {
       status.textContent = `${scopedEntries.length} focused ${scopeLabel} for ${def.label}`;
@@ -442,11 +443,13 @@ function _renderSanitizeList() {
   if (missingPlays.length === 0) {
     body.innerHTML = `
       ${focusActive ? _renderSanitizeFocusPanel(def, scopedEntries) : ""}
+      ${standardizePanel}
       <div class="pb-sanitize-empty">
         <div class="pb-sanitize-empty-icon">🎉</div>
         <div class="pb-sanitize-empty-title">${focusActive ? "No matching variants found." : `All plays have ${escapeHtml(def.label)} filled in.`}</div>
         <div class="pb-sanitize-empty-sub">${focusActive ? "The health issue may already be cleaned up." : "Pick another field above to keep going."}</div>
       </div>`;
+    _bindSanitizeStandardizeHandlers(body);
     return;
   }
 
@@ -514,9 +517,187 @@ function _renderSanitizeList() {
       </div>`;
   }).join("");
 
-  body.innerHTML = sharedDatalistHtml + (focusActive ? _renderSanitizeFocusPanel(def, scopedEntries) : "") + rowsHtml;
+  body.innerHTML =
+    sharedDatalistHtml +
+    (focusActive ? _renderSanitizeFocusPanel(def, scopedEntries) : "") +
+    standardizePanel +
+    rowsHtml;
+  _bindSanitizeStandardizeHandlers(body);
   _bindSanitizeFocusHandlers();
   _bindSanitizeRowHandlers(body);
+}
+
+function _sanitizeStandardizeCompare(value) {
+  if (typeof normalizePlayCompareValue === "function") {
+    return normalizePlayCompareValue(value);
+  }
+  return _sanitizeComparableValue(value).compact;
+}
+
+function _sanitizeCanStandardizeField(def) {
+  return Boolean(def && def.type !== "boolean" && (def.type !== "select" || def.canAddNew));
+}
+
+function _sanitizeStandardizeGroups(def, entries) {
+  if (!_sanitizeCanStandardizeField(def)) return [];
+  const groups = new Map();
+  entries.forEach((entry) => {
+    const value = _sanitizeDisplayValue(entry.play?.[def.key]);
+    if (!value) return;
+    const compareKey = _sanitizeStandardizeCompare(value);
+    if (!compareKey) return;
+    if (!groups.has(compareKey)) {
+      groups.set(compareKey, {
+        compareKey,
+        total: 0,
+        variants: new Map(),
+      });
+    }
+    const group = groups.get(compareKey);
+    group.total += 1;
+    if (!group.variants.has(value)) {
+      group.variants.set(value, { value, count: 0, items: [] });
+    }
+    const variant = group.variants.get(value);
+    variant.count += 1;
+    variant.items.push(entry);
+  });
+
+  return Array.from(groups.values())
+    .map((group) => {
+      const variants = Array.from(group.variants.values())
+        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+      const target = variants[0]?.value || "";
+      const changeCount = variants
+        .filter((variant) => variant.value !== target)
+        .reduce((sum, variant) => sum + variant.count, 0);
+      return { ...group, variants, target, changeCount };
+    })
+    .filter((group) => group.variants.length > 1 && group.changeCount > 0)
+    .sort((a, b) => b.changeCount - a.changeCount || b.total - a.total || a.target.localeCompare(b.target));
+}
+
+function _sanitizeStandardizeTargetFor(index) {
+  const targetEl = document.getElementById(`pbSanitizeStandardizeTarget-${index}`);
+  return _sanitizeDisplayValue(targetEl?.value || "");
+}
+
+function _sanitizeStandardizeChangeCount(group, target) {
+  return group.variants
+    .filter((variant) => variant.value !== target)
+    .reduce((sum, variant) => sum + variant.count, 0);
+}
+
+function _renderSanitizeStandardizePanel(def, entries) {
+  const groups = _sanitizeStandardizeGroups(def, entries).slice(0, 5);
+  if (!groups.length) return "";
+  const rows = groups.map((group, index) => {
+    const target = group.target;
+    const changeCount = _sanitizeStandardizeChangeCount(group, target);
+    const variantChips = group.variants
+      .map((variant) =>
+        `<span class="pb-sanitize-standardize-chip"><strong>${escapeHtml(variant.value)}</strong><em>${variant.count}</em></span>`
+      )
+      .join("");
+    const options = group.variants
+      .map((variant) => `<option value="${escapeHtml(variant.value)}" ${variant.value === target ? "selected" : ""}>${escapeHtml(variant.value)} (${variant.count})</option>`)
+      .join("");
+    return `
+      <div class="pb-sanitize-standardize-row" data-standardize-index="${index}">
+        <div class="pb-sanitize-standardize-main">
+          <strong>${escapeHtml(target)}</strong>
+          <span>${group.variants.length} variants · ${group.total} rows</span>
+          <div class="pb-sanitize-standardize-values">${variantChips}</div>
+        </div>
+        <div class="pb-sanitize-standardize-action">
+          <label for="pbSanitizeStandardizeTarget-${index}">Standard</label>
+          <select id="pbSanitizeStandardizeTarget-${index}" data-standardize-target="${index}">
+            ${options}
+          </select>
+          <span id="pbSanitizeStandardizePreview-${index}">${changeCount} row${changeCount === 1 ? "" : "s"} will change.</span>
+          <button type="button" class="btn btn-sm btn-primary"
+            data-action="applySanitizeStandardizeGroup" data-arg="${index}" ${changeCount ? "" : "disabled"}>Apply</button>
+        </div>
+      </div>`;
+  }).join("");
+  return `
+    <div class="pb-sanitize-standardize-panel">
+      <div class="pb-sanitize-standardize-head">
+        <div>
+          <strong>Standardize ${escapeHtml(def.label)}</strong>
+          <span>Review canonical matches before applying the most common readable value.</span>
+        </div>
+      </div>
+      ${rows}
+    </div>`;
+}
+
+function _bindSanitizeStandardizeHandlers(scope) {
+  scope.querySelectorAll("[data-standardize-target]").forEach((targetEl) => {
+    targetEl.addEventListener("change", () => {
+      const index = parseInt(targetEl.dataset.standardizeTarget, 10);
+      if (!Number.isInteger(index)) return;
+      const def = _sanitizeFieldDef(_sanitizeFieldKey);
+      const groups = _sanitizeStandardizeGroups(def, _sanitizeSourceEntries());
+      const group = groups[index];
+      if (!group) return;
+      const target = _sanitizeDisplayValue(targetEl.value || "");
+      const changeCount = _sanitizeStandardizeChangeCount(group, target);
+      const preview = document.getElementById(`pbSanitizeStandardizePreview-${index}`);
+      if (preview) {
+        preview.textContent = `${changeCount} row${changeCount === 1 ? "" : "s"} will change.`;
+      }
+      const row = targetEl.closest(".pb-sanitize-standardize-row");
+      const button = row?.querySelector('[data-action="applySanitizeStandardizeGroup"]');
+      if (button) button.disabled = changeCount === 0;
+    });
+  });
+}
+
+async function applySanitizeStandardizeGroup(indexStr) {
+  const index = parseInt(indexStr, 10);
+  if (!Number.isInteger(index)) return;
+  const def = _sanitizeFieldDef(_sanitizeFieldKey);
+  const entries = _sanitizeSourceEntries();
+  const groups = _sanitizeStandardizeGroups(def, entries);
+  const group = groups[index];
+  if (!group) return;
+  const target = _sanitizeStandardizeTargetFor(index) || group.target;
+  if (!target) return;
+  const changes = entries.filter(({ play }) => {
+    const value = _sanitizeDisplayValue(play?.[def.key]);
+    return value && _sanitizeStandardizeCompare(value) === group.compareKey && value !== target;
+  });
+  if (!changes.length) {
+    showToast("Nothing to standardize", { duration: 1800, type: "info" });
+    return;
+  }
+  const variants = group.variants
+    .filter((variant) => variant.value !== target)
+    .map((variant) => `${variant.value} (${variant.count})`)
+    .join(", ");
+  const ok = await showConfirm(
+    `Update ${changes.length} ${changes.length === 1 ? "row" : "rows"} so ${escapeHtml(def.label)} becomes <strong>${escapeHtml(target)}</strong>?<br><br><small>Changing: ${escapeHtml(variants)}</small>`,
+    {
+      title: "Standardize Field",
+      icon: "🧹",
+      confirmText: "Apply Standard",
+    },
+  );
+  if (!ok) return;
+  changes.forEach(({ play }) => {
+    play[def.key] = target;
+  });
+  _sanitizeInvalidateVocab();
+  storageManager.setPlaybook(plays);
+  if (typeof invalidateFilterCache === "function") invalidateFilterCache();
+  if (typeof filterPlays === "function") filterPlays();
+  showToast(`Standardized ${changes.length} ${changes.length === 1 ? "row" : "rows"}`, {
+    duration: 2200,
+    type: "success",
+  });
+  _renderSanitizePicker();
+  _renderSanitizeList();
 }
 
 function _sanitizeFocusCounts(def, entries) {

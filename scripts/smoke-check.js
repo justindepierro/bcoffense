@@ -772,6 +772,7 @@ function checkPlayCompareKeyContracts() {
   const callSheet = read("js/callsheet.js");
   const playbookAnalytics = read("js/playbook-analytics.js");
   const playbookSanitize = read("js/playbook-sanitize.js");
+  const playbookCss = read("css/playbook.css");
   const playbookFilters = read("js/playbook-filters.js");
   const scriptStorage = read("js/script-storage.js");
   const scriptIntegrations = read("js/script-integrations.js");
@@ -823,6 +824,17 @@ function checkPlayCompareKeyContracts() {
     !/getPlayCompareKey\(play, "core"\)/.test(gameplan)
   ) {
     fail("canonical compare keys are not wired through duplicate/matching surfaces");
+  }
+  if (
+    !/function _sanitizeStandardizeGroups\(def, entries\)[\s\S]*_sanitizeStandardizeCompare\(value\)/.test(playbookSanitize) ||
+    !/variants\.length > 1 && group\.changeCount > 0/.test(playbookSanitize) ||
+    !/function _renderSanitizeStandardizePanel\(def, entries\)[\s\S]*Standardize \$\{escapeHtml\(def\.label\)\}/.test(playbookSanitize) ||
+    !/data-action="applySanitizeStandardizeGroup"/.test(playbookSanitize) ||
+    !/async function applySanitizeStandardizeGroup\(indexStr\)[\s\S]*showConfirm\([\s\S]*Apply Standard[\s\S]*storageManager\.setPlaybook\(plays\)/.test(playbookSanitize) ||
+    !/\.pb-sanitize-standardize-panel/.test(playbookCss) ||
+    !/\.pb-sanitize-standardize-row[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(230px,\s*0\.62fr\)/.test(playbookCss)
+  ) {
+    fail("playbook cleanup field standardization is incomplete");
   }
 
   console.log("play compare key contracts ok");

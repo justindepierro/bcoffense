@@ -3727,6 +3727,90 @@ body[data-auth-role="player"] .pb-card .pb-present-btn {
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
 }
+.pb-sanitize-standardize-panel {
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+.pb-sanitize-standardize-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+.pb-sanitize-standardize-head strong,
+.pb-sanitize-standardize-main strong {
+  display: block;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+.pb-sanitize-standardize-head span,
+.pb-sanitize-standardize-main span,
+.pb-sanitize-standardize-action span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+.pb-sanitize-standardize-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.62fr);
+  gap: var(--space-sm);
+  align-items: start;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+.pb-sanitize-standardize-main {
+  min-width: 0;
+}
+.pb-sanitize-standardize-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+.pb-sanitize-standardize-chip {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: var(--space-xs);
+  padding: 3px var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-blue-tint);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+}
+.pb-sanitize-standardize-chip strong {
+  overflow-wrap: anywhere;
+}
+.pb-sanitize-standardize-chip em {
+  color: var(--color-text-muted);
+  font-style: normal;
+}
+.pb-sanitize-standardize-action {
+  display: grid;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+.pb-sanitize-standardize-action label {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+.pb-sanitize-standardize-action select {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+}
 .pb-sanitize-focus-head,
 .pb-sanitize-merge-preview {
   display: flex;
@@ -3867,6 +3951,10 @@ body[data-auth-role="player"] .pb-card .pb-present-btn {
 }
 
 @media (max-width: 600px) {
+  .pb-sanitize-standardize-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .pb-sanitize-row {
     flex-direction: column;
     align-items: stretch;
