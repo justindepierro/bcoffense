@@ -3703,9 +3703,20 @@ function checkSignalPlayIntegrationContracts() {
     !/typeof filteredPlays !== "undefined" && Array\.isArray\(filteredPlays\)/.test(signals) ||
     !/function openScriptSignalSelector\(idx\)/.test(signals) ||
     !/function openSignalClip\(recordId\)/.test(signals) ||
-    !/function closeSignalSelector\(\)/.test(signals)
+    !/function closeSignalSelector\(\)/.test(signals) ||
+    !/function _sigBuildCoverageReport\(summariesByComponent\)/.test(signals) ||
+    !/function _sigRenderCoverageReport\(summariesByComponent\)/.test(signals)
   ) {
     fail("signal play selector API is incomplete");
+  }
+
+  if (
+    !/if \(!_sigCanManage\(\)\) return "";/.test(signals) ||
+    !/topMissing: missing[\s\S]*\.slice\(0, 8\)/.test(signals) ||
+    !/Most-used missing signals/.test(signals) ||
+    !/_sigRenderCoverageReport\(summariesByComponent\)/.test(signals)
+  ) {
+    fail("signal coverage reporting is incomplete");
   }
 
   if (
@@ -3750,6 +3761,8 @@ function checkSignalPlayIntegrationContracts() {
     !/\.signals-play-chip/.test(signalsCss) ||
     !/\.signals-play-video/.test(signalsCss) ||
     !/\.pb-signal-badge/.test(signalsCss) ||
+    !/\.signals-coverage/.test(signalsCss) ||
+    !/\.signals-coverage-missing/.test(signalsCss) ||
     !/z-index:\s*calc\(var\(--z-skip-link\) \+ 2\)/.test(signalsCss) ||
     !/\.pp-signals-btn/.test(presentationCss)
   ) {
@@ -3760,7 +3773,8 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Add a Playbook detail surface for "Signals for this play"/.test(roadmap) ||
     !/- \[x\] Add a small `Signals` button to Practice Script play rows\/cards/.test(roadmap) ||
     !/- \[x\] Add the same signal selector to Script Swipe View \/ presentation-style/.test(roadmap) ||
-    !/- \[x\] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and/.test(roadmap)
+    !/- \[x\] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and/.test(roadmap) ||
+    !/- \[x\] Add simple coach\/admin coverage reporting: components with signals,/.test(roadmap)
   ) {
     fail("signals roadmap checklist is not updated for the play selector slice");
   }

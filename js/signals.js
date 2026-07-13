@@ -201,6 +201,102 @@ function _sigAllVisibleSummaries() {
   return all;
 }
 
+function _sigHasPublishedClip(summary) {
+  const record = summary?.record;
+  return Boolean(record && record.visibility === "published" && Number(record.clipCount || 0) > 0);
+}
+
+function _sigBuildCoverageReport(summariesByComponent) {
+  const all = [];
+  SIGNAL_COMPONENTS.forEach((component) => {
+    (summariesByComponent.get(component.componentType) || []).forEach((summary) => {
+      all.push({
+        ...summary,
+        componentLabel: summary.componentLabel || component.label,
+        category: summary.category || component.category,
+      });
+    });
+  });
+  const covered = all.filter(_sigHasPublishedClip);
+  const missing = all.filter((summary) => !_sigHasPublishedClip(summary));
+  const drafts = all.filter((summary) => summary.record?.visibility === "draft");
+  const categories = SIGNAL_CATEGORIES.map((category) => {
+    const items = all.filter((summary) => summary.category === category.id);
+    const coveredItems = items.filter(_sigHasPublishedClip);
+    return {
+      ...category,
+      total: items.length,
+      covered: coveredItems.length,
+      missing: Math.max(0, items.length - coveredItems.length),
+    };
+  });
+  return {
+    total: all.length,
+    covered: covered.length,
+    missing: missing.length,
+    drafts: drafts.length,
+    categories,
+    topMissing: missing
+      .sort((a, b) => b.count - a.count || a.displayValue.localeCompare(b.displayValue))
+      .slice(0, 8),
+  };
+}
+
+function _sigRenderCoverageReport(summariesByComponent) {
+  if (!_sigCanManage()) return "";
+  const report = _sigBuildCoverageReport(summariesByComponent);
+  const pct = report.total ? Math.round((report.covered / report.total) * 100) : 0;
+  const categoryRows = report.categories
+    .map((category) => {
+      const categoryPct = category.total
+        ? Math.round((category.covered / category.total) * 100)
+        : 0;
+      return `
+        <div class="signals-coverage-row">
+          <span>${escapeHtml(category.label)}</span>
+          <strong>${categoryPct}%</strong>
+          <small>${category.covered}/${category.total} covered</small>
+        </div>`;
+    })
+    .join("");
+  const missingRows = report.topMissing
+    .map((summary) => `
+      <button type="button" class="signals-coverage-missing"
+        data-action="openSignalComponent"
+        data-arg="${escapeAttr(`${summary.componentType}|${summary.compareKey}`)}">
+        <span>
+          <strong>${escapeHtml(summary.displayValue)}</strong>
+          <small>${escapeHtml(summary.category)} / ${escapeHtml(summary.componentLabel)}</small>
+        </span>
+        <em>${summary.count} play${summary.count === 1 ? "" : "s"}</em>
+      </button>`)
+    .join("");
+
+  return `
+    <section class="signals-coverage" aria-label="Signal coverage report">
+      <div class="signals-coverage-head">
+        <div>
+          <p class="signals-eyebrow">Coverage Report</p>
+          <h2>${pct}% signal coverage</h2>
+        </div>
+        <div class="signals-coverage-stats">
+          <span><strong>${report.covered}</strong> covered</span>
+          <span><strong>${report.missing}</strong> missing</span>
+          <span><strong>${report.drafts}</strong> drafts</span>
+        </div>
+      </div>
+      <div class="signals-coverage-grid">
+        <div class="signals-coverage-categories">${categoryRows}</div>
+        <div class="signals-coverage-priority">
+          <h3>Most-used missing signals</h3>
+          <div class="signals-coverage-missing-list">
+            ${missingRows || '<p class="signals-empty-line">Every playbook component has a published signal clip.</p>'}
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
 function _sigRenderStats(visibleSummaries) {
   const records = _sigLoadRecords();
   const published = records.filter((record) => record.visibility === "published" && record.clipCount > 0).length;
@@ -400,6 +496,7 @@ function renderSignals() {
         </div>
         <div class="signals-stats">${_sigRenderStats(visibleSummaries)}</div>
       </header>
+      ${_sigRenderCoverageReport(summariesByComponent)}
       <div class="signals-layout">
         <main class="signals-category-grid" aria-label="Signal component categories">
           ${SIGNAL_CATEGORIES.map((category) => _sigRenderCategory(category, summariesByComponent)).join("")}
