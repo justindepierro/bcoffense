@@ -399,7 +399,8 @@ Work left:
 - [x] Audit intentional `window.X =` exports and document the real public globals.
   - Added a smoke-checked `window-export-manifest` in `AGENTS.md` covering all direct `window.X =` assignments in `js/*.js`.
   - New exports now require explicit documentation instead of silently expanding the browser-global surface.
-- [ ] Establish helper naming conventions by module prefix.
+- [x] Establish helper naming conventions by module prefix.
+  - Added a smoke-checked `module-prefix-manifest` to `AGENTS.md` covering JS public actions, module-private helpers, shared utility exceptions, and CSS module prefixes.
 
 Definition of done:
 

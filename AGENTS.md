@@ -858,11 +858,29 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ### Naming Conventions
 
-- **Module prefix:** Call sheet uses `cs-*`, constraints panel uses `cr-*`, wristband uses `wb-*`
+- **JS public actions:** Delegated handlers and public module functions keep readable verb names (`renderScript`, `saveCallSheetTemplate`, `openGamePlanPrintModal`).
+- **JS private helpers:** Module-private helpers use a leading underscore plus the owning module prefix. Avoid new generic helpers such as `renderRow`, `saveTemplate`, `updateState`, or `openModal` in split files.
+- **Shared utilities:** Unprefixed helpers belong only in `utils.js` or `dom-helpers.js` when they are truly cross-module.
+- **CSS module prefix:** Use the same module prefix in class names (`cs-cell-format-dot`, `cr-bucket-row`, `wb-card-tab`).
 - **BEM-lite:** Mostly flat class names with dashes (`cs-cell-format-dot`, `cr-bucket-row`)
 - **State classes:** `active`, `open`, `visible`, `highlighted`, `collapsed`
 - **Status classes:** `cr-status-ok`, `cr-status-warn`, `cr-status-error`, `cr-status-empty`
 - **Button variants:** `.btn`, `.btn-sm`, `.btn-primary`, `.btn-danger`, `.btn-warning`, `.btn-success`
+
+```module-prefix-manifest
+app-shell:_shell
+dashboard:_dash
+page-actions:_pa
+playbook:pb,_pb
+script:script,_script
+player-quiz:quiz,playerQuiz,_quiz,_playerQuiz
+call-sheet:cs,_cs
+constraints:cr,_cr
+game-plan:gp,_gp
+tendencies:td,_td
+wristband:wb,_wb
+storage:storage
+```
 
 ---
 

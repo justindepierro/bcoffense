@@ -3385,6 +3385,67 @@ function checkWindowExportManifest() {
   console.log(`window export manifest ok (${actual.length} exports)`);
 }
 
+function checkModulePrefixManifest() {
+  const guide = read("AGENTS.md");
+  const manifest = guide.match(/```module-prefix-manifest\n([\s\S]*?)```/);
+  if (!manifest) {
+    fail("AGENTS.md is missing the module-prefix-manifest block");
+    return;
+  }
+
+  const entries = new Map(
+    manifest[1]
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [moduleName, prefixes = ""] = line.split(":");
+        return [
+          moduleName,
+          prefixes
+            .split(",")
+            .map((prefix) => prefix.trim())
+            .filter(Boolean),
+        ];
+      }),
+  );
+  const required = new Map([
+    ["app-shell", ["_shell"]],
+    ["dashboard", ["_dash"]],
+    ["page-actions", ["_pa"]],
+    ["playbook", ["pb", "_pb"]],
+    ["script", ["script", "_script"]],
+    ["player-quiz", ["quiz", "playerQuiz", "_quiz", "_playerQuiz"]],
+    ["call-sheet", ["cs", "_cs"]],
+    ["constraints", ["cr", "_cr"]],
+    ["game-plan", ["gp", "_gp"]],
+    ["tendencies", ["td", "_td"]],
+    ["wristband", ["wb", "_wb"]],
+    ["storage", ["storage"]],
+  ]);
+  const missing = [];
+
+  required.forEach((prefixes, moduleName) => {
+    const documented = entries.get(moduleName) || [];
+    prefixes.forEach((prefix) => {
+      if (!documented.includes(prefix)) missing.push(`${moduleName}:${prefix}`);
+    });
+  });
+
+  [
+    "Module-private helpers use a leading underscore plus the owning module prefix",
+    "Avoid new generic helpers such as `renderRow`, `saveTemplate`, `updateState`, or `openModal`",
+    "Unprefixed helpers belong only in `utils.js` or `dom-helpers.js`",
+  ].forEach((phrase) => {
+    if (!guide.includes(phrase)) missing.push(`guidance:${phrase}`);
+  });
+
+  if (missing.length) {
+    fail(`module prefix manifest drifted: ${missing.join(", ")}`);
+  }
+  console.log(`module prefix manifest ok (${required.size} modules)`);
+}
+
 function checkWristbandConstantUsage() {
   const files = [
     ...walk("js").filter((file) => /^js\/wristband.*\.js$/.test(file)),
@@ -3675,6 +3736,7 @@ checkScrollOwnershipContract();
 checkTopLevelSymbolOwnership();
 checkSplitFileOwnershipClaims();
 checkWindowExportManifest();
+checkModulePrefixManifest();
 checkWristbandConstantUsage();
 checkScriptPacketPrintContracts();
 checkScriptSelectionRenderContracts();
