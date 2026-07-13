@@ -41,14 +41,6 @@ const _PR_LEGACY_TYPE_MAP = {
   live: "live", game: "live",
 };
 
-const PLAY_READINESS_SAMPLE_SEEDS = [
-  { play: "Power", tier: "core", scores: [4, 5, 4, 4, 5], types: ["scout", "live", "scout", "scout", "live"] },
-  { play: "Counter", tier: "installed", scores: [3, 4, 4], types: ["scout", "scout", "live"] },
-  { play: "Inside Zone", tier: "core", scores: [4, 4, 5, 4], types: ["live", "scout", "live", "scout"] },
-  { play: "Play Action Shot", tier: "installed", scores: [3, 4], types: ["air", "scout"] },
-  { play: "Screen", tier: "installed", scores: [2, 3, 4], types: ["scout", "scout", "live"] },
-];
-
 let playReadinessHistoryContext = null;
 
 function isPlayReadinessCoachRole() {
@@ -82,11 +74,6 @@ function normalizePlayReadinessInstallStatus(value) {
   return "installed";
 }
 
-// Kept for backward compat — complexity no longer used in new records
-function normalizePlayReadinessComplexity(value) {
-  return ["Low", "Medium", "High"].includes(value) ? value : "Medium";
-}
-
 function inferPlayReadinessInstallStatus(play) {
   if (!play) return "installed";
   // Tags/variations of a base play
@@ -95,15 +82,6 @@ function inferPlayReadinessInstallStatus(play) {
   const tempo = String(play?.tempo || "").toLowerCase();
   if (tempo.includes("two") || tempo.includes("openers")) return "core";
   return "installed";
-}
-
-// Kept for migration compat only
-function inferPlayReadinessComplexity(play) {
-  const text = [play?.motion, play?.shift, play?.protection, play?.play]
-    .join(" ").toLowerCase();
-  if (/trick|screen|shot|rpo|option/.test(text)) return "High";
-  if (/tag|counter|pull|play action|pa /.test(text)) return "Medium";
-  return "Low";
 }
 
 function getPlayReadinessFamily(play) {
@@ -1283,56 +1261,6 @@ function showPlayReadinessPlaybookHistory(index) {
 
 function showPlayReadinessPresentationHistory() {
   showPlayReadinessHistoryForPlay(getPlayReadinessCurrentPresentationPlay());
-}
-
-function findPlayReadinessSeedPlay(seed) {
-  const all = [...(Array.isArray(script) ? script.filter((item) => item && !item.isSeparator) : []), ...(Array.isArray(plays) ? plays : [])];
-  const needle = seed.play.toLowerCase();
-  return all.find((play) => String(play.play || play.basePlay || "").toLowerCase().includes(needle));
-}
-
-function seedPlayReadinessSampleData() {
-  if (!isPlayReadinessCoachRole()) return;
-  const store = getPlayReadinessStore();
-  PLAY_READINESS_SAMPLE_SEEDS.forEach((seed, seedIndex) => {
-    const matchPlay = findPlayReadinessSeedPlay(seed);
-    const play = matchPlay || {
-      id: `sample_readiness_${seed.play.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`,
-      play: seed.play,
-      formation: "Sample",
-      personnel: "11",
-      basePlay: seed.play,
-      type: seed.play.includes("Screen") || seed.play.includes("Shot") ? "Pass" : "Run",
-    };
-    const key = getPlayReadinessKey(play);
-    const logs = seed.scores.map((score, i) => {
-      const daysBack = (seedIndex + i) * 3;
-      const date = new Date(Date.now() - daysBack * 86400000).toISOString().slice(0, 10);
-      return {
-        id: createPlayId("seed_log"),
-        date,
-        score,
-        type: seed.types[i] || "scout",
-        notes: i === 0 ? "Sample rep" : "",
-        situation: i % 2 ? "3rd down" : "1st and 10",
-        defense: "Sample look",
-        explosive: score >= 5,
-        turnover: score <= 1,
-        penalty: false,
-        createdAt: new Date().toISOString(),
-      };
-    });
-    store.records[key] = {
-      installStatus: seed.tier,
-      notes: "Sample readiness seed",
-      playSnapshot: getPlayReadinessSnapshot(play),
-      logs,
-      updatedAt: new Date().toISOString(),
-    };
-  });
-  savePlayReadinessStore(store);
-  if (typeof requestRenderScript === "function") requestRenderScript();
-  showToast("Seeded five sample readiness records.", { type: "success", duration: 2600 });
 }
 
 // ── Readiness panel toggle (script inline widget) ──────────────────────────

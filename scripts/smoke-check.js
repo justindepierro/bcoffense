@@ -1426,13 +1426,7 @@ function checkPlayReadinessContracts() {
     !/async function deletePlayReadinessReport\(element\)/.test(readiness) ||
     !/play-readiness-report-score-controls/.test(readiness) ||
     !/function openPlayReadinessPresentationActionModal\(\)/.test(readiness) ||
-    !/function showPlayReadinessHistory\(index\)/.test(readiness) ||
-    !/function seedPlayReadinessSampleData\(\)/.test(readiness) ||
-    !/Power/.test(readiness) ||
-    !/Counter/.test(readiness) ||
-    !/Inside Zone/.test(readiness) ||
-    !/Play Action Shot/.test(readiness) ||
-    !/Screen/.test(readiness)
+    !/function showPlayReadinessHistory\(index\)/.test(readiness)
   ) {
     fail("play readiness coach workflow is incomplete");
   }
@@ -1452,16 +1446,17 @@ function checkPlayReadinessContracts() {
     !/"quickPlayReadinessPlaybookScore"/.test(auth) ||
     !/"quickPlayReadinessPresentationScore"/.test(auth) ||
     !/"updatePlayReadinessReportScore"/.test(auth) ||
-    !/"deletePlayReadinessReport"/.test(auth) ||
-    !/"seedPlayReadinessSampleData"/.test(auth)
+    !/"deletePlayReadinessReport"/.test(auth)
   ) {
     fail("play readiness script integration or coach permissions are incomplete");
   }
   if (
     /type="checkbox"\s+name="(?:explosive|turnover|penalty)"/.test(readiness) ||
-    /data-action="seedPlayReadinessSampleData"/.test(readiness)
+    /data-action="seedPlayReadinessSampleData"/.test(readiness) ||
+    /seedPlayReadinessSampleData|PLAY_READINESS_SAMPLE_SEEDS|normalizePlayReadinessComplexity|inferPlayReadinessComplexity/.test(readiness) ||
+    /\.play-readiness-sweet/.test(css)
   ) {
-    fail("play readiness daily UI still exposes event checkboxes or seed samples");
+    fail("play readiness daily UI still exposes event checkboxes or dead legacy paths");
   }
   if (
     !/\.play-readiness-widget/.test(css) ||

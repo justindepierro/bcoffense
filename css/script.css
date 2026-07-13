@@ -1304,8 +1304,7 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
   background: var(--color-border-light);
 }
 
-.play-readiness-fill,
-.play-readiness-sweet {
+.play-readiness-fill {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -1316,11 +1315,6 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
   z-index: 2;
   width: var(--pr-progress, 0%);
   background: var(--color-primary);
-}
-
-/* Sweet spot no longer rendered — keep rule to suppress any lingering elements */
-.play-readiness-sweet {
-  display: none;
 }
 
 /* Widget progress fill color by tone */

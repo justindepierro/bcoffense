@@ -157,7 +157,6 @@
     "updatePlayReadinessReportScore",
     "deletePlayReadinessReport",
     "closePlayReadinessModal",
-    "seedPlayReadinessSampleData",
     "loadPublishedPlayerScript",
     "presentPublishedPlayerScript",
     "openPlayerCurrentScriptPresentation",
