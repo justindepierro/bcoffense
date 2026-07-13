@@ -389,7 +389,10 @@ Work left:
 - [x] Reduce broad `innerHTML` rebuilds for small Script state changes.
   - Selection-only changes now update checkbox state and `.bulk-selected` row styling directly instead of re-rendering the full Script list on clear/select-all shortcuts.
   - Bulk field edits still use the full render path because they mutate multiple play rows; next optimization should target `renderScriptContent()` row rebuilds.
-- [ ] Choose the next product-value split between `tendencies.js` and `installation.js`.
+- [x] Choose the next product-value split between `tendencies.js` and `installation.js`.
+  - Decision: split `tendencies.js` next, not `installation.js`.
+  - First target: extract a `js/tendencies-intel.js` module for the shared scout-intel engine: `queryTendencies()`, `getTendenciesForCategory()`, `scorePlayForSituation()`, and closely related situation/scoring helpers.
+  - Reason: `installation.js` is already relatively small with render/print extracted; `tendencies.js` still owns cross-module intelligence consumed by Call Sheet, Game Plan, Dashboard, Script shared surfaces, and Tendencies reports.
 - [ ] Verify split-file ownership claims by grepping for the functions each file claims to own.
 - [ ] Audit intentional `window.X =` exports and document the real public globals.
 - [ ] Establish helper naming conventions by module prefix.
