@@ -145,6 +145,29 @@ Phase 4 - player study extensions:
 - [x] Add simple coach/admin coverage reporting: components with signals,
   components missing signals, and most-used play components without clips.
 
+Phase 5 - Signal games and leaderboards:
+
+- [x] Document the coach capture standard at upload time: iPhone 1080p HD,
+  30 fps, 4-5 seconds, preferably Most Compatible/H.264, with the same 5 second
+  and 25 MB Signal limits enforced before upload.
+- [ ] Build a signal-only quiz item source from published signal clips, grouped
+  by `CORE`, `TAGS`, `BLOCKING`, and `MOTIONS`.
+- [ ] Add `100 Second Signal Sprint`: players answer as many signal clips as
+  they can in 100 seconds; leaderboard ranks correct answers, then accuracy,
+  then average answer speed.
+- [ ] Add `6 Seconds of Battle`: the clip plays, then the video turns off and
+  players have 6 seconds to identify the component; leaderboard ranks correct
+  answers under pressure and average reaction time.
+- [ ] Add `Heat Check`: endless signal reps until the player misses; leaderboard
+  ranks best correct streak, with total correct as the tie-breaker.
+- [ ] Add a dedicated Signal Leaderboard with three tabs for the three game
+  modes so these scores do not get buried inside normal play-call quiz totals.
+- [ ] Sync Signal game attempts through the existing leaderboard pipeline with
+  `sourceType: signal` and distinct `quizMode` values, then filter the UI by
+  game mode.
+- [ ] Give coaches controls for eligible categories, minimum published signal
+  count, and whether to include draft/private clips in staff-only testing.
+
 First build slice:
 
 - [x] Ship `MOTIONS` first in the new Signals tab because motion signals are

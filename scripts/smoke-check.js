@@ -4247,6 +4247,10 @@ function checkSignalPlayIntegrationContracts() {
     !/function _sigConfigureLoopVideos\(root = document\)/.test(signals) ||
     !/video\.defaultMuted = true/.test(signals) ||
     !/video\.playsInline = true/.test(signals) ||
+    !/SIGNAL_IPHONE_CAPTURE_HINT/.test(signals) ||
+    !/accept="video\/mp4,video\/quicktime,video\/\*"/.test(signals) ||
+    !/1080p HD at 30 fps/.test(signals) ||
+    !/Keep it under \$\{_sigFormatMegabytes\(SIGNAL_MAX_BYTES\)\}/.test(signals) ||
     !/_sigConfigureLoopVideos\(preview\)/.test(signals) ||
     !/_sigConfigureLoopVideos\(listEl\)/.test(signals) ||
     !/<video controls autoplay loop muted preload="metadata" playsinline/.test(signals) ||
@@ -4263,7 +4267,13 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Signal clips autoplay muted and loop like GIF-style previews/.test(roadmap) ||
     !/- \[x\] Add signal availability to player-facing play detail and current-practice/.test(roadmap) ||
     !/- \[x\] Add future quiz hooks so players can be asked to identify the signal/.test(roadmap) ||
-    !/- \[x\] Add simple coach\/admin coverage reporting: components with signals,/.test(roadmap)
+    !/- \[x\] Add simple coach\/admin coverage reporting: components with signals,/.test(roadmap) ||
+    !/Phase 5 - Signal games and leaderboards:/.test(roadmap) ||
+    !/- \[x\] Document the coach capture standard at upload time: iPhone 1080p HD,/.test(roadmap) ||
+    !/- \[ \] Add `100 Second Signal Sprint`/.test(roadmap) ||
+    !/- \[ \] Add `6 Seconds of Battle`/.test(roadmap) ||
+    !/- \[ \] Add `Heat Check`/.test(roadmap) ||
+    !/- \[ \] Add a dedicated Signal Leaderboard with three tabs/.test(roadmap)
   ) {
     fail("signals roadmap checklist is not updated for the play selector slice");
   }

@@ -24,6 +24,9 @@ const SIGNAL_COMPONENTS = [
 ];
 
 const SIGNAL_MAX_DURATION_SEC = 5;
+const SIGNAL_MAX_BYTES = 25 * 1024 * 1024;
+const SIGNAL_IPHONE_CAPTURE_HINT =
+  "iPhone: 1080p HD at 30 fps, 4-5s, Most Compatible/H.264 works best.";
 
 let _sigSelected = null;
 let _sigLastRenderToken = 0;
@@ -98,6 +101,10 @@ function _sigRecordsMap(records = _sigLoadRecords()) {
 function _sigNormalizeClipList(data) {
   if (Array.isArray(data)) return data;
   return Array.isArray(data?.clips) ? data.clips : [];
+}
+
+function _sigFormatMegabytes(bytes) {
+  return `${(Number(bytes || 0) / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function _sigUpsertRecord(summary, patch = {}) {
@@ -376,12 +383,12 @@ function _sigRenderDetailSkeleton(summary, record) {
   const upload = manage
     ? `
       <div class="signals-upload-row">
-        <input id="signalClipFile" type="file" accept="video/*" class="hidden"
+        <input id="signalClipFile" type="file" accept="video/mp4,video/quicktime,video/*" class="hidden"
           data-onchange="uploadSelectedSignalClip" data-pass="event" />
         <button type="button" class="btn btn-primary" data-action="triggerClick" data-target="signalClipFile">
           Upload Clip
         </button>
-        <span class="signals-upload-hint">Max ${SIGNAL_MAX_DURATION_SEC}s</span>
+        <span class="signals-upload-hint">Max ${SIGNAL_MAX_DURATION_SEC}s, ${_sigFormatMegabytes(SIGNAL_MAX_BYTES)}. ${escapeHtml(SIGNAL_IPHONE_CAPTURE_HINT)}</span>
       </div>
     `
     : "";
@@ -557,6 +564,11 @@ async function uploadSelectedSignalClip(event) {
   try {
     if (!String(file.type || "").toLowerCase().startsWith("video/")) {
       throw new Error("Choose a video file.");
+    }
+    if (file.size > SIGNAL_MAX_BYTES) {
+      throw new Error(
+        `Signal clip is ${_sigFormatMegabytes(file.size)}. Keep it under ${_sigFormatMegabytes(SIGNAL_MAX_BYTES)}; use 1080p HD at 30 fps for 4-5 seconds.`,
+      );
     }
     const duration = await _sigProbeDuration(file);
     if (duration && duration > SIGNAL_MAX_DURATION_SEC) {
