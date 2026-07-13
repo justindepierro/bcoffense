@@ -95,6 +95,11 @@ function _sigRecordsMap(records = _sigLoadRecords()) {
   return map;
 }
 
+function _sigNormalizeClipList(data) {
+  if (Array.isArray(data)) return data;
+  return Array.isArray(data?.clips) ? data.clips : [];
+}
+
 function _sigUpsertRecord(summary, patch = {}) {
   const records = _sigLoadRecords();
   const id = _sigRecordId(summary.componentType, summary.compareKey);
@@ -431,7 +436,7 @@ async function _sigRenderRemoteClips(summary, record, token) {
   try {
     clips =
       window.playClips && typeof window.playClips.listForSig === "function"
-        ? await window.playClips.listForSig(sig)
+        ? _sigNormalizeClipList(await window.playClips.listForSig(sig))
         : [];
   } catch (err) {
     listEl.innerHTML = `<div class="signals-clip-empty">Clip list unavailable.</div>`;
@@ -456,7 +461,7 @@ async function _sigRenderRemoteClips(summary, record, token) {
     ].filter(Boolean).join(" / ");
     return `
       <article class="signals-clip">
-        <video controls preload="metadata" playsinline src="${escapeAttr(clip.url || "")}"></video>
+        <video controls autoplay loop muted preload="metadata" playsinline src="${escapeAttr(clip.url || "")}"></video>
         <div class="signals-clip-meta">
           <strong>${escapeHtml(clip.label || summary.displayValue)}</strong>
           <span>${escapeHtml(meta || "Signal clip")}</span>
@@ -465,6 +470,7 @@ async function _sigRenderRemoteClips(summary, record, token) {
       </article>
     `;
   }).join("");
+  _sigConfigureLoopVideos(listEl);
 }
 
 function renderSignals() {
@@ -739,9 +745,32 @@ function _sigSelectorRecordLabel(record) {
   return String(record?.value || record?.componentValue || record?.compareKey || "Signal").trim();
 }
 
+function _sigConfigureLoopVideos(root = document) {
+  root.querySelectorAll?.(".signals-play-video, .signals-clip video").forEach((video) => {
+    video.controls = true;
+    video.autoplay = true;
+    video.loop = true;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.setAttribute("autoplay", "");
+    video.setAttribute("loop", "");
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("controls", "");
+    const playPromise = typeof video.play === "function" ? video.play() : null;
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => { });
+    }
+  });
+}
+
 function _sigRenderSelectorPreview(content) {
   const preview = document.getElementById("signalsPlayPreview");
-  if (preview) preview.innerHTML = sanitizeHTML(content);
+  if (preview) {
+    preview.innerHTML = sanitizeHTML(content);
+    _sigConfigureLoopVideos(preview);
+  }
 }
 
 function _sigRenderSelectorShell(play, groups, records, sourceLabel) {
@@ -845,7 +874,7 @@ async function openSignalClip(recordId) {
     }
     const data = await window.playClips.listForSig(record.clipKey);
     if (!_sigSelectorState || token !== _sigSelectorState.token) return;
-    const clips = Array.isArray(data?.clips) ? data.clips : [];
+    const clips = _sigNormalizeClipList(data);
     const clip = clips[0];
     if (!clip?.url) {
       _sigRenderSelectorPreview(`
@@ -858,7 +887,7 @@ async function openSignalClip(recordId) {
     const notes = String(record.notes || "").trim();
     _sigRenderSelectorPreview(`
       <div class="signals-play-video-shell">
-        <video class="signals-play-video" src="${escapeHtml(clip.url)}" controls playsinline autoplay></video>
+        <video class="signals-play-video" src="${escapeHtml(clip.url)}" controls autoplay loop muted playsinline></video>
         <div class="signals-play-video-meta">
           <strong>${escapeHtml(_sigSelectorRecordLabel(record))}</strong>
           <span>${escapeHtml(record.label || record.componentType || "Signal")}</span>

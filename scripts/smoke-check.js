@@ -3714,6 +3714,7 @@ function checkSignalPlayIntegrationContracts() {
     !/function openScriptSignalSelector\(idx\)/.test(signals) ||
     !/function openSignalClip\(recordId\)/.test(signals) ||
     !/function closeSignalSelector\(\)/.test(signals) ||
+    !/function _sigNormalizeClipList\(data\)/.test(signals) ||
     !/function _sigBuildCoverageReport\(summariesByComponent\)/.test(signals) ||
     !/function _sigRenderCoverageReport\(summariesByComponent\)/.test(signals)
   ) {
@@ -3793,10 +3794,23 @@ function checkSignalPlayIntegrationContracts() {
   }
 
   if (
+    !/function _sigConfigureLoopVideos\(root = document\)/.test(signals) ||
+    !/video\.defaultMuted = true/.test(signals) ||
+    !/video\.playsInline = true/.test(signals) ||
+    !/_sigConfigureLoopVideos\(preview\)/.test(signals) ||
+    !/_sigConfigureLoopVideos\(listEl\)/.test(signals) ||
+    !/<video controls autoplay loop muted preload="metadata" playsinline/.test(signals) ||
+    !/<video class="signals-play-video"[\s\S]*controls autoplay loop muted playsinline/.test(signals)
+  ) {
+    fail("signal clips are not configured as muted autoplay loops");
+  }
+
+  if (
     !/- \[x\] Add a Playbook detail surface for "Signals for this play"/.test(roadmap) ||
     !/- \[x\] Add a small `Signals` button to Practice Script play rows\/cards/.test(roadmap) ||
     !/- \[x\] Add the same signal selector to Script Swipe View \/ presentation-style/.test(roadmap) ||
     !/- \[x\] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and/.test(roadmap) ||
+    !/- \[x\] Signal clips autoplay muted and loop like GIF-style previews/.test(roadmap) ||
     !/- \[x\] Add signal availability to player-facing play detail and current-practice/.test(roadmap) ||
     !/- \[x\] Add future quiz hooks so players can be asked to identify the signal/.test(roadmap) ||
     !/- \[x\] Add simple coach\/admin coverage reporting: components with signals,/.test(roadmap)

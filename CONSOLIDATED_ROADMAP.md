@@ -128,6 +128,8 @@ Phase 3 - Practice Script and Swipe View integration:
   study views so athletes can open signals while studying the current play.
 - [x] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and
   `MOTIONS`; tapping a chip plays the very short clip.
+- [x] Signal clips autoplay muted and loop like GIF-style previews while keeping
+  video controls available.
 - [x] Keep the main play view clean. Signals should open in a compact selector,
   drawer, or lightweight modal rather than occupying permanent space.
 
