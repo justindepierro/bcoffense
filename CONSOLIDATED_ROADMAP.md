@@ -177,9 +177,9 @@ backup utility.
 - [x] Suppress Cloud autosave during boot, restore, and startup normalization so
   playbook ID backfills or restored state do not look like coach-initiated
   uploads.
-- [ ] Replace the backup-style modal copy with a clearer "Team Workspace Sync"
+- [x] Replace the backup-style modal copy with a clearer "Team Workspace Sync"
   flow that separates Push, Pull, and Last Updated state.
-- [ ] Show a post-pull summary on Dashboard with counts for playbook, scripts,
+- [x] Show a post-pull summary on Dashboard with counts for playbook, scripts,
   call sheets, wristbands, game plans, diagrams, clips, and player data.
 - [ ] Add stale/local-conflict warnings before replacing a device that has newer
   local edits.

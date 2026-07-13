@@ -395,6 +395,69 @@ function renderAdminDiagnosticsTile() {
   _dashUpdateServiceWorkerDiagnostics();
 }
 
+function renderTeamWorkspacePullSummary() {
+  const section = document.getElementById("teamWorkspacePullSummary");
+  if (!section) return;
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  if (user?.role === "player") {
+    section.hidden = true;
+    section.innerHTML = "";
+    return;
+  }
+  const summary = typeof getTeamWorkspacePullSummary === "function"
+    ? getTeamWorkspacePullSummary()
+    : null;
+  if (!summary || !summary.counts) {
+    section.hidden = true;
+    section.innerHTML = "";
+    return;
+  }
+
+  const counts = summary.counts || {};
+  const countItems = [
+    ["Playbook", counts.playbook || 0],
+    ["Scripts", counts.scripts || 0],
+    ["Call sheet", counts.callSheets || 0],
+    ["Wristbands", counts.wristbands || 0],
+    ["Game plans", counts.gamePlans || 0],
+    ["Diagrams", counts.diagrams || 0],
+    ["Clips", counts.clips || 0],
+    ["Player data", counts.playerData || 0],
+  ];
+  const dateText = summary.exportDate || summary.updatedAt
+    ? _dashFormatDiagnosticDate(summary.exportDate || summary.updatedAt)
+    : "Not recorded";
+  const pulledText = summary.pulledAt ? _dashFormatDiagnosticDate(summary.pulledAt) : "";
+  const sizeText = summary.size && storageManager?.formatBytes
+    ? storageManager.formatBytes(summary.size)
+    : "";
+
+  section.hidden = false;
+  section.innerHTML = `
+    <div class="team-workspace-summary-card">
+      <div class="team-workspace-summary-head">
+        <div>
+          <span>Team Workspace Sync</span>
+          <h3>Workspace pulled from cloud</h3>
+          <p>${escapeHtml(dateText)}${pulledText ? ` • pulled ${escapeHtml(pulledText)}` : ""}${sizeText ? ` • ${escapeHtml(sizeText)}` : ""}</p>
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary" data-action="dismissTeamWorkspacePullSummary">
+          Dismiss
+        </button>
+      </div>
+      <div class="team-workspace-summary-grid">
+        ${countItems.map(([label, count]) => `
+          <div class="team-workspace-summary-item">
+            <strong>${escapeHtml(String(count))}</strong>
+            <span>${escapeHtml(label)}</span>
+          </div>
+        `).join("")}
+      </div>
+      ${summary.imageWarning ? `<p class="team-workspace-summary-warning">${escapeHtml(summary.imageWarning)}</p>` : ""}
+    </div>
+  `;
+}
+
 async function _dashUpdateServiceWorkerDiagnostics() {
   const section = document.getElementById("dashDiagnosticsSection");
   if (!section || section.hidden) return;
@@ -1881,6 +1944,7 @@ function renderDashboard() {
 
     renderMobileCoachNotesCard(gw, opponents);
     renderGameWeekCommandCenter(gw, opponents);
+    renderTeamWorkspacePullSummary();
     renderAdminDiagnosticsTile();
 
     const cardsEl = document.getElementById("dashCards");

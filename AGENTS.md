@@ -337,6 +337,7 @@ window.closePublishMedia
 window.debouncedFilterScriptItems
 window.debouncedOnDashSearchInput
 window.deleteSignalClip
+window.dismissTeamWorkspacePullSummary
 window.deletePlayImage
 window.ensurePlayImageUrl
 window.failWorkspaceSyncJob
@@ -349,6 +350,7 @@ window.getRemotePlayerLeaderboardRows
 window.getScriptVisiblePlayerSummary
 window.getSignalAvailabilityForPlay
 window.getSignalCountForPlay
+window.getTeamWorkspacePullSummary
 window.hasWorkspaceSyncWork
 window.hasPlayImage
 window.initScriptEvents

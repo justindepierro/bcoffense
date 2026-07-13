@@ -129,9 +129,9 @@ function _buildCommandBaseItems() {
   if (typeof openCloudSyncModal === "function" && _canUseMutatingCommand()) {
     items.push({
       kind: "Action",
-      title: "Cloud Sync",
-      subtitle: "Open backup push/pull sync controls",
-      keywords: "cloud sync backup pull push",
+      title: "Team Sync",
+      subtitle: "Open team workspace push/pull controls",
+      keywords: "cloud sync team workspace pull push",
       priority: 33,
       run: () => openCloudSyncModal(),
     });

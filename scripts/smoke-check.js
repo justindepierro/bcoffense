@@ -539,10 +539,14 @@ function checkStorageKeyUsage() {
     !/function formatDiagramSyncSummary\(result\)/.test(cloudSync) ||
     !/function formatDiagramSyncDetails\(result\)/.test(cloudSync) ||
     !/diagramSyncResult = await window\.playImages\.syncToRemote\(_playsRef\)/.test(cloudSync) ||
-    !/Push Everything/.test(cloudSync) ||
-    !/Pull replaces this device/.test(cloudSync)
+    !/Team Workspace Sync/.test(cloudSync) ||
+    !/Push Workspace/.test(cloudSync) ||
+    !/Pull Workspace/.test(cloudSync)
   ) {
     fail("cloud sync push does not wait for and report diagram sync results");
+  }
+  if (/Push Everything/.test(cloudSync) || /Pull replaces this device/.test(cloudSync)) {
+    fail("cloud sync modal still uses backup-style push/pull copy");
   }
   console.log("storage key usage ok");
 }
@@ -3278,9 +3282,13 @@ function checkGracefulLoadingStates() {
 
 function checkWorkspaceSyncContracts() {
   const roadmap = read("WORKSPACE_SYNC_ROADMAP.md");
+  const consolidatedRoadmap = read("CONSOLIDATED_ROADMAP.md");
   const workspaceSync = read("js/workspace-sync.js");
   const shell = read("js/app-shell.js");
   const layout = read("css/layout.css");
+  const dashboardRender = read("js/dashboard-render.js");
+  const dashboardCss = read("css/dashboard.css");
+  const componentsCss = read("css/components.css");
   const playbookCss = read("css/playbook.css");
   const cloudSync = read("js/cloud-sync.js");
   const playImages = read("js/play-images.js");
@@ -3445,6 +3453,42 @@ function checkWorkspaceSyncContracts() {
     !/scriptDirty \|\| wristbandDirty \|\| workspaceSyncPending/.test(appSession)
   ) {
     fail("beforeunload does not protect pending workspace sync work");
+  }
+
+  [
+    "- [x] Replace the backup-style modal copy with a clearer \"Team Workspace Sync\"",
+    "- [x] Show a post-pull summary on Dashboard with counts for playbook, scripts,",
+  ].forEach((token) => {
+    if (!consolidatedRoadmap.includes(token)) {
+      fail(`consolidated roadmap missing team workspace sync completion ${token}`);
+    }
+  });
+
+  if (
+    !/const CLOUD_SYNC_PULL_SUMMARY_KEY = "_bcCloudSyncLastPullSummary"/.test(cloudSync) ||
+    !/function buildTeamWorkspacePullSummary\(remote, opts = \{\}\)/.test(cloudSync) ||
+    !/saveTeamWorkspacePullSummary\(remote, \{ restoredImages, imageWarning \}\)/.test(cloudSync) ||
+    !/window\.getTeamWorkspacePullSummary = getTeamWorkspacePullSummary/.test(cloudSync) ||
+    !/window\.dismissTeamWorkspacePullSummary = dismissTeamWorkspacePullSummary/.test(cloudSync) ||
+    !/Team Workspace Sync/.test(cloudSync) ||
+    !/Push Workspace/.test(cloudSync) ||
+    !/Pull Workspace/.test(cloudSync)
+  ) {
+    fail("team workspace sync modal and pull summary are incomplete");
+  }
+
+  if (
+    !/id="teamWorkspacePullSummary"/.test(html) ||
+    !/function renderTeamWorkspacePullSummary\(\)/.test(dashboardRender) ||
+    !/getTeamWorkspacePullSummary\(\)/.test(dashboardRender) ||
+    !/data-action="dismissTeamWorkspacePullSummary"/.test(dashboardRender) ||
+    !/renderTeamWorkspacePullSummary\(\)/.test(dashboardRender) ||
+    !/\.team-workspace-summary-card/.test(dashboardCss) ||
+    !/\.team-workspace-summary-grid/.test(dashboardCss) ||
+    !/\.cloud-sync-flow-grid/.test(componentsCss) ||
+    !/\.cloud-sync-flow-card/.test(componentsCss)
+  ) {
+    fail("dashboard team workspace pull summary is incomplete");
   }
 
   [
