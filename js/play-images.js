@@ -81,6 +81,7 @@
   const _urlPromiseCache = new Map(); // sig → pending object URL Promise
   const _urlVersions = new Map(); // sig → invalidation counter
   const _knownKeys = new Set();
+  const _remoteManifestCache = new Map();
   let _keysPromise = null;
   let _keysLoaded = false;
   let _hoverPreviewInstalled = false;
@@ -499,6 +500,16 @@
     return _isUniqueIdentityKey(key, sourcePlay, "tag") ? key : "";
   }
 
+  function _remoteIdentityKeysForPlay(play) {
+    return [
+      _remoteIdentityKey(play),
+      _legacyRemoteIdentityKey(play),
+    ]
+      .map(_normalizeSig)
+      .filter(Boolean)
+      .filter((sig, index, list) => list.indexOf(sig) === index);
+  }
+
   async function _remoteErrorMessage(res, fallback) {
     let detail = "";
     try {
@@ -540,13 +551,8 @@
 
   async function _fetchRemoteForPlay(play) {
     if (!_remoteAvailable()) return null;
-    const identityKeys = [
-      _remoteIdentityKey(play),
-      _legacyRemoteIdentityKey(play),
-    ]
-      .map(_normalizeSig)
-      .filter(Boolean);
-    for (const identityKey of [...new Set(identityKeys)]) {
+    const identityKeys = _remoteIdentityKeysForPlay(play);
+    for (const identityKey of identityKeys) {
       try {
         const res = await fetch(
           `/images/file?sig=${encodeURIComponent(identityKey)}`,
@@ -562,6 +568,61 @@
       }
     }
     return null;
+  }
+
+  async function checkRemoteForPlay(play) {
+    if (!_remoteAvailable()) {
+      return { ok: false, status: "offline", published: false, reason: "offline" };
+    }
+    const identityKeys = _remoteIdentityKeysForPlay(play);
+    if (!identityKeys.length) {
+      return { ok: false, status: "unpublished", published: false, reason: "no-stable-key" };
+    }
+    let lastResult = null;
+    for (const identityKey of identityKeys) {
+      const cached = _remoteManifestCache.get(identityKey);
+      if (cached) {
+        if (cached.published) return cached;
+        lastResult = cached;
+        continue;
+      }
+      try {
+        const response = await fetch(`/images/manifest?sig=${encodeURIComponent(identityKey)}`, {
+          credentials: "same-origin",
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) {
+          const status = response.status === 404 ? "unpublished" : "error";
+          const result = {
+            ok: false,
+            status,
+            published: false,
+            sig: identityKey,
+            reason: `http-${response.status}`,
+          };
+          _remoteManifestCache.set(identityKey, result);
+          lastResult = result;
+          if (status === "unpublished") continue;
+          continue;
+        }
+        const data = await response.json().catch(() => null);
+        const result = {
+          ok: Boolean(data?.ok),
+          status: data?.published ? "published" : "unpublished",
+          published: Boolean(data?.published),
+          sig: identityKey,
+          size: Number(data?.size || 0) || 0,
+          contentType: data?.contentType || "",
+          uploadedAt: data?.uploadedAt || "",
+        };
+        _remoteManifestCache.set(identityKey, result);
+        if (result.published) return result;
+        lastResult = result;
+      } catch (_err) {
+        return { ok: false, status: "offline", published: false, sig: identityKey, reason: "network" };
+      }
+    }
+    return lastResult || { ok: true, status: "unpublished", published: false, sig: identityKeys[0] || "" };
   }
 
   async function pushRemote(play, blob) {
@@ -1044,6 +1105,52 @@
     return _fetchRemoteForPlay(play);
   }
 
+  async function ensureDisplayReadinessForPlay(play) {
+    for (const signature of displaySignaturesForPlay(play)) {
+      const url = await ensureUrl(signature);
+      if (url) {
+        return {
+          status: "ready",
+          source: "local",
+          url,
+          message: "Diagram ready",
+        };
+      }
+    }
+    const remote = await checkRemoteForPlay(play);
+    if (remote.status === "offline") {
+      return {
+        status: "offline",
+        source: "remote",
+        url: "",
+        message: "Offline - diagram saved locally only if already loaded on this device.",
+      };
+    }
+    if (!remote.published) {
+      return {
+        status: "unpublished",
+        source: "remote",
+        url: "",
+        message: "Diagram has not been published for players yet.",
+      };
+    }
+    const url = await _fetchRemoteForPlay(play);
+    if (url) {
+      return {
+        status: "ready",
+        source: "remote",
+        url,
+        message: "Diagram ready",
+      };
+    }
+    return {
+      status: "load-error",
+      source: "remote",
+      url: "",
+      message: "Diagram is published but could not be loaded.",
+    };
+  }
+
   function hasForPlay(play) {
     return signaturesForPlay(play).some(has);
   }
@@ -1331,6 +1438,8 @@
     urlForDisplayPlay,
     ensureUrlForPlay,
     ensureDisplayUrlForPlay,
+    ensureDisplayReadinessForPlay,
+    checkRemoteForPlay,
     hasForPlay,
     hasDisplayForPlay,
     storedSignatureForPlay,

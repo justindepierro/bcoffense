@@ -50,12 +50,12 @@ workflow.
 
 ## Phase 3 - Player Diagram Readiness
 
-- [ ] Add a remote diagram manifest/check endpoint so players know published
+- [x] Add a remote diagram manifest/check endpoint so players know published
   status before trying image loads.
-- [ ] Replace premature "ask coach to sync diagrams" copy with distinct states:
+- [x] Replace premature "ask coach to sync diagrams" copy with distinct states:
   checking, unpublished, offline, and load error.
-- [ ] Prefer cached local diagram when available, then remote published diagram.
-- [ ] Make player diagram empty states quiet and professional.
+- [x] Prefer cached local diagram when available, then remote published diagram.
+- [x] Make player diagram empty states quiet and professional.
 
 ## Phase 4 - Architecture Cleanup
 

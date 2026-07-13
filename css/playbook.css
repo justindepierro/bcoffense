@@ -3109,6 +3109,20 @@ body.shell-phone .pb-action-sheet {
     var(--color-bg-light);
 }
 
+.pb-card-media--unpublished {
+  border-color: color-mix(in srgb, var(--color-warning) 40%, var(--color-border-light));
+  background:
+    linear-gradient(135deg, var(--color-warning-light), transparent 62%),
+    var(--color-bg-light);
+}
+
+.pb-card-media--offline {
+  border-color: color-mix(in srgb, var(--color-info) 34%, var(--color-border-light));
+  background:
+    linear-gradient(135deg, var(--color-info-light), transparent 62%),
+    var(--color-bg-light);
+}
+
 .pb-card-play {
   font-weight: 700;
   font-size: var(--font-size-base);

@@ -451,22 +451,19 @@ function _renderPlayerPlaybookCardActions(item) {
 }
 
 function _renderPlayerPlaybookCardMedia(item) {
-  if (!item?.imageSig) {
-    return `
-      <div class="pb-card-media pb-card-media--missing" aria-label="No diagram attached">
-        <span class="pb-card-media__state">Needs diagram</span>
-      </div>`;
-  }
   const playLabel =
     typeof getPlayPresentationPlayLabel === "function"
       ? getPlayPresentationPlayLabel(item.play)
       : item.play?.play || "play";
+  const thumbSig = item?.imageSig
+    ? ` data-pb-thumb-sig="${escapeHtml(item.imageSig)}"`
+    : "";
   return `
     <button type="button" class="pb-card-media pb-card-media--diagram" data-action="openPlaybookPresentation"
-      data-arg="${item.idx}" data-pb-thumb-sig="${escapeHtml(item.imageSig)}"
+      data-arg="${item.idx}" data-pb-thumb-idx="${item.idx}"${thumbSig}
       aria-label="Study diagram for ${escapeHtml(playLabel)}">
       <img alt="Diagram for ${escapeHtml(playLabel)}" loading="lazy" hidden />
-      <span class="pb-card-media__state">Loading diagram</span>
+      <span class="pb-card-media__state">Checking diagram</span>
     </button>`;
 }
 
@@ -490,19 +487,36 @@ function hydratePlayerPlaybookThumbnails(root = document) {
   ) {
     return;
   }
-  root.querySelectorAll("[data-pb-thumb-sig]").forEach((media) => {
+  root.querySelectorAll("[data-pb-thumb-idx], [data-pb-thumb-sig]").forEach((media) => {
     if (media.dataset.pbThumbLoading === "true" || media.dataset.pbThumbLoaded === "true") {
       return;
     }
     const sig = media.dataset.pbThumbSig || "";
+    const playIdx = parseInt(media.dataset.pbThumbIdx || "", 10);
+    const play = Number.isInteger(playIdx) && typeof filteredPlays !== "undefined" && Array.isArray(filteredPlays)
+      ? filteredPlays[playIdx]
+      : null;
     const img = media.querySelector("img");
     const state = media.querySelector(".pb-card-media__state");
-    if (!sig || !img) return;
+    if (!img) return;
+
+    const setState = (status, label) => {
+      media.classList.remove(
+        "pb-card-media--missing",
+        "pb-card-media--error",
+        "pb-card-media--offline",
+        "pb-card-media--unpublished",
+      );
+      if (status === "unpublished") media.classList.add("pb-card-media--unpublished");
+      else if (status === "offline") media.classList.add("pb-card-media--offline");
+      else if (status === "load-error" || status === "error") media.classList.add("pb-card-media--error");
+      else if (status === "missing") media.classList.add("pb-card-media--missing");
+      if (state) state.textContent = label;
+    };
 
     const setUrl = (url) => {
       if (!url || !media.isConnected) {
-        media.classList.add("pb-card-media--error");
-        if (state) state.textContent = "Diagram issue";
+        setState("error", "Diagram issue");
         return;
       }
       img.src = url;
@@ -520,13 +534,32 @@ function hydratePlayerPlaybookThumbnails(root = document) {
     }
 
     media.dataset.pbThumbLoading = "true";
-    window.playImages
-      .ensureUrl(sig)
-      .then(setUrl)
+    const readinessPromise =
+      play && typeof window.playImages.ensureDisplayReadinessForPlay === "function"
+        ? window.playImages.ensureDisplayReadinessForPlay(play)
+        : sig
+          ? window.playImages.ensureUrl(sig).then((url) => ({ status: url ? "ready" : "missing", url }))
+          : Promise.resolve({ status: "missing", url: "" });
+    readinessPromise
+      .then((readiness) => {
+        if (!media.isConnected) return;
+        if (readiness?.url) {
+          setUrl(readiness.url);
+          return;
+        }
+        if (readiness?.status === "unpublished") {
+          setState("unpublished", "Not published");
+        } else if (readiness?.status === "offline") {
+          setState("offline", "Offline");
+        } else if (readiness?.status === "load-error") {
+          setState("load-error", "Diagram issue");
+        } else {
+          setState("missing", "Needs diagram");
+        }
+      })
       .catch(() => {
         if (!media.isConnected) return;
-        media.classList.add("pb-card-media--error");
-        if (state) state.textContent = "Diagram issue";
+        setState("error", "Diagram issue");
       })
       .finally(() => {
         if (media.isConnected) media.dataset.pbThumbLoading = "false";

@@ -1136,7 +1136,8 @@ function checkPlayPresentationContracts() {
   }
   if (
     !/async function _putRemoteImage\(identityKey, blob\)/.test(playImages) ||
-    !/const identityKeys = \[[\s\S]*_remoteIdentityKey\(play\),[\s\S]*_legacyRemoteIdentityKey\(play\),/.test(playImages) ||
+    !/function _remoteIdentityKeysForPlay\(play\)[\s\S]*_remoteIdentityKey\(play\),[\s\S]*_legacyRemoteIdentityKey\(play\),/.test(playImages) ||
+    !/const identityKeys = _remoteIdentityKeysForPlay\(play\)/.test(playImages) ||
     !/_isSourceIdentityKey\(localSig\)/.test(playImages) ||
     !/"X-BC-Auth-Mode": "json"/.test(playImages) ||
     !/credentials: "same-origin"/.test(playImages) ||
@@ -3444,6 +3445,89 @@ function checkWorkspaceSyncContracts() {
   console.log("workspace sync contracts ok");
 }
 
+function checkPlayerDiagramReadinessContracts() {
+  const roadmap = read("WORKSPACE_SYNC_ROADMAP.md");
+  const manifest = read("functions/images/manifest.js");
+  const playImages = read("js/play-images.js");
+  const presentation = read("js/play-presentation.js");
+  const presentationCss = read("css/play-presentation.css");
+  const playbookRender = read("js/playbook-render.js");
+  const playbookCss = read("css/playbook.css");
+
+  [
+    "- [x] Add a remote diagram manifest/check endpoint so players know published",
+    "- [x] Replace premature \"ask coach to sync diagrams\" copy with distinct states:",
+    "- [x] Prefer cached local diagram when available, then remote published diagram.",
+    "- [x] Make player diagram empty states quiet and professional.",
+  ].forEach((token) => {
+    if (!roadmap.includes(token)) {
+      fail(`player diagram readiness roadmap missing ${token}`);
+    }
+  });
+
+  if (
+    !/bucket\.head\(r2Key\(sig\)\)/.test(manifest) ||
+    !/published:\s*false/.test(manifest) ||
+    !/published:\s*true/.test(manifest) ||
+    !/contentType:\s*object\.httpMetadata\?\.contentType/.test(manifest)
+  ) {
+    fail("remote image manifest endpoint is incomplete");
+  }
+
+  if (
+    !/const _remoteManifestCache = new Map\(\)/.test(playImages) ||
+    !/function _remoteIdentityKeysForPlay\(play\)/.test(playImages) ||
+    !/async function checkRemoteForPlay\(play\)/.test(playImages) ||
+    !/\/images\/manifest\?sig=\$\{encodeURIComponent\(identityKey\)\}/.test(playImages) ||
+    !/async function ensureDisplayReadinessForPlay\(play\)/.test(playImages) ||
+    !/for \(const signature of displaySignaturesForPlay\(play\)\)[\s\S]*const remote = await checkRemoteForPlay\(play\)/.test(playImages) ||
+    !/status:\s*"offline"/.test(playImages) ||
+    !/status:\s*"unpublished"/.test(playImages) ||
+    !/status:\s*"load-error"/.test(playImages) ||
+    !/ensureDisplayReadinessForPlay,/.test(playImages) ||
+    !/checkRemoteForPlay,/.test(playImages)
+  ) {
+    fail("play image readiness API is incomplete");
+  }
+
+  if (
+    /Ask your coach to sync diagrams/.test(presentation) ||
+    !/function getPlayPresentationDiagramStatusCopy\(status\)/.test(presentation) ||
+    !/Diagram has not been published for players yet/.test(presentation) ||
+    !/Offline\. This diagram will appear/.test(presentation) ||
+    !/Diagram is published but could not be loaded/.test(presentation) ||
+    !/ensureDisplayReadinessForPlay\(play\)/.test(presentation) ||
+    !/updatePlayPresentationDiagramStatus\(copy\.pill, copy\.label\)/.test(presentation)
+  ) {
+    fail("play presentation diagram readiness states are incomplete or stale");
+  }
+
+  if (
+    !/data-pb-thumb-idx="\$\{item\.idx\}"/.test(playbookRender) ||
+    !/ensureDisplayReadinessForPlay\(play\)/.test(playbookRender) ||
+    !/Not published/.test(playbookRender) ||
+    !/setState\("offline", "Offline"\)/.test(playbookRender) ||
+    !/pb-card-media--unpublished/.test(playbookRender) ||
+    !/pb-card-media--offline/.test(playbookRender)
+  ) {
+    fail("player playbook card diagram readiness states are incomplete");
+  }
+
+  [
+    '[data-status="unpublished"]',
+    '[data-status="offline"]',
+    ".pb-card-media--unpublished",
+    ".pb-card-media--offline",
+  ].forEach((token) => {
+    const source = token.startsWith("[") ? presentationCss : playbookCss;
+    if (!source.includes(token)) {
+      fail(`diagram readiness styling missing ${token}`);
+    }
+  });
+
+  console.log("player diagram readiness contracts ok");
+}
+
 function checkPlayerQuizSettingsContracts() {
   const scriptRender = read("js/script-render.js");
   const scriptCss = read("css/script.css");
@@ -4227,6 +4311,7 @@ checkStartupTabRestoreContracts();
 checkStartupRestoreHarness();
 checkGracefulLoadingStates();
 checkWorkspaceSyncContracts();
+checkPlayerDiagramReadinessContracts();
 checkPlayerQuizSettingsContracts();
 checkScrollOwnershipContract();
 checkTopLevelSymbolOwnership();

@@ -699,6 +699,18 @@ body.play-presentation-open .quick-tools {
   color: var(--color-danger);
 }
 
+.pp-player-status-pill[data-status="unpublished"] {
+  border-color: color-mix(in srgb, var(--color-warning) 38%, var(--color-border-light));
+  background: var(--color-warning-light);
+  color: var(--color-warning-hover);
+}
+
+.pp-player-status-pill[data-status="offline"] {
+  border-color: color-mix(in srgb, var(--color-info) 32%, var(--color-border-light));
+  background: var(--color-info-light);
+  color: var(--color-info-hover);
+}
+
 .pp-player-status-pill.is-checking,
 .pp-player-status-pill[data-status="checking"] {
   border-color: color-mix(in srgb, var(--color-info) 34%, var(--color-border-light));

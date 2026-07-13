@@ -1649,6 +1649,35 @@ function updatePlayPresentationDiagramStatus(status, label) {
   statusEl.textContent = label || "Diagram checking";
 }
 
+function getPlayPresentationDiagramStatusCopy(status) {
+  if (status === "unpublished") {
+    return {
+      message: "Diagram has not been published for players yet.",
+      label: "Diagram unpublished",
+      pill: "unpublished",
+    };
+  }
+  if (status === "offline") {
+    return {
+      message: "Offline. This diagram will appear if it was already loaded on this device.",
+      label: "Offline",
+      pill: "offline",
+    };
+  }
+  if (status === "load-error") {
+    return {
+      message: "Diagram is published but could not be loaded. Reload when your connection is stable.",
+      label: "Diagram issue",
+      pill: "error",
+    };
+  }
+  return {
+    message: "No player diagram is available for this play yet.",
+    label: "Needs diagram",
+    pill: "missing",
+  };
+}
+
 function cleanupPlayPresentationDiagramRenderer() {
   if (playPresentationDiagramResizeObserver) {
     playPresentationDiagramResizeObserver.disconnect();
@@ -1970,28 +1999,32 @@ async function loadPlayPresentationDiagram(play, token) {
   cleanupPlayPresentationDiagramRenderer();
   updatePlayPresentationDiagramStatus("checking", "Diagram checking");
   if (!window.playImages) {
-    setPlayPresentationDiagramMessage(frame, "No play diagram attached. Ask your coach to sync diagrams.");
+    const copy = getPlayPresentationDiagramStatusCopy("missing");
+    setPlayPresentationDiagramMessage(frame, copy.message);
     updatePlayPresentationDiagramStatus("missing", "Needs diagram");
     return;
   }
 
   try {
-    const imageUrl =
-      typeof window.ensurePlayImageUrl === "function"
-        ? await window.ensurePlayImageUrl(play)
-        : null;
+    const readiness =
+      window.playImages && typeof window.playImages.ensureDisplayReadinessForPlay === "function"
+        ? await window.playImages.ensureDisplayReadinessForPlay(play)
+        : {
+          status: "ready",
+          url: typeof window.ensurePlayImageUrl === "function"
+            ? await window.ensurePlayImageUrl(play)
+            : null,
+        };
     if (token !== playPresentationState.imageToken) return;
     const currentFrame = document.getElementById("playPresentationDiagram");
     if (!currentFrame) return;
-    if (!imageUrl) {
-      setPlayPresentationDiagramMessage(
-        currentFrame,
-        "No play diagram attached. Ask your coach to sync diagrams.",
-      );
-      updatePlayPresentationDiagramStatus("missing", "Needs diagram");
+    if (!readiness?.url) {
+      const copy = getPlayPresentationDiagramStatusCopy(readiness?.status || "missing");
+      setPlayPresentationDiagramMessage(currentFrame, copy.message);
+      updatePlayPresentationDiagramStatus(copy.pill, copy.label);
       return;
     }
-    const image = await loadPlayPresentationImage(imageUrl, play);
+    const image = await loadPlayPresentationImage(readiness.url, play);
     if (token !== playPresentationState.imageToken) return;
     try {
       installPlayPresentationDiagramRenderer(
@@ -2010,11 +2043,12 @@ async function loadPlayPresentationDiagram(play, token) {
     console.warn("play presentation image load failed:", err);
     if (token !== playPresentationState.imageToken) return;
     const currentFrame = document.getElementById("playPresentationDiagram");
+    const copy = getPlayPresentationDiagramStatusCopy("load-error");
     setPlayPresentationDiagramMessage(
       currentFrame,
-      "Diagram could not be loaded. Reload or ask your coach to sync diagrams.",
+      copy.message,
     );
-    updatePlayPresentationDiagramStatus("error", "Diagram issue");
+    updatePlayPresentationDiagramStatus(copy.pill, copy.label);
   }
 }
 
