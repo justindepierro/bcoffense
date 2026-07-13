@@ -421,6 +421,8 @@ Current `!important` hotspots from the scan:
 
 Work left:
 
+- [x] Fix Script page action buttons that overflow or look cramped in the workbench, library rail, toolbar, and tools drawer.
+  - Script buttons now wrap within their containers, keep `min-width: 0`, and smoke verifies the key overflow-safe selectors.
 - [ ] Reduce `wristband.css` `!important` count by fixing source order and selectors.
 - [ ] Categorize global `!important` usage as utility override versus specificity war.
 - [ ] Standardize pinned-zone plus scroll-zone layout across Call Sheet, Wristband, Tendencies, and Dashboard.

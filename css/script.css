@@ -5763,9 +5763,18 @@ body[data-active-tab="script"] .script-display-fab {
 
 .script-workbench-primary-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 84px), 1fr));
   min-width: 0;
   width: 100%;
+}
+
+#script .toolbar-surface .script-workbench-toggle-group .script-workbench-pill,
+#script .toolbar-surface .script-workbench-primary-actions .btn {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 #script .script-workbench-primary-actions .btn {
@@ -5950,7 +5959,9 @@ body[data-active-tab="script"] .script-display-fab {
   padding: 3px 8px;
   flex: 1 1 calc(50% - 2px);
   min-width: 0;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 #script .script-play-rail .available-plays-actions .select-all-label {
   font-size: var(--font-size-xs);
@@ -6495,6 +6506,8 @@ body.is-mobile-screen #script .stat-health-btn {
   min-width: 0;
   line-height: 1.15;
   white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 #script .script-toolbar .toolbar-btn-xs {
@@ -6916,8 +6929,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 #script .script-tools-drawer .script-action-cluster .btn,
 #script .script-tools-drawer .more-tools-btn {
   width: 100%;
+  min-width: 0;
   min-height: 38px;
+  max-width: 100%;
+  line-height: 1.15;
   white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 #script .script-tools-drawer .more-tools-wrap {
@@ -6925,7 +6943,19 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 #script .script-tools-drawer .more-tools-menu {
+  min-width: min(220px, 100%);
+  max-width: min(320px, calc(100vw - (var(--space-md) * 2)));
   z-index: var(--z-popover);
+  white-space: normal;
+}
+
+#script .script-tools-drawer .more-tools-menu button {
+  min-width: 0;
+  max-width: 100%;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 #script .script-tools-drawer .wristband-integration-panel,

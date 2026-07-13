@@ -160,16 +160,19 @@ function checkPageStyleContracts() {
   if (
     !/\.script-workbench-controls\s*\{[\s\S]*grid-template-columns:\s*minmax\(220px,\s*1fr\)\s*minmax\(0,\s*1\.15fr\)\s*minmax\(150px,\s*0\.65fr\)/.test(scriptCss) ||
     !/\.script-workbench-controls\s*\{[\s\S]*overflow:\s*clip/.test(scriptCss) ||
-    !/\.script-workbench-primary-actions\s*\{[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(88px,\s*1fr\)\)/.test(scriptCss) ||
-    !/#script \.script-workbench-primary-actions \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(scriptCss)
+    !/\.script-workbench-primary-actions\s*\{[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*84px\),\s*1fr\)\)/.test(scriptCss) ||
+    !/#script \.toolbar-surface \.script-workbench-toggle-group \.script-workbench-pill,[\s\S]*#script \.toolbar-surface \.script-workbench-primary-actions \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(scriptCss) ||
+    !/#script \.script-play-rail \.available-plays-actions \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(scriptCss)
   ) {
     fail("Script workbench action buttons are missing overflow-safe sizing rules");
   }
 
   if (
     !/#script \.script-toolbar\s*\{[\s\S]*grid-template-columns:\s*minmax\(92px,\s*max-content\)\s*minmax\(0,\s*1fr\)\s*minmax\(160px,\s*0\.9fr\)/.test(scriptCss) ||
-    !/#script \.script-toolbar \.btn,[\s\S]*#script \.script-toolbar \.bulk-select-label\s*\{[\s\S]*white-space:\s*normal/.test(scriptCss) ||
+    !/#script \.script-toolbar \.btn,[\s\S]*#script \.script-toolbar \.bulk-select-label\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(scriptCss) ||
     !/#script \.toolbar-sort-select\s*\{[\s\S]*min-width:\s*0[\s\S]*max-width:\s*100%/.test(scriptCss) ||
+    !/#script \.script-tools-drawer \.script-action-cluster \.btn,[\s\S]*#script \.script-tools-drawer \.more-tools-btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(scriptCss) ||
+    !/#script \.script-tools-drawer \.more-tools-menu button\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(scriptCss) ||
     !/@media \(max-width:\s*1180px\)[\s\S]*#script \.script-workbench-controls\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(0,\s*1fr\)[\s\S]*#script \.script-toolbar\s*\{[\s\S]*grid-template-columns:\s*1fr/.test(scriptCss)
   ) {
     fail("Script toolbar is missing overflow-safe responsive style rules");
