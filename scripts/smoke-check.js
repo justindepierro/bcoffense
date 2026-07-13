@@ -2854,7 +2854,7 @@ function checkE2eLocalHarness() {
 }
 
 function checkStartupDiagnosticsAndRenderQueue() {
-  const utils = read("js/utils.js");
+  const appDiagnosticsSource = read("js/app-diagnostics.js");
   const appInit = read("js/app-init.js");
   const storage = read("js/storage.js");
   const moduleInit = read("js/app-module-init.js");
@@ -2864,7 +2864,7 @@ function checkStartupDiagnosticsAndRenderQueue() {
   const auth = read("js/auth.js");
   const gameplanActions = read("js/gameplan-actions.js");
 
-  if (!/const appDiagnostics\s*=/.test(utils) || !/window\.bcDebugStartup/.test(utils)) {
+  if (!/const appDiagnostics\s*=/.test(appDiagnosticsSource) || !/window\.bcDebugStartup/.test(appDiagnosticsSource)) {
     fail("startup diagnostics API is not exposed");
   }
   if (!/appDiagnostics\.mark\("startup:init"\)/.test(appInit)) {

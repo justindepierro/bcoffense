@@ -365,14 +365,14 @@ Definition of done:
 
 Current large JS files from the scan:
 
-- `js/script-render.js` - 6105 lines.
+- `js/script-render.js` - 7187 lines.
 - `js/play-discussion.js` - 3050 lines.
 - `js/play-presentation.js` - 2989 lines.
-- `js/utils.js` - 2455 lines.
-- `js/app-shell.js` - 2215 lines.
-- `js/dashboard-render.js` - 2078 lines.
+- `js/utils.js` - 2469 lines.
+- `js/dashboard-render.js` - 2399 lines.
+- `js/app-shell.js` - 2376 lines.
 - `js/tendencies.js` - 1997 lines.
-- `js/callsheet.js` - 1832 lines.
+- `js/callsheet.js` - 1860 lines.
 
 Work left:
 
@@ -382,7 +382,7 @@ Work left:
 - [x] Add local source-identity E2E coverage for edited/deleted playbook sources.
 - [x] Use stress-audit reports to prioritize the highest-impact loading, overflow, touch-target, and console-error fixes.
 - [x] Defer non-critical dashboard, tendencies, and remaining callsheet setup until first use.
-- [ ] Reduce unrelated responsibilities still owned by `utils.js`.
+- [x] Reduce unrelated responsibilities still owned by `utils.js`.
 - [ ] Measure large-script render and filter hotspots before optimizing `script-render.js`.
 - [ ] Reduce broad `innerHTML` rebuilds for small Script state changes.
 - [ ] Choose the next product-value split between `tendencies.js` and `installation.js`.
