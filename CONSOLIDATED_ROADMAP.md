@@ -152,8 +152,10 @@ Phase 5 - Signal games and leaderboards:
   and 25 MB Signal limits enforced before upload.
 - [x] Build a signal-only quiz item source from published signal clips, grouped
   by `CORE`, `TAGS`, `BLOCKING`, and `MOTIONS`.
-- [ ] Add `100 Second Signal Sprint`: players answer as many signal clips as
-  they can in 100 seconds; leaderboard ranks correct answers, then accuracy,
+- [x] Add `100 Second Signal Sprint` as a playable Signal mode: players answer
+  as many signal clips as they can in 100 seconds, with timed attempt metadata
+  saved for ranking.
+- [ ] Add Signal Sprint leaderboard ranking by correct answers, then accuracy,
   then average answer speed.
 - [ ] Add `6 Seconds of Battle`: the clip plays, then the video turns off and
   players have 6 seconds to identify the component; leaderboard ranks correct

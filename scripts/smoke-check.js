@@ -4229,6 +4229,16 @@ function checkSignalPlayIntegrationContracts() {
 
   if (
     !/key:\s*"signal-study"[\s\S]*label:\s*"Signal Study"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
+    !/key:\s*"signal-sprint"[\s\S]*label:\s*"100 Second Sprint"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
+    !/const SIGNAL_SPRINT_DURATION_MS = 100000/.test(scriptRender) ||
+    !/const SIGNAL_SPRINT_TARGET_REPS = 100/.test(scriptRender) ||
+    !/function _isSignalSprintMode\(mode = _quizMode\)/.test(scriptRender) ||
+    !/function _buildSignalSprintItems\(items, targetCount = SIGNAL_SPRINT_TARGET_REPS\)/.test(scriptRender) ||
+    !/function _startQuizTimerIfNeeded\(\)/.test(scriptRender) ||
+    !/timeLimitMs:\s*signalMode === "signal-sprint" \? SIGNAL_SPRINT_DURATION_MS : 0/.test(scriptRender) ||
+    !/finishScriptQuiz\(\{ timedOut: true \}\)/.test(scriptRender) ||
+    !/averageAnswerMs/.test(scriptRender) ||
+    !/timedOut/.test(scriptRender) ||
     !/async function startPlayerQuizHubSignals\(\)/.test(scriptRender) ||
     !/sourceType:\s*"signal"/.test(scriptRender) ||
     !/function _getSignalQuizStatus\(\)/.test(scriptRender) ||
@@ -4259,7 +4269,9 @@ function checkSignalPlayIntegrationContracts() {
     !/z-index:\s*calc\(var\(--z-skip-link\) \+ 2\)/.test(signalsCss) ||
     !/\.pp-signals-btn/.test(presentationCss) ||
     !/\.player-quiz-source-card--signals/.test(scriptCss) ||
-    !/\.sq-signal-prompt/.test(scriptCss)
+    !/\.sq-signal-prompt/.test(scriptCss) ||
+    !/\.sq-game-pill--timer/.test(scriptCss) ||
+    !/\.sq-result-sprint/.test(scriptCss)
   ) {
     fail("signal selector styling is incomplete");
   }
@@ -4292,7 +4304,8 @@ function checkSignalPlayIntegrationContracts() {
     !/Phase 5 - Signal games and leaderboards:/.test(roadmap) ||
     !/- \[x\] Document the coach capture standard at upload time: iPhone 1080p HD,/.test(roadmap) ||
     !/- \[x\] Build a signal-only quiz item source from published signal clips, grouped/.test(roadmap) ||
-    !/- \[ \] Add `100 Second Signal Sprint`/.test(roadmap) ||
+    !/- \[x\] Add `100 Second Signal Sprint` as a playable Signal mode/.test(roadmap) ||
+    !/- \[ \] Add Signal Sprint leaderboard ranking by correct answers/.test(roadmap) ||
     !/- \[ \] Add `6 Seconds of Battle`/.test(roadmap) ||
     !/- \[ \] Add `Heat Check`/.test(roadmap) ||
     !/- \[ \] Add a dedicated Signal Leaderboard with three tabs/.test(roadmap)

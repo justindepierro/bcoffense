@@ -7464,6 +7464,39 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   font-weight: 800;
 }
 
+.sq-game-pill--timer {
+  border-color: color-mix(in srgb, var(--color-warning) 48%, var(--color-border));
+  background: color-mix(in srgb, var(--color-warning-light) 72%, var(--color-surface));
+  color: var(--color-warning);
+}
+
+.sq-result-sprint {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.sq-result-sprint span {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-sm);
+  border: 1px solid color-mix(in srgb, var(--color-info) 26%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-info-light) 58%, var(--color-surface));
+  text-align: center;
+}
+
+.sq-result-sprint strong {
+  color: var(--color-info);
+  font-size: var(--font-size-xl);
+}
+
+.sq-result-sprint small {
+  color: var(--color-text-muted);
+  font-weight: 800;
+}
+
 .sq-diagram-prompt {
   margin: 0;
   display: grid;
@@ -11434,6 +11467,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   }
 
   .sq-result-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sq-result-sprint {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

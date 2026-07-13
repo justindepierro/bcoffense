@@ -1493,8 +1493,14 @@ let _quizPositionMode = "primary";
 let _quizFinished = false;
 let _quizSavedAttemptId = "";
 let _quizExitSummaryOpen = false;
+let _quizTimerId = 0;
+let _quizTimeLimitMs = 0;
+let _quizStartedAt = 0;
+let _quizFinishedAt = 0;
 
 const SCRIPT_QUIZ_CHOICE_COLORS = ["blue", "red", "gold", "green"];
+const SIGNAL_SPRINT_DURATION_MS = 100000;
+const SIGNAL_SPRINT_TARGET_REPS = 100;
 const PLAYER_QUIZ_WEEKLY_GOAL = 1000;
 const PLAYER_QUIZ_BASE_CORRECT_POINTS = 10;
 const PLAYER_QUIZ_STREAK_STEP_POINTS = 1;
@@ -1669,6 +1675,69 @@ function _getQuizSourceLabel(sourceType = _quizSourceType, variant = "title") {
   if (normalized === "gameplan") return variant === "sentence" ? "game plan" : "Game Plan";
   if (normalized === "signal") return variant === "sentence" ? "signal set" : "Signals";
   return variant === "sentence" ? "script" : "Script";
+}
+
+function _isSignalSprintMode(mode = _quizMode) {
+  return String(mode || "") === "signal-sprint";
+}
+
+function _clearQuizTimer() {
+  if (_quizTimerId) {
+    clearInterval(_quizTimerId);
+    _quizTimerId = 0;
+  }
+}
+
+function _getQuizElapsedMs() {
+  if (!_quizStartedAt) return 0;
+  const end = _quizFinishedAt || Date.now();
+  return Math.max(0, end - _quizStartedAt);
+}
+
+function _getQuizRemainingMs() {
+  if (!_quizTimeLimitMs) return 0;
+  return Math.max(0, _quizTimeLimitMs - _getQuizElapsedMs());
+}
+
+function _formatQuizClock(ms) {
+  return `${Math.max(0, Math.ceil(Number(ms || 0) / 1000))}s`;
+}
+
+function _syncQuizTimerUi() {
+  if (!_quizTimeLimitMs || _quizFinished) return;
+  const remaining = _getQuizRemainingMs();
+  const progressEl = document.getElementById("scriptQuizProgress");
+  if (progressEl) {
+    progressEl.textContent = `${_quizIndex + 1} / ${_quizPlays.length} · ${_formatQuizClock(remaining)}`;
+  }
+  const scoreEl = document.getElementById("scriptQuizScore");
+  if (scoreEl) {
+    scoreEl.textContent = `Score ${_quizScore} · Streak ${_quizStreak} · ${_formatQuizClock(remaining)}`;
+  }
+}
+
+function _getQuizAverageAnswerMs() {
+  const answers = Array.from(_quizAnswers.values()).filter((answer) => Number(answer.elapsedMs || 0) > 0);
+  if (!answers.length) return 0;
+  const first = Math.max(0, Number(answers[0].elapsedMs || 0));
+  const last = Math.max(first, Number(answers[answers.length - 1].elapsedMs || 0));
+  return Math.round((last - first || last) / answers.length);
+}
+
+function _startQuizTimerIfNeeded() {
+  _clearQuizTimer();
+  if (!_quizTimeLimitMs) return;
+  _quizTimerId = setInterval(() => {
+    if (_quizFinished) {
+      _clearQuizTimer();
+      return;
+    }
+    if (_getQuizRemainingMs() <= 0) {
+      finishScriptQuiz({ timedOut: true });
+      return;
+    }
+    _syncQuizTimerUi();
+  }, 500);
 }
 
 function _getQuizBadges() {
@@ -1886,6 +1955,7 @@ function _getPlayerQuizDraft() {
 
 function _savePlayerQuizDraft() {
   if (!_quizPlays.length || _quizFinished) return null;
+  if (_quizTimeLimitMs) return null;
   if (typeof storageManager === "undefined" || typeof storageManager.set !== "function") return null;
   const draft = {
     savedAt: new Date().toISOString(),
@@ -5607,6 +5677,14 @@ function _getPlayerQuizModes(context = {}) {
       source: "signal",
       disabled: !signalStatus.available,
     },
+    {
+      key: "signal-sprint",
+      label: "100 Second Sprint",
+      time: "100s",
+      note: "Answer as many signal clips as you can before the clock expires.",
+      source: "signal",
+      disabled: !signalStatus.available,
+    },
   ];
 }
 
@@ -5846,8 +5924,11 @@ function _renderPlayerQuizHub() {
     gamePlanStatusEl.hidden = !gamePlanStatus.detail;
   }
   if (signalBtn) {
+    const mode = _getPlayerQuizMode();
     signalBtn.disabled = !signalStatus.available;
-    signalBtn.textContent = signalStatus.available ? "Start Signal Study" : signalStatus.label;
+    signalBtn.textContent = signalStatus.available
+      ? `Start ${mode?.source === "signal" ? mode.label : "Signal Study"}`
+      : signalStatus.label;
   }
   if (signalStatusEl) {
     const categoryChips = signalStatus.categories.length
@@ -5965,6 +6046,25 @@ function startPlayerQuizHubScript() {
   });
 }
 
+function _buildSignalSprintItems(items, targetCount = SIGNAL_SPRINT_TARGET_REPS) {
+  const source = _normalizeQuizItems(items).filter((item) => item.signalRecord);
+  if (!source.length) return [];
+  const out = [];
+  let guard = 0;
+  while (out.length < targetCount && guard < targetCount * 2) {
+    const round = _quizShuffle(source);
+    round.forEach((item) => {
+      if (out.length >= targetCount) return;
+      out.push({
+        ...item,
+        scriptIndex: out.length,
+      });
+    });
+    guard += round.length || 1;
+  }
+  return out;
+}
+
 async function startPlayerQuizHubSignals() {
   const status = _getSignalQuizStatus();
   if (!status.available) {
@@ -5977,6 +6077,8 @@ async function startPlayerQuizHubSignals() {
     button.textContent = "Loading Signals...";
   }
   try {
+    const mode = _getPlayerQuizMode();
+    const signalMode = mode?.key === "signal-sprint" ? "signal-sprint" : "signal-study";
     const items = typeof getSignalQuizItems === "function"
       ? await getSignalQuizItems({ requireClip: true })
       : [];
@@ -5984,15 +6086,19 @@ async function startPlayerQuizHubSignals() {
       showToast("Signal Study needs at least two playable signal clips.", { type: "warning" });
       return;
     }
+    const quizItems = signalMode === "signal-sprint"
+      ? _buildSignalSprintItems(items)
+      : items;
     closePlayerQuizHub();
-    _quizMode = "signal-study";
+    _quizMode = signalMode;
     startScriptQuiz({
-      items,
+      items: quizItems,
       sourceType: "signal",
       sourceId: "signals",
-      title: "Signal Study",
+      title: signalMode === "signal-sprint" ? "100 Second Signal Sprint" : "Signal Study",
       positionKey: _quizPositionKey,
       positionMode: _quizPositionMode,
+      timeLimitMs: signalMode === "signal-sprint" ? SIGNAL_SPRINT_DURATION_MS : 0,
       mode: _quizMode,
     });
   } catch (err) {
@@ -6001,7 +6107,9 @@ async function startPlayerQuizHubSignals() {
     if (button) {
       const nextStatus = _getSignalQuizStatus();
       button.disabled = !nextStatus.available;
-      button.textContent = nextStatus.available ? "Start Signal Study" : nextStatus.label;
+      button.textContent = nextStatus.available
+        ? `Start ${_getPlayerQuizMode()?.source === "signal" ? _getPlayerQuizMode().label : "Signal Study"}`
+        : nextStatus.label;
     }
   }
 }
@@ -6128,6 +6236,7 @@ function startPlayerQuizHubGamePlan() {
 }
 
 function _resetQuizGameState() {
+  _clearQuizTimer();
   _quizRevealed = false;
   _quizAnswers = new Map();
   _quizChoiceCache = new Map();
@@ -6139,12 +6248,15 @@ function _resetQuizGameState() {
   _quizFinished = false;
   _quizSavedAttemptId = "";
   _quizExitSummaryOpen = false;
+  _quizTimeLimitMs = 0;
+  _quizStartedAt = 0;
+  _quizFinishedAt = 0;
 }
 
 function _quizItemKey(item) {
   if (!item || !item.play) return "";
   if (item.signalRecord?.id) {
-    return `signal::${item.signalRecord.id}::${item.signalRecord.clipId || item.signalRecord.clipSig || ""}`;
+    return `signal::${item.scriptIndex ?? _quizIndex}::${item.signalRecord.id}::${item.signalRecord.clipId || item.signalRecord.clipSig || ""}`;
   }
   const sig = typeof playSignature === "function" ? playSignature(item.play) : "";
   return `${item.scriptIndex ?? _quizIndex}::${item.positionKey || _quizPositionKey}::${sig || _quizPlainCall(item.play)}`;
@@ -6425,11 +6537,11 @@ function _buildQuizQuestion(item) {
   } : null;
   const signalQuestion = canAskSignal ? {
     type: "signal",
-    prompt: _quizMode === "signal-study"
+    prompt: _quizMode === "signal-study" || _isSignalSprintMode()
       ? `Which ${signalRecord.label || signalRecord.componentType || "signal"} is shown?`
       : `Which ${signalRecord.label || signalRecord.componentType || "signal"} belongs to this play?`,
     detailLabel: `${signalRecord.groupLabel || signalRecord.category || "Signal"} Signal`,
-    detailValue: _quizMode === "signal-study"
+    detailValue: _quizMode === "signal-study" || _isSignalSprintMode()
       ? signalRecord.groupLabel || signalRecord.category || "Signal"
       : signalRecord.label || signalRecord.componentType || "",
     rule: positionRule,
@@ -6452,7 +6564,7 @@ function _buildQuizQuestion(item) {
   } : null;
 
   const candidates = [];
-  if (_quizMode === "signal-study") {
+  if (_quizMode === "signal-study" || _isSignalSprintMode()) {
     candidates.push(signalQuestion);
   } else if (_quizMode === "diagram") {
     candidates.push(diagramQuestion, diagramFormationQuestion, formationQuestion, signalQuestion, typeQuestion, callQuestion, ruleQuestion, ruleToPlayQuestion);
@@ -6756,6 +6868,9 @@ function startScriptQuiz(options = {}) {
   _setQuizPlays(_prepareQuizItemsForPositionMode(normalizedItems, _quizPositionMode), false);
   _quizIndex = 0;
   _resetQuizGameState();
+  _quizTimeLimitMs = Math.max(0, Number(opts.timeLimitMs || 0));
+  _quizStartedAt = _quizTimeLimitMs ? Date.now() : 0;
+  _quizFinishedAt = 0;
   _clearPlayerQuizDraft();
 
   const overlay = document.getElementById("scriptQuizOverlay");
@@ -6770,12 +6885,17 @@ function startScriptQuiz(options = {}) {
   } else if (typeof trapFocus === "function") {
     trapFocus(overlay);
   }
+  _startQuizTimerIfNeeded();
   renderScriptQuizPlay();
 }
 
 function closeScriptQuiz() {
   const overlay = document.getElementById("scriptQuizOverlay");
   if (!overlay) return;
+  if (!_quizFinished && _quizTimeLimitMs && _quizPlays.length) {
+    endScriptQuiz();
+    return;
+  }
   if (!_quizFinished && _quizPlays.length && !_quizExitSummaryOpen) {
     _savePlayerQuizDraft();
     _renderQuizExitSummary();
@@ -6793,6 +6913,10 @@ function closeScriptQuiz() {
 }
 
 function toggleScriptQuizShuffle() {
+  if (_quizTimeLimitMs) {
+    showToast("Timed signal games stay in sprint order.", { type: "info" });
+    return;
+  }
   _quizShuffled = !_quizShuffled;
   _setQuizPlays(_quizBasePlays, _quizShuffled);
   _quizIndex = 0;
@@ -6840,6 +6964,29 @@ function prevScriptQuizPlay() {
   }
 }
 
+function _advanceSignalSprintAfterAnswer(questionKey) {
+  if (!_isSignalSprintMode() || _quizFinished) return;
+  if (_getQuizRemainingMs() <= 0) {
+    finishScriptQuiz({ timedOut: true });
+    return;
+  }
+  if (_quizIndex >= _quizPlays.length - 1) {
+    finishScriptQuiz();
+    return;
+  }
+  setTimeout(() => {
+    if (!_isSignalSprintMode() || _quizFinished) return;
+    const item = _quizPlays[_quizIndex];
+    if (!item || _quizItemKey(item) !== questionKey) return;
+    if (_getQuizRemainingMs() <= 0) {
+      finishScriptQuiz({ timedOut: true });
+      return;
+    }
+    _quizIndex++;
+    renderScriptQuizPlay();
+  }, 425);
+}
+
 function answerScriptQuizChoice(choiceKey) {
   const item = _quizPlays[_quizIndex];
   if (!item) return;
@@ -6870,9 +7017,12 @@ function answerScriptQuizChoice(choiceKey) {
     playCall: _quizPlainCall(item.play),
     streakAfter: correct ? _quizStreak : 0,
     momentLabel: correct ? _getQuizCorrectMomentLabel({ questionType }) : "",
+    elapsedMs: _getQuizElapsedMs(),
+    answeredAt: new Date().toISOString(),
   });
   renderScriptQuizPlay();
   _savePlayerQuizDraft();
+  _advanceSignalSprintAfterAnswer(questionKey);
 }
 
 function _getQuizAnswerReviewRows() {
@@ -7018,9 +7168,25 @@ function _renderQuizResultRewardMoment(summary = {}) {
   `;
 }
 
+function _renderQuizSprintStats(summary = {}) {
+  if (summary.quizMode !== "signal-sprint") return "";
+  const duration = _formatQuizClock(summary.durationMs || 0);
+  const pace = summary.averageAnswerMs ? `${(summary.averageAnswerMs / 1000).toFixed(1)}s` : "-";
+  const finishLabel = summary.timedOut ? "Timed out" : "Ended";
+  return `
+    <div class="sq-result-sprint">
+      <span><strong>${summary.answered}</strong><small>Answered</small></span>
+      <span><strong>${duration}</strong><small>${escapeHtml(finishLabel)}</small></span>
+      <span><strong>${pace}</strong><small>Avg pace</small></span>
+      <span><strong>${summary.correct}</strong><small>Sprint score</small></span>
+    </div>
+  `;
+}
+
 function _buildQuizAttemptSummary(options = {}) {
   const opts = options && typeof options === "object" ? options : {};
   const partial = Boolean(opts.partial);
+  const timedOut = Boolean(opts.timedOut);
   const answers = Array.from(_quizAnswers.values());
   const answered = answers.length;
   const correct = answers.filter((answer) => answer.correct).length;
@@ -7035,6 +7201,17 @@ function _buildQuizAttemptSummary(options = {}) {
   const now = new Date();
   const reviewRows = _getQuizAnswerReviewRows();
   const review = _summarizeQuizReviewRows(reviewRows);
+  const durationMs = _getQuizElapsedMs();
+  const timeLimitMs = _quizTimeLimitMs;
+  const timeRemainingMs = _getQuizRemainingMs();
+  const averageAnswerMs = _getQuizAverageAnswerMs() || (answered ? Math.round(durationMs / answered) : 0);
+  const gameStats = {
+    durationMs,
+    timeLimitMs,
+    timeRemainingMs,
+    timedOut,
+    averageAnswerMs,
+  };
   return {
     id: _quizSavedAttemptId || `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     player: _getQuizPlayerName(),
@@ -7057,6 +7234,11 @@ function _buildQuizAttemptSummary(options = {}) {
     questionBreakdown,
     totalQuestions,
     remaining,
+    durationMs,
+    timeLimitMs,
+    timeRemainingMs,
+    timedOut,
+    averageAnswerMs,
     percent,
     badge: badge.label,
     bestStreak: _quizBestStreak,
@@ -7065,6 +7247,7 @@ function _buildQuizAttemptSummary(options = {}) {
       missTypes: review.missTypes,
       strengthTypes: review.strengthTypes,
       nextReview: review.nextReview,
+      gameStats,
     },
     reviewRows,
     completed: !partial,
@@ -7151,6 +7334,10 @@ function resumeScriptQuiz() {
 }
 
 function saveAndCloseScriptQuiz() {
+  if (_quizTimeLimitMs && !_quizFinished) {
+    endScriptQuiz();
+    return;
+  }
   _savePlayerQuizDraft();
   _quizExitSummaryOpen = false;
   _setScriptQuizOverlayOpen(false);
@@ -7162,6 +7349,8 @@ function saveAndCloseScriptQuiz() {
 
 function endScriptQuiz() {
   if (_quizFinished) return;
+  _quizFinishedAt = Date.now();
+  _clearQuizTimer();
   const summary = _buildQuizAttemptSummary({ partial: true });
   _saveQuizAttempt(summary);
   _clearPlayerQuizDraft();
@@ -7206,6 +7395,10 @@ function resumePlayerQuizDraft() {
   _quizFinished = false;
   _quizSavedAttemptId = "";
   _quizExitSummaryOpen = false;
+  _clearQuizTimer();
+  _quizTimeLimitMs = 0;
+  _quizStartedAt = 0;
+  _quizFinishedAt = 0;
   closePlayerQuizHub();
   _setScriptQuizOverlayOpen(true);
   renderScriptQuizPlay();
@@ -7241,6 +7434,7 @@ function _renderQuizResults(summary) {
           <span><strong>${summary.bestStreak}</strong><small>Best streak</small></span>
           <span><strong>${Math.round(summary.totalPoints)}</strong><small>Total points</small></span>
         </div>
+        ${_renderQuizSprintStats(summary)}
         ${summary.remaining ? `<div class="sq-result-tier">${summary.remaining} question${summary.remaining === 1 ? "" : "s"} left in this ${escapeHtml(_getQuizSourceLabel(summary.sourceType, "sentence"))}.</div>` : ""}
         ${summary.bonusPoints ? `<div class="sq-result-bonus">+${summary.bonusPoints} bonus points · ${escapeHtml(summary.badge)}</div>` : ""}
         ${_renderQuizResultRewardMoment(summary)}
@@ -7257,10 +7451,16 @@ function _renderQuizResults(summary) {
   if (revealRow) revealRow.classList.add("hidden");
 }
 
-function finishScriptQuiz() {
+function finishScriptQuiz(options = {}) {
+  return _finishScriptQuizInternal(options);
+}
+
+function _finishScriptQuizInternal(options = {}) {
   if (_quizFinished) return;
   _quizFinished = true;
-  const summary = _buildQuizAttemptSummary();
+  _quizFinishedAt = Date.now();
+  _clearQuizTimer();
+  const summary = _buildQuizAttemptSummary({ timedOut: Boolean(options?.timedOut) });
   _saveQuizAttempt(summary);
   _clearPlayerQuizDraft();
   const progressEl = document.getElementById("scriptQuizProgress");
@@ -7299,6 +7499,10 @@ function renderScriptQuizPlay() {
     _renderQuizResults(_buildQuizAttemptSummary());
     return;
   }
+  if (_quizTimeLimitMs && _getQuizRemainingMs() <= 0) {
+    finishScriptQuiz({ timedOut: true });
+    return;
+  }
   const { play, period } = item;
   const questionKey = _quizItemKey(item);
   const answer = _quizAnswers.get(questionKey) || null;
@@ -7313,7 +7517,11 @@ function renderScriptQuizPlay() {
 
   // Progress
   const progressEl = document.getElementById("scriptQuizProgress");
-  if (progressEl) progressEl.textContent = `${_quizIndex + 1} / ${_quizPlays.length}`;
+  if (progressEl) {
+    progressEl.textContent = _quizTimeLimitMs
+      ? `${_quizIndex + 1} / ${_quizPlays.length} · ${_formatQuizClock(_getQuizRemainingMs())}`
+      : `${_quizIndex + 1} / ${_quizPlays.length}`;
+  }
 
   // Period label
   const periodEl = document.getElementById("scriptQuizPeriod");
@@ -7330,12 +7538,17 @@ function renderScriptQuizPlay() {
     nextBtn.disabled = gameMode && !answer;
     nextBtn.textContent = _quizIndex === _quizPlays.length - 1 ? "Finish" : "Next ▶";
   }
+  const shuffleBtn = document.getElementById("scriptQuizShuffleBtn");
+  if (shuffleBtn) {
+    shuffleBtn.disabled = Boolean(_quizTimeLimitMs);
+    shuffleBtn.classList.toggle("active", _quizShuffled && !_quizTimeLimitMs);
+  }
 
   // Score / context
   const scoreEl = document.getElementById("scriptQuizScore");
   if (scoreEl) {
     scoreEl.textContent = gameMode
-      ? `Score ${_quizScore} · Streak ${_quizStreak}`
+      ? `Score ${_quizScore} · Streak ${_quizStreak}${_quizTimeLimitMs ? ` · ${_formatQuizClock(_getQuizRemainingMs())}` : ""}`
       : `Play ${_quizIndex + 1} of ${_quizPlays.length}`;
   }
 
@@ -7382,6 +7595,7 @@ function renderScriptQuizPlay() {
     <div class="sq-game-topline">
       <span class="sq-game-pill">Score ${_quizScore}</span>
       <span class="sq-game-pill">Streak ${_quizStreak}</span>
+      ${_quizTimeLimitMs ? `<span class="sq-game-pill sq-game-pill--timer">${escapeHtml(_formatQuizClock(_getQuizRemainingMs()))}</span>` : ""}
       <span class="sq-game-pill">${escapeHtml(sourceLabel)} · ${escapeHtml(weightLabel)}</span>
       <span class="sq-game-pill">${escapeHtml(_quizQuestionTypeLabel(question.type))}</span>
     </div>` : ""}
