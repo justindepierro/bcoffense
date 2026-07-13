@@ -7567,6 +7567,30 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   object-fit: contain;
 }
 
+.sq-signal-prompt.is-hidden {
+  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  background: color-mix(in srgb, var(--color-warning-light) 54%, var(--color-bg-body));
+}
+
+.sq-signal-hidden {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-text-muted) 12%, transparent) 0,
+      color-mix(in srgb, var(--color-text-muted) 12%, transparent) 10px,
+      transparent 10px,
+      transparent 20px
+    ),
+    var(--color-bg-light);
+  color: var(--color-text);
+  font-size: var(--font-size-xl);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
 .sq-signal-prompt figcaption {
   padding: 0 8px 7px;
   color: var(--color-text-muted);
@@ -7580,6 +7604,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-sm);
   margin-top: var(--space-sm);
+}
+
+.script-quiz-choices.is-battle-locked {
+  display: none;
 }
 
 .script-quiz-scenario--long-choices .script-quiz-choices,

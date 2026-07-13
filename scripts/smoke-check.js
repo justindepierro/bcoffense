@@ -4230,17 +4230,32 @@ function checkSignalPlayIntegrationContracts() {
   if (
     !/key:\s*"signal-study"[\s\S]*label:\s*"Signal Study"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
     !/key:\s*"signal-sprint"[\s\S]*label:\s*"100 Second Sprint"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
+    !/key:\s*"signal-battle"[\s\S]*label:\s*"6 Seconds of Battle"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
     !/const SIGNAL_SPRINT_DURATION_MS = 100000/.test(scriptRender) ||
     !/const SIGNAL_SPRINT_TARGET_REPS = 100/.test(scriptRender) ||
+    !/const SIGNAL_BATTLE_CLIP_MS = 5000/.test(scriptRender) ||
+    !/const SIGNAL_BATTLE_ANSWER_MS = 6000/.test(scriptRender) ||
+    !/const SIGNAL_BATTLE_TARGET_REPS = 20/.test(scriptRender) ||
     !/function _isSignalSprintMode\(mode = _quizMode\)/.test(scriptRender) ||
+    !/function _isSignalBattleMode\(mode = _quizMode\)/.test(scriptRender) ||
     !/function _buildSignalSprintItems\(items, targetCount = SIGNAL_SPRINT_TARGET_REPS\)/.test(scriptRender) ||
+    !/function _buildSignalBattleItems\(items, targetCount = SIGNAL_BATTLE_TARGET_REPS\)/.test(scriptRender) ||
+    !/function _startSignalBattleRound\(questionKey\)/.test(scriptRender) ||
+    !/function _recordSignalBattleTimeout\(questionKey = _quizRoundQuestionKey\)/.test(scriptRender) ||
     !/function _buildSignalSprintLeaderboardRows\(attempts, player, weekKey = ""\)/.test(scriptRender) ||
+    !/function _buildSignalBattleLeaderboardRows\(attempts, player, weekKey = ""\)/.test(scriptRender) ||
     !/function _compareSignalSprintRows\(a, b\)/.test(scriptRender) ||
+    !/function _compareSignalBattleRows\(a, b\)/.test(scriptRender) ||
     !/function _renderSignalSprintLeaderboardRows\(rows, player, variant = "player"\)/.test(scriptRender) ||
+    !/function _renderSignalBattleLeaderboardRows\(rows, player, variant = "player"\)/.test(scriptRender) ||
     !/weeklySignalSprintRows/.test(scriptRender) ||
     !/seasonSignalSprintRows/.test(scriptRender) ||
+    !/weeklySignalBattleRows/.test(scriptRender) ||
+    !/seasonSignalBattleRows/.test(scriptRender) ||
     !/100 Second Signal Sprint/.test(scriptRender) ||
+    !/6 Seconds of Battle/.test(scriptRender) ||
     !/correct, accuracy, speed/.test(scriptRender) ||
+    !/correct, reaction time/.test(scriptRender) ||
     !/function _startQuizTimerIfNeeded\(\)/.test(scriptRender) ||
     !/timeLimitMs:\s*signalMode === "signal-sprint" \? SIGNAL_SPRINT_DURATION_MS : 0/.test(scriptRender) ||
     !/finishScriptQuiz\(\{ timedOut: true \}\)/.test(scriptRender) ||
@@ -4279,7 +4294,9 @@ function checkSignalPlayIntegrationContracts() {
     !/\.sq-signal-prompt/.test(scriptCss) ||
     !/\.sq-game-pill--timer/.test(scriptCss) ||
     !/\.sq-result-sprint/.test(scriptCss) ||
-    !/\.signal-sprint-leader-row/.test(scriptCss)
+    !/\.signal-sprint-leader-row/.test(scriptCss) ||
+    !/\.sq-signal-prompt\.is-hidden/.test(scriptCss) ||
+    !/\.script-quiz-choices\.is-battle-locked/.test(scriptCss)
   ) {
     fail("signal selector styling is incomplete");
   }
@@ -4314,7 +4331,7 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Build a signal-only quiz item source from published signal clips, grouped/.test(roadmap) ||
     !/- \[x\] Add `100 Second Signal Sprint` as a playable Signal mode/.test(roadmap) ||
     !/- \[x\] Add Signal Sprint leaderboard ranking by correct answers/.test(roadmap) ||
-    !/- \[ \] Add `6 Seconds of Battle`/.test(roadmap) ||
+    !/- \[x\] Add `6 Seconds of Battle`/.test(roadmap) ||
     !/- \[ \] Add `Heat Check`/.test(roadmap) ||
     !/- \[ \] Add a dedicated Signal Leaderboard with three tabs/.test(roadmap)
   ) {

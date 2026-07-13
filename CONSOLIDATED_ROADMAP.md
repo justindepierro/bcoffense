@@ -157,7 +157,7 @@ Phase 5 - Signal games and leaderboards:
   saved for ranking.
 - [x] Add Signal Sprint leaderboard ranking by correct answers, then accuracy,
   then average answer speed.
-- [ ] Add `6 Seconds of Battle`: the clip plays, then the video turns off and
+- [x] Add `6 Seconds of Battle`: the clip plays, then the video turns off and
   players have 6 seconds to identify the component; leaderboard ranks correct
   answers under pressure and average reaction time.
 - [ ] Add `Heat Check`: endless signal reps until the player misses; leaderboard
