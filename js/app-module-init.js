@@ -1,4 +1,6 @@
 let scriptWorkspaceNeedsInit = true;
+let tendenciesNeedsInit = true;
+let callSheetNeedsInit = true;
 
 function ensureScriptWorkspaceReady(force = false) {
   if (typeof initScriptWorkspace !== "function") return;
@@ -6,6 +8,26 @@ function ensureScriptWorkspaceReady(force = false) {
 
   initScriptWorkspace();
   scriptWorkspaceNeedsInit = false;
+}
+
+function ensureTendenciesReady(force = false) {
+  if (typeof initTendencies !== "function") return;
+  if (!force && !tendenciesNeedsInit) return;
+
+  initTendencies();
+  tendenciesNeedsInit = false;
+}
+
+function ensureCallSheetReady(force = false) {
+  if (typeof initCallSheet !== "function") return;
+  const hasCallSheetData =
+    typeof callSheet !== "undefined" &&
+    callSheet &&
+    Object.keys(callSheet).length > 0;
+  if (!force && !callSheetNeedsInit && hasCallSheetData) return;
+
+  initCallSheet();
+  callSheetNeedsInit = false;
 }
 
 function initAllModules() {
@@ -19,7 +41,7 @@ function initAllModules() {
         .join("");
     }
   }
-  if (typeof renderDashboardLoadingState === "function") {
+  if (currentActiveTab === "dashboard" && typeof renderDashboardLoadingState === "function") {
     renderDashboardLoadingState("Restoring dashboard...");
   }
 
@@ -30,6 +52,8 @@ function initAllModules() {
   restoreColumnVisibility();
   filterPlays();
   scriptWorkspaceNeedsInit = true;
+  tendenciesNeedsInit = true;
+  callSheetNeedsInit = true;
 
   // Sync the game-week bar with stored state (runs on every session restore).
   if (typeof updateGameWeekBar === "function") updateGameWeekBar();
@@ -59,8 +83,13 @@ function initAllModules() {
         typeof window.playImages.loadKeys === "function"
       ) {
         window.playImages.loadKeys().then((keys) => {
-          if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
-          if (typeof refreshPlayReadinessSurfaces === "function") {
+          if (currentActiveTab === "gameplan" && typeof requestRenderGamePlan === "function") {
+            requestRenderGamePlan();
+          }
+          if (
+            ["playbook", "script", "gameplan"].includes(currentActiveTab) &&
+            typeof refreshPlayReadinessSurfaces === "function"
+          ) {
             refreshPlayReadinessSurfaces("play-images");
           }
           if (!keys.length) return;

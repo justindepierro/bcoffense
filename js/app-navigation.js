@@ -141,7 +141,11 @@ function showTab(tabName) {
       });
     }
   } else if (tabName === "tendencies") {
-    initTendencies();
+    if (typeof ensureTendenciesReady === "function") {
+      ensureTendenciesReady();
+    } else {
+      initTendencies();
+    }
   } else if (tabName === "gameplan") {
     if (typeof initGamePlan === "function") initGamePlan();
     // Game plan uses overflow:hidden + internal scroll — ensure body scroll is
@@ -150,9 +154,16 @@ function showTab(tabName) {
       queueDesktopDocumentScrollRepair("gameplan-tab");
     }
   } else if (tabName === "callsheet") {
-    if (Object.keys(callSheet).length === 0) {
+    if (typeof ensureCallSheetReady === "function") {
+      ensureCallSheetReady();
+    } else if (Object.keys(callSheet).length === 0) {
       initCallSheet();
-    } else if (typeof refreshCallSheetFromPlaybook === "function") {
+    }
+    if (
+      typeof callSheetNeedsInit !== "undefined" &&
+      !callSheetNeedsInit &&
+      typeof refreshCallSheetFromPlaybook === "function"
+    ) {
       refreshCallSheetFromPlaybook();
     }
     if (typeof scheduleRenderCallSheet === "function") {

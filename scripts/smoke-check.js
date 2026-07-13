@@ -2857,6 +2857,7 @@ function checkStartupDiagnosticsAndRenderQueue() {
   const utils = read("js/utils.js");
   const appInit = read("js/app-init.js");
   const storage = read("js/storage.js");
+  const moduleInit = read("js/app-module-init.js");
   const dashboardRender = read("js/dashboard-render.js");
   const appNavigation = read("js/app-navigation.js");
   const dashboard = read("js/dashboard.js");
@@ -2874,6 +2875,22 @@ function checkStartupDiagnosticsAndRenderQueue() {
   }
   if (!/const requestRenderDashboard\s*=/.test(dashboardRender)) {
     fail("dashboard render queue helper is missing");
+  }
+  if (
+    !/let tendenciesNeedsInit = true/.test(moduleInit) ||
+    !/let callSheetNeedsInit = true/.test(moduleInit) ||
+    !/function ensureTendenciesReady\(force = false\)/.test(moduleInit) ||
+    !/function ensureCallSheetReady\(force = false\)/.test(moduleInit) ||
+    !/currentActiveTab === "gameplan"[\s\S]*requestRenderGamePlan\(\)/.test(moduleInit) ||
+    !/\["playbook", "script", "gameplan"\]\.includes\(currentActiveTab\)[\s\S]*refreshPlayReadinessSurfaces\("play-images"\)/.test(moduleInit)
+  ) {
+    fail("startup module deferral gates are incomplete");
+  }
+  if (
+    !/tabName === "tendencies"[\s\S]*ensureTendenciesReady\(\)/.test(appNavigation) ||
+    !/tabName === "callsheet"[\s\S]*ensureCallSheetReady\(\)/.test(appNavigation)
+  ) {
+    fail("showTab does not use first-use module gates");
   }
 
   const directDashboardRenderCall =
@@ -3045,7 +3062,7 @@ function checkGracefulLoadingStates() {
   }
   if (
     !/renderPlaybookLoadingState\("Restoring playbook/.test(moduleInit) ||
-    !/renderDashboardLoadingState\("Restoring dashboard/.test(moduleInit)
+    !/currentActiveTab === "dashboard"[\s\S]*renderDashboardLoadingState\("Restoring dashboard/.test(moduleInit)
   ) {
     fail("module init does not seed graceful loading states");
   }

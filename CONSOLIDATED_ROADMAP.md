@@ -381,7 +381,7 @@ Work left:
 - [x] Add local backup/restore integrity E2E coverage for playbook plus downstream artifacts.
 - [x] Add local source-identity E2E coverage for edited/deleted playbook sources.
 - [x] Use stress-audit reports to prioritize the highest-impact loading, overflow, touch-target, and console-error fixes.
-- [ ] Defer non-critical dashboard, tendencies, and remaining callsheet setup until first use.
+- [x] Defer non-critical dashboard, tendencies, and remaining callsheet setup until first use.
 - [ ] Reduce unrelated responsibilities still owned by `utils.js`.
 - [ ] Measure large-script render and filter hotspots before optimizing `script-render.js`.
 - [ ] Reduce broad `innerHTML` rebuilds for small Script state changes.
