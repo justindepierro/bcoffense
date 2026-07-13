@@ -1864,6 +1864,11 @@ body.play-presentation-mobile .pp-disc-drawer .disc-composer-actions .btn {
   background: var(--color-text-inverse);
 }
 
+.pp-signals-btn {
+  min-width: 64px;
+  font-size: var(--font-size-2xs);
+}
+
 .pp-icon-btn:focus-visible {
   outline: 3px solid var(--color-warning);
   outline-offset: 2px;

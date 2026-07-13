@@ -392,6 +392,33 @@ function openPlayPresentationClips() {
   window.openPlayClipViewer(item.play, getPlayPresentationPlayLabel(item.play));
 }
 
+function updatePlayPresentationSignalsButton() {
+  const btn = document.getElementById("playPresentationSignalsBtn");
+  if (!btn) return;
+  const item = playPresentationState.items[playPresentationState.index];
+  const count =
+    item && typeof getSignalCountForPlay === "function"
+      ? getSignalCountForPlay(item.play)
+      : 0;
+  btn.hidden = count <= 0;
+  btn.setAttribute(
+    "aria-label",
+    count > 0
+      ? `Watch ${count} signal clip${count === 1 ? "" : "s"} for this play`
+      : "Watch play signals",
+  );
+  btn.title =
+    count > 0
+      ? `Watch ${count} signal clip${count === 1 ? "" : "s"}`
+      : "Watch play signals";
+}
+
+function openPlayPresentationSignals() {
+  const item = playPresentationState.items[playPresentationState.index];
+  if (!item || typeof openSignalSelectorForPlay !== "function") return;
+  openSignalSelectorForPlay(item.play, { sourceLabel: "Swipe View Signals" });
+}
+
 function setPlayPresentationDetailPanel(on) {
   playPresentationDetailOpen = !!on;
   const overlay = document.getElementById("playPresentationOverlay");
@@ -2503,6 +2530,7 @@ function renderPlayPresentation() {
   loadPlayPresentationDiagram(item.play, token);
 
   updatePlayPresentationClipsButton();
+  updatePlayPresentationSignalsButton();
 
   const announcer = document.getElementById("liveAnnouncer");
   if (announcer) {

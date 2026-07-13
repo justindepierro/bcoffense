@@ -3683,10 +3683,14 @@ function checkGamePlanMediaReadinessContracts() {
 }
 
 function checkSignalPlayIntegrationContracts() {
+  const html = read("index.html");
   const signals = read("js/signals.js");
   const playbookRender = read("js/playbook-render.js");
   const scriptRender = read("js/script-render.js");
+  const presentation = read("js/play-presentation.js");
+  const presentationCss = read("css/play-presentation.css");
   const appEvents = read("js/app-events.js");
+  const auth = read("js/auth.js");
   const signalsCss = read("css/signals.css");
   const roadmap = read("CONSOLIDATED_ROADMAP.md");
 
@@ -3722,6 +3726,18 @@ function checkSignalPlayIntegrationContracts() {
   }
 
   if (
+    !/id="playPresentationSignalsBtn"[\s\S]*data-action="openPlayPresentationSignals"/.test(html) ||
+    !/function updatePlayPresentationSignalsButton\(\)/.test(presentation) ||
+    !/getSignalCountForPlay\(item\.play\)/.test(presentation) ||
+    !/function openPlayPresentationSignals\(\)/.test(presentation) ||
+    !/openSignalSelectorForPlay\(item\.play, \{ sourceLabel: "Swipe View Signals" \}\)/.test(presentation) ||
+    !/updatePlayPresentationSignalsButton\(\);/.test(presentation) ||
+    !/["']openPlayPresentationSignals["']/.test(auth)
+  ) {
+    fail("presentation signal selector entry point is incomplete");
+  }
+
+  if (
     !/data-action='openPlaybookSignalSelector'/.test(appEvents) ||
     !/openPlaybookSignalSelector\(signalBtn\.dataset\.arg\)/.test(appEvents)
   ) {
@@ -3733,7 +3749,9 @@ function checkSignalPlayIntegrationContracts() {
     !/\.signals-play-dialog/.test(signalsCss) ||
     !/\.signals-play-chip/.test(signalsCss) ||
     !/\.signals-play-video/.test(signalsCss) ||
-    !/\.pb-signal-badge/.test(signalsCss)
+    !/\.pb-signal-badge/.test(signalsCss) ||
+    !/z-index:\s*calc\(var\(--z-skip-link\) \+ 2\)/.test(signalsCss) ||
+    !/\.pp-signals-btn/.test(presentationCss)
   ) {
     fail("signal selector styling is incomplete");
   }
@@ -3741,6 +3759,7 @@ function checkSignalPlayIntegrationContracts() {
   if (
     !/- \[x\] Add a Playbook detail surface for "Signals for this play"/.test(roadmap) ||
     !/- \[x\] Add a small `Signals` button to Practice Script play rows\/cards/.test(roadmap) ||
+    !/- \[x\] Add the same signal selector to Script Swipe View \/ presentation-style/.test(roadmap) ||
     !/- \[x\] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and/.test(roadmap)
   ) {
     fail("signals roadmap checklist is not updated for the play selector slice");

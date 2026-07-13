@@ -124,7 +124,7 @@ Phase 3 - Practice Script and Swipe View integration:
 
 - [x] Add a small `Signals` button to Practice Script play rows/cards when the
   current play resolves at least one signal.
-- [ ] Add the same signal selector to Script Swipe View / presentation-style
+- [x] Add the same signal selector to Script Swipe View / presentation-style
   study views so athletes can open signals while studying the current play.
 - [x] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and
   `MOTIONS`; tapping a chip plays the very short clip.

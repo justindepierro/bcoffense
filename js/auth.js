@@ -192,6 +192,7 @@
     "movePlayPresentation",
     "togglePresentationDiscussion",
     "openPresentationDiscussion",
+    "openPlayPresentationSignals",
     "closePresentationDiscussion",
     "retryPresentationDiscussion",
     "askPresentationQuestion",
