@@ -484,13 +484,16 @@ function renderScriptDefenseInputs(play, index, playLabel, defenseDatalistState)
       </div>`;
 }
 
-function renderScriptPlayControls(play, index, playLabel, reps) {
+function renderScriptPlayControls(play, index, playLabel, reps, signalCount = 0) {
   const hasClip =
     typeof window.playClips !== "undefined" &&
     typeof window.playClips.hasForPlay === "function" &&
     window.playClips.hasForPlay(play);
   const clipBtn = hasClip
     ? `<button class="script-clip-btn" data-action="openScriptClipViewer" data-arg="${index}" title="Watch video clips" aria-label="Watch video clips for ${escapeHtml(playLabel)}">🎬</button>`
+    : "";
+  const signalBtn = signalCount
+    ? `<button class="script-signal-btn" data-action="openScriptSignalSelector" data-arg="${index}" title="Watch signals" aria-label="Watch ${signalCount} signal clips for ${escapeHtml(playLabel)}">Signals</button>`
     : "";
   const discBtn = typeof getPlayThreadId === "function"
     ? `<button class="script-disc-btn" data-action="openScriptDiscussion" data-arg="${index}" title="View discussion" aria-label="Discussion for ${escapeHtml(playLabel)}">💬</button>` +
@@ -503,6 +506,7 @@ function renderScriptPlayControls(play, index, playLabel, reps) {
           <input class="play-notes-input" type="text" value="${escapeHtml(play.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
         </div>
         <div class="play-control-actions">
+          ${signalBtn}
           ${clipBtn}
           ${discBtn}
           <button class="script-present-btn" data-action="openScriptPresentation" data-idx="${index}" title="Present this play" aria-label="Present ${escapeHtml(playLabel)}">▶</button>
@@ -595,6 +599,10 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       ? renderPlaySourceStatusBadge(play)
       : "";
   const reps = play.reps ?? 1;
+  const signalCount =
+    !opts.printStyle && typeof getSignalCountForPlay === "function"
+      ? getSignalCountForPlay(play)
+      : 0;
   const itemClasses = [
     "script-item",
     `script-item--${availTypeSlug(play.type)}`,
@@ -626,6 +634,11 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
         <div class="script-player-card-head">
           <div class="script-player-card-badge">Play ${playNumber}${wbBadge}</div>
           <div class="script-player-card-actions">
+            ${signalCount
+        ? `<button class="script-player-signal-btn" data-action="openScriptSignalSelector"
+            data-arg="${index}" title="Watch signals" aria-label="Watch ${signalCount} signal clips for ${escapeHtml(playLabel)}">Signals</button>`
+        : ""
+      }
             ${typeof window.playClips !== "undefined" &&
         typeof window.playClips.hasForPlay === "function" &&
         window.playClips.hasForPlay(play)
@@ -701,7 +714,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
         </select>
       </div>
       ${renderScriptDefenseInputs(play, index, playLabel, defenseDatalistState)}
-      ${renderScriptPlayControls(play, index, playLabel, reps)}
+      ${renderScriptPlayControls(play, index, playLabel, reps, signalCount)}
       ${readinessMarkup}
       ${playerPersonnelMarkup}
     </div>

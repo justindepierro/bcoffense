@@ -3682,6 +3682,73 @@ function checkGamePlanMediaReadinessContracts() {
   console.log("game plan media readiness contracts ok");
 }
 
+function checkSignalPlayIntegrationContracts() {
+  const signals = read("js/signals.js");
+  const playbookRender = read("js/playbook-render.js");
+  const scriptRender = read("js/script-render.js");
+  const appEvents = read("js/app-events.js");
+  const signalsCss = read("css/signals.css");
+  const roadmap = read("CONSOLIDATED_ROADMAP.md");
+
+  if (
+    !/function resolveSignalsForPlay\(play\)/.test(signals) ||
+    !/const seen = new Set\(\)/.test(signals) ||
+    !/function getSignalCountForPlay\(play\)/.test(signals) ||
+    !/function openSignalSelectorForPlay\(play, options = \{\}\)/.test(signals) ||
+    !/function openPlaybookSignalSelector\(idx\)/.test(signals) ||
+    !/typeof filteredPlays !== "undefined" && Array\.isArray\(filteredPlays\)/.test(signals) ||
+    !/function openScriptSignalSelector\(idx\)/.test(signals) ||
+    !/function openSignalClip\(recordId\)/.test(signals) ||
+    !/function closeSignalSelector\(\)/.test(signals)
+  ) {
+    fail("signal play selector API is incomplete");
+  }
+
+  if (
+    !/signalCount:\s*[\s\S]*getSignalCountForPlay\(play\)/.test(playbookRender) ||
+    !/data-action="openPlaybookSignalSelector"/.test(playbookRender) ||
+    !/pb-card-action--signals/.test(playbookRender)
+  ) {
+    fail("playbook signal entry points are incomplete");
+  }
+
+  if (
+    !/script-signal-btn/.test(scriptRender) ||
+    !/script-player-signal-btn/.test(scriptRender) ||
+    !/data-action="openScriptSignalSelector"/.test(scriptRender) ||
+    !/renderScriptPlayControls\(play, index, playLabel, reps, signalCount\)/.test(scriptRender)
+  ) {
+    fail("script signal entry points are incomplete");
+  }
+
+  if (
+    !/data-action='openPlaybookSignalSelector'/.test(appEvents) ||
+    !/openPlaybookSignalSelector\(signalBtn\.dataset\.arg\)/.test(appEvents)
+  ) {
+    fail("playbook signal click routing is incomplete");
+  }
+
+  if (
+    !/\.signals-play-overlay/.test(signalsCss) ||
+    !/\.signals-play-dialog/.test(signalsCss) ||
+    !/\.signals-play-chip/.test(signalsCss) ||
+    !/\.signals-play-video/.test(signalsCss) ||
+    !/\.pb-signal-badge/.test(signalsCss)
+  ) {
+    fail("signal selector styling is incomplete");
+  }
+
+  if (
+    !/- \[x\] Add a Playbook detail surface for "Signals for this play"/.test(roadmap) ||
+    !/- \[x\] Add a small `Signals` button to Practice Script play rows\/cards/.test(roadmap) ||
+    !/- \[x\] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and/.test(roadmap)
+  ) {
+    fail("signals roadmap checklist is not updated for the play selector slice");
+  }
+
+  console.log("signal play integration contracts ok");
+}
+
 function checkGuideContracts() {
   const html = read("index.html");
   const guide = read("AGENTS.md");
@@ -3823,6 +3890,7 @@ checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();
 checkGamePlanMediaReadinessContracts();
+checkSignalPlayIntegrationContracts();
 checkCacheBusters();
 checkServiceWorkerLifecycle();
 checkServiceWorkerCachePolicy();

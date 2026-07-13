@@ -115,20 +115,20 @@ Phase 2 - play resolution:
 
 - [x] Add a resolver that takes a play and returns matching signal records by
   component, grouped under `CORE`, `TAGS`, `BLOCKING`, and `MOTIONS`.
-- [ ] Add a Playbook detail surface for "Signals for this play" that shows only
+- [x] Add a Playbook detail surface for "Signals for this play" that shows only
   components with signal clips attached.
-- [ ] Keep empty states quiet: if no signals exist for a play, the play detail
+- [x] Keep empty states quiet: if no signals exist for a play, the play detail
   should not feel broken or unfinished.
 
 Phase 3 - Practice Script and Swipe View integration:
 
-- [ ] Add a small `Signals` button to Practice Script play rows/cards when the
+- [x] Add a small `Signals` button to Practice Script play rows/cards when the
   current play resolves at least one signal.
 - [ ] Add the same signal selector to Script Swipe View / presentation-style
   study views so athletes can open signals while studying the current play.
-- [ ] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and
+- [x] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and
   `MOTIONS`; tapping a chip plays the very short clip.
-- [ ] Keep the main play view clean. Signals should open in a compact selector,
+- [x] Keep the main play view clean. Signals should open in a compact selector,
   drawer, or lightweight modal rather than occupying permanent space.
 
 Phase 4 - player study extensions:

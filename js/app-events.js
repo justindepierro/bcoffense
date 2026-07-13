@@ -710,6 +710,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         return;
       }
+      const signalBtn = e.target.closest("[data-action='openPlaybookSignalSelector']");
+      if (signalBtn) {
+        e.stopPropagation();
+        if (typeof openPlaybookSignalSelector === "function") {
+          openPlaybookSignalSelector(signalBtn.dataset.arg);
+        }
+        return;
+      }
       const row = e.target.closest("tr[data-action]");
       if (!row) return;
       const idx = parseInt(row.dataset.idx, 10);

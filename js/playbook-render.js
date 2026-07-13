@@ -178,6 +178,10 @@ function renderPlaybook() {
             typeof window.playClips.hasForPlay === "function"
             ? window.playClips.hasForPlay(play)
             : false,
+        signalCount:
+          typeof getSignalCountForPlay === "function"
+            ? getSignalCountForPlay(play)
+            : 0,
         usage: usageIndex ? usageIndex.get(play) : null,
         readinessBadge,
         readinessCardBadge,
@@ -212,6 +216,9 @@ function renderPlaybook() {
         const clipBadge = item.hasClips
           ? `<span class="pb-clip-badge" data-action="openPlaybookClipViewer" data-arg="${idx}" role="button" tabindex="0" title="Watch video clips" aria-label="Watch video clips">\ud83c\udfac</span>`
           : "";
+        const signalBadge = item.signalCount
+          ? `<span class="pb-signal-badge" data-action="openPlaybookSignalSelector" data-arg="${idx}" role="button" tabindex="0" title="Watch play signals" aria-label="Watch ${item.signalCount} signal clips">Signals</span>`
+          : "";
 
         const gpToggle = activeOpponent
           ? `<button class="gp-toggle-btn${gpActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" data-arg="${idx}" title="${gpActive ? "Remove from" : "Add to"} game plan">🎯</button>`
@@ -226,7 +233,7 @@ function renderPlaybook() {
                 title="${rowTitle}">
                 <td class="col-gameplan">${gpToggle}</td>
                 <td class="col-install">${item.installBadge}</td>
-                <td class="col-type col-type--${(play.type || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '')}">${wbIndicator}${jvBadge}${wbFlagBadge}${imgBadge}${clipBadge}<span class="play-type-chip">${highlight(play.type)}</span></td>
+                <td class="col-type col-type--${(play.type || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '')}">${wbIndicator}${jvBadge}${wbFlagBadge}${imgBadge}${clipBadge}${signalBadge}<span class="play-type-chip">${highlight(play.type)}</span></td>
                 <td class="col-formation">${highlight(play.formation)}</td>
                 <td class="col-tags">${escapeHtml([play.formTag1, play.formTag2].filter(Boolean).join(", ") || "-")}</td>
                 <td class="col-back">${highlight(play.back || "-")}</td>
@@ -267,12 +274,16 @@ function renderPlaybook() {
         const cardClipBadge = item.hasClips
           ? `<span class="pb-clip-badge" data-action="openPlaybookClipViewer" data-arg="${idx}" role="button" tabindex="0" title="Watch video clips" aria-label="Watch video clips">\ud83c\udfac</span>`
           : "";
+        const cardSignalBadge = item.signalCount
+          ? `<span class="pb-signal-badge" data-action="openPlaybookSignalSelector" data-arg="${idx}" role="button" tabindex="0" title="Watch play signals" aria-label="Watch ${item.signalCount} signal clips">Signals</span>`
+          : "";
         const hasCoachNotes = String(play.playerNotes || "").trim();
         const studyBadges = [
           imageSig
             ? '<span class="pb-card-study-badge pb-card-study-badge--diagram">Diagram</span>'
             : '<span class="pb-card-study-badge pb-card-study-badge--missing">Needs diagram</span>',
           item.hasClips ? '<span class="pb-card-study-badge pb-card-study-badge--film">Film</span>' : "",
+          item.signalCount ? '<span class="pb-card-study-badge pb-card-study-badge--signals">Signals</span>' : "",
           hasCoachNotes ? '<span class="pb-card-study-badge pb-card-study-badge--notes">Coach note</span>' : "",
         ].filter(Boolean).join("");
         const gpCardToggle = activeOpponent
@@ -291,7 +302,7 @@ function renderPlaybook() {
                tabindex="0" role="button"
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
             ${playerCardMedia}
-            <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge}${cardClipBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></div>
+            <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge}${cardClipBadge}${cardSignalBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></div>
             <div class="pb-card-sub">${highlight(play.type)}${play.motion ? " · " + highlight(play.motion) : ""}${play.back ? " · " + highlight(play.back) : ""}</div>
             <div class="pb-card-study-row">${studyBadges}</div>
             ${playerCardNote}
@@ -427,11 +438,15 @@ function _renderPlayerPlaybookCardActions(item) {
   const filmButton = item.hasClips
     ? `<button type="button" class="pb-card-action pb-card-action--film" data-action="openPlaybookClipViewer" data-arg="${item.idx}" aria-label="Watch film for ${escapeHtml(playLabel)}">Film</button>`
     : "";
+  const signalButton = item.signalCount
+    ? `<button type="button" class="pb-card-action pb-card-action--signals" data-action="openPlaybookSignalSelector" data-arg="${item.idx}" aria-label="Watch signals for ${escapeHtml(playLabel)}">Signals</button>`
+    : "";
   return `
     <div class="pb-card-actions" aria-label="Player study actions">
       <button type="button" class="pb-card-action pb-card-action--study" data-action="openPlaybookPresentation" data-arg="${item.idx}" aria-label="Study ${escapeHtml(playLabel)}">Study</button>
       ${askButton}
       ${filmButton}
+      ${signalButton}
     </div>`;
 }
 

@@ -27,6 +27,7 @@ const SIGNAL_MAX_DURATION_SEC = 5;
 
 let _sigSelected = null;
 let _sigLastRenderToken = 0;
+let _sigSelectorState = null;
 
 function _sigCanManage() {
   return typeof canEditUser === "function" ? Boolean(canEditUser()) : false;
@@ -531,6 +532,7 @@ function resolveSignalsForPlay(play) {
   if (!play) return {};
   const records = _sigRecordsMap();
   const result = {};
+  const seen = new Set();
   SIGNAL_CATEGORIES.forEach((category) => {
     result[category.id] = [];
   });
@@ -539,8 +541,11 @@ function resolveSignalsForPlay(play) {
       const value = String(play[field] == null ? "" : play[field]).trim();
       if (!value) return;
       const compareKey = _sigCompareValue(value);
+      const dedupeKey = `${component.componentType}:${compareKey}`;
+      if (seen.has(dedupeKey)) return;
       const record = records.get(_sigRecordId(component.componentType, compareKey));
       if (!record || record.visibility !== "published" || record.clipCount <= 0) return;
+      seen.add(dedupeKey);
       result[component.category].push({
         ...record,
         label: component.label,
@@ -550,6 +555,187 @@ function resolveSignalsForPlay(play) {
     });
   });
   return result;
+}
+
+function _sigFlattenPlayGroups(groups) {
+  const records = [];
+  SIGNAL_CATEGORIES.forEach((category) => {
+    (groups?.[category.id] || []).forEach((record) => {
+      records.push({ ...record, groupLabel: category.label });
+    });
+  });
+  return records;
+}
+
+function getSignalCountForPlay(play) {
+  return _sigFlattenPlayGroups(resolveSignalsForPlay(play)).length;
+}
+
+function _sigPlayLabel(play) {
+  if (typeof getPlayPresentationPlayLabel === "function") {
+    return getPlayPresentationPlayLabel(play);
+  }
+  return [play?.formation, play?.protection, play?.play].filter(Boolean).join(" ") || "Play";
+}
+
+function _sigSelectorRecordLabel(record) {
+  return String(record?.value || record?.componentValue || record?.compareKey || "Signal").trim();
+}
+
+function _sigRenderSelectorPreview(content) {
+  const preview = document.getElementById("signalsPlayPreview");
+  if (preview) preview.innerHTML = sanitizeHTML(content);
+}
+
+function _sigRenderSelectorShell(play, groups, records, sourceLabel) {
+  const playLabel = _sigPlayLabel(play);
+  const grouped = SIGNAL_CATEGORIES.map((category) => {
+    const items = groups[category.id] || [];
+    if (!items.length) return "";
+    const chips = items
+      .map((record) => `
+        <button type="button" class="signals-play-chip" data-action="openSignalClip" data-arg="${escapeHtml(record.id)}">
+          <span>${escapeHtml(_sigSelectorRecordLabel(record))}</span>
+          <small>${escapeHtml(record.label || record.componentType || "Signal")}</small>
+        </button>`)
+      .join("");
+    return `
+      <section class="signals-play-group" aria-label="${escapeHtml(category.label)} signals">
+        <h4>${escapeHtml(category.label)}</h4>
+        <div class="signals-play-chip-grid">${chips}</div>
+      </section>`;
+  }).join("");
+
+  return `
+    <div id="signalSelectorOverlay" class="signals-play-overlay" data-action="closeSignalSelectorOverlay" role="dialog" aria-modal="true" aria-labelledby="signalsPlayTitle">
+      <div class="signals-play-dialog">
+        <header class="signals-play-header">
+          <div>
+            <span class="signals-play-kicker">${escapeHtml(sourceLabel || "Play Signals")}</span>
+            <h3 id="signalsPlayTitle">${escapeHtml(playLabel)}</h3>
+          </div>
+          <button type="button" class="signals-play-close" data-action="closeSignalSelector" aria-label="Close signals">&times;</button>
+        </header>
+        <div class="signals-play-layout">
+          <div class="signals-play-list" aria-label="Signals for this play">
+            ${grouped}
+          </div>
+          <div id="signalsPlayPreview" class="signals-play-preview">
+            <div class="signals-play-empty">
+              <strong>${records.length} signal${records.length === 1 ? "" : "s"} available</strong>
+              <span>Select a component to watch its signal.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function openSignalSelectorForPlay(play, options = {}) {
+  const groups = resolveSignalsForPlay(play);
+  const records = _sigFlattenPlayGroups(groups);
+  if (!records.length) {
+    showToast("No published signal clips are attached to this play yet.", {
+      type: "info",
+      duration: 2200,
+    });
+    return;
+  }
+  closeSignalSelector();
+  _sigSelectorState = {
+    play,
+    groups,
+    records,
+    token: 0,
+    selectedId: "",
+  };
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = sanitizeHTML(
+    _sigRenderSelectorShell(play, groups, records, options.sourceLabel),
+  );
+  document.body.appendChild(wrapper.firstElementChild);
+  if (typeof trapFocus === "function") {
+    trapFocus(document.getElementById("signalSelectorOverlay"));
+  }
+  openSignalClip(records[0].id);
+}
+
+function closeSignalSelector() {
+  const overlay = document.getElementById("signalSelectorOverlay");
+  if (overlay) overlay.remove();
+  _sigSelectorState = null;
+}
+
+async function openSignalClip(recordId) {
+  if (!_sigSelectorState) return;
+  const record = _sigSelectorState.records.find((item) => item.id === recordId);
+  if (!record) return;
+  _sigSelectorState.selectedId = recordId;
+  _sigSelectorState.token += 1;
+  const token = _sigSelectorState.token;
+  document.querySelectorAll(".signals-play-chip").forEach((button) => {
+    button.classList.toggle("active", button.dataset.arg === recordId);
+  });
+  _sigRenderSelectorPreview(`
+    <div class="signals-play-empty">
+      <strong>${escapeHtml(_sigSelectorRecordLabel(record))}</strong>
+      <span>Loading signal clip...</span>
+    </div>`);
+
+  try {
+    if (!window.playClips || typeof window.playClips.listForSig !== "function") {
+      throw new Error("Signal video storage is not available.");
+    }
+    const data = await window.playClips.listForSig(record.clipKey);
+    if (!_sigSelectorState || token !== _sigSelectorState.token) return;
+    const clips = Array.isArray(data?.clips) ? data.clips : [];
+    const clip = clips[0];
+    if (!clip?.url) {
+      _sigRenderSelectorPreview(`
+        <div class="signals-play-empty">
+          <strong>${escapeHtml(_sigSelectorRecordLabel(record))}</strong>
+          <span>This signal record has no playable clip right now.</span>
+        </div>`);
+      return;
+    }
+    const notes = String(record.notes || "").trim();
+    _sigRenderSelectorPreview(`
+      <div class="signals-play-video-shell">
+        <video class="signals-play-video" src="${escapeHtml(clip.url)}" controls playsinline autoplay></video>
+        <div class="signals-play-video-meta">
+          <strong>${escapeHtml(_sigSelectorRecordLabel(record))}</strong>
+          <span>${escapeHtml(record.label || record.componentType || "Signal")}</span>
+          ${notes ? `<p>${escapeHtml(notes)}</p>` : ""}
+        </div>
+      </div>`);
+  } catch (err) {
+    if (!_sigSelectorState || token !== _sigSelectorState.token) return;
+    _sigRenderSelectorPreview(`
+      <div class="signals-play-empty signals-play-empty--error">
+        <strong>${escapeHtml(_sigSelectorRecordLabel(record))}</strong>
+        <span>${escapeHtml(err?.message || "Could not load this signal clip.")}</span>
+      </div>`);
+  }
+}
+
+function openPlaybookSignalSelector(idx) {
+  const playIdx = Number.parseInt(idx, 10);
+  const source =
+    typeof filteredPlays !== "undefined" && Array.isArray(filteredPlays)
+      ? filteredPlays
+      : typeof plays !== "undefined"
+        ? plays
+        : [];
+  const play = Number.isFinite(playIdx) ? source[playIdx] : null;
+  if (!play) return;
+  openSignalSelectorForPlay(play, { sourceLabel: "Playbook Signals" });
+}
+
+function openScriptSignalSelector(idx) {
+  const scriptIdx = Number.parseInt(idx, 10);
+  const play = Number.isFinite(scriptIdx) ? script?.[scriptIdx] : null;
+  if (!play || play.isSeparator) return;
+  openSignalSelectorForPlay(play, { sourceLabel: "Script Signals" });
 }
 
 window.SIGNAL_CATEGORIES = SIGNAL_CATEGORIES;
