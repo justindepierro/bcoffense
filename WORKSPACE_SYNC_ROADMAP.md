@@ -41,11 +41,12 @@ workflow.
 
 ## Phase 2 - Coach Media Publish
 
-- [ ] Replace "Sync Diagrams" daily workflow with "Publish Media".
-- [ ] Show active player-visible script media coverage: ready, missing, stale,
+- [x] Replace "Sync Diagrams" daily workflow with "Publish Media".
+- [x] Show active player-visible script media coverage: ready, missing, stale,
   unpublished, and failed.
-- [ ] Upload only missing/stale diagrams and clips.
-- [ ] Show result summary and failed items with exact next steps.
+- [x] Upload only stale/unpublished player-visible diagrams; report clip gaps
+  because clips are already cloud-published when attached.
+- [x] Show result summary and failed items with exact next steps.
 
 ## Phase 3 - Player Diagram Readiness
 

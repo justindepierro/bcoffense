@@ -3280,6 +3280,7 @@ function checkWorkspaceSyncContracts() {
   const workspaceSync = read("js/workspace-sync.js");
   const shell = read("js/app-shell.js");
   const layout = read("css/layout.css");
+  const playbookCss = read("css/playbook.css");
   const cloudSync = read("js/cloud-sync.js");
   const playImages = read("js/play-images.js");
   const scriptPlayer = read("js/script-player.js");
@@ -3297,6 +3298,10 @@ function checkWorkspaceSyncContracts() {
     "- [x] Deduplicate repeated writes so rapid edits become one visible save cycle.",
     "- [x] Expose retry for failed cloud/media work from the dock.",
     "- [x] Keep manual Cloud Sync and Sync Diagrams as advanced fallback actions.",
+    "- [x] Replace \"Sync Diagrams\" daily workflow with \"Publish Media\".",
+    "- [x] Show active player-visible script media coverage: ready, missing, stale,",
+    "- [x] Upload only stale/unpublished player-visible diagrams; report clip gaps",
+    "- [x] Show result summary and failed items with exact next steps.",
   ].forEach((token) => {
     if (!roadmap.includes(token)) {
       fail(`workspace sync roadmap missing ${token}`);
@@ -3390,6 +3395,36 @@ function checkWorkspaceSyncContracts() {
   ) {
     fail("play image sync does not route media upload progress and skipped items into workspace status");
   }
+
+  if (
+    !/data-action="openPublishMediaModal"/.test(html) ||
+    !/data-action="publishPlayerMedia"/.test(playImages) ||
+    !/function buildPlayerMediaPublishReport\(\)/.test(playImages) ||
+    !/function renderPlayerMediaPublishReport\(report\)/.test(playImages) ||
+    !/window\.openPublishMediaModal = async function/.test(playImages) ||
+    !/window\.publishPlayerMedia = async function/.test(playImages) ||
+    !/window\.closePublishMedia = function/.test(playImages) ||
+    !/getPlayerPublishedScripts\(\)/.test(playImages) ||
+    !/window\.playClips\.loadIndex\(\)/.test(playImages) ||
+    !/window\.playClips\.hasForPlay\(play\)/.test(playImages) ||
+    !/publishableKeys/.test(playImages) ||
+    !/syncToRemote\(report\.rows\.map\(\(row\) => row\.play\), \{[\s\S]*keys: report\.publishableKeys/.test(playImages)
+  ) {
+    fail("publish media workflow is not wired to player-visible script media readiness and targeted diagram upload");
+  }
+
+  [
+    ".pb-publish-media-summary",
+    ".pb-publish-media-meta",
+    ".pb-publish-media-row",
+    ".pb-publish-media-row--stale",
+    ".pb-publish-media-row--unpublished",
+    ".pb-publish-media-chip",
+  ].forEach((token) => {
+    if (!playbookCss.includes(token)) {
+      fail(`publish media styling missing ${token}`);
+    }
+  });
 
   if (
     !/queueWorkspaceSyncJob\("player", kind/.test(scriptPlayer) ||

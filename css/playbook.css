@@ -4775,6 +4775,89 @@ body[data-auth-role="player"] .pb-card .pb-present-btn {
   white-space: nowrap;
 }
 
+.pb-publish-media-summary {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.pb-publish-media-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+.pb-publish-media-meta span {
+  padding: 6px 9px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-light);
+}
+
+.pb-publish-media-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-left: 4px solid var(--color-border-med);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+}
+
+.pb-publish-media-row > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pb-publish-media-row strong,
+.pb-publish-media-row span,
+.pb-publish-media-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pb-publish-media-row strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.pb-publish-media-row span,
+.pb-publish-media-row small {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.pb-publish-media-row--ready {
+  border-left-color: var(--color-success);
+}
+
+.pb-publish-media-row--stale,
+.pb-publish-media-row--unpublished {
+  border-left-color: var(--color-warning);
+}
+
+.pb-publish-media-row--missing,
+.pb-publish-media-row--failed {
+  border-left-color: var(--color-danger);
+}
+
+.pb-publish-media-chip {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+}
+
 .pb-health-vocab-grid {
   display: grid;
   gap: var(--space-sm);

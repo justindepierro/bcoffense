@@ -795,6 +795,201 @@
     };
   }
 
+  function _publishMediaTimestamp(value) {
+    const parsed = Date.parse(value || "");
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function _publishMediaPlayLabel(play) {
+    return [
+      play?.formation,
+      play?.motion,
+      play?.play,
+      play?.playTag1,
+      play?.playTag2,
+    ].filter(Boolean).join(" ") || "Unnamed play";
+  }
+
+  function _publishMediaScriptSource(scriptRecord) {
+    return scriptRecord?.name || scriptRecord?.date || "Published script";
+  }
+
+  function _publishMediaStatusLabel(status) {
+    if (status === "ready") return "Ready";
+    if (status === "stale") return "Stale";
+    if (status === "unpublished") return "Unpublished";
+    if (status === "failed") return "Needs fix";
+    return "Missing";
+  }
+
+  async function buildPlayerMediaPublishReport() {
+    const allKeys = await loadKeys();
+    if (window.playClips && typeof window.playClips.loadIndex === "function") {
+      try { await window.playClips.loadIndex(); } catch (_err) { /* keep report best-effort */ }
+    }
+    const publishedScripts = typeof getPlayerPublishedScripts === "function"
+      ? getPlayerPublishedScripts()
+      : [];
+    const publishedPlayEntries = publishedScripts.flatMap((savedScript) =>
+      (Array.isArray(savedScript?.plays) ? savedScript.plays : [])
+        .filter((play) => play && !play.isSeparator)
+        .map((play) => ({ play, script: savedScript })),
+    );
+    const latestScriptAt = publishedScripts.reduce((max, savedScript) => {
+      const ts = Math.max(
+        _publishMediaTimestamp(savedScript.playerPublishedAt),
+        _publishMediaTimestamp(savedScript.savedAt),
+        _publishMediaTimestamp(savedScript.date ? `${savedScript.date}T00:00:00` : ""),
+      );
+      return Math.max(max, ts);
+    }, 0);
+    const publishStatus = typeof getPlayerPublishStatus === "function"
+      ? getPlayerPublishStatus()
+      : {};
+    const diagramStatus = publishStatus.diagrams || {};
+    const lastDiagramPublishAt = _publishMediaTimestamp(diagramStatus.updatedAt);
+    const publishableKeys = new Set();
+    const rows = publishedPlayEntries.map(({ play, script }, index) => {
+      const localSig = storedDisplaySignatureForPlay(play);
+      const identityKey = _remoteIdentityKey(play);
+      const hasClip = Boolean(
+        window.playClips &&
+        typeof window.playClips.hasForPlay === "function" &&
+        window.playClips.hasForPlay(play)
+      );
+      let diagramStatusName = "missing";
+      let detail = "No local player-safe diagram found on this device.";
+      if (localSig && !identityKey) {
+        diagramStatusName = "failed";
+        detail = "Diagram exists locally, but this play does not have a stable cloud media key.";
+      } else if (localSig && !lastDiagramPublishAt) {
+        diagramStatusName = "unpublished";
+        detail = "Diagram is local and ready to publish.";
+      } else if (localSig && latestScriptAt > lastDiagramPublishAt + 500) {
+        diagramStatusName = "stale";
+        detail = "Player-visible scripts changed after the last diagram publish.";
+      } else if (localSig) {
+        diagramStatusName = "ready";
+        detail = "Diagram publish is current for the player-visible scripts.";
+      }
+      if (localSig && identityKey && ["unpublished", "stale"].includes(diagramStatusName)) {
+        publishableKeys.add(localSig);
+      }
+      return {
+        index,
+        play,
+        script,
+        source: _publishMediaScriptSource(script),
+        label: _publishMediaPlayLabel(play),
+        localSig,
+        identityKey,
+        diagramStatus: diagramStatusName,
+        detail,
+        hasClip,
+      };
+    });
+    const counts = rows.reduce((acc, row) => {
+      acc[row.diagramStatus] = (acc[row.diagramStatus] || 0) + 1;
+      if (row.hasClip) acc.clipReady += 1;
+      else acc.clipMissing += 1;
+      return acc;
+    }, {
+      ready: 0,
+      stale: 0,
+      unpublished: 0,
+      missing: 0,
+      failed: 0,
+      clipReady: 0,
+      clipMissing: 0,
+    });
+    const playerKeys = _playListDiagramKeys(rows.map((row) => row.play), allKeys);
+    return {
+      publishedScripts,
+      rows,
+      counts,
+      latestScriptAt,
+      lastDiagramPublishAt,
+      lastDiagramPublishLabel: diagramStatus.label || "",
+      publishableKeys: [...publishableKeys],
+      allPlayerKeys: playerKeys,
+    };
+  }
+
+  function _renderPublishMediaRow(row) {
+    return `<div class="pb-publish-media-row pb-publish-media-row--${escapeAttr(row.diagramStatus)}">
+      <div>
+        <strong>${escapeHtml(row.label)}</strong>
+        <span>${escapeHtml(row.source)} · ${escapeHtml(_publishMediaStatusLabel(row.diagramStatus))}${row.hasClip ? " · Clip ready" : " · No clip"}</span>
+        <small>${escapeHtml(row.detail)}</small>
+      </div>
+      <span class="pb-publish-media-chip">${escapeHtml(row.hasClip ? "Clip" : "No clip")}</span>
+    </div>`;
+  }
+
+  function renderPlayerMediaPublishReport(report) {
+    const total = report.rows.length;
+    const readyPct = total
+      ? Math.round((report.counts.ready / total) * 100)
+      : 0;
+    const scoreClass = readyPct >= 90
+      ? "is-good"
+      : readyPct >= 65
+        ? "is-warn"
+        : "is-poor";
+    const issueRows = report.rows
+      .filter((row) => row.diagramStatus !== "ready" || !row.hasClip)
+      .slice(0, 14)
+      .map(_renderPublishMediaRow)
+      .join("");
+    const readyRows = report.rows
+      .filter((row) => row.diagramStatus === "ready" && row.hasClip)
+      .slice(0, 8)
+      .map(_renderPublishMediaRow)
+      .join("");
+    const latestText = report.latestScriptAt
+      ? new Date(report.latestScriptAt).toLocaleString()
+      : "No player-visible script";
+    const diagramText = report.lastDiagramPublishAt
+      ? new Date(report.lastDiagramPublishAt).toLocaleString()
+      : "Never published";
+    return `
+      <div class="pb-health-summary pb-publish-media-summary">
+        <div class="pb-health-score ${scoreClass}">
+          <strong>${readyPct}%</strong>
+          <span>Media readiness</span>
+        </div>
+        <div class="pb-health-card"><strong>${report.publishedScripts.length}</strong><span>Player scripts</span></div>
+        <div class="pb-health-card"><strong>${total}</strong><span>Script plays</span></div>
+        <div class="pb-health-card"><strong>${report.counts.ready}</strong><span>Ready diagrams</span></div>
+        <div class="pb-health-card"><strong>${report.publishableKeys.length}</strong><span>Diagrams to publish</span></div>
+        <div class="pb-health-card"><strong>${report.counts.missing}</strong><span>Missing diagrams</span></div>
+        <div class="pb-health-card"><strong>${report.counts.clipReady}</strong><span>Ready clips</span></div>
+        <div class="pb-health-card"><strong>${report.counts.clipMissing}</strong><span>No clip</span></div>
+      </div>
+      <div class="pb-health-guidance">
+        Publish Media checks player-visible scripts first. It uploads only local player-safe diagrams that are unpublished or stale. Video clips are already cloud-hosted when uploaded, so this report flags missing clips instead of re-uploading them.
+      </div>
+      <div class="pb-publish-media-meta">
+        <span>Latest player script: <strong>${escapeHtml(latestText)}</strong></span>
+        <span>Last diagram publish: <strong>${escapeHtml(diagramText)}</strong></span>
+      </div>
+      <section class="pb-health-section">
+        <div class="pb-health-section-head">
+          <h4>Needs Attention</h4>
+          <span>${report.publishableKeys.length} publishable · ${report.counts.missing} missing · ${report.counts.failed} failed</span>
+        </div>
+        ${issueRows || `<div class="pb-health-empty">All player-visible script plays have current diagrams and clips.</div>`}
+        ${report.rows.length > 14 ? `<div class="pb-health-more">Showing top 14 media items.</div>` : ""}
+      </section>
+      <section class="pb-health-section">
+        <div class="pb-health-section-head">
+          <h4>Ready Sample</h4>
+          <span>${report.counts.ready} current diagrams</span>
+        </div>
+        ${readyRows || `<div class="pb-health-empty">No fully ready play media found yet.</div>`}
+      </section>`;
+  }
+
   function _diagramCountLabel(count) {
     return `${count} diagram${count === 1 ? "" : "s"}`;
   }
@@ -1391,6 +1586,104 @@
     } else if (typeof editPlay === "function") {
       editPlay(idx);
     }
+  };
+
+  async function _renderPublishMediaModalBody() {
+    const body = document.getElementById("publishMediaBody");
+    if (!body) return null;
+    body.innerHTML = `<div class="pb-health-empty">Checking player-visible media...</div>`;
+    const report = await buildPlayerMediaPublishReport();
+    body.innerHTML = renderPlayerMediaPublishReport(report);
+    return report;
+  }
+
+  window.openPublishMediaModal = async function () {
+    document.getElementById("publishMediaOverlay")?.remove();
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay visible";
+    overlay.id = "publishMediaOverlay";
+    overlay.dataset.action = "closePublishMediaOverlay";
+    overlay.innerHTML = `
+      <div class="custom-modal pb-health-modal pb-publish-media-modal" role="dialog" aria-modal="true" aria-labelledby="publishMediaTitle">
+        <div class="custom-modal-header">
+          <span class="custom-modal-icon">🟢</span>
+          <h3 class="custom-modal-title" id="publishMediaTitle">Publish Media</h3>
+          <button class="modal-close" aria-label="Close" data-action="closePublishMedia">×</button>
+        </div>
+        <div class="custom-modal-body pb-health-body" id="publishMediaBody">
+          <div class="pb-health-empty">Checking player-visible media...</div>
+        </div>
+        <div class="custom-modal-actions">
+          <button type="button" class="btn btn-primary btn-sm" data-action="publishPlayerMedia">Publish Needed Media</button>
+          <button type="button" class="btn btn-sm" data-action="syncPlayImagesToCloud">Advanced: Sync Diagrams</button>
+          <button type="button" class="btn btn-sm" data-action="closePublishMedia">Done</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    if (typeof trapFocus === "function") trapFocus(overlay);
+    try {
+      await _renderPublishMediaModalBody();
+    } catch (err) {
+      const body = document.getElementById("publishMediaBody");
+      if (body) {
+        body.innerHTML = `<div class="pb-health-empty">Media readiness could not be checked: ${escapeHtml(err?.message || "Unknown error")}</div>`;
+      }
+    }
+  };
+
+  window.closePublishMedia = function () {
+    document.getElementById("publishMediaOverlay")?.remove();
+  };
+
+  window.publishPlayerMedia = async function () {
+    if (!_remoteAvailable()) {
+      if (typeof showModal === "function") {
+        showModal("Cloud media publish is not available on this page.", { title: "Publish Media", icon: "⚠️" });
+      }
+      return;
+    }
+    const report = await buildPlayerMediaPublishReport();
+    if (!report.publishedScripts.length) {
+      if (typeof showModal === "function") {
+        showModal("No practice scripts are currently visible to players. Publish a script first, then publish media.", { title: "Nothing To Publish", icon: "ℹ️" });
+      }
+      await _renderPublishMediaModalBody();
+      return;
+    }
+    if (!report.publishableKeys.length) {
+      const message = report.counts.missing
+        ? `${report.counts.missing} player-visible play${report.counts.missing === 1 ? "" : "s"} still need diagrams attached on this device. Nothing can be uploaded until those diagrams exist locally.`
+        : "No stale or unpublished local diagrams were found for player-visible scripts.";
+      if (typeof showModal === "function") {
+        showModal(message, { title: "Media Already Current", icon: "🟢" });
+      }
+      await _renderPublishMediaModalBody();
+      return;
+    }
+    if (typeof showToast === "function") {
+      showToast(`Publishing ${report.publishableKeys.length} needed diagram${report.publishableKeys.length === 1 ? "" : "s"}...`, { duration: 60000 });
+    }
+    const result = await syncToRemote(report.rows.map((row) => row.play), {
+      keys: report.publishableKeys,
+    });
+    const failedOrSkipped = result.failed + result.skipped;
+    if (typeof showModal === "function") {
+      if (result.pushed > 0 && failedOrSkipped === 0) {
+        showModal(
+          `${result.pushed} needed diagram${result.pushed === 1 ? "" : "s"} published for player-visible scripts.\n\nMissing clips are listed in the report and can be added from each play.`,
+          { title: "Media Published", icon: "🟢" },
+        );
+      } else {
+        const details = result.errors
+          .map((item) => `- ${item.status ? `${item.status}: ` : ""}${item.error}`)
+          .join("\n");
+        showModal(
+          `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} published. ${failedOrSkipped} need attention.${details ? `\n\nFirst issues:\n${details}` : ""}`,
+          { title: result.pushed ? "Publish Partially Complete" : "Publish Needs Attention", icon: "⚠️" },
+        );
+      }
+    }
+    await _renderPublishMediaModalBody();
   };
 
   // Coach-triggered manual sync — preflights scope before pushing images to R2.

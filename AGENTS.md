@@ -333,6 +333,7 @@ window.closeCloudSyncModal
 window.completeWorkspaceSyncJob
 window.closePlayDiagramHealth
 window.closePlayEditor
+window.closePublishMedia
 window.debouncedFilterScriptItems
 window.debouncedOnDashSearchInput
 window.deleteSignalClip
@@ -362,6 +363,7 @@ window.openPlayClipViewer
 window.openPlayDiagramHealth
 window.openPlayDiagramHealthEdit
 window.openPlaybookSignalSelector
+window.openPublishMediaModal
 window.openScriptClipViewer
 window.openScriptSignalSelector
 window.openSignalSelectorForPlay
@@ -372,6 +374,7 @@ window.playerTeamRefreshState
 window.playImages
 window.positionAnchoredMenu
 window.pullCloudBackup
+window.publishPlayerMedia
 window.pushCloudBackup
 window.queueCloudAutoPush
 window.queuePlayerLeaderboardSync
