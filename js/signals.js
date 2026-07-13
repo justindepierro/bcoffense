@@ -25,7 +25,6 @@ const SIGNAL_COMPONENTS = [
 
 const SIGNAL_MAX_DURATION_SEC = 5;
 const SIGNAL_MAX_BYTES = 25 * 1024 * 1024;
-const SIGNAL_SILENT_UPLOAD_FPS = 30;
 const SIGNAL_IPHONE_CAPTURE_HINT =
   "iPhone: 1080p HD at 30 fps, 4-5s, Most Compatible/H.264 works best. Audio is removed before upload.";
 
@@ -111,146 +110,6 @@ function _sigNormalizeClipList(data) {
 
 function _sigFormatMegabytes(bytes) {
   return `${(Number(bytes || 0) / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function _sigSilentMimeType() {
-  if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") return "";
-  return [
-    'video/mp4;codecs="avc1.42E01E"',
-    "video/mp4;codecs=h264",
-    "video/mp4",
-    "video/webm;codecs=vp9",
-    "video/webm;codecs=vp8",
-    "video/webm",
-  ].find((type) => MediaRecorder.isTypeSupported(type)) || "";
-}
-
-function _sigSilentExtension(mimeType) {
-  return String(mimeType || "").includes("mp4") ? "mp4" : "webm";
-}
-
-function _sigSilentFileName(file, mimeType) {
-  const base = String(file?.name || "signal-clip")
-    .replace(/\.[a-z0-9]+$/i, "")
-    .replace(/[^a-z0-9._-]+/gi, "-")
-    .replace(/^-+|-+$/g, "") || "signal-clip";
-  return `${base}-silent.${_sigSilentExtension(mimeType)}`;
-}
-
-async function _sigCreateSilentVideoFile(file, durationSec = 0) {
-  if (typeof MediaRecorder === "undefined") {
-    throw new Error("This browser cannot remove audio from signal videos.");
-  }
-  const mimeType = _sigSilentMimeType();
-  if (!mimeType) {
-    throw new Error("This browser cannot create a silent signal video.");
-  }
-  if (typeof document === "undefined") {
-    throw new Error("Signal video processing is not available.");
-  }
-  const canvas = document.createElement("canvas");
-  if (typeof canvas.captureStream !== "function") {
-    throw new Error("This browser cannot strip audio before upload.");
-  }
-
-  const objectUrl = URL.createObjectURL(file);
-  const video = document.createElement("video");
-  video.preload = "auto";
-  video.muted = true;
-  video.defaultMuted = true;
-  video.playsInline = true;
-  video.setAttribute("muted", "");
-  video.setAttribute("playsinline", "");
-
-  try {
-    await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("Could not read the signal video.")), 7000);
-      video.onloadedmetadata = () => {
-        clearTimeout(timer);
-        resolve();
-      };
-      video.onerror = () => {
-        clearTimeout(timer);
-        reject(new Error("Could not read the signal video."));
-      };
-      video.src = objectUrl;
-    });
-
-    const width = Math.max(2, Math.round(video.videoWidth || 1280));
-    const height = Math.max(2, Math.round(video.videoHeight || 720));
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Could not process the signal video.");
-
-    const stream = canvas.captureStream(SIGNAL_SILENT_UPLOAD_FPS);
-    const recorder = new MediaRecorder(stream, { mimeType });
-    const chunks = [];
-    recorder.ondataavailable = (event) => {
-      if (event.data && event.data.size) chunks.push(event.data);
-    };
-
-    const stopTracks = () => {
-      stream.getTracks().forEach((track) => track.stop());
-    };
-    const recordDone = new Promise((resolve, reject) => {
-      recorder.onerror = () => reject(new Error("Could not create a silent signal video."));
-      recorder.onstop = () => {
-        stopTracks();
-        if (!chunks.length) {
-          reject(new Error("Silent signal video processing produced an empty file."));
-          return;
-        }
-        const blob = new Blob(chunks, { type: mimeType });
-        resolve(new File([blob], _sigSilentFileName(file, mimeType), {
-          type: mimeType,
-          lastModified: Date.now(),
-        }));
-      };
-    });
-
-    let stopped = false;
-    const stopRecorder = () => {
-      if (stopped) return;
-      stopped = true;
-      if (recorder.state !== "inactive") recorder.stop();
-    };
-    const drawFrame = () => {
-      if (stopped) return;
-      try {
-        ctx.drawImage(video, 0, 0, width, height);
-      } catch (_err) {
-        /* keep recording; the next decoded frame may draw */
-      }
-      if (video.ended || (durationSec && video.currentTime >= durationSec)) {
-        stopRecorder();
-        return;
-      }
-      requestAnimationFrame(drawFrame);
-    };
-    const maxMs = Math.max(1500, (Number(durationSec || video.duration || SIGNAL_MAX_DURATION_SEC) + 1) * 1000);
-    const timeout = setTimeout(stopRecorder, maxMs);
-    video.onended = stopRecorder;
-    recorder.start(250);
-    try {
-      await video.play();
-    } catch (err) {
-      stopRecorder();
-      clearTimeout(timeout);
-      throw err;
-    }
-    drawFrame();
-    let silentFile = null;
-    try {
-      silentFile = await recordDone;
-    } finally {
-      clearTimeout(timeout);
-    }
-    return silentFile;
-  } finally {
-    try { video.pause(); } catch (_err) { }
-    try { URL.revokeObjectURL(objectUrl); } catch (_err) { }
-  }
 }
 
 function _sigUpsertRecord(summary, patch = {}) {
@@ -736,27 +595,16 @@ async function uploadSelectedSignalClip(event) {
     if (duration && duration > SIGNAL_MAX_DURATION_SEC) {
       throw new Error(`Signal clips must be ${SIGNAL_MAX_DURATION_SEC}s or shorter.`);
     }
-    showToast("Removing audio before signal upload...", { type: "info", duration: 1800 });
-    const silentFile = await _sigCreateSilentVideoFile(file, duration);
-    if (silentFile.size > SIGNAL_MAX_BYTES) {
-      throw new Error(
-        `Silent signal clip is ${_sigFormatMegabytes(silentFile.size)}. Keep it under ${_sigFormatMegabytes(SIGNAL_MAX_BYTES)}; use 1080p HD at 30 fps for 4-5 seconds.`,
-      );
-    }
-    const silentDuration = await _sigProbeDuration(silentFile);
-    if (silentDuration && silentDuration > SIGNAL_MAX_DURATION_SEC + 0.5) {
-      throw new Error(`Silent signal clips must be ${SIGNAL_MAX_DURATION_SEC}s or shorter.`);
-    }
     const sig = _sigClipKey(summary.componentType, summary.compareKey);
     const label = `${summary.componentLabel}: ${summary.displayValue}`;
-    const result = await window.playClips.uploadForSig(sig, silentFile, label, {
+    const result = await window.playClips.uploadForSig(sig, file, label, {
       maxDurationSec: SIGNAL_MAX_DURATION_SEC,
       durationGraceSec: 0.5,
       publishType: "signals",
     });
     _sigUpsertRecord(summary, {
       clipCount: Math.max(1, Number(summary.record?.clipCount || 0) + 1),
-      durationMs: silentDuration ? Math.round(silentDuration * 1000) : Number(result.clip?.duration || 0) * 1000,
+      durationMs: Number(result.clip?.duration || duration || 0) * 1000,
       visibility: document.getElementById("signalVisibility")?.value || "published",
       notes: document.getElementById("signalNotes")?.value || summary.record?.notes || "",
     });

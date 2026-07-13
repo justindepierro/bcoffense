@@ -21,6 +21,7 @@
   const MAX_BYTES = 25 * 1024 * 1024; // 25 MiB
   const MAX_DURATION_SEC = 15;
   const DURATION_GRACE_SEC = 2; // allow slight overage from encoder rounding
+  const SILENT_UPLOAD_FPS = 30;
 
   // Cached set of play signatures that have at least one clip, so the playbook
   // table can show a 🎬 indicator synchronously without a request per row.
@@ -121,6 +122,144 @@
   function hasForPlay(play) {
     if (!_indexSet) return false;
     return candidateSigs(play).some((s) => _indexSet.has(s));
+  }
+
+  function silentMimeType() {
+    if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") return "";
+    return [
+      'video/mp4;codecs="avc1.42E01E"',
+      "video/mp4;codecs=h264",
+      "video/mp4",
+      "video/webm;codecs=vp9",
+      "video/webm;codecs=vp8",
+      "video/webm",
+    ].find((type) => MediaRecorder.isTypeSupported(type)) || "";
+  }
+
+  function silentExtension(mimeType) {
+    return String(mimeType || "").includes("mp4") ? "mp4" : "webm";
+  }
+
+  function silentFileName(file, mimeType) {
+    const base = String(file?.name || "clip")
+      .replace(/\.[a-z0-9]+$/i, "")
+      .replace(/[^a-z0-9._-]+/gi, "-")
+      .replace(/^-+|-+$/g, "") || "clip";
+    return `${base}-silent.${silentExtension(mimeType)}`;
+  }
+
+  async function createSilentVideoFile(file, durationSec = 0) {
+    if (typeof MediaRecorder === "undefined") {
+      throw new Error("This browser cannot remove audio from video clips.");
+    }
+    const mimeType = silentMimeType();
+    if (!mimeType) {
+      throw new Error("This browser cannot create a silent video clip.");
+    }
+    if (typeof document === "undefined") {
+      throw new Error("Video processing is not available.");
+    }
+    const canvas = document.createElement("canvas");
+    if (typeof canvas.captureStream !== "function") {
+      throw new Error("This browser cannot strip audio before upload.");
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.preload = "auto";
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+
+    try {
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("Could not read the video clip.")), 7000);
+        video.onloadedmetadata = () => {
+          clearTimeout(timer);
+          resolve();
+        };
+        video.onerror = () => {
+          clearTimeout(timer);
+          reject(new Error("Could not read the video clip."));
+        };
+        video.src = objectUrl;
+      });
+
+      const width = Math.max(2, Math.round(video.videoWidth || 1280));
+      const height = Math.max(2, Math.round(video.videoHeight || 720));
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Could not process the video clip.");
+
+      const stream = canvas.captureStream(SILENT_UPLOAD_FPS);
+      const recorder = new MediaRecorder(stream, { mimeType });
+      const chunks = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size) chunks.push(event.data);
+      };
+
+      const stopTracks = () => {
+        stream.getTracks().forEach((track) => track.stop());
+      };
+      const recordDone = new Promise((resolve, reject) => {
+        recorder.onerror = () => reject(new Error("Could not create a silent video clip."));
+        recorder.onstop = () => {
+          stopTracks();
+          if (!chunks.length) {
+            reject(new Error("Silent video processing produced an empty file."));
+            return;
+          }
+          const blob = new Blob(chunks, { type: mimeType });
+          resolve(new File([blob], silentFileName(file, mimeType), {
+            type: mimeType,
+            lastModified: Date.now(),
+          }));
+        };
+      });
+
+      let stopped = false;
+      const stopRecorder = () => {
+        if (stopped) return;
+        stopped = true;
+        if (recorder.state !== "inactive") recorder.stop();
+      };
+      const drawFrame = () => {
+        if (stopped) return;
+        try {
+          ctx.drawImage(video, 0, 0, width, height);
+        } catch (_err) {
+          /* keep recording; the next decoded frame may draw */
+        }
+        if (video.ended || (durationSec && video.currentTime >= durationSec)) {
+          stopRecorder();
+          return;
+        }
+        requestAnimationFrame(drawFrame);
+      };
+      const maxMs = Math.max(1500, (Number(durationSec || video.duration || MAX_DURATION_SEC) + 1) * 1000);
+      const timeout = setTimeout(stopRecorder, maxMs);
+      video.onended = stopRecorder;
+      recorder.start(250);
+      try {
+        await video.play();
+      } catch (err) {
+        stopRecorder();
+        clearTimeout(timeout);
+        throw err;
+      }
+      drawFrame();
+      try {
+        return await recordDone;
+      } finally {
+        clearTimeout(timeout);
+      }
+    } finally {
+      try { video.pause(); } catch (_err) { /* ignore */ }
+      try { URL.revokeObjectURL(objectUrl); } catch (_err) { /* ignore */ }
+    }
   }
 
   function _emitClipChange(sig) {
@@ -244,15 +383,31 @@
       );
     }
 
-    const headers = { "Content-Type": type };
+    if (typeof window.showToast === "function") {
+      window.showToast("Removing audio before video upload...", { type: "info", duration: 1800 });
+    }
+    const uploadFile = await createSilentVideoFile(file, duration);
+    if (uploadFile.size > MAX_BYTES) {
+      throw new Error(
+        `Silent clip is ${(uploadFile.size / (1024 * 1024)).toFixed(1)} MB — the limit is 25 MB.`,
+      );
+    }
+    const uploadDuration = await probeDuration(uploadFile);
+    if (uploadDuration && uploadDuration > maxDurationSec + durationGraceSec) {
+      throw new Error(
+        `Silent clip is ${Math.round(uploadDuration)}s — keep clips to about ${maxDurationSec}s.`,
+      );
+    }
+    const uploadType = (uploadFile.type || type).toLowerCase();
+    const headers = { "Content-Type": uploadType };
     if (label) headers["X-Clip-Label"] = encodeURIComponent(String(label));
-    if (duration) headers["X-Clip-Duration"] = String(Math.round(duration));
+    if (uploadDuration || duration) headers["X-Clip-Duration"] = String(Math.round(uploadDuration || duration));
 
     const response = await fetch(manifestUrl(sig), {
       method: "POST",
       credentials: "same-origin",
       headers,
-      body: file,
+      body: uploadFile,
     });
     const data = await response.json().catch(() => null);
     if (!response.ok || !data || !data.ok) {

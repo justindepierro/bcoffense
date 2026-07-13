@@ -105,6 +105,8 @@ Phase 0 - data and media architecture:
   retention, and cleanup can diverge later.
 - [x] Enforce short clips under 5 seconds at upload/attach time, with a clear
   coach-facing error when clips are too long.
+- [x] Route all remote video clip uploads through a shared silent-upload path so
+  play clips and signal clips are stored without audio tracks.
 
 Phase 1 - dedicated Signals tab:
 

@@ -4143,6 +4143,7 @@ function checkGamePlanMediaReadinessContracts() {
 function checkSignalPlayIntegrationContracts() {
   const html = read("index.html");
   const signals = read("js/signals.js");
+  const clips = read("js/play-clips.js");
   const playbookRender = read("js/playbook-render.js");
   const scriptRender = read("js/script-render.js");
   const presentation = read("js/play-presentation.js");
@@ -4307,12 +4308,13 @@ function checkSignalPlayIntegrationContracts() {
 
   if (
     !/function _sigConfigureLoopVideos\(root = document\)/.test(signals) ||
-    !/const SIGNAL_SILENT_UPLOAD_FPS = 30/.test(signals) ||
-    !/function _sigCreateSilentVideoFile\(file, durationSec = 0\)/.test(signals) ||
-    !/canvas\.captureStream\(SIGNAL_SILENT_UPLOAD_FPS\)/.test(signals) ||
-    !/new MediaRecorder\(stream, \{ mimeType \}\)/.test(signals) ||
-    !/Removing audio before signal upload/.test(signals) ||
-    !/window\.playClips\.uploadForSig\(sig, silentFile/.test(signals) ||
+    !/const SILENT_UPLOAD_FPS = 30/.test(clips) ||
+    !/async function createSilentVideoFile\(file, durationSec = 0\)/.test(clips) ||
+    !/canvas\.captureStream\(SILENT_UPLOAD_FPS\)/.test(clips) ||
+    !/new MediaRecorder\(stream, \{ mimeType \}\)/.test(clips) ||
+    !/Removing audio before video upload/.test(clips) ||
+    !/const uploadFile = await createSilentVideoFile\(file, duration\)/.test(clips) ||
+    !/body: uploadFile/.test(clips) ||
     !/video\.defaultMuted = true/.test(signals) ||
     !/video\.playsInline = true/.test(signals) ||
     !/SIGNAL_IPHONE_CAPTURE_HINT/.test(signals) ||
@@ -4330,6 +4332,7 @@ function checkSignalPlayIntegrationContracts() {
   if (
     !/- \[x\] Add a Playbook detail surface for "Signals for this play"/.test(roadmap) ||
     !/- \[x\] Mark formation as a non-video cue because formations are yelled/.test(roadmap) ||
+    !/- \[x\] Route all remote video clip uploads through a shared silent-upload/.test(roadmap) ||
     !/- \[x\] Add a small `Signals` button to Practice Script play rows\/cards/.test(roadmap) ||
     !/- \[x\] Add the same signal selector to Script Swipe View \/ presentation-style/.test(roadmap) ||
     !/- \[x\] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and/.test(roadmap) ||
