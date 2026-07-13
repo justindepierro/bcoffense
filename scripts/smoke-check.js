@@ -3458,6 +3458,7 @@ function checkWorkspaceSyncContracts() {
   [
     "- [x] Replace the backup-style modal copy with a clearer \"Team Workspace Sync\"",
     "- [x] Show a post-pull summary on Dashboard with counts for playbook, scripts,",
+    "- [x] Add stale/local-conflict warnings before replacing a device that has newer",
   ].forEach((token) => {
     if (!consolidatedRoadmap.includes(token)) {
       fail(`consolidated roadmap missing team workspace sync completion ${token}`);
@@ -3475,6 +3476,26 @@ function checkWorkspaceSyncContracts() {
     !/Pull Workspace/.test(cloudSync)
   ) {
     fail("team workspace sync modal and pull summary are incomplete");
+  }
+
+  if (
+    !/function getTeamWorkspacePullRisks\(remote\)/.test(cloudSync) ||
+    !/function addLocalPullRisk\(risks, remoteTime, label, records, fields/.test(cloudSync) ||
+    !/function addLocalSinglePullRisk\(risks, remoteTime, label, record, fields/.test(cloudSync) ||
+    !/typeof scriptDirty !== "undefined" && scriptDirty/.test(cloudSync) ||
+    !/typeof wristbandDirty !== "undefined" && wristbandDirty/.test(cloudSync) ||
+    !/window\.hasWorkspaceSyncWork\(\)/.test(cloudSync) ||
+    !/cloudAutoPushPending \|\| cloudAutoPushSaving \|\| cloudAutoPushDirtyKeys\.size > 0/.test(cloudSync) ||
+    !/Saved script newer than cloud/.test(cloudSync) ||
+    !/Script draft newer than cloud/.test(cloudSync) ||
+    !/Call sheet draft newer than cloud/.test(cloudSync) ||
+    !/Game plan snapshot newer than cloud/.test(cloudSync) ||
+    !/Player publish status newer than cloud/.test(cloudSync) ||
+    !/Review Local Work Before Pull/.test(cloudSync) ||
+    !/Pull Anyway/.test(cloudSync) ||
+    !/Push this device first if those changes should be kept/.test(cloudSync)
+  ) {
+    fail("team workspace pull does not warn about newer local work before restore");
   }
 
   if (

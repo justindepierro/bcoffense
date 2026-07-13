@@ -159,6 +159,242 @@
     return Number.isFinite(timestamp) ? timestamp : NaN;
   }
 
+  function getLocalRecordTimestamp(record, fields = ["savedAt", "updatedAt", "playerPublishedAt", "timestamp"]) {
+    if (!record || typeof record !== "object") return 0;
+    return fields.reduce((latest, field) => {
+      const value = record[field];
+      const timestamp =
+        typeof value === "number" && Number.isFinite(value)
+          ? value
+          : getCloudTime(value);
+      return Number.isFinite(timestamp) && timestamp > latest ? timestamp : latest;
+    }, 0);
+  }
+
+  function getLocalRecordLabel(record, fallback = "Local item") {
+    if (!record || typeof record !== "object") return fallback;
+    return (
+      record.name ||
+      record.title ||
+      record.label ||
+      record.opponentName ||
+      record.teamName ||
+      fallback
+    );
+  }
+
+  function getLatestLocalRecord(records, fields) {
+    const list = Array.isArray(records)
+      ? records
+      : records && typeof records === "object"
+        ? Object.values(records)
+        : [];
+    return list.reduce((latest, record) => {
+      const timestamp = getLocalRecordTimestamp(record, fields);
+      if (!timestamp) return latest;
+      if (!latest || timestamp > latest.timestamp) {
+        return { record, timestamp };
+      }
+      return latest;
+    }, null);
+  }
+
+  function addLocalPullRisk(risks, remoteTime, label, records, fields, fallbackLabel = "Local item") {
+    if (!Number.isFinite(remoteTime)) return;
+    const latest = getLatestLocalRecord(records, fields);
+    if (!latest || latest.timestamp <= remoteTime + 500) return;
+    risks.push({
+      label,
+      detail: `${getLocalRecordLabel(latest.record, fallbackLabel)} saved ${formatCloudDate(latest.timestamp)}`,
+      timestamp: latest.timestamp,
+    });
+  }
+
+  function addLocalSinglePullRisk(risks, remoteTime, label, record, fields, fallbackLabel = "Local draft") {
+    if (!Number.isFinite(remoteTime) || !record || typeof record !== "object") return;
+    const timestamp = getLocalRecordTimestamp(record, fields);
+    if (!timestamp || timestamp <= remoteTime + 500) return;
+    risks.push({
+      label,
+      detail: `${getLocalRecordLabel(record, fallbackLabel)} saved ${formatCloudDate(timestamp)}`,
+      timestamp,
+    });
+  }
+
+  function getDirtyCloudKeyLabels() {
+    const labels = {
+      playImages: "player-visible diagrams",
+      [STORAGE_KEYS.PLAYBOOK]: "playbook",
+      [STORAGE_KEYS.SAVED_SCRIPTS]: "saved scripts",
+      [STORAGE_KEYS.SAVED_WRISTBANDS]: "saved wristbands",
+      [STORAGE_KEYS.CALL_SHEET]: "call sheet",
+      [STORAGE_KEYS.CALLSHEET_SNAPSHOTS]: "call sheet snapshots",
+      [STORAGE_KEYS.GAME_PLAN_BOARDS]: "game plan boards",
+      [STORAGE_KEYS.GAME_PLAN_SNAPSHOTS]: "game plan snapshots",
+      [STORAGE_KEYS.PLAYER_PUBLISH_STATUS]: "player publish status",
+      [STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS]: "quiz source settings",
+    };
+    return [...cloudAutoPushDirtyKeys].map((key) => labels[key] || key);
+  }
+
+  function getTeamWorkspacePullRisks(remote) {
+    const remoteTime = getCloudTime(remote?.summary?.exportDate || remote?.updatedAt);
+    const risks = [];
+
+    if (typeof scriptDirty !== "undefined" && scriptDirty) {
+      risks.push({
+        label: "Unsaved script",
+        detail: "Current Practice Script has local edits that have not been saved.",
+        timestamp: Date.now(),
+      });
+    }
+    if (typeof wristbandDirty !== "undefined" && wristbandDirty) {
+      risks.push({
+        label: "Unsaved wristband",
+        detail: "Current Wristband has local edits that have not been saved.",
+        timestamp: Date.now(),
+      });
+    }
+    if (typeof window.hasWorkspaceSyncWork === "function" && window.hasWorkspaceSyncWork()) {
+      risks.push({
+        label: "Pending workspace work",
+        detail: "A local save, cloud push, media upload, or player update has not finished.",
+        timestamp: Date.now(),
+      });
+    }
+    if (cloudAutoPushPending || cloudAutoPushSaving || cloudAutoPushDirtyKeys.size > 0) {
+      const labels = getDirtyCloudKeyLabels();
+      risks.push({
+        label: "Cloud autosave pending",
+        detail: labels.length
+          ? `Waiting to push ${labels.slice(0, 4).join(", ")}${labels.length > 4 ? ", and more" : ""}.`
+          : "Waiting to finish pushing this device to cloud.",
+        timestamp: Date.now(),
+      });
+    }
+
+    addLocalPullRisk(
+      risks,
+      remoteTime,
+      "Saved script newer than cloud",
+      storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []),
+      ["savedAt", "playerPublishedAt"],
+      "Saved script",
+    );
+    addLocalPullRisk(
+      risks,
+      remoteTime,
+      "Script template newer than cloud",
+      storageManager.get(STORAGE_KEYS.SCRIPT_TEMPLATES, []),
+      ["savedAt"],
+      "Script template",
+    );
+    addLocalSinglePullRisk(
+      risks,
+      remoteTime,
+      "Script draft newer than cloud",
+      storageManager.get(STORAGE_KEYS.SCRIPT_DRAFT, null),
+      ["savedAt", "timestamp"],
+      "Script draft",
+    );
+    addLocalPullRisk(
+      risks,
+      remoteTime,
+      "Saved wristband newer than cloud",
+      storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []),
+      ["savedAt"],
+      "Saved wristband",
+    );
+    addLocalSinglePullRisk(
+      risks,
+      remoteTime,
+      "Wristband draft newer than cloud",
+      storageManager.get(STORAGE_KEYS.WRISTBAND_DRAFT, null),
+      ["savedAt", "timestamp"],
+      "Wristband draft",
+    );
+    addLocalPullRisk(
+      risks,
+      remoteTime,
+      "Call sheet snapshot newer than cloud",
+      storageManager.get(STORAGE_KEYS.CALLSHEET_SNAPSHOTS, []),
+      ["savedAt"],
+      "Call sheet snapshot",
+    );
+    addLocalPullRisk(
+      risks,
+      remoteTime,
+      "Call sheet template newer than cloud",
+      storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []),
+      ["savedAt"],
+      "Call sheet template",
+    );
+    addLocalSinglePullRisk(
+      risks,
+      remoteTime,
+      "Call sheet draft newer than cloud",
+      storageManager.get(STORAGE_KEYS.CALLSHEET_DRAFT, null),
+      ["savedAt", "timestamp"],
+      "Call sheet draft",
+    );
+    addLocalPullRisk(
+      risks,
+      remoteTime,
+      "Game plan snapshot newer than cloud",
+      storageManager.get(STORAGE_KEYS.GAME_PLAN_SNAPSHOTS, []),
+      ["savedAt"],
+      "Game plan snapshot",
+    );
+    addLocalPullRisk(
+      risks,
+      remoteTime,
+      "Game plan template newer than cloud",
+      storageManager.get(STORAGE_KEYS.GAME_PLAN_TEMPLATES, []),
+      ["savedAt"],
+      "Game plan template",
+    );
+    addLocalPullRisk(
+      risks,
+      remoteTime,
+      "Player publish status newer than cloud",
+      storageManager.get(STORAGE_KEYS.PLAYER_PUBLISH_STATUS, {}),
+      ["updatedAt"],
+      "Player publish",
+    );
+    addLocalPullRisk(
+      risks,
+      remoteTime,
+      "Quiz source settings newer than cloud",
+      storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS, {}),
+      ["updatedAt"],
+      "Quiz source",
+    );
+    addLocalSinglePullRisk(
+      risks,
+      remoteTime,
+      "Player quiz draft newer than cloud",
+      storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_DRAFT, null),
+      ["savedAt", "timestamp", "updatedAt"],
+      "Player quiz draft",
+    );
+
+    const seen = new Set();
+    const uniqueRisks = risks
+      .filter((risk) => {
+        const key = `${risk.label}:${risk.detail}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    return {
+      hasRisk: uniqueRisks.length > 0,
+      remoteTime,
+      risks: uniqueRisks,
+    };
+  }
+
   function getCurrentRoleLabel() {
     if (typeof getCurrentAuthUser !== "function") return "";
     return getCurrentAuthUser()?.label || "";
@@ -575,12 +811,24 @@
             : "";
     const summary = remote.summary;
     if (shouldConfirm) {
+      const pullRisks = getTeamWorkspacePullRisks(remote);
+      const riskLines = pullRisks.risks
+        .slice(0, 6)
+        .map((risk) => `- ${risk.label}: ${risk.detail}`)
+        .join("\n");
+      const overflowLine = pullRisks.risks.length > 6
+        ? `\n- ${pullRisks.risks.length - 6} more local item${pullRisks.risks.length - 6 === 1 ? "" : "s"}`
+        : "";
+      const riskText = pullRisks.hasRisk
+        ? `\n\nLocal work to review before pulling:\n${riskLines}${overflowLine}\n\nPulling anyway will replace this device's local workspace. Push this device first if those changes should be kept.`
+        : "";
       const ok = await showConfirm(
-        `Pull the team workspace from ${formatCloudDate(summary.exportDate)} onto this device?\n\nThis refreshes local practice data with the latest cloud workspace.\n\nItems: ${summary.itemCount}${summary.imageCount ? `\nDiagrams in backup: ${summary.imageCount}` : ""}\n\nContinue?`,
+        `Pull the team workspace from ${formatCloudDate(summary.exportDate)} onto this device?\n\nThis refreshes local practice data with the latest cloud workspace.\n\nItems: ${summary.itemCount}${summary.imageCount ? `\nDiagrams in backup: ${summary.imageCount}` : ""}${riskText}\n\nContinue?`,
         {
-          title: "Pull Team Workspace",
-          icon: "☁️",
-          confirmText: "Pull Workspace",
+          title: pullRisks.hasRisk ? "Review Local Work Before Pull" : "Pull Team Workspace",
+          icon: pullRisks.hasRisk ? "⚠️" : "☁️",
+          confirmText: pullRisks.hasRisk ? "Pull Anyway" : "Pull Workspace",
+          danger: pullRisks.hasRisk,
         },
       );
       if (!ok) return false;

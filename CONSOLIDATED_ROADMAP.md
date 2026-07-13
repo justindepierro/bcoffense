@@ -181,7 +181,7 @@ backup utility.
   flow that separates Push, Pull, and Last Updated state.
 - [x] Show a post-pull summary on Dashboard with counts for playbook, scripts,
   call sheets, wristbands, game plans, diagrams, clips, and player data.
-- [ ] Add stale/local-conflict warnings before replacing a device that has newer
+- [x] Add stale/local-conflict warnings before replacing a device that has newer
   local edits.
 - [ ] Add a lightweight sync activity log so coaches can see who pushed/pulled
   and when.
