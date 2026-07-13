@@ -4168,7 +4168,9 @@ function checkSignalPlayIntegrationContracts() {
   const roadmap = read("CONSOLIDATED_ROADMAP.md");
 
   if (
-    !/function resolveSignalsForPlay\(play\)/.test(signals) ||
+    !/function resolveSignalsForPlay\(play, options = \{\}\)/.test(signals) ||
+    !/const includeDraft = opts\.includeDraft === true && _sigCanManage\(\)/.test(signals) ||
+    !/categoryFilter\.size && !categoryFilter\.has/.test(signals) ||
     !/const seen = new Set\(\)/.test(signals) ||
     !/function getSignalCountForPlay\(play\)/.test(signals) ||
     !/function getSignalAvailabilityForPlay\(play\)/.test(signals) ||
@@ -4251,6 +4253,7 @@ function checkSignalPlayIntegrationContracts() {
     !/key:\s*"signal-sprint"[\s\S]*label:\s*"100 Second Sprint"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
     !/key:\s*"signal-battle"[\s\S]*label:\s*"6 Seconds of Battle"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
     !/key:\s*"signal-heat"[\s\S]*label:\s*"Heat Check"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
+    !/key:\s*"signal-full-call"[\s\S]*label:\s*"Full Play Call"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
     !/const SIGNAL_SPRINT_DURATION_MS = 100000/.test(scriptRender) ||
     !/const SIGNAL_SPRINT_TARGET_REPS = 100/.test(scriptRender) ||
     !/const SIGNAL_BATTLE_CLIP_MS = 5000/.test(scriptRender) ||
@@ -4261,7 +4264,11 @@ function checkSignalPlayIntegrationContracts() {
     !/function _isSignalSprintMode\(mode = _quizMode\)/.test(scriptRender) ||
     !/function _isSignalBattleMode\(mode = _quizMode\)/.test(scriptRender) ||
     !/function _isSignalHeatCheckMode\(mode = _quizMode\)/.test(scriptRender) ||
+    !/function _isSignalFullCallMode\(mode = _quizMode\)/.test(scriptRender) ||
     !/function _isSignalAutoAdvanceMode\(mode = _quizMode\)/.test(scriptRender) ||
+    !/function _getSignalFullCallSourceItems\(\)/.test(scriptRender) ||
+    !/async function _buildSignalFullCallItems\(settings = _getSignalGameSettings\(\)\)/.test(scriptRender) ||
+    !/function _signalFullCallDistractorScore\(correctPlay, candidatePlay\)/.test(scriptRender) ||
     !/function _getSignalGameSettings\(status = null\)/.test(scriptRender) ||
     !/function toggleSignalGameCategory\(categoryId\)/.test(scriptRender) ||
     !/function _getSignalCategoryMultiplier\(categories = _quizSignalCategories, eligibleCategories = SIGNAL_GAME_DEFAULT_SETTINGS\.eligibleCategories\)/.test(scriptRender) ||
@@ -4290,6 +4297,7 @@ function checkSignalPlayIntegrationContracts() {
     !/100 Second Signal Sprint/.test(scriptRender) ||
     !/6 Seconds of Battle/.test(scriptRender) ||
     !/Heat Check/.test(scriptRender) ||
+    !/Full Play Call/.test(scriptRender) ||
     !/correct, accuracy, speed/.test(scriptRender) ||
     !/correct, reaction time/.test(scriptRender) ||
     !/best streak, total correct/.test(scriptRender) ||
@@ -4300,6 +4308,10 @@ function checkSignalPlayIntegrationContracts() {
     !/timedOut/.test(scriptRender) ||
     !/async function startPlayerQuizHubSignals\(\)/.test(scriptRender) ||
     !/getSignalQuizItems\(\{[\s\S]*?requireClip: true,[\s\S]*?categories: signalCategories,[\s\S]*?includeDraft: _canUseStaffSignalClips\(signalSettings\)/.test(scriptRender) ||
+    !/type: "signal_full_call"/.test(scriptRender) ||
+    !/question\.type === "signal_full_call"/.test(scriptRender) ||
+    !/signalFullCallClips/.test(scriptRender) ||
+    !/sq-signal-sequence-prompt/.test(scriptRender) ||
     !/signalCategoryMultiplier/.test(scriptRender) ||
     !/signalGame: _quizSourceType === "signal"/.test(scriptRender) ||
     !/sourceType:\s*"signal"/.test(scriptRender) ||
@@ -4340,6 +4352,8 @@ function checkSignalPlayIntegrationContracts() {
     !/\.signal-leaderboard-tabs/.test(scriptCss) ||
     !/\.signal-game-category-panel/.test(scriptCss) ||
     !/\.signal-game-category-chip/.test(scriptCss) ||
+    !/\.sq-signal-sequence-prompt/.test(scriptCss) ||
+    !/\.sq-signal-sequence-grid/.test(scriptCss) ||
     !/\.sq-signal-prompt\.is-hidden/.test(scriptCss) ||
     !/\.script-quiz-choices\.is-battle-locked/.test(scriptCss)
   ) {
@@ -4391,7 +4405,7 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Add a dedicated Signal Leaderboard with three tabs/.test(roadmap) ||
     !/- \[x\] Sync Signal game attempts through the existing leaderboard pipeline/.test(roadmap) ||
     !/- \[x\] Give coaches controls for eligible categories/.test(roadmap) ||
-    !/- \[ \] Add a future `Full Play Call` signal game/.test(roadmap)
+    !/- \[x\] Add a future `Full Play Call` signal game/.test(roadmap)
   ) {
     fail("signals roadmap checklist is not updated for the play selector slice");
   }

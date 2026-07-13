@@ -180,7 +180,7 @@ Phase 5 - Signal games and leaderboards:
   game mode.
 - [x] Give coaches controls for eligible categories, minimum published signal
   count, and whether to include draft/private clips in staff-only testing.
-- [ ] Add a future `Full Play Call` signal game: pull a play from the practice
+- [x] Add a future `Full Play Call` signal game: pull a play from the practice
   script or game plan, queue its component signal clips, then ask athletes to
   identify the full play call with smart distractors like same formation,
   different play, missing motion, missing shift, or near-match tags; formation

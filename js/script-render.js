@@ -1720,6 +1720,10 @@ function _isSignalHeatCheckMode(mode = _quizMode) {
   return String(mode || "") === "signal-heat";
 }
 
+function _isSignalFullCallMode(mode = _quizMode) {
+  return String(mode || "") === "signal-full-call";
+}
+
 function _isTimedSignalGameMode(mode = _quizMode) {
   return _isSignalSprintMode(mode) || _isSignalBattleMode(mode);
 }
@@ -6300,6 +6304,7 @@ function _getPlayerQuizModes(context = {}) {
   const scriptItems = _normalizeQuizItems(scriptSource?.plays || []);
   const gamePlanStatus = context.gamePlanStatus || _getActiveGamePlanQuizStatus();
   const signalStatus = context.signalStatus || _getSignalQuizStatus();
+  const signalFullCallCount = Number(signalStatus.fullCallCount || 0);
   const hasDiagram = scriptItems.some(_quizItemHasDiagram);
   const hasRules = scriptItems.some((item) => _quizItemHasPositionRule(item));
   const missedItems = _getRecentMissedQuizItems(5);
@@ -6375,6 +6380,14 @@ function _getPlayerQuizModes(context = {}) {
       note: "Keep answering signal clips until the first miss.",
       source: "signal",
       disabled: !signalStatus.available,
+    },
+    {
+      key: "signal-full-call",
+      label: "Full Play Call",
+      time: `${signalFullCallCount} calls`,
+      note: "Read a sequence of component signals and identify the full call.",
+      source: "signal",
+      disabled: !signalStatus.available || signalFullCallCount < 2,
     },
   ];
 }
@@ -6846,41 +6859,50 @@ async function startPlayerQuizHubSignals() {
   }
   try {
     const mode = _getPlayerQuizMode();
-    const signalMode = ["signal-sprint", "signal-battle", "signal-heat"].includes(mode?.key) ? mode.key : "signal-study";
+    const signalMode = ["signal-sprint", "signal-battle", "signal-heat", "signal-full-call"].includes(mode?.key) ? mode.key : "signal-study";
     const signalSettings = status.settings || _getSignalGameSettings(status);
     const signalCategories = signalSettings.categories;
     const signalMultiplier = _getSignalCategoryMultiplier(signalCategories, signalSettings.eligibleCategories);
-    const items = typeof getSignalQuizItems === "function"
-      ? await getSignalQuizItems({
+    let items = [];
+    if (signalMode === "signal-full-call") {
+      items = await _buildSignalFullCallItems(signalSettings);
+    } else if (typeof getSignalQuizItems === "function") {
+      items = await getSignalQuizItems({
         requireClip: true,
         categories: signalCategories,
         includeDraft: _canUseStaffSignalClips(signalSettings),
-      })
-      : [];
-    if (!Array.isArray(items) || items.length < signalSettings.minClipCount) {
-      showToast(`That signal category selection needs at least ${signalSettings.minClipCount} playable clips.`, { type: "warning" });
+      });
+    }
+    const minimumItems = signalMode === "signal-full-call" ? 2 : signalSettings.minClipCount;
+    if (!Array.isArray(items) || items.length < minimumItems) {
+      showToast(signalMode === "signal-full-call"
+        ? "Full Play Call needs at least two playable calls with signal clips."
+        : `That signal category selection needs at least ${signalSettings.minClipCount} playable clips.`, { type: "warning" });
       return;
     }
-    const quizItems = signalMode === "signal-sprint"
-      ? _buildSignalSprintItems(items)
-      : signalMode === "signal-battle"
-        ? _buildSignalBattleItems(items)
-        : signalMode === "signal-heat"
-          ? _buildSignalHeatCheckItems(items)
-      : items;
+    let quizItems = items;
+    if (signalMode === "signal-sprint") {
+      quizItems = _buildSignalSprintItems(items);
+    } else if (signalMode === "signal-battle") {
+      quizItems = _buildSignalBattleItems(items);
+    } else if (signalMode === "signal-heat") {
+      quizItems = _buildSignalHeatCheckItems(items);
+    } else if (signalMode === "signal-full-call") {
+      quizItems = _quizShuffle(items).slice(0, 12);
+    }
+    const titleByMode = {
+      "signal-sprint": "100 Second Signal Sprint",
+      "signal-battle": "6 Seconds of Battle",
+      "signal-heat": "Heat Check",
+      "signal-full-call": "Full Play Call",
+    };
     closePlayerQuizHub();
     _quizMode = signalMode;
     startScriptQuiz({
       items: quizItems,
       sourceType: "signal",
       sourceId: "signals",
-      title: signalMode === "signal-sprint"
-        ? "100 Second Signal Sprint"
-        : signalMode === "signal-battle"
-          ? "6 Seconds of Battle"
-          : signalMode === "signal-heat"
-            ? "Heat Check"
-          : "Signal Study",
+      title: titleByMode[signalMode] || "Signal Study",
       positionKey: _quizPositionKey,
       positionMode: _quizPositionMode,
       timeLimitMs: signalMode === "signal-sprint" ? SIGNAL_SPRINT_DURATION_MS : 0,
@@ -6926,6 +6948,7 @@ function _getSignalQuizStatus() {
   return {
     count,
     categories,
+    fullCallCount: _countSignalFullCallCandidates(settings),
     settings,
     includeDraft,
     minClipCount: settings.minClipCount,
@@ -7138,6 +7161,8 @@ function _quizQuestionChoiceLabel(item, question) {
     case "signal":
       if (item?.signalRecord) return _quizSignalAnswerLabel(item.signalRecord);
       return _quizSignalAnswerLabel(_quizSignalRecordForQuestion(play, question));
+    case "signal_full_call":
+      return _quizPlainCall(play);
     case "play_type":
       return _quizCleanText(play.type);
     case "play_from_rule":
@@ -7171,6 +7196,111 @@ function _quizSignalRecordsForPlay(play) {
 
 function _quizSignalAnswerLabel(record) {
   return _quizCleanText(record?.value || record?.componentValue || record?.compareKey || "");
+}
+
+function _getSignalFullCallSourceItems() {
+  const pools = [
+    ...(_getPlayerQuizSelectedScriptRecord()?.plays || []),
+    ..._buildGamePlanQuizItems().map((item) => item.play),
+    ...((Array.isArray(script) ? script : []).filter((play) => play && !play.isSeparator)),
+  ];
+  const seen = new Set();
+  const items = [];
+  pools.forEach((play) => {
+    if (!play || play.isSeparator) return;
+    const sig = typeof playSignature === "function" ? playSignature(play) : _quizPlainCall(play);
+    const key = String(sig || _quizPlainCall(play)).toLowerCase();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    items.push({
+      play,
+      period: "Full Play Call",
+      scriptIndex: items.length,
+      sourceBox: "signal-full-call",
+    });
+  });
+  return items;
+}
+
+function _getSignalFullCallRecordsForPlay(play, settings = _getSignalGameSettings()) {
+  if (!play || typeof resolveSignalsForPlay !== "function") return [];
+  const groups = resolveSignalsForPlay(play, {
+    categories: settings.categories,
+    includeDraft: _canUseStaffSignalClips(settings),
+  });
+  const categories =
+    typeof SIGNAL_CATEGORIES !== "undefined" && Array.isArray(SIGNAL_CATEGORIES)
+      ? SIGNAL_CATEGORIES
+      : Object.keys(groups || {}).map((id) => ({ id, label: id }));
+  const records = [];
+  categories.forEach((category) => {
+    (groups?.[category.id] || []).forEach((record) => {
+      records.push({
+        ...record,
+        groupLabel: category.label || record.category || "",
+      });
+    });
+  });
+  return records;
+}
+
+function _countSignalFullCallCandidates(settings = _getSignalGameSettings()) {
+  return _getSignalFullCallSourceItems()
+    .filter((item) => _getSignalFullCallRecordsForPlay(item.play, settings).length > 0)
+    .length;
+}
+
+async function _buildSignalFullCallItems(settings = _getSignalGameSettings()) {
+  const candidates = _getSignalFullCallSourceItems();
+  const items = [];
+  for (const item of candidates) {
+    const records = _getSignalFullCallRecordsForPlay(item.play, settings);
+    if (!records.length) continue;
+    const clips = [];
+    for (const record of records.slice(0, 5)) {
+      let clip = null;
+      if (window.playClips && typeof window.playClips.listForSig === "function") {
+        try {
+          const list = await window.playClips.listForSig(record.clipKey);
+          clip = Array.isArray(list) ? list[0] : null;
+        } catch (_err) {
+          clip = null;
+        }
+      }
+      if (!clip?.url) continue;
+      clips.push({
+        ...record,
+        clipUrl: clip.url,
+        clipId: clip.id || "",
+        answerLabel: _quizSignalAnswerLabel(record),
+      });
+    }
+    if (!clips.length) continue;
+    items.push({
+      ...item,
+      scriptIndex: items.length,
+      signalFullCallClips: clips,
+    });
+  }
+  return items;
+}
+
+function _signalFullCallDistractorScore(correctPlay, candidatePlay) {
+  if (!correctPlay || !candidatePlay) return 0;
+  const same = (field) => _quizCleanText(correctPlay[field]).toLowerCase() &&
+    _quizCleanText(correctPlay[field]).toLowerCase() === _quizCleanText(candidatePlay[field]).toLowerCase();
+  let score = 0;
+  if (same("personnel")) score += 2;
+  if (same("formation")) score += 4;
+  if (same("formTag1")) score += 1;
+  if (same("formTag2")) score += 1;
+  if (same("shift")) score += 3;
+  if (same("motion")) score += 3;
+  if (same("protection")) score += 2;
+  if (same("play")) score += 3;
+  if (same("playTag1")) score += 1;
+  if (same("type")) score += 1;
+  return score;
 }
 
 function _quizPickSignalRecord(item) {
@@ -7208,13 +7338,29 @@ function _quizQuestionDistractorItems(item, question) {
       return candidateLabel && candidateLabel !== correctLabel;
     });
   }
+  if (question?.type === "signal_full_call") {
+    const correctLabel = _quizQuestionChoiceLabel(item, question).toLowerCase();
+    return source
+      .filter((candidate) => {
+        const candidateLabel = _quizQuestionChoiceLabel(candidate, question).toLowerCase();
+        return candidateLabel && candidateLabel !== correctLabel;
+      })
+      .sort((a, b) => (
+        _signalFullCallDistractorScore(item.play, b.play) -
+        _signalFullCallDistractorScore(item.play, a.play)
+      ));
+  }
   return source;
 }
 
 function _quizChoiceQuality(label, questionType = "call") {
   const text = _quizCleanText(label);
   if (!text) return { ok: false, reason: "blank" };
-  const maxLength = questionType === "responsibility" ? 120 : questionType === "call" ? 72 : 90;
+  const maxLength = questionType === "responsibility" || questionType === "signal_full_call"
+    ? 120
+    : questionType === "call"
+      ? 72
+      : 90;
   if (text.length > maxLength) return { ok: false, reason: "too-long" };
   return { ok: true, reason: "" };
 }
@@ -7352,6 +7498,18 @@ function _buildQuizQuestion(item) {
       record: signalRecord,
     },
   } : null;
+  const signalFullCallQuestion = _isSignalFullCallMode() && Array.isArray(item.signalFullCallClips) && item.signalFullCallClips.length ? {
+    type: "signal_full_call",
+    prompt: "What is the full play call?",
+    detailLabel: "Signal sequence",
+    detailValue: item.signalFullCallClips
+      .map((record) => `${record.label || record.componentType || "Signal"}: ${_quizSignalAnswerLabel(record)}`)
+      .filter(Boolean)
+      .join(" · "),
+    rule: positionRule,
+    position,
+    signalClips: item.signalFullCallClips,
+  } : null;
   const callQuestion = canAskRecognition ? {
     type: "call",
     prompt: "What's the call?",
@@ -7362,7 +7520,9 @@ function _buildQuizQuestion(item) {
   } : null;
 
   const candidates = [];
-  if (_quizMode === "signal-study" || _isSignalAutoAdvanceMode()) {
+  if (_isSignalFullCallMode()) {
+    candidates.push(signalFullCallQuestion);
+  } else if (_quizMode === "signal-study" || _isSignalAutoAdvanceMode()) {
     candidates.push(signalQuestion);
   } else if (_quizMode === "diagram") {
     candidates.push(diagramQuestion, diagramFormationQuestion, formationQuestion, signalQuestion, typeQuestion, callQuestion, ruleQuestion, ruleToPlayQuestion);
@@ -7461,6 +7621,7 @@ function _quizQuestionTypeLabel(type) {
     diagram_formation: "Formation ID",
     formation_to_play: "Formation Match",
     signal: "Signal ID",
+    signal_full_call: "Full Play Call",
     play_type: "Play Type",
     study_card: "Study Card",
     call: "Call ID",
@@ -7527,6 +7688,8 @@ function _renderQuizWrongReview(item, answer) {
           ? "Connect the formation clue back to the play name."
           : context.questionType === "signal"
             ? "Connect the play component to the short signal clip you studied."
+          : context.questionType === "signal_full_call"
+            ? "Read the signal sequence as a full call: formation or board cue, motion, tag, protection, and play name together."
           : context.questionType === "play_type"
             ? "Sort the call into run, pass, screen, RPO, or another play family."
             : "Use the formation, personnel, and tags to identify the call.";
@@ -8471,6 +8634,20 @@ function renderScriptQuizPlay() {
           : `<video src="${escapeAttr(question.signalClipUrl)}" autoplay loop muted playsinline controls preload="metadata"></video>`}
         <figcaption>${escapeHtml(_isSignalBattleMode() && !battleLocked ? "Answer window" : question.signal?.label || "Signal clip")}</figcaption>
       </figure>`
+    : question.type === "signal_full_call" && Array.isArray(question.signalClips) && question.signalClips.length
+      ? `
+        <figure class="sq-signal-sequence-prompt" aria-label="Full play signal sequence">
+          <div class="sq-signal-sequence-grid">
+            ${question.signalClips.map((clip, idx) => `
+              <span class="sq-signal-sequence-item">
+                <video src="${escapeAttr(clip.clipUrl)}" autoplay loop muted playsinline controls preload="metadata"></video>
+                <b>${idx + 1}</b>
+                <small>${escapeHtml(clip.label || clip.componentType || "Signal")}</small>
+              </span>
+            `).join("")}
+          </div>
+          <figcaption>Read the signal sequence, then pick the full play call.</figcaption>
+        </figure>`
     : "";
 
   const situationParts = [downLabel && distLabel ? `${downLabel} ${distLabel}` : downLabel || distLabel, posLabel, hashLabel, situationLabel].filter(Boolean);

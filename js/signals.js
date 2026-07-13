@@ -664,8 +664,15 @@ async function deleteSignalClip(clipId) {
   }
 }
 
-function resolveSignalsForPlay(play) {
+function resolveSignalsForPlay(play, options = {}) {
   if (!play) return {};
+  const opts = options && typeof options === "object" ? options : {};
+  const includeDraft = opts.includeDraft === true && _sigCanManage();
+  const categoryFilter = new Set(
+    (Array.isArray(opts.categories) ? opts.categories : [])
+      .map((category) => String(category || "").trim().toUpperCase())
+      .filter(Boolean),
+  );
   const records = _sigRecordsMap();
   const result = {};
   const seen = new Set();
@@ -679,8 +686,10 @@ function resolveSignalsForPlay(play) {
       const compareKey = _sigCompareValue(value);
       const dedupeKey = `${component.componentType}:${compareKey}`;
       if (seen.has(dedupeKey)) return;
+      if (categoryFilter.size && !categoryFilter.has(String(component.category || "").toUpperCase())) return;
       const record = records.get(_sigRecordId(component.componentType, compareKey));
-      if (!record || record.visibility !== "published" || record.clipCount <= 0) return;
+      if (!record || record.clipCount <= 0) return;
+      if (record.visibility !== "published" && !includeDraft) return;
       seen.add(dedupeKey);
       result[component.category].push({
         ...record,
