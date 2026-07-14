@@ -775,13 +775,17 @@ async function uploadSelectedSignalClip(event) {
     }
     const duration = await _sigProbeDuration(file);
     if (duration && duration > SIGNAL_MAX_DURATION_SEC) {
-      throw new Error(`Signal clips must be ${SIGNAL_MAX_DURATION_SEC}s or shorter.`);
+      showToast(`Trimming this signal to the first ${SIGNAL_MAX_DURATION_SEC}s.`, {
+        type: "info",
+        duration: 2200,
+      });
     }
     const sig = _sigClipKey(summary.componentType, summary.compareKey);
     const label = `${summary.componentLabel}: ${summary.displayValue}`;
     const result = await window.playClips.uploadForSig(sig, file, label, {
       maxDurationSec: SIGNAL_MAX_DURATION_SEC,
       durationGraceSec: 0.5,
+      trimToMaxDuration: true,
       publishType: "signals",
     });
     _sigUpsertRecord(summary, {
@@ -1077,10 +1081,21 @@ function _sigConfigureLoopVideos(root = document) {
     video.setAttribute("preload", "auto");
     video.setAttribute("disablepictureinpicture", "");
     video.setAttribute("controlslist", "nodownload noplaybackrate noremoteplayback");
-    const playPromise = typeof video.play === "function" ? video.play() : null;
-    if (playPromise && typeof playPromise.catch === "function") {
-      playPromise.catch(() => { });
+    const attemptPlay = () => {
+      const playPromise = typeof video.play === "function" ? video.play() : null;
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => { });
+      }
+    };
+    if (!video.dataset.signalPreviewBound) {
+      video.dataset.signalPreviewBound = "true";
+      video.addEventListener("loadeddata", attemptPlay);
+      video.addEventListener("canplay", attemptPlay);
     }
+    if (video.readyState === 0 && video.currentSrc) {
+      try { video.load(); } catch (_err) { }
+    }
+    attemptPlay();
   });
 }
 

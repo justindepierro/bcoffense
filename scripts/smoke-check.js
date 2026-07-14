@@ -4559,14 +4559,21 @@ function checkSignalPlayIntegrationContracts() {
     !/canvas\.captureStream\(SILENT_UPLOAD_FPS\)/.test(clips) ||
     !/new MediaRecorder\(stream, \{ mimeType \}\)/.test(clips) ||
     !/Removing audio before video upload/.test(clips) ||
-    !/const uploadFile = await createSilentVideoFile\(file, duration\)/.test(clips) ||
+    !/const shouldTrimUpload = Boolean\(opts\.trimToMaxDuration\)/.test(clips) ||
+    !/Trimming to \$\{maxDurationSec\}s and removing audio before upload/.test(clips) ||
+    !/const targetDuration = shouldTrimUpload \? maxDurationSec : duration/.test(clips) ||
+    !/const uploadFile = await createSilentVideoFile\(file, targetDuration\)/.test(clips) ||
     !/body: uploadFile/.test(clips) ||
+    !/trimToMaxDuration: true/.test(signals) ||
+    !/Trimming this signal to the first \$\{SIGNAL_MAX_DURATION_SEC\}s/.test(signals) ||
     !/video\.controls = false/.test(signals) ||
     !/video\.defaultMuted = true/.test(signals) ||
     !/video\.playsInline = true/.test(signals) ||
     !/video\.removeAttribute\("controls"\)/.test(signals) ||
     !/video\.setAttribute\("preload", "auto"\)/.test(signals) ||
     !/video\.setAttribute\("controlslist", "nodownload noplaybackrate noremoteplayback"\)/.test(signals) ||
+    !/video\.addEventListener\("loadeddata", attemptPlay\)/.test(signals) ||
+    !/video\.addEventListener\("canplay", attemptPlay\)/.test(signals) ||
     !/function configureLoopPreviewVideo\(video\)/.test(clips) ||
     !/video\.controls = false/.test(clips) ||
     !/video\.autoplay = true/.test(clips) ||
@@ -4574,6 +4581,8 @@ function checkSignalPlayIntegrationContracts() {
     !/video\.muted = true/.test(clips) ||
     !/video\.preload = "auto"/.test(clips) ||
     !/video\.removeAttribute\("controls"\)/.test(clips) ||
+    !/video\.addEventListener\("loadeddata", attemptPlay\)/.test(clips) ||
+    !/video\.addEventListener\("canplay", attemptPlay\)/.test(clips) ||
     !/configureLoopPreviewVideo,/.test(clips) ||
     !/window\.playClips\.configureLoopPreviewVideo\(video\)/.test(playbookEditor) ||
     !/window\.playClips\.configureLoopPreviewVideo\(video\)/.test(presentation) ||

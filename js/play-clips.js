@@ -377,16 +377,23 @@
       opts.durationGraceSec == null
         ? DURATION_GRACE_SEC
         : Number(opts.durationGraceSec) || 0;
-    if (duration && duration > maxDurationSec + durationGraceSec) {
+    const shouldTrimUpload = Boolean(opts.trimToMaxDuration) && duration && duration > maxDurationSec;
+    if (duration && duration > maxDurationSec + durationGraceSec && !shouldTrimUpload) {
       throw new Error(
         `Clip is ${Math.round(duration)}s — keep clips to about ${maxDurationSec}s.`,
       );
     }
 
     if (typeof window.showToast === "function") {
-      window.showToast("Removing audio before video upload...", { type: "info", duration: 1800 });
+      window.showToast(
+        shouldTrimUpload
+          ? `Trimming to ${maxDurationSec}s and removing audio before upload...`
+          : "Removing audio before video upload...",
+        { type: "info", duration: 1800 },
+      );
     }
-    const uploadFile = await createSilentVideoFile(file, duration);
+    const targetDuration = shouldTrimUpload ? maxDurationSec : duration;
+    const uploadFile = await createSilentVideoFile(file, targetDuration);
     if (uploadFile.size > MAX_BYTES) {
       throw new Error(
         `Silent clip is ${(uploadFile.size / (1024 * 1024)).toFixed(1)} MB — the limit is 25 MB.`,
@@ -486,6 +493,17 @@
     video.setAttribute("preload", "auto");
     video.setAttribute("disablepictureinpicture", "");
     video.setAttribute("controlslist", "nodownload noplaybackrate noremoteplayback");
+    const attemptPlay = () => {
+      const playPromise = typeof video.play === "function" ? video.play() : null;
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => { });
+      }
+    };
+    if (!video.dataset.clipPreviewBound) {
+      video.dataset.clipPreviewBound = "true";
+      video.addEventListener("loadeddata", attemptPlay);
+      video.addEventListener("canplay", attemptPlay);
+    }
   }
 
   function buildClipViewer() {
