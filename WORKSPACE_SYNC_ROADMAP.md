@@ -201,8 +201,13 @@ plain warnings.
   Media` as the normal action.
 - [x] Rewrite player update copy so players only see `Checking for coach
   updates`, `Ready`, or `Try Again`.
-- [ ] Add a simple coach explanation panel: `Saved on this device`,
+- [x] Add a simple coach explanation panel: `Saved on this device`,
   `Published for team`, `Ready for players`.
+- [x] Decide login loading direction: use a bounded first-load readiness gate
+  with clear step names, not an unbounded longer spinner. Auth, local playbook,
+  player update status, dashboard shell, and critical publish metadata should
+  settle before reveal; diagrams, clips, and heavy media should lazy-load after
+  entry.
 
 ### Phase V2.1 - Published Workspace Ledger
 
@@ -225,6 +230,9 @@ plain warnings.
 
 ### Phase V2.3 - Player Bootstrap Contract
 
+- [ ] Add a bounded startup readiness gate with visible statuses for secure
+  session, saved data, latest coach update, dashboard shell, and media manifest
+  checks.
 - [ ] Replace player-visible Cloud Sync pull behavior with one player bootstrap
   result object.
 - [ ] Apply data, media manifest, app-shell, quiz, and notification freshness in

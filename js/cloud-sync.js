@@ -1236,6 +1236,23 @@
         </div>
         <div class="custom-modal-body cloud-sync-body">
           <p>This shows whether the current team workspace is published and whether this device is current. Players update automatically when they log in or refresh.</p>
+          <div class="cloud-sync-explainer" aria-label="Workspace status meanings">
+            <div class="cloud-sync-explainer-item">
+              <span>Saved on this device</span>
+              <strong>Your edits are safe here.</strong>
+              <small>Autosave protects coach work immediately, even before it is live for players.</small>
+            </div>
+            <div class="cloud-sync-explainer-item">
+              <span>Published for team</span>
+              <strong>The team workspace has a cloud version.</strong>
+              <small>Other coach devices and player logins can receive that published update.</small>
+            </div>
+            <div class="cloud-sync-explainer-item">
+              <span>Ready for players</span>
+              <strong>Data and player-visible media are checked.</strong>
+              <small>Scripts, diagrams, clips, quizzes, and status metadata are ready to load quietly.</small>
+            </div>
+          </div>
           <div class="cloud-sync-flow-grid" aria-label="Team workspace publish actions">
             <div class="cloud-sync-flow-card">
               <span>Publish</span>

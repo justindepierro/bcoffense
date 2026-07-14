@@ -3554,6 +3554,10 @@ function checkWorkspaceSyncContracts() {
     !/renderTeamWorkspacePullSummary\(\)/.test(dashboardRender) ||
     !/\.team-workspace-summary-card/.test(dashboardCss) ||
     !/\.team-workspace-summary-grid/.test(dashboardCss) ||
+    !/Saved on this device/.test(cloudSync) ||
+    !/Published for team/.test(cloudSync) ||
+    !/Ready for players/.test(cloudSync) ||
+    !/\.cloud-sync-explainer/.test(componentsCss) ||
     !/\.cloud-sync-flow-grid/.test(componentsCss) ||
     !/\.cloud-sync-flow-card/.test(componentsCss)
   ) {
