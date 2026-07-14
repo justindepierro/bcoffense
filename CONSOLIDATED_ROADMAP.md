@@ -230,6 +230,10 @@ backup utility.
   and when.
 - [ ] Decide whether auto-pull should stay silent or become an explicit
   "new workspace update available" banner for staff devices.
+- [ ] Execute the Workspace Sync V2 architecture reset in
+  `WORKSPACE_SYNC_ROADMAP.md`: players never sync, coaches publish, advanced
+  push/pull/diagram sync tools move to admin recovery, and one published
+  workspace version answers what is live for players.
 
 Definition of done:
 

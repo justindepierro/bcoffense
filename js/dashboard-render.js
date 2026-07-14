@@ -437,8 +437,8 @@ function renderTeamWorkspacePullSummary() {
     <div class="team-workspace-summary-card">
       <div class="team-workspace-summary-head">
         <div>
-          <span>Team Workspace Sync</span>
-          <h3>Workspace pulled from cloud</h3>
+          <span>Team Workspace Update</span>
+          <h3>This device was updated</h3>
           <p>${escapeHtml(dateText)}${pulledText ? ` • pulled ${escapeHtml(pulledText)}` : ""}${sizeText ? ` • ${escapeHtml(sizeText)}` : ""}</p>
         </div>
         <button type="button" class="btn btn-sm btn-secondary" data-action="dismissTeamWorkspacePullSummary">

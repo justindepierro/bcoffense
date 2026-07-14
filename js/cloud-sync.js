@@ -767,8 +767,8 @@
           `Team workspace pushed.\n\nSize: ${storageManager.formatBytes(payloadSize)}\nItems: ${summary.itemCount}${summary.imageCount ? `\nDiagram entries: ${summary.imageCount}` : ""}${diagramLine ? `\n${diagramLine}` : ""}${modalDetails ? `\n\nDiagram issues:\n${modalDetails}` : ""}`,
           {
             title: diagramSyncResult && (diagramSyncResult.failed || diagramSyncResult.skipped)
-              ? "Team Workspace Sync Needs Review"
-              : "Team Workspace Sync Complete",
+              ? "Team Publish Needs Review"
+              : "Team Update Published",
             icon: diagramSyncResult && (diagramSyncResult.failed || diagramSyncResult.skipped) ? "⚠️" : "✅",
           },
         );
@@ -820,14 +820,14 @@
         ? `\n- ${pullRisks.risks.length - 6} more local item${pullRisks.risks.length - 6 === 1 ? "" : "s"}`
         : "";
       const riskText = pullRisks.hasRisk
-        ? `\n\nLocal work to review before pulling:\n${riskLines}${overflowLine}\n\nPulling anyway will replace this device's local workspace. Push this device first if those changes should be kept.`
+        ? `\n\nLocal work to review before updating:\n${riskLines}${overflowLine}\n\nUpdating anyway will replace this device's local workspace. Publish this device first if those changes should be kept.`
         : "";
       const ok = await showConfirm(
         `Pull the team workspace from ${formatCloudDate(summary.exportDate)} onto this device?\n\nThis refreshes local practice data with the latest cloud workspace.\n\nItems: ${summary.itemCount}${summary.imageCount ? `\nDiagrams in backup: ${summary.imageCount}` : ""}${riskText}\n\nContinue?`,
         {
-          title: pullRisks.hasRisk ? "Review Local Work Before Pull" : "Pull Team Workspace",
+          title: pullRisks.hasRisk ? "Review Local Work Before Update" : "Update Team Workspace",
           icon: pullRisks.hasRisk ? "⚠️" : "☁️",
-          confirmText: pullRisks.hasRisk ? "Pull Anyway" : "Pull Workspace",
+          confirmText: pullRisks.hasRisk ? "Update Anyway" : "Update Device",
           danger: pullRisks.hasRisk,
         },
       );
@@ -882,7 +882,7 @@
           closeCloudSyncModal();
           await showModal(
             `Team workspace pulled successfully.${restoredImages ? `\nDiagrams restored: ${restoredImages}` : ""}${imageWarning}\nDashboard has the review summary.`,
-            { title: "Team Workspace Sync", icon: "✅" },
+            { title: "Team Workspace Updated", icon: "✅" },
           );
         }
         return true;
@@ -1017,10 +1017,10 @@
         : settings.lastRemoteExportDate
           ? `cloud workspace ${formatCloudDate(settings.lastRemoteExportDate)}`
           : "no sync yet";
-    statusEl.textContent = `Cloudflare sync ready - ${lastText}`;
+    statusEl.textContent = `Publish status ready - ${lastText}`;
     statusEl.className = "cloud-sync-status cloud-sync-status-ready";
     if (typeof window.setWorkspaceSyncStatus === "function") {
-      window.setWorkspaceSyncStatus("cloud", "synced", { label: "Team cloud synced" });
+      window.setWorkspaceSyncStatus("cloud", "synced", { label: "Team update published" });
     }
   }
 
@@ -1054,7 +1054,7 @@
     _cloudQueueJob("cloud", "auto-push", {
       queuedLabel: "Cloud sync queued",
       runningLabel: "Syncing team cloud...",
-      doneLabel: "Team cloud synced",
+      doneLabel: "Team update published",
       errorLabel: "Cloud sync needs attention",
     });
     if (key === "playImages") {
@@ -1099,7 +1099,7 @@
     const cloudJobKey = _cloudQueueJob("cloud", "auto-push", {
       queuedLabel: "Cloud sync queued",
       runningLabel: "Syncing team cloud...",
-      doneLabel: "Team cloud synced",
+      doneLabel: "Team update published",
       errorLabel: "Cloud sync needs attention",
     });
     const mediaJobKey = syncingMedia
@@ -1119,7 +1119,7 @@
       const moreChangesQueued = cloudAutoPushPending;
       cloudAutoPushLastError = "";
       cloudAutoPushRetryCount = 0;
-      _cloudCompleteJob(cloudJobKey, { label: "Team cloud synced" });
+      _cloudCompleteJob(cloudJobKey, { label: "Team update published" });
       if (!moreChangesQueued) {
         cloudAutoPushDirtyKeys.clear();
         _cloudCompleteJob(mediaJobKey, { label: "Media published" });
@@ -1188,7 +1188,7 @@
         !Number.isFinite(knownTime) &&
         hasLocalTeamData()
       ) {
-        showToast("Team workspace update available. Open Team Workspace Sync to pull it onto this admin device.", {
+        showToast("Team workspace update available. Open Publish Status to update this coach device.", {
           type: "info",
           duration: 5000,
         });
@@ -1232,42 +1232,42 @@
       <div class="custom-modal custom-modal-wide cloud-sync-modal" role="dialog" aria-modal="true" aria-labelledby="cloudSyncTitle">
         <div class="custom-modal-header">
           <span class="custom-modal-icon">☁️</span>
-          <h3 class="custom-modal-title" id="cloudSyncTitle">Team Workspace Sync</h3>
+          <h3 class="custom-modal-title" id="cloudSyncTitle">Publish Status</h3>
         </div>
         <div class="custom-modal-body cloud-sync-body">
-          <p>Cloudflare sync is connected. This keeps team workspace data available across coach and player devices.</p>
-          <div class="cloud-sync-flow-grid" aria-label="Team workspace sync actions">
+          <p>This shows whether the current team workspace is published and whether this device is current. Players update automatically when they log in or refresh.</p>
+          <div class="cloud-sync-flow-grid" aria-label="Team workspace publish actions">
             <div class="cloud-sync-flow-card">
-              <span>Push</span>
-              <strong>Send this device to cloud</strong>
-              <small>${escapeHtml(canPush ? "Publishes playbook, scripts, team tools, and player-visible diagrams." : "Only admins can push workspace changes.")}</small>
+              <span>Publish</span>
+              <strong>Send coach changes to the team</strong>
+              <small>${escapeHtml(canPush ? "Publishes playbook, scripts, team tools, and player-visible media status." : "Only admins can publish team workspace changes.")}</small>
             </div>
             <div class="cloud-sync-flow-card">
-              <span>Pull</span>
-              <strong>Refresh this device</strong>
-              <small>${escapeHtml(`${roleLabel || "This login"} can pull the latest cloud workspace onto this device.`)}</small>
+              <span>Update</span>
+              <strong>Refresh this coach device</strong>
+              <small>${escapeHtml(`${roleLabel || "This login"} can update this device from the latest published workspace.`)}</small>
             </div>
             <div class="cloud-sync-flow-card">
-              <span>Last updated</span>
+              <span>Last published</span>
               <strong>${escapeHtml(formatCloudDate(settings.lastRemoteExportDate || settings.lastPushAt || settings.lastPullAt))}</strong>
               <small>${escapeHtml(settings.lastRemoteSize ? storageManager.formatBytes(settings.lastRemoteSize) : "Cloud size unknown")}</small>
             </div>
           </div>
-          <p class="cloud-sync-warning">${escapeHtml(canPush ? "Pull refreshes this device with the latest cloud workspace. Push sends this device's current workspace to the team cloud." : "Pull refreshes this device with the latest team workspace. Ask an admin to push new team changes.")}</p>
+          <p class="cloud-sync-warning">${escapeHtml(canPush ? "Normal player updates are automatic. Publish sends this coach device's current workspace to the team. Update refreshes this coach device from the latest published workspace." : "Update refreshes this device with the latest team workspace. Ask an admin to publish new team changes.")}</p>
           <div id="cloudSyncModalStatus" class="cloud-sync-modal-status cloud-sync-modal-status-info">
-            Team workspace sync ready. Last cloud update: ${escapeHtml(formatCloudDate(settings.lastRemoteExportDate || settings.lastPushAt || settings.lastPullAt))}.
+            Publish status ready. Last published update: ${escapeHtml(formatCloudDate(settings.lastRemoteExportDate || settings.lastPushAt || settings.lastPullAt))}.
           </div>
           <div class="cloud-sync-meta">
-            <span>Last push: ${escapeHtml(formatCloudDate(settings.lastPushAt))}</span>
-            <span>Last pull: ${escapeHtml(formatCloudDate(settings.lastPullAt))}</span>
+            <span>Last publish: ${escapeHtml(formatCloudDate(settings.lastPushAt))}</span>
+            <span>This device updated: ${escapeHtml(formatCloudDate(settings.lastPullAt))}</span>
             <span>Cloud size: ${escapeHtml(settings.lastRemoteSize ? storageManager.formatBytes(settings.lastRemoteSize) : "unknown")}</span>
           </div>
         </div>
         <div class="custom-modal-actions cloud-sync-actions">
           <button type="button" class="btn custom-modal-btn custom-modal-cancel" data-action="closeCloudSyncModal">Close</button>
-          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="testCloudSyncConnection" data-cloud-sync-action="test">Check Cloud</button>
-          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="pullCloudBackup" data-cloud-sync-action="pull">Pull Workspace</button>
-          ${canPush ? '<button type="button" class="btn btn-primary custom-modal-btn" data-action="pushCloudBackup" data-cloud-sync-action="push" data-auth-admin-only="true">Push Workspace</button>' : ""}
+          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="testCloudSyncConnection" data-cloud-sync-action="test">Check Status</button>
+          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="pullCloudBackup" data-cloud-sync-action="pull">Update This Device</button>
+          ${canPush ? '<button type="button" class="btn btn-primary custom-modal-btn" data-action="pushCloudBackup" data-cloud-sync-action="push" data-auth-admin-only="true">Publish Team Update</button>' : ""}
         </div>
       </div>
     `;

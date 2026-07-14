@@ -72,3 +72,184 @@ workflow.
 - Players stop seeing diagram-missing states caused by timing or stale metadata.
 - Manual sync remains available, but normal work feels automatic.
 - Exiting during pending save/upload work is guarded.
+
+---
+
+# V2 Architecture Reset - Professional Team Workspace
+
+Why this exists: the Phase 0-4 work improved the old system, but it did not
+fully change the mental model. Coaches still see too many verbs (`sync`, `push`,
+`pull`, `publish`, `refresh`) and too many surfaces (`Team Sync`, `Publish
+Media`, `Sync Diagrams`, player refresh, app update status). Players should
+never think about syncing. Coaches should not need to decide which low-level
+thing to push before practice.
+
+## New Product Contract
+
+There are only three user-facing concepts:
+
+- **Save** - local edits are preserved on the coach device immediately.
+- **Publish** - the latest team workspace is made available to players and
+  other coach devices.
+- **Update** - this device quietly receives the latest published team workspace.
+
+Everything else is implementation detail.
+
+Daily behavior:
+
+- Players never see Cloud Sync, Sync Diagrams, or backup language.
+- Player login automatically checks for the latest published workspace, app
+  shell, quiz state, media manifests, and notifications.
+- If player update fails, the only visible action is `Try Again`, not `Pull from
+  Cloudflare`.
+- Coaches work normally. The app autosaves locally and auto-publishes eligible
+  team data when safe.
+- Coaches see one bottom status: `Saving`, `Publishing`, `Ready for players`,
+  `Offline - saved locally`, or `Needs retry`.
+- Manual sync tools move to an admin-only `Recovery Tools` area.
+
+## Current Pain To Remove
+
+- `Push Workspace` and `Pull Workspace` sound like backup tools, not practice
+  workflows.
+- `Sync Diagrams` still exists as a visible advanced action even though `Publish
+  Media` is the preferred workflow.
+- Cloud autosave can say `Team cloud synced` while player media or publish
+  metadata may still be incomplete.
+- Player freshness mixes app-cache updates, cloud data restores, media
+  manifests, and notifications in one confusing visible path.
+- Coach devices have no simple answer to "what version is live for players?"
+- There is no durable activity log answering who published, when, and what
+  changed.
+
+## Target Architecture
+
+### 1. One Published Workspace Version
+
+Create a durable published workspace record with a version id, timestamp,
+publisher, and domain summary:
+
+- playbook
+- scripts
+- game plan
+- call sheet
+- wristbands
+- diagrams
+- clips
+- signals
+- quizzes
+- notifications/comments
+
+The UI should say `Published 2:14 PM by Coach` instead of exposing backup size
+or low-level pull/push timestamps.
+
+### 2. One Publish Pipeline
+
+Replace scattered publish/sync paths with one orchestration path:
+
+1. Save local data.
+2. Build team workspace snapshot.
+3. Upload changed media/manifests.
+4. Write publish metadata/version.
+5. Verify player-visible readiness.
+6. Update coach status to `Ready for players`.
+
+If any step fails, the dock shows exactly which domain needs retry.
+
+### 3. One Player Bootstrap
+
+Player startup should call one high-level bootstrap/update path that answers:
+
+- latest published workspace version
+- whether this device is current
+- data payload or no-op
+- media manifest freshness
+- app shell update availability
+- notification/comment freshness
+
+The player app applies it silently after login and again on resume. Manual
+refresh is a retry, not a normal workflow.
+
+### 4. Recovery Tools, Not Daily Sync
+
+Move these out of the main coach flow:
+
+- manual Cloud Sync push/pull
+- all-local diagram sync
+- raw backup restore/export
+- force app-cache update diagnostics
+
+Keep them available for admins under `Data Management -> Recovery Tools` with
+plain warnings.
+
+## V2 Implementation Phases
+
+### Phase V2.0 - Language And Surface Cleanup
+
+- [x] Rename coach-facing daily verbs:
+  - `Team Sync` -> `Publish Status`
+  - `Push Workspace` -> `Publish Team Update`
+  - `Pull Workspace` -> `Update This Device`
+  - `Sync Diagrams` -> `Recovery: Upload All Local Diagrams`
+  - First pass updated the main Data Management, Playbook action sheet, command
+    palette, Publish Status modal, Dashboard pull summary, workspace dock cloud
+    label, and diagram recovery upload copy.
+- [ ] Hide advanced diagram sync from primary Playbook chrome; keep `Publish
+  Media` as the normal action.
+- [ ] Rewrite player update copy so players only see `Checking for coach
+  updates`, `Ready`, or `Try Again`.
+- [ ] Add a simple coach explanation panel: `Saved on this device`,
+  `Published for team`, `Ready for players`.
+
+### Phase V2.1 - Published Workspace Ledger
+
+- [ ] Add a lightweight publish activity log with version, actor, timestamp,
+  changed domains, and result.
+- [ ] Show the latest published version on Dashboard and in Publish Status.
+- [ ] Record failed publish attempts with the exact failed domain and retry
+  action.
+- [ ] Add smoke coverage for publish status labels and activity-log rendering.
+
+### Phase V2.2 - Unified Publish Orchestrator
+
+- [ ] Introduce one `publishTeamWorkspace()` orchestration function.
+- [ ] Route cloud backup push, player publish metadata, media manifest updates,
+  diagrams, clips, signals, quizzes, and notification freshness through that
+  orchestrator.
+- [ ] Make the dock state domain-aware: data, media, quizzes, notifications.
+- [ ] Stop showing `Team cloud synced` until player-visible readiness checks are
+  complete.
+
+### Phase V2.3 - Player Bootstrap Contract
+
+- [ ] Replace player-visible Cloud Sync pull behavior with one player bootstrap
+  result object.
+- [ ] Apply data, media manifest, app-shell, quiz, and notification freshness in
+  one quiet startup/update path.
+- [ ] Make manual player refresh call the same bootstrap path.
+- [ ] Add diagnostics only for admins; hide technical sync terms from players.
+
+### Phase V2.4 - Recovery Tools Demotion
+
+- [ ] Move raw Cloud Sync modal into admin-only recovery tools.
+- [ ] Move all-local diagram sync into recovery tools.
+- [ ] Keep export/import backup tools but separate them from publish status.
+- [ ] Add warnings that recovery tools are not the normal practice workflow.
+
+### Phase V2.5 - Legacy Cleanup
+
+- [ ] Remove duplicate status toasts that compete with the dock.
+- [ ] Collapse overlapping publish status stores into one publish ledger.
+- [ ] Audit every user-facing instance of `sync`, `push`, and `pull`.
+- [ ] Add regression checks that players do not see Cloudflare/pull/sync copy.
+
+## V2 Definition Of Done
+
+- A player can log in on a fresh device and simply sees the latest coach-published
+  practice without choosing a sync action.
+- A coach can make edits and see one status that truthfully says whether players
+  are ready.
+- Admins can still recover data, but recovery tools are clearly separate from
+  daily publishing.
+- The app can answer: `What is live for players right now? Who published it?
+  Did media/quizzes/comments publish too?`

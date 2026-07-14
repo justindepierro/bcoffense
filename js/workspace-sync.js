@@ -37,7 +37,7 @@
     }
     if (state === "synced" || state === "saved") {
       if (channel === "media") return "Media published";
-      if (channel === "cloud") return "Team cloud synced";
+      if (channel === "cloud") return "Team update published";
       if (channel === "player") return "Player publish updated";
       return "Saved locally";
     }

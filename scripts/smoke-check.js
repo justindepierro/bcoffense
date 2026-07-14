@@ -539,9 +539,9 @@ function checkStorageKeyUsage() {
     !/function formatDiagramSyncSummary\(result\)/.test(cloudSync) ||
     !/function formatDiagramSyncDetails\(result\)/.test(cloudSync) ||
     !/diagramSyncResult = await window\.playImages\.syncToRemote\(_playsRef\)/.test(cloudSync) ||
-    !/Team Workspace Sync/.test(cloudSync) ||
-    !/Push Workspace/.test(cloudSync) ||
-    !/Pull Workspace/.test(cloudSync)
+    !/Publish Status/.test(cloudSync) ||
+    !/Publish Team Update/.test(cloudSync) ||
+    !/Update This Device/.test(cloudSync)
   ) {
     fail("cloud sync push does not wait for and report diagram sync results");
   }
@@ -3500,9 +3500,9 @@ function checkWorkspaceSyncContracts() {
     !/saveTeamWorkspacePullSummary\(remote, \{ restoredImages, imageWarning \}\)/.test(cloudSync) ||
     !/window\.getTeamWorkspacePullSummary = getTeamWorkspacePullSummary/.test(cloudSync) ||
     !/window\.dismissTeamWorkspacePullSummary = dismissTeamWorkspacePullSummary/.test(cloudSync) ||
-    !/Team Workspace Sync/.test(cloudSync) ||
-    !/Push Workspace/.test(cloudSync) ||
-    !/Pull Workspace/.test(cloudSync)
+    !/Publish Status/.test(cloudSync) ||
+    !/Publish Team Update/.test(cloudSync) ||
+    !/Update This Device/.test(cloudSync)
   ) {
     fail("team workspace sync modal and pull summary are incomplete");
   }
@@ -3520,9 +3520,9 @@ function checkWorkspaceSyncContracts() {
     !/Call sheet draft newer than cloud/.test(cloudSync) ||
     !/Game plan snapshot newer than cloud/.test(cloudSync) ||
     !/Player publish status newer than cloud/.test(cloudSync) ||
-    !/Review Local Work Before Pull/.test(cloudSync) ||
-    !/Pull Anyway/.test(cloudSync) ||
-    !/Push this device first if those changes should be kept/.test(cloudSync)
+    !/Review Local Work Before Update/.test(cloudSync) ||
+    !/Update Anyway/.test(cloudSync) ||
+    !/Publish this device first if those changes should be kept/.test(cloudSync)
   ) {
     fail("team workspace pull does not warn about newer local work before restore");
   }

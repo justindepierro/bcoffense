@@ -1967,7 +1967,7 @@
         </div>
         <div class="custom-modal-actions">
           <button type="button" class="btn btn-primary btn-sm" data-action="publishPlayerMedia">Publish Needed Media</button>
-          <button type="button" class="btn btn-sm" data-action="syncPlayImagesToCloud">Advanced: Sync Diagrams</button>
+          <button type="button" class="btn btn-sm" data-action="syncPlayImagesToCloud">Recovery: Upload All Diagrams</button>
           <button type="button" class="btn btn-sm" data-action="closePublishMedia">Done</button>
         </div>
       </div>`;
@@ -2042,7 +2042,7 @@
   window.syncPlayImagesToCloud = async function (opts = {}) {
     if (!_remoteAvailable()) {
       if (typeof showModal === "function") {
-        showModal("Cloud sync is not available. Make sure you are on bcoffense.com (not a file:// URL).", { title: "Sync Diagrams", icon: "⚠️" });
+        showModal("Diagram recovery upload is not available. Make sure you are on bcoffense.com (not a file:// URL).", { title: "Recovery Upload", icon: "⚠️" });
       }
       return;
     }
@@ -2053,7 +2053,7 @@
     if (!allKeys.length) {
       if (typeof showModal === "function") {
         showModal(
-          "No play diagrams were found on this device.\n\nImages are stored per-device in your browser. Open the app on the computer or device where you originally uploaded your play diagrams, then press Sync Diagrams from there.",
+          "No play diagrams were found on this device.\n\nImages are stored per-device in your browser. Open the app on the computer or device where you originally uploaded your play diagrams, then use Recovery: Upload All Diagrams from there.",
           { title: "No Diagrams Found", icon: "ℹ️" },
         );
       }
@@ -2080,7 +2080,7 @@
           : "",
       ].filter(Boolean).join("\n");
       const choice = await showChoice(notes, {
-        title: "Sync Diagrams",
+        title: "Recovery Upload",
         icon: "🖼️",
         option1: recommendedLabel,
         option2: allLabel,
