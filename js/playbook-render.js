@@ -226,6 +226,9 @@ function renderPlaybook() {
         const rowTitle = isReadOnlyViewer
           ? "Click to select and use Present to study this play"
           : "Click to select, double-click to edit";
+        const editButton = isReadOnlyViewer
+          ? ""
+          : `<button class="pb-edit-btn" data-action="openPlayEditor" data-idx="${idx}" data-arg="${idx}" title="Edit this play" aria-label="Edit ${escapeHtml(play.play)}">✎</button>`;
 
         return `
             <tr class="${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-arg="${idx}"
@@ -239,7 +242,7 @@ function renderPlaybook() {
                 <td class="col-back">${highlight(play.back || "-")}</td>
                 <td class="col-motion">${highlight(play.motion || "-")}</td>
                 <td class="col-protection">${highlight(play.protection || "-")}</td>
-                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${_renderWorkflowChips(play, idx)}${item.readinessBadge}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button><button class="pb-add-week-btn" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet">⊕</button>${typeof askCoachAboutPlay === "function" ? `<button class="pb-ask-coach-btn" data-action="askCoachAboutPlay" data-arg="${idx}" title="Ask a question about this play" aria-label="Ask a question about ${escapeHtml(play.play)}">❓</button>` : ""}</td>
+                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${_renderWorkflowChips(play, idx)}${item.readinessBadge}${editButton}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button><button class="pb-add-week-btn" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet">⊕</button>${typeof askCoachAboutPlay === "function" ? `<button class="pb-ask-coach-btn" data-action="askCoachAboutPlay" data-arg="${idx}" title="Ask a question about this play" aria-label="Ask a question about ${escapeHtml(play.play)}">❓</button>` : ""}</td>
                 <td class="col-basePlay">${escapeHtml(play.basePlay || "-")}</td>
                 <td class="col-tempo">${escapeHtml(play.tempo || "-")}</td>
             </tr>
@@ -289,6 +292,9 @@ function renderPlaybook() {
         const gpCardToggle = activeOpponent
           ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" data-arg="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`
           : "";
+        const cardEditButton = isReadOnlyViewer
+          ? ""
+          : `<button class="pb-edit-btn" data-action="openPlayEditor" data-idx="${idx}" data-arg="${idx}" title="Edit this play" aria-label="Edit ${escapeHtml(play.play)}">✎</button>`;
         const pills = [play.type, play.back, play.motion, play.tempo]
           .filter(Boolean)
           .map((value) => `<span class="pb-card-pill">${escapeHtml(value)}</span>`)
@@ -302,7 +308,7 @@ function renderPlaybook() {
                tabindex="0" role="button"
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
             ${playerCardMedia}
-            <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge}${cardClipBadge}${cardSignalBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></div>
+            <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge}${cardClipBadge}${cardSignalBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}${cardEditButton}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></div>
             <div class="pb-card-sub">${highlight(play.type)}${play.motion ? " · " + highlight(play.motion) : ""}${play.back ? " · " + highlight(play.back) : ""}</div>
             <div class="pb-card-study-row">${studyBadges}</div>
             ${playerCardNote}

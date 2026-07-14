@@ -1666,8 +1666,11 @@ function checkPlayerPortalContracts() {
   const componentsCss = read("css/components.css");
   const layoutCss = read("css/layout.css");
   const responsiveCss = read("css/responsive.css");
+  const playbookCss = read("css/playbook.css");
   const dashboardCss = read("css/dashboard.css");
   const scriptCss = read("css/script.css");
+  const playbookRender = read("js/playbook-render.js");
+  const playImages = read("js/play-images.js");
   const presentation = read("js/play-presentation.js");
   const presentationCss = read("css/play-presentation.css");
 
@@ -1831,8 +1834,21 @@ function checkPlayerPortalContracts() {
     !/is-staff-mobile-shell/.test(appShell) ||
     !/queueMobileShellSettledSync\(\);[\s\S]*\} else \{[\s\S]*queueMobileShellStateSync\(\);/.test(appShell) ||
     !/queueMobileShellStateSync/.test(auth)
-  ) {
+	  ) {
     fail("mobile screen recognition does not account for touch viewports");
+  }
+  if (
+    !/const isPlaybookHoverPreviewAllowed = \(\) =>[\s\S]*shell-tablet[\s\S]*is-mobile-screen[\s\S]*\(hover: hover\) and \(pointer: fine\)/.test(appEvents) ||
+    !/pbBody\.addEventListener\([\s\S]*"touchstart"[\s\S]*hidePlayPreview/.test(appEvents) ||
+    !/function _isTouchPreviewDevice\(\)/.test(playImages) ||
+    !/\(hover: none\), \(pointer: coarse\)/.test(playImages) ||
+    !/function _openDiagramForTouch\(el\)/.test(playImages) ||
+    !/window\.openPlaybookPresentation\(idx\)/.test(playImages) ||
+    !/class="pb-edit-btn" data-action="openPlayEditor"/.test(playbookRender) ||
+    !/body\.shell-tablet #playbookTable \.pb-present-btn,[\s\S]*body\.shell-tablet #playbookTable \.pb-edit-btn,[\s\S]*min-width:\s*44px/.test(playbookCss) ||
+    !/body\.shell-tablet \.pb-img-badge,[\s\S]*body\.shell-tablet \.pb-clip-badge,[\s\S]*body\.shell-tablet \.pb-signal-badge[\s\S]*min-width:\s*44px/.test(playbookCss)
+  ) {
+    fail("tablet playbook touch interactions are incomplete");
   }
   if (
     !/function isMobileCoachLockRole\(\)/.test(appShell) ||

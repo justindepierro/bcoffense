@@ -201,8 +201,9 @@ table.sortable th {
   display: none;
 }
 
-/* ── Present button: invisible until row hover ── */
-#playbookTable .pb-present-btn {
+/* ── Row action buttons: invisible until row hover on desktop ── */
+#playbookTable .pb-present-btn,
+#playbookTable .pb-edit-btn {
   opacity: 0;
   visibility: hidden;
   min-width: 24px;
@@ -212,10 +213,20 @@ table.sortable th {
   transition: opacity var(--transition-fast);
 }
 @media (hover: hover) {
-  #playbookTable tbody tr:hover .pb-present-btn {
+  #playbookTable tbody tr:hover .pb-present-btn,
+  #playbookTable tbody tr:hover .pb-edit-btn {
     opacity: 1;
     visibility: visible;
   }
+}
+
+#playbookTable .pb-edit-btn {
+  margin-left: 4px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  color: var(--color-text-muted);
+  cursor: pointer;
 }
 
 /* Add-to-week button (#109) */
@@ -411,6 +422,34 @@ table.sortable th {
 .pb-clip-badge:hover,
 .pb-clip-badge:focus {
   filter: drop-shadow(0 0 2px var(--color-primary));
+}
+
+body.shell-tablet #playbookTable .pb-present-btn,
+body.shell-tablet #playbookTable .pb-edit-btn,
+body.shell-tablet #playbookTable .pb-add-week-btn,
+body.shell-tablet #playbookTable .pb-ask-coach-btn,
+body.is-mobile-screen #playbookTable .pb-present-btn,
+body.is-mobile-screen #playbookTable .pb-edit-btn,
+body.is-mobile-screen #playbookTable .pb-add-week-btn,
+body.is-mobile-screen #playbookTable .pb-ask-coach-btn {
+  opacity: 1;
+  visibility: visible;
+  min-width: 44px;
+  min-height: 44px;
+  margin-left: 4px;
+  touch-action: manipulation;
+}
+
+body.shell-tablet .pb-img-badge,
+body.shell-tablet .pb-clip-badge,
+body.shell-tablet .pb-signal-badge,
+body.is-mobile-screen .pb-img-badge,
+body.is-mobile-screen .pb-clip-badge,
+body.is-mobile-screen .pb-signal-badge {
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 10px;
+  touch-action: manipulation;
 }
 
 .pb-usage {
@@ -3268,11 +3307,23 @@ body[data-auth-role="player"] .pb-card .pb-present-btn {
 }
 
 .pb-card .gp-toggle-btn,
+.pb-card .pb-edit-btn,
 .pb-card .pb-present-btn {
   min-width: 44px;
   width: 44px;
   min-height: 44px;
   height: 44px;
+}
+
+.pb-card .pb-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  color: var(--color-text-muted);
+  cursor: pointer;
 }
 
 .pb-card-pills {

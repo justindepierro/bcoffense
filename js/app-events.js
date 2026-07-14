@@ -766,9 +766,14 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
       }
     }, { passive: false });
+    const isPlaybookHoverPreviewAllowed = () =>
+      !document.body?.classList.contains("shell-tablet") &&
+      !document.body?.classList.contains("is-mobile-screen") &&
+      (!window.matchMedia || window.matchMedia("(hover: hover) and (pointer: fine)").matches);
     pbBody.addEventListener(
       "mouseenter",
       (e) => {
+        if (!isPlaybookHoverPreviewAllowed()) return;
         const row = e.target.closest("tr[data-preview]");
         if (row) showPlayPreview(e, parseInt(row.dataset.preview, 10));
       },
@@ -781,6 +786,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (row) hidePlayPreview();
       },
       true,
+    );
+    pbBody.addEventListener(
+      "touchstart",
+      () => {
+        if (typeof hidePlayPreview === "function") hidePlayPreview();
+      },
+      { passive: true },
     );
     pbBody.addEventListener("contextmenu", (e) => {
       const row = e.target.closest("tr[data-idx]");

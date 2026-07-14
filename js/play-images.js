@@ -2189,7 +2189,26 @@
       popover.style.top = `${top}px`;
     }
 
+    function _isTouchPreviewDevice() {
+      return Boolean(
+        document.body?.classList.contains("shell-tablet") ||
+        document.body?.classList.contains("is-mobile-screen") ||
+        (window.matchMedia && window.matchMedia("(hover: none), (pointer: coarse)").matches),
+      );
+    }
+
+    function _openDiagramForTouch(el) {
+      const item = el?.closest?.("[data-idx]");
+      const idx = item?.dataset?.idx || item?.getAttribute?.("data-idx");
+      if (idx != null && typeof window.openPlaybookPresentation === "function") {
+        window.openPlaybookPresentation(idx);
+        return true;
+      }
+      return false;
+    }
+
     document.addEventListener("mouseover", (e) => {
+      if (_isTouchPreviewDevice()) return;
       const target = e.target.closest && e.target.closest("[data-img-sig]");
       if (!target) return;
       _show(target);
@@ -2207,6 +2226,12 @@
       const target = e.target.closest && e.target.closest("[data-img-sig]");
       if (!target) {
         if (popover && popover.style.display === "block") _hide();
+        return;
+      }
+      if (_isTouchPreviewDevice()) {
+        e.preventDefault();
+        _hide();
+        _openDiagramForTouch(target);
         return;
       }
       if (popover && popover.style.display === "block" && activeEl === target) {
