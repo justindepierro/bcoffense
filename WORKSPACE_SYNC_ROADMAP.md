@@ -199,7 +199,7 @@ plain warnings.
     label, and diagram recovery upload copy.
 - [x] Hide advanced diagram sync from primary Playbook chrome; keep `Publish
   Media` as the normal action.
-- [ ] Rewrite player update copy so players only see `Checking for coach
+- [x] Rewrite player update copy so players only see `Checking for coach
   updates`, `Ready`, or `Try Again`.
 - [ ] Add a simple coach explanation panel: `Saved on this device`,
   `Published for team`, `Ready for players`.

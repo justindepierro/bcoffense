@@ -3073,12 +3073,10 @@ function checkStartupDiagnosticsAndRenderQueue() {
     !/function refreshPlayerTeamApp\(opts = \{\}\)[\s\S]*const quietStartup = quiet && startup/.test(appShell) ||
     !/let playerTeamRefreshPromise = null/.test(appShell) ||
     !/if \(playerTeamRefreshPromise\)/.test(appShell) ||
-    !/Already checking team updates/.test(appShell) ||
-    !/title: startup \? "Home is ready" : "Checking team updates"/.test(appShell) ||
-    !/Checking for coach updates in the background/.test(appShell) ||
-    !/Waiting on coach update/.test(appShell) ||
-    !/Team app ready/.test(appShell) ||
-    !/No team workspace has been pushed yet/.test(appShell) ||
+    !/showToast\("Checking for coach updates"/.test(appShell) ||
+    !/title: "Checking for coach updates"/.test(appShell) ||
+    !/state\.title \|\| "Ready"/.test(appShell) ||
+    !/title: "Try Again"/.test(appShell) ||
     !/phaseStateOpts = quietStartup \? \{ render: false \}/.test(appShell) ||
     !/refreshPlayerCloudBackup\(\{[\s\S]*navigate: !quietStartup,[\s\S]*skipIfCurrent: true/.test(appShell) ||
     !/refreshNotificationStatus\(\{ render: !quietStartup \}\)/.test(appShell) ||
@@ -3090,7 +3088,10 @@ function checkStartupDiagnosticsAndRenderQueue() {
   ) {
     fail("player first-impression startup refresh is not ordered and quiet");
   }
-  if (/No cloud backup has been pushed yet/.test(appShell) || /Getting team app ready/.test(appShell)) {
+  if (
+    /No cloud backup has been pushed yet|Getting team app ready|Already checking team updates|Home is ready|Checking team updates|Waiting on coach update|Team app ready|No team workspace has been pushed yet|Team app could not refresh|Refresh needs connection/.test(appShell) ||
+    /Team app update status|Update status|Practice version|Team data|Not synced yet|Refresh team app|newest app version/.test(dashboardRender)
+  ) {
     fail("player first-impression startup copy still exposes backup/getting-ready language");
   }
   if (/Sync Now|sync so players can view them/.test(moduleInit)) {
@@ -3343,6 +3344,7 @@ function checkWorkspaceSyncContracts() {
     "- [x] Keep manual Cloud Sync and Sync Diagrams as advanced fallback actions.",
     "- [x] Replace \"Sync Diagrams\" daily workflow with \"Publish Media\".",
     "- [x] Hide advanced diagram sync from primary Playbook chrome; keep `Publish",
+    "- [x] Rewrite player update copy so players only see `Checking for coach",
     "- [x] Show active player-visible script media coverage: ready, missing, stale,",
     "- [x] Upload only stale/unpublished player-visible diagrams; report clip gaps",
     "- [x] Show result summary and failed items with exact next steps.",

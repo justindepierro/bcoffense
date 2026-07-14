@@ -196,75 +196,21 @@ function _dashGetScriptPlayerVersionTime(savedScript) {
 }
 
 function _dashRenderPlayerFreshnessStrip(featuredScript, publishedScripts = []) {
-  const appVersion = _dashGetAppShellVersion();
-  const practiceTime = _dashGetScriptPlayerVersionTime(featuredScript);
-  const teamSyncTime = _dashGetCloudFreshnessTime();
-  const notificationState = window.playerNotificationState || {};
-  const notificationChecked = notificationState.checkedAt || "";
-  const notificationUnread = Number(notificationState.unread || 0);
-  const latestPublishedTime = (Array.isArray(publishedScripts) ? publishedScripts : [])
-    .map(_dashGetScriptPlayerVersionTime)
-    .filter(Boolean)
-    .sort((a, b) => _dashGetTimestamp(b) - _dashGetTimestamp(a))[0] || "";
-  const connectionOnline =
-    typeof navigator === "undefined" || navigator.onLine !== false;
-  const items = [
-    {
-      label: "App",
-      value: appVersion || "Loaded",
-      tone: "neutral",
-    },
-    {
-      label: "Practice version",
-      value: practiceTime
-        ? `Updated ${_dashFormatRelativeTime(practiceTime)}`
-        : "No published practice",
-      tone: practiceTime ? "ready" : "muted",
-    },
-    {
-      label: "Team data",
-      value: teamSyncTime
-        ? `Synced ${_dashFormatRelativeTime(teamSyncTime)}`
-        : latestPublishedTime
-          ? `Loaded ${_dashFormatRelativeTime(latestPublishedTime)}`
-          : "Not synced yet",
-      tone: teamSyncTime || latestPublishedTime ? "ready" : "muted",
-    },
-    {
-      label: "Alerts",
-      value: notificationUnread > 0
-        ? `${notificationUnread} unread`
-        : notificationChecked
-          ? `Checked ${_dashFormatRelativeTime(notificationChecked)}`
-          : "Checking soon",
-      tone: notificationState.error
-        ? "warn"
-        : notificationUnread > 0
-          ? "ready"
-          : notificationChecked
-            ? "ready"
-            : "muted",
-    },
-    {
-      label: "Connection",
-      value: connectionOnline ? "Online" : "Offline",
-      tone: connectionOnline ? "ready" : "warn",
-    },
-  ];
-  return `<section class="player-home-freshness" aria-label="Team app update status">
+  const state = window.playerTeamRefreshState || {};
+  const checking = Boolean(state.busy) || state.tone === "checking";
+  const needsRetry = state.tone === "warn" || state.tone === "offline";
+  const label = checking ? "Checking for coach updates" : needsRetry ? "Try Again" : "Ready";
+  const tone = checking ? "neutral" : needsRetry ? "warn" : "ready";
+  return `<section class="player-home-freshness" aria-label="Coach updates">
     <div class="player-home-freshness__head">
-      <strong>Update status</strong>
-      <span>${escapeHtml(
-        connectionOnline
-          ? "This device is showing the latest version it has loaded."
-          : "Offline. This device is showing the last version it loaded.",
-      )}</span>
+      <strong>${escapeHtml(label)}</strong>
+      <span>${escapeHtml(label)}</span>
     </div>
     <div class="player-home-freshness__grid">
-      ${items.map((item) => `<div class="player-home-freshness__item player-home-freshness__item--${escapeHtml(item.tone)}">
-        <span>${escapeHtml(item.label)}</span>
-        <strong>${escapeHtml(item.value)}</strong>
-      </div>`).join("")}
+      <div class="player-home-freshness__item player-home-freshness__item--${escapeHtml(tone)}">
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(label)}</strong>
+      </div>
     </div>
   </section>`;
 }
@@ -273,9 +219,13 @@ function _dashRenderPlayerRefreshAction() {
   const state = window.playerTeamRefreshState || {};
   const tone = state.tone || "idle";
   const busy = Boolean(state.busy);
-  const updated = _dashFormatRelativeTime(state.updatedAt);
-  const title = state.title || "Refresh team app";
-  const body = state.body || "Check for the newest app version and team data.";
+  const needsRetry = tone === "warn" || tone === "offline";
+  const title = busy
+    ? "Checking for coach updates"
+    : needsRetry
+      ? "Try Again"
+      : "Ready";
+  const body = title;
   const installState =
     typeof getPlayerA2HSActionState === "function"
       ? getPlayerA2HSActionState()
@@ -286,15 +236,15 @@ function _dashRenderPlayerRefreshAction() {
   const actionClass = installAction
     ? "player-home-refresh__actions"
     : "player-home-refresh__actions player-home-refresh__actions--single";
-  return `<section class="player-home-refresh player-home-refresh--${escapeAttr(tone)}" aria-label="Refresh team app">
+  return `<section class="player-home-refresh player-home-refresh--${escapeAttr(tone)}" aria-label="Coach updates">
     <div class="player-home-refresh__copy">
       <strong>${escapeHtml(title)}</strong>
-      <span>${escapeHtml(updated ? `${body} Last checked ${updated}.` : body)}</span>
+      <span>${escapeHtml(body)}</span>
     </div>
     <div class="${actionClass}">
       ${installAction}
-      <button type="button" class="player-home-refresh__btn" data-action="refreshPlayerTeamApp" ${busy ? "disabled" : ""}>
-        ${escapeHtml(busy ? "Checking" : "Refresh")}
+      <button type="button" class="player-home-refresh__btn" data-action="refreshPlayerTeamApp" ${busy || !needsRetry ? "disabled" : ""}>
+        ${escapeHtml(busy ? "Checking for coach updates" : needsRetry ? "Try Again" : "Ready")}
       </button>
     </div>
   </section>`;

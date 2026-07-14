@@ -907,12 +907,12 @@
         const result = await refreshPlayerCloudBackup({ navigate: true });
         closeCloudSyncModal();
         if (result?.ok) {
-          showToast("Team data refreshed. Opening Home.", {
+          showToast("Ready", {
             type: "success",
             duration: 3000,
           });
         } else {
-          showToast(result?.message || "Team data could not be refreshed.", {
+          showToast("Try Again", {
             type: "warning",
             duration: 4000,
           });
@@ -935,7 +935,7 @@
       return {
         ok: false,
         status: "missing",
-        message: "No team workspace has been pushed yet.",
+        message: "Try Again",
       };
     }
     if (opts.skipIfCurrent !== false && isCloudRemoteAlreadyKnown(remote)) {
@@ -951,7 +951,7 @@
         updatedAt: remote.updatedAt || "",
         itemCount: remote.summary?.itemCount || 0,
         imageCount: remote.summary?.imageCount || 0,
-        message: `Team data is current from ${formatCloudDate(remote.summary?.exportDate || remote.updatedAt)}.`,
+        message: "Ready",
       };
     }
     const restored = await restoreCloudBackup(remote, {
@@ -965,7 +965,7 @@
       return {
         ok: false,
         status: "restore-failed",
-        message: "Team data could not be refreshed.",
+        message: "Try Again",
       };
     }
     return {
@@ -975,7 +975,7 @@
       updatedAt: remote.updatedAt || "",
       itemCount: remote.summary?.itemCount || 0,
       imageCount: remote.summary?.imageCount || 0,
-      message: `Team data refreshed from ${formatCloudDate(remote.summary?.exportDate || remote.updatedAt)}.`,
+      message: "Ready",
     };
   }
 
@@ -1192,7 +1192,10 @@
         return false;
       }
 
-      showToast("Pulling latest team workspace...", { type: "info", duration: 1500 });
+      showToast(
+        currentUser.role === "player" ? "Checking for coach updates" : "Pulling latest team workspace...",
+        { type: "info", duration: 1500 },
+      );
       return restoreCloudBackup(remote, {
         auto: true,
         confirm: false,
@@ -1201,7 +1204,7 @@
     } catch (err) {
       console.warn("Cloud auto-pull failed:", err);
       if (err.status !== 401 && err.status !== 404) {
-        showToast(`Cloud auto-pull failed: ${err.message}`, {
+        showToast(currentUser.role === "player" ? "Try Again" : `Cloud auto-pull failed: ${err.message}`, {
           type: "warning",
           duration: 5000,
         });
