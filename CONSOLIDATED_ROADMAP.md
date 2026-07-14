@@ -120,6 +120,8 @@ Phase 1 - dedicated Signals tab:
   preview, replace, delete, notes, and visibility controls.
 - [x] Let players view only signal clips that are visible/published; no editing
   controls.
+- [x] On mobile, tapping a signal chip with an attached clip opens the video
+  overlay directly instead of requiring a second `Watch` step.
 
 Phase 2 - play resolution:
 

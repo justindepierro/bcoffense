@@ -224,6 +224,20 @@ function _sigHasPublishedClip(summary) {
   return Boolean(record && record.visibility === "published" && Number(record.clipCount || 0) > 0);
 }
 
+function _sigCanOpenSummaryClip(summary) {
+  const record = summary?.record;
+  if (!record || !_sigSummaryRequiresVideo(summary) || Number(record.clipCount || 0) <= 0) return false;
+  return record.visibility === "published" || _sigCanManage();
+}
+
+function _sigShouldOpenClipDirectly() {
+  return Boolean(
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(max-width: 700px)").matches,
+  );
+}
+
 function _sigSummaryRequiresVideo(summary) {
   return _sigComponentRequiresVideo(summary?.componentType);
 }
@@ -516,6 +530,10 @@ function openSignalClipModal(cacheKey) {
     if (typeof showToast === "function") showToast("Signal clip unavailable.", { type: "warning" });
     return;
   }
+  _sigOpenClipModalItem(item);
+}
+
+function _sigOpenClipModalItem(item) {
   closeSignalClipModal();
   const clip = item.clip;
   const summary = item.summary || {};
@@ -540,6 +558,32 @@ function openSignalClipModal(cacheKey) {
   document.body.appendChild(overlay);
   if (typeof trapFocus === "function") trapFocus(overlay);
   _sigConfigureLoopVideos(overlay);
+}
+
+async function _sigOpenFirstClipForSummary(summary) {
+  if (!_sigCanOpenSummaryClip(summary)) return false;
+  const sig = _sigClipKey(summary.componentType, summary.compareKey);
+  let clips = [];
+  try {
+    clips =
+      window.playClips && typeof window.playClips.listForSig === "function"
+        ? _sigNormalizeClipList(await window.playClips.listForSig(sig))
+        : [];
+  } catch (_err) {
+    return false;
+  }
+  const clip = clips.find((item) => item?.url);
+  if (!clip) return false;
+  const meta = [
+    clip.duration ? `${clip.duration}s` : "",
+    clip.size ? `${(clip.size / (1024 * 1024)).toFixed(1)} MB` : "",
+  ].filter(Boolean).join(" / ");
+  _sigOpenClipModalItem({
+    clip,
+    summary,
+    meta: meta || "Signal clip",
+  });
+  return true;
 }
 
 function closeSignalClipModal() {
@@ -597,6 +641,15 @@ function openSignalComponent(arg) {
   const [componentType, compareKey] = String(arg || "").split("|");
   if (!componentType || !compareKey) return;
   _sigSelected = { componentType, compareKey };
+  const summary = _sigFindSummary(componentType, compareKey);
+  if (_sigShouldOpenClipDirectly() && _sigCanOpenSummaryClip(summary)) {
+    _sigOpenFirstClipForSummary(summary)
+      .then((opened) => {
+        if (!opened) renderSignals();
+      })
+      .catch(() => renderSignals());
+    return;
+  }
   renderSignals();
 }
 

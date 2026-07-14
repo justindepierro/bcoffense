@@ -4400,6 +4400,11 @@ function checkSignalPlayIntegrationContracts() {
   if (
     !/function _sigConfigureLoopVideos\(root = document\)/.test(signals) ||
     !/function openSignalClipModal\(cacheKey\)/.test(signals) ||
+    !/function _sigOpenClipModalItem\(item\)/.test(signals) ||
+    !/async function _sigOpenFirstClipForSummary\(summary\)/.test(signals) ||
+    !/function _sigShouldOpenClipDirectly\(\)/.test(signals) ||
+    !/window\.matchMedia\("\(max-width: 700px\)"\)\.matches/.test(signals) ||
+    !/if \(_sigShouldOpenClipDirectly\(\) && _sigCanOpenSummaryClip\(summary\)\)/.test(signals) ||
     !/function closeSignalClipModal\(\)/.test(signals) ||
     !/window\.openSignalClipModal = openSignalClipModal/.test(signals) ||
     !/window\.closeSignalClipModal = closeSignalClipModal/.test(signals) ||
@@ -4431,6 +4436,7 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Add a Playbook detail surface for "Signals for this play"/.test(roadmap) ||
     !/- \[x\] Mark formation as a non-video cue because formations are yelled/.test(roadmap) ||
     !/- \[x\] Route all remote video clip uploads through a shared silent-upload/.test(roadmap) ||
+    !/- \[x\] On mobile, tapping a signal chip with an attached clip opens the video/.test(roadmap) ||
     !/- \[x\] Add a small `Signals` button to Practice Script play rows\/cards/.test(roadmap) ||
     !/- \[x\] Add the same signal selector to Script Swipe View \/ presentation-style/.test(roadmap) ||
     !/- \[x\] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and/.test(roadmap) ||
