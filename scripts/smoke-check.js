@@ -1737,6 +1737,8 @@ function checkPlayerPortalContracts() {
 	    !/data-action="installPlayerA2HS"/.test(dashboardRender) ||
 	    /showPlayerA2HSBannerIfNeeded\(\)/.test(dashboardRender) ||
 	    !/player-home-today-card/.test(dashboardRender) ||
+	    !/function _dashBuildPlayerHomeFocus\(savedScript, stats\)/.test(dashboardRender) ||
+	    !/Today's work/.test(dashboardRender) ||
     !/class="player-home-state player-home-state--\$\{escapeHtml\(practiceStatus\.tone\)\}"/.test(
       dashboardRender,
     ) ||
@@ -1988,6 +1990,7 @@ function checkPlayerPortalContracts() {
     !/\.player-home-quick-actions/.test(dashboardCss) ||
     !/player-home-card--study/.test(dashboardRender) ||
     !/\.player-home-today-card/.test(dashboardCss) ||
+    !/\.player-home-today-metrics/.test(dashboardCss) ||
     !/\.player-dashboard-home[\s\S]*overflow:\s*visible/.test(dashboardCss) ||
     !/\.player-home-card[\s\S]*overflow:\s*clip/.test(dashboardCss) ||
     !/body\.is-phone-screen\[data-auth-role="player"\] \.player-home-quick-action/.test(

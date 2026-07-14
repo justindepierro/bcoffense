@@ -387,6 +387,10 @@ test.describe("Player mobile experience", () => {
     await seedFirstPracticeDiagram(page);
 
     await expect(page.locator("#playerDashboardHome")).toBeVisible();
+    await expect(page.locator("#playerDashboardHome .player-home-today-card")).toContainText("Today's work");
+    await expect(page.locator("#playerDashboardHome .player-home-today-card")).toContainText("2 calls / 3 reps");
+    await expect(page.locator("#playerDashboardHome .player-home-today-card")).toContainText("2/2 Q rules");
+    await expect(page.locator("#playerDashboardHome .player-home-card--study")).toContainText("Study Targets");
     await expect(page.getByRole("button", { name: /Open Practice/i }).first()).toBeVisible();
 
     const portalButton = page.locator("#playerPortalBtn");

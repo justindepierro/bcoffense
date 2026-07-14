@@ -1410,6 +1410,89 @@ function getPlayerHomePracticeStatus(featuredScript, loadedScript, todayValue) {
   };
 }
 
+function _dashPlural(count, singular, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function _dashGetPlayerPracticePosition() {
+  let key = "respQ";
+  try {
+    if (typeof _getCurrentQuizRosterPositionKeys === "function") {
+      const rosterKeys = _getCurrentQuizRosterPositionKeys();
+      key = rosterKeys.primary || rosterKeys.secondary || key;
+    }
+  } catch (_err) {
+    key = "respQ";
+  }
+  const position = typeof _getQuizPosition === "function"
+    ? _getQuizPosition(key)
+    : null;
+  return {
+    key,
+    label: position?.label || "Q",
+  };
+}
+
+function _dashGetCurrentPlayerName() {
+  try {
+    if (typeof _getQuizRosterPlayerForCurrentUser === "function") {
+      const rosterPlayer = _getQuizRosterPlayerForCurrentUser();
+      if (rosterPlayer?.name) return rosterPlayer.name;
+    }
+  } catch (_err) {
+    // Roster helpers are optional on Home; fall back to the auth label below.
+  }
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  return String(user?.label || user?.username || "").trim();
+}
+
+function _dashBuildPlayerHomeFocus(savedScript, stats) {
+  const playsForDay = Array.isArray(savedScript?.plays)
+    ? savedScript.plays.filter((play) => play && !play.isSeparator)
+    : [];
+  const position = _dashGetPlayerPracticePosition();
+  const studyStats = typeof getPlayerScriptStudyStats === "function"
+    ? getPlayerScriptStudyStats(playsForDay)
+    : { diagramCount: 0, ruleCount: 0, noteCount: 0 };
+  const positionRuleCount = playsForDay.filter((play) => String(play?.[position.key] || "").trim()).length;
+  const playCount = Number(stats?.playCount || playsForDay.length || 0);
+  const periodCount = Number(stats?.periodCount || 0);
+  const totalReps = Number(stats?.totalReps || 0);
+  const scriptLabel = playCount
+    ? `${_dashPlural(playCount, "call")} / ${_dashPlural(totalReps, "rep")}`
+    : "No calls loaded";
+  const positionLabel = playCount
+    ? `${positionRuleCount}/${playCount} ${position.label} rules`
+    : `${position.label} rules`;
+  const periodLabel = periodCount
+    ? _dashPlural(periodCount, "period")
+    : "No periods";
+  const diagramLabel = playCount
+    ? `${studyStats.diagramCount}/${playCount} diagrams`
+    : "No diagrams";
+  const noteLabel = studyStats.noteCount
+    ? _dashPlural(studyStats.noteCount, "coach note")
+    : "No coach notes";
+  return {
+    position,
+    scriptLabel,
+    positionLabel,
+    periodLabel,
+    diagramLabel,
+    noteLabel,
+    heroLine: playCount
+      ? `${scriptLabel} with ${positionLabel}.`
+      : "Practice details will appear here when your coach publishes.",
+    studyItems: [
+      { label: "Calls", value: scriptLabel },
+      { label: position.label, value: positionLabel },
+      { label: "Periods", value: periodLabel },
+      { label: "Diagrams", value: diagramLabel },
+      { label: "Notes", value: noteLabel },
+    ],
+  };
+}
+
 function renderPlayerDashboardHome() {
   const section = document.getElementById("playerDashboardHome");
   if (!section) return;
@@ -1461,14 +1544,20 @@ function renderPlayerDashboardHome() {
 
   // Item 21: time-of-day greeting
   const _hour = new Date().getHours();
-  const greeting =
+  const playerName = _dashGetCurrentPlayerName();
+  const greetingBase =
     _hour < 12 ? "Good morning" : _hour < 17 ? "Good afternoon" : "Good evening";
+  const greeting = playerName ? `${greetingBase}, ${playerName}` : greetingBase;
+
+  const focusSource = featuredScript || (loadedScript ? { plays: script } : null);
+  const focusStats = featuredStats || loadedScript?.stats || null;
+  const focus = _dashBuildPlayerHomeFocus(focusSource, focusStats);
 
   // Contextual hero description
   const heroDesc = featuredScript
     ? featuredScript.date === todayValue
-      ? `${todayLabel} \u2022 Today\u2019s practice is ready. Open it, swipe through the calls, and lock your position.`
-      : `${todayLabel} \u2022 Here\u2019s the most recent practice. Open it to review calls.`
+      ? `${todayLabel} \u2022 Today's practice is ready: ${focus.heroLine}`
+      : `${todayLabel} \u2022 Most recent practice: ${focus.heroLine}`
     : `${todayLabel} \u2022 No practice published yet. Check back with your coach.`;
 
   // Item 30: relative time helper for script card timestamps
@@ -1499,9 +1588,9 @@ function renderPlayerDashboardHome() {
   const statusTitle =
     featuredScript?.name || loadedScript?.name || "No practice published yet";
   const statusCopy = featuredStats
-    ? `${featuredStats.playCount} plays • ${featuredStats.totalReps} reps • ${featuredStats.periodCount} periods`
+    ? `${focus.scriptLabel} • ${focus.positionLabel} • ${focus.periodLabel}`
     : loadedScript?.stats
-      ? `${loadedScript.stats.playCount} loaded plays are ready in the Practice tab`
+      ? `${focus.scriptLabel} already loaded`
       : "Practice will appear here when your coach publishes it.";
   const notificationStatus = getPlayerHomeNotificationStatus();
   const practiceStatus = getPlayerHomePracticeStatus(featuredScript, loadedScript, todayValue);
@@ -1554,9 +1643,14 @@ function renderPlayerDashboardHome() {
         <p>${escapeHtml(heroDesc)}</p>
       </div>
       <div class="player-home-today-card" aria-label="Today status">
-        <span>Today</span>
+        <span>Today's work</span>
         <strong>${escapeHtml(statusTitle)}</strong>
         <p>${escapeHtml(statusCopy)}</p>
+        ${focus.studyItems.length ? `<div class="player-home-today-metrics">
+          ${focus.studyItems.slice(0, 3).map((item) => `
+            <span><b>${escapeHtml(item.label)}</b>${escapeHtml(item.value)}</span>
+          `).join("")}
+        </div>` : ""}
       </div>
     </section>
     <section class="player-home-state player-home-state--${escapeHtml(practiceStatus.tone)}" role="status" aria-live="polite">
@@ -1611,38 +1705,30 @@ function renderPlayerDashboardHome() {
     <div class="player-home-grid">
       <article class="player-home-card player-home-card--feature">
         <span class="player-home-card__eyebrow">${escapeHtml(
-          featuredScript?.date === todayValue ? "Today's Practice" : "Published Practice",
+          featuredScript?.date === todayValue ? "Script Snapshot" : "Published Snapshot",
         )}</span>
         <h3>${escapeHtml(featuredScript?.name || "Waiting on a published practice")}</h3>
         <p>${escapeHtml(
           featuredStats
-            ? `${featuredStats.playCount} plays, ${featuredStats.totalReps} reps, and ${featuredStats.periodCount} periods are ready to review.`
+            ? `${focus.diagramLabel}, ${focus.noteLabel}, and ${focus.positionLabel} are ready to scan.`
             : "When your coach publishes a practice script, it will show up here first.",
         )}</p>
         ${featuredStats
       ? `<div class="player-home-stat-row">
-                <span>${featuredStats.playCount} plays</span>
-                <span>${featuredStats.totalReps} reps</span>
-                <span>${featuredStats.periodCount} periods</span>
+                <span>${escapeHtml(focus.scriptLabel)}</span>
+                <span>${escapeHtml(focus.positionLabel)}</span>
+                <span>${escapeHtml(focus.diagramLabel)}</span>
               </div>`
       : ""
     }
-        <div class="player-home-card__actions">
-          <button type="button" class="btn btn-primary player-home-action" ${practiceAction}>
-            Open Practice
-          </button>
-          <button type="button" class="btn btn-secondary player-home-action" ${swipeAction}>
-            Open Swipe View
-          </button>
-        </div>
       </article>
       <article class="player-home-card player-home-card--study">
-        <span class="player-home-card__eyebrow">Study Flow</span>
-        <h3>What to do first</h3>
+        <span class="player-home-card__eyebrow">Study Targets</span>
+        <h3>Scan before the first rep</h3>
         <div class="player-home-study-list">
-          <div><strong>1</strong><span>Load the practice so the day's script is ready.</span></div>
-          <div><strong>2</strong><span>Use Swipe View and lock your position for rules.</span></div>
-          <div><strong>3</strong><span>Take Quiz, then ask a question if anything is unclear.</span></div>
+          <div><strong>1</strong><span>${escapeHtml(focus.positionLabel)} in this script.</span></div>
+          <div><strong>2</strong><span>${escapeHtml(focus.diagramLabel)} available for Swipe View.</span></div>
+          <div><strong>3</strong><span>${escapeHtml(focus.noteLabel)} from coach notes.</span></div>
         </div>
       </article>
       <article class="player-home-card player-home-card--recent">
@@ -1657,8 +1743,8 @@ function renderPlayerDashboardHome() {
         <h3>${escapeHtml(loadedScript?.name || "Load a practice to begin")}</h3>
         <p>${escapeHtml(
       loadedScript?.stats
-        ? `${loadedScript.stats.playCount} plays are already loaded in the Practice tab.`
-        : "Once loaded, this becomes your quick way back into the day's rules.",
+        ? `${_dashPlural(loadedScript.stats.playCount, "call")} are loaded. Use the quick actions above to study or quiz.`
+        : "Load the published script once, then this card becomes your resume point.",
     )}</p>
         ${loadedScript?.stats
       ? `<div class="player-home-stat-row">

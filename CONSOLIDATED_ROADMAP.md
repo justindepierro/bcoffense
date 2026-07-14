@@ -402,7 +402,7 @@ Work left from the player mobile scan:
 - [x] iPad player screenshot pass across Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions.
   - Added a local Playwright screenshot audit and fixed tablet portrait Swipe View rail sizing so the full call, chips, and player rule stay readable.
 - [x] Player delight pass: selective motion/feedback for quiz answers, streaks, sticker awards, and ready confirmation.
-- [ ] Practice/Home polish follow-up with real team data; trim repeated copy.
+- [x] Practice/Home polish follow-up with real team data; trim repeated copy.
 - [ ] Continue safe-area/body-lock QA for full-screen drawers, modal footers, coach dock, and landscape presentation controls.
 - [ ] Decide whether the viewport harness becomes a required ship gate.
 - [ ] Add or document manual coverage for soft-keyboard `visualViewport` resize and 200% text zoom.
