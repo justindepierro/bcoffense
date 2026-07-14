@@ -146,6 +146,14 @@ function handleApiStub(parsed, res) {
     sendEmptyOk(res);
     return true;
   }
+  if (parsed.pathname === "/clips/batch-manifest") {
+    sendJson(res, { ok: true, count: 0, manifests: {} });
+    return true;
+  }
+  if (parsed.pathname === "/images/batch-manifest") {
+    sendJson(res, { ok: true, count: 0, manifests: {} });
+    return true;
+  }
   if (
     parsed.pathname.startsWith("/sync/") ||
     parsed.pathname.startsWith("/clips/") ||
