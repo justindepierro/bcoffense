@@ -3721,6 +3721,7 @@ function checkWorkspaceSyncContracts() {
 function checkPlayerDiagramReadinessContracts() {
   const roadmap = read("WORKSPACE_SYNC_ROADMAP.md");
   const manifest = read("functions/images/manifest.js");
+  const batchManifest = read("functions/images/batch-manifest.js");
   const playImages = read("js/play-images.js");
   const presentation = read("js/play-presentation.js");
   const presentationCss = read("css/play-presentation.css");
@@ -3748,9 +3749,22 @@ function checkPlayerDiagramReadinessContracts() {
   }
 
   if (
+    !/POST \/images\/batch-manifest/.test(batchManifest) ||
+    !/const MAX_BATCH_SIGS = 100/.test(batchManifest) ||
+    !/bucket\.head\(r2Key\(sig\)\)/.test(batchManifest) ||
+    !/manifests\[sig\] = publicImageStatus\(sig, object\)/.test(batchManifest) ||
+    !/Use POST with a sigs array/.test(batchManifest)
+  ) {
+    fail("remote image batch manifest endpoint is incomplete");
+  }
+
+  if (
     !/const _remoteManifestCache = new Map\(\)/.test(playImages) ||
     !/function _remoteIdentityKeysForPlay\(play\)/.test(playImages) ||
     !/async function checkRemoteForPlay\(play\)/.test(playImages) ||
+    !/async function checkRemoteForPlays\(playsArray\)/.test(playImages) ||
+    !/fetch\("\/images\/batch-manifest"/.test(playImages) ||
+    !/checkRemoteForPlays,/.test(playImages) ||
     !/\/images\/manifest\?sig=\$\{encodeURIComponent\(identityKey\)\}/.test(playImages) ||
     !/async function ensureDisplayReadinessForPlay\(play\)/.test(playImages) ||
     !/for \(const signature of displaySignaturesForPlay\(play\)\)[\s\S]*const remote = await checkRemoteForPlay\(play\)/.test(playImages) ||
@@ -3862,6 +3876,13 @@ function checkPlayerQuizSettingsContracts() {
     "function _canUseStaffSignalClips",
     "coachSignalMinClipCount",
     "coachSignalIncludeDraft",
+    "const QUIZ_DIAGRAM_PRELOAD_WINDOW = 4",
+    "const QUIZ_MEDIA_PREP_TIMEOUT_MS = 650",
+    "async function _prepareQuizMedia",
+    "function _quizShouldSkipMediaWarmup",
+    "function _warmQuizDiagramForPlay",
+    "function _getQuizSignalClipMap",
+    "data-smart-diagram-keep-visible=\"true\"",
   ].forEach((token) => {
     if (!quizSurface.includes(token)) {
       fail(`player quiz settings contract missing ${token}`);
@@ -3879,9 +3900,13 @@ function checkPlayerQuizSettingsContracts() {
   if (
     !/function coachSaveQuizSettings\(\)[\s\S]*?eligibleCategories = SIGNAL_GAME_CATEGORY_OPTIONS[\s\S]*?_saveSignalGameSettings\(\{[\s\S]*?minClipCount:\s*_readCoachQuizSettingNumber\("coachSignalMinClipCount"\)[\s\S]*?includeDraftForStaff/.test(scriptRender) ||
     !/function _getSignalQuizStatus\(\)[\s\S]*?getSignalQuizStats\(\{[\s\S]*?categories: settings\.eligibleCategories[\s\S]*?includeDraft/.test(scriptRender) ||
-    !/getSignalQuizItems\(\{[\s\S]*?includeDraft: _canUseStaffSignalClips\(signalSettings\)/.test(scriptRender)
+    !/getSignalQuizItems\(\{[\s\S]*?includeDraft: _canUseStaffSignalClips\(signalSettings\)/.test(scriptRender) ||
+    !/await _prepareQuizMedia\(_quizPlays, \{ signalWindow: SIGNAL_QUIZ_PRELOAD_WINDOW \}\)/.test(scriptRender) ||
+    !/window\.playImages[\s\S]*checkRemoteForPlays\(diagramItems\.map/.test(scriptRender) ||
+    !/window\.playClips\.listForSigs\(clipKeys\)/.test(scriptRender) ||
+    !/mediaPrepToken !== _quizMediaPrepToken/.test(scriptRender)
   ) {
-    fail("coach signal game settings do not drive signal quiz availability and launch");
+    fail("coach signal game settings or quiz media warmup do not drive quiz availability and launch");
   }
 
   if (
@@ -4326,6 +4351,7 @@ function checkSignalPlayIntegrationContracts() {
   const playbookEditor = read("js/playbook-editor.js");
   const roadmap = read("CONSOLIDATED_ROADMAP.md");
   const clipManifest = read("functions/clips/manifest.js");
+  const clipBatchManifest = read("functions/clips/batch-manifest.js");
 
   if (
     !/function resolveSignalsForPlay\(play, options = \{\}\)/.test(signals) ||
@@ -4347,6 +4373,7 @@ function checkSignalPlayIntegrationContracts() {
     !/function _sigComponentRequiresVideo\(componentType\)/.test(signals) ||
     !/function _sigSummaryRequiresVideo\(summary\)/.test(signals) ||
     !/async function getSignalQuizItems\(options = \{\}\)/.test(signals) ||
+    !/window\.playClips\.listForSigs\(records\.map\(\(record\) => record\.clipKey\)\)/.test(signals) ||
     !/function getSignalQuizStats\(options = \{\}\)/.test(signals) ||
     !/record\.visibility === "published" \|\| \(opts\.includeDraft === true && _sigCanManage\(\)\)/.test(signals) ||
     !/window\.getSignalQuizItems = getSignalQuizItems/.test(signals) ||
@@ -4634,12 +4661,22 @@ function checkSignalPlayIntegrationContracts() {
     !/prepareSilentVideoUpload,/.test(clips) ||
     !/uploadPreparedForSig,/.test(clips) ||
     !/configureLoopPreviewVideo,/.test(clips) ||
+    !/async function listForSigs\(sigs\)/.test(clips) ||
+    !/fetch\("\/clips\/batch-manifest"/.test(clips) ||
+    !/const _manifestCache = new Map\(\)/.test(clips) ||
+    !/getManifestCache,/.test(clips) ||
+    !/listForSigs,/.test(clips) ||
     !/window\.playClips\.configureLoopPreviewVideo\(video\)/.test(playbookEditor) ||
     !/window\.playClips\.configureLoopPreviewVideo\(video\)/.test(presentation) ||
     !/function isReplaceOnlySig\(sig\)/.test(clipManifest) ||
     !/const replaceExisting = isReplaceOnlySig\(sig\)/.test(clipManifest) ||
     !/writeManifest\(store, sig, replaceExisting \? \[entry\] : \[\.\.\.entries, entry\]\)/.test(clipManifest) ||
     !/Promise\.allSettled/.test(clipManifest) ||
+    !/POST \/clips\/batch-manifest/.test(clipBatchManifest) ||
+    !/const MAX_BATCH_SIGS = 100/.test(clipBatchManifest) ||
+    !/manifestKey\(sig\)/.test(clipBatchManifest) ||
+    !/manifests\[sig\] = entries\.map\(publicClip\)/.test(clipBatchManifest) ||
+    !/Use POST with a sigs array/.test(clipBatchManifest) ||
     !/SIGNAL_IPHONE_CAPTURE_HINT/.test(signals) ||
     !/\.signals-upload-review-video/.test(signalsCss) ||
     !/\.signals-upload-review-modal/.test(signalsCss) ||

@@ -210,12 +210,31 @@ function serveStatic(port) {
       res.end();
       return;
     }
+    if (parsed.pathname === "/clips/batch-manifest") {
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: true, count: 0, manifests: {} }));
+      return;
+    }
     if (parsed.pathname.startsWith("/clips/")) {
       // Clip routes are Cloudflare Pages Functions in production. Stub them as
       // an empty index so the static harness mirrors a signed-in user with no
       // clips instead of reporting a 404 on every page load.
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ ok: true, sigs: [], clips: [] }));
+      return;
+    }
+    if (parsed.pathname === "/images/batch-manifest") {
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: true, count: 0, manifests: {} }));
+      return;
+    }
+    if (parsed.pathname.startsWith("/images/manifest")) {
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({
+        ok: true,
+        sig: parsed.searchParams.get("sig") || "",
+        published: false,
+      }));
       return;
     }
 
