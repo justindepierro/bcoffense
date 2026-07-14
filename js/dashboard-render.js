@@ -199,7 +199,8 @@ function _dashRenderPlayerFreshnessStrip(featuredScript, publishedScripts = []) 
   const state = window.playerTeamRefreshState || {};
   const checking = Boolean(state.busy) || state.tone === "checking";
   const needsRetry = state.tone === "warn" || state.tone === "offline";
-  const label = checking ? "Checking for coach updates" : needsRetry ? "Try Again" : "Ready";
+  if (!checking) return "";
+  const label = "Checking for coach updates";
   const tone = checking ? "neutral" : needsRetry ? "warn" : "ready";
   const steps = Array.isArray(state.steps) && state.steps.length
     ? state.steps
@@ -216,7 +217,7 @@ function _dashRenderPlayerFreshnessStrip(featuredScript, publishedScripts = []) 
           stepStatus === "skipped" ? "neutral" : "neutral";
     const statusLabel =
       stepStatus === "ready" ? "Ready" :
-        stepStatus === "warn" || stepStatus === "error" ? "Try Again" :
+        stepStatus === "warn" || stepStatus === "error" ? "Needs retry" :
           stepStatus === "skipped" ? "Queued" : "Checking";
     return `
       <div class="player-home-freshness__item player-home-freshness__item--${escapeHtml(stepTone)}">
@@ -227,7 +228,7 @@ function _dashRenderPlayerFreshnessStrip(featuredScript, publishedScripts = []) 
   return `<section class="player-home-freshness" aria-label="Coach updates">
     <div class="player-home-freshness__head">
       <strong>${escapeHtml(label)}</strong>
-      <span>${escapeHtml(label)}</span>
+      <span>This should only take a moment.</span>
     </div>
     <div class="player-home-freshness__grid">
       ${stepRows}
@@ -240,12 +241,6 @@ function _dashRenderPlayerRefreshAction() {
   const tone = state.tone || "idle";
   const busy = Boolean(state.busy);
   const needsRetry = tone === "warn" || tone === "offline";
-  const title = busy
-    ? "Checking for coach updates"
-    : needsRetry
-      ? "Try Again"
-      : "Ready";
-  const body = title;
   const installState =
     typeof getPlayerA2HSActionState === "function"
       ? getPlayerA2HSActionState()
@@ -253,9 +248,20 @@ function _dashRenderPlayerRefreshAction() {
   const installAction = installState.available
     ? `<button type="button" class="player-home-refresh__install" data-action="installPlayerA2HS">${escapeHtml(installState.label || "Install app")}</button>`
     : "";
+  if (!busy && !needsRetry && !installAction) return "";
   const actionClass = installAction
     ? "player-home-refresh__actions"
     : "player-home-refresh__actions player-home-refresh__actions--single";
+  const title = busy
+    ? "Checking for coach updates"
+    : needsRetry
+      ? "Update check needs another try"
+      : "Install app";
+  const body = busy
+    ? "Refreshing your latest practice and quiz state."
+    : needsRetry
+      ? "Home and Practice still work. Retry when your connection is ready."
+      : "Add this app to your Home Screen for the best practice view.";
   return `<section class="player-home-refresh player-home-refresh--${escapeAttr(tone)}" aria-label="Coach updates">
     <div class="player-home-refresh__copy">
       <strong>${escapeHtml(title)}</strong>
@@ -264,7 +270,7 @@ function _dashRenderPlayerRefreshAction() {
     <div class="${actionClass}">
       ${installAction}
       <button type="button" class="player-home-refresh__btn" data-action="refreshPlayerTeamApp" ${busy || !needsRetry ? "disabled" : ""}>
-        ${escapeHtml(busy ? "Checking for coach updates" : needsRetry ? "Try Again" : "Ready")}
+        ${escapeHtml(busy ? "Checking..." : needsRetry ? "Retry" : "Ready")}
       </button>
     </div>
   </section>`;

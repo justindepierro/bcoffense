@@ -901,7 +901,7 @@ or completed during later hardening passes.
 Use `CONSOLIDATED_ROADMAP.md` as the active queue. The current mobile items are:
 
 1. `[ ]` Notifications/offline polish for opt-in, denied, offline, and newly published practice states.
-2. `[ ]` iPad player screenshot pass across Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions.
+2. `[x]` iPad player screenshot pass across Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions.
 3. `[ ]` Player delight pass for quiz answers, streaks, sticker awards, and ready confirmation.
 4. `[ ]` Practice/Home polish follow-up with real team data.
 5. `[ ]` Safe-area/body-lock QA for full-screen drawers, modal footers, coach dock, and landscape presentation controls.
@@ -935,3 +935,4 @@ Use `CONSOLIDATED_ROADMAP.md` as the active queue. The current mobile items are:
 - `[x]` M-040 partial - Player presentation cut-off: portrait player presentation scrolls and clears bottom browser controls.
 - `[x]` M-050 partial - Viewport harness: `scripts/mobile-viewport-check.mjs` runs local auth/viewport checks for admin, coach, and player.
 - `[x]` M-051 partial - Automated assertions: horizontal overflow, phone startup, fixed overlap, touch target, and player-control assertions have initial coverage.
+- `[x]` M-052 partial - iPad player visual audit: local Playwright screenshot pass now covers Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions; Swipe View tablet portrait keeps the call/rule rail readable.

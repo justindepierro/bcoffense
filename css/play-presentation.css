@@ -3380,6 +3380,8 @@ body.play-presentation-mobile.is-portrait-screen:not(.is-phone-screen)
   min-height: 0;
   overflow: auto;
   grid-template-rows: none;
+  grid-auto-rows: max-content;
+  align-content: start;
   padding-right: 2px;
   -webkit-overflow-scrolling: touch;
 }
@@ -3387,9 +3389,10 @@ body.play-presentation-mobile.is-portrait-screen:not(.is-phone-screen)
 body.play-presentation-mobile.is-portrait-screen:not(.is-phone-screen)
   .pp-player-call {
   max-height: none;
-  padding: 16px 18px;
-  font-size: var(--font-size-2xl);
-  line-height: 1.14;
+  padding: 12px 14px;
+  font-size: var(--font-size-xl);
+  line-height: 1.18;
+  overflow: visible;
 }
 
 body.play-presentation-mobile.is-portrait-screen:not(.is-phone-screen)
@@ -3418,9 +3421,9 @@ body.play-presentation-mobile.is-portrait-screen:not(.is-phone-screen)
 body.play-presentation-mobile.is-portrait-screen:not(.is-phone-screen)
   .pp-player-rule {
   gap: var(--space-sm);
-  min-height: 0;
+  min-height: auto;
   padding: 18px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 body.play-presentation-mobile.is-portrait-screen:not(.is-phone-screen)

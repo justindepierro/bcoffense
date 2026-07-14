@@ -190,6 +190,154 @@ async function seedFirstPracticeDiagram(page) {
     .toBe(true);
 }
 
+async function seedIpadPlayerWorld(page) {
+  await page.evaluate(() => {
+    const now = new Date();
+    const dateKey = typeof _quizDateKey === "function" ? _quizDateKey(now) : now.toISOString().slice(0, 10);
+    const weekKey = typeof _quizWeekKey === "function" ? _quizWeekKey(now) : "2026-W29";
+    const ipadPlays = [
+      {
+        type: "Run",
+        personnel: "11",
+        formation: "Trips Rt Nub",
+        play: "Buck Sweep Read Force",
+        basePlay: "Buck",
+        preferredDown: "1",
+        preferredDistance: "Medium",
+        keyPlayerName1: "Lucas",
+        respQ: "Secure the edge, ID force, and finish through contact.",
+        respNotes: "If force folds inside, climb now. If they widen, pin and call it out.",
+        playerNotes: "Coach says: eyes start on the force defender, then snap to alley support.",
+      },
+      {
+        type: "Pass",
+        personnel: "10",
+        formation: "Doubles FIB Rt",
+        play: "Verts Choice Boundary Alert",
+        basePlay: "Verts",
+        preferredDown: "3",
+        preferredDistance: "Long",
+        keyPlayerName1: "Marco",
+        respQ: "Win vertical leverage and expect the ball on cloud.",
+        respNotes: "Versus cloud, flatten now. Versus press, stack and stay friendly.",
+        playerNotes: "Listen for the coverage tag before you look to the sideline.",
+      },
+      {
+        type: "RPO",
+        personnel: "12",
+        formation: "Wing Lt Stack",
+        play: "Power Read Glance",
+        basePlay: "Power",
+        preferredDown: "2",
+        preferredDistance: "Short",
+        keyPlayerName1: "Ty",
+        respQ: "Open play side and carry out the keep fake after the mesh.",
+        respNotes: "Sell run first. The glance only comes alive on the safety trigger.",
+      },
+      {
+        type: "Screen",
+        personnel: "11",
+        formation: "Trips Lt Tight",
+        play: "Bubble Now Perimeter Fit",
+        basePlay: "Bubble",
+        preferredDown: "1",
+        preferredDistance: "Short",
+        keyPlayerName1: "Taj",
+        respQ: "Catch, replace, and get north after the first block declares.",
+        respNotes: "No drifting. Replace grass and beat the inside pursuit.",
+      },
+    ];
+    const savedScript = {
+      id: "ipad-player-script",
+      name: "Friday Walkthrough - Red Zone + Perimeter",
+      date: dateKey,
+      playerVisible: true,
+      savedAt: now.toISOString(),
+      plays: [
+        { isSeparator: true, id: "period-team", label: "Team Red Zone", minutes: 10, color: "#f59e0b" },
+        ...ipadPlays.slice(0, 2).map((play, index) => ({ ...play, id: `ipad-play-${index + 1}`, reps: index + 1 })),
+        { isSeparator: true, id: "period-perimeter", label: "Perimeter Finish", minutes: 8, color: "#10b981" },
+        ...ipadPlays.slice(2).map((play, index) => ({ ...play, id: `ipad-play-${index + 3}`, reps: 2 })),
+      ],
+    };
+    storageManager.set(STORAGE_KEYS.A2HS_DISMISSED, Date.now());
+    storageManager.set(STORAGE_KEYS.PRESENTATION_IPAD_HELP_DISMISSED, true);
+    storageManager.set(STORAGE_KEYS.TEAM_NAME, "Burke Catholic Eagles");
+    storageManager.set(STORAGE_KEYS.MOTD, "Bring your wristband. Know the first two calls and your red-zone alert.");
+    storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, [savedScript]);
+    storageManager.set(STORAGE_KEYS.TEAM_ROSTER, [
+      { id: "roster-lucas", name: "Lucas", number: "7", position: "QB", positionGroup: "skill", accountUsername: "player" },
+      { id: "roster-marco", name: "Marco", number: "12", position: "H", positionGroup: "skill", accountUsername: "marco12" },
+      { id: "roster-ty", name: "Ty", number: "24", position: "Y", positionGroup: "skill", accountUsername: "ty24" },
+      { id: "roster-taj", name: "Taj", number: "2", position: "Z", positionGroup: "skill", accountUsername: "taj2" },
+    ]);
+    storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, [{
+      id: "ipad-quiz-current",
+      player: "player",
+      sourceType: "script",
+      sourceId: savedScript.id,
+      title: savedScript.name,
+      totalPoints: 1110,
+      correct: 5,
+      wrong: 1,
+      answered: 6,
+      totalQuestions: 10,
+      remaining: 4,
+      percent: 83,
+      completed: false,
+      dateKey,
+      weekKey,
+      questionBreakdown: {
+        responsibility: { total: 4, correct: 3, wrong: 1 },
+        diagram: { total: 1, correct: 1, wrong: 0 },
+        call: { total: 1, correct: 1, wrong: 0 },
+      },
+    }, {
+      id: "ipad-quiz-prior",
+      player: "player",
+      sourceType: "gameplan",
+      title: "September Install",
+      totalPoints: 200,
+      correct: 4,
+      wrong: 0,
+      answered: 4,
+      totalQuestions: 4,
+      remaining: 0,
+      percent: 100,
+      completed: true,
+      dateKey,
+      weekKey,
+      questionBreakdown: {
+        diagram: { total: 4, correct: 4, wrong: 0 },
+      },
+    }]);
+    storageManager.set(STORAGE_KEYS.PLAYER_REWARD_EVENTS, [
+      { id: "ipad-question", player: "Lucas", type: "question", points: 25, note: "Asked a sharp force-fit question.", status: "approved", dateKey, weekKey, createdAt: now.toISOString() },
+      { id: "ipad-answer", player: "Lucas", type: "answer", points: 35, note: "Helped a teammate with the cloud rule.", status: "approved", dateKey, weekKey, createdAt: now.toISOString() },
+      { id: "ipad-gift", player: "Lucas", type: "gift", points: 100, note: "Scout look energy.", status: "approved", dateKey, weekKey, createdAt: now.toISOString() },
+    ]);
+    storageManager.set(STORAGE_KEYS.PLAYER_HELMET_STICKERS, [{
+      id: "ipad-sticker",
+      player: "Lucas",
+      stickerKey: "do-your-job",
+      label: "Do Your Job",
+      icon: "⭐",
+      color: "blue",
+      description: "Handled the assignment without needing extra coaching.",
+      note: "Clean checks all week.",
+      dateKey,
+      weekKey,
+    }]);
+    plays = ipadPlays.map((play) => ({ ...play }));
+    filteredPlays = plays.slice();
+    script = savedScript.plays.map((play) => ({ ...play }));
+    if (typeof invalidateFilterCache === "function") invalidateFilterCache();
+    if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
+    if (typeof renderPlayerScriptLauncher === "function") renderPlayerScriptLauncher();
+    if (typeof showTab === "function") showTab("dashboard");
+  });
+}
+
 test.describe("Player mobile experience", () => {
   test.use({
     viewport: { width: 393, height: 852 },
@@ -2380,5 +2528,120 @@ test.describe("Player mobile experience", () => {
     await setup.getByRole("button", { name: /^Week$/i }).click();
     await expect(setup).toContainText("525 pts");
     await assertNoHorizontalOverflow(page);
+  });
+});
+
+test.describe("Player iPad visual audit", () => {
+  test("captures Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions @screenshots", async ({ page }, testInfo) => {
+    test.skip(!/ipad/i.test(testInfo.project.name), "iPad visual audit runs only on iPad projects.");
+    fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+    const device = testInfo.project.name;
+    const screenshotPath = (surface) => path.join(SCREENSHOTS_DIR, `player-ipad-${surface}-${device}.png`);
+    const capturePage = async (surface) => {
+      await assertNoHorizontalOverflow(page);
+      await page.screenshot({ path: screenshotPath(surface), fullPage: false });
+    };
+    const captureLocator = async (surface, locator) => {
+      await assertNoHorizontalOverflow(page);
+      await locator.screenshot({ path: screenshotPath(surface) });
+    };
+
+    await page.route("**/api/questions/mine?**", async (route) => {
+      const url = new URL(route.request().url());
+      const offset = Number(url.searchParams.get("offset") || "0");
+      const questions = offset === 0
+        ? [{
+          id: "ipad-q-1",
+          playId: "11::Trips Rt Nub::Buck Sweep Read Force",
+          state: "open",
+          body: "If the force defender widens late, do I pin it or climb?",
+          coachReply: "",
+          createdAt: Math.floor(Date.now() / 1000) - 180,
+        }]
+        : [{
+          id: "ipad-q-2",
+          playId: "10::Doubles FIB Rt::Verts Choice Boundary Alert",
+          state: "answered",
+          body: "Do I convert versus cloud?",
+          coachReply: "Yes. Flatten into the window and expect the ball now.",
+          coachName: "Coach",
+          createdAt: Math.floor(Date.now() / 1000) - 360,
+        }];
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          summary: { open: 1, answered: 1, resolved: 0 },
+          questions,
+          hasMore: offset === 0,
+          has_more: offset === 0,
+        }),
+      });
+    });
+
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await seedIpadPlayerWorld(page);
+    await seedFirstPracticeDiagram(page);
+
+    await expect(page.locator("#playerDashboardHome")).toBeVisible();
+    await expect(page.locator(".player-home-hero")).toContainText("Burke Catholic Eagles");
+    await capturePage("home");
+
+    await goToTab(page, "playbook");
+    await page.evaluate(() => {
+      if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+    });
+    await expect(page.locator("#playbook.panel.active")).toBeVisible();
+    await expect(page.locator(".pb-card").first()).toContainText("Buck Sweep Read Force");
+    await expect(page.locator(".pb-card-media--diagram").first()).toBeVisible();
+    await expect(page.locator(".pb-card-action--study").first()).toBeVisible();
+    await capturePage("playbook");
+
+    await goToTab(page, "script");
+    await expect(page.locator("#playerScriptLauncherSection")).toBeVisible();
+    await page.evaluate(() => {
+      if (typeof loadPublishedPlayerScript === "function") {
+        loadPublishedPlayerScript("ipad-player-script", { skipToast: true });
+      }
+    });
+    await expect(page.locator("#playerScriptNowBar")).toBeVisible();
+    await expect(page.locator("#playerScriptNowTitle")).toContainText("Friday Walkthrough");
+    await expect(page.locator("#scriptPlays")).toBeVisible();
+    await capturePage("practice");
+
+    await page.locator("#playerScriptNowBar").getByRole("button", { name: /Open Swipe View/i }).click();
+    const presentation = page.locator("#playPresentationOverlay");
+    await expect(presentation).toHaveAttribute("data-presentation-open", "true");
+    await expect(presentation.locator("#playPresentationBody")).toContainText("Buck Sweep Read Force");
+    await captureLocator("swipe-view", presentation);
+    await presentation.locator("#playPresentationClose").click();
+    await expect(presentation).not.toHaveAttribute("data-presentation-open", "true");
+
+    await page.locator("#playerScriptNowBar").getByRole("button", { name: /^Quiz$/i }).click();
+    const quiz = page.locator("#scriptQuizOverlay");
+    await expect(quiz).toBeVisible();
+    await expect(quiz.locator("#scriptQuizProgress")).toContainText("1 /");
+    await captureLocator("quiz", quiz);
+    await quiz.getByRole("button", { name: /Close quiz/i }).click();
+    await quiz.getByRole("button", { name: /Save & Close/i }).click();
+    await expect(quiz).toBeHidden();
+
+    await goToTab(page, "leaderboard");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Weekly board");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Lucas");
+    await capturePage("leaderboard");
+
+    const portalButton = page.locator("#playerPortalBtn");
+    await expect(portalButton).toBeVisible();
+    await portalButton.click();
+    const questions = page.locator("#playerPortalOverlay");
+    await expect(questions).toBeVisible();
+    await expect(questions).toContainText("If the force defender widens late");
+    await questions.getByRole("button", { name: /Load more/i }).click();
+    await expect(questions).toContainText("Do I convert versus cloud?");
+    await captureLocator("questions", questions);
   });
 });
