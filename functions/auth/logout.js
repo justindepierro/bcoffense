@@ -28,10 +28,8 @@ function logoutResponse(request) {
   });
 }
 
-export function onRequestGet(context) {
-  return logoutResponse(context.request);
-}
-
+// POST-only: a GET handler would let a cross-site `<img src="/auth/logout">`
+// force-logout the user (CSRF). The app always calls this via fetch POST.
 export function onRequestPost(context) {
   return logoutResponse(context.request);
 }

@@ -5,7 +5,7 @@
  * Requires: active D1 player session
  */
 
-import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
+import { getSessionFromRequest, authJson, withSecurityHeaders, createSessionCookie } from "../../_lib/auth.js";
 import { changeD1Password } from "../../_lib/d1-auth.js";
 
 export async function onRequestPost(context) {
@@ -45,5 +45,25 @@ export async function onRequestPost(context) {
     return withSecurityHeaders(authJson({ ok: false, error: err }, { status: 400 }));
   }
 
-  return withSecurityHeaders(authJson({ ok: true, message: "Password updated successfully." }));
+  // changeD1Password bumps sessions_invalid_before, which would also reject THIS
+  // request's cookie on the next call. Re-issue a fresh cookie (iat >= the
+  // invalidation timestamp) so the user who just changed their own password
+  // stays signed in while all other sessions are evicted.
+  const cookie = await createSessionCookie(
+    {
+      username: session.username,
+      role: session.role,
+      label: session.label,
+      d1: true,
+      d1_user_id: session.d1UserId,
+    },
+    env,
+  );
+
+  return withSecurityHeaders(
+    authJson(
+      { ok: true, message: "Password updated successfully." },
+      { headers: { "Set-Cookie": cookie } },
+    ),
+  );
 }

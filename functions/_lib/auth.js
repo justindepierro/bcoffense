@@ -20,6 +20,29 @@ const USERS = {
   },
 };
 
+// Content-Security-Policy backstop for the innerHTML-heavy app.
+// - script-src keeps 'unsafe-inline' because index.html ships a pre-paint theme
+//   bootstrap inline <script> and there is no build step to inject nonces.
+//   'unsafe-eval' is intentionally OMITTED: the only new Function() site
+//   (bcIntegrityCheck in app-shell.js) degrades gracefully when blocked.
+// - style-src allows 'unsafe-inline' for inline style="" attrs + Google Fonts CSS.
+// - img/media allow data: and blob: for the favicon + IndexedDB object URLs.
+// - object-src 'none', base-uri 'self', frame-ancestors 'none' close the common
+//   injection bypasses. All app traffic is same-origin (connect-src 'self').
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: blob:",
+  "media-src 'self' blob:",
+  "connect-src 'self'",
+].join("; ");
+
 const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
@@ -27,6 +50,7 @@ const SECURITY_HEADERS = {
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Robots-Tag": "noindex, nofollow",
+  "Content-Security-Policy": CONTENT_SECURITY_POLICY,
 };
 
 function textEncoder() {
@@ -213,8 +237,17 @@ export async function getSessionFromRequest(request, env) {
   if (!payload || !signature) return null;
 
   try {
-    const expectedSignature = await signPayload(payload, env);
-    if (!timingSafeEqual(signature, expectedSignature)) return null;
+    // Verify the HMAC directly instead of re-signing and string-comparing.
+    // crypto.subtle.verify is constant-time by construction (M1 hardening).
+    const key = await getSigningKey(env);
+    const signatureBytes = base64UrlToBytes(signature);
+    const validSignature = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      signatureBytes,
+      textEncoder().encode(payload),
+    );
+    if (!validSignature) return null;
 
     const session = base64UrlDecodeJson(payload);
     if (!session) return null;

@@ -207,13 +207,19 @@ export async function activateD1User(db, userId, password) {
     .run();
 }
 
-/** Update password only (for reset flow). */
+/**
+ * Update password only (for reset + change flows).
+ * Bumps sessions_invalid_before so every session issued before now is rejected
+ * at the API boundary — a password change/reset must evict existing sessions
+ * (e.g. an attacker's live cookie after a compromise). The current user should
+ * be re-issued a fresh cookie by the caller if they must stay signed in.
+ */
 export async function updateD1Password(db, userId, password) {
   const hash = await hashPassword(password);
   const now = Math.floor(Date.now() / 1000);
   await db
-    .prepare("UPDATE users SET password_hash = ?, password_changed_at = ?, updated_at = ? WHERE id = ?")
-    .bind(hash, now, now, userId)
+    .prepare("UPDATE users SET password_hash = ?, password_changed_at = ?, sessions_invalid_before = ?, updated_at = ? WHERE id = ?")
+    .bind(hash, now, now, now, userId)
     .run();
 }
 

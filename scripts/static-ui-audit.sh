@@ -138,10 +138,15 @@ run_cmd strict \
   "Close icon buttons need a spoken label, especially in generated modals/drawers." \
   'perl -ne '\''print "$ARGV:$.:$_" if /<button[^>]*(?:modal-close|close-btn|sort-close|drawer-close|disc-floating-close|disc-attachment-viewer-close)[^>]*>/ && !/aria-label=/; close ARGV if eof'\'' index.html js/*.js'
 
-run_rg strict \
+# skipWaiting/clients.claim can disrupt active practice work. The ONE sanctioned
+# exception is a message-handler skipWaiting gated on a SKIP_WAITING postMessage
+# (user-initiated "update now") — permitted when a SKIP_WAITING guard appears
+# within the preceding 2 lines. Install-handler skipWaiting and any clients.claim
+# are still flagged.
+run_cmd strict \
   "service worker forced takeover" \
-  "skipWaiting/clients.claim can disrupt active practice work." \
-  -g 'sw.js' -g 'js/*.js' -e 'skipWaiting|clients\.claim' .
+  "skipWaiting/clients.claim can disrupt active practice work (message-triggered SKIP_WAITING is exempt)." \
+  'perl -ne '\''push @w, $_; shift @w if @w > 3; if (/skipWaiting|clients\.claim/) { my $recent = join("", @w); print "$ARGV:$.:$_" unless (/skipWaiting/ && !/clients\.claim/ && $recent =~ /SKIP_WAITING/); } if (eof) { close ARGV; @w = (); }'\'' sw.js js/*.js'
 
 run_rg review \
   "page reload calls" \
