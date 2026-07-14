@@ -408,6 +408,70 @@ function renderTeamWorkspacePullSummary() {
   `;
 }
 
+function renderTeamPublishLedgerSummary() {
+  const section = document.getElementById("teamPublishLedgerSummary");
+  if (!section) return;
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  if (user?.role === "player") {
+    section.hidden = true;
+    section.innerHTML = "";
+    return;
+  }
+  const latest = typeof getLatestPublishActivity === "function"
+    ? getLatestPublishActivity()
+    : (storageManager.get(STORAGE_KEYS.PUBLISH_ACTIVITY_LOG, [])[0] || null);
+  if (!latest) {
+    section.hidden = false;
+    section.innerHTML = `
+      <div class="team-publish-ledger-card">
+        <div class="team-publish-ledger-head">
+          <div>
+            <span>Latest Published Workspace</span>
+            <h3>No publish recorded</h3>
+            <p>Use Publish Status to create the first team workspace version.</p>
+          </div>
+          <button type="button" class="btn btn-sm btn-secondary" data-action="openCloudSyncModal">
+            Publish Status
+          </button>
+        </div>
+      </div>`;
+    return;
+  }
+  const failed = latest.result !== "success";
+  const domains = Array.isArray(latest.domains) && latest.domains.length
+    ? latest.domains.join(", ")
+    : latest.failedDomain || "workspace";
+  section.hidden = false;
+  section.innerHTML = `
+    <div class="team-publish-ledger-card${failed ? " team-publish-ledger-card--failed" : ""}">
+      <div class="team-publish-ledger-head">
+        <div>
+          <span>Latest Published Workspace</span>
+          <h3>${escapeHtml(latest.versionId || "Published version")}</h3>
+          <p>${escapeHtml(`${failed ? "Needs retry" : "Ready for players"} · ${_dashFormatDiagnosticDate(latest.timestamp)}`)}</p>
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary" data-action="openCloudSyncModal">
+          Publish Status
+        </button>
+      </div>
+      <div class="team-publish-ledger-grid">
+        <div class="team-publish-ledger-item">
+          <strong>${escapeHtml(latest.actor || "Coach")}</strong>
+          <span>Published by</span>
+        </div>
+        <div class="team-publish-ledger-item">
+          <strong>${escapeHtml(failed ? latest.failedDomain || "workspace" : "Ready")}</strong>
+          <span>${escapeHtml(failed ? "Failed domain" : "Player state")}</span>
+        </div>
+        <div class="team-publish-ledger-item team-publish-ledger-item--wide">
+          <strong>${escapeHtml(domains)}</strong>
+          <span>Domains</span>
+        </div>
+      </div>
+      ${failed && latest.retryAction ? `<p class="team-publish-ledger-warning">${escapeHtml(latest.retryAction)}</p>` : ""}
+    </div>`;
+}
+
 async function _dashUpdateServiceWorkerDiagnostics() {
   const section = document.getElementById("dashDiagnosticsSection");
   if (!section || section.hidden) return;
@@ -1895,6 +1959,7 @@ function renderDashboard() {
     renderMobileCoachNotesCard(gw, opponents);
     renderGameWeekCommandCenter(gw, opponents);
     renderTeamWorkspacePullSummary();
+    renderTeamPublishLedgerSummary();
     renderAdminDiagnosticsTile();
 
     const cardsEl = document.getElementById("dashCards");

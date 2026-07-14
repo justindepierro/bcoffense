@@ -3327,6 +3327,7 @@ function checkWorkspaceSyncContracts() {
   const playImages = read("js/play-images.js");
   const scriptPlayer = read("js/script-player.js");
   const appSession = read("js/app-session.js");
+  const storage = read("js/storage.js");
   const html = read("index.html");
   const agentGuide = read("AGENTS.md");
 
@@ -3353,6 +3354,10 @@ function checkWorkspaceSyncContracts() {
     "- [x] Remove normal success modals from publish, update, and media completion",
     "- [x] Consolidate module-specific save indicators onto shared primitives where",
     "- [x] Add smoke contracts for the unified status events and before-exit warning.",
+    "- [x] Add a lightweight publish activity log with version, actor, timestamp,",
+    "- [x] Show the latest published version on Dashboard and in Publish Status.",
+    "- [x] Record failed publish attempts with the exact failed domain and retry",
+    "- [x] Add smoke coverage for publish status labels and activity-log rendering.",
   ].forEach((token) => {
     if (!roadmap.includes(token)) {
       fail(`workspace sync roadmap missing ${token}`);
@@ -3548,12 +3553,30 @@ function checkWorkspaceSyncContracts() {
 
   if (
     !/id="teamWorkspacePullSummary"/.test(html) ||
+    !/id="teamPublishLedgerSummary"/.test(html) ||
+    !/PUBLISH_ACTIVITY_LOG:\s*"publishActivityLog"/.test(storage) ||
+    !/PUBLISH_ACTIVITY_LOG\s*→\s*"publishActivityLog"/.test(agentGuide) ||
+    !/function getPublishActivityLog\(\)/.test(cloudSync) ||
+    !/function getLatestPublishActivity\(\)/.test(cloudSync) ||
+    !/function recordPublishActivity\(patch = \{\}\)/.test(cloudSync) ||
+    !/function renderPublishActivityRows\(limit = 4\)/.test(cloudSync) ||
+    !/recordPublishActivity\(\{[\s\S]*result: hasDiagramIssues \? "partial" : "success"/.test(cloudSync) ||
+    !/recordPublishActivity\(\{[\s\S]*result: "failed"/.test(cloudSync) ||
+    !/window\.getPublishActivityLog = getPublishActivityLog/.test(cloudSync) ||
+    !/window\.getLatestPublishActivity = getLatestPublishActivity/.test(cloudSync) ||
+    !/cloud-sync-ledger/.test(cloudSync) ||
+    !/\.cloud-sync-ledger/.test(componentsCss) ||
     !/function renderTeamWorkspacePullSummary\(\)/.test(dashboardRender) ||
+    !/function renderTeamPublishLedgerSummary\(\)/.test(dashboardRender) ||
+    !/getLatestPublishActivity\(\)/.test(dashboardRender) ||
+    !/renderTeamPublishLedgerSummary\(\)/.test(dashboardRender) ||
     !/getTeamWorkspacePullSummary\(\)/.test(dashboardRender) ||
     !/data-action="dismissTeamWorkspacePullSummary"/.test(dashboardRender) ||
     !/renderTeamWorkspacePullSummary\(\)/.test(dashboardRender) ||
     !/\.team-workspace-summary-card/.test(dashboardCss) ||
     !/\.team-workspace-summary-grid/.test(dashboardCss) ||
+    !/\.team-publish-ledger-card/.test(dashboardCss) ||
+    !/\.team-publish-ledger-grid/.test(dashboardCss) ||
     !/Saved on this device/.test(cloudSync) ||
     !/Published for team/.test(cloudSync) ||
     !/Ready for players/.test(cloudSync) ||

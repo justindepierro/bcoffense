@@ -211,12 +211,12 @@ plain warnings.
 
 ### Phase V2.1 - Published Workspace Ledger
 
-- [ ] Add a lightweight publish activity log with version, actor, timestamp,
+- [x] Add a lightweight publish activity log with version, actor, timestamp,
   changed domains, and result.
-- [ ] Show the latest published version on Dashboard and in Publish Status.
-- [ ] Record failed publish attempts with the exact failed domain and retry
+- [x] Show the latest published version on Dashboard and in Publish Status.
+- [x] Record failed publish attempts with the exact failed domain and retry
   action.
-- [ ] Add smoke coverage for publish status labels and activity-log rendering.
+- [x] Add smoke coverage for publish status labels and activity-log rendering.
 
 ### Phase V2.2 - Unified Publish Orchestrator
 

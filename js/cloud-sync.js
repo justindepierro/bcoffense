@@ -124,6 +124,89 @@
     return safeSettings;
   }
 
+  function getPublishActivityLog() {
+    const raw = storageManager.get(STORAGE_KEYS.PUBLISH_ACTIVITY_LOG, []);
+    return Array.isArray(raw)
+      ? raw
+        .filter((entry) => entry && typeof entry === "object")
+        .sort((a, b) => (getCloudTime(b.timestamp) || 0) - (getCloudTime(a.timestamp) || 0))
+        .slice(0, 25)
+      : [];
+  }
+
+  function getLatestPublishActivity() {
+    return getPublishActivityLog()[0] || null;
+  }
+
+  function getPublishActorLabel() {
+    const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    return user?.displayName || user?.username || user?.role || "Coach";
+  }
+
+  function buildPublishVersionId(timestamp = new Date().toISOString()) {
+    const compactTime = String(timestamp).replace(/[^0-9]/g, "").slice(0, 14);
+    return `pub-${compactTime || Date.now()}`;
+  }
+
+  function getPublishDomainsFromBackup(backup, diagramSyncResult = null, opts = {}) {
+    const domains = new Set(Array.isArray(opts.domains) ? opts.domains.filter(Boolean) : []);
+    const summary = getCloudBackupSummary(backup || {});
+    if (summary.playCount) domains.add("playbook");
+    if (summary.scriptCount) domains.add("scripts");
+    if (summary.wristbandCount) domains.add("wristbands");
+    if (summary.callSheetCount) domains.add("call sheet");
+    if (summary.gamePlanCount) domains.add("game plan");
+    if (summary.imageCount || diagramSyncResult) domains.add("diagrams");
+    if (backup?.[STORAGE_KEYS.PLAYER_PUBLISH_STATUS]) domains.add("player publish");
+    if (backup?.[STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS]) domains.add("quizzes");
+    if (backup?.[STORAGE_KEYS.SIGNALS]) domains.add("signals");
+    return [...domains];
+  }
+
+  function recordPublishActivity(patch = {}) {
+    const now = new Date().toISOString();
+    const entry = {
+      id: patch.id || `${buildPublishVersionId(now)}-${Math.random().toString(36).slice(2, 7)}`,
+      versionId: patch.versionId || buildPublishVersionId(now),
+      timestamp: patch.timestamp || now,
+      actor: patch.actor || getPublishActorLabel(),
+      result: patch.result || "success",
+      domains: Array.isArray(patch.domains) ? patch.domains.filter(Boolean) : [],
+      summary: patch.summary || "",
+      failedDomain: patch.failedDomain || "",
+      retryAction: patch.retryAction || "",
+      size: Number(patch.size || 0) || 0,
+    };
+    const log = [entry, ...getPublishActivityLog()]
+      .filter((item, index, arr) => arr.findIndex((candidate) => candidate.id === item.id) === index)
+      .slice(0, 25);
+    storageManager.set(STORAGE_KEYS.PUBLISH_ACTIVITY_LOG, log);
+    if (typeof renderTeamPublishLedgerSummary === "function") {
+      renderTeamPublishLedgerSummary();
+    }
+    return entry;
+  }
+
+  function renderPublishActivityRows(limit = 4) {
+    const rows = getPublishActivityLog().slice(0, limit);
+    if (!rows.length) {
+      return `<p class="cloud-sync-ledger-empty">No publish activity recorded yet.</p>`;
+    }
+    return rows.map((entry) => {
+      const failed = entry.result !== "success";
+      const domains = Array.isArray(entry.domains) && entry.domains.length
+        ? entry.domains.join(", ")
+        : entry.failedDomain || "workspace";
+      return `
+        <div class="cloud-sync-ledger-row${failed ? " cloud-sync-ledger-row--failed" : ""}">
+          <span>${escapeHtml(failed ? "Needs retry" : "Published")}</span>
+          <strong>${escapeHtml(formatCloudDate(entry.timestamp))}</strong>
+          <small>${escapeHtml(`${entry.versionId || "version"} by ${entry.actor || "Coach"} · ${domains}`)}</small>
+          ${failed && entry.retryAction ? `<em>${escapeHtml(entry.retryAction)}</em>` : ""}
+        </div>`;
+    }).join("");
+  }
+
   function isCloudRemoteAlreadyKnown(remote, settings = getCloudSyncSettings()) {
     if (!remote?.summary) return false;
     const remoteTime = getCloudTime(remote.summary.exportDate || remote.updatedAt);
@@ -760,6 +843,16 @@
         const diagramLine = formatDiagramSyncSummary(diagramSyncResult);
         const modalDetails = formatDiagramSyncDetails(diagramSyncResult);
         const hasDiagramIssues = diagramSyncResult && (diagramSyncResult.failed || diagramSyncResult.skipped);
+        recordPublishActivity({
+          versionId: buildPublishVersionId(nextSettings.lastPushAt),
+          timestamp: nextSettings.lastPushAt,
+          result: hasDiagramIssues ? "partial" : "success",
+          domains: getPublishDomainsFromBackup(backup, diagramSyncResult),
+          summary: `Published ${summary.itemCount} workspace items`,
+          failedDomain: hasDiagramIssues ? "diagrams" : "",
+          retryAction: hasDiagramIssues ? "Open Publish Media and retry failed diagrams." : "",
+          size: payloadSize,
+        });
         updateCloudSyncModalStatus(
           `Pushed ${summary.itemCount} items${summary.imageCount ? ` and ${summary.imageCount} diagram entries` : ""}.${diagramLine ? ` ${diagramLine}` : ""} Last push: ${formatCloudDate(nextSettings.lastPushAt)}.`,
           hasDiagramIssues ? "warning" : "ok",
@@ -770,8 +863,26 @@
             { type: "warning", duration: 6000 },
           );
         }
+      } else {
+        recordPublishActivity({
+          versionId: buildPublishVersionId(nextSettings.lastPushAt),
+          timestamp: nextSettings.lastPushAt,
+          result: "success",
+          domains: getPublishDomainsFromBackup(backup, diagramSyncResult, { domains: getDirtyCloudKeyLabels() }),
+          summary: `Published ${summary.itemCount} workspace items`,
+          size: payloadSize,
+        });
       }
       return { backup, summary, size: payloadSize, updatedAt: data.updatedAt || "", diagramSyncResult };
+    } catch (err) {
+      recordPublishActivity({
+        result: "failed",
+        domains: getDirtyCloudKeyLabels(),
+        summary: err.message || "Publish failed",
+        failedDomain: cloudAutoPushDirtyKeys.has("playImages") ? "media" : "workspace",
+        retryAction: silent ? "Use Retry from the save status chip." : "Open Publish Status and retry Publish Team Update.",
+      });
+      throw err;
     } finally {
       setCloudSyncBusy(false);
     }
@@ -1224,6 +1335,7 @@
     const settings = getCloudSyncSettings();
     const canPush = userCanPushCloudBackup();
     const roleLabel = getCurrentRoleLabel();
+    const latestPublish = getLatestPublishActivity();
     const overlay = document.createElement("div");
     overlay.id = "cloudSyncOverlay";
     overlay.className = "custom-modal-overlay cloud-sync-overlay";
@@ -1270,6 +1382,18 @@
               <small>${escapeHtml(settings.lastRemoteSize ? storageManager.formatBytes(settings.lastRemoteSize) : "Cloud size unknown")}</small>
             </div>
           </div>
+          <section class="cloud-sync-ledger" aria-label="Publish activity">
+            <div class="cloud-sync-ledger-head">
+              <div>
+                <span>Latest published workspace</span>
+                <strong>${escapeHtml(latestPublish ? `${latestPublish.versionId} · ${formatCloudDate(latestPublish.timestamp)}` : "No publish recorded")}</strong>
+              </div>
+              <small>${escapeHtml(latestPublish ? `${latestPublish.result === "success" ? "Ready" : "Needs retry"} · ${latestPublish.actor || "Coach"}` : "Publish Team Update creates the first ledger entry.")}</small>
+            </div>
+            <div class="cloud-sync-ledger-list">
+              ${renderPublishActivityRows(4)}
+            </div>
+          </section>
           <p class="cloud-sync-warning">${escapeHtml(canPush ? "Normal player updates are automatic. Publish sends this coach device's current workspace to the team. Update refreshes this coach device from the latest published workspace." : "Update refreshes this device with the latest team workspace. Ask an admin to publish new team changes.")}</p>
           <div id="cloudSyncModalStatus" class="cloud-sync-modal-status cloud-sync-modal-status-info">
             Publish status ready. Last published update: ${escapeHtml(formatCloudDate(settings.lastRemoteExportDate || settings.lastPushAt || settings.lastPullAt))}.
@@ -1343,6 +1467,8 @@
   window.resetCloudSyncAutoPull = resetCloudSyncAutoPull;
   window.getTeamWorkspacePullSummary = getTeamWorkspacePullSummary;
   window.dismissTeamWorkspacePullSummary = dismissTeamWorkspacePullSummary;
+  window.getPublishActivityLog = getPublishActivityLog;
+  window.getLatestPublishActivity = getLatestPublishActivity;
   window.queueCloudAutoPush = queueCloudAutoPush;
   window.flushCloudAutoPush = flushCloudAutoPush;
 })();

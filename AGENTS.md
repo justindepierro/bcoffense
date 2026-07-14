@@ -345,7 +345,9 @@ window.failWorkspaceSyncJob
 window.flushCloudAutoPush
 window.getCurrentAuthUser
 window.getDefaultAuthTab
+window.getLatestPublishActivity
 window.getPlayImageUrl
+window.getPublishActivityLog
 window.getRemotePlayerLeaderboardMeta
 window.getRemotePlayerLeaderboardRows
 window.getScriptVisiblePlayerSummary
@@ -583,6 +585,7 @@ GAME_PLAN_SNAPSHOTS             → "gamePlanSnapshots"
 GAME_PLAN_TEMPLATES             → "gamePlanTemplates"
 CALLSHEET_PRINT_OPTIONS         → "callSheetPrintOptions"
 CLOUD_SYNC_SETTINGS             → "cloudSyncSettings"
+PUBLISH_ACTIVITY_LOG            → "publishActivityLog"
 COLOR_PRESET                    → "colorPreset"
 AUTH_SESSION                    → "authSession"
 A2HS_DISMISSED                  → "a2hsDismissed"
