@@ -202,6 +202,20 @@ function renderPlaybook() {
       currentUser,
     });
 
+    // Precompute O(1) membership matchers ONCE per render pass. Without this,
+    // _renderWorkflowChips scans the whole script + scout-rec arrays per row
+    // (O(rows × arr)) on every filter/sort/page render.
+    const _wfScriptLookup =
+      Array.isArray(script) && typeof buildPlaysMatchLookup === "function"
+        ? buildPlaysMatchLookup(script.filter((s) => s && !s.isSeparator))
+        : null;
+    const _wfScoutLookup =
+      typeof _tdScoutRecs !== "undefined" &&
+      Array.isArray(_tdScoutRecs) &&
+      typeof buildPlaysMatchLookup === "function"
+        ? buildPlaysMatchLookup(_tdScoutRecs.map((r) => r.play))
+        : null;
+
     tbody.innerHTML = pageItems
       .map((item) => {
         const { play, idx, gpSig, onWristband, gpActive, imageSig } = item;
@@ -258,7 +272,7 @@ function renderPlaybook() {
                 <td class="col-back">${highlight(play.back || "-")}</td>
                 <td class="col-motion">${highlight(play.motion || "-")}</td>
                 <td class="col-protection">${highlight(play.protection || "-")}</td>
-                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${_renderWorkflowChips(play, idx)}${item.readinessBadge}${playerVisibilityButton}${editButton}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button><button class="pb-add-week-btn" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet">⊕</button>${typeof askCoachAboutPlay === "function" ? `<button class="pb-ask-coach-btn" data-action="askCoachAboutPlay" data-arg="${idx}" title="Ask a question about this play" aria-label="Ask a question about ${escapeHtml(play.play)}">❓</button>` : ""}</td>
+                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${_renderWorkflowChips(play, idx, _wfScriptLookup, _wfScoutLookup)}${item.readinessBadge}${playerVisibilityButton}${editButton}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button><button class="pb-add-week-btn" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet">⊕</button>${typeof askCoachAboutPlay === "function" ? `<button class="pb-ask-coach-btn" data-action="askCoachAboutPlay" data-arg="${idx}" title="Ask a question about this play" aria-label="Ask a question about ${escapeHtml(play.play)}">❓</button>` : ""}</td>
                 <td class="col-basePlay">${escapeHtml(play.basePlay || "-")}</td>
                 <td class="col-tempo">${escapeHtml(play.tempo || "-")}</td>
             </tr>
@@ -434,10 +448,15 @@ function renderPlaybook() {
   }
 }
 
-function _renderWorkflowChips(play, idx) {
+function _renderWorkflowChips(play, idx, scriptLookup, scoutLookup) {
   const chips = [];
-  // Script membership (#105)
-  if (Array.isArray(script) && typeof playsMatch === "function") {
+  // Script membership (#105). Prefer the precomputed O(1) matcher; fall back to
+  // the per-row scan if a caller did not supply one.
+  if (scriptLookup) {
+    if (scriptLookup(play)) {
+      chips.push(`<span class="pb-wf-chip pb-wf-script" title="In current practice script">📋 Script</span>`);
+    }
+  } else if (Array.isArray(script) && typeof playsMatch === "function") {
     if (script.some((s) => !s.isSeparator && playsMatch(s, play))) {
       chips.push(`<span class="pb-wf-chip pb-wf-script" title="In current practice script">📋 Script</span>`);
     }
@@ -452,7 +471,11 @@ function _renderWorkflowChips(play, idx) {
     }
   }
   // Scout recommended (#108)
-  if (typeof _tdScoutRecs !== "undefined" && Array.isArray(_tdScoutRecs) && _tdScoutRecs.length > 0 && typeof playsMatch === "function") {
+  if (scoutLookup) {
+    if (scoutLookup(play)) {
+      chips.push(`<span class="pb-wf-chip pb-wf-scout" title="Scout recommended for current opponent">🔍 Scout</span>`);
+    }
+  } else if (typeof _tdScoutRecs !== "undefined" && Array.isArray(_tdScoutRecs) && _tdScoutRecs.length > 0 && typeof playsMatch === "function") {
     if (_tdScoutRecs.some((r) => playsMatch(r.play, play))) {
       chips.push(`<span class="pb-wf-chip pb-wf-scout" title="Scout recommended for current opponent">🔍 Scout</span>`);
     }

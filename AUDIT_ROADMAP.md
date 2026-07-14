@@ -46,22 +46,28 @@ band** is where they contradict — root cause of iPad / small-laptop layout bug
 
 ## Phase 3 — JS Cold-Boot Parse Cost
 
-All 127 scripts parse ~100k lines on every cold boot. Module *init* is already
-lazy (`needsInit` flags in `app-module-init.js`); *parse* is not. No build step
-needed — use dynamic `<script>` injection on first feature use.
+> **Investigated 2026-07-14 → DEFERRED (poor ROI / high risk).** Mapping the real
+> surface showed the presenter's open-entry functions are called synchronously
+> from ~9 eager files (many behind `typeof fn === "function"` guards that
+> silently no-op if unloaded), `script-quiz.js` has 5 external callers + a
+> companion `player-quiz-sync.js`, and `play-discussion.js` has a boot-time
+> deep-link `DOMContentLoaded` handler. Correct lazy-loading needs self-replacing
+> stubs across those files. Meanwhile V8 lazy-compiles unused function bodies and
+> the SW already caches these files, so the true boot saving is small. Not worth
+> the live-production regression risk. Revisit only if boot is measured slow.
 
-- [ ] 🔴 **Lazy-load `script-quiz.js` (7625 lines)** via dynamic `<script src>` injection on first Quiz entry; await `onload`, guard so it loads once. — biggest single win
-- [ ] 🟠 **Lazy-load `play-presentation.js` (3077)** on first presentation open.
-- [ ] 🟠 **Lazy-load `play-discussion.js` (3050)** on first discussion open.
-- [ ] 🟠 **Split `script-quiz.js`** into `-render`/`-runtime` per existing wristband/callsheet conventions (2.5× the next-largest file).
+- [ ] ⏸️ **Lazy-load `script-quiz.js` (7625 lines)** — deferred (see note; 5 external callers + `player-quiz-sync.js`).
+- [ ] ⏸️ **Lazy-load `play-presentation.js` (3077)** — deferred (see note; ~9 eager call sites, several guarded).
+- [ ] ⏸️ **Lazy-load `play-discussion.js` (3050)** — deferred (see note; boot deep-link handler + delegated listeners).
+- [ ] 🟠 **Split `script-quiz.js`** into `-render`/`-runtime` per existing wristband/callsheet conventions (2.5× the next-largest file) — still valid as a maintainability win with no lazy-load risk.
 
-_Combined lazy-load target: ~13k lines (~13%) off cold-boot parse._
+_Lazy-load target abandoned; the V8 lazy-compile + SW cache means the win is small._
 
 ---
 
 ## Phase 4 — Render Performance
 
-- [ ] 🟠 **Build per-render `Map` lookup indices** to kill nested `plays.find()` in render loops. Top target: `gameplan-render.js` (44 array iterations); also `playbook-render.js` (26), `callsheet-render.js` (21), `script-render.js` (20).
+- [x] 🟠 **Build per-render lookup indices to kill nested `plays.find()`/`playsMatch` scans.** ✅ Started. Added `buildPlaysMatchLookup(arr)` to `utils.js` (a semantics-preserving O(1) matcher = 5 per-strategy key Sets, verified equivalent to `playsMatch` over 3200 randomized checks). Applied to `playbook-render.js` `_renderWorkflowChips` (was O(rows × script) + O(rows × scoutRecs) per filter/sort/page render → now one index build + O(1) lookups). Verified `gameplan-render.js` already uses `assignedSigs`/`rawIndexByPlay` Sets (perf-fixed v585/v358). Remaining: `script-render.js:1157` and `playbook-editor.js` use `findIndex` (need a key→index Map variant, lower frequency) — follow-up.
 - [ ] 🟢 **Audit render functions for per-render `addEventListener`** (470 add vs 16 remove). Move any per-row handlers to `data-action` delegation to prevent accumulation on re-render.
 - [ ] 🟢 **Confirm all keystroke-driven re-renders are debounced** (`debounce()` exists in `utils.js`).
 

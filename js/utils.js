@@ -1678,6 +1678,46 @@ function playsMatch(p1, p2) {
   return playsHaveSameCompareKey(p1, p2, "name");
 }
 
+/**
+ * Build an O(1) membership matcher equivalent to
+ * `arr.some((a) => playsMatch(a, play))`, for use in render hot paths that
+ * would otherwise be O(rows × arr).
+ *
+ * playsMatch is an OR of five pure key-equality strategies, so precomputing one
+ * Set per strategy from `arr` and testing five memberships is exactly
+ * equivalent: `play` matches iff any strategy key is present in its Set (each
+ * strategy match is transitive key equality). Empty-key semantics match
+ * playsMatch too (empty === empty), so no behavior change.
+ *
+ * @param {Array} arr - Plays to index (falsy entries skipped, like playsMatch).
+ * @returns {(play: Object) => boolean}
+ */
+function buildPlaysMatchLookup(arr) {
+  const coreId = new Set();
+  const nameId = new Set();
+  const nameIdCI = new Set();
+  const coreCmp = new Set();
+  const nameCmp = new Set();
+  (Array.isArray(arr) ? arr : []).forEach((p) => {
+    if (!p) return;
+    coreId.add(getPlayIdentityKey(p, "core", { trim: false }));
+    nameId.add(getPlayIdentityKey(p, "name", { trim: false }));
+    nameIdCI.add(getPlayIdentityKey(p, "name", { normalizeCase: true }));
+    coreCmp.add(getPlayCompareKey(p, "core"));
+    nameCmp.add(getPlayCompareKey(p, "name"));
+  });
+  return function playMatchesIndexed(play) {
+    if (!play) return false;
+    return (
+      coreId.has(getPlayIdentityKey(play, "core", { trim: false })) ||
+      nameId.has(getPlayIdentityKey(play, "name", { trim: false })) ||
+      nameIdCI.has(getPlayIdentityKey(play, "name", { normalizeCase: true })) ||
+      coreCmp.has(getPlayCompareKey(play, "core")) ||
+      nameCmp.has(getPlayCompareKey(play, "name"))
+    );
+  };
+}
+
 // ============ Defense Taxonomy / Normalization ============
 // Coaches call the same concept by many names. This system groups
 // defensive terms into families so analysis can compare apples to apples.
