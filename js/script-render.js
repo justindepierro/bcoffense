@@ -7768,6 +7768,44 @@ function _getQuizStreakMoment(streak = 0) {
   return null;
 }
 
+function _renderQuizInlineFeedback(item, answer) {
+  if (!item || !answer || _quizSourceType !== "signal") return "";
+  const correct = Boolean(answer.correct);
+  const correctLabel = answer.correctLabel || _quizPlainCall(item.play);
+  const selectedLabel = answer.selectedLabel || "";
+  const detail = correct
+    ? answer.momentLabel || _getQuizCorrectMomentLabel(answer)
+    : `Answer: ${correctLabel}`;
+  return `
+    <div class="sq-answer-flash ${correct ? "is-correct" : "is-wrong"}" role="status" aria-live="polite">
+      <strong>${correct ? "Correct" : "Incorrect"}</strong>
+      <span>${escapeHtml(detail)}</span>
+      ${!correct && selectedLabel ? `<small>You picked ${escapeHtml(selectedLabel)}</small>` : ""}
+    </div>
+  `;
+}
+
+function _configureQuizSignalVideos(root = document) {
+  root.querySelectorAll?.(".sq-signal-prompt video, .sq-signal-sequence-item video").forEach((video) => {
+    video.controls = false;
+    video.autoplay = true;
+    video.loop = true;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.removeAttribute("controls");
+    video.setAttribute("autoplay", "");
+    video.setAttribute("loop", "");
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("preload", "auto");
+    const playPromise = typeof video.play === "function" ? video.play() : null;
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => { });
+    }
+  });
+}
+
 function _renderQuizFeedback(item, answer) {
   if (!answer) return "";
   const { play } = item;
@@ -7975,7 +8013,7 @@ function _advanceSignalGameAfterAnswer(questionKey) {
     _quizIndex++;
     _resetQuizRoundState();
     renderScriptQuizPlay();
-  }, 425);
+    }, 650);
 }
 
 function answerScriptQuizChoice(choiceKey) {
@@ -8638,7 +8676,7 @@ function renderScriptQuizPlay() {
       <figure class="sq-signal-prompt${_isSignalBattleMode() && !battleLocked ? " is-hidden" : ""}" aria-label="Signal video prompt">
         ${_isSignalBattleMode() && !battleLocked
           ? `<div class="sq-signal-hidden">Signal hidden</div>`
-          : `<video src="${escapeAttr(question.signalClipUrl)}" autoplay loop muted playsinline controls preload="metadata"></video>`}
+          : `<video src="${escapeAttr(question.signalClipUrl)}" autoplay loop muted playsinline preload="auto" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"></video>`}
         <figcaption>${escapeHtml(_isSignalBattleMode() && !battleLocked ? "Answer window" : question.signal?.label || "Signal clip")}</figcaption>
       </figure>`
     : question.type === "signal_full_call" && Array.isArray(question.signalClips) && question.signalClips.length
@@ -8647,7 +8685,7 @@ function renderScriptQuizPlay() {
           <div class="sq-signal-sequence-grid">
             ${question.signalClips.map((clip, idx) => `
               <span class="sq-signal-sequence-item">
-                <video src="${escapeAttr(clip.clipUrl)}" autoplay loop muted playsinline controls preload="metadata"></video>
+                <video src="${escapeAttr(clip.clipUrl)}" autoplay loop muted playsinline preload="auto" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"></video>
                 <b>${idx + 1}</b>
                 <small>${escapeHtml(clip.label || clip.componentType || "Signal")}</small>
               </span>
@@ -8664,6 +8702,7 @@ function renderScriptQuizPlay() {
         ${_quizCurrentChoices.map((choice) => _renderQuizChoice(choice, answer)).join("")}
       </div>`
     : "";
+  const inlineFeedbackHtml = gameMode && answer ? _renderQuizInlineFeedback(item, answer) : "";
   const choiceLengthTone = gameMode ? _getQuizChoiceLengthTone(_quizCurrentChoices) : "";
   const scenarioClasses = [
     "script-quiz-scenario",
@@ -8706,6 +8745,7 @@ function renderScriptQuizPlay() {
       <div class="sq-scenario-value sq-defense">${[play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean).map(escapeHtml).join(" / ")}</div>
     </div>` : ""}
     ${choicesHtml}
+    ${inlineFeedbackHtml}
   `;
   const scenarioEl = document.getElementById("scriptQuizScenario");
   if (scenarioEl) {
@@ -8714,6 +8754,7 @@ function renderScriptQuizPlay() {
     if (window.playImages && typeof window.playImages.hydrateSmartDiagramImages === "function") {
       requestAnimationFrame(() => window.playImages.hydrateSmartDiagramImages(scenarioEl));
     }
+    requestAnimationFrame(() => _configureQuizSignalVideos(scenarioEl));
   }
 
   // Answer — hidden until revealed

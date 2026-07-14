@@ -4290,6 +4290,8 @@ function checkSignalPlayIntegrationContracts() {
     !/function _isSignalHeatCheckMode\(mode = _quizMode\)/.test(scriptRender) ||
     !/function _isSignalFullCallMode\(mode = _quizMode\)/.test(scriptRender) ||
     !/function _isSignalAutoAdvanceMode\(mode = _quizMode\)/.test(scriptRender) ||
+    !/function _renderQuizInlineFeedback\(item, answer\)/.test(scriptRender) ||
+    !/function _configureQuizSignalVideos\(root = document\)/.test(scriptRender) ||
     !/function _getSignalFullCallSourceItems\(\)/.test(scriptRender) ||
     !/async function _buildSignalFullCallItems\(settings = _getSignalGameSettings\(\)\)/.test(scriptRender) ||
     !/function _signalFullCallDistractorScore\(correctPlay, candidatePlay\)/.test(scriptRender) ||
@@ -4341,11 +4343,18 @@ function checkSignalPlayIntegrationContracts() {
     !/sourceType:\s*"signal"/.test(scriptRender) ||
     !/function _getSignalQuizStatus\(\)/.test(scriptRender) ||
     !/signalClipUrl/.test(scriptRender) ||
+    !/Correct/.test(scriptRender) ||
+    !/Incorrect/.test(scriptRender) ||
+    !/disablepictureinpicture/.test(scriptRender) ||
+    !/preload="auto"/.test(scriptRender) ||
     !/function _getQuizSourceLabel\(sourceType = _quizSourceType/.test(scriptRender) ||
     !/["']toggleSignalGameCategory["']/.test(auth) ||
     !/["']setSignalLeaderboardMode["']/.test(auth)
   ) {
     fail("signal quiz study mode is incomplete");
+  }
+  if (/<video src="\$\{escapeAttr\(question\.signalClipUrl\)\}"[^>]*\scontrols(?:\s|>|=)/.test(scriptRender)) {
+    fail("signal quiz video prompt should not show browser controls");
   }
 
   if (
@@ -4373,6 +4382,7 @@ function checkSignalPlayIntegrationContracts() {
     !/\.pp-signals-btn/.test(presentationCss) ||
     !/\.player-quiz-source-card--signals/.test(scriptCss) ||
     !/\.sq-signal-prompt/.test(scriptCss) ||
+    !/\.sq-answer-flash/.test(scriptCss) ||
     !/\.sq-game-pill--timer/.test(scriptCss) ||
     !/\.sq-result-sprint/.test(scriptCss) ||
     !/\.signal-sprint-leader-row/.test(scriptCss) ||
@@ -4424,7 +4434,7 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Add a small `Signals` button to Practice Script play rows\/cards/.test(roadmap) ||
     !/- \[x\] Add the same signal selector to Script Swipe View \/ presentation-style/.test(roadmap) ||
     !/- \[x\] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and/.test(roadmap) ||
-    !/- \[x\] Signal clips autoplay muted and loop like GIF-style previews/.test(roadmap) ||
+    !/- \[x\] Signal clips autoplay muted and loop like GIF-style previews; player quiz/.test(roadmap) ||
     !/- \[x\] Add signal availability to player-facing play detail and current-practice/.test(roadmap) ||
     !/- \[x\] Add future quiz hooks so players can be asked to identify the signal/.test(roadmap) ||
     !/- \[x\] Add simple coach\/admin coverage reporting: components with signals,/.test(roadmap) ||
@@ -4439,6 +4449,7 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Add a dedicated Signal Leaderboard with three tabs/.test(roadmap) ||
     !/- \[x\] Sync Signal game attempts through the existing leaderboard pipeline/.test(roadmap) ||
     !/- \[x\] Give coaches controls for eligible categories/.test(roadmap) ||
+    !/- \[x\] Tighten Signal quiz playback: remove browser video controls from quiz/.test(roadmap) ||
     !/- \[x\] Add a future `Full Play Call` signal game/.test(roadmap)
   ) {
     fail("signals roadmap checklist is not updated for the play selector slice");

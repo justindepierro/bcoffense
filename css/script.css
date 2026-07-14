@@ -7571,8 +7571,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .sq-signal-prompt video {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  max-height: 260px;
+  aspect-ratio: 4 / 3;
+  max-height: 300px;
   background: #000;
   object-fit: contain;
 }
@@ -7672,6 +7672,49 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 .script-quiz-choices.is-battle-locked {
   display: none;
+}
+
+.sq-answer-flash {
+  display: grid;
+  gap: 2px;
+  margin-top: var(--space-sm);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-light);
+  text-align: center;
+  animation: sqReveal 0.16s ease;
+}
+
+.sq-answer-flash strong {
+  font-size: var(--font-size-lg);
+  font-weight: 950;
+  line-height: 1.05;
+}
+
+.sq-answer-flash span,
+.sq-answer-flash small {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 850;
+}
+
+.sq-answer-flash.is-correct {
+  border-color: color-mix(in srgb, var(--color-success) 58%, var(--color-border));
+  background: color-mix(in srgb, var(--color-success-light) 50%, var(--color-bg-light));
+}
+
+.sq-answer-flash.is-correct strong {
+  color: var(--color-success);
+}
+
+.sq-answer-flash.is-wrong {
+  border-color: color-mix(in srgb, var(--color-danger) 54%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger-light) 48%, var(--color-bg-light));
+}
+
+.sq-answer-flash.is-wrong strong {
+  color: var(--color-danger);
 }
 
 .script-quiz-scenario--long-choices .script-quiz-choices,
@@ -11638,7 +11681,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   }
 
   .script-quiz-scenario--signal-video .sq-signal-prompt video {
-    max-height: min(34vh, 220px);
+    aspect-ratio: 9 / 12;
+    max-height: min(38vh, 280px);
   }
 
   .script-quiz-scenario--signal-video .sq-scenario-block--situation,
@@ -11694,6 +11738,16 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     gap: 8px;
     padding: 8px 10px;
     border-radius: var(--radius-sm);
+  }
+
+  .sq-answer-flash {
+    margin-top: 6px;
+    padding: 7px 9px;
+    border-radius: var(--radius-sm);
+  }
+
+  .sq-answer-flash strong {
+    font-size: var(--font-size-md);
   }
 
   .script-quiz-scenario--long-choices .script-quiz-choice,

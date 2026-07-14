@@ -138,8 +138,8 @@ Phase 3 - Practice Script and Swipe View integration:
   study views so athletes can open signals while studying the current play.
 - [x] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and
   `MOTIONS`; tapping a chip plays the very short clip.
-- [x] Signal clips autoplay muted and loop like GIF-style previews while keeping
-  video controls available.
+- [x] Signal clips autoplay muted and loop like GIF-style previews; player quiz
+  prompts should stay control-free so the signal remains visible.
 - [x] Keep the main play view clean. Signals should open in a compact selector,
   drawer, or lightweight modal rather than occupying permanent space.
 
@@ -181,6 +181,9 @@ Phase 5 - Signal games and leaderboards:
   game mode.
 - [x] Give coaches controls for eligible categories, minimum published signal
   count, and whether to include draft/private clips in staff-only testing.
+- [x] Tighten Signal quiz playback: remove browser video controls from quiz
+  prompts, preload clips faster, and show immediate `Correct` / `Incorrect`
+  feedback before the next rep.
 - [x] Add a future `Full Play Call` signal game: pull a play from the practice
   script or game plan, queue its component signal clips, then ask athletes to
   identify the full play call with smart distractors like same formation,
