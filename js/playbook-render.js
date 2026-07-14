@@ -541,6 +541,8 @@ function _truncatePlayerPlaybookText(text, maxLength) {
   return `${clean.slice(0, Math.max(0, maxLength - 1)).trim()}…`;
 }
 
+let _pbThumbObserver = null;
+
 function hydratePlayerPlaybookThumbnails(root = document) {
   if (
     typeof window === "undefined" ||
@@ -549,7 +551,7 @@ function hydratePlayerPlaybookThumbnails(root = document) {
   ) {
     return;
   }
-  root.querySelectorAll("[data-pb-thumb-idx], [data-pb-thumb-sig]").forEach((media) => {
+  const hydrateCard = (media) => {
     if (media.dataset.pbThumbLoading === "true" || media.dataset.pbThumbLoaded === "true") {
       return;
     }
@@ -636,6 +638,70 @@ function hydratePlayerPlaybookThumbnails(root = document) {
       .finally(() => {
         if (media.isConnected) media.dataset.pbThumbLoading = "false";
       });
+  };
+
+  const cards = Array.from(
+    root.querySelectorAll("[data-pb-thumb-idx], [data-pb-thumb-sig]"),
+  ).filter(
+    (media) =>
+      media.dataset.pbThumbLoading !== "true" &&
+      media.dataset.pbThumbLoaded !== "true",
+  );
+  if (!cards.length) return;
+
+  // Batch-warm the remote diagram manifest for all uncached cards in ONE
+  // /images/batch-manifest request instead of one /images/manifest per card.
+  // This only checks WHICH diagrams are published (cheap metadata), not bytes.
+  if (
+    typeof window.playImages.checkRemoteForPlays === "function" &&
+    typeof window.playImages.urlFor === "function" &&
+    typeof filteredPlays !== "undefined" &&
+    Array.isArray(filteredPlays)
+  ) {
+    const uncachedPlays = [];
+    cards.forEach((media) => {
+      const sig = media.dataset.pbThumbSig || "";
+      if (sig && window.playImages.urlFor(sig)) return;
+      const idx = parseInt(media.dataset.pbThumbIdx || "", 10);
+      const play = Number.isInteger(idx) ? filteredPlays[idx] : null;
+      if (play) uncachedPlays.push(play);
+    });
+    if (uncachedPlays.length > 1) {
+      Promise.resolve(window.playImages.checkRemoteForPlays(uncachedPlays)).catch(
+        () => {},
+      );
+    }
+  }
+
+  // Cards with an already-resolved object URL hydrate instantly. Uncached cards
+  // are gated behind an IntersectionObserver so off-screen player diagrams do
+  // NOT download blobs until they scroll near the viewport — the key phone win.
+  if (_pbThumbObserver) _pbThumbObserver.disconnect();
+  _pbThumbObserver =
+    typeof IntersectionObserver === "function"
+      ? new IntersectionObserver(
+          (entries, obs) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              obs.unobserve(entry.target);
+              hydrateCard(entry.target);
+            });
+          },
+          { rootMargin: "400px" },
+        )
+      : null;
+
+  cards.forEach((media) => {
+    const sig = media.dataset.pbThumbSig || "";
+    const cachedUrl =
+      typeof window.playImages.urlFor === "function"
+        ? window.playImages.urlFor(sig)
+        : null;
+    if (cachedUrl || !_pbThumbObserver) {
+      hydrateCard(media);
+    } else {
+      _pbThumbObserver.observe(media);
+    }
   });
 }
 
