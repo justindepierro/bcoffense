@@ -1935,6 +1935,7 @@ test.describe("Player mobile experience", () => {
     await setup.locator("#coachQuizTypeResponsibility").uncheck();
     await setup.locator("#coachQuizTypeRuleToPlay").uncheck();
     await setup.locator("#coachQuizTypeDiagram").uncheck();
+    await setup.locator("#coachQuizTypeSignal").uncheck();
     await setup.getByRole("button", { name: /Save Settings/i }).click();
 
     await expect.poll(() => page.evaluate(() => storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_SETTINGS, null))).toMatchObject({

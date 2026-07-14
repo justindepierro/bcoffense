@@ -1735,6 +1735,7 @@ function _getQuizTierName(key, settings = _getPlayerQuizSettings()) {
 function _getQuizSourceWeight(sourceType = _quizSourceType) {
   const settings = _getPlayerQuizSettings();
   if (sourceType === "gameplan") return settings.gameplanWeight;
+  if (!sourceType || sourceType === "script") return settings.scriptWeight;
   return PLAYER_QUIZ_SOURCE_WEIGHTS[sourceType] || settings.scriptWeight;
 }
 
