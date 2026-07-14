@@ -7603,7 +7603,30 @@ function renderScriptQuizPlay() {
   const scenarioEl = document.getElementById("scriptQuizScenario");
   if (scenarioEl) {
     scenarioEl.className = scenarioClasses;
+    // Preserve already-loaded signal <video> elements across a same-question
+    // re-render (e.g. revealing the answer after a tap) so the clip does NOT
+    // reload/restart — a visible jank + re-decode + possible re-download on
+    // phones. Detach matching videos by src, rebuild the scenario, then swap the
+    // live elements back into their fresh placeholders.
+    const sameQuestion = scenarioEl.dataset.quizKey === questionKey;
+    const preservedVideos = sameQuestion
+      ? Array.from(scenarioEl.querySelectorAll("video"))
+      : [];
+    preservedVideos.forEach((video) => video.remove());
     setInnerHTML(scenarioEl, scenarioHtml);
+    scenarioEl.dataset.quizKey = questionKey;
+    if (preservedVideos.length) {
+      scenarioEl.querySelectorAll("video").forEach((freshVideo) => {
+        const freshSrc = freshVideo.getAttribute("src") || "";
+        const match = preservedVideos.find(
+          (video) => !video._quizReused && (video.getAttribute("src") || "") === freshSrc,
+        );
+        if (match) {
+          match._quizReused = true;
+          freshVideo.replaceWith(match);
+        }
+      });
+    }
     if (window.playImages && typeof window.playImages.hydrateSmartDiagramImages === "function") {
       requestAnimationFrame(() => window.playImages.hydrateSmartDiagramImages(scenarioEl));
     }
