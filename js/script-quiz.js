@@ -6493,6 +6493,18 @@ function _quizShouldSkipMediaWarmup() {
   );
 }
 
+// Warm the browser's decoded-image cache for an object URL so the next quiz
+// diagram paints instantly instead of stalling on decode when it's shown.
+function _decodeAheadImage(url) {
+  if (!url || typeof Image === "undefined") return;
+  try {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = url;
+    if (typeof img.decode === "function") img.decode().catch(() => {});
+  } catch (_e) { /* best-effort decode warm */ }
+}
+
 async function _warmQuizDiagramForPlay(play) {
   const startedAt = _quizPerfNow();
   if (!play || !window.playImages) {
@@ -6503,6 +6515,7 @@ async function _warmQuizDiagramForPlay(play) {
     if (typeof window.playImages.ensureDisplayReadinessForPlay === "function") {
       const readiness = await window.playImages.ensureDisplayReadinessForPlay(play);
       _quizPerfRecord("diagram-readiness", startedAt, { status: readiness?.status || "unknown" });
+      if (readiness?.url) _decodeAheadImage(readiness.url);
       return readiness?.url || null;
     }
     if (typeof window.playImages.ensureDisplayUrlForPlay !== "function") {
@@ -6511,6 +6524,7 @@ async function _warmQuizDiagramForPlay(play) {
     }
     const url = await window.playImages.ensureDisplayUrlForPlay(play);
     _quizPerfRecord("diagram-readiness", startedAt, { status: url ? "ready" : "missing" });
+    if (url) _decodeAheadImage(url);
     return url;
   } catch (_err) {
     _quizPerfRecord("diagram-readiness", startedAt, { status: "error" });

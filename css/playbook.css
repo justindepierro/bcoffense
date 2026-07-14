@@ -3183,6 +3183,51 @@ body.shell-phone .pb-action-sheet {
   color: var(--color-text-inverse);
 }
 
+/* Reels-style media loading: never blank (skeleton shimmer while loading) and
+   smooth fade-in on load instead of a hard pop. The shimmer only runs until the
+   diagram loads, then stops. Theme-aware via --color-text at low opacity. */
+.pb-card-media:not(.is-loaded)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in srgb, var(--color-text) 12%, transparent) 50%,
+    transparent 70%
+  );
+  background-size: 220% 100%;
+  animation: pb-media-shimmer 1.25s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pb-media-shimmer {
+  from { background-position: 180% 0; }
+  to { background-position: -80% 0; }
+}
+
+.pb-card-media img,
+.pb-card-media .smart-diagram-canvas {
+  opacity: 0;
+  transition: opacity 0.32s ease;
+}
+
+.pb-card-media.is-loaded img,
+.pb-card-media.is-loaded .smart-diagram-canvas {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pb-card-media:not(.is-loaded)::after {
+    animation: none;
+  }
+  .pb-card-media img,
+  .pb-card-media .smart-diagram-canvas {
+    transition: none;
+    opacity: 1;
+  }
+}
+
 .pb-card-media--missing {
   min-height: 96px;
   border-style: dashed;
