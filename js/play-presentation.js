@@ -334,7 +334,8 @@ function renderPlayPresentationDetailPanel() {
 
 // Asynchronously fetch and prepend any cloud video clips for the current play.
 // Uses a stale token so navigating away mid-fetch never injects the wrong clips.
-// Built with direct innerHTML (not setInnerHTML) so <video controls> survives.
+// Built with direct innerHTML (not setInnerHTML) so coach clip previews can use
+// the same fast silent-loop playback contract as player-facing videos.
 async function loadPlayPresentationDetailClips(item, body) {
   if (!body || !item || !item.play) return;
   if (typeof window.playClips === "undefined") return;
@@ -359,7 +360,7 @@ async function loadPlayPresentationDetailClips(item, body) {
     .map((clip) => {
       const url = clip.url || window.playClips.fileUrl(play, clip.id);
       return `<figure class="pp-detail-clip">
-        <video class="pp-detail-clip-video" controls preload="metadata" playsinline src="${escapeHtml(url)}"></video>
+        <video class="pp-detail-clip-video" autoplay loop muted preload="auto" playsinline disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback" src="${escapeHtml(url)}"></video>
         ${clip.label ? `<figcaption class="pp-detail-clip-caption">${escapeHtml(clip.label)}</figcaption>` : ""}
       </figure>`;
     })
@@ -370,6 +371,11 @@ async function loadPlayPresentationDetailClips(item, body) {
     </div>
     <div class="pp-detail-clips-list">${clipMarkup}</div>`;
   body.insertBefore(section, body.firstChild);
+  if (typeof window.playClips?.configureLoopPreviewVideo === "function") {
+    section.querySelectorAll(".pp-detail-clip-video").forEach((video) => {
+      window.playClips.configureLoopPreviewVideo(video);
+    });
+  }
 }
 
 function updatePlayPresentationDetailButton() {

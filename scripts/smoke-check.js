@@ -4229,6 +4229,7 @@ function checkSignalPlayIntegrationContracts() {
   const auth = read("js/auth.js");
   const signalsCss = read("css/signals.css");
   const scriptCss = read("css/script.css");
+  const playbookEditor = read("js/playbook-editor.js");
   const roadmap = read("CONSOLIDATED_ROADMAP.md");
 
   if (
@@ -4404,6 +4405,19 @@ function checkSignalPlayIntegrationContracts() {
   if (/<video src="\$\{escapeAttr\(question\.signalClipUrl\)\}"[^>]*\scontrols(?:\s|>|=)/.test(scriptRender)) {
     fail("signal quiz video prompt should not show browser controls");
   }
+  const clipFilesWithNativeControls = [
+    ["play clips", clips],
+    ["signals", signals],
+    ["playbook editor clips", playbookEditor],
+    ["play presentation clips", presentation],
+  ].filter(([, source]) => (
+    /<video[^>]*\scontrols(?:\s|>|=)/.test(source) ||
+    /video\.controls\s*=\s*true/.test(source) ||
+    /setAttribute\("controls"/.test(source)
+  ));
+  if (clipFilesWithNativeControls.length) {
+    fail(`${clipFilesWithNativeControls.map(([name]) => name).join(", ")} should not show native video controls`);
+  }
 
   if (
     !/data-action='openPlaybookSignalSelector'/.test(appEvents) ||
@@ -4466,16 +4480,30 @@ function checkSignalPlayIntegrationContracts() {
     !/Removing audio before video upload/.test(clips) ||
     !/const uploadFile = await createSilentVideoFile\(file, duration\)/.test(clips) ||
     !/body: uploadFile/.test(clips) ||
+    !/video\.controls = false/.test(signals) ||
     !/video\.defaultMuted = true/.test(signals) ||
     !/video\.playsInline = true/.test(signals) ||
+    !/video\.removeAttribute\("controls"\)/.test(signals) ||
+    !/video\.setAttribute\("preload", "auto"\)/.test(signals) ||
+    !/video\.setAttribute\("controlslist", "nodownload noplaybackrate noremoteplayback"\)/.test(signals) ||
+    !/function configureLoopPreviewVideo\(video\)/.test(clips) ||
+    !/video\.controls = false/.test(clips) ||
+    !/video\.autoplay = true/.test(clips) ||
+    !/video\.loop = true/.test(clips) ||
+    !/video\.muted = true/.test(clips) ||
+    !/video\.preload = "auto"/.test(clips) ||
+    !/video\.removeAttribute\("controls"\)/.test(clips) ||
+    !/configureLoopPreviewVideo,/.test(clips) ||
+    !/window\.playClips\.configureLoopPreviewVideo\(video\)/.test(playbookEditor) ||
+    !/window\.playClips\.configureLoopPreviewVideo\(video\)/.test(presentation) ||
     !/SIGNAL_IPHONE_CAPTURE_HINT/.test(signals) ||
     !/accept="video\/mp4,video\/quicktime,video\/\*"/.test(signals) ||
     !/1080p HD at 30 fps/.test(signals) ||
     !/Keep it under \$\{_sigFormatMegabytes\(SIGNAL_MAX_BYTES\)\}/.test(signals) ||
     !/_sigConfigureLoopVideos\(preview\)/.test(signals) ||
     !/_sigConfigureLoopVideos\(listEl\)/.test(signals) ||
-    !/<video controls autoplay loop muted preload="metadata" playsinline/.test(signals) ||
-    !/<video class="signals-play-video"[\s\S]*controls autoplay loop muted playsinline/.test(signals)
+    !/<video autoplay loop muted preload="auto" playsinline disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"/.test(signals) ||
+    !/<video class="signals-play-video"[\s\S]*autoplay loop muted playsinline preload="auto"[\s\S]*controlslist="nodownload noplaybackrate noremoteplayback"/.test(signals)
   ) {
     fail("signal clips are not configured as muted autoplay loops");
   }
@@ -4484,6 +4512,7 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Add a Playbook detail surface for "Signals for this play"/.test(roadmap) ||
     !/- \[x\] Mark formation as a non-video cue because formations are yelled/.test(roadmap) ||
     !/- \[x\] Route all remote video clip uploads through a shared silent-upload/.test(roadmap) ||
+    !/- \[x\] Standardize short play and signal clips as fast silent loops/.test(roadmap) ||
     !/- \[x\] On mobile, tapping a signal chip with an attached clip opens the video/.test(roadmap) ||
     !/- \[x\] Add a small `Signals` button to Practice Script play rows\/cards/.test(roadmap) ||
     !/- \[x\] Add the same signal selector to Script Swipe View \/ presentation-style/.test(roadmap) ||

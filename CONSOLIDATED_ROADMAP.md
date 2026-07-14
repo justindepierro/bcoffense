@@ -108,6 +108,8 @@ Phase 0 - data and media architecture:
   coach-facing error when clips are too long.
 - [x] Route all remote video clip uploads through a shared silent-upload path so
   play clips and signal clips are stored without audio tracks.
+- [x] Standardize short play and signal clips as fast silent loops: autoplay,
+  muted, repeat, eager preload, and no browser controls blocking the video.
 
 Phase 1 - dedicated Signals tab:
 

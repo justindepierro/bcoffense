@@ -1048,7 +1048,7 @@ function _wirePlayEditorClips(play, isNew) {
           if (clip.duration) meta.push(`${clip.duration}s`);
           if (clip.size) meta.push(`${(clip.size / (1024 * 1024)).toFixed(1)} MB`);
           return `<div class="pb-editor-clip" data-clip-id="${escapeHtml(clip.id)}">
-        <video class="pb-editor-clip-video" controls preload="metadata" playsinline src="${escapeHtml(url)}"></video>
+        <video class="pb-editor-clip-video" autoplay loop muted preload="auto" playsinline disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback" src="${escapeHtml(url)}"></video>
         <div class="pb-editor-clip-meta">
           <span class="pb-editor-clip-label">${escapeHtml(clip.label || "Clip")}</span>
           <span class="pb-editor-clip-sub">${escapeHtml(meta.join(" • "))}</span>
@@ -1062,6 +1062,11 @@ function _wirePlayEditorClips(play, isNew) {
       const atMax = safeClips.length >= window.playClips.MAX_CLIPS;
       trigger.disabled = atMax;
       trigger.textContent = atMax ? "Max 3 clips" : "Add Clip…";
+    }
+    if (typeof window.playClips?.configureLoopPreviewVideo === "function") {
+      listEl.querySelectorAll(".pb-editor-clip-video").forEach((video) => {
+        window.playClips.configureLoopPreviewVideo(video);
+      });
     }
     if (canManage) {
       listEl.querySelectorAll("[data-clip-remove]").forEach((btn) => {

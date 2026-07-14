@@ -511,7 +511,7 @@ async function _sigRenderRemoteClips(summary, record, token) {
     });
     return `
       <article class="signals-clip">
-        <video controls autoplay loop muted preload="metadata" playsinline src="${escapeAttr(clip.url || "")}"></video>
+        <video autoplay loop muted preload="auto" playsinline disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback" src="${escapeAttr(clip.url || "")}"></video>
         <div class="signals-clip-meta">
           <strong>${escapeHtml(clip.label || summary.displayValue)}</strong>
           <span>${escapeHtml(meta || "Signal clip")}</span>
@@ -552,7 +552,7 @@ function _sigOpenClipModalItem(item) {
         </div>
         <button type="button" class="signals-clip-modal__close" data-action="closeSignalClipModal" aria-label="Close signal clip">&times;</button>
       </header>
-      <video class="signals-clip-modal-video" controls autoplay loop muted playsinline preload="metadata" src="${escapeAttr(clip.url)}"></video>
+      <video class="signals-clip-modal-video" autoplay loop muted playsinline preload="auto" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback" src="${escapeAttr(clip.url)}"></video>
       <p class="signals-clip-modal__meta">${escapeHtml(meta)}</p>
     </div>`;
   document.body.appendChild(overlay);
@@ -973,17 +973,22 @@ function _sigConfigureLoopVideos(root = document) {
     ) {
       return;
     }
-    video.controls = true;
+    video.controls = false;
     video.autoplay = true;
     video.loop = true;
     video.muted = true;
     video.defaultMuted = true;
     video.playsInline = true;
+    video.preload = "auto";
+    video.disablePictureInPicture = true;
+    video.removeAttribute("controls");
     video.setAttribute("autoplay", "");
     video.setAttribute("loop", "");
     video.setAttribute("muted", "");
     video.setAttribute("playsinline", "");
-    video.setAttribute("controls", "");
+    video.setAttribute("preload", "auto");
+    video.setAttribute("disablepictureinpicture", "");
+    video.setAttribute("controlslist", "nodownload noplaybackrate noremoteplayback");
     const playPromise = typeof video.play === "function" ? video.play() : null;
     if (playPromise && typeof playPromise.catch === "function") {
       playPromise.catch(() => { });
@@ -1113,7 +1118,7 @@ async function openSignalClip(recordId) {
     const notes = String(record.notes || "").trim();
     _sigRenderSelectorPreview(`
       <div class="signals-play-video-shell">
-        <video class="signals-play-video" src="${escapeHtml(clip.url)}" controls autoplay loop muted playsinline></video>
+        <video class="signals-play-video" src="${escapeHtml(clip.url)}" autoplay loop muted playsinline preload="auto" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"></video>
         <div class="signals-play-video-meta">
           <strong>${escapeHtml(_sigSelectorRecordLabel(record))}</strong>
           <span>${escapeHtml(record.label || record.componentType || "Signal")}</span>

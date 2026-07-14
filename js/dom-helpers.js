@@ -55,6 +55,8 @@ const SAFE_ATTRS = new Set([
   "readonly",
   "autoplay",
   "controls",
+  "controlslist",
+  "disablepictureinpicture",
   "loop",
   "muted",
   "playsinline",

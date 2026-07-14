@@ -463,10 +463,30 @@
 
   // ---------------------------------------------------------------------------
   // Clip viewer modal — a single, intuitive player surface reused everywhere
-  // (playbook table/cards, practice script, presentation). Built with direct
-  // DOM nodes so <video controls> is preserved and labels are set as text.
+  // (playbook table/cards, practice script, presentation). Clips behave like
+  // quick silent loops so native controls never block the actual rep.
   // ---------------------------------------------------------------------------
   let _viewer = null;
+
+  function configureLoopPreviewVideo(video) {
+    if (!video) return;
+    video.controls = false;
+    video.autoplay = true;
+    video.loop = true;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.disablePictureInPicture = true;
+    video.removeAttribute("controls");
+    video.setAttribute("autoplay", "");
+    video.setAttribute("loop", "");
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("preload", "auto");
+    video.setAttribute("disablepictureinpicture", "");
+    video.setAttribute("controlslist", "nodownload noplaybackrate noremoteplayback");
+  }
 
   function buildClipViewer() {
     const overlay = document.createElement("div");
@@ -493,10 +513,7 @@
 
     const video = document.createElement("video");
     video.className = "pc-viewer-video";
-    video.controls = true;
-    video.playsInline = true;
-    video.setAttribute("playsinline", "");
-    video.preload = "metadata";
+    configureLoopPreviewVideo(video);
 
     const controls = document.createElement("div");
     controls.className = "pc-viewer-controls";
@@ -547,17 +564,10 @@
       select.value = String(state.index);
       prevBtn.disabled = state.index <= 0;
       nextBtn.disabled = state.index >= state.clips.length - 1;
-      // Start playback immediately. If the browser blocks autoplay with sound,
-      // retry muted so the clip still plays — a paused video keeps its controls
-      // pinned on screen, which feels sluggish.
-      video.muted = false;
+      configureLoopPreviewVideo(video);
       const attempt = video.play();
       if (attempt && typeof attempt.catch === "function") {
-        attempt.catch(() => {
-          video.muted = true;
-          const retry = video.play();
-          if (retry && typeof retry.catch === "function") retry.catch(() => { });
-        });
+        attempt.catch(() => { });
       }
     };
 
@@ -681,6 +691,7 @@
     loadIndex,
     has,
     hasForPlay,
+    configureLoopPreviewVideo,
     openViewer: openPlayClipViewer,
   };
 
