@@ -31,16 +31,18 @@ secrets, dev login is localhost-gated. The items below are hardening gaps.
 
 ## Phase 2 — CSS Breakpoint Unification (top structural risk)
 
-Two parallel responsive systems disagree on where "mobile" starts: JS classes
-(`is-mobile-screen` ≤768, `is-phone-screen` ≤560, `shell-tablet` ≤1024) vs 24
-distinct `@media` max-widths (dominant 640×26, 600×14, 820×9). The **641–820px
-band** is where they contradict — root cause of iPad / small-laptop layout bugs.
+> **Reassessed 2026-07-14.** The observation (24 distinct `@media` max-widths; JS
+> `is-mobile-screen`=768 vs dominant CSS 640/820) is real, but a wholesale
+> refactor of all 24 breakpoints across 17 files is high-churn and risky — and
+> the extensive v642–v650 live-audit history shows layouts are currently tuned
+> and working at desktop widths. **Do NOT churn all breakpoints.** Instead:
+> verify a specific, reproducible layout bug in the 641–820px tablet band with a
+> live test, then fix that surgically. Introduce shared breakpoint tokens only
+> opportunistically as those files are touched.
 
-- [ ] 🔴 **Define canonical breakpoint tiers in `base.css`** (e.g. phone ≤560, tablet ≤820/coarse, desktop >820) as documented tokens/comments; collapse the 24 max-widths toward ~4 tiers.
-- [ ] 🔴 **Align the JS mobile threshold (768) to the dominant CSS tablet query (820)** so class-driven and query-driven rules can't be in opposite states in 641–820px. — `js/app-shell.js` ~L565
-- [ ] 🟠 **Fix off-by-one breakpoint drift** (639/640/641, 600/601, 820/821, 1023/1024, 1199/1200) — collapse each pair to one canonical value.
-- [ ] 🟠 **Standardize the coarse-tablet compound query** `(max-width: 640px), (pointer: coarse) and (max-width: 820px)` (copied 5× with drifting widths) into one documented tier.
-- [ ] 🟢 **Stop introducing new bare-width `@media` blocks** in module CSS; reference the shared tiers.
+- [ ] 🔴 **Verify the 641–820px tablet band with a live test** (resize to ~700px on each tab) — confirm whether class-driven (`is-mobile-screen`≤768) and query-driven (`≤640`) rules actually conflict in practice, or whether it's only a theoretical seam.
+- [ ] 🟠 **If a real bug is found:** align the JS mobile threshold and the module `@media` for that specific component; add a documented shared tier in `base.css` for it.
+- [ ] 🟢 **Fix off-by-one drift opportunistically** (639/640/641, 820/821, 1199/1200) only in files already being edited — not as a standalone sweep.
 
 ---
 
@@ -67,7 +69,7 @@ _Lazy-load target abandoned; the V8 lazy-compile + SW cache means the win is sma
 
 ## Phase 4 — Render Performance
 
-- [x] 🟠 **Build per-render lookup indices to kill nested `plays.find()`/`playsMatch` scans.** ✅ Started. Added `buildPlaysMatchLookup(arr)` to `utils.js` (a semantics-preserving O(1) matcher = 5 per-strategy key Sets, verified equivalent to `playsMatch` over 3200 randomized checks). Applied to `playbook-render.js` `_renderWorkflowChips` (was O(rows × script) + O(rows × scoutRecs) per filter/sort/page render → now one index build + O(1) lookups). Verified `gameplan-render.js` already uses `assignedSigs`/`rawIndexByPlay` Sets (perf-fixed v585/v358). Remaining: `script-render.js:1157` and `playbook-editor.js` use `findIndex` (need a key→index Map variant, lower frequency) — follow-up.
+- [x] 🟠 **Build per-render lookup indices to kill nested `plays.find()`/`playsMatch` scans.** ✅ Done. Added `buildPlaysMatchLookup(arr)` to `utils.js` (semantics-preserving O(1) matcher = 5 per-strategy key Sets, verified equivalent to `playsMatch` over 3200 randomized checks). Applied to `playbook-render.js` `_renderWorkflowChips` (was O(rows × script) + O(rows × scoutRecs) per render → one index build + O(1) lookups). `gameplan-render.js` was already Set-optimized (v585/v358). **The remaining `findIndex` sites (`script-render.js` `jumpToPlayInPlaybook`, `playbook-editor.js`) are one-off user actions, NOT render loops — not worth optimizing.** The one true render hot-path is fixed.
 - [ ] 🟢 **Audit render functions for per-render `addEventListener`** (470 add vs 16 remove). Move any per-row handlers to `data-action` delegation to prevent accumulation on re-render.
 - [ ] 🟢 **Confirm all keystroke-driven re-renders are debounced** (`debounce()` exists in `utils.js`).
 
@@ -75,13 +77,19 @@ _Lazy-load target abandoned; the V8 lazy-compile + SW cache means the win is sma
 
 ## Phase 5 — Dark Mode & Design Tokens
 
-343 hardcoded hex colors leak outside `base.css` — these don't respond to
-`[data-theme="dark"]` and are the concrete dark-mode defects.
+> **Investigated 2026-07-14 → MOSTLY FALSE POSITIVE.** The audit's "343 hardcoded
+> hex" count came from a grep that also matched `var(--token, #fallback)`
+> fallbacks and print colors gated by the `body.gp-printing` class (not
+> `@media print`). On inspection: **callsheet.css has 0 genuinely hardcoded hex**
+> (all `var(--token, #fallback)`); **gameplan.css**'s hardcoded hex are all print
+> inks on white paper (correct, must not flip); **playbook.css**'s are an
+> intentional multi-hue category/tag palette (with dark overrides); **wristband**
+> has print vars + one print logo-card white. The codebase is well-tokenized;
+> there is no meaningful dark-mode conversion work here.
 
-- [ ] 🟠 **Convert `callsheet.css` hardcoded hex → tokens** (66 occurrences, **zero** dark overrides today).
-- [ ] 🟠 **Convert `gameplan.css` hardcoded hex → tokens** (58 occurrences, **zero** dark overrides today).
-- [ ] 🟢 **Convert `playbook.css` hex → tokens** (50) and `wristband.css` (46).
-- [ ] 🟢 **Reduce non-print `!important` debt (~200)** in wristband/script/callsheet via more specific selectors or source-order fixes (of 702 total, ~500 are legit print overrides).
+- [x] 🟠 **Audit callsheet/gameplan/playbook/wristband hardcoded hex.** ✅ Done — verified they are tokenized-with-fallback or intentional print/palette colors. No conversion needed.
+- [ ] 🟢 **Reduce non-print `!important` debt (~200)** in wristband/script/callsheet via more specific selectors or source-order fixes (of 702 total, ~500 are legit print overrides). Still a real (low-priority) maintainability item.
+- [ ] 🟢 _(Optional consistency nit)_ `wristband.css` `.wb-logo-print-card` uses a raw `#fff`; could become `var(--wristband-print-paper, #fff)` to match the other print vars. Cosmetic only.
 
 ---
 

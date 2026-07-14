@@ -524,7 +524,7 @@ function _renderPlayerPlaybookCardMedia(item) {
     <button type="button" class="pb-card-media pb-card-media--diagram" data-action="openPlaybookPresentation"
       data-arg="${item.idx}" data-pb-thumb-idx="${item.idx}"${thumbSig}
       aria-label="Study diagram for ${escapeHtml(playLabel)}">
-      <img alt="Diagram for ${escapeHtml(playLabel)}" loading="lazy" hidden />
+      <img alt="Diagram for ${escapeHtml(playLabel)}" loading="lazy" decoding="async" hidden />
       <span class="pb-card-media__state">Checking diagram</span>
     </button>`;
 }

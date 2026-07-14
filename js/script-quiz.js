@@ -766,6 +766,36 @@ function _getPlayerQuizDraft() {
   return draft && typeof draft === "object" && Array.isArray(draft.plays) ? draft : null;
 }
 
+let _quizDraftSaveTimer = null;
+const QUIZ_DRAFT_SAVE_DEBOUNCE_MS = 1200;
+
+// Debounced draft persistence. The full draft (basePlays + plays + answers) is
+// JSON+LZ-compressed by storageManager.set, so firing it on every answer/nav
+// janks the player between questions on a phone. Coalesce rapid saves; the
+// pagehide/visibility flush below guarantees the latest progress is persisted
+// even if the player backgrounds or closes the tab mid-question.
+function _schedulePlayerQuizDraftSave() {
+  clearTimeout(_quizDraftSaveTimer);
+  _quizDraftSaveTimer = setTimeout(() => {
+    _quizDraftSaveTimer = null;
+    _savePlayerQuizDraft();
+  }, QUIZ_DRAFT_SAVE_DEBOUNCE_MS);
+}
+
+function _flushPlayerQuizDraftSave() {
+  if (!_quizDraftSaveTimer) return;
+  clearTimeout(_quizDraftSaveTimer);
+  _quizDraftSaveTimer = null;
+  _savePlayerQuizDraft();
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", _flushPlayerQuizDraftSave);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") _flushPlayerQuizDraftSave();
+  });
+}
+
 function _savePlayerQuizDraft() {
   if (!_quizPlays.length || _quizFinished) return null;
   if (_quizTimeLimitMs || _isSignalAutoAdvanceMode()) return null;
@@ -795,6 +825,8 @@ function _savePlayerQuizDraft() {
 }
 
 function _clearPlayerQuizDraft() {
+  clearTimeout(_quizDraftSaveTimer);
+  _quizDraftSaveTimer = null;
   if (typeof storageManager === "undefined" || typeof storageManager.remove !== "function") return;
   storageManager.remove(_getPlayerQuizDraftStorageKey());
 }
@@ -6282,7 +6314,7 @@ function _renderQuizRedactedDiagram(play, diagramUrl = _quizDiagramUrl(play)) {
   return `
     <figure class="sq-diagram-prompt" aria-label="Redacted play diagram">
       <div class="sq-diagram-prompt__stage">
-        <img src="${escapeAttr(diagramUrl)}" alt="Redacted diagram for quiz question" loading="lazy" data-smart-diagram="true" data-smart-diagram-keep-visible="true">
+        <img src="${escapeAttr(diagramUrl)}" alt="Redacted diagram for quiz question" loading="lazy" decoding="async" data-smart-diagram="true" data-smart-diagram-keep-visible="true">
         <span class="sq-diagram-redaction-band" aria-hidden="true"></span>
       </div>
       <figcaption>Top title band hidden for quiz</figcaption>
@@ -6325,7 +6357,7 @@ function _renderQuizWrongReview(item, answer) {
       ${noteParts.length ? `<div class="sq-review-detail"><strong>Coach note:</strong> ${noteParts.map(escapeHtml).join(" ")}</div>` : ""}
       ${diagramUrl ? `
         <figure class="sq-review-diagram">
-          <img src="${escapeAttr(diagramUrl)}" alt="Correct play diagram" loading="lazy" data-smart-diagram="true" data-smart-diagram-keep-visible="true">
+          <img src="${escapeAttr(diagramUrl)}" alt="Correct play diagram" loading="lazy" decoding="async" data-smart-diagram="true" data-smart-diagram-keep-visible="true">
           <figcaption>Diagram to study</figcaption>
         </figure>
       ` : ""}
@@ -6737,7 +6769,7 @@ function nextScriptQuizPlay() {
   if (_quizIndex < _quizPlays.length - 1) {
     _quizIndex++;
     renderScriptQuizPlay();
-    _savePlayerQuizDraft();
+    _schedulePlayerQuizDraftSave();
   }
 }
 
@@ -6745,7 +6777,7 @@ function prevScriptQuizPlay() {
   if (_quizIndex > 0) {
     _quizIndex--;
     renderScriptQuizPlay();
-    _savePlayerQuizDraft();
+    _schedulePlayerQuizDraftSave();
   }
 }
 
@@ -6841,7 +6873,7 @@ function answerScriptQuizChoice(choiceKey) {
   });
   if (_isSignalBattleMode()) _resetQuizRoundState();
   renderScriptQuizPlay();
-  _savePlayerQuizDraft();
+  _schedulePlayerQuizDraftSave();
   _advanceSignalGameAfterAnswer(questionKey);
 }
 
