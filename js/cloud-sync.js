@@ -759,19 +759,17 @@
       if (!silent) {
         const diagramLine = formatDiagramSyncSummary(diagramSyncResult);
         const modalDetails = formatDiagramSyncDetails(diagramSyncResult);
+        const hasDiagramIssues = diagramSyncResult && (diagramSyncResult.failed || diagramSyncResult.skipped);
         updateCloudSyncModalStatus(
           `Pushed ${summary.itemCount} items${summary.imageCount ? ` and ${summary.imageCount} diagram entries` : ""}.${diagramLine ? ` ${diagramLine}` : ""} Last push: ${formatCloudDate(nextSettings.lastPushAt)}.`,
-          diagramSyncResult && (diagramSyncResult.failed || diagramSyncResult.skipped) ? "warning" : "ok",
+          hasDiagramIssues ? "warning" : "ok",
         );
-        showModal(
-          `Team workspace pushed.\n\nSize: ${storageManager.formatBytes(payloadSize)}\nItems: ${summary.itemCount}${summary.imageCount ? `\nDiagram entries: ${summary.imageCount}` : ""}${diagramLine ? `\n${diagramLine}` : ""}${modalDetails ? `\n\nDiagram issues:\n${modalDetails}` : ""}`,
-          {
-            title: diagramSyncResult && (diagramSyncResult.failed || diagramSyncResult.skipped)
-              ? "Team Publish Needs Review"
-              : "Team Update Published",
-            icon: diagramSyncResult && (diagramSyncResult.failed || diagramSyncResult.skipped) ? "⚠️" : "✅",
-          },
-        );
+        if (hasDiagramIssues && typeof showToast === "function") {
+          showToast(
+            `Team update published, but some media needs attention.${modalDetails ? ` ${modalDetails.split("\n")[0]}` : ""}`,
+            { type: "warning", duration: 6000 },
+          );
+        }
       }
       return { backup, summary, size: payloadSize, updatedAt: data.updatedAt || "", diagramSyncResult };
     } finally {
@@ -880,10 +878,9 @@
         }
         if (shouldNotify) {
           closeCloudSyncModal();
-          await showModal(
-            `Team workspace pulled successfully.${restoredImages ? `\nDiagrams restored: ${restoredImages}` : ""}${imageWarning}\nDashboard has the review summary.`,
-            { title: "Team Workspace Updated", icon: "✅" },
-          );
+          if (typeof showToast === "function" && imageWarning) {
+            showToast(`Team workspace updated.${imageWarning}`, { type: "warning", duration: 5000 });
+          }
         }
         return true;
       }

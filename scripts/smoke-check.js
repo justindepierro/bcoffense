@@ -3328,21 +3328,23 @@ function checkWorkspaceSyncContracts() {
 
   [
     "# BCOffense Workspace Sync Roadmap",
-    "- [x] Add a bottom coach-facing Workspace Sync dock",
-    "- [x] Route existing local dirty/saving/saved state into the dock",
-    "- [x] Route existing Cloud autosave pending/running/error state into the dock",
-    "- [x] Route play-image/media queue state into the dock",
+    "- [x] Add a top coach-facing Workspace Sync chip",
+    "- [x] Route existing local dirty/saving/saved state into the chip",
+    "- [x] Route existing Cloud autosave pending/running/error state into the chip",
+    "- [x] Route play-image/media queue state into the chip",
     "- [x] Warn before exit while local, cloud, or media work is pending",
+    "- [x] Replace bottom loading-bar style feedback with compact top `Saving...`,",
     "- [x] Create one queue abstraction for local save, cloud push, media upload, and",
     "- [x] Deduplicate repeated writes so rapid edits become one visible save cycle.",
-    "- [x] Expose retry for failed cloud/media work from the dock.",
+    "- [x] Expose retry for failed cloud/media work from the chip.",
     "- [x] Keep manual Cloud Sync and Sync Diagrams as advanced fallback actions.",
     "- [x] Replace \"Sync Diagrams\" daily workflow with \"Publish Media\".",
     "- [x] Show active player-visible script media coverage: ready, missing, stale,",
     "- [x] Upload only stale/unpublished player-visible diagrams; report clip gaps",
     "- [x] Show result summary and failed items with exact next steps.",
     "- [x] Document the single write tree: local save -> cloud data publish -> media",
-    "- [x] Remove redundant sync toasts once the dock owns the status surface.",
+    "- [x] Remove redundant sync toasts once the chip owns the status surface.",
+    "- [x] Remove normal success modals from publish, update, and media completion",
     "- [x] Consolidate module-specific save indicators onto shared primitives where",
     "- [x] Add smoke contracts for the unified status events and before-exit warning.",
   ].forEach((token) => {
@@ -3391,6 +3393,7 @@ function checkWorkspaceSyncContracts() {
 
   [
     ".workspace-sync-dock",
+    "top: max(10px, env(safe-area-inset-top, 10px))",
     ".workspace-sync-dock__retry",
     ".workspace-sync-dock--saving",
     ".workspace-sync-dock--syncing",
@@ -3403,6 +3406,13 @@ function checkWorkspaceSyncContracts() {
       fail(`workspace sync dock style missing ${token}`);
     }
   });
+
+  if (/Team Update Published|Team Workspace Updated/.test(cloudSync)) {
+    fail("cloud sync should not show normal success completion modals");
+  }
+  if (/Media Published|Sync Complete/.test(playImages)) {
+    fail("media publish should not show normal success completion modals");
+  }
 
   [
     "function _cloudQueueJob(channel, id, opts = {})",

@@ -18,30 +18,23 @@
 
   function _wsDefaultLabel(channel, state) {
     if (state === "error") {
-      if (channel === "media") return "Media upload needs attention";
-      if (channel === "cloud") return "Cloud sync needs attention";
-      if (channel === "player") return "Player publish needs attention";
-      return "Save needs attention";
+      return "Needs attention";
     }
     if (state === "queued" || state === "dirty") {
-      if (channel === "media") return "Media upload queued";
-      if (channel === "cloud") return "Cloud sync queued";
-      if (channel === "player") return "Player publish queued";
-      return "Unsaved local changes";
+      return channel === "local" ? "Saving..." : "Publishing...";
     }
     if (state === "syncing" || state === "saving") {
-      if (channel === "media") return "Uploading media...";
-      if (channel === "cloud") return "Syncing team cloud...";
-      if (channel === "player") return "Updating player publish...";
-      return "Saving workspace...";
+      return channel === "local" ? "Saving..." : "Publishing...";
     }
     if (state === "synced" || state === "saved") {
-      if (channel === "media") return "Media published";
-      if (channel === "cloud") return "Team update published";
-      if (channel === "player") return "Player publish updated";
-      return "Saved locally";
+      return "Saved";
     }
-    return "Workspace ready";
+    return "";
+  }
+
+  function _wsDisplayLabel(channel, state, label) {
+    if (state === "error") return label || _wsDefaultLabel(channel, state);
+    return _wsDefaultLabel(channel, state);
   }
 
   function ensureWorkspaceSyncDock() {
@@ -56,7 +49,7 @@
     dock.innerHTML = `
       <span class="workspace-sync-dock__spinner" aria-hidden="true"></span>
       <span class="workspace-sync-dock__dot" aria-hidden="true"></span>
-      <span class="workspace-sync-dock__text">Workspace ready</span>
+      <span class="workspace-sync-dock__text"></span>
       <button type="button" class="workspace-sync-dock__retry" data-action="retryWorkspaceSyncWork">Retry</button>
     `;
     document.body.appendChild(dock);
@@ -77,7 +70,7 @@
       return {
         state: item.state,
         channel,
-        label: item.label || _wsDefaultLabel(channel, item.state),
+        label: _wsDisplayLabel(channel, item.state, item.label),
         canRetry: item.state === "error" && _wsHasRetryableJob(channel),
       };
     }
@@ -86,11 +79,11 @@
       return {
         state: "saved",
         channel: synced[0],
-        label: synced[1].label || _wsDefaultLabel(synced[0], synced[1].state),
+        label: _wsDisplayLabel(synced[0], synced[1].state, synced[1].label),
         canRetry: false,
       };
     }
-    return { state: "idle", channel: "", label: "Workspace ready", canRetry: false };
+    return { state: "idle", channel: "", label: "", canRetry: false };
   }
 
   function renderWorkspaceSyncDock() {

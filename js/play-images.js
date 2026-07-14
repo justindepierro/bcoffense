@@ -2006,34 +2006,22 @@
       const message = report.counts.missing
         ? `${report.counts.missing} player-visible play${report.counts.missing === 1 ? "" : "s"} still need diagrams attached on this device. Nothing can be uploaded until those diagrams exist locally.`
         : "No stale or unpublished local diagrams were found for player-visible scripts.";
-      if (typeof showModal === "function") {
-        showModal(message, { title: "Media Already Current", icon: "🟢" });
+      if (typeof showToast === "function") {
+        showToast(message, { type: report.counts.missing ? "warning" : "success", duration: 4500 });
       }
       await _renderPublishMediaModalBody();
       return;
-    }
-    if (typeof showToast === "function") {
-      showToast(`Publishing ${report.publishableKeys.length} needed diagram${report.publishableKeys.length === 1 ? "" : "s"}...`, { duration: 60000 });
     }
     const result = await syncToRemote(report.rows.map((row) => row.play), {
       keys: report.publishableKeys,
     });
     const failedOrSkipped = result.failed + result.skipped;
-    if (typeof showModal === "function") {
-      if (result.pushed > 0 && failedOrSkipped === 0) {
-        showModal(
-          `${result.pushed} needed diagram${result.pushed === 1 ? "" : "s"} published for player-visible scripts.\n\nMissing clips are listed in the report and can be added from each play.`,
-          { title: "Media Published", icon: "🟢" },
-        );
-      } else {
-        const details = result.errors
-          .map((item) => `- ${item.status ? `${item.status}: ` : ""}${item.error}`)
-          .join("\n");
-        showModal(
-          `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} published. ${failedOrSkipped} need attention.${details ? `\n\nFirst issues:\n${details}` : ""}`,
-          { title: result.pushed ? "Publish Partially Complete" : "Publish Needs Attention", icon: "⚠️" },
-        );
-      }
+    if (failedOrSkipped && typeof showToast === "function") {
+      const firstIssue = result.errors[0]?.error ? ` ${result.errors[0].error}` : "";
+      showToast(
+        `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} published. ${failedOrSkipped} need attention.${firstIssue}`,
+        { type: "warning", duration: 6500 },
+      );
     }
     await _renderPublishMediaModalBody();
   };
@@ -2089,43 +2077,20 @@
       scope = _syncScopeFromChoice(plan, choice);
     }
     if (!scope.keys.length) {
-      if (typeof showModal === "function") {
-        showModal(
-          `No diagrams matched the selected sync scope.\n\nUse All Local if you need to push every diagram stored on this device.`,
-          { title: "Nothing to Sync", icon: "ℹ️" },
-        );
+      if (typeof showToast === "function") {
+        showToast("No diagrams matched that recovery upload scope.", { type: "info", duration: 4500 });
       }
       return;
-    }
-    if (typeof showToast === "function") {
-      showToast(`Syncing ${scope.label} to cloud…`, { duration: 60000 });
     }
     const result = await syncToRemote(scope.plays, { keys: scope.keys });
     // eslint-disable-next-line no-console
     console.log("[Diagrams] R2 sync result:", result);
-    if (typeof showModal === "function") {
-      if (result.pushed > 0 && result.failed === 0 && result.skipped === 0) {
-        showModal(
-          `${result.pushed} of ${scope.keys.length} selected diagram${scope.keys.length === 1 ? "" : "s"} synced to cloud.\n\nPlayers can now see those play diagrams in the swipe view. Have them reload the app if they are already in a session.`,
-          { title: "Sync Complete ✓", icon: "🖼️" },
-        );
-      } else if (result.pushed > 0) {
-        const details = result.errors
-          .map((item) => `- ${item.status ? `${item.status}: ` : ""}${item.error}`)
-          .join("\n");
-        showModal(
-          `${result.pushed} of ${scope.keys.length} selected diagrams synced.\n\n${result.failed} failed and ${result.skipped} were skipped.${details ? `\n\nFirst issues:\n${details}` : ""}`,
-          { title: "Sync Partially Complete", icon: "⚠️" },
-        );
-      } else {
-        const details = result.errors
-          .map((item) => `- ${item.status ? `${item.status}: ` : ""}${item.error}`)
-          .join("\n");
-        showModal(
-          `Found ${scope.keys.length} selected diagram${scope.keys.length === 1 ? "" : "s"} locally but 0 were pushed to cloud.${details ? `\n\nFirst issues:\n${details}` : ""}`,
-          { title: "Sync Issue", icon: "⚠️" },
-        );
-      }
+    if ((result.failed || result.skipped || result.pushed === 0) && typeof showToast === "function") {
+      const firstIssue = result.errors[0]?.error ? ` ${result.errors[0].error}` : "";
+      showToast(
+        `${result.pushed} of ${scope.keys.length} selected diagram${scope.keys.length === 1 ? "" : "s"} uploaded. ${result.failed + result.skipped} need attention.${firstIssue}`,
+        { type: result.pushed ? "warning" : "error", duration: 6500 },
+      );
     }
   };
 

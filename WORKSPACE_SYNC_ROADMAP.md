@@ -12,31 +12,32 @@ clip uploads, or player publish status as separate systems. The app should show 
 single trustworthy workspace state:
 
 - Saving...
-- Uploading media...
-- Saved locally
-- Syncing to team cloud...
-- Ready for players
+- Publishing...
+- Saved
 - Offline - saved locally
 - Sync needs attention
 
 Manual sync actions should become fallback/retry tools, not the primary daily
-workflow.
+workflow. Normal completion should not open modal dialogs or bottom loading
+toasts.
 
 ## Phase 0 - Unified Status Surface
 
-- [x] Add a bottom coach-facing Workspace Sync dock with spinner, status text,
+- [x] Add a top coach-facing Workspace Sync chip with spinner, status text,
   and saved/error states.
-- [x] Route existing local dirty/saving/saved state into the dock.
-- [x] Route existing Cloud autosave pending/running/error state into the dock.
-- [x] Route play-image/media queue state into the dock.
+- [x] Route existing local dirty/saving/saved state into the chip.
+- [x] Route existing Cloud autosave pending/running/error state into the chip.
+- [x] Route play-image/media queue state into the chip.
 - [x] Warn before exit while local, cloud, or media work is pending.
+- [x] Replace bottom loading-bar style feedback with compact top `Saving...`,
+  `Publishing...`, and `Saved` feedback.
 
 ## Phase 1 - Save/Publish Queue
 
 - [x] Create one queue abstraction for local save, cloud push, media upload, and
   player publish metadata.
 - [x] Deduplicate repeated writes so rapid edits become one visible save cycle.
-- [x] Expose retry for failed cloud/media work from the dock.
+- [x] Expose retry for failed cloud/media work from the chip.
 - [x] Keep manual Cloud Sync and Sync Diagrams as advanced fallback actions.
 
 ## Phase 2 - Coach Media Publish
@@ -61,7 +62,9 @@ workflow.
 
 - [x] Document the single write tree: local save -> cloud data publish -> media
   publish -> player readiness update.
-- [x] Remove redundant sync toasts once the dock owns the status surface.
+- [x] Remove redundant sync toasts once the chip owns the status surface.
+- [x] Remove normal success modals from publish, update, and media completion
+  flows.
 - [x] Consolidate module-specific save indicators onto shared primitives where
   they are still needed.
 - [x] Add smoke contracts for the unified status events and before-exit warning.
@@ -104,7 +107,7 @@ Daily behavior:
   Cloudflare`.
 - Coaches work normally. The app autosaves locally and auto-publishes eligible
   team data when safe.
-- Coaches see one bottom status: `Saving`, `Publishing`, `Ready for players`,
+- Coaches see one top status: `Saving`, `Publishing`, `Saved`,
   `Offline - saved locally`, or `Needs retry`.
 - Manual sync tools move to an admin-only `Recovery Tools` area.
 

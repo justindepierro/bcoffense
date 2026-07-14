@@ -172,25 +172,25 @@ body[data-auth-role="player"] .save-status {
 
 .workspace-sync-dock {
   position: fixed;
-  right: max(18px, env(safe-area-inset-right, 18px));
-  bottom: max(18px, env(safe-area-inset-bottom, 18px));
+  top: max(10px, env(safe-area-inset-top, 10px));
+  right: max(12px, env(safe-area-inset-right, 12px));
   z-index: var(--z-toast);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  max-width: min(360px, calc(100vw - 32px));
-  padding: 8px 13px;
-  border: 1px solid var(--color-border);
+  gap: 6px;
+  min-height: 28px;
+  max-width: min(220px, calc(100vw - 24px));
+  padding: 4px 9px;
+  border: 1px solid color-mix(in srgb, var(--color-success) 35%, var(--color-border));
   border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  color: var(--color-text);
-  box-shadow: var(--shadow-lg);
-  font-size: var(--font-size-xs);
+  background: color-mix(in srgb, var(--color-success-light) 48%, var(--color-surface));
+  color: var(--color-success);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--font-size-xs2);
   font-weight: 800;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(10px);
+  transform: translateY(-6px);
   transition: opacity 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
 }
 
@@ -205,8 +205,8 @@ body[data-auth-role="player"] .save-status {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 26px;
-  padding: 3px 9px;
+  min-height: 22px;
+  padding: 2px 7px;
   border: 1px solid currentColor;
   border-radius: var(--radius-pill);
   background: transparent;
@@ -232,18 +232,18 @@ body[data-auth-role="player"] .save-status {
 }
 
 .workspace-sync-dock__dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 999px;
   background: var(--color-border-med);
 }
 
 .workspace-sync-dock__spinner {
   display: none;
-  width: 14px;
-  height: 14px;
-  border: 2px solid color-mix(in srgb, var(--color-primary) 22%, transparent);
-  border-top-color: var(--color-primary);
+  width: 11px;
+  height: 11px;
+  border: 2px solid color-mix(in srgb, var(--color-success) 24%, transparent);
+  border-top-color: var(--color-success);
   border-radius: 999px;
   animation: workspaceSyncSpin 0.78s linear infinite;
 }
@@ -260,7 +260,7 @@ body[data-auth-role="player"] .save-status {
 
 .workspace-sync-dock--saving,
 .workspace-sync-dock--syncing {
-  border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border));
+  border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-border));
 }
 
 .workspace-sync-dock--saving .workspace-sync-dock__dot,
@@ -275,12 +275,12 @@ body[data-auth-role="player"] .save-status {
 
 .workspace-sync-dock--dirty,
 .workspace-sync-dock--queued {
-  border-color: color-mix(in srgb, var(--color-warning) 46%, var(--color-border));
+  border-color: color-mix(in srgb, var(--color-success) 36%, var(--color-border));
 }
 
 .workspace-sync-dock--dirty .workspace-sync-dock__dot,
 .workspace-sync-dock--queued .workspace-sync-dock__dot {
-  background: var(--color-warning);
+  background: var(--color-success);
 }
 
 .workspace-sync-dock--saved {
@@ -293,6 +293,8 @@ body[data-auth-role="player"] .save-status {
 
 .workspace-sync-dock--error {
   border-color: color-mix(in srgb, var(--color-danger) 48%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger-light) 52%, var(--color-surface));
+  color: var(--color-danger);
 }
 
 .workspace-sync-dock--error .workspace-sync-dock__dot {
