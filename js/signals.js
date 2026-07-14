@@ -8,8 +8,8 @@ const SIGNAL_CATEGORIES = [
 ];
 
 const SIGNAL_COMPONENTS = [
-  { category: "CORE", componentType: "personnel", label: "Personnel", fields: ["personnel"] },
-  { category: "CORE", componentType: "formation", label: "Formation", fields: ["formation"], requiresVideo: false, cueLabel: "Verbal / board cue" },
+  { category: "CORE", componentType: "personnel", label: "Personnel", fields: ["personnel"], requiresVideo: false, cueLabel: "Verbal / board cue" },
+  { category: "CORE", componentType: "formation", label: "Formation", fields: ["formation"] },
   { category: "CORE", componentType: "play", label: "Play Name", fields: ["play"] },
   { category: "CORE", componentType: "basePlay", label: "Base Play", fields: ["basePlay"] },
   { category: "TAGS", componentType: "formTag", label: "Form Tag", fields: ["formTag1", "formTag2"] },

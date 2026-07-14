@@ -4247,7 +4247,8 @@ function checkSignalPlayIntegrationContracts() {
     !/function openSignalClip\(recordId\)/.test(signals) ||
     !/function closeSignalSelector\(\)/.test(signals) ||
     !/function _sigNormalizeClipList\(data\)/.test(signals) ||
-    !/componentType: "formation"[\s\S]*requiresVideo: false[\s\S]*cueLabel: "Verbal \/ board cue"/.test(signals) ||
+    !/componentType: "personnel"[\s\S]*requiresVideo: false[\s\S]*cueLabel: "Verbal \/ board cue"/.test(signals) ||
+    /componentType: "formation"[\s\S]*requiresVideo: false/.test(signals) ||
     !/function _sigComponentRequiresVideo\(componentType\)/.test(signals) ||
     !/function _sigSummaryRequiresVideo\(summary\)/.test(signals) ||
     !/async function getSignalQuizItems\(options = \{\}\)/.test(signals) ||
@@ -4510,7 +4511,7 @@ function checkSignalPlayIntegrationContracts() {
 
   if (
     !/- \[x\] Add a Playbook detail surface for "Signals for this play"/.test(roadmap) ||
-    !/- \[x\] Mark formation as a non-video cue because formations are yelled/.test(roadmap) ||
+    !/- \[x\] Mark personnel as a non-video cue because personnel is yelled/.test(roadmap) ||
     !/- \[x\] Route all remote video clip uploads through a shared silent-upload/.test(roadmap) ||
     !/- \[x\] Standardize short play and signal clips as fast silent loops/.test(roadmap) ||
     !/- \[x\] On mobile, tapping a signal chip with an attached clip opens the video/.test(roadmap) ||
@@ -4523,7 +4524,7 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Add simple coach\/admin coverage reporting: components with signals,/.test(roadmap) ||
     !/Phase 5 - Signal games and leaderboards:/.test(roadmap) ||
     !/- \[x\] Document the coach capture standard at upload time: iPhone 1080p HD,/.test(roadmap) ||
-    !/- \[x\] Build a signal-only quiz item source from published signal clips, grouped[\s\S]*excluding non-video formation/.test(roadmap) ||
+    !/- \[x\] Build a signal-only quiz item source from published signal clips, grouped[\s\S]*excluding non-video personnel/.test(roadmap) ||
     !/- \[x\] Add `100 Second Signal Sprint` as a playable Signal mode/.test(roadmap) ||
     !/- \[x\] Add Signal Sprint leaderboard ranking by correct answers/.test(roadmap) ||
     !/- \[x\] Add `6 Seconds of Battle`/.test(roadmap) ||
