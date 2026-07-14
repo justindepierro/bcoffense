@@ -900,7 +900,7 @@ or completed during later hardening passes.
 
 Use `CONSOLIDATED_ROADMAP.md` as the active queue. The current mobile items are:
 
-1. `[ ]` Notifications/offline polish for opt-in, denied, offline, and newly published practice states.
+1. `[x]` Notifications/offline polish for opt-in, denied, offline, and newly published practice states.
 2. `[x]` iPad player screenshot pass across Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions.
 3. `[ ]` Player delight pass for quiz answers, streaks, sticker awards, and ready confirmation.
 4. `[ ]` Practice/Home polish follow-up with real team data.
@@ -936,3 +936,4 @@ Use `CONSOLIDATED_ROADMAP.md` as the active queue. The current mobile items are:
 - `[x]` M-050 partial - Viewport harness: `scripts/mobile-viewport-check.mjs` runs local auth/viewport checks for admin, coach, and player.
 - `[x]` M-051 partial - Automated assertions: horizontal overflow, phone startup, fixed overlap, touch target, and player-control assertions have initial coverage.
 - `[x]` M-052 partial - iPad player visual audit: local Playwright screenshot pass now covers Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions; Swipe View tablet portrait keeps the call/rule rail readable.
+- `[x]` Player notification/offline polish: Player Home, notification drawer, and push setup states now use calmer opt-in/denied/offline/retry copy and keep Practice availability explicit.

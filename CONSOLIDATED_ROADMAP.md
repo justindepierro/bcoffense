@@ -397,7 +397,8 @@ Detailed matrix: `MOBILE_AUDIT.md`.
 Work left from the player mobile scan:
 
 - [x] Add visible Player Home practice status for offline, newly published, loaded, and waiting states.
-- [ ] Notifications/offline polish: opt-in, denied, and deeper notification recovery states should feel clear and non-scary.
+- [x] Notifications/offline polish: opt-in, denied, and deeper notification recovery states should feel clear and non-scary.
+  - Player Home, notification drawer, and push setup states now distinguish offline, unsupported, browser-off, and retry states without implying Practice is broken.
 - [x] iPad player screenshot pass across Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions.
   - Added a local Playwright screenshot audit and fixed tablet portrait Swipe View rail sizing so the full call, chips, and player rule stay readable.
 - [ ] Player delight pass: selective motion/feedback for quiz answers, streaks, sticker awards, and ready confirmation.

@@ -48,8 +48,8 @@ async function _refreshPushUI() {
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
     _setPushStatus({
       icon: "📱",
-      title: "Alerts are not supported in this browser",
-      body: "You can still check Home before practice for anything coach posts.",
+      title: "Home will show your updates",
+      body: "This browser cannot send alerts, but Home still shows coach posts and replies.",
       tone: "muted",
     });
     return;
@@ -58,8 +58,8 @@ async function _refreshPushUI() {
   if (navigator.onLine === false) {
     _setPushStatus({
       icon: "📵",
-      title: "Alert settings need internet",
-      body: "Your loaded practice still works offline. Come back here when you reconnect.",
+      title: "Alert settings wait for connection",
+      body: "Your loaded practice still works offline. Reconnect to change alert settings.",
       tone: "warning",
     });
     return;
@@ -70,8 +70,8 @@ async function _refreshPushUI() {
   if (permission === "denied") {
     _setPushStatus({
       icon: "🔕",
-      title: "Alerts are blocked",
-      body: "You can still use Home for updates. To get alerts, allow notifications in your browser settings.",
+      title: "Alerts are off in browser",
+      body: "Home still shows updates. To get push alerts, allow notifications in browser settings.",
       tone: "blocked",
     });
     return;
@@ -137,7 +137,7 @@ async function enablePushNotifications() {
   if (permission !== "granted") {
     await _refreshPushUI();
     if (permission === "denied") {
-      showToast("Push notifications blocked. Allow them in browser settings.", { type: "error", duration: 4000 });
+      showToast("Alerts are off in browser settings.", { type: "info", duration: 3500 });
     }
     return;
   }
@@ -161,11 +161,11 @@ async function enablePushNotifications() {
     } catch {
       _setPushStatus({
         icon: "📵",
-        title: "Couldn’t reach the alert service",
+        title: "Alert service paused",
         body: "Your practice is still available. Try again when the connection is stronger.",
         tone: "warning",
       });
-      showToast("Could not reach alert service. Try again.", { type: "error" });
+      showToast("Alert setup paused. Practice still works.", { type: "info" });
       return;
     }
   }
@@ -196,21 +196,21 @@ async function enablePushNotifications() {
     } else {
       _setPushStatus({
         icon: "🛠️",
-        title: "Couldn’t save alert settings",
+        title: "Alert settings did not save",
         body: "Practice still works. Try enabling alerts again later.",
         tone: "warning",
       });
-      showToast(data.error || "Failed to save subscription.", { type: "error" });
+      showToast(data.error || "Alert settings did not save.", { type: "info" });
     }
   } catch (err) {
     console.error("[push] Subscribe error:", err);
     _setPushStatus({
       icon: "⚠️",
-      title: "Couldn’t enable alerts",
+      title: "Alert setup paused",
       body: "No problem. Use Home before practice and try alerts again later.",
       tone: "warning",
     });
-    showToast("Could not enable push notifications.", { type: "error" });
+    showToast("Alert setup paused. Practice still works.", { type: "info" });
   }
 
   await _refreshPushUI();

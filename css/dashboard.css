@@ -288,8 +288,16 @@
 
 .player-home-refresh--warn,
 .player-home-refresh--offline {
-  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-warning) 10%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-warning) 28%, var(--color-border-light));
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.68), rgb(255 255 255 / 0.42)),
+    color-mix(in srgb, var(--color-warning) 7%, var(--color-surface));
+}
+
+.player-home-refresh--warn .player-home-refresh__btn,
+.player-home-refresh--offline .player-home-refresh__btn {
+  border-color: color-mix(in srgb, var(--color-warning) 34%, var(--color-border-med));
+  color: var(--color-text);
 }
 
 /* ── Player push notify button (item 47) ── */
@@ -366,13 +374,18 @@
 
 .player-notify-btn--blocked,
 .player-notify-btn--offline {
-  border-color: color-mix(in srgb, var(--color-warning) 50%, var(--color-border-light));
+  border-color: color-mix(in srgb, var(--color-warning) 34%, var(--color-border-light));
 }
 
 .player-notify-btn--blocked .player-notify-btn__icon,
 .player-notify-btn--offline .player-notify-btn__icon {
   color: var(--color-warning);
   background: var(--color-warning-light);
+}
+
+.player-notify-btn--muted,
+.player-notify-btn--ready {
+  border-color: color-mix(in srgb, var(--color-info) 24%, var(--color-border-light));
 }
 
 /* ── Player portal hero logo (item 50) ── */

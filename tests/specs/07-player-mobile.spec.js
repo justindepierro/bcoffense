@@ -1583,7 +1583,7 @@ test.describe("Player mobile experience", () => {
     await expect(drawer.getByText("Coach posted Friday Walkthrough")).toBeVisible();
     await expect(drawer.locator("#pushNotifFooter")).toBeVisible();
     await expect(drawer.locator("#pushNotifStatus")).toContainText(
-      /Practice alerts|Alerts are not supported|Checking alert settings|Alerts are blocked/i,
+      /Practice alerts|Home will show your updates|Checking alert settings|Alerts are off/i,
     );
     await expect(drawer).not.toContainText(/coming soon/i);
 
@@ -1596,12 +1596,12 @@ test.describe("Player mobile experience", () => {
       window.dispatchEvent(new Event("offline"));
       if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
     });
-    await expect(page.locator("#playerDashboardHome .player-notify-btn")).toContainText("Offline Mode");
+    await expect(page.locator("#playerDashboardHome .player-notify-btn")).toContainText("Offline Practice");
     await page.locator("#playerDashboardHome .player-notify-btn").click();
     await expect(drawer).toHaveClass(/is-open/);
-    await expect(drawer.getByText("You’re offline")).toBeVisible();
+    await expect(drawer.getByText("Offline practice is available")).toBeVisible();
     await expect(drawer).toContainText(/loaded practice still works/i);
-    await expect(drawer.locator("#pushNotifStatus")).toContainText(/Alert settings need internet|Alerts are not supported/i);
+    await expect(drawer.locator("#pushNotifStatus")).toContainText(/Alert settings wait for connection|Home will show your updates/i);
     await assertNoHorizontalOverflow(page);
   });
 

@@ -255,12 +255,14 @@ function _dashRenderPlayerRefreshAction() {
   const title = busy
     ? "Checking for coach updates"
     : needsRetry
-      ? "Update check needs another try"
+      ? tone === "offline" ? "Updates wait for connection" : "Update check paused"
       : "Install app";
   const body = busy
     ? "Refreshing your latest practice and quiz state."
     : needsRetry
-      ? "Home and Practice still work. Retry when your connection is ready."
+      ? tone === "offline"
+        ? "Your loaded practice still works. Reconnect when you want the newest alerts."
+        : "Home and Practice still work. Retry when your connection is ready."
       : "Add this app to your Home Screen for the best practice view.";
   return `<section class="player-home-refresh player-home-refresh--${escapeAttr(tone)}" aria-label="Coach updates">
     <div class="player-home-refresh__copy">
@@ -1332,22 +1334,22 @@ function getPlayerHomeNotificationStatus() {
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     return {
       tone: "offline",
-      title: "Offline Mode",
-      body: "Loaded practice still works. Alerts will refresh when you reconnect.",
+      title: "Offline Practice",
+      body: "Loaded practice works here. New alerts wait until you reconnect.",
     };
   }
   if (unread > 0) {
     return {
       tone: "on",
-      title: `${unread} New Alert${unread === 1 ? "" : "s"}`,
-      body: "Open updates to see what coach posted.",
+      title: `${unread} Coach Update${unread === 1 ? "" : "s"}`,
+      body: "Open alerts to see the latest practice note or reply.",
     };
   }
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
     return {
       tone: "muted",
-      title: "Practice Updates",
-      body: "Check Home before practice for coach posts and replies.",
+      title: "Home Has Updates",
+      body: "This browser cannot send alerts, but Home will still show coach posts.",
     };
   }
   if (Notification.permission === "granted") {
@@ -1362,13 +1364,13 @@ function getPlayerHomeNotificationStatus() {
   if (Notification.permission === "denied") {
     return {
       tone: "blocked",
-      title: "Alerts Blocked",
-      body: "Use Home for updates, or change browser notification settings.",
+      title: "Alerts Off In Browser",
+      body: "Home still shows updates. Turn alerts back on in browser settings anytime.",
     };
   }
   return {
     tone: "ready",
-    title: "Practice Alerts",
+    title: "Turn On Practice Alerts",
     body: "Get a heads-up when practice is posted or coach replies.",
   };
 }

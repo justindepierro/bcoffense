@@ -5829,6 +5829,16 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
 .notif-state--error .notif-state__icon {
   background: var(--color-warning-light);
 }
+
+.notif-state--offline strong,
+.notif-state--error strong {
+  color: var(--color-text);
+}
+
+.notif-state--offline span:not(.notif-state__icon),
+.notif-state--error span:not(.notif-state__icon) {
+  color: var(--color-text-secondary);
+}
 .notif-state--empty .notif-state__icon {
   background: var(--color-success-light);
 }
@@ -5891,7 +5901,7 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
 }
 .push-notif-copy--blocked strong,
 .push-notif-copy--warning strong {
-  color: var(--color-warning);
+  color: var(--color-text);
 }
 .push-notif-on {
   color: var(--color-success);

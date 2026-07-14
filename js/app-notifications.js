@@ -158,12 +158,12 @@ async function _loadNotifications(append = false) {
     });
     listEl.innerHTML = _notifStateHtml({
       icon: "📵",
-      title: "You’re offline",
+      title: "Offline practice is available",
       body: _isPlayerNotificationUser()
-        ? "Your loaded practice still works. New coach replies and published practices will show here when you reconnect."
+        ? "Your loaded practice still works. New coach replies and published practices will show here after you reconnect."
         : "Local work is still available. New notifications will show when you reconnect.",
       action: "retryNotifs",
-      actionLabel: "Check Again",
+      actionLabel: "Check again",
       tone: "offline",
     });
     return;
@@ -229,8 +229,8 @@ async function _loadNotifications(append = false) {
     });
     const unavailable = /\b(?:503|404)\b/.test(String(err?.message || ""));
     listEl.innerHTML = _notifStateHtml({
-      icon: unavailable ? "🛠️" : "⚠️",
-      title: unavailable ? "Notifications are not ready here yet" : "Couldn’t load updates",
+      icon: unavailable ? "🛠️" : "📵",
+      title: unavailable ? "Alerts are not set up here yet" : "Updates paused",
       body: unavailable
         ? "Practice, Playbook, Swipe View, and Questions still work. Alerts will appear once the team notification service is available."
         : "This does not affect your saved practice. Try again when your connection is stronger.",

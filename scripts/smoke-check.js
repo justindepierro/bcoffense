@@ -3120,7 +3120,7 @@ function checkStartupDiagnosticsAndRenderQueue() {
     !/showToast\("Checking for coach updates"/.test(appShell) ||
     !/title: "Checking for coach updates"/.test(appShell) ||
     !/state\.title \|\| "Ready"/.test(appShell) ||
-    !/const title = ok \? "Ready" : "Try Again"/.test(appShell) ||
+    !/const title = ok[\s\S]*\? "Updates checked"[\s\S]*: result\.status === "offline" \? "Offline practice ready" : "Update check paused"/.test(appShell) ||
     !/stateOpts = quietStartup \? \{ render: false \}/.test(appShell) ||
     !/refreshPlayerCloudBackup\(\{[\s\S]*navigate: !quietStartup,[\s\S]*skipIfCurrent: true/.test(appShell) ||
     !/Checking media manifest/.test(appShell) ||

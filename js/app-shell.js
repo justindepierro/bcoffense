@@ -2241,7 +2241,7 @@ function _isPlayerBootstrapOk(result) {
 function _playerBootstrapStepLabel(step) {
   if (!step) return "Checking for coach updates";
   if (step.status === "ready") return `${step.label} ready`;
-  if (step.status === "warn" || step.status === "error") return `${step.label} needs retry`;
+  if (step.status === "warn" || step.status === "error") return `${step.label} paused`;
   if (step.status === "skipped") return `${step.label} queued`;
   return `Checking ${step.label.toLowerCase()}...`;
 }
@@ -2383,7 +2383,9 @@ function _getPlayerBootstrapNotificationFreshness(notificationResult = null) {
 
 function _finishPlayerBootstrapState(result, opts = {}) {
   const ok = _isPlayerBootstrapOk(result);
-  const title = ok ? "Ready" : "Try Again";
+  const title = ok
+    ? "Updates checked"
+    : result.status === "offline" ? "Offline practice ready" : "Update check paused";
   result.ok = ok;
   result.status = ok ? (result.status || "ready") : (result.status || "needs-retry");
   result.finishedAt = new Date().toISOString();
@@ -2429,7 +2431,7 @@ async function runPlayerTeamBootstrap(opts = {}) {
     _setPlayerBootstrapStep(result, "local", "ready", "Local data available");
     result.status = "offline";
     result.steps = result.steps.map((step) => (
-      step.status === "pending" ? { ...step, status: "warn", detail: "Try Again" } : step
+      step.status === "pending" ? { ...step, status: "warn", detail: "Reconnect to check" } : step
     ));
     return _finishPlayerBootstrapState(result, { stateOpts });
   }
@@ -2543,7 +2545,7 @@ async function runPlayerTeamBootstrap(opts = {}) {
     if (typeof refreshNotificationStatus === "function") {
       result.notifications = await refreshNotificationStatus({ render: !quietStartup }).catch((err) => ({
         ok: false,
-        error: err?.message || "Try Again",
+        error: err?.message || "Alerts will retry later",
       }));
     }
     result.freshness.notifications = _getPlayerBootstrapNotificationFreshness(result.notifications);
@@ -2551,7 +2553,7 @@ async function runPlayerTeamBootstrap(opts = {}) {
       result,
       "notifications",
       result.notifications?.ok === false ? "warn" : "ready",
-      result.notifications?.ok === false ? "Try Again" : "Ready",
+      result.notifications?.ok === false ? "Alerts will retry later" : "Ready",
     );
 
     const dataOk = !result.data || result.data.ok;
@@ -2561,10 +2563,10 @@ async function runPlayerTeamBootstrap(opts = {}) {
   } catch (err) {
     _refreshPlayerTeamSurfaces();
     result.status = "error";
-    result.error = err?.message || "Try Again";
+    result.error = err?.message || "Update check paused";
     result.steps = result.steps.map((step) => (
       step.status === "checking" || step.status === "pending"
-        ? { ...step, status: "warn", detail: "Try Again" }
+        ? { ...step, status: "warn", detail: "Retry when connected" }
         : step
     ));
     return _finishPlayerBootstrapState(result, { stateOpts });
@@ -2588,7 +2590,7 @@ async function refreshPlayerTeamApp(opts = {}) {
     try {
       const result = await runPlayerTeamBootstrap(opts);
       if (!quiet && !_isPlayerBootstrapOk(result)) {
-        showToast("Try Again", { type: "warning", duration: 3000 });
+        showToast("Update check paused. Practice still works.", { type: "info", duration: 3000 });
       }
       return result;
     } finally {
