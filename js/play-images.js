@@ -731,7 +731,7 @@
       return { ok: false, skipped: true, error: "This play does not have a stable cloud image key." };
     }
     try {
-      const result = await _putRemoteImage(identityKey, blob);
+      const result = await _putRemoteImage(identityKey, await _playerPublishBlob(blob));
       if (result.ok && typeof window.recordPlayerPublishStatus === "function") {
         window.recordPlayerPublishStatus("diagrams", {
           label: "Play diagram uploaded to player devices",
@@ -848,7 +848,7 @@
           return;
         }
         result.attempted += 1;
-        const uploaded = await _putRemoteImage(identityKey, blob);
+        const uploaded = await _putRemoteImage(identityKey, await _playerPublishBlob(blob));
         if (uploaded.ok) {
           result.pushed += 1;
         } else {
@@ -1356,6 +1356,26 @@
       blob.outputMime = blob.type || mime;
       return blob;
     }, { sourceBytes: file.size || 0 });
+  }
+
+  // Downscale a stored master diagram to a player-friendly size before cloud
+  // upload. Players fetch this copy on phones, so smaller = faster to load;
+  // coaches keep their full-res master in local IndexedDB (never re-fetched
+  // while present). Best-effort: any failure — or a result that isn't actually
+  // smaller — falls back to uploading the original blob unchanged.
+  const PLAYER_PUBLISH_MAX_DIM = 1400;
+  const PLAYER_PUBLISH_QUALITY = 0.85;
+  async function _playerPublishBlob(blob) {
+    if (!blob || typeof blob.size !== "number" || blob.size === 0) return blob;
+    try {
+      const smaller = await compress(blob, {
+        maxDim: PLAYER_PUBLISH_MAX_DIM,
+        quality: PLAYER_PUBLISH_QUALITY,
+      });
+      return smaller && smaller.size > 0 && smaller.size < blob.size ? smaller : blob;
+    } catch (_e) {
+      return blob;
+    }
   }
 
   async function _decodeImage(file) {
