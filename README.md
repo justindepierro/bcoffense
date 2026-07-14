@@ -32,6 +32,7 @@ Persistent data is split by authority:
   `storageManager.setPlaybook()`.
 - IndexedDB diagram blobs through `window.playImages`.
 - R2/KV video clips through `window.playClips`.
+- Cross-media readiness and cleanup inventory through `js/media-inventory.js`.
 - Cloudflare backup publish/update through `js/cloud-sync.js`.
 
 ## Development
@@ -88,4 +89,6 @@ The first quiz/media speed pass now focuses the code around faster launch:
 
 The current static wiring audit is clean, so the highest value work is not
 missing handlers or missing assets. It is making media and quiz preparation more
-intentional.
+intentional. The Playbook `Media Inventory` report is now the staff-facing
+starting point before deleting local diagram blobs, hunting large media files,
+or tuning player quiz launch performance.

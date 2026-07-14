@@ -24,6 +24,8 @@ Primary runtime layers:
   rendering, and R2-backed player diagram publish/load.
 - `js/play-clips.js` owns R2-backed video clips, silent clip upload, manifest
   reads, loop video configuration, and the clip signature index.
+- `js/media-inventory.js` owns the cross-media inventory report for diagram
+  storage, remote clips, signals, player-visible scripts, and quiz readiness.
 - `js/signals.js` owns component-level signal records and resolves signal clips
   from playbook fields.
 - `js/script-render.js` owns Practice Script rendering surfaces.
@@ -118,6 +120,8 @@ Main owners:
 - `js/script-player.js`: player-visible script publishing and publish status.
 - `js/play-images.js`: diagram readiness reports and media publish.
 - `js/play-clips.js`: clip upload and clip manifest/index state.
+- `js/media-inventory.js`: coach-facing media inventory and cleanup candidate
+  report.
 - `js/signals.js`: signal clip upload and signal publish metadata.
 
 ## Media Architecture
@@ -171,6 +175,23 @@ Current cost centers:
 - Signal selector playback fetches each selected chip manifest on demand.
 - Player readiness still needs deeper domain-level versioning so "ready" can be
   tied to one published workspace version instead of several module timestamps.
+
+### Inventory
+
+`js/media-inventory.js` provides the coach-facing `Media Inventory` report from
+the Playbook analytics and data tools. It intentionally reads existing media
+authorities instead of creating a new source of truth:
+
+- Local diagram keys and blob sizes from `playImages.loadKeys()` /
+  `playImages.get()`.
+- Player-visible script readiness from
+  `playImages.buildPlayerMediaPublishReport()`.
+- Remote play and signal clip manifests from `playClips.listForSigs()`.
+- Signal records from `STORAGE_KEYS.SIGNALS`.
+
+Use this report before deleting local media or tuning quiz load performance. It
+surfaces largest blobs, unreferenced local diagram keys, player-visible diagram
+or clip gaps, signal clip gaps, and quiz source readiness in one place.
 
 ### Signals
 
@@ -243,7 +264,8 @@ Highest-impact cleanup work:
 4. Move media readiness to domain summaries.
    Player publish readiness should answer "script data, diagrams, clips,
    signals, quizzes" from one summary object instead of recomputing each surface
-   independently.
+   independently. The first staff-facing summary now exists as Media Inventory;
+   the next step is sharing that summary with publish and quiz launch flows.
 
 5. Keep service-worker strategy explicit.
    Clips should continue to bypass the worker. Images can stay cacheable through
@@ -258,22 +280,30 @@ First implementation slice, landed 2026-07-14:
 3. Used that helper in `getSignalQuizItems()` and Full Play Call item building.
 4. Added a bounded `prepareQuizMedia(items, mode)` helper for first-question
    diagrams and signal videos.
-5. Added `/clips/batch-manifest` and `/images/batch-manifest` server endpoints.
-6. Used the batch endpoints from quiz launch and player media readiness checks.
 
 Second implementation slice, landed 2026-07-14:
 
-1. Added opt-in quiz launch timing through the existing `bcoPerf` / `?perf`
+1. Added `/clips/batch-manifest` and `/images/batch-manifest` server endpoints.
+2. Used the batch endpoints from quiz launch and player media readiness checks.
+3. Added opt-in quiz launch timing through the existing `bcoPerf` / `?perf`
    instrumentation path.
-2. Recorded first-question timing with `quiz:first-question-visible`.
-3. Recorded media warmup timing with `quiz:media-prep`,
+4. Recorded first-question timing with `quiz:first-question-visible`.
+5. Recorded media warmup timing with `quiz:media-prep`,
    `quiz:diagram-readiness`, `quiz:video-preload`, and
    `quiz:clip-manifest`.
-4. Recorded reusable batch endpoint timing with `media:image-batch-manifest`
+6. Recorded reusable batch endpoint timing with `media:image-batch-manifest`
    and `media:clip-batch-manifest`.
-5. Kept timing out of user-facing UI; inspect with
+7. Kept timing out of user-facing UI; inspect with
    `window.perfMonitor.report()` and `window.appDiagnostics.report()` when
    `localStorage.bcoPerf = "1"` or `?perf` is enabled.
+
+Third implementation slice, landed 2026-07-14:
+
+1. Added `js/media-inventory.js` for a cross-media inventory/report modal.
+2. Wired Media Inventory into Playbook analytics and data actions.
+3. Counted local diagram storage, largest files, unreferenced diagram keys,
+   player-visible script media gaps, signal clip gaps, and quiz source readiness.
+4. Added smoke contracts for the new report and asset wiring.
 
 Next implementation slice:
 

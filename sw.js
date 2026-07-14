@@ -156,6 +156,7 @@ const LOCAL_ASSETS = [
   "./js/script-smart.js",
   "./js/script-storage.js",
   "./js/script-player.js",
+  "./js/media-inventory.js",
   "./js/script-integrations.js",
   "./js/play-presentation.js",
   "./js/wristband.js",

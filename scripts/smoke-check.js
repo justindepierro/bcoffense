@@ -3726,6 +3726,9 @@ function checkPlayerDiagramReadinessContracts() {
   const manifest = read("functions/images/manifest.js");
   const batchManifest = read("functions/images/batch-manifest.js");
   const playImages = read("js/play-images.js");
+  const mediaInventory = read("js/media-inventory.js");
+  const html = read("index.html");
+  const sw = read("sw.js");
   const presentation = read("js/play-presentation.js");
   const presentationCss = read("css/play-presentation.css");
   const playbookRender = read("js/playbook-render.js");
@@ -3778,6 +3781,22 @@ function checkPlayerDiagramReadinessContracts() {
     !/checkRemoteForPlay,/.test(playImages)
   ) {
     fail("play image readiness API is incomplete");
+  }
+
+  if (
+    !/async function buildMediaInventoryReport\(\)/.test(mediaInventory) ||
+    !/window\.buildMediaInventoryReport = buildMediaInventoryReport/.test(mediaInventory) ||
+    !/window\.openMediaInventoryReport = async function/.test(mediaInventory) ||
+    !/window\.closeMediaInventoryReport = function/.test(mediaInventory) ||
+    !/window\.playImages\.buildPlayerMediaPublishReport/.test(mediaInventory) ||
+    !/imageApi\.loadKeys/.test(mediaInventory) ||
+    !/clipApi\.listForSigs/.test(mediaInventory) ||
+    !/STORAGE_KEYS\.SIGNALS/.test(mediaInventory) ||
+    !/STORAGE_KEYS\.SAVED_SCRIPTS/.test(mediaInventory) ||
+    !/data-action="openMediaInventoryReport"/.test(html) ||
+    !/"\.\/js\/media-inventory\.js"/.test(sw)
+  ) {
+    fail("media inventory report contract is incomplete");
   }
 
   if (
