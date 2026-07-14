@@ -32,6 +32,7 @@ let _sigSelected = null;
 let _sigLastRenderToken = 0;
 let _sigSelectorState = null;
 let _sigClipModalCache = new Map();
+let _sigPendingUpload = null;
 
 function _sigCanManage() {
   return typeof canEditUser === "function" ? Boolean(canEditUser()) : false;
@@ -600,6 +601,178 @@ function closeSignalUploadModal() {
   document.getElementById("signalUploadModalOverlay")?.remove();
 }
 
+function _sigClearPendingUpload() {
+  if (_sigPendingUpload?.sourceUrl) {
+    try { URL.revokeObjectURL(_sigPendingUpload.sourceUrl); } catch (_err) { }
+  }
+  if (_sigPendingUpload?.preparedUrl) {
+    try { URL.revokeObjectURL(_sigPendingUpload.preparedUrl); } catch (_err) { }
+  }
+  _sigPendingUpload = null;
+}
+
+function closeSignalUploadReviewModal() {
+  document.getElementById("signalUploadReviewModalOverlay")?.remove();
+  _sigClearPendingUpload();
+}
+
+function _sigRenderUploadReviewModal() {
+  const state = _sigPendingUpload;
+  if (!state?.summary) return;
+  const existing = document.getElementById("signalUploadReviewModalOverlay");
+  const overlay = existing || document.createElement("div");
+  overlay.id = "signalUploadReviewModalOverlay";
+  overlay.className = "signals-upload-modal-overlay signals-upload-review-overlay";
+  overlay.dataset.action = "closeSignalUploadReviewModalOverlay";
+  const summary = state.summary;
+  const durationText = state.duration
+    ? `${state.duration.toFixed(1)}s selected`
+    : "Selected clip";
+  const sizeText = state.file?.size ? _sigFormatMegabytes(state.file.size) : "";
+  const willTrim = state.duration && state.duration > SIGNAL_MAX_DURATION_SEC;
+  const stage = state.stage || "source";
+  const isProcessing = stage === "processing";
+  const isReady = stage === "ready";
+  const activeUrl = isReady ? state.preparedUrl : state.sourceUrl;
+  const headline = isReady
+    ? "Final preview ready"
+    : isProcessing
+      ? "Preparing final clip..."
+      : "Review before processing";
+  const subcopy = isReady
+    ? `Audio removed${state.preparedDuration ? `, ${state.preparedDuration.toFixed(1)}s` : ""}. Confirm when this looks right.`
+    : willTrim
+      ? `This clip is over ${SIGNAL_MAX_DURATION_SEC}s, so the upload will use the first ${SIGNAL_MAX_DURATION_SEC}s.`
+      : `This clip is within the ${SIGNAL_MAX_DURATION_SEC}s limit.`;
+  overlay.innerHTML = `
+    <div class="signals-upload-modal signals-upload-review-modal" role="dialog" aria-modal="true" aria-labelledby="signalUploadReviewTitle">
+      <header class="signals-upload-modal__head">
+        <div>
+          <span>${escapeHtml(summary.category)} / ${escapeHtml(summary.componentLabel)}</span>
+          <h3 id="signalUploadReviewTitle">${escapeHtml(summary.displayValue)}</h3>
+        </div>
+        <button type="button" class="signals-clip-modal__close" data-action="closeSignalUploadReviewModal" aria-label="Close signal upload review">&times;</button>
+      </header>
+      <div class="signals-upload-review-body">
+        <div class="signals-upload-review-meta">
+          <strong>${escapeHtml(headline)}</strong>
+          <span>${escapeHtml([durationText, sizeText].filter(Boolean).join(" / "))}</span>
+          <p>${escapeHtml(subcopy)}</p>
+        </div>
+        <video class="signals-upload-review-video" src="${escapeAttr(activeUrl || "")}" autoplay loop muted playsinline preload="auto" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"></video>
+      </div>
+      <footer class="signals-upload-modal__actions signals-upload-review-actions">
+        ${isReady
+          ? `<button type="button" class="btn btn-primary" data-action="confirmSignalReviewedUpload">Upload This Clip</button>
+             <button type="button" class="btn btn-secondary" data-action="resetSignalUploadReview">Choose Different</button>`
+          : `<button type="button" class="btn btn-primary" data-action="processSignalUploadReview"${isProcessing ? " disabled" : ""}>${isProcessing ? "Processing..." : "Preview Final Clip"}</button>
+             <button type="button" class="btn btn-secondary" data-action="resetSignalUploadReview"${isProcessing ? " disabled" : ""}>Choose Different</button>`}
+      </footer>
+    </div>`;
+  if (!existing) document.body.appendChild(overlay);
+  if (!existing && typeof trapFocus === "function") trapFocus(overlay);
+  _sigConfigureLoopVideos(overlay);
+}
+
+async function openSignalUploadReviewModal(file) {
+  if (!_sigCanManage() || !file || !_sigSelected) return;
+  const summary = _sigFindSummary(_sigSelected.componentType, _sigSelected.compareKey);
+  if (!summary) return;
+  if (!String(file.type || "").toLowerCase().startsWith("video/")) {
+    showToast("Choose a video file.", { type: "error", duration: 3000 });
+    return;
+  }
+  if (file.size > SIGNAL_MAX_BYTES) {
+    showToast(
+      `Signal clip is ${_sigFormatMegabytes(file.size)}. Keep it under ${_sigFormatMegabytes(SIGNAL_MAX_BYTES)}.`,
+      { type: "error", duration: 4200 },
+    );
+    return;
+  }
+  closeSignalUploadModal();
+  closeSignalUploadReviewModal();
+  const sourceUrl = URL.createObjectURL(file);
+  _sigPendingUpload = {
+    file,
+    sourceUrl,
+    summary,
+    duration: await _sigProbeDuration(file),
+    stage: "source",
+  };
+  _sigRenderUploadReviewModal();
+}
+
+async function processSignalUploadReview() {
+  const state = _sigPendingUpload;
+  if (!state?.file || !state.summary) return;
+  try {
+    state.stage = "processing";
+    _sigRenderUploadReviewModal();
+    const prepared = await window.playClips.prepareSilentVideoUpload(state.file, {
+      maxDurationSec: SIGNAL_MAX_DURATION_SEC,
+      durationGraceSec: 0.5,
+      trimToMaxDuration: true,
+      showProcessingToast: false,
+      publishType: "signals",
+    });
+    if (_sigPendingUpload !== state) return;
+    if (state.preparedUrl) {
+      try { URL.revokeObjectURL(state.preparedUrl); } catch (_err) { }
+    }
+    state.prepared = prepared;
+    state.preparedUrl = URL.createObjectURL(prepared.uploadFile);
+    state.preparedDuration = Number(prepared.uploadDuration || prepared.duration || 0);
+    state.stage = "ready";
+    _sigRenderUploadReviewModal();
+  } catch (err) {
+    if (_sigPendingUpload === state) {
+      state.stage = "source";
+      _sigRenderUploadReviewModal();
+    }
+    showToast(err?.message || "Could not prepare signal clip.", { type: "error", duration: 4500 });
+  }
+}
+
+function resetSignalUploadReview() {
+  const summary = _sigPendingUpload?.summary;
+  closeSignalUploadReviewModal();
+  if (summary) {
+    _sigSelected = { componentType: summary.componentType, compareKey: summary.compareKey };
+    openSignalUploadModal(`${summary.componentType}|${summary.compareKey}`);
+  }
+}
+
+async function confirmSignalReviewedUpload() {
+  const state = _sigPendingUpload;
+  if (!_sigCanManage() || !state?.prepared || !state.summary) return;
+  const summary = state.summary;
+  try {
+    const sig = _sigClipKey(summary.componentType, summary.compareKey);
+    const label = `${summary.componentLabel}: ${summary.displayValue}`;
+    const result = await window.playClips.uploadPreparedForSig(sig, state.prepared, label, {
+      publishType: "signals",
+    });
+    _sigSelected = { componentType: summary.componentType, compareKey: summary.compareKey };
+    _sigUpsertRecord(summary, {
+      clipCount: Math.max(1, Number(summary.record?.clipCount || 0) + 1),
+      durationMs: Number(result.clip?.duration || state.preparedDuration || 0) * 1000,
+      visibility: "published",
+      notes: summary.record?.notes || "",
+    });
+    if (typeof recordPlayerPublishStatus === "function") {
+      recordPlayerPublishStatus("signals", {
+        label: `Signal uploaded: ${summary.displayValue}`,
+      });
+    }
+    showToast("Signal clip uploaded", { type: "success", duration: 2200 });
+    closeSignalUploadReviewModal();
+    renderSignals();
+    openSignalUploadModal(`${summary.componentType}|${summary.compareKey}`);
+  } catch (err) {
+    showToast(err?.message || "Signal upload failed.", { type: "error", duration: 4500 });
+  }
+}
+
 function openSignalUploadModal(arg) {
   if (!_sigCanManage()) return;
   const summary = _sigSummaryFromArg(arg);
@@ -764,50 +937,7 @@ async function uploadSelectedSignalClip(event) {
   if (!file || !_sigSelected) return;
   const summary = _sigFindSummary(_sigSelected.componentType, _sigSelected.compareKey);
   if (!summary) return;
-  try {
-    if (!String(file.type || "").toLowerCase().startsWith("video/")) {
-      throw new Error("Choose a video file.");
-    }
-    if (file.size > SIGNAL_MAX_BYTES) {
-      throw new Error(
-        `Signal clip is ${_sigFormatMegabytes(file.size)}. Keep it under ${_sigFormatMegabytes(SIGNAL_MAX_BYTES)}; use 1080p HD at 30 fps for 4-5 seconds.`,
-      );
-    }
-    const duration = await _sigProbeDuration(file);
-    if (duration && duration > SIGNAL_MAX_DURATION_SEC) {
-      showToast(`Trimming this signal to the first ${SIGNAL_MAX_DURATION_SEC}s.`, {
-        type: "info",
-        duration: 2200,
-      });
-    }
-    const sig = _sigClipKey(summary.componentType, summary.compareKey);
-    const label = `${summary.componentLabel}: ${summary.displayValue}`;
-    const result = await window.playClips.uploadForSig(sig, file, label, {
-      maxDurationSec: SIGNAL_MAX_DURATION_SEC,
-      durationGraceSec: 0.5,
-      trimToMaxDuration: true,
-      publishType: "signals",
-    });
-    _sigUpsertRecord(summary, {
-      clipCount: Math.max(1, Number(summary.record?.clipCount || 0) + 1),
-      durationMs: Number(result.clip?.duration || duration || 0) * 1000,
-      visibility: document.getElementById("signalVisibility")?.value || "published",
-      notes: document.getElementById("signalNotes")?.value || summary.record?.notes || "",
-    });
-    if (typeof recordPlayerPublishStatus === "function") {
-      recordPlayerPublishStatus("signals", {
-        label: `Signal uploaded: ${summary.displayValue}`,
-      });
-    }
-    showToast("Signal clip uploaded", { type: "success", duration: 2200 });
-    const shouldReopenUploadModal = Boolean(document.getElementById("signalUploadModalOverlay"));
-    renderSignals();
-    if (shouldReopenUploadModal) {
-      openSignalUploadModal(`${summary.componentType}|${summary.compareKey}`);
-    }
-  } catch (err) {
-    showToast(err?.message || "Signal upload failed.", { type: "error", duration: 4000 });
-  }
+  openSignalUploadReviewModal(file);
 }
 
 function saveSignalDetails() {
@@ -1057,7 +1187,7 @@ function getSignalQuizStats(options = {}) {
 }
 
 function _sigConfigureLoopVideos(root = document) {
-  root.querySelectorAll?.(".signals-play-video, .signals-clip video, .signals-clip-modal-video").forEach((video) => {
+  root.querySelectorAll?.(".signals-play-video, .signals-clip video, .signals-clip-modal-video, .signals-upload-review-video").forEach((video) => {
     if (
       video.closest(".signals-clip") &&
       typeof window.matchMedia === "function" &&
@@ -1265,6 +1395,10 @@ window.renderSignals = renderSignals;
 window.openSignalComponent = openSignalComponent;
 window.openSignalUploadModal = openSignalUploadModal;
 window.closeSignalUploadModal = closeSignalUploadModal;
+window.closeSignalUploadReviewModal = closeSignalUploadReviewModal;
+window.processSignalUploadReview = processSignalUploadReview;
+window.resetSignalUploadReview = resetSignalUploadReview;
+window.confirmSignalReviewedUpload = confirmSignalReviewedUpload;
 window.openSignalComponentDetails = openSignalComponentDetails;
 window.watchSignalUploadModalClip = watchSignalUploadModalClip;
 window.openSignalClipModal = openSignalClipModal;

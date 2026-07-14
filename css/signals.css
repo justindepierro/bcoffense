@@ -747,6 +747,51 @@
   gap: var(--space-sm);
 }
 
+.signals-upload-review-modal {
+  width: min(620px, 100%);
+}
+
+.signals-upload-review-body {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.signals-upload-review-meta {
+  display: grid;
+  gap: 4px;
+}
+
+.signals-upload-review-meta strong {
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+}
+
+.signals-upload-review-meta span,
+.signals-upload-review-meta p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+}
+
+.signals-upload-review-video {
+  width: 100%;
+  min-height: 260px;
+  max-height: min(520px, 58vh);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-dark);
+  object-fit: contain;
+}
+
+.signals-upload-review-actions {
+  flex-wrap: wrap;
+}
+
+.signals-upload-review-actions .btn {
+  min-height: 44px;
+}
+
 .signals-field-grid {
   display: grid;
   gap: var(--space-sm);

@@ -332,7 +332,9 @@ window.closeAnchoredMenu
 window.closeCloudSyncModal
 window.closeSignalClipModal
 window.closeSignalUploadModal
+window.closeSignalUploadReviewModal
 window.completeWorkspaceSyncJob
+window.confirmSignalReviewedUpload
 window.closePlayDiagramHealth
 window.closePlayEditor
 window.closePublishMedia
@@ -385,6 +387,7 @@ window.playerNotificationState
 window.playerTeamRefreshState
 window.playImages
 window.positionAnchoredMenu
+window.processSignalUploadReview
 window.pullCloudBackup
 window.publishPlayerMedia
 window.publishTeamWorkspace
@@ -396,6 +399,7 @@ window.refreshPlayerCloudBackup
 window.refreshPlayerLeaderboardSummary
 window.resetAnchoredMenu
 window.resetCloudSyncAutoPull
+window.resetSignalUploadReview
 window.retryWorkspaceSyncWork
 window.renderSignals
 window.renderSignalAvailabilityForPlay

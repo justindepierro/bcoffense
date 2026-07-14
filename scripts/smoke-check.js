@@ -4551,6 +4551,10 @@ function checkSignalPlayIntegrationContracts() {
     !/function openSignalClipModal\(cacheKey\)/.test(signals) ||
     !/function openSignalUploadModal\(arg\)/.test(signals) ||
     !/function closeSignalUploadModal\(\)/.test(signals) ||
+    !/function closeSignalUploadReviewModal\(\)/.test(signals) ||
+    !/async function openSignalUploadReviewModal\(file\)/.test(signals) ||
+    !/async function processSignalUploadReview\(\)/.test(signals) ||
+    !/async function confirmSignalReviewedUpload\(\)/.test(signals) ||
     !/function openSignalComponentDetails\(arg\)/.test(signals) ||
     !/function _sigOpenClipModalItem\(item\)/.test(signals) ||
     !/async function _sigOpenFirstClipForSummary\(summary\)/.test(signals) ||
@@ -4560,11 +4564,20 @@ function checkSignalPlayIntegrationContracts() {
     !/function closeSignalClipModal\(\)/.test(signals) ||
     !/window\.openSignalUploadModal = openSignalUploadModal/.test(signals) ||
     !/window\.closeSignalUploadModal = closeSignalUploadModal/.test(signals) ||
+    !/window\.closeSignalUploadReviewModal = closeSignalUploadReviewModal/.test(signals) ||
+    !/window\.processSignalUploadReview = processSignalUploadReview/.test(signals) ||
+    !/window\.resetSignalUploadReview = resetSignalUploadReview/.test(signals) ||
+    !/window\.confirmSignalReviewedUpload = confirmSignalReviewedUpload/.test(signals) ||
     !/window\.openSignalComponentDetails = openSignalComponentDetails/.test(signals) ||
     !/window\.openSignalClipModal = openSignalClipModal/.test(signals) ||
     !/window\.closeSignalClipModal = closeSignalClipModal/.test(signals) ||
     !/if \(_sigCanManage\(\) && _sigSummaryRequiresVideo\(summary\)\) \{[\s\S]*openSignalUploadModal\(arg\)/.test(signals) ||
     !/id="signalUploadClipFile"[\s\S]*data-onchange="uploadSelectedSignalClip"/.test(signals) ||
+    !/openSignalUploadReviewModal\(file\)/.test(signals) ||
+    !/class="signals-upload-review-video"/.test(signals) ||
+    !/data-action="processSignalUploadReview"/.test(signals) ||
+    !/data-action="confirmSignalReviewedUpload"/.test(signals) ||
+    !/overlay\.dataset\.action = "closeSignalUploadReviewModalOverlay"/.test(signals) ||
     !/data-action="openSignalComponentDetails"/.test(signals) ||
     !/overlay\.dataset\.action = "closeSignalUploadModalOverlay"/.test(signals) ||
     !/data-action="openSignalClipModal"/.test(signals) ||
@@ -4576,12 +4589,16 @@ function checkSignalPlayIntegrationContracts() {
     !/new MediaRecorder\(stream, \{ mimeType \}\)/.test(clips) ||
     !/Removing audio before video upload/.test(clips) ||
     !/const shouldTrimUpload = Boolean\(opts\.trimToMaxDuration\)/.test(clips) ||
+    !/async function prepareSilentVideoUpload\(file, opts = \{\}\)/.test(clips) ||
+    !/async function uploadPreparedForSig\(sig, prepared, label, opts = \{\}\)/.test(clips) ||
     !/Trimming to \$\{maxDurationSec\}s and removing audio before upload/.test(clips) ||
     !/const targetDuration = shouldTrimUpload \? maxDurationSec : duration/.test(clips) ||
     !/const uploadFile = await createSilentVideoFile\(file, targetDuration\)/.test(clips) ||
     !/body: uploadFile/.test(clips) ||
     !/trimToMaxDuration: true/.test(signals) ||
-    !/Trimming this signal to the first \$\{SIGNAL_MAX_DURATION_SEC\}s/.test(signals) ||
+    !/Final preview ready/.test(signals) ||
+    !/Preview Final Clip/.test(signals) ||
+    !/Upload This Clip/.test(signals) ||
     !/video\.controls = false/.test(signals) ||
     !/video\.defaultMuted = true/.test(signals) ||
     !/video\.playsInline = true/.test(signals) ||
@@ -4599,10 +4616,14 @@ function checkSignalPlayIntegrationContracts() {
     !/video\.removeAttribute\("controls"\)/.test(clips) ||
     !/video\.addEventListener\("loadeddata", attemptPlay\)/.test(clips) ||
     !/video\.addEventListener\("canplay", attemptPlay\)/.test(clips) ||
+    !/prepareSilentVideoUpload,/.test(clips) ||
+    !/uploadPreparedForSig,/.test(clips) ||
     !/configureLoopPreviewVideo,/.test(clips) ||
     !/window\.playClips\.configureLoopPreviewVideo\(video\)/.test(playbookEditor) ||
     !/window\.playClips\.configureLoopPreviewVideo\(video\)/.test(presentation) ||
     !/SIGNAL_IPHONE_CAPTURE_HINT/.test(signals) ||
+    !/\.signals-upload-review-video/.test(signalsCss) ||
+    !/\.signals-upload-review-modal/.test(signalsCss) ||
     !/accept="video\/mp4,video\/quicktime,video\/\*"/.test(signals) ||
     !/1080p HD at 30 fps/.test(signals) ||
     !/Keep it under \$\{_sigFormatMegabytes\(SIGNAL_MAX_BYTES\)\}/.test(signals) ||

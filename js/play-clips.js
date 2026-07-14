@@ -8,6 +8,8 @@
      await playClips.list(play)            → [{ id, label, contentType, size, duration, uploadedAt }]
      await playClips.upload(play, file, label, opts) → { ok, clip } | throws Error(message)
      await playClips.uploadForSig(sig, file, label, opts) → upload to a stable signature
+     await playClips.prepareSilentVideoUpload(file, opts) → processed silent clip preview
+     await playClips.uploadPreparedForSig(sig, prepared, label, opts) → upload processed clip
      await playClips.listForSig(sig)       → [{ id, label, contentType, size, duration, uploadedAt, url }]
      await playClips.removeForSig(sig, id) → { ok, clips }
      await playClips.remove(play, id)      → { ok, clips }
@@ -346,12 +348,9 @@
     });
   }
 
-  async function uploadForSig(sig, file, label, opts = {}) {
+  async function prepareSilentVideoUpload(file, opts = {}) {
     if (!canManage()) {
       throw new Error("Only admin or coach can upload clips.");
-    }
-    if (!sig) {
-      throw new Error("Missing stable clip signature.");
     }
     if (!file || !(file instanceof Blob)) {
       throw new Error("No clip file selected.");
@@ -364,11 +363,6 @@
       throw new Error(
         `Clip is ${(file.size / (1024 * 1024)).toFixed(1)} MB — the limit is 25 MB.`,
       );
-    }
-
-    const existing = await listForSig(sig);
-    if (existing.length >= MAX_CLIPS) {
-      throw new Error(`This play already has the maximum of ${MAX_CLIPS} clips.`);
     }
 
     const duration = await probeDuration(file);
@@ -384,7 +378,7 @@
       );
     }
 
-    if (typeof window.showToast === "function") {
+    if (opts.showProcessingToast !== false && typeof window.showToast === "function") {
       window.showToast(
         shouldTrimUpload
           ? `Trimming to ${maxDurationSec}s and removing audio before upload...`
@@ -405,10 +399,43 @@
         `Silent clip is ${Math.round(uploadDuration)}s — keep clips to about ${maxDurationSec}s.`,
       );
     }
-    const uploadType = (uploadFile.type || type).toLowerCase();
+    return {
+      uploadFile,
+      duration,
+      uploadDuration,
+      shouldTrimUpload,
+      maxDurationSec,
+      uploadType: (uploadFile.type || type).toLowerCase(),
+    };
+  }
+
+  async function uploadPreparedForSig(sig, prepared, label, opts = {}) {
+    if (!canManage()) {
+      throw new Error("Only admin or coach can upload clips.");
+    }
+    if (!sig) {
+      throw new Error("Missing stable clip signature.");
+    }
+    const uploadFile = prepared?.uploadFile || prepared;
+    if (!uploadFile || !(uploadFile instanceof Blob)) {
+      throw new Error("No processed clip file is ready.");
+    }
+    if (uploadFile.size > MAX_BYTES) {
+      throw new Error(
+        `Processed clip is ${(uploadFile.size / (1024 * 1024)).toFixed(1)} MB — the limit is 25 MB.`,
+      );
+    }
+    if (!opts.skipExistingCheck) {
+      const existing = await listForSig(sig);
+      if (existing.length >= MAX_CLIPS) {
+        throw new Error(`This play already has the maximum of ${MAX_CLIPS} clips.`);
+      }
+    }
+    const uploadDuration = Number(prepared?.uploadDuration || prepared?.duration || 0);
+    const uploadType = String(prepared?.uploadType || uploadFile.type || "video/mp4").toLowerCase();
     const headers = { "Content-Type": uploadType };
     if (label) headers["X-Clip-Label"] = encodeURIComponent(String(label));
-    if (uploadDuration || duration) headers["X-Clip-Duration"] = String(Math.round(uploadDuration || duration));
+    if (uploadDuration) headers["X-Clip-Duration"] = String(Math.round(uploadDuration));
 
     const response = await fetch(manifestUrl(sig), {
       method: "POST",
@@ -431,6 +458,18 @@
     }
     _emitClipChange(sig);
     return data;
+  }
+
+  async function uploadForSig(sig, file, label, opts = {}) {
+    if (!sig) {
+      throw new Error("Missing stable clip signature.");
+    }
+    const existing = await listForSig(sig);
+    if (existing.length >= MAX_CLIPS) {
+      throw new Error(`This play already has the maximum of ${MAX_CLIPS} clips.`);
+    }
+    const prepared = await prepareSilentVideoUpload(file, opts);
+    return uploadPreparedForSig(sig, prepared, label, { ...opts, skipExistingCheck: true });
   }
 
   async function upload(play, file, label, opts = {}) {
@@ -702,7 +741,9 @@
     fileUrlForSig,
     listForSig,
     list,
+    prepareSilentVideoUpload,
     uploadForSig,
+    uploadPreparedForSig,
     upload,
     removeForSig,
     remove,
