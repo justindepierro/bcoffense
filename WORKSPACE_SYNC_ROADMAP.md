@@ -221,7 +221,7 @@ plain warnings.
 ### Phase V2.2 - Unified Publish Orchestrator
 
 - [x] Introduce one `publishTeamWorkspace()` orchestration function.
-- [ ] Route cloud backup push, player publish metadata, media manifest updates,
+- [x] Route cloud backup push, player publish metadata, media manifest updates,
   diagrams, clips, signals, quizzes, and notification freshness through that
   orchestrator.
 - [x] Make the dock state domain-aware: data, media, quizzes, notifications.

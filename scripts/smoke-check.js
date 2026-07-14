@@ -3359,6 +3359,7 @@ function checkWorkspaceSyncContracts() {
     "- [x] Record failed publish attempts with the exact failed domain and retry",
     "- [x] Add smoke coverage for publish status labels and activity-log rendering.",
     "- [x] Introduce one `publishTeamWorkspace()` orchestration function.",
+    "- [x] Route cloud backup push, player publish metadata, media manifest updates,",
     "- [x] Make the dock state domain-aware: data, media, quizzes, notifications.",
     "- [x] Stop showing `Team cloud synced` until player-visible readiness checks are",
   ].forEach((token) => {
@@ -3444,6 +3445,11 @@ function checkWorkspaceSyncContracts() {
     "function publishReadinessHasIssues(report)",
     "window.publishTeamWorkspace = publishTeamWorkspace",
     "pushCloudBackupInternal({ silent, skipActivityLog: true })",
+    "publishTeamWorkspace({",
+    "throwOnError: true",
+    "jobId: \"auto-push\"",
+    "Team publish queued",
+    "Publishing team update...",
     "Checking media...",
     "Checking quizzes and signals...",
     "Ready for players",
@@ -3457,7 +3463,7 @@ function checkWorkspaceSyncContracts() {
     }
   });
 
-  if (/Cloud autosaved/.test(cloudSync) || /Play image changed\. Cloud autosave queued\./.test(cloudSync)) {
+  if (/Cloud autosaved|Cloud autosave|Cloud sync queued|Syncing team cloud|Cloud sync needs attention/.test(cloudSync) || /Play image changed\. Cloud autosave queued\./.test(cloudSync)) {
     fail("cloud autosave still uses noisy success/queued toasts instead of the workspace dock");
   }
 
