@@ -547,7 +547,7 @@ async function _sigRenderRemoteClips(summary, record, token) {
     });
     return `
       <article class="signals-clip">
-        <video autoplay loop muted preload="auto" playsinline disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback" src="${escapeAttr(clip.url || "")}"></video>
+        <video loop muted playsinline preload="metadata" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback" src="${escapeAttr(clip.url || "")}"></video>
         <div class="signals-clip-meta">
           <strong>${escapeHtml(clip.label || summary.displayValue)}</strong>
           <span>${escapeHtml(meta || "Signal clip")}</span>
@@ -1232,46 +1232,75 @@ function getSignalQuizStats(options = {}) {
   };
 }
 
+let _sigClipObserver = null;
+
+function _sigActivateLoopVideo(video) {
+  video.controls = false;
+  video.autoplay = true;
+  video.loop = true;
+  video.muted = true;
+  video.defaultMuted = true;
+  video.playsInline = true;
+  video.preload = "auto";
+  video.disablePictureInPicture = true;
+  video.removeAttribute("controls");
+  video.setAttribute("autoplay", "");
+  video.setAttribute("loop", "");
+  video.setAttribute("muted", "");
+  video.setAttribute("playsinline", "");
+  video.setAttribute("preload", "auto");
+  video.setAttribute("disablepictureinpicture", "");
+  video.setAttribute("controlslist", "nodownload noplaybackrate noremoteplayback");
+  const attemptPlay = () => {
+    const playPromise = typeof video.play === "function" ? video.play() : null;
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => { });
+    }
+  };
+  if (!video.dataset.signalPreviewBound) {
+    video.dataset.signalPreviewBound = "true";
+    video.addEventListener("loadeddata", attemptPlay);
+    video.addEventListener("canplay", attemptPlay);
+  }
+  if (video.readyState === 0 && video.currentSrc) {
+    try { video.load(); } catch (_err) { }
+  }
+  attemptPlay();
+}
+
+function _sigDeactivateLoopVideo(video) {
+  try { video.pause(); } catch (_e) { /* ignore */ }
+  // Stop buffering an off-screen preview; keeps the shown first frame.
+  video.preload = "metadata";
+  video.setAttribute("preload", "metadata");
+}
+
 function _sigConfigureLoopVideos(root = document) {
-  root.querySelectorAll?.(".signals-play-video, .signals-clip video, .signals-clip-modal-video, .signals-upload-review-video").forEach((video) => {
-    if (
-      video.closest(".signals-clip") &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(max-width: 640px)").matches
-    ) {
-      return;
+  const nodes = root.querySelectorAll?.(".signals-play-video, .signals-clip video, .signals-clip-modal-video, .signals-upload-review-video");
+  if (!nodes) return;
+  // Grid previews (.signals-clip) are gated behind an IntersectionObserver so
+  // only on-screen looping clips download/play — a component can list several,
+  // and eager autoplay+preload downloads them all at once on phones/tablets.
+  // Single videos (clip modal / selector preview / upload review) play now.
+  if (_sigClipObserver) _sigClipObserver.disconnect();
+  _sigClipObserver =
+    typeof IntersectionObserver === "function"
+      ? new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) _sigActivateLoopVideo(entry.target);
+              else _sigDeactivateLoopVideo(entry.target);
+            });
+          },
+          { rootMargin: "200px" },
+        )
+      : null;
+  nodes.forEach((video) => {
+    if (video.closest(".signals-clip") && _sigClipObserver) {
+      _sigClipObserver.observe(video);
+    } else {
+      _sigActivateLoopVideo(video);
     }
-    video.controls = false;
-    video.autoplay = true;
-    video.loop = true;
-    video.muted = true;
-    video.defaultMuted = true;
-    video.playsInline = true;
-    video.preload = "auto";
-    video.disablePictureInPicture = true;
-    video.removeAttribute("controls");
-    video.setAttribute("autoplay", "");
-    video.setAttribute("loop", "");
-    video.setAttribute("muted", "");
-    video.setAttribute("playsinline", "");
-    video.setAttribute("preload", "auto");
-    video.setAttribute("disablepictureinpicture", "");
-    video.setAttribute("controlslist", "nodownload noplaybackrate noremoteplayback");
-    const attemptPlay = () => {
-      const playPromise = typeof video.play === "function" ? video.play() : null;
-      if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch(() => { });
-      }
-    };
-    if (!video.dataset.signalPreviewBound) {
-      video.dataset.signalPreviewBound = "true";
-      video.addEventListener("loadeddata", attemptPlay);
-      video.addEventListener("canplay", attemptPlay);
-    }
-    if (video.readyState === 0 && video.currentSrc) {
-      try { video.load(); } catch (_err) { }
-    }
-    attemptPlay();
   });
 }
 

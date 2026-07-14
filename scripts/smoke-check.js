@@ -4740,10 +4740,13 @@ function checkSignalPlayIntegrationContracts() {
     !/Keep it under \$\{_sigFormatMegabytes\(SIGNAL_MAX_BYTES\)\}/.test(signals) ||
     !/_sigConfigureLoopVideos\(preview\)/.test(signals) ||
     !/_sigConfigureLoopVideos\(listEl\)/.test(signals) ||
-    !/<video autoplay loop muted preload="auto" playsinline disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"/.test(signals) ||
+    !/<video loop muted playsinline preload="metadata" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"/.test(signals) ||
+    !/function _sigActivateLoopVideo\(video\)/.test(signals) ||
+    !/function _sigDeactivateLoopVideo\(video\)/.test(signals) ||
+    !/new IntersectionObserver\(/.test(signals) ||
     !/<video class="signals-play-video"[\s\S]*autoplay loop muted playsinline preload="auto"[\s\S]*controlslist="nodownload noplaybackrate noremoteplayback"/.test(signals)
   ) {
-    fail("signal clips are not configured as muted autoplay loops");
+    fail("signal clips are not lazy, viewport-gated muted loops");
   }
 
   if (
