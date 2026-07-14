@@ -590,6 +590,87 @@ function closeSignalClipModal() {
   document.getElementById("signalClipModalOverlay")?.remove();
 }
 
+function _sigSummaryFromArg(arg) {
+  const [componentType, compareKey] = String(arg || "").split("|");
+  if (!componentType || !compareKey) return null;
+  return _sigFindSummary(componentType, compareKey);
+}
+
+function closeSignalUploadModal() {
+  document.getElementById("signalUploadModalOverlay")?.remove();
+}
+
+function openSignalUploadModal(arg) {
+  if (!_sigCanManage()) return;
+  const summary = _sigSummaryFromArg(arg);
+  if (!summary) return;
+  _sigSelected = { componentType: summary.componentType, compareKey: summary.compareKey };
+  renderSignals();
+  if (!_sigSummaryRequiresVideo(summary)) {
+    closeSignalUploadModal();
+    if (typeof showToast === "function") {
+      showToast(`${summary.componentLabel} is handled as a cue, not a video signal.`, {
+        type: "info",
+        duration: 2600,
+      });
+    }
+    return;
+  }
+  closeSignalUploadModal();
+  const record = _sigRecordsMap().get(_sigRecordId(summary.componentType, summary.compareKey)) || summary.record || null;
+  const clipCount = Number(record?.clipCount || 0);
+  const argValue = `${summary.componentType}|${summary.compareKey}`;
+  const status = clipCount
+    ? `${clipCount} clip${clipCount === 1 ? "" : "s"} attached`
+    : "No clip attached yet";
+  const overlay = document.createElement("div");
+  overlay.id = "signalUploadModalOverlay";
+  overlay.className = "signals-upload-modal-overlay";
+  overlay.dataset.action = "closeSignalUploadModalOverlay";
+  overlay.innerHTML = `
+    <div class="signals-upload-modal" role="dialog" aria-modal="true" aria-labelledby="signalUploadModalTitle">
+      <header class="signals-upload-modal__head">
+        <div>
+          <span>${escapeHtml(summary.category)} / ${escapeHtml(summary.componentLabel)}</span>
+          <h3 id="signalUploadModalTitle">${escapeHtml(summary.displayValue)}</h3>
+        </div>
+        <button type="button" class="signals-clip-modal__close" data-action="closeSignalUploadModal" aria-label="Close signal upload">&times;</button>
+      </header>
+      <div class="signals-upload-modal__body">
+        <p class="signals-upload-modal__status">${escapeHtml(status)}</p>
+        <input id="signalUploadClipFile" type="file" accept="video/mp4,video/quicktime,video/*" class="hidden"
+          data-onchange="uploadSelectedSignalClip" data-pass="event" />
+        <button type="button" class="btn btn-primary signals-upload-modal__upload" data-action="triggerClick" data-target="signalUploadClipFile">
+          Upload Clip
+        </button>
+        <p class="signals-upload-hint">Max ${SIGNAL_MAX_DURATION_SEC}s, ${_sigFormatMegabytes(SIGNAL_MAX_BYTES)}. ${escapeHtml(SIGNAL_IPHONE_CAPTURE_HINT)}</p>
+      </div>
+      <footer class="signals-upload-modal__actions">
+        ${clipCount ? `<button type="button" class="btn btn-secondary" data-action="watchSignalUploadModalClip" data-arg="${escapeAttr(argValue)}">Watch Current</button>` : ""}
+        <button type="button" class="btn btn-secondary" data-action="openSignalComponentDetails" data-arg="${escapeAttr(argValue)}">Details</button>
+      </footer>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+}
+
+function openSignalComponentDetails(arg) {
+  const summary = _sigSummaryFromArg(arg);
+  if (!summary) return;
+  closeSignalUploadModal();
+  _sigSelected = { componentType: summary.componentType, compareKey: summary.compareKey };
+  renderSignals();
+}
+
+async function watchSignalUploadModalClip(arg) {
+  const summary = _sigSummaryFromArg(arg);
+  if (!summary) return;
+  const opened = await _sigOpenFirstClipForSummary(summary);
+  if (!opened && typeof showToast === "function") {
+    showToast("No signal clip is ready yet.", { type: "warning", duration: 2200 });
+  }
+}
+
 function renderSignals() {
   const root = document.getElementById("signalsApp");
   if (!root) return;
@@ -638,10 +719,13 @@ function initSignals() {
 }
 
 function openSignalComponent(arg) {
-  const [componentType, compareKey] = String(arg || "").split("|");
-  if (!componentType || !compareKey) return;
-  _sigSelected = { componentType, compareKey };
-  const summary = _sigFindSummary(componentType, compareKey);
+  const summary = _sigSummaryFromArg(arg);
+  if (!summary) return;
+  _sigSelected = { componentType: summary.componentType, compareKey: summary.compareKey };
+  if (_sigCanManage() && _sigSummaryRequiresVideo(summary)) {
+    openSignalUploadModal(arg);
+    return;
+  }
   if (_sigShouldOpenClipDirectly() && _sigCanOpenSummaryClip(summary)) {
     _sigOpenFirstClipForSummary(summary)
       .then((opened) => {
@@ -712,7 +796,11 @@ async function uploadSelectedSignalClip(event) {
       });
     }
     showToast("Signal clip uploaded", { type: "success", duration: 2200 });
+    const shouldReopenUploadModal = Boolean(document.getElementById("signalUploadModalOverlay"));
     renderSignals();
+    if (shouldReopenUploadModal) {
+      openSignalUploadModal(`${summary.componentType}|${summary.compareKey}`);
+    }
   } catch (err) {
     showToast(err?.message || "Signal upload failed.", { type: "error", duration: 4000 });
   }
@@ -1160,6 +1248,10 @@ window.SIGNAL_COMPONENTS = SIGNAL_COMPONENTS;
 window.initSignals = initSignals;
 window.renderSignals = renderSignals;
 window.openSignalComponent = openSignalComponent;
+window.openSignalUploadModal = openSignalUploadModal;
+window.closeSignalUploadModal = closeSignalUploadModal;
+window.openSignalComponentDetails = openSignalComponentDetails;
+window.watchSignalUploadModalClip = watchSignalUploadModalClip;
 window.openSignalClipModal = openSignalClipModal;
 window.closeSignalClipModal = closeSignalClipModal;
 window.uploadSelectedSignalClip = uploadSelectedSignalClip;

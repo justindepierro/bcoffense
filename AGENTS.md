@@ -331,6 +331,7 @@ window.canManageSettings
 window.closeAnchoredMenu
 window.closeCloudSyncModal
 window.closeSignalClipModal
+window.closeSignalUploadModal
 window.completeWorkspaceSyncJob
 window.closePlayDiagramHealth
 window.closePlayEditor
@@ -366,7 +367,9 @@ window.isAdminUser
 window.logoutAuth
 window.openCloudSyncModal
 window.openSignalComponent
+window.openSignalComponentDetails
 window.openSignalClipModal
+window.openSignalUploadModal
 window.openPlaybookClipViewer
 window.openPlayClipViewer
 window.openPlayDiagramHealth
@@ -406,6 +409,7 @@ window.syncPlayerLeaderboardNow
 window.syncPlayImagesToCloud
 window.testCloudSyncConnection
 window.uploadSelectedSignalClip
+window.watchSignalUploadModalClip
 window.whenAuthReady
 window.workspaceSync
 ```

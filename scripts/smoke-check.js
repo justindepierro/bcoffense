@@ -4502,6 +4502,8 @@ function checkSignalPlayIntegrationContracts() {
     !/\.signals-play-video/.test(signalsCss) ||
     !/\.signals-clip-modal-overlay/.test(signalsCss) ||
     !/\.signals-clip-modal-video/.test(signalsCss) ||
+    !/\.signals-upload-modal-overlay/.test(signalsCss) ||
+    !/\.signals-upload-modal/.test(signalsCss) ||
     !/\.signals-clip video\s*\{[\s\S]*display:\s*none/.test(signalsCss) ||
     !/\.pb-signal-badge/.test(signalsCss) ||
     !/\.signals-coverage/.test(signalsCss) ||
@@ -4531,14 +4533,24 @@ function checkSignalPlayIntegrationContracts() {
   if (
     !/function _sigConfigureLoopVideos\(root = document\)/.test(signals) ||
     !/function openSignalClipModal\(cacheKey\)/.test(signals) ||
+    !/function openSignalUploadModal\(arg\)/.test(signals) ||
+    !/function closeSignalUploadModal\(\)/.test(signals) ||
+    !/function openSignalComponentDetails\(arg\)/.test(signals) ||
     !/function _sigOpenClipModalItem\(item\)/.test(signals) ||
     !/async function _sigOpenFirstClipForSummary\(summary\)/.test(signals) ||
     !/function _sigShouldOpenClipDirectly\(\)/.test(signals) ||
     !/window\.matchMedia\("\(max-width: 700px\)"\)\.matches/.test(signals) ||
     !/if \(_sigShouldOpenClipDirectly\(\) && _sigCanOpenSummaryClip\(summary\)\)/.test(signals) ||
     !/function closeSignalClipModal\(\)/.test(signals) ||
+    !/window\.openSignalUploadModal = openSignalUploadModal/.test(signals) ||
+    !/window\.closeSignalUploadModal = closeSignalUploadModal/.test(signals) ||
+    !/window\.openSignalComponentDetails = openSignalComponentDetails/.test(signals) ||
     !/window\.openSignalClipModal = openSignalClipModal/.test(signals) ||
     !/window\.closeSignalClipModal = closeSignalClipModal/.test(signals) ||
+    !/if \(_sigCanManage\(\) && _sigSummaryRequiresVideo\(summary\)\) \{[\s\S]*openSignalUploadModal\(arg\)/.test(signals) ||
+    !/id="signalUploadClipFile"[\s\S]*data-onchange="uploadSelectedSignalClip"/.test(signals) ||
+    !/data-action="openSignalComponentDetails"/.test(signals) ||
+    !/overlay\.dataset\.action = "closeSignalUploadModalOverlay"/.test(signals) ||
     !/data-action="openSignalClipModal"/.test(signals) ||
     !/overlay\.dataset\.action = "closeSignalClipModalOverlay"/.test(signals) ||
     !/\.signals-clip-modal-video/.test(signals) ||
