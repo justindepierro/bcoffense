@@ -203,7 +203,8 @@ table.sortable th {
 
 /* ── Row action buttons: invisible until row hover on desktop ── */
 #playbookTable .pb-present-btn,
-#playbookTable .pb-edit-btn {
+#playbookTable .pb-edit-btn,
+#playbookTable .pb-player-visibility-btn {
   opacity: 0;
   visibility: hidden;
   min-width: 24px;
@@ -214,19 +215,29 @@ table.sortable th {
 }
 @media (hover: hover) {
   #playbookTable tbody tr:hover .pb-present-btn,
-  #playbookTable tbody tr:hover .pb-edit-btn {
+  #playbookTable tbody tr:hover .pb-edit-btn,
+  #playbookTable tbody tr:hover .pb-player-visibility-btn {
     opacity: 1;
     visibility: visible;
   }
 }
 
-#playbookTable .pb-edit-btn {
+#playbookTable .pb-edit-btn,
+#playbookTable .pb-player-visibility-btn {
   margin-left: 4px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
   background: var(--color-bg-light);
   color: var(--color-text-muted);
   cursor: pointer;
+}
+
+#playbookTable .pb-player-visibility-btn.is-hidden {
+  opacity: 1;
+  visibility: visible;
+  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  background: var(--color-warning-light);
+  color: color-mix(in srgb, var(--color-warning-hover) 68%, var(--color-dark));
 }
 
 /* Add-to-week button (#109) */
@@ -380,6 +391,30 @@ table.sortable th {
   vertical-align: baseline;
 }
 
+.pb-player-hidden-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  margin-right: 4px;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--color-warning) 40%, var(--color-border-light));
+  border-radius: var(--radius-pill);
+  background: var(--color-warning-light);
+  color: color-mix(in srgb, var(--color-warning-hover) 68%, var(--color-dark));
+  font-size: var(--font-size-2xs);
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+#playbookTable tbody tr.is-hidden-from-players {
+  color: var(--color-text-secondary);
+}
+
+#playbookTable tbody tr.is-hidden-from-players .play-cell strong {
+  color: var(--color-text-muted);
+}
+
 /* Image attached to play */
 .pb-img-badge {
   display: inline-flex;
@@ -427,10 +462,12 @@ table.sortable th {
 body.shell-tablet #playbookTable .pb-present-btn,
 body.shell-tablet #playbookTable .pb-edit-btn,
 body.shell-tablet #playbookTable .pb-add-week-btn,
+body.shell-tablet #playbookTable .pb-player-visibility-btn,
 body.shell-tablet #playbookTable .pb-ask-coach-btn,
 body.is-mobile-screen #playbookTable .pb-present-btn,
 body.is-mobile-screen #playbookTable .pb-edit-btn,
 body.is-mobile-screen #playbookTable .pb-add-week-btn,
+body.is-mobile-screen #playbookTable .pb-player-visibility-btn,
 body.is-mobile-screen #playbookTable .pb-ask-coach-btn {
   opacity: 1;
   visibility: visible;
@@ -3260,6 +3297,12 @@ body.shell-phone .pb-action-sheet {
   color: color-mix(in srgb, var(--color-warning-hover) 68%, var(--color-dark));
 }
 
+.pb-card-study-badge--hidden {
+  border-color: color-mix(in srgb, var(--color-warning) 44%, var(--color-border-light));
+  background: var(--color-warning-light);
+  color: color-mix(in srgb, var(--color-warning-hover) 70%, var(--color-dark));
+}
+
 .pb-card-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
@@ -3304,6 +3347,32 @@ body.shell-phone .pb-action-sheet {
   border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-border-light));
   background: var(--color-success-light);
   color: var(--color-success-hover);
+}
+
+.pb-card-action--visibility.is-hidden {
+  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  background: var(--color-warning-light);
+  color: color-mix(in srgb, var(--color-warning-hover) 70%, var(--color-dark));
+}
+
+.pb-card.is-hidden-from-players {
+  border-color: color-mix(in srgb, var(--color-warning) 34%, var(--color-border-light));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-warning-light) 44%, transparent), transparent 70%),
+    var(--color-surface);
+}
+
+.pb-player-access-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 850;
+  color: var(--color-text);
+}
+
+.pb-player-access-toggle input {
+  width: 18px;
+  height: 18px;
 }
 
 .pb-card-action:focus-visible {

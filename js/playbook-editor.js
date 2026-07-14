@@ -403,6 +403,19 @@ function _populateEditorForm(play, isNew) {
     </div>`;
   }
 
+  const isPlayerHidden =
+    typeof isPlayHiddenFromPlayers === "function"
+      ? isPlayHiddenFromPlayers(play)
+      : Boolean(play?.playerHidden);
+  html += `<div class="pb-editor-section pb-editor-player-access">
+    <div class="pb-editor-section-title">👁️ Player Access</div>
+    <label class="pb-player-access-toggle" for="pe-playerHidden">
+      <input type="checkbox" id="pe-playerHidden" data-bool-field="playerHidden" ${isPlayerHidden ? "checked" : ""} />
+      <span>Hide this play from the player playbook</span>
+    </label>
+    <p class="pb-editor-hint">Use this for old installs or archived calls you still want coaches to keep in the master playbook.</p>
+  </div>`;
+
   // Defensive match-up flags (good vs Man / Bear / Okie)
   html += `<div class="pb-editor-section pb-editor-matchups">
     <div class="pb-editor-section-title">🛡️ Defensive Match-ups</div>
@@ -572,6 +585,7 @@ function savePlayEditor(opts = {}) {
     Object.keys(data).forEach((key) => {
       existing[key] = data[key];
     });
+    if ("hiddenFromPlayers" in existing) delete existing.hiddenFromPlayers;
     existing.playerAssignments = data.playerAssignments;
     existing.updatedAt = Date.now();
     if (typeof getCurrentAuthUser === "function") {
@@ -591,6 +605,7 @@ function savePlayEditor(opts = {}) {
     RESP_POSITIONS.forEach((pos) => { newPlay[pos.key] = data[pos.key] || ""; });
     newPlay.respNotes = data.respNotes || "";
     newPlay.playerNotes = data.playerNotes || "";
+    newPlay.playerHidden = !!data.playerHidden;
     if (typeof createPlayId === "function") newPlay.id = createPlayId();
     newPlay.createdAt = Date.now();
     if (typeof getCurrentAuthUser === "function") {

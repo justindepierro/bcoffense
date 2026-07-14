@@ -748,6 +748,11 @@
     if (typeof renderPlayerScriptLauncher === "function") {
       renderPlayerScriptLauncher();
     }
+    if (typeof filterPlays === "function") {
+      filterPlays();
+    } else if (typeof requestRenderPlaybook === "function") {
+      requestRenderPlaybook();
+    }
     if (typeof requestRenderScript === "function") {
       requestRenderScript();
     }

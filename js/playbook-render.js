@@ -84,6 +84,11 @@ function renderPlaybook() {
       currentUser &&
       !(typeof isAdminUser === "function" ? isAdminUser() : false),
     );
+    const canTogglePlayerVisibility =
+      !currentUser ||
+      (typeof canEditUser === "function"
+        ? canEditUser()
+        : !isReadOnlyViewer);
     const highlight = createSearchHighlighter(searchTerm);
     const runtimeIndex =
       typeof getPlaybookRuntimeIndex === "function" ? getPlaybookRuntimeIndex() : null;
@@ -183,6 +188,10 @@ function renderPlaybook() {
             ? getSignalCountForPlay(play)
             : 0,
         usage: usageIndex ? usageIndex.get(play) : null,
+        playerHidden:
+          typeof isPlayHiddenFromPlayers === "function"
+            ? isPlayHiddenFromPlayers(play)
+            : false,
         readinessBadge,
         readinessCardBadge,
       };
@@ -198,6 +207,7 @@ function renderPlaybook() {
         const { play, idx, gpSig, onWristband, gpActive, imageSig } = item;
         const wbClass = onWristband ? " on-wristband" : "";
         const gpClass = gpActive ? " in-gameplan" : "";
+        const hiddenClass = item.playerHidden ? " is-hidden-from-players" : "";
         const isJvFlagged = jvFlagged.has(gpSig);
         const isWbFlagged = wbFlagged.has(gpSig);
         const jvBadge = isJvFlagged
@@ -219,6 +229,9 @@ function renderPlaybook() {
         const signalBadge = item.signalCount
           ? `<span class="pb-signal-badge" data-action="openPlaybookSignalSelector" data-arg="${idx}" role="button" tabindex="0" title="Watch play signals" aria-label="Watch ${item.signalCount} signal clips">Signals</span>`
           : "";
+        const playerHiddenBadge = item.playerHidden
+          ? '<span class="pb-player-hidden-badge" title="Hidden from player playbook">Hidden</span>'
+          : "";
 
         const gpToggle = activeOpponent
           ? `<button class="gp-toggle-btn${gpActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" data-arg="${idx}" title="${gpActive ? "Remove from" : "Add to"} game plan">🎯</button>`
@@ -229,20 +242,23 @@ function renderPlaybook() {
         const editButton = isReadOnlyViewer
           ? ""
           : `<button class="pb-edit-btn" data-action="openPlayEditor" data-idx="${idx}" data-arg="${idx}" title="Edit this play" aria-label="Edit ${escapeHtml(play.play)}">✎</button>`;
+        const playerVisibilityButton = canTogglePlayerVisibility
+          ? `<button class="pb-player-visibility-btn${item.playerHidden ? " is-hidden" : ""}" data-action="togglePlayPlayerVisibility" data-idx="${idx}" data-arg="${idx}" title="${item.playerHidden ? "Show this play to players" : "Hide this play from players"}" aria-label="${item.playerHidden ? "Show" : "Hide"} ${escapeHtml(play.play || "this play")} ${item.playerHidden ? "in" : "from"} the player playbook">${item.playerHidden ? "🙈" : "👁️"}</button>`
+          : "";
 
         return `
-            <tr class="${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-arg="${idx}"
+            <tr class="${wbClass}${gpClass}${hiddenClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-arg="${idx}"
                 data-preview="${idx}"
                 title="${rowTitle}">
                 <td class="col-gameplan">${gpToggle}</td>
                 <td class="col-install">${item.installBadge}</td>
-                <td class="col-type col-type--${(play.type || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '')}">${wbIndicator}${jvBadge}${wbFlagBadge}${imgBadge}${clipBadge}${signalBadge}<span class="play-type-chip">${highlight(play.type)}</span></td>
+                <td class="col-type col-type--${(play.type || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '')}">${wbIndicator}${jvBadge}${wbFlagBadge}${imgBadge}${clipBadge}${signalBadge}${playerHiddenBadge}<span class="play-type-chip">${highlight(play.type)}</span></td>
                 <td class="col-formation">${highlight(play.formation)}</td>
                 <td class="col-tags">${escapeHtml([play.formTag1, play.formTag2].filter(Boolean).join(", ") || "-")}</td>
                 <td class="col-back">${highlight(play.back || "-")}</td>
                 <td class="col-motion">${highlight(play.motion || "-")}</td>
                 <td class="col-protection">${highlight(play.protection || "-")}</td>
-                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${_renderWorkflowChips(play, idx)}${item.readinessBadge}${editButton}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button><button class="pb-add-week-btn" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet">⊕</button>${typeof askCoachAboutPlay === "function" ? `<button class="pb-ask-coach-btn" data-action="askCoachAboutPlay" data-arg="${idx}" title="Ask a question about this play" aria-label="Ask a question about ${escapeHtml(play.play)}">❓</button>` : ""}</td>
+                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${_renderWorkflowChips(play, idx)}${item.readinessBadge}${playerVisibilityButton}${editButton}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button><button class="pb-add-week-btn" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet">⊕</button>${typeof askCoachAboutPlay === "function" ? `<button class="pb-ask-coach-btn" data-action="askCoachAboutPlay" data-arg="${idx}" title="Ask a question about this play" aria-label="Ask a question about ${escapeHtml(play.play)}">❓</button>` : ""}</td>
                 <td class="col-basePlay">${escapeHtml(play.basePlay || "-")}</td>
                 <td class="col-tempo">${escapeHtml(play.tempo || "-")}</td>
             </tr>
@@ -264,6 +280,7 @@ function renderPlaybook() {
         const wbClass = onWristband ? " on-wristband" : "";
         const gpCardActive = item.gpActive;
         const gpClass = gpCardActive ? " in-gameplan" : "";
+        const hiddenClass = item.playerHidden ? " is-hidden-from-players" : "";
         const cardJv = jvFlagged.has(gpSig)
           ? '<span class="pb-jv-badge" title="Marked JV in Game Plan">\ud83d\udfe1</span>'
           : "";
@@ -282,6 +299,9 @@ function renderPlaybook() {
           : "";
         const hasCoachNotes = String(play.playerNotes || "").trim();
         const studyBadges = [
+          item.playerHidden && currentUser?.role !== "player"
+            ? '<span class="pb-card-study-badge pb-card-study-badge--hidden">Hidden from players</span>'
+            : "",
           imageSig
             ? '<span class="pb-card-study-badge pb-card-study-badge--diagram">Diagram</span>'
             : '<span class="pb-card-study-badge pb-card-study-badge--missing">Needs diagram</span>',
@@ -295,10 +315,14 @@ function renderPlaybook() {
         const cardEditButton = isReadOnlyViewer
           ? ""
           : `<button type="button" class="pb-card-action" data-action="openPlayEditor" data-idx="${idx}" data-arg="${idx}" title="Edit this play" aria-label="Edit ${escapeHtml(play.play)}">Edit</button>`;
+        const cardPlayerVisibilityButton = canTogglePlayerVisibility
+          ? `<button type="button" class="pb-card-action pb-card-action--visibility${item.playerHidden ? " is-hidden" : ""}" data-action="togglePlayPlayerVisibility" data-idx="${idx}" data-arg="${idx}" title="${item.playerHidden ? "Show this play to players" : "Hide this play from players"}" aria-label="${item.playerHidden ? "Show" : "Hide"} ${escapeHtml(play.play || "this play")} ${item.playerHidden ? "in" : "from"} the player playbook">${item.playerHidden ? "🙈 Hidden" : "👁️ Players"}</button>`
+          : "";
         const staffCardActions = currentUser?.role === "player"
           ? ""
           : `<div class="pb-card-actions pb-card-actions--staff" aria-label="Coach play actions">
               <button type="button" class="pb-card-action pb-card-action--study" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">Present</button>
+              ${cardPlayerVisibilityButton}
               ${cardEditButton}
               <button type="button" class="pb-card-action" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet" aria-label="Add ${escapeHtml(play.play)} to week">Add Week</button>
               ${typeof askCoachAboutPlay === "function" ? `<button type="button" class="pb-card-action pb-card-action--ask" data-action="askCoachAboutPlay" data-arg="${idx}" title="Ask a question about this play" aria-label="Ask a question about ${escapeHtml(play.play)}">Ask</button>` : ""}
@@ -312,7 +336,7 @@ function renderPlaybook() {
         const playerCardNote =
           currentUser?.role === "player" ? _renderPlayerPlaybookCardNote(play) : "";
         return `
-          <div class="pb-card${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-arg="${idx}" data-preview="${idx}"
+          <div class="pb-card${wbClass}${gpClass}${hiddenClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-arg="${idx}" data-preview="${idx}"
                tabindex="0" role="button"
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
             ${playerCardMedia}
@@ -684,12 +708,16 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
     (typeof playerPlaybookStudyFilters !== "undefined" && playerPlaybookStudyFilters.size > 0) ||
     Boolean(document.getElementById("pbGamePlanFilter")?.checked) ||
     Boolean(document.getElementById("pbJvFilter")?.checked);
+  const playerVisiblePlays =
+    typeof isPlayHiddenFromPlayers === "function"
+      ? plays.filter((play) => !isPlayHiddenFromPlayers(play))
+      : plays;
 
   const diagramCount =
     typeof _playbookHasStoredDiagram === "function"
-      ? plays.filter((play) => _playbookHasStoredDiagram(play)).length
+      ? playerVisiblePlays.filter((play) => _playbookHasStoredDiagram(play)).length
       : 0;
-  const notesCount = plays.filter((play) => String(play.playerNotes || "").trim()).length;
+  const notesCount = playerVisiblePlays.filter((play) => String(play.playerNotes || "").trim()).length;
   const stats = [
     `${filteredCount} showing`,
     `${diagramCount} diagrams ready`,

@@ -4832,6 +4832,60 @@ function checkFunctionShadows() {
   console.log("function shadows ok");
 }
 
+function checkPlayerPlaybookVisibilityContracts() {
+  const actions = read("js/playbook-actions.js");
+  const filters = read("js/playbook-filters.js");
+  const render = read("js/playbook-render.js");
+  const editor = read("js/playbook-editor.js");
+  const auth = read("js/auth.js");
+  const css = read("css/playbook.css");
+
+  if (
+    !/function isPlayHiddenFromPlayers\(play\)/.test(actions) ||
+    !/function togglePlayPlayerVisibility\(filteredIdx\)/.test(actions) ||
+    !/target\.playerHidden = nextHidden/.test(actions) ||
+    !/storageManager\.setPlaybook\(plays\)/.test(actions)
+  ) {
+    fail("player playbook visibility toggle contract is missing");
+  }
+
+  if (
+    !/function _isPlayerPlaybookViewer\(\)/.test(filters) ||
+    !/_isPlayerPlaybookViewer\(\)[\s\S]*isPlayHiddenFromPlayers\(play\)[\s\S]*return false/.test(filters)
+  ) {
+    fail("player playbook filter does not exclude hidden plays");
+  }
+
+  if (
+    !/data-action="togglePlayPlayerVisibility"/.test(render) ||
+    !/pb-player-visibility-btn/.test(render) ||
+    !/pb-card-action--visibility/.test(render) ||
+    !/playerVisiblePlays/.test(render)
+  ) {
+    fail("player playbook visibility render controls or counts are missing");
+  }
+
+  if (
+    !/id="pe-playerHidden"/.test(editor) ||
+    !/data-bool-field="playerHidden"/.test(editor) ||
+    !/newPlay\.playerHidden = !!data\.playerHidden/.test(editor)
+  ) {
+    fail("play editor player visibility field is missing");
+  }
+
+  if (!/typeof filterPlays === "function"[\s\S]*filterPlays\(\)/.test(auth)) {
+    fail("auth role UI does not refresh playbook filters");
+  }
+
+  if (
+    !/\.pb-player-hidden-badge/.test(css) ||
+    !/\.pb-card\.is-hidden-from-players/.test(css)
+  ) {
+    fail("player visibility styles are missing");
+  }
+  console.log("player playbook visibility contracts ok");
+}
+
 checkJsSyntax();
 checkServiceWorkerAssets();
 checkIndexReferences();
@@ -4891,6 +4945,7 @@ checkWristbandConstantUsage();
 checkScriptPacketPrintContracts();
 checkScriptSelectionRenderContracts();
 checkGuideContracts();
+checkPlayerPlaybookVisibilityContracts();
 checkFunctionShadows();
 
 if (process.exitCode) process.exit(process.exitCode);

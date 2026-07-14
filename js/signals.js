@@ -232,6 +232,14 @@ function _sigCanOpenSummaryClip(summary) {
 }
 
 function _sigShouldOpenClipDirectly() {
+  const body = typeof document !== "undefined" ? document.body : null;
+  if (
+    body?.classList?.contains("shell-tablet") ||
+    body?.classList?.contains("shell-ipados") ||
+    body?.dataset?.device === "tablet"
+  ) {
+    return true;
+  }
   return Boolean(
     typeof window !== "undefined" &&
     typeof window.matchMedia === "function" &&

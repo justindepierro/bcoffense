@@ -2532,6 +2532,81 @@ test.describe("Player mobile experience", () => {
 });
 
 test.describe("Player iPad visual audit", () => {
+  test("opens published signal clips in a centered modal", async ({ page }, testInfo) => {
+    test.skip(!/ipad/i.test(testInfo.project.name), "iPad signal modal check runs only on iPad projects.");
+
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await seedIpadPlayerWorld(page);
+    await page.evaluate(() => {
+      const sig = "signals/formation/tripsrtnub";
+      const clip = {
+        id: "ipad-signal-clip",
+        label: "Trips Rt Nub",
+        url: "data:video/mp4;base64,AAAA",
+        duration: 6,
+        size: 4096,
+      };
+      storageManager.set(STORAGE_KEYS.SIGNALS, [{
+        id: "formation:tripsrtnub",
+        category: "CORE",
+        componentType: "formation",
+        componentValue: "Trips Rt Nub",
+        compareKey: "tripsrtnub",
+        clipKey: sig,
+        clipCount: 1,
+        visibility: "published",
+        updatedAt: new Date().toISOString(),
+      }]);
+      window.playClips = {
+        ...(window.playClips || {}),
+        listForSig: async (requestedSig) => (requestedSig === sig ? [clip] : []),
+        listForSigs: async (sigs) => Object.fromEntries((sigs || []).map((item) => [
+          item,
+          item === sig ? [clip] : [],
+        ])),
+      };
+    });
+
+    await goToTab(page, "signals");
+    await page.evaluate(() => {
+      if (typeof renderSignals === "function") renderSignals();
+    });
+
+    await expect.poll(() => page.evaluate(() => ({
+      tablet: document.body.classList.contains("shell-tablet"),
+      ipados: document.body.classList.contains("shell-ipados"),
+      device: document.body.dataset.device || "",
+    }))).toEqual(expect.objectContaining({ tablet: true }));
+
+    const signalChip = page.locator(".signals-chip.has-clip", { hasText: "Trips Rt Nub" }).first();
+    await expect(signalChip).toBeVisible();
+    await signalChip.click();
+
+    const overlay = page.locator("#signalClipModalOverlay");
+    await expect(overlay).toBeVisible();
+    await expect(overlay.locator(".signals-clip-modal-video")).toBeVisible();
+    const metrics = await page.evaluate(() => {
+      const overlayEl = document.getElementById("signalClipModalOverlay");
+      const modalEl = overlayEl?.querySelector(".signals-clip-modal");
+      const overlayRect = overlayEl?.getBoundingClientRect();
+      const modalRect = modalEl?.getBoundingClientRect();
+      return {
+        bodyClasses: document.body.className,
+        overlayDisplay: overlayEl ? getComputedStyle(overlayEl).display : "",
+        modalWidth: Math.round(modalRect?.width || 0),
+        distanceTop: Math.round((modalRect?.top || 0) - (overlayRect?.top || 0)),
+        distanceBottom: Math.round((overlayRect?.bottom || 0) - (modalRect?.bottom || 0)),
+      };
+    });
+
+    expect(metrics.overlayDisplay).toBe("grid");
+    expect(metrics.modalWidth).toBeLessThanOrEqual(620);
+    expect(metrics.distanceTop).toBeGreaterThan(24);
+    expect(Math.abs(metrics.distanceTop - metrics.distanceBottom)).toBeLessThanOrEqual(90);
+    await assertNoHorizontalOverflow(page);
+  });
+
   test("captures Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions @screenshots", async ({ page }, testInfo) => {
     test.skip(!/ipad/i.test(testInfo.project.name), "iPad visual audit runs only on iPad projects.");
     fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });

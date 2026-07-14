@@ -148,6 +148,12 @@ function _playbookHasPlayerNotes(play) {
   return Boolean(play && String(play.playerNotes || "").trim());
 }
 
+function _isPlayerPlaybookViewer() {
+  const currentUser =
+    typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  return currentUser?.role === "player";
+}
+
 function filterPlays() {
   const activeTypes = activeTypeChips;
   const activePersonnel = activePersonnelChips;
@@ -183,6 +189,13 @@ function filterPlays() {
   _updateGamePlanFilterBar();
 
   filteredPlays = plays.filter((play) => {
+    if (
+      _isPlayerPlaybookViewer() &&
+      typeof isPlayHiddenFromPlayers === "function" &&
+      isPlayHiddenFromPlayers(play)
+    ) {
+      return false;
+    }
     const meta = runtimeIndex && runtimeIndex.byPlay ? runtimeIndex.byPlay.get(play) : null;
     if (taggedForOpponent) {
       const tagSig = meta ? meta.tagSig : playSignature(play);
@@ -314,8 +327,7 @@ function clearFilters() {
 
   storageManager.remove(STORAGE_KEYS.PLAYBOOK_STATE);
 
-  filteredPlays = [...plays];
-  requestRenderPlaybook();
+  filterPlays();
   updateActiveFilterBar();
 }
 
