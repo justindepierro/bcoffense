@@ -186,7 +186,7 @@ Phase 5 - Signal games and leaderboards:
 - [x] Tighten Signal quiz playback: remove browser video controls from quiz
   prompts, preload clips faster, and show immediate `Correct` / `Incorrect`
   feedback before the next rep.
-- [ ] Speed pass for Signal quizzes: correct answers should auto-advance to the
+- [x] Speed pass for Signal quizzes: correct answers should auto-advance to the
   next rep immediately, wrong answers should show brief feedback, and clip
   loading/question transitions should feel much faster on mobile.
 - [x] Add a future `Full Play Call` signal game: pull a play from the practice

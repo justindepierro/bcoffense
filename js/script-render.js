@@ -1513,6 +1513,10 @@ const SIGNAL_BATTLE_CLIP_MS = 5000;
 const SIGNAL_BATTLE_ANSWER_MS = 6000;
 const SIGNAL_BATTLE_TARGET_REPS = 20;
 const SIGNAL_HEAT_CHECK_TARGET_REPS = 200;
+const SIGNAL_QUIZ_CORRECT_ADVANCE_MS = 90;
+const SIGNAL_QUIZ_WRONG_FEEDBACK_MS = 420;
+const SIGNAL_QUIZ_HEAT_MISS_FINISH_MS = 520;
+const SIGNAL_QUIZ_PRELOAD_WINDOW = 3;
 const SIGNAL_GAME_CATEGORY_OPTIONS = [
   { id: "CORE", label: "Core" },
   { id: "TAGS", label: "Tags" },
@@ -1530,6 +1534,7 @@ const PLAYER_QUIZ_BASE_CORRECT_POINTS = 10;
 const PLAYER_QUIZ_STREAK_STEP_POINTS = 1;
 const PLAYER_QUIZ_MAX_STREAK_BONUS = 4;
 const PLAYER_QUIZ_MIN_BONUS_ANSWERS = 5;
+const _quizSignalPreloadCache = new Map();
 const PLAYER_QUIZ_SOURCE_WEIGHTS = {
   script: 1,
   gameplan: 1.25,
@@ -7806,6 +7811,46 @@ function _configureQuizSignalVideos(root = document) {
   });
 }
 
+function _getQuizSignalClipUrls(item) {
+  const urls = [];
+  const single = item?.signalRecord?.clipUrl || "";
+  if (single) urls.push(single);
+  if (Array.isArray(item?.signalFullCallClips)) {
+    item.signalFullCallClips.forEach((clip) => {
+      if (clip?.clipUrl) urls.push(clip.clipUrl);
+    });
+  }
+  return [...new Set(urls.filter(Boolean))];
+}
+
+function _preloadQuizSignalClip(url) {
+  const clipUrl = String(url || "").trim();
+  if (!clipUrl || _quizSignalPreloadCache.has(clipUrl)) return;
+  if (typeof navigator !== "undefined" && navigator.connection?.saveData) return;
+  const video = document.createElement("video");
+  video.preload = "auto";
+  video.muted = true;
+  video.defaultMuted = true;
+  video.playsInline = true;
+  video.src = clipUrl;
+  _quizSignalPreloadCache.set(clipUrl, { video, touchedAt: Date.now() });
+  try { video.load(); } catch (_err) { }
+  if (_quizSignalPreloadCache.size > 12) {
+    const oldest = [..._quizSignalPreloadCache.entries()]
+      .sort((a, b) => a[1].touchedAt - b[1].touchedAt)[0];
+    if (oldest) _quizSignalPreloadCache.delete(oldest[0]);
+  }
+}
+
+function _preloadUpcomingQuizSignalMedia(startIndex = _quizIndex) {
+  if (_quizSourceType !== "signal") return;
+  const start = Math.max(0, Number(startIndex || 0));
+  const end = Math.min(_quizPlays.length, start + SIGNAL_QUIZ_PRELOAD_WINDOW);
+  for (let i = start; i < end; i += 1) {
+    _getQuizSignalClipUrls(_quizPlays[i]).forEach(_preloadQuizSignalClip);
+  }
+}
+
 function _renderQuizFeedback(item, answer) {
   if (!answer) return "";
   const { play } = item;
@@ -7899,6 +7944,7 @@ function startScriptQuiz(options = {}) {
     trapFocus(overlay);
   }
   _startQuizTimerIfNeeded();
+  _preloadUpcomingQuizSignalMedia(0);
   renderScriptQuizPlay();
 }
 
@@ -7984,15 +8030,18 @@ function _advanceSignalGameAfterAnswer(questionKey) {
     return;
   }
   const answer = _quizAnswers.get(questionKey);
+  const advanceDelay = answer?.correct ? SIGNAL_QUIZ_CORRECT_ADVANCE_MS : SIGNAL_QUIZ_WRONG_FEEDBACK_MS;
   if (_isSignalHeatCheckMode() && answer && !answer.correct) {
     setTimeout(() => {
       if (_quizFinished) return;
       finishScriptQuiz();
-    }, 650);
+    }, SIGNAL_QUIZ_HEAT_MISS_FINISH_MS);
     return;
   }
   if (_quizIndex >= _quizPlays.length - 1) {
-    finishScriptQuiz();
+    setTimeout(() => {
+      if (!_quizFinished) finishScriptQuiz();
+    }, advanceDelay);
     return;
   }
   setTimeout(() => {
@@ -8013,7 +8062,7 @@ function _advanceSignalGameAfterAnswer(questionKey) {
     _quizIndex++;
     _resetQuizRoundState();
     renderScriptQuizPlay();
-    }, 650);
+  }, advanceDelay);
 }
 
 function answerScriptQuizChoice(choiceKey) {
@@ -8601,6 +8650,7 @@ function renderScriptQuizPlay() {
   const questionData = _getQuizQuestionAndChoices(item);
   _quizCurrentQuestion = questionData.question;
   _quizCurrentChoices = questionData.choices;
+  _preloadUpcomingQuizSignalMedia(_quizIndex);
   const gameMode = _quizCurrentChoices.length >= 2;
   _quizRevealed = Boolean(answer);
   const battleState = _ensureSignalBattleRound(questionKey, answer);
@@ -8754,6 +8804,7 @@ function renderScriptQuizPlay() {
     if (window.playImages && typeof window.playImages.hydrateSmartDiagramImages === "function") {
       requestAnimationFrame(() => window.playImages.hydrateSmartDiagramImages(scenarioEl));
     }
+    _configureQuizSignalVideos(scenarioEl);
     requestAnimationFrame(() => _configureQuizSignalVideos(scenarioEl));
   }
 

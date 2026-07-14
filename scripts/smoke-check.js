@@ -4311,6 +4311,9 @@ function checkSignalPlayIntegrationContracts() {
     !/const SIGNAL_BATTLE_ANSWER_MS = 6000/.test(scriptRender) ||
     !/const SIGNAL_BATTLE_TARGET_REPS = 20/.test(scriptRender) ||
     !/const SIGNAL_HEAT_CHECK_TARGET_REPS = 200/.test(scriptRender) ||
+    !/const SIGNAL_QUIZ_CORRECT_ADVANCE_MS = 90/.test(scriptRender) ||
+    !/const SIGNAL_QUIZ_WRONG_FEEDBACK_MS = 420/.test(scriptRender) ||
+    !/const SIGNAL_QUIZ_PRELOAD_WINDOW = 3/.test(scriptRender) ||
     !/const SIGNAL_GAME_CATEGORY_OPTIONS = \[/.test(scriptRender) ||
     !/function _isSignalSprintMode\(mode = _quizMode\)/.test(scriptRender) ||
     !/function _isSignalBattleMode\(mode = _quizMode\)/.test(scriptRender) ||
@@ -4319,6 +4322,11 @@ function checkSignalPlayIntegrationContracts() {
     !/function _isSignalAutoAdvanceMode\(mode = _quizMode\)/.test(scriptRender) ||
     !/function _renderQuizInlineFeedback\(item, answer\)/.test(scriptRender) ||
     !/function _configureQuizSignalVideos\(root = document\)/.test(scriptRender) ||
+    !/function _preloadUpcomingQuizSignalMedia\(startIndex = _quizIndex\)/.test(scriptRender) ||
+    !/_preloadUpcomingQuizSignalMedia\(0\)/.test(scriptRender) ||
+    !/_preloadUpcomingQuizSignalMedia\(_quizIndex\)/.test(scriptRender) ||
+    !/answer\?\.correct \? SIGNAL_QUIZ_CORRECT_ADVANCE_MS : SIGNAL_QUIZ_WRONG_FEEDBACK_MS/.test(scriptRender) ||
+    !/SIGNAL_QUIZ_HEAT_MISS_FINISH_MS/.test(scriptRender) ||
     !/function _getSignalFullCallSourceItems\(\)/.test(scriptRender) ||
     !/async function _buildSignalFullCallItems\(settings = _getSignalGameSettings\(\)\)/.test(scriptRender) ||
     !/function _signalFullCallDistractorScore\(correctPlay, candidatePlay\)/.test(scriptRender) ||
@@ -4483,6 +4491,7 @@ function checkSignalPlayIntegrationContracts() {
     !/- \[x\] Sync Signal game attempts through the existing leaderboard pipeline/.test(roadmap) ||
     !/- \[x\] Give coaches controls for eligible categories/.test(roadmap) ||
     !/- \[x\] Tighten Signal quiz playback: remove browser video controls from quiz/.test(roadmap) ||
+    !/- \[x\] Speed pass for Signal quizzes: correct answers should auto-advance/.test(roadmap) ||
     !/- \[x\] Add a future `Full Play Call` signal game/.test(roadmap)
   ) {
     fail("signals roadmap checklist is not updated for the play selector slice");
