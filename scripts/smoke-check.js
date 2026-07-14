@@ -4360,6 +4360,9 @@ function checkSignalPlayIntegrationContracts() {
     !/\.signals-play-dialog/.test(signalsCss) ||
     !/\.signals-play-chip/.test(signalsCss) ||
     !/\.signals-play-video/.test(signalsCss) ||
+    !/\.signals-clip-modal-overlay/.test(signalsCss) ||
+    !/\.signals-clip-modal-video/.test(signalsCss) ||
+    !/\.signals-clip video\s*\{[\s\S]*display:\s*none/.test(signalsCss) ||
     !/\.pb-signal-badge/.test(signalsCss) ||
     !/\.signals-coverage/.test(signalsCss) ||
     !/\.signals-coverage-missing/.test(signalsCss) ||
@@ -4386,6 +4389,13 @@ function checkSignalPlayIntegrationContracts() {
 
   if (
     !/function _sigConfigureLoopVideos\(root = document\)/.test(signals) ||
+    !/function openSignalClipModal\(cacheKey\)/.test(signals) ||
+    !/function closeSignalClipModal\(\)/.test(signals) ||
+    !/window\.openSignalClipModal = openSignalClipModal/.test(signals) ||
+    !/window\.closeSignalClipModal = closeSignalClipModal/.test(signals) ||
+    !/data-action="openSignalClipModal"/.test(signals) ||
+    !/overlay\.dataset\.action = "closeSignalClipModalOverlay"/.test(signals) ||
+    !/\.signals-clip-modal-video/.test(signals) ||
     !/const SILENT_UPLOAD_FPS = 30/.test(clips) ||
     !/async function createSilentVideoFile\(file, durationSec = 0\)/.test(clips) ||
     !/canvas\.captureStream\(SILENT_UPLOAD_FPS\)/.test(clips) ||

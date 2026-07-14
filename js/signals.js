@@ -31,6 +31,7 @@ const SIGNAL_IPHONE_CAPTURE_HINT =
 let _sigSelected = null;
 let _sigLastRenderToken = 0;
 let _sigSelectorState = null;
+let _sigClipModalCache = new Map();
 
 function _sigCanManage() {
   return typeof canEditUser === "function" ? Boolean(canEditUser()) : false;
@@ -482,11 +483,18 @@ async function _sigRenderRemoteClips(summary, record, token) {
     return;
   }
   const manage = _sigCanManage();
-  listEl.innerHTML = clips.map((clip) => {
+  _sigClipModalCache = new Map();
+  listEl.innerHTML = clips.map((clip, index) => {
     const meta = [
       clip.duration ? `${clip.duration}s` : "",
       clip.size ? `${(clip.size / (1024 * 1024)).toFixed(1)} MB` : "",
     ].filter(Boolean).join(" / ");
+    const cacheKey = `${sig}:${clip.id || index}`;
+    _sigClipModalCache.set(cacheKey, {
+      clip,
+      summary,
+      meta,
+    });
     return `
       <article class="signals-clip">
         <video controls autoplay loop muted preload="metadata" playsinline src="${escapeAttr(clip.url || "")}"></video>
@@ -494,11 +502,48 @@ async function _sigRenderRemoteClips(summary, record, token) {
           <strong>${escapeHtml(clip.label || summary.displayValue)}</strong>
           <span>${escapeHtml(meta || "Signal clip")}</span>
         </div>
+        <button type="button" class="signals-clip-open" data-action="openSignalClipModal" data-arg="${escapeAttr(cacheKey)}">Watch</button>
         ${manage ? `<button type="button" class="btn btn-sm btn-danger" data-action="deleteSignalClip" data-arg="${escapeAttr(clip.id)}">Delete</button>` : ""}
       </article>
     `;
   }).join("");
   _sigConfigureLoopVideos(listEl);
+}
+
+function openSignalClipModal(cacheKey) {
+  const item = _sigClipModalCache.get(String(cacheKey || ""));
+  if (!item?.clip?.url) {
+    if (typeof showToast === "function") showToast("Signal clip unavailable.", { type: "warning" });
+    return;
+  }
+  closeSignalClipModal();
+  const clip = item.clip;
+  const summary = item.summary || {};
+  const title = clip.label || summary.displayValue || "Signal";
+  const meta = item.meta || "Signal clip";
+  const overlay = document.createElement("div");
+  overlay.id = "signalClipModalOverlay";
+  overlay.className = "signals-clip-modal-overlay";
+  overlay.dataset.action = "closeSignalClipModalOverlay";
+  overlay.innerHTML = `
+    <div class="signals-clip-modal" role="dialog" aria-modal="true" aria-labelledby="signalClipModalTitle">
+      <header class="signals-clip-modal__head">
+        <div>
+          <span>${escapeHtml(summary.componentLabel || summary.category || "Signal")}</span>
+          <h3 id="signalClipModalTitle">${escapeHtml(title)}</h3>
+        </div>
+        <button type="button" class="signals-clip-modal__close" data-action="closeSignalClipModal" aria-label="Close signal clip">&times;</button>
+      </header>
+      <video class="signals-clip-modal-video" controls autoplay loop muted playsinline preload="metadata" src="${escapeAttr(clip.url)}"></video>
+      <p class="signals-clip-modal__meta">${escapeHtml(meta)}</p>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+  _sigConfigureLoopVideos(overlay);
+}
+
+function closeSignalClipModal() {
+  document.getElementById("signalClipModalOverlay")?.remove();
 }
 
 function renderSignals() {
@@ -867,7 +912,14 @@ function getSignalQuizStats(options = {}) {
 }
 
 function _sigConfigureLoopVideos(root = document) {
-  root.querySelectorAll?.(".signals-play-video, .signals-clip video").forEach((video) => {
+  root.querySelectorAll?.(".signals-play-video, .signals-clip video, .signals-clip-modal-video").forEach((video) => {
+    if (
+      video.closest(".signals-clip") &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 640px)").matches
+    ) {
+      return;
+    }
     video.controls = true;
     video.autoplay = true;
     video.loop = true;
@@ -1050,6 +1102,8 @@ window.SIGNAL_COMPONENTS = SIGNAL_COMPONENTS;
 window.initSignals = initSignals;
 window.renderSignals = renderSignals;
 window.openSignalComponent = openSignalComponent;
+window.openSignalClipModal = openSignalClipModal;
+window.closeSignalClipModal = closeSignalClipModal;
 window.uploadSelectedSignalClip = uploadSelectedSignalClip;
 window.saveSignalDetails = saveSignalDetails;
 window.deleteSignalClip = deleteSignalClip;

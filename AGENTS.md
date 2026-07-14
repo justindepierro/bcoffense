@@ -330,6 +330,7 @@ window.canEditUser
 window.canManageSettings
 window.closeAnchoredMenu
 window.closeCloudSyncModal
+window.closeSignalClipModal
 window.completeWorkspaceSyncJob
 window.closePlayDiagramHealth
 window.closePlayEditor
@@ -362,6 +363,7 @@ window.isAdminUser
 window.logoutAuth
 window.openCloudSyncModal
 window.openSignalComponent
+window.openSignalClipModal
 window.openPlaybookClipViewer
 window.openPlayClipViewer
 window.openPlayDiagramHealth
