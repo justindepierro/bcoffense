@@ -459,7 +459,7 @@
     if (typeof window.hasWorkspaceSyncWork === "function" && window.hasWorkspaceSyncWork()) {
       risks.push({
         label: "Pending workspace work",
-        detail: "A local save, cloud push, media upload, or player update has not finished.",
+        detail: "A local save, cloud publish, media upload, or player update has not finished.",
         timestamp: Date.now(),
       });
     }
@@ -747,11 +747,11 @@
           throw new Error("Play images could not be included in the cloud autosave.");
         } else {
           const ok = await showConfirm(
-            "Play images could not be included in this workspace push. Push the rest of your data anyway?",
+            "Play images could not be included in this workspace publish. Publish the rest of your data anyway?",
             {
               title: "Image Export Failed",
               icon: "⚠️",
-              confirmText: "Push Without Images",
+              confirmText: "Publish Without Images",
             },
           );
           if (!ok) throw err;
@@ -798,7 +798,7 @@
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const err = new Error(data.error || `Cloud sync failed with ${response.status}`);
+      const err = new Error(data.error || `Workspace request failed with ${response.status}`);
       err.status = response.status;
       err.data = data;
       throw err;
@@ -830,16 +830,16 @@
 
   function saveCloudSyncSettings(opts = {}) {
     saveCloudSyncSettingsObject();
-    if (!opts.quiet) showToast("Cloud sync settings saved", { type: "success" });
+    if (!opts.quiet) showToast("Recovery settings saved", { type: "success" });
   }
 
   async function testCloudSyncConnection() {
     try {
       setCloudSyncBusy(true);
-      updateCloudSyncModalStatus("Checking Cloudflare sync...", "info");
+      updateCloudSyncModalStatus("Checking recovery status...", "info");
       const remote = await fetchCloudBackup({ allowMissing: true });
       if (!remote) {
-        updateCloudSyncModalStatus("Cloudflare sync is ready. No team workspace has been pushed yet.", "ok");
+        updateCloudSyncModalStatus("Recovery connection is ready. No team workspace has been published yet.", "ok");
         renderCloudSyncStatus();
         return;
       }
@@ -862,7 +862,7 @@
 
   function formatDiagramSyncSummary(result) {
     if (!result) return "";
-    return `Player-visible diagrams: ${Number(result.pushed || 0)} pushed, ${Number(result.skipped || 0)} skipped, ${Number(result.failed || 0)} failed.`;
+    return `Player-visible diagrams: ${Number(result.pushed || 0)} published, ${Number(result.skipped || 0)} skipped, ${Number(result.failed || 0)} failed.`;
   }
 
   function formatDiagramSyncDetails(result) {
@@ -872,7 +872,7 @@
       .map((item) => {
         const sig = item.sig ? `${item.sig}: ` : "";
         const status = item.status ? `${item.status}: ` : "";
-        return `- ${sig}${status}${item.error || "Unknown diagram sync issue."}`;
+        return `- ${sig}${status}${item.error || "Unknown diagram publish issue."}`;
       })
       .join("\n");
   }
@@ -886,7 +886,7 @@
     if (Object.prototype.hasOwnProperty.call(backup, "playImages")) {
       if (interactive) {
         const ok = await showConfirm(
-          `This team workspace is ${storageManager.formatBytes(payloadSize)}, which is larger than Cloudflare KV can store in one item. Push the team data without play images?`,
+          `This team workspace is ${storageManager.formatBytes(payloadSize)}, which is larger than the current cloud storage limit. Publish the team data without play images?`,
           {
             title: "Backup Too Large",
             icon: "⚠️",
@@ -894,7 +894,7 @@
           },
         );
         if (!ok) {
-          throw new Error("Team workspace was not pushed.");
+          throw new Error("Team workspace was not published.");
         }
       }
       const smallerBackup = { ...backup };
@@ -911,7 +911,7 @@
     }
 
     throw new Error(
-      `Team workspace is ${storageManager.formatBytes(payloadSize)}. Cloudflare KV supports up to 25 MiB per item.`,
+      `Team workspace is ${storageManager.formatBytes(payloadSize)}. The current cloud storage limit is 25 MiB per item.`,
     );
   }
 
@@ -919,7 +919,7 @@
     const silent = opts.silent === true;
     const skipActivityLog = opts.skipActivityLog === true;
     if (!userCanPushCloudBackup()) {
-      throw new Error("Only admin can push the team workspace.");
+      throw new Error("Only admin can publish the team workspace.");
     }
 
     try {
@@ -936,7 +936,7 @@
         { interactive: !silent },
       ));
 
-      if (!silent) updateCloudSyncModalStatus("Pushing team workspace to Cloudflare...", "info");
+      if (!silent) updateCloudSyncModalStatus("Publishing team workspace...", "info");
       const data = await cloudSyncRequest("PUT", payloadText);
       const summary = getCloudBackupSummary(backup);
       const nextSettings = saveCloudSyncSettingsObject({
@@ -949,7 +949,7 @@
       if (window.playImages && typeof window.playImages.syncToRemote === "function") {
         const _playsRef = typeof plays !== "undefined" ? plays : [];
         if (!silent) {
-          updateCloudSyncModalStatus("Backup pushed. Syncing diagrams to player devices...", "info");
+          updateCloudSyncModalStatus("Workspace published. Publishing diagrams to player devices...", "info");
           diagramSyncResult = await window.playImages.syncToRemote(_playsRef);
         } else {
           // Auto-push should never block the app; report issues to the console.
@@ -979,7 +979,7 @@
           });
         }
         updateCloudSyncModalStatus(
-          `Pushed ${summary.itemCount} items${summary.imageCount ? ` and ${summary.imageCount} diagram entries` : ""}.${diagramLine ? ` ${diagramLine}` : ""} Last push: ${formatCloudDate(nextSettings.lastPushAt)}.`,
+          `Published ${summary.itemCount} items${summary.imageCount ? ` and ${summary.imageCount} diagram entries` : ""}.${diagramLine ? ` ${diagramLine}` : ""} Last publish: ${formatCloudDate(nextSettings.lastPushAt)}.`,
           hasDiagramIssues ? "warning" : "ok",
         );
         if (hasDiagramIssues && typeof showToast === "function") {
@@ -1143,7 +1143,7 @@
         ? `\n\nLocal work to review before updating:\n${riskLines}${overflowLine}\n\nUpdating anyway will replace this device's local workspace. Publish this device first if those changes should be kept.`
         : "";
       const ok = await showConfirm(
-        `Pull the team workspace from ${formatCloudDate(summary.exportDate)} onto this device?\n\nThis refreshes local practice data with the latest cloud workspace.\n\nItems: ${summary.itemCount}${summary.imageCount ? `\nDiagrams in backup: ${summary.imageCount}` : ""}${riskText}\n\nContinue?`,
+        `Recover this device from the team workspace dated ${formatCloudDate(summary.exportDate)}?\n\nThis refreshes local practice data with the latest published workspace.\n\nItems: ${summary.itemCount}${summary.imageCount ? `\nDiagrams in backup: ${summary.imageCount}` : ""}${riskText}\n\nContinue?`,
         {
           title: pullRisks.hasRisk ? "Review Local Work Before Update" : "Update Team Workspace",
           icon: pullRisks.hasRisk ? "⚠️" : "☁️",
@@ -1209,7 +1209,7 @@
 
       if (shouldNotify) {
         showToast(
-          `Team workspace pulled.${restoredImages ? ` Diagrams restored: ${restoredImages}.` : ""}${imageWarning}`,
+          `Team workspace updated.${restoredImages ? ` Diagrams restored: ${restoredImages}.` : ""}${imageWarning}`,
           { type: "success", duration: 4000 },
         );
       }
@@ -1230,12 +1230,7 @@
           ? await refreshPlayerTeamApp({ quiet: false, force: true })
           : await refreshPlayerCloudBackup({ navigate: true });
         closeCloudSyncModal();
-        if (result?.ok && result?.status !== "needs-retry") {
-          showToast("Ready", {
-            type: "success",
-            duration: 3000,
-          });
-        } else {
+        if (!result?.ok || result?.status === "needs-retry") {
           showToast("Try Again", {
             type: "warning",
             duration: 4000,
@@ -1332,12 +1327,12 @@
       return;
     }
     const lastText = settings.lastPushAt
-      ? `last push ${formatCloudDate(settings.lastPushAt)}`
+      ? `last publish ${formatCloudDate(settings.lastPushAt)}`
       : settings.lastPullAt
-        ? `last pull ${formatCloudDate(settings.lastPullAt)}`
+        ? `this device updated ${formatCloudDate(settings.lastPullAt)}`
         : settings.lastRemoteExportDate
-          ? `cloud workspace ${formatCloudDate(settings.lastRemoteExportDate)}`
-          : "no sync yet";
+          ? `published workspace ${formatCloudDate(settings.lastRemoteExportDate)}`
+          : "not published yet";
     statusEl.textContent = `Publish status ready - ${lastText}`;
     statusEl.className = "cloud-sync-status cloud-sync-status-ready";
     if (typeof window.setWorkspaceSyncStatus === "function") {
@@ -1524,10 +1519,6 @@
         return false;
       }
 
-      showToast(
-        currentUser.role === "player" ? "Checking for coach updates" : "Pulling latest team workspace...",
-        { type: "info", duration: 1500 },
-      );
       return restoreCloudBackup(remote, {
         auto: true,
         confirm: false,
@@ -1536,7 +1527,7 @@
     } catch (err) {
       console.warn("Cloud auto-pull failed:", err);
       if (err.status !== 401 && err.status !== 404) {
-        showToast(currentUser.role === "player" ? "Try Again" : `Cloud auto-pull failed: ${err.message}`, {
+        showToast(currentUser.role === "player" ? "Try Again" : `Team workspace update failed: ${err.message}`, {
           type: "warning",
           duration: 5000,
         });
@@ -1661,7 +1652,7 @@
     const applied = sessionStorage.getItem(CLOUD_SYNC_AUTO_PULL_APPLIED_KEY);
     if (applied) {
       sessionStorage.removeItem(CLOUD_SYNC_AUTO_PULL_APPLIED_KEY);
-      showToast(`Latest team workspace pulled: ${formatCloudDate(applied)}`, {
+      showToast(`Latest team workspace applied: ${formatCloudDate(applied)}`, {
         type: "success",
         duration: 4000,
       });
@@ -1698,6 +1689,7 @@
   window.dismissTeamWorkspacePullSummary = dismissTeamWorkspacePullSummary;
   window.getPublishActivityLog = getPublishActivityLog;
   window.getLatestPublishActivity = getLatestPublishActivity;
+  window.recordPublishActivity = recordPublishActivity;
   window.queueCloudAutoPush = queueCloudAutoPush;
   window.flushCloudAutoPush = flushCloudAutoPush;
 })();

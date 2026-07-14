@@ -249,10 +249,10 @@ plain warnings.
 
 ### Phase V2.5 - Legacy Cleanup
 
-- [ ] Remove duplicate status toasts that compete with the dock.
-- [ ] Collapse overlapping publish status stores into one publish ledger.
-- [ ] Audit every user-facing instance of `sync`, `push`, and `pull`.
-- [ ] Add regression checks that players do not see Cloudflare/pull/sync copy.
+- [x] Remove duplicate status toasts that compete with the dock.
+- [x] Collapse overlapping publish status stores into one publish ledger.
+- [x] Audit every user-facing instance of `sync`, `push`, and `pull`.
+- [x] Add regression checks that players do not see Cloudflare/pull/sync copy.
 
 ## V2 Definition Of Done
 

@@ -284,6 +284,22 @@ function _dashFormatDiagnosticDate(value) {
 }
 
 function _dashLatestPlayerPublish(savedScripts = []) {
+  const ledger = typeof getPublishActivityLog === "function" ? getPublishActivityLog() : [];
+  const latestLedger = (Array.isArray(ledger) ? ledger : [])
+    .filter((entry) =>
+      entry &&
+      entry.result !== "failed" &&
+      Array.isArray(entry.domains) &&
+      entry.domains.some((domain) => ["scripts", "diagrams", "clips", "quizzes", "signals"].includes(String(domain))),
+    )
+    .sort((a, b) => _dashGetTimestamp(b.timestamp) - _dashGetTimestamp(a.timestamp))[0];
+  if (latestLedger) {
+    return {
+      kind: "Ledger",
+      label: latestLedger.summary || (latestLedger.domains || []).join(", ") || "Player publish",
+      updatedAt: latestLedger.timestamp || "",
+    };
+  }
   const scriptLatest = (Array.isArray(savedScripts) ? savedScripts : [])
     .filter((savedScript) => savedScript?.playerVisible)
     .map((savedScript) => ({
@@ -388,7 +404,7 @@ function renderAdminDiagnosticsTile() {
       <div class="dash-diagnostics-grid">
         ${_dashDiagnosticItem("App cache", appVersion, "Current loaded asset version", appVersion === "Unknown" ? "warn" : "ready")}
         ${_dashDiagnosticItem("Service worker", controllerState, "Checking registration...", controllerState === "Active" ? "ready" : "warn")}
-        ${_dashDiagnosticItem("Last cloud pull", _dashFormatDiagnosticDate(cloud.lastPullAt), cloudDetail || "No pull recorded on this device", cloud.lastPullAt ? "ready" : "warn")}
+        ${_dashDiagnosticItem("Last recovery update", _dashFormatDiagnosticDate(cloud.lastPullAt), cloudDetail || "No recovery update recorded on this device", cloud.lastPullAt ? "ready" : "warn")}
         ${_dashDiagnosticItem("Player bootstrap", bootstrapDiagnostic.value, bootstrapDiagnostic.detail, bootstrapDiagnostic.tone)}
         ${_dashDiagnosticItem(
     "Last player publish",
@@ -434,7 +450,7 @@ function renderTeamWorkspacePullSummary() {
   const dateText = summary.exportDate || summary.updatedAt
     ? _dashFormatDiagnosticDate(summary.exportDate || summary.updatedAt)
     : "Not recorded";
-  const pulledText = summary.pulledAt ? _dashFormatDiagnosticDate(summary.pulledAt) : "";
+  const updatedText = summary.pulledAt ? _dashFormatDiagnosticDate(summary.pulledAt) : "";
   const sizeText = summary.size && storageManager?.formatBytes
     ? storageManager.formatBytes(summary.size)
     : "";
@@ -446,7 +462,7 @@ function renderTeamWorkspacePullSummary() {
         <div>
           <span>Team Workspace Update</span>
           <h3>This device was updated</h3>
-          <p>${escapeHtml(dateText)}${pulledText ? ` • pulled ${escapeHtml(pulledText)}` : ""}${sizeText ? ` • ${escapeHtml(sizeText)}` : ""}</p>
+              <p>${escapeHtml(dateText)}${updatedText ? ` • updated ${escapeHtml(updatedText)}` : ""}${sizeText ? ` • ${escapeHtml(sizeText)}` : ""}</p>
         </div>
         <button type="button" class="btn btn-sm btn-secondary" data-action="dismissTeamWorkspacePullSummary">
           Dismiss
@@ -1362,7 +1378,7 @@ function getPlayerHomePracticeStatus(featuredScript, loadedScript, todayValue) {
       : {
         tone: "offline",
         title: "Offline mode",
-        body: "Reconnect to pull the newest practice. Anything already loaded stays available.",
+        body: "Reconnect to get the newest practice. Anything already loaded stays available.",
       };
   }
   if (featuredScript?.date === todayValue && !loadedScript) {

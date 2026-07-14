@@ -3401,6 +3401,10 @@ function checkWorkspaceSyncContracts() {
     "- [x] Move all-local diagram sync into recovery tools.",
     "- [x] Keep export/import backup tools but separate them from publish status.",
     "- [x] Add warnings that recovery tools are not the normal practice workflow.",
+    "- [x] Remove duplicate status toasts that compete with the dock.",
+    "- [x] Collapse overlapping publish status stores into one publish ledger.",
+    "- [x] Audit every user-facing instance of `sync`, `push`, and `pull`.",
+    "- [x] Add regression checks that players do not see Cloudflare/pull/sync copy.",
   ].forEach((token) => {
     if (!roadmap.includes(token)) {
       fail(`workspace sync roadmap missing ${token}`);
@@ -3504,6 +3508,15 @@ function checkWorkspaceSyncContracts() {
 
   if (/Cloud autosaved|Cloud autosave|Cloud sync queued|Syncing team cloud|Cloud sync needs attention/.test(cloudSync) || /Play image changed\. Cloud autosave queued\./.test(cloudSync)) {
     fail("cloud autosave still uses noisy success/queued toasts instead of the workspace dock");
+  }
+  if (
+    /Pushing team workspace to Cloudflare|Backup pushed\. Syncing|Cloudflare sync|Cloud sync settings saved|Team workspace pulled|Latest team workspace pulled|last pull|last push|no sync yet/.test(cloudSync) ||
+    /Reconnect to pull|Pull from Cloudflare|Cloud Sync|Ask your coach to sync diagrams/.test(shell + dashboardRender + scriptPlayer)
+  ) {
+    fail("workspace update surfaces still expose legacy sync/push/pull/cloud copy");
+  }
+  if (/showToast\("Ready"/.test(cloudSync) || /if \(!quiet\)[\s\S]*showToast\(title/.test(shell)) {
+    fail("routine ready status should use the workspace/dashboard status surface, not duplicate toasts");
   }
 
   if (
@@ -3629,6 +3642,9 @@ function checkWorkspaceSyncContracts() {
     !/recordPublishActivity\(\{[\s\S]*result: "failed"/.test(cloudSync) ||
     !/window\.getPublishActivityLog = getPublishActivityLog/.test(cloudSync) ||
     !/window\.getLatestPublishActivity = getLatestPublishActivity/.test(cloudSync) ||
+    !/window\.recordPublishActivity = recordPublishActivity/.test(cloudSync) ||
+    !/window\.recordPublishActivity\(\{[\s\S]*id: `player-\$\{kind\}-\$\{updatedAt\}`/.test(scriptPlayer) ||
+    !/const ledger = typeof getPublishActivityLog === "function" \? getPublishActivityLog\(\) : \[\]/.test(dashboardRender) ||
     !/cloud-sync-ledger/.test(cloudSync) ||
     !/\.cloud-sync-ledger/.test(componentsCss) ||
     !/function renderTeamWorkspacePullSummary\(\)/.test(dashboardRender) ||

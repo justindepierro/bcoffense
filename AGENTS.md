@@ -348,6 +348,7 @@ window.getDefaultAuthTab
 window.getLatestPublishActivity
 window.getPlayImageUrl
 window.getPublishActivityLog
+window.recordPublishActivity
 window.getRemotePlayerLeaderboardMeta
 window.getRemotePlayerLeaderboardRows
 window.getScriptVisiblePlayerSummary

@@ -627,7 +627,7 @@
 
   async function pushRemote(play, blob) {
     if (!_remoteAvailable()) {
-      return { ok: false, skipped: true, error: "Cloud image sync is not available on this page." };
+      return { ok: false, skipped: true, error: "Cloud media publish is not available on this page." };
     }
     if (!play || !blob) {
       return { ok: false, skipped: true, error: "Missing play or image data." };
@@ -741,7 +741,7 @@
         if (!identityKey) {
           result.skipped += 1;
           if (result.errors.length < 5) {
-            result.errors.push({ sig: localSig, error: "No unique matching play was found for this local diagram. Reattach it from the correct Playbook row, then push again." });
+            result.errors.push({ sig: localSig, error: "No unique matching play was found for this local diagram. Reattach it from the correct Playbook row, then try again." });
           }
           return;
         }
@@ -780,7 +780,7 @@
     if (result.pushed > 0 && typeof window.recordPlayerPublishStatus === "function") {
       window.recordPlayerPublishStatus("diagrams", {
         count: result.pushed,
-        label: `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} synced to player devices`,
+        label: `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} published to player devices`,
       });
     }
     if (typeof window.setWorkspaceSyncStatus === "function") {
@@ -2027,7 +2027,7 @@
     await _renderPublishMediaModalBody();
   };
 
-  // Coach-triggered manual sync — preflights scope before pushing images to R2.
+  // Admin-triggered recovery upload: preflight scope before publishing images to R2.
   window.syncPlayImagesToCloud = async function (opts = {}) {
     if (typeof isAdminUser === "function" && !isAdminUser()) {
       if (typeof showToast === "function") {
@@ -2044,7 +2044,7 @@
     const plan = await buildSyncPlan();
     const allKeys = plan.allKeys;
     // eslint-disable-next-line no-console
-    console.log("[Diagrams] Sync plan:", plan);
+    console.log("[Diagrams] Recovery upload plan:", plan);
     if (!allKeys.length) {
       if (typeof showModal === "function") {
         showModal(
@@ -2092,7 +2092,7 @@
     }
     const result = await syncToRemote(scope.plays, { keys: scope.keys });
     // eslint-disable-next-line no-console
-    console.log("[Diagrams] R2 sync result:", result);
+    console.log("[Diagrams] R2 recovery upload result:", result);
     if ((result.failed || result.skipped || result.pushed === 0) && typeof showToast === "function") {
       const firstIssue = result.errors[0]?.error ? ` ${result.errors[0].error}` : "";
       showToast(

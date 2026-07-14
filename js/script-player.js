@@ -223,6 +223,7 @@ function getPlayerPublishStatus() {
 
 function recordPlayerPublishStatus(kind, details = {}) {
   if (!kind || typeof storageManager === "undefined" || typeof storageManager.set !== "function") return;
+  const updatedAt = details.updatedAt || new Date().toISOString();
   const publishJobKey = typeof window.queueWorkspaceSyncJob === "function"
     ? window.queueWorkspaceSyncJob("player", kind, {
       queuedLabel: "Player publish update queued",
@@ -239,9 +240,20 @@ function recordPlayerPublishStatus(kind, details = {}) {
   status[kind] = {
     ...previous,
     ...details,
-    updatedAt: details.updatedAt || new Date().toISOString(),
+    updatedAt,
   };
   storageManager.set(_playerPublishStatusStorageKey(), status);
+  if (typeof window.recordPublishActivity === "function") {
+    window.recordPublishActivity({
+      id: `player-${kind}-${updatedAt}`,
+      versionId: `player-${kind}`,
+      timestamp: updatedAt,
+      result: "success",
+      domains: [kind],
+      summary: details.label || `Player ${kind} updated`,
+      size: 0,
+    });
+  }
   if (publishJobKey && typeof window.completeWorkspaceSyncJob === "function") {
     window.completeWorkspaceSyncJob(publishJobKey, { label: "Player publish updated" });
   }
@@ -340,7 +352,7 @@ function renderCoachPublishStatus() {
           kind: "Diagrams",
           title: diagramStatus.updatedAt ? "Last diagram update" : "No diagram update tracked",
           updatedAt: diagramStatus.updatedAt,
-          label: diagramStatus.label || (diagramStatus.count ? `${diagramStatus.count} diagrams synced` : "Tracked after next upload or sync."),
+          label: diagramStatus.label || (diagramStatus.count ? `${diagramStatus.count} diagrams published` : "Tracked after next upload."),
         })}
         ${_coachPublishStatusItem({
           kind: "Clips",

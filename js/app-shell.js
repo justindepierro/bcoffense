@@ -1075,7 +1075,7 @@ function updateSaveStatus(state) {
       const role = document.body.dataset.authRole || "";
       banner.textContent = role === "player"
         ? "📱 You’re offline — your last loaded practice is still available in the Script tab."
-        : "📡 You’re offline — changes are saved locally and will sync when reconnected";
+        : "📡 You’re offline — changes are saved locally and will update when reconnected";
     }
   };
   window.addEventListener("online", update);
@@ -2573,9 +2573,6 @@ async function runPlayerTeamBootstrap(opts = {}) {
 
 async function refreshPlayerTeamApp(opts = {}) {
   if (playerTeamRefreshPromise) {
-    if (!opts.quiet) {
-      showToast("Checking for coach updates", { type: "info", duration: 1800 });
-    }
     return playerTeamRefreshPromise;
   }
 
@@ -2590,8 +2587,9 @@ async function refreshPlayerTeamApp(opts = {}) {
   const runRefresh = async () => {
     try {
       const result = await runPlayerTeamBootstrap(opts);
-      const title = _isPlayerBootstrapOk(result) ? "Ready" : "Try Again";
-      if (!quiet) showToast(title, { type: title === "Ready" ? "success" : "warning", duration: 3000 });
+      if (!quiet && !_isPlayerBootstrapOk(result)) {
+        showToast("Try Again", { type: "warning", duration: 3000 });
+      }
       return result;
     } finally {
       playerTeamRefreshPromise = null;
