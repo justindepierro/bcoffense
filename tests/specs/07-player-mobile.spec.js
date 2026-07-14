@@ -510,6 +510,8 @@ test.describe("Player mobile experience", () => {
     await expect(quiz.locator(".sq-result-card")).toContainText("Coaches List");
     await expect(quiz.locator(".sq-result-reward-moment")).toContainText("Coaches List finish");
     await expect(quiz.locator(".sq-result-reward-moment")).toContainText("Badge posted");
+    await expect(quiz.locator(".sq-result-ready-moment")).toContainText("Practice ready");
+    await expect(quiz.locator(".sq-result-ready-moment")).toContainText("Clean finish");
     await expect(quiz.locator(".sq-result-card")).toContainText("46");
     await expect.poll(async () => page.evaluate(() => {
       const attempts = storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, []);

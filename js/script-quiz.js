@@ -6988,6 +6988,49 @@ function _renderQuizResultRewardMoment(summary = {}) {
   `;
 }
 
+function _getQuizResultReadyMoment(summary = {}) {
+  if (!summary || summary.completed === false || Number(summary.answered || 0) < 3) return null;
+  const percent = Number(summary.percent || 0);
+  const wrong = Number(summary.wrong || 0);
+  if (percent >= 95 && wrong === 0) {
+    return {
+      tone: "locked",
+      label: "Practice ready",
+      detail: "Clean finish. Take this confidence into the next script.",
+    };
+  }
+  if (percent >= 85) {
+    return {
+      tone: "ready",
+      label: "Ready to roll",
+      detail: wrong ? "Good finish. Hit the missed call once more before practice." : "Strong finish. Keep the call speed high.",
+    };
+  }
+  if (percent >= 70) {
+    return {
+      tone: "review",
+      label: "Close to ready",
+      detail: "Run the missed reps once more, then retest.",
+    };
+  }
+  return {
+    tone: "study",
+    label: "Study target set",
+    detail: "Start with the misses below before the next quiz.",
+  };
+}
+
+function _renderQuizResultReadyMoment(summary = {}) {
+  const moment = _getQuizResultReadyMoment(summary);
+  if (!moment) return "";
+  return `
+    <div class="sq-result-ready-moment sq-result-ready-moment--${escapeHtml(moment.tone)}" role="status" aria-live="polite">
+      <span>${escapeHtml(moment.label)}</span>
+      <strong>${escapeHtml(moment.detail)}</strong>
+    </div>
+  `;
+}
+
 function _renderQuizSprintStats(summary = {}) {
   if (summary.quizMode !== "signal-sprint") return "";
   const duration = _formatQuizClock(summary.durationMs || 0);
@@ -7304,6 +7347,7 @@ function _renderQuizResults(summary) {
         ${summary.remaining ? `<div class="sq-result-tier">${summary.remaining} question${summary.remaining === 1 ? "" : "s"} left in this ${escapeHtml(_getQuizSourceLabel(summary.sourceType, "sentence"))}.</div>` : ""}
         ${summary.bonusPoints ? `<div class="sq-result-bonus">+${summary.bonusPoints} bonus points · ${escapeHtml(summary.badge)}</div>` : ""}
         ${_renderQuizResultRewardMoment(summary)}
+        ${_renderQuizResultReadyMoment(summary)}
         ${_renderQuizResultReview(summary, review)}
         <div class="sq-result-tier">Weekly tier now: <strong>${escapeHtml(tierAfter)}</strong></div>
         <div class="sq-result-actions">

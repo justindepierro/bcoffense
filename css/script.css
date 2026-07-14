@@ -8223,6 +8223,52 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   font-weight: 800;
 }
 
+.sq-result-ready-moment {
+  width: min(100%, 420px);
+  display: grid;
+  gap: 4px;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-info) 34%, var(--color-border-light));
+  background: color-mix(in srgb, var(--color-info-light) 58%, var(--color-bg-body));
+  text-align: left;
+}
+
+.sq-result-ready-moment span {
+  color: var(--color-info);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.sq-result-ready-moment strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 850;
+  line-height: 1.28;
+}
+
+.sq-result-ready-moment--locked,
+.sq-result-ready-moment--ready {
+  border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-border-light));
+  background: color-mix(in srgb, var(--color-success-light) 62%, var(--color-bg-body));
+}
+
+.sq-result-ready-moment--locked span,
+.sq-result-ready-moment--ready span {
+  color: var(--color-success);
+}
+
+.sq-result-ready-moment--review {
+  border-color: color-mix(in srgb, var(--color-warning) 40%, var(--color-border-light));
+  background: color-mix(in srgb, var(--color-warning-light) 64%, var(--color-bg-body));
+}
+
+.sq-result-ready-moment--review span {
+  color: var(--color-warning);
+}
+
 .sq-result-review {
   width: 100%;
   display: grid;

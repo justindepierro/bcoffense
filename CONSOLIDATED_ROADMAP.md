@@ -401,7 +401,7 @@ Work left from the player mobile scan:
   - Player Home, notification drawer, and push setup states now distinguish offline, unsupported, browser-off, and retry states without implying Practice is broken.
 - [x] iPad player screenshot pass across Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions.
   - Added a local Playwright screenshot audit and fixed tablet portrait Swipe View rail sizing so the full call, chips, and player rule stay readable.
-- [ ] Player delight pass: selective motion/feedback for quiz answers, streaks, sticker awards, and ready confirmation.
+- [x] Player delight pass: selective motion/feedback for quiz answers, streaks, sticker awards, and ready confirmation.
 - [ ] Practice/Home polish follow-up with real team data; trim repeated copy.
 - [ ] Continue safe-area/body-lock QA for full-screen drawers, modal footers, coach dock, and landscape presentation controls.
 - [ ] Decide whether the viewport harness becomes a required ship gate.
