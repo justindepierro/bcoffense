@@ -8,6 +8,32 @@
 
 ---
 
+## Reels Experience — "it just plays" for players (phones/teenagers)
+
+> Goal: media feels like an Instagram reel — never blank, smooth, autoplay/loop,
+> the next one already ready. Foundation already shipped: viewport-gating
+> (v1104/v1107), 1400px player diagrams (v1106), windowed video preload, quiz
+> video preserved across answers (v1103).
+
+**Wave 1 — smooth & never-blank (shipped, SW v1108, `d55e51c`)**
+
+- [x] 🟠 **Skeleton shimmer while loading + fade-in on load** on player playbook cards (never a blank box; smooth appear instead of pop). Theme-aware, reduced-motion safe. — `css/playbook.css`
+- [x] 🟠 **Decode-ahead** the next quiz diagrams (`_decodeAheadImage` warms the browser's decoded-image cache) so they paint instantly, not stall on decode. — `js/script-quiz.js`
+- [x] ✅ Reserved `aspect-ratio`/min-height already present on card + quiz diagram (no layout shift).
+
+**Wave 2 — content-aware placeholders (assessed)**
+
+- [ ] 🟢 **LQIP blur placeholder** — LOWER value here than on Instagram: play diagrams are line art, so a 24px blur is a muddy blob; the clean skeleton shimmer (Wave 1) reads better for diagrams. Revisit only if we add photo media. Would also need publish→player delivery (manifest-embedded data URL or client-cached on first view).
+
+**Wave 3 — video "just plays" polish (remaining, higher effort)**
+
+- [ ] 🟠 **Video element pool** — reuse 2–3 `<video>` elements + swap `src` (what Reels does) instead of innerHTML create/destroy; removes decoder churn/GC hitches on cheap phones when advancing quiz questions. Moderate refactor of `renderScriptQuizPlay`.
+- [ ] 🟢 **Poster frames on player videos** — capture a first-frame at publish so clips show an image instantly instead of black. Needs first-frame capture in the upload pipeline. (Note: `preload="metadata"` already shows a first frame on the gated signal grid.)
+- [ ] 🟢 **SW-cache watched clips (offline replay)** — online replay is ALREADY fast via HTTP `Cache-Control: max-age=86400`; the SW cache would only add offline. Range/206 semantics make it fiddly. Low marginal value.
+
+---
+
+
 ## Phase 1 — Auth / Login Security
 
 Foundation is sound: HMAC-signed session cookie, global `_middleware.js` gates
