@@ -896,10 +896,10 @@ body.shell-tablet.is-mobile-screen .auth-user-badge:not([hidden]) {
 
 /* Staff tablets keep a near-full editing workspace instead of inheriting phone run mode. */
 body.shell-tablet.is-staff-mobile-shell #script .script-builder {
-  grid-template-columns: minmax(250px, 0.72fr) minmax(0, 1.28fr);
+  grid-template-columns: minmax(220px, 0.48fr) minmax(0, 1.52fr);
   grid-template-rows: minmax(0, 1fr);
   align-items: stretch;
-  gap: 14px;
+  gap: 12px;
 }
 
 body.shell-tablet.is-staff-mobile-shell #script .script-play-rail.play-list {
@@ -925,6 +925,63 @@ body.shell-tablet.is-staff-mobile-shell #script .script-list {
   order: 2;
   min-width: 0;
   overflow: visible;
+}
+
+body.shell-tablet.is-staff-mobile-shell #script .script-item--detail,
+body.shell-tablet.is-staff-mobile-shell #script .script-item--compact {
+  grid-template-columns: 40px minmax(0, 1fr) 56px;
+  gap: 8px;
+  padding: 8px;
+}
+
+body.shell-tablet.is-staff-mobile-shell #script .script-select-tools {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+body.shell-tablet.is-staff-mobile-shell #script .play-num {
+  display: none;
+}
+
+body.shell-tablet.is-staff-mobile-shell #script .play-call {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+body.shell-tablet.is-staff-mobile-shell #script .hash-input {
+  grid-column: 3;
+  grid-row: 1;
+  justify-content: flex-end;
+}
+
+body.shell-tablet.is-staff-mobile-shell #script .defense-inputs,
+body.shell-tablet.is-staff-mobile-shell #script .play-controls {
+  grid-column: 2 / -1;
+}
+
+body.shell-tablet.is-staff-mobile-shell #script .play-controls {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+body.shell-tablet.is-staff-mobile-shell #script .play-control-actions {
+  grid-auto-flow: unset;
+  grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+  justify-content: stretch;
+}
+
+body.shell-tablet.is-staff-mobile-shell #script .play-control-actions button {
+  min-height: 44px;
+}
+
+body.shell-tablet.is-staff-mobile-shell #script .script-column-headers {
+  display: none;
+}
+
+body.shell-tablet.is-staff-mobile-shell #script[data-controls-mode="basic"] .script-item--detail,
+body.shell-tablet.is-staff-mobile-shell #script[data-controls-mode="basic"] .script-item--compact {
+  grid-template-columns: 40px minmax(0, 1fr) 56px;
 }
 
 body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {

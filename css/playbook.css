@@ -3269,6 +3269,10 @@ body.shell-phone .pb-action-sheet {
   border-top: 1px solid var(--color-border-light);
 }
 
+.pb-card-actions--staff {
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+}
+
 .pb-card-action {
   min-width: 0;
   min-height: 44px;
@@ -3300,6 +3304,11 @@ body.shell-phone .pb-action-sheet {
   border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-border-light));
   background: var(--color-success-light);
   color: var(--color-success-hover);
+}
+
+.pb-card-action:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 body[data-auth-role="player"] .pb-card .pb-present-btn {
@@ -3342,6 +3351,44 @@ body[data-auth-role="player"] .pb-card .pb-present-btn {
 }
 .pb-card.on-wristband {
   border-left-color: var(--color-success);
+}
+
+body.shell-tablet #playbook #playbookContainer {
+  overflow-x: visible;
+}
+
+body.shell-tablet #playbook #playbookContainer table {
+  display: none;
+}
+
+body.shell-tablet #playbook .pb-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+  align-content: start;
+  gap: 12px;
+  margin-top: 0;
+}
+
+body.shell-tablet #playbook .pb-card {
+  padding: 12px;
+}
+
+body.shell-tablet #playbook .pb-card-play {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  line-height: 1.28;
+}
+
+body.shell-tablet #playbook .pb-card-sub,
+body.shell-tablet #playbook .pb-card-pills,
+body.shell-tablet #playbook .pb-card-study-row {
+  line-height: 1.25;
+}
+
+body.shell-tablet #playbook .pb-card-actions {
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
 }
 
 /* ============ Play Editor Modal ============ */
@@ -3511,8 +3558,8 @@ body[data-auth-role="player"] .pb-card .pb-present-btn {
 
   .pb-player-summary {
     grid-template-columns: 1fr;
-    gap: 6px;
-    padding: 8px;
+    gap: 5px;
+    padding: 7px;
   }
 
   .pb-player-summary__main {
@@ -3542,19 +3589,15 @@ body[data-auth-role="player"] .pb-card .pb-present-btn {
 
   .pb-player-summary__actions .btn {
     min-width: 0;
-    min-height: 40px;
-    padding: 7px 9px;
+    min-height: 36px;
+    padding: 6px 8px;
     justify-content: center;
     white-space: normal;
     touch-action: manipulation;
   }
 
   .pb-player-summary__stats {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    padding-bottom: 1px;
-    scrollbar-width: none;
+    display: none;
   }
 
   .pb-player-summary__stats::-webkit-scrollbar,
@@ -3566,7 +3609,7 @@ body[data-auth-role="player"] .pb-card .pb-present-btn {
     flex-wrap: nowrap;
     justify-content: flex-start;
     overflow-x: auto;
-    padding-top: 5px;
+    padding-top: 4px;
     scrollbar-width: none;
   }
 
@@ -3577,8 +3620,8 @@ body[data-auth-role="player"] .pb-card .pb-present-btn {
   }
 
   body.is-mobile-screen[data-auth-role="player"] .pb-player-summary__filter-pill {
-    min-height: 44px;
-    padding-inline: 14px;
+    min-height: 36px;
+    padding-inline: 12px;
   }
 
   body.is-phone-screen[data-auth-role="player"] .pb-player-summary__filter-label {

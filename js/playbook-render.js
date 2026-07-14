@@ -294,7 +294,15 @@ function renderPlaybook() {
           : "";
         const cardEditButton = isReadOnlyViewer
           ? ""
-          : `<button class="pb-edit-btn" data-action="openPlayEditor" data-idx="${idx}" data-arg="${idx}" title="Edit this play" aria-label="Edit ${escapeHtml(play.play)}">✎</button>`;
+          : `<button type="button" class="pb-card-action" data-action="openPlayEditor" data-idx="${idx}" data-arg="${idx}" title="Edit this play" aria-label="Edit ${escapeHtml(play.play)}">Edit</button>`;
+        const staffCardActions = currentUser?.role === "player"
+          ? ""
+          : `<div class="pb-card-actions pb-card-actions--staff" aria-label="Coach play actions">
+              <button type="button" class="pb-card-action pb-card-action--study" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">Present</button>
+              ${cardEditButton}
+              <button type="button" class="pb-card-action" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet" aria-label="Add ${escapeHtml(play.play)} to week">Add Week</button>
+              ${typeof askCoachAboutPlay === "function" ? `<button type="button" class="pb-card-action pb-card-action--ask" data-action="askCoachAboutPlay" data-arg="${idx}" title="Ask a question about this play" aria-label="Ask a question about ${escapeHtml(play.play)}">Ask</button>` : ""}
+            </div>`;
         const pills = [play.type, play.back, play.motion, play.tempo]
           .filter(Boolean)
           .map((value) => `<span class="pb-card-pill">${escapeHtml(value)}</span>`)
@@ -308,13 +316,14 @@ function renderPlaybook() {
                tabindex="0" role="button"
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
             ${playerCardMedia}
-            <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge}${cardClipBadge}${cardSignalBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}${cardEditButton}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></div>
+            <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge}${cardClipBadge}${cardSignalBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}</div>
             <div class="pb-card-sub">${highlight(play.type)}${play.motion ? " · " + highlight(play.motion) : ""}${play.back ? " · " + highlight(play.back) : ""}</div>
             <div class="pb-card-study-row">${studyBadges}</div>
             ${playerCardNote}
             ${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}
             ${item.readinessCardBadge}
             <div class="pb-card-pills">${pills}</div>
+            ${staffCardActions}
             ${_renderPlayerPlaybookCardActions(item)}
           </div>
         `;
@@ -531,6 +540,7 @@ function hydratePlayerPlaybookThumbnails(root = document) {
         window.playImages
           .renderSmartDiagramImage(img, url, {
             canvasClass: "smart-diagram-canvas pb-card-media__canvas",
+            keepSourceVisible: true,
           })
           .catch(() => {
             img.hidden = false;

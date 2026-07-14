@@ -1845,8 +1845,12 @@ function checkPlayerPortalContracts() {
     !/function _openDiagramForTouch\(el\)/.test(playImages) ||
     !/window\.openPlaybookPresentation\(idx\)/.test(playImages) ||
     !/class="pb-edit-btn" data-action="openPlayEditor"/.test(playbookRender) ||
+    !/pb-card-actions--staff/.test(playbookRender) ||
     !/body\.shell-tablet #playbookTable \.pb-present-btn,[\s\S]*body\.shell-tablet #playbookTable \.pb-edit-btn,[\s\S]*min-width:\s*44px/.test(playbookCss) ||
-    !/body\.shell-tablet \.pb-img-badge,[\s\S]*body\.shell-tablet \.pb-clip-badge,[\s\S]*body\.shell-tablet \.pb-signal-badge[\s\S]*min-width:\s*44px/.test(playbookCss)
+    !/body\.shell-tablet \.pb-img-badge,[\s\S]*body\.shell-tablet \.pb-clip-badge,[\s\S]*body\.shell-tablet \.pb-signal-badge[\s\S]*min-width:\s*44px/.test(playbookCss) ||
+    !/body\.shell-tablet #playbook #playbookContainer table[\s\S]*display:\s*none/.test(playbookCss) ||
+    !/body\.shell-tablet #playbook \.pb-cards[\s\S]*display:\s*grid/.test(playbookCss) ||
+    !/\.pb-card-actions--staff[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(96px,\s*1fr\)\)/.test(playbookCss)
   ) {
     fail("tablet playbook touch interactions are incomplete");
   }
@@ -1918,10 +1922,16 @@ function checkPlayerPortalContracts() {
     !/body\.shell-phone\.is-staff-mobile-shell #script \.play-list,[\s\S]*body\.shell-compact\.is-staff-mobile-shell:not\(\.shell-tablet\)[\s\S]*position:\s*static[\s\S]*max-height:\s*none[\s\S]*overflow:\s*visible/.test(
       responsiveCss,
     ) ||
-    !/body\.shell-tablet\.is-staff-mobile-shell #script \.script-builder[\s\S]*grid-template-columns:\s*minmax\(250px,\s*0\.72fr\) minmax\(0,\s*1\.28fr\)/.test(
+    !/body\.shell-tablet\.is-staff-mobile-shell #script \.script-builder[\s\S]*grid-template-columns:\s*minmax\(220px,\s*0\.48fr\) minmax\(0,\s*1\.52fr\)/.test(
       responsiveCss,
     ) ||
     !/body\.shell-tablet\.is-staff-mobile-shell #script \.script-play-rail\.play-list[\s\S]*position:\s*relative[\s\S]*transform:\s*none[\s\S]*overflow:\s*auto/.test(
+      responsiveCss,
+    ) ||
+    !/body\.shell-tablet\.is-staff-mobile-shell #script \.script-item--detail,[\s\S]*body\.shell-tablet\.is-staff-mobile-shell #script \.script-item--compact[\s\S]*grid-template-columns:\s*40px minmax\(0,\s*1fr\) 56px/.test(
+      responsiveCss,
+    ) ||
+    !/body\.shell-tablet\.is-staff-mobile-shell #script \.script-column-headers[\s\S]*display:\s*none/.test(
       responsiveCss,
     ) ||
     !/body\.is-mobile-screen\.is-staff-mobile-shell #script \.script-player-grid[\s\S]*display:\s*none/.test(
