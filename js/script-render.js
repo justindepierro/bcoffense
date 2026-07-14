@@ -1517,6 +1517,8 @@ const SIGNAL_QUIZ_CORRECT_ADVANCE_MS = 90;
 const SIGNAL_QUIZ_WRONG_FEEDBACK_MS = 420;
 const SIGNAL_QUIZ_HEAT_MISS_FINISH_MS = 520;
 const SIGNAL_QUIZ_PRELOAD_WINDOW = 3;
+const QUIZ_DIAGRAM_PRELOAD_WINDOW = 4;
+const QUIZ_MEDIA_PREP_TIMEOUT_MS = 650;
 const SIGNAL_GAME_CATEGORY_OPTIONS = [
   { id: "CORE", label: "Core" },
   { id: "TAGS", label: "Tags" },
@@ -1535,11 +1537,41 @@ const PLAYER_QUIZ_STREAK_STEP_POINTS = 1;
 const PLAYER_QUIZ_MAX_STREAK_BONUS = 4;
 const PLAYER_QUIZ_MIN_BONUS_ANSWERS = 5;
 const _quizSignalPreloadCache = new Map();
+let _quizMediaPrepToken = 0;
+let _quizLaunchStartedAt = 0;
+let _quizFirstQuestionVisibleRecorded = false;
 const PLAYER_QUIZ_SOURCE_WEIGHTS = {
   script: 1,
   gameplan: 1.25,
   signal: 1,
 };
+
+function _quizPerfNow() {
+  return typeof performance !== "undefined" && typeof performance.now === "function"
+    ? performance.now()
+    : Date.now();
+}
+
+function _quizPerfMeta(extra = {}) {
+  return {
+    sourceType: _quizSourceType,
+    mode: _quizMode,
+    count: _quizPlays.length,
+    index: _quizIndex,
+    ...extra,
+  };
+}
+
+function _quizPerfMark(name, meta = {}) {
+  if (typeof appDiagnostics !== "undefined" && typeof appDiagnostics.mark === "function") {
+    appDiagnostics.mark(`quiz:${name}`, _quizPerfMeta(meta));
+  }
+}
+
+function _quizPerfRecord(name, startedAt, meta = {}) {
+  if (typeof window === "undefined" || !window.perfMonitor || typeof window.perfMonitor.record !== "function") return;
+  window.perfMonitor.record(`quiz:${name}`, _quizPerfNow() - startedAt, _quizPerfMeta(meta));
+}
 const PLAYER_QUIZ_TIER_DEFAULTS = [
   { key: "champion", label: "Champion" },
   { key: "baller", label: "Baller" },
@@ -6663,6 +6695,9 @@ function _renderPlayerQuizHub() {
     const mode = _getPlayerQuizMode();
     const modeNeedsGamePlan = mode?.source === "gameplan";
     const modeNeedsSignal = mode?.source === "signal";
+    const scriptStartLabel = !mode || mode.key === "quick"
+      ? "Start Script Quiz"
+      : `Start ${mode.label}`;
     scriptStartBtn.disabled = !hasScriptOption || modeNeedsGamePlan || modeNeedsSignal;
     scriptStartBtn.textContent = !hasScriptOption
       ? "Script Quiz Locked"
@@ -6670,7 +6705,7 @@ function _renderPlayerQuizHub() {
         ? "Use Game Plan"
         : modeNeedsSignal
           ? "Use Signals"
-          : `Start ${mode?.label || "Script Quiz"}`;
+          : scriptStartLabel;
   }
   if (scriptPicker) {
     scriptPicker.innerHTML = _renderPlayerQuizScriptPicker(_getPlayerQuizScriptOptions());
@@ -7255,23 +7290,66 @@ function _countSignalFullCallCandidates(settings = _getSignalGameSettings()) {
     .length;
 }
 
+async function _getQuizSignalClipMap(keys) {
+  const startedAt = _quizPerfNow();
+  const clipKeys = [...new Set(
+    (Array.isArray(keys) ? keys : [])
+      .map((key) => String(key || "").trim())
+      .filter(Boolean),
+  )];
+  const clipMap = Object.create(null);
+  if (!clipKeys.length || !window.playClips) {
+    _quizPerfRecord("clip-manifest", startedAt, { requested: clipKeys.length, resolved: 0, method: "none" });
+    return clipMap;
+  }
+  if (typeof window.playClips.listForSigs === "function") {
+    try {
+      const batchMap = await window.playClips.listForSigs(clipKeys);
+      _quizPerfRecord("clip-manifest", startedAt, {
+        requested: clipKeys.length,
+        resolved: Object.values(batchMap || {}).filter((clips) => Array.isArray(clips) && clips.length).length,
+        method: "batch",
+      });
+      return batchMap;
+    } catch (_err) {
+      // Fall back to the one-at-a-time API below.
+    }
+  }
+  if (typeof window.playClips.listForSig !== "function") {
+    _quizPerfRecord("clip-manifest", startedAt, { requested: clipKeys.length, resolved: 0, method: "unavailable" });
+    return clipMap;
+  }
+  await Promise.all(clipKeys.map(async (clipKey) => {
+    try {
+      clipMap[clipKey] = await window.playClips.listForSig(clipKey);
+    } catch (_err) {
+      clipMap[clipKey] = [];
+    }
+  }));
+  _quizPerfRecord("clip-manifest", startedAt, {
+    requested: clipKeys.length,
+    resolved: Object.values(clipMap).filter((clips) => Array.isArray(clips) && clips.length).length,
+    method: "fallback",
+  });
+  return clipMap;
+}
+
 async function _buildSignalFullCallItems(settings = _getSignalGameSettings()) {
-  const candidates = _getSignalFullCallSourceItems();
+  const candidates = _getSignalFullCallSourceItems()
+    .map((item) => ({
+      item,
+      records: _getSignalFullCallRecordsForPlay(item.play, settings),
+    }))
+    .filter((entry) => entry.records.length > 0);
+  const clipMap = await _getQuizSignalClipMap(
+    candidates.flatMap((entry) => entry.records.map((record) => record.clipKey)),
+  );
   const items = [];
-  for (const item of candidates) {
-    const records = _getSignalFullCallRecordsForPlay(item.play, settings);
-    if (!records.length) continue;
+  for (const { item, records } of candidates) {
     const clips = [];
     for (const record of records.slice(0, 5)) {
-      let clip = null;
-      if (window.playClips && typeof window.playClips.listForSig === "function") {
-        try {
-          const list = await window.playClips.listForSig(record.clipKey);
-          clip = Array.isArray(list) ? list[0] : null;
-        } catch (_err) {
-          clip = null;
-        }
-      }
+      const list = Array.isArray(clipMap[record.clipKey]) ? clipMap[record.clipKey] : [];
+      const clip = list[0] || null;
       if (!clip?.url) continue;
       clips.push({
         ...record,
@@ -7673,7 +7751,7 @@ function _renderQuizRedactedDiagram(play, diagramUrl = _quizDiagramUrl(play)) {
   return `
     <figure class="sq-diagram-prompt" aria-label="Redacted play diagram">
       <div class="sq-diagram-prompt__stage">
-        <img src="${escapeAttr(diagramUrl)}" alt="Redacted diagram for quiz question" loading="lazy" data-smart-diagram="true">
+        <img src="${escapeAttr(diagramUrl)}" alt="Redacted diagram for quiz question" loading="lazy" data-smart-diagram="true" data-smart-diagram-keep-visible="true">
         <span class="sq-diagram-redaction-band" aria-hidden="true"></span>
       </div>
       <figcaption>Top title band hidden for quiz</figcaption>
@@ -7716,7 +7794,7 @@ function _renderQuizWrongReview(item, answer) {
       ${noteParts.length ? `<div class="sq-review-detail"><strong>Coach note:</strong> ${noteParts.map(escapeHtml).join(" ")}</div>` : ""}
       ${diagramUrl ? `
         <figure class="sq-review-diagram">
-          <img src="${escapeAttr(diagramUrl)}" alt="Correct play diagram" loading="lazy" data-smart-diagram="true">
+          <img src="${escapeAttr(diagramUrl)}" alt="Correct play diagram" loading="lazy" data-smart-diagram="true" data-smart-diagram-keep-visible="true">
           <figcaption>Diagram to study</figcaption>
         </figure>
       ` : ""}
@@ -7827,6 +7905,7 @@ function _preloadQuizSignalClip(url) {
   const clipUrl = String(url || "").trim();
   if (!clipUrl || _quizSignalPreloadCache.has(clipUrl)) return;
   if (typeof navigator !== "undefined" && navigator.connection?.saveData) return;
+  const startedAt = _quizPerfNow();
   const video = document.createElement("video");
   video.preload = "auto";
   video.muted = true;
@@ -7835,11 +7914,101 @@ function _preloadQuizSignalClip(url) {
   video.src = clipUrl;
   _quizSignalPreloadCache.set(clipUrl, { video, touchedAt: Date.now() });
   try { video.load(); } catch (_err) { }
+  _quizPerfRecord("video-preload", startedAt, { cached: _quizSignalPreloadCache.size });
   if (_quizSignalPreloadCache.size > 12) {
     const oldest = [..._quizSignalPreloadCache.entries()]
       .sort((a, b) => a[1].touchedAt - b[1].touchedAt)[0];
     if (oldest) _quizSignalPreloadCache.delete(oldest[0]);
   }
+}
+
+function _quizShouldSkipMediaWarmup() {
+  return Boolean(
+    typeof navigator !== "undefined" &&
+    navigator.connection &&
+    navigator.connection.saveData,
+  );
+}
+
+async function _warmQuizDiagramForPlay(play) {
+  const startedAt = _quizPerfNow();
+  if (!play || !window.playImages) {
+    _quizPerfRecord("diagram-readiness", startedAt, { status: "unavailable" });
+    return null;
+  }
+  try {
+    if (typeof window.playImages.ensureDisplayReadinessForPlay === "function") {
+      const readiness = await window.playImages.ensureDisplayReadinessForPlay(play);
+      _quizPerfRecord("diagram-readiness", startedAt, { status: readiness?.status || "unknown" });
+      return readiness?.url || null;
+    }
+    if (typeof window.playImages.ensureDisplayUrlForPlay !== "function") {
+      _quizPerfRecord("diagram-readiness", startedAt, { status: "unavailable" });
+      return null;
+    }
+    const url = await window.playImages.ensureDisplayUrlForPlay(play);
+    _quizPerfRecord("diagram-readiness", startedAt, { status: url ? "ready" : "missing" });
+    return url;
+  } catch (_err) {
+    _quizPerfRecord("diagram-readiness", startedAt, { status: "error" });
+    return null;
+  }
+}
+
+async function _prepareQuizMedia(items, opts = {}) {
+  const startedAt = _quizPerfNow();
+  if (_quizShouldSkipMediaWarmup()) {
+    _quizPerfRecord("media-prep", startedAt, { skipped: true, reason: "save-data" });
+    return;
+  }
+  const sourceItems = _normalizeQuizItems(items);
+  if (!sourceItems.length) {
+    _quizPerfRecord("media-prep", startedAt, { skipped: true, reason: "empty" });
+    return;
+  }
+  const tasks = [];
+  const diagramItems = sourceItems.slice(0, QUIZ_DIAGRAM_PRELOAD_WINDOW);
+  let remoteManifestChecked = false;
+  if (window.playImages && typeof window.playImages.checkRemoteForPlays === "function") {
+    await Promise.race([
+      window.playImages
+        .checkRemoteForPlays(diagramItems.map((item) => item?.play || item).filter(Boolean))
+        .then(() => { remoteManifestChecked = true; })
+        .catch(() => null),
+      new Promise((resolve) => setTimeout(resolve, 180)),
+    ]);
+  }
+  diagramItems.forEach((item) => {
+    const play = item?.play || item;
+    if (play && window.playImages && typeof window.playImages.ensureDisplayUrlForPlay === "function") {
+      tasks.push(_warmQuizDiagramForPlay(play));
+    }
+  });
+  const signalWindow = Math.min(sourceItems.length, Math.max(SIGNAL_QUIZ_PRELOAD_WINDOW, Number(opts.signalWindow || 0) || 0));
+  for (let i = 0; i < signalWindow; i += 1) {
+    _getQuizSignalClipUrls(sourceItems[i]).forEach(_preloadQuizSignalClip);
+  }
+  if (!tasks.length) {
+    _quizPerfRecord("media-prep", startedAt, {
+      diagrams: diagramItems.length,
+      remoteManifestChecked,
+      signalWindow,
+      tasks: 0,
+    });
+    return;
+  }
+  let timedOut = true;
+  await Promise.race([
+    Promise.allSettled(tasks).then(() => { timedOut = false; }),
+    new Promise((resolve) => setTimeout(resolve, QUIZ_MEDIA_PREP_TIMEOUT_MS)),
+  ]);
+  _quizPerfRecord("media-prep", startedAt, {
+    diagrams: diagramItems.length,
+    remoteManifestChecked,
+    signalWindow,
+    tasks: tasks.length,
+    timedOut,
+  });
 }
 
 function _preloadUpcomingQuizSignalMedia(startIndex = _quizIndex) {
@@ -7890,7 +8059,8 @@ function isScriptQuizAwaitingAnswer() {
   return choices.length >= 2 && !_quizAnswers.has(_quizItemKey(item));
 }
 
-function startScriptQuiz(options = {}) {
+async function startScriptQuiz(options = {}) {
+  const launchStartedAt = _quizPerfNow();
   const opts = options && typeof options === "object" ? options : {};
   const requestedSourceType = String(opts.sourceType || "").trim();
   const sourceType = ["gameplan", "signal"].includes(requestedSourceType) ? requestedSourceType : "script";
@@ -7927,13 +8097,34 @@ function startScriptQuiz(options = {}) {
   _quizIndex = 0;
   _resetQuizGameState();
   _quizTimeLimitMs = Math.max(0, Number(opts.timeLimitMs || 0));
-  _quizStartedAt = _quizTimeLimitMs || _isSignalAutoAdvanceMode() ? Date.now() : 0;
+  _quizStartedAt = 0;
   _quizFinishedAt = 0;
   _clearPlayerQuizDraft();
+  const mediaPrepToken = ++_quizMediaPrepToken;
+  _quizLaunchStartedAt = launchStartedAt;
+  _quizFirstQuestionVisibleRecorded = false;
+  _quizPerfMark("launch-start", {
+    requestedSourceType: sourceType,
+    requestedMode: _quizMode,
+    normalizedCount: normalizedItems.length,
+  });
 
   const overlay = document.getElementById("scriptQuizOverlay");
   if (!overlay) return;
   overlay.classList.remove("hidden");
+  const titleEl = document.getElementById("scriptQuizTitle");
+  if (titleEl) titleEl.textContent = _quizTitle;
+  const progressEl = document.getElementById("scriptQuizProgress");
+  if (progressEl) progressEl.textContent = "Preparing first rep...";
+  const scenarioEl = document.getElementById("scriptQuizScenario");
+  if (scenarioEl) {
+    scenarioEl.className = "script-quiz-scenario";
+    setInnerHTML(scenarioEl, `
+      <div class="sq-scenario-block">
+        <div class="sq-scenario-label">Quiz</div>
+        <div class="sq-scenario-value">Loading first rep...</div>
+      </div>`);
+  }
   if (typeof openLayer === "function") {
     openLayer(overlay, {
       id: "scriptQuizOverlay",
@@ -7943,6 +8134,10 @@ function startScriptQuiz(options = {}) {
   } else if (typeof trapFocus === "function") {
     trapFocus(overlay);
   }
+  await _prepareQuizMedia(_quizPlays, { signalWindow: SIGNAL_QUIZ_PRELOAD_WINDOW });
+  if (mediaPrepToken !== _quizMediaPrepToken) return;
+  _quizPerfRecord("launch-to-ready", launchStartedAt);
+  _quizStartedAt = _quizTimeLimitMs || _isSignalAutoAdvanceMode() ? Date.now() : 0;
   _startQuizTimerIfNeeded();
   _preloadUpcomingQuizSignalMedia(0);
   renderScriptQuizPlay();
@@ -8634,6 +8829,7 @@ function closeScriptQuizToHub() {
 }
 
 function renderScriptQuizPlay() {
+  const renderStartedAt = _quizPerfNow();
   const item = _quizPlays[_quizIndex];
   if (!item) return;
   if (_quizFinished) {
@@ -8828,6 +9024,24 @@ function renderScriptQuizPlay() {
   }
   const revealRow = document.querySelector(".script-quiz-reveal-row");
   if (revealRow) revealRow.classList.toggle("hidden", gameMode);
+  _quizPerfRecord("render-question", renderStartedAt, {
+    questionType: question.type,
+    hasDiagram: Boolean(diagramPromptHtml),
+    hasSignal: Boolean(signalPromptHtml),
+  });
+  if (!_quizFirstQuestionVisibleRecorded && _quizLaunchStartedAt && _quizIndex === 0) {
+    _quizFirstQuestionVisibleRecorded = true;
+    _quizPerfRecord("first-question-visible", _quizLaunchStartedAt, {
+      questionType: question.type,
+      hasDiagram: Boolean(diagramPromptHtml),
+      hasSignal: Boolean(signalPromptHtml),
+    });
+    _quizPerfMark("first-question-visible", {
+      questionType: question.type,
+      hasDiagram: Boolean(diagramPromptHtml),
+      hasSignal: Boolean(signalPromptHtml),
+    });
+  }
 }
 
 function _ordinalDown(n) {

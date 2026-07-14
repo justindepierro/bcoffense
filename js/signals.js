@@ -1131,12 +1131,22 @@ async function getSignalQuizItems(options = {}) {
     .filter((record) => record.visibility === "published" || (opts.includeDraft === true && _sigCanManage()))
     .filter((record) => _sigComponentRequiresVideo(record.componentType))
     .filter((record) => !categoryFilter.size || categoryFilter.has(String(record.category || "").toUpperCase()));
+  let clipMap = null;
+  if (window.playClips && typeof window.playClips.listForSigs === "function") {
+    try {
+      clipMap = await window.playClips.listForSigs(records.map((record) => record.clipKey));
+    } catch (_err) {
+      clipMap = null;
+    }
+  }
   const items = [];
   for (const record of records) {
     const component = _sigComponentByType(record.componentType);
     const category = SIGNAL_CATEGORIES.find((item) => item.id === record.category);
     let clip = null;
-    if (window.playClips && typeof window.playClips.listForSig === "function") {
+    if (clipMap) {
+      clip = _sigNormalizeClipList(clipMap[record.clipKey])[0] || null;
+    } else if (window.playClips && typeof window.playClips.listForSig === "function") {
       try {
         clip = _sigNormalizeClipList(await window.playClips.listForSig(record.clipKey))[0] || null;
       } catch (_err) {

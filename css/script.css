@@ -7530,6 +7530,15 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   background: var(--color-bg-body);
 }
 
+.sq-diagram-prompt img[data-smart-diagram-source="true"][data-smart-diagram-keep-visible="true"] {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  max-height: none;
+  opacity: .01;
+  pointer-events: none;
+}
+
 .sq-diagram-redaction-band {
   position: absolute;
   z-index: 1;
@@ -8043,6 +8052,7 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 .sq-review-diagram {
   margin: 0;
+  position: relative;
   overflow: hidden;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border-light);
@@ -8062,6 +8072,15 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   width: 100%;
   height: 150px;
   background: var(--color-bg-body);
+}
+
+.sq-review-diagram img[data-smart-diagram-source="true"][data-smart-diagram-keep-visible="true"] {
+  position: absolute;
+  inset: 0;
+  height: 150px;
+  max-height: none;
+  opacity: .01;
+  pointer-events: none;
 }
 
 .sq-review-diagram figcaption {

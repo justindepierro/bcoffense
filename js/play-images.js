@@ -625,6 +625,100 @@
     return lastResult || { ok: true, status: "unpublished", published: false, sig: identityKeys[0] || "" };
   }
 
+  function _remoteManifestResult(identityKey, data) {
+    return {
+      ok: Boolean(data?.ok),
+      status: data?.published ? "published" : "unpublished",
+      published: Boolean(data?.published),
+      sig: identityKey,
+      size: Number(data?.size || 0) || 0,
+      contentType: data?.contentType || "",
+      uploadedAt: data?.uploadedAt || "",
+    };
+  }
+
+  async function checkRemoteForPlays(playsArray) {
+    const startedAt = _nowMs();
+    const result = Object.create(null);
+    if (!_remoteAvailable()) {
+      _recordPerf("media:image-batch-manifest", startedAt, { requested: 0, method: "unavailable" });
+      return result;
+    }
+    const identityKeys = [...new Set(
+      (Array.isArray(playsArray) ? playsArray : [])
+        .flatMap((play) => _remoteIdentityKeysForPlay(play))
+        .map(_normalizeSig)
+        .filter(Boolean),
+    )];
+    const missing = identityKeys.filter((identityKey) => !_remoteManifestCache.has(identityKey));
+    let method = missing.length ? "fallback" : "cache";
+    if (missing.length > 1 && typeof fetch === "function") {
+      try {
+        const response = await fetch("/images/batch-manifest", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-BC-Auth-Mode": "json",
+          },
+          body: JSON.stringify({ sigs: missing }),
+        });
+        if (response.ok) {
+          const data = await response.json().catch(() => null);
+          const manifests = data && data.manifests && typeof data.manifests === "object"
+            ? data.manifests
+            : {};
+          missing.forEach((identityKey) => {
+            const item = manifests[identityKey] || { ok: true, sig: identityKey, published: false };
+            _remoteManifestCache.set(identityKey, _remoteManifestResult(identityKey, item));
+          });
+          method = "batch";
+        }
+      } catch (_err) {
+        // Fall back to existing one-at-a-time checks below.
+      }
+    }
+    await Promise.all(identityKeys.map(async (identityKey) => {
+      if (!_remoteManifestCache.has(identityKey)) {
+        try {
+          const response = await fetch(`/images/manifest?sig=${encodeURIComponent(identityKey)}`, {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+          });
+          if (response.ok) {
+            const data = await response.json().catch(() => null);
+            _remoteManifestCache.set(identityKey, _remoteManifestResult(identityKey, data));
+          } else {
+            _remoteManifestCache.set(identityKey, {
+              ok: false,
+              status: response.status === 404 ? "unpublished" : "error",
+              published: false,
+              sig: identityKey,
+              reason: `http-${response.status}`,
+            });
+          }
+        } catch (_err) {
+          _remoteManifestCache.set(identityKey, {
+            ok: false,
+            status: "offline",
+            published: false,
+            sig: identityKey,
+            reason: "network",
+          });
+        }
+      }
+      result[identityKey] = _remoteManifestCache.get(identityKey);
+    }));
+    _recordPerf("media:image-batch-manifest", startedAt, {
+      requested: identityKeys.length,
+      missing: missing.length,
+      method,
+      published: Object.values(result).filter((item) => item?.published).length,
+    });
+    return result;
+  }
+
   async function pushRemote(play, blob) {
     if (!_remoteAvailable()) {
       return { ok: false, skipped: true, error: "Cloud media publish is not available on this page." };
@@ -910,9 +1004,14 @@
     const diagramStatus = publishStatus.diagrams || {};
     const lastDiagramPublishAt = _publishMediaTimestamp(diagramStatus.updatedAt);
     const publishableKeys = new Set();
+    const remoteManifestMap = typeof checkRemoteForPlays === "function"
+      ? await checkRemoteForPlays(publishedPlayEntries.map((entry) => entry.play))
+      : {};
     const rows = publishedPlayEntries.map(({ play, script }, index) => {
       const localSig = storedDisplaySignatureForPlay(play);
       const identityKey = _remoteIdentityKey(play);
+      const remoteStatus = identityKey ? remoteManifestMap[identityKey] : null;
+      const remotePublished = Boolean(remoteStatus?.published);
       const hasClip = Boolean(
         window.playClips &&
         typeof window.playClips.hasForPlay === "function" &&
@@ -923,6 +1022,9 @@
       if (localSig && !identityKey) {
         diagramStatusName = "failed";
         detail = "Diagram exists locally, but this play does not have a stable cloud media key.";
+      } else if (remotePublished) {
+        diagramStatusName = "ready";
+        detail = "Diagram is published for player devices.";
       } else if (localSig && !lastDiagramPublishAt) {
         diagramStatusName = "unpublished";
         detail = "Diagram is local and ready to publish.";
@@ -1402,6 +1504,22 @@
     return fn();
   }
 
+  function _nowMs() {
+    return typeof performance !== "undefined" && typeof performance.now === "function"
+      ? performance.now()
+      : Date.now();
+  }
+
+  function _recordPerf(name, startedAt, meta = {}) {
+    if (
+      typeof window !== "undefined" &&
+      window.perfMonitor &&
+      typeof window.perfMonitor.record === "function"
+    ) {
+      window.perfMonitor.record(name, _nowMs() - startedAt, meta);
+    }
+  }
+
   function _blobToDataURL(blob) {
     return new Promise((resolve, reject) => {
       const r = new FileReader();
@@ -1639,7 +1757,12 @@
     const previous = frame.querySelector(":scope > canvas[data-smart-diagram-canvas='true']");
     if (previous) previous.remove();
     img.dataset.smartDiagramSource = "true";
-    img.hidden = true;
+    if (options.keepSourceVisible || img.dataset.smartDiagramKeepVisible === "true") {
+      img.hidden = false;
+      img.dataset.smartDiagramKeepVisible = "true";
+    } else {
+      img.hidden = true;
+    }
     frame.appendChild(canvas);
     return canvas;
   }
@@ -1678,6 +1801,7 @@
     ensureDisplayUrlForPlay,
     ensureDisplayReadinessForPlay,
     checkRemoteForPlay,
+    checkRemoteForPlays,
     hasForPlay,
     hasDisplayForPlay,
     storedSignatureForPlay,

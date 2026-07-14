@@ -11,9 +11,11 @@
      await playClips.prepareSilentVideoUpload(file, opts) → processed silent clip preview
      await playClips.uploadPreparedForSig(sig, prepared, label, opts) → upload processed clip
      await playClips.listForSig(sig)       → [{ id, label, contentType, size, duration, uploadedAt, url }]
+     await playClips.listForSigs(sigs)     → { [sig]: clips[] } using cached manifest reads
      await playClips.removeForSig(sig, id) → { ok, clips }
      await playClips.remove(play, id)      → { ok, clips }
      playClips.fileUrl(play, id)           → streaming URL for a <video> src
+     playClips.getManifestCache()          → debug manifest cache snapshot
      playClips.canManage()                 → bool (admin/coach)
      playClips.MAX_CLIPS / MAX_BYTES / MAX_DURATION_SEC
 */
@@ -24,11 +26,14 @@
   const MAX_DURATION_SEC = 15;
   const DURATION_GRACE_SEC = 2; // allow slight overage from encoder rounding
   const SILENT_UPLOAD_FPS = 30;
+  const MANIFEST_CACHE_TTL_MS = 30000;
+  const MANIFEST_BATCH_CONCURRENCY = 6;
 
   // Cached set of play signatures that have at least one clip, so the playbook
   // table can show a 🎬 indicator synchronously without a request per row.
   let _indexSet = null;
   let _indexPromise = null;
+  const _manifestCache = new Map();
 
   // Candidate signature keys for a play, most-canonical first. Clips are SHARED
   // across devices via R2, so the primary key must be content-derived and
@@ -97,6 +102,57 @@
   function fileUrlForSig(sig, id) {
     if (!sig || !id) return "";
     return `/clips/file?sig=${encodeURIComponent(sig)}&id=${encodeURIComponent(id)}`;
+  }
+
+  function normalizeManifestSig(sig) {
+    return String(sig || "").trim();
+  }
+
+  function decorateManifestClips(sig, clips) {
+    const key = normalizeManifestSig(sig);
+    return (Array.isArray(clips) ? clips : []).map((clip) => ({
+      ...clip,
+      sig: key,
+      url: fileUrlForSig(key, clip.id),
+    }));
+  }
+
+  function invalidateManifestCache(sig) {
+    const key = normalizeManifestSig(sig);
+    if (key) {
+      _manifestCache.delete(key);
+    } else {
+      _manifestCache.clear();
+    }
+  }
+
+  function getManifestCache() {
+    const now = Date.now();
+    const entries = [];
+    _manifestCache.forEach((entry, sig) => {
+      entries.push({
+        sig,
+        count: Array.isArray(entry.clips) ? entry.clips.length : 0,
+        pending: Boolean(entry.promise),
+        ageMs: entry.fetchedAt ? now - entry.fetchedAt : 0,
+      });
+    });
+    return {
+      ttlMs: MANIFEST_CACHE_TTL_MS,
+      size: _manifestCache.size,
+      entries,
+    };
+  }
+
+  function nowMs() {
+    return typeof performance !== "undefined" && typeof performance.now === "function"
+      ? performance.now()
+      : Date.now();
+  }
+
+  function recordPerf(name, startedAt, meta = {}) {
+    if (!window.perfMonitor || typeof window.perfMonitor.record !== "function") return;
+    window.perfMonitor.record(name, nowMs() - startedAt, meta);
   }
 
   async function loadIndex(force) {
@@ -286,18 +342,125 @@
     return data && Array.isArray(data.clips) ? data.clips : [];
   }
 
+  async function readManifest(sig, opts = {}) {
+    const key = normalizeManifestSig(sig);
+    if (!key) return [];
+    const now = Date.now();
+    const cached = _manifestCache.get(key);
+    if (!opts.force && cached) {
+      if (cached.promise) return cached.promise;
+      if (now - Number(cached.fetchedAt || 0) < MANIFEST_CACHE_TTL_MS) {
+        return cached.clips || [];
+      }
+    }
+    const promise = fetchManifest(key)
+      .then((clips) => {
+        const normalized = Array.isArray(clips) ? clips : [];
+        _manifestCache.set(key, {
+          clips: normalized,
+          fetchedAt: Date.now(),
+          promise: null,
+        });
+        return normalized;
+      })
+      .catch((err) => {
+        _manifestCache.delete(key);
+        throw err;
+      });
+    _manifestCache.set(key, {
+      clips: cached?.clips || [],
+      fetchedAt: cached?.fetchedAt || 0,
+      promise,
+    });
+    return promise;
+  }
+
   // Returns clips for a play, searching every candidate signature so clips
   // stored under the canonical content key are found regardless of which device
   // (coach/player) is viewing. Each clip is decorated with its resolved `sig`
   // and a ready-to-use `url` for a <video> src.
-  async function listForSig(sig) {
-    if (!sig) return [];
-    const clips = await fetchManifest(sig);
-    return clips.map((clip) => ({
-      ...clip,
-      sig,
-      url: fileUrlForSig(sig, clip.id),
-    }));
+  async function listForSig(sig, opts = {}) {
+    const key = normalizeManifestSig(sig);
+    if (!key) return [];
+    const clips = await readManifest(key, opts);
+    return decorateManifestClips(key, clips);
+  }
+
+  async function listForSigs(sigs) {
+    const startedAt = nowMs();
+    const keys = [...new Set(
+      (Array.isArray(sigs) ? sigs : [])
+        .map(normalizeManifestSig)
+        .filter(Boolean),
+    )];
+    const result = Object.create(null);
+    const missing = [];
+    const now = Date.now();
+    keys.forEach((sig) => {
+      const cached = _manifestCache.get(sig);
+      if (cached && !cached.promise && now - Number(cached.fetchedAt || 0) < MANIFEST_CACHE_TTL_MS) {
+        result[sig] = decorateManifestClips(sig, cached.clips || []);
+      } else {
+        missing.push(sig);
+      }
+    });
+    if (missing.length > 1 && typeof fetch === "function") {
+      try {
+        const response = await fetch("/clips/batch-manifest", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-BC-Auth-Mode": "json",
+          },
+          body: JSON.stringify({ sigs: missing }),
+        });
+        if (response.ok) {
+          const data = await response.json().catch(() => null);
+          const manifests = data && data.manifests && typeof data.manifests === "object"
+            ? data.manifests
+            : {};
+          missing.forEach((sig) => {
+            const clips = Array.isArray(manifests[sig]) ? manifests[sig] : [];
+            _manifestCache.set(sig, {
+              clips,
+              fetchedAt: Date.now(),
+              promise: null,
+            });
+            result[sig] = decorateManifestClips(sig, clips);
+          });
+          recordPerf("media:clip-batch-manifest", startedAt, {
+            requested: keys.length,
+            missing: missing.length,
+            method: "batch",
+          });
+          return result;
+        }
+      } catch (_err) {
+        // Fall back to bounded one-at-a-time manifest reads below.
+      }
+    }
+    let cursor = 0;
+    async function worker() {
+      while (cursor < missing.length) {
+        const sig = missing[cursor];
+        cursor += 1;
+        try {
+          result[sig] = await listForSig(sig);
+        } catch (_err) {
+          result[sig] = [];
+        }
+      }
+    }
+    const workerCount = Math.min(MANIFEST_BATCH_CONCURRENCY, missing.length);
+    await Promise.all(Array.from({ length: workerCount }, worker));
+    recordPerf("media:clip-batch-manifest", startedAt, {
+      requested: keys.length,
+      missing: missing.length,
+      method: missing.length ? "fallback" : "cache",
+    });
+    return result;
   }
 
   async function list(play) {
@@ -310,13 +473,9 @@
       ordered = cands.filter((s) => _indexSet.has(s));
     }
     for (const sig of ordered) {
-      const clips = await fetchManifest(sig);
+      const clips = await readManifest(sig);
       if (clips.length) {
-        return clips.map((clip) => ({
-          ...clip,
-          sig,
-          url: fileUrlForSig(sig, clip.id),
-        }));
+        return decorateManifestClips(sig, clips);
       }
     }
     return [];
@@ -430,7 +589,7 @@
       );
     }
     if (!opts.skipExistingCheck && !opts.replaceExisting && !isReplaceOnlySig(sig)) {
-      const existing = await listForSig(sig);
+      const existing = await listForSig(sig, { force: true });
       if (existing.length >= MAX_CLIPS) {
         throw new Error(`This play already has the maximum of ${MAX_CLIPS} clips.`);
       }
@@ -452,6 +611,7 @@
       throw new Error((data && data.error) || "Upload failed.");
     }
     if (_indexSet) _indexSet.add(sig);
+    invalidateManifestCache(sig);
     if (typeof window.recordPlayerPublishStatus === "function") {
       window.recordPlayerPublishStatus(opts.publishType || "clips", {
         updatedAt: data.clip?.uploadedAt || new Date().toISOString(),
@@ -469,7 +629,7 @@
       throw new Error("Missing stable clip signature.");
     }
     if (!opts.replaceExisting && !isReplaceOnlySig(sig)) {
-      const existing = await listForSig(sig);
+      const existing = await listForSig(sig, { force: true });
       if (existing.length >= MAX_CLIPS) {
         throw new Error(`This play already has the maximum of ${MAX_CLIPS} clips.`);
       }
@@ -499,6 +659,15 @@
     }
     if (_indexSet && Array.isArray(data.clips) && !data.clips.length) {
       _indexSet.delete(sig);
+    }
+    if (Array.isArray(data.clips)) {
+      _manifestCache.set(sig, {
+        clips: data.clips,
+        fetchedAt: Date.now(),
+        promise: null,
+      });
+    } else {
+      invalidateManifestCache(sig);
     }
     if (typeof window.recordPlayerPublishStatus === "function") {
       window.recordPlayerPublishStatus(opts.publishType || "clips", {
@@ -745,7 +914,9 @@
     canManage,
     fileUrl,
     fileUrlForSig,
+    getManifestCache,
     listForSig,
+    listForSigs,
     list,
     prepareSilentVideoUpload,
     uploadForSig,
