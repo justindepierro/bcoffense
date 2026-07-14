@@ -90,18 +90,45 @@ function _sigNormalizeRecord(record) {
   };
 }
 
+// Short-TTL in-memory cache of normalized signal records. Without it,
+// _sigLoadRecords does a storageManager.get (localStorage read + LZ-decompress +
+// JSON.parse) and a full .map(normalize).filter() on EVERY call — and
+// getSignalCountForPlay is called per row on every playbook/script/presentation
+// render. The 1s TTL means all per-row calls within a single synchronous render
+// pass share one decode, while external writes (cloud pull / restore) are picked
+// up within a second — no explicit invalidation hooks required. _sigSaveRecords
+// refreshes the cache immediately so local edits are instant.
+let _sigRecordsCache = null;
+let _sigRecordsCacheAt = 0;
+let _sigRecordsMapCache = null;
+const SIG_RECORDS_CACHE_TTL_MS = 1000;
+
 function _sigLoadRecords() {
+  if (_sigRecordsCache && Date.now() - _sigRecordsCacheAt < SIG_RECORDS_CACHE_TTL_MS) {
+    return _sigRecordsCache;
+  }
   const raw = storageManager.get(_sigRecordsKey(), []);
-  return Array.isArray(raw) ? raw.map(_sigNormalizeRecord).filter(Boolean) : [];
+  _sigRecordsCache = Array.isArray(raw) ? raw.map(_sigNormalizeRecord).filter(Boolean) : [];
+  _sigRecordsCacheAt = Date.now();
+  _sigRecordsMapCache = null;
+  return _sigRecordsCache;
 }
 
 function _sigSaveRecords(records) {
-  storageManager.set(_sigRecordsKey(), records.map(_sigNormalizeRecord).filter(Boolean));
+  const normalized = records.map(_sigNormalizeRecord).filter(Boolean);
+  storageManager.set(_sigRecordsKey(), normalized);
+  _sigRecordsCache = normalized;
+  _sigRecordsCacheAt = Date.now();
+  _sigRecordsMapCache = null;
 }
 
 function _sigRecordsMap(records = _sigLoadRecords()) {
+  // Reuse the cached Map only for the default (cached-records) path; callers
+  // that pass an explicit list always get a fresh Map.
+  if (records === _sigRecordsCache && _sigRecordsMapCache) return _sigRecordsMapCache;
   const map = new Map();
   records.forEach((record) => map.set(record.id, record));
+  if (records === _sigRecordsCache) _sigRecordsMapCache = map;
   return map;
 }
 
