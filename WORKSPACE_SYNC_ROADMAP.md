@@ -197,7 +197,7 @@ plain warnings.
   - First pass updated the main Data Management, Playbook action sheet, command
     palette, Publish Status modal, Dashboard pull summary, workspace dock cloud
     label, and diagram recovery upload copy.
-- [ ] Hide advanced diagram sync from primary Playbook chrome; keep `Publish
+- [x] Hide advanced diagram sync from primary Playbook chrome; keep `Publish
   Media` as the normal action.
 - [ ] Rewrite player update copy so players only see `Checking for coach
   updates`, `Ready`, or `Try Again`.

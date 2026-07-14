@@ -3093,6 +3093,9 @@ function checkStartupDiagnosticsAndRenderQueue() {
   if (/No cloud backup has been pushed yet/.test(appShell) || /Getting team app ready/.test(appShell)) {
     fail("player first-impression startup copy still exposes backup/getting-ready language");
   }
+  if (/Sync Now|sync so players can view them/.test(moduleInit)) {
+    fail("startup should not prompt coaches into diagram recovery sync");
+  }
   if (!/appDiagnostics\.mark\("startup:init"\)/.test(appInit)) {
     fail("initApp does not mark startup diagnostics");
   }
@@ -3339,6 +3342,7 @@ function checkWorkspaceSyncContracts() {
     "- [x] Expose retry for failed cloud/media work from the chip.",
     "- [x] Keep manual Cloud Sync and Sync Diagrams as advanced fallback actions.",
     "- [x] Replace \"Sync Diagrams\" daily workflow with \"Publish Media\".",
+    "- [x] Hide advanced diagram sync from primary Playbook chrome; keep `Publish",
     "- [x] Show active player-visible script media coverage: ready, missing, stale,",
     "- [x] Upload only stale/unpublished player-visible diagrams; report clip gaps",
     "- [x] Show result summary and failed items with exact next steps.",
@@ -3464,6 +3468,9 @@ function checkWorkspaceSyncContracts() {
     !/syncToRemote\(report\.rows\.map\(\(row\) => row\.play\), \{[\s\S]*keys: report\.publishableKeys/.test(playImages)
   ) {
     fail("publish media workflow is not wired to player-visible script media readiness and targeted diagram upload");
+  }
+  if (/data-action="syncPlayImagesToCloud"/.test(html)) {
+    fail("advanced diagram recovery upload should not appear in primary Playbook chrome");
   }
 
   [
