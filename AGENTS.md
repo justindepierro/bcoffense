@@ -630,7 +630,8 @@ publish -> media publish -> player readiness update.
    `retryWorkspaceSyncWork()`, `setWorkspaceSyncStatus()`, and
    `hasWorkspaceSyncWork()` instead of adding module-specific sync UI.
 3. `js/cloud-sync.js` queues Cloud autosave/push work into the shared dock.
-   Manual Cloud Sync is an advanced fallback, not the daily coach workflow.
+   Raw cloud push/pull is admin-only recovery tooling, not the daily coach
+   workflow.
 4. `Publish Media` is the coach default for player-visible scripts. It uploads
    stale/unpublished player-visible diagrams, reports clip gaps, and leaves
    already-cloud-published clips alone.
@@ -644,8 +645,8 @@ Rules:
   diagram sync, or player publish work. Route normal work into the workspace
   dock and reserve toasts for explicit user actions or failures that need
   attention.
-- Keep manual `Cloud Sync` and `Sync Diagrams` available as fallback/retry
-  actions, but do not make them the primary first-run or daily workflow.
+- Keep raw cloud recovery and all-local diagram upload under admin-only
+  `Recovery Tools`. Do not make them the primary first-run or daily workflow.
 - Player-facing diagram copy must distinguish checking, unpublished, offline,
   and load-error states. Avoid generic "ask coach to sync diagrams" copy.
 - Exit guards must include both local dirty flags and `hasWorkspaceSyncWork()`

@@ -605,6 +605,10 @@
     return typeof isAdminUser !== "function" || isAdminUser();
   }
 
+  function userCanOpenRecoveryTools() {
+    return typeof isAdminUser === "function" && isAdminUser();
+  }
+
   function canAutoPushCloudBackup() {
     return typeof isAdminUser === "function" && isAdminUser();
   }
@@ -1004,7 +1008,7 @@
           domains: getDirtyCloudKeyLabels(),
           summary: err.message || "Publish failed",
           failedDomain: cloudAutoPushDirtyKeys.has("playImages") ? "media" : "workspace",
-          retryAction: silent ? "Use Retry from the save status chip." : "Open Publish Status and retry Publish Team Update.",
+          retryAction: silent ? "Use Retry from the save status chip." : "Open Recovery Tools and retry the local workspace republish.",
         });
       }
       throw err;
@@ -1047,7 +1051,7 @@
         domains,
         summary: formatPublishReadinessSummary(readiness),
         failedDomain: hasIssues ? failedItem?.domain || "readiness" : "",
-        retryAction: hasIssues ? "Open Publish Status, fix the listed readiness item, then publish again." : "",
+        retryAction: hasIssues ? "Use publish readiness, fix the listed item, then publish again." : "",
         size: result.size,
       });
       cloudAutoPushLastError = "";
@@ -1098,7 +1102,7 @@
         domains: getDirtyCloudKeyLabels(),
         summary: err.message || "Publish failed",
         failedDomain: cloudAutoPushDirtyKeys.has("playImages") ? "media" : "workspace",
-        retryAction: silent ? "Use Retry from the save status chip." : "Open Publish Status and retry Publish Team Update.",
+        retryAction: silent ? "Use Retry from the save status chip." : "Open Recovery Tools and retry the local workspace republish.",
       });
       updateCloudSyncModalStatus(err.message, "error");
       if (!silent) showToast(err.message, { type: "error", duration: 6000 });
@@ -1513,7 +1517,7 @@
         !Number.isFinite(knownTime) &&
         hasLocalTeamData()
       ) {
-        showToast("Team workspace update available. Open Publish Status to update this coach device.", {
+        showToast("Team workspace update available. An admin can use Recovery Tools to update this coach device.", {
           type: "info",
           duration: 5000,
         });
@@ -1546,6 +1550,12 @@
   }
 
   function openCloudSyncModal() {
+    if (!userCanOpenRecoveryTools()) {
+      if (typeof showToast === "function") {
+        showToast("Recovery tools are admin-only.", { type: "warning", duration: 3000 });
+      }
+      return;
+    }
     const existing = document.getElementById("cloudSyncOverlay");
     if (existing) existing.remove();
 
@@ -1560,11 +1570,12 @@
     overlay.innerHTML = `
       <div class="custom-modal custom-modal-wide cloud-sync-modal" role="dialog" aria-modal="true" aria-labelledby="cloudSyncTitle">
         <div class="custom-modal-header">
-          <span class="custom-modal-icon">☁️</span>
-          <h3 class="custom-modal-title" id="cloudSyncTitle">Publish Status</h3>
+          <span class="custom-modal-icon">🛟</span>
+          <h3 class="custom-modal-title" id="cloudSyncTitle">Admin Recovery Tools</h3>
         </div>
         <div class="custom-modal-body cloud-sync-body">
-          <p>This shows whether the current team workspace is published and whether this device is current. Players update automatically when they log in or refresh.</p>
+          <p>Use these tools only to recover a device or investigate a publish problem. Normal player updates are automatic, and normal coach publishing should use the save status and publish readiness surfaces.</p>
+          <p class="cloud-sync-warning">Recovery actions can overwrite this device or republish the current local workspace. Export a backup first if there is any chance this device has work you need to keep.</p>
           <div class="cloud-sync-explainer" aria-label="Workspace status meanings">
             <div class="cloud-sync-explainer-item">
               <span>Saved on this device</span>
@@ -1605,15 +1616,15 @@
                 <span>Latest published workspace</span>
                 <strong>${escapeHtml(latestPublish ? `${latestPublish.versionId} · ${formatCloudDate(latestPublish.timestamp)}` : "No publish recorded")}</strong>
               </div>
-              <small>${escapeHtml(latestPublish ? `${latestPublish.result === "success" ? "Ready" : "Needs retry"} · ${latestPublish.actor || "Coach"}` : "Publish Team Update creates the first ledger entry.")}</small>
+              <small>${escapeHtml(latestPublish ? `${latestPublish.result === "success" ? "Ready" : "Needs retry"} · ${latestPublish.actor || "Coach"}` : "A normal team publish creates the first ledger entry.")}</small>
             </div>
             <div class="cloud-sync-ledger-list">
               ${renderPublishActivityRows(4)}
             </div>
           </section>
-          <p class="cloud-sync-warning">${escapeHtml(canPush ? "Normal player updates are automatic. Publish sends this coach device's current workspace to the team. Update refreshes this coach device from the latest published workspace." : "Update refreshes this device with the latest team workspace. Ask an admin to publish new team changes.")}</p>
+          <p class="cloud-sync-warning">${escapeHtml(canPush ? "Daily workflow: edit normally and let the save/publish status show readiness. Recovery workflow: use these buttons only when a device is behind, corrupted, or publish status needs investigation." : "Recovery tools are admin-only. Ask an admin to recover this device or publish team changes.")}</p>
           <div id="cloudSyncModalStatus" class="cloud-sync-modal-status cloud-sync-modal-status-info">
-            Publish status ready. Last published update: ${escapeHtml(formatCloudDate(settings.lastRemoteExportDate || settings.lastPushAt || settings.lastPullAt))}.
+            Recovery tools ready. Last published update: ${escapeHtml(formatCloudDate(settings.lastRemoteExportDate || settings.lastPushAt || settings.lastPullAt))}.
           </div>
           <div class="cloud-sync-meta">
             <span>Last publish: ${escapeHtml(formatCloudDate(settings.lastPushAt))}</span>
@@ -1623,9 +1634,9 @@
         </div>
         <div class="custom-modal-actions cloud-sync-actions">
           <button type="button" class="btn custom-modal-btn custom-modal-cancel" data-action="closeCloudSyncModal">Close</button>
-          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="testCloudSyncConnection" data-cloud-sync-action="test">Check Status</button>
-          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="pullCloudBackup" data-cloud-sync-action="pull">Update This Device</button>
-          ${canPush ? '<button type="button" class="btn btn-primary custom-modal-btn" data-action="pushCloudBackup" data-cloud-sync-action="push" data-auth-admin-only="true">Publish Team Update</button>' : ""}
+          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="testCloudSyncConnection" data-cloud-sync-action="test">Check Recovery Status</button>
+          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="pullCloudBackup" data-cloud-sync-action="pull">Recover This Device</button>
+          ${canPush ? '<button type="button" class="btn btn-primary custom-modal-btn" data-action="pushCloudBackup" data-cloud-sync-action="push" data-auth-admin-only="true">Republish Local Workspace</button>' : ""}
         </div>
       </div>
     `;

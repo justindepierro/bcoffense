@@ -1909,7 +1909,7 @@
           <div class="pb-health-empty">Checking local diagram keys...</div>
         </div>
         <div class="custom-modal-actions">
-          <button type="button" class="btn btn-sm" data-action="syncPlayImagesToCloud">Push Diagrams</button>
+          <button type="button" class="btn btn-sm" data-action="syncPlayImagesToCloud" data-auth-admin-only="true">Admin Recovery: Upload Diagrams</button>
           <button type="button" class="btn btn-sm" data-action="closePlayDiagramHealth">Done</button>
         </div>
       </div>`;
@@ -1968,7 +1968,7 @@
         </div>
         <div class="custom-modal-actions">
           <button type="button" class="btn btn-primary btn-sm" data-action="publishPlayerMedia">Publish Needed Media</button>
-          <button type="button" class="btn btn-sm" data-action="syncPlayImagesToCloud">Recovery: Upload All Diagrams</button>
+          <button type="button" class="btn btn-sm" data-action="syncPlayImagesToCloud" data-auth-admin-only="true">Admin Recovery: Upload All Diagrams</button>
           <button type="button" class="btn btn-sm" data-action="closePublishMedia">Done</button>
         </div>
       </div>`;
@@ -2029,6 +2029,12 @@
 
   // Coach-triggered manual sync — preflights scope before pushing images to R2.
   window.syncPlayImagesToCloud = async function (opts = {}) {
+    if (typeof isAdminUser === "function" && !isAdminUser()) {
+      if (typeof showToast === "function") {
+        showToast("Diagram recovery upload is admin-only.", { type: "warning", duration: 3000 });
+      }
+      return;
+    }
     if (!_remoteAvailable()) {
       if (typeof showModal === "function") {
         showModal("Diagram recovery upload is not available. Make sure you are on bcoffense.com (not a file:// URL).", { title: "Recovery Upload", icon: "⚠️" });
@@ -2057,6 +2063,7 @@
           : `All Local (${plan.allKeys.length})`;
       const allLabel = `All Local (${plan.allKeys.length})`;
       const notes = [
+        "This is a recovery upload, not the normal Publish Media workflow.",
         `Found ${_diagramCountLabel(plan.allKeys.length)} stored on this device.`,
         plan.playerKeys.length
           ? `${_diagramCountLabel(plan.playerKeys.length)} ${_diagramVerb(plan.playerKeys.length, "matches", "match")} player-visible scripts.`

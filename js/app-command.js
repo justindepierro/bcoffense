@@ -126,12 +126,16 @@ function _buildCommandBaseItems() {
     });
   }
 
-  if (typeof openCloudSyncModal === "function" && _canUseMutatingCommand()) {
+  if (
+    typeof openCloudSyncModal === "function" &&
+    _canUseMutatingCommand() &&
+    (typeof isAdminUser === "function" && isAdminUser())
+  ) {
     items.push({
       kind: "Action",
-      title: "Publish Status",
-      subtitle: "Review team publish status and update this device",
-      keywords: "cloud sync team workspace publish update status",
+      title: "Recovery Tools",
+      subtitle: "Admin-only device recovery and publish investigation",
+      keywords: "admin recovery cloud sync team workspace publish update status",
       priority: 33,
       run: () => openCloudSyncModal(),
     });

@@ -485,10 +485,10 @@ function renderTeamPublishLedgerSummary() {
           <div>
             <span>Latest Published Workspace</span>
             <h3>No publish recorded</h3>
-            <p>Use Publish Status to create the first team workspace version.</p>
+            <p>The save status and publish readiness surfaces create the first team workspace version.</p>
           </div>
-          <button type="button" class="btn btn-sm btn-secondary" data-action="openCloudSyncModal">
-            Publish Status
+          <button type="button" class="btn btn-sm btn-secondary" data-action="openCloudSyncModal" data-auth-admin-only="true">
+            Recovery Tools
           </button>
         </div>
       </div>`;
@@ -507,8 +507,8 @@ function renderTeamPublishLedgerSummary() {
           <h3>${escapeHtml(latest.versionId || "Published version")}</h3>
           <p>${escapeHtml(`${failed ? "Needs retry" : "Ready for players"} · ${_dashFormatDiagnosticDate(latest.timestamp)}`)}</p>
         </div>
-        <button type="button" class="btn btn-sm btn-secondary" data-action="openCloudSyncModal">
-          Publish Status
+        <button type="button" class="btn btn-sm btn-secondary" data-action="openCloudSyncModal" data-auth-admin-only="true">
+          Recovery Tools
         </button>
       </div>
       <div class="team-publish-ledger-grid">

@@ -283,8 +283,12 @@
     "importBackup",
     "exportCompleteBackup",
     "importCompleteBackup",
+    "openCloudSyncModal",
     "saveCloudSyncSettings",
     "pushCloudBackup",
+    "pullCloudBackup",
+    "testCloudSyncConnection",
+    "syncPlayImagesToCloud",
     "handleFileUpload",
   ]);
 

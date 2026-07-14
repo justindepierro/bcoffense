@@ -242,10 +242,10 @@ plain warnings.
 
 ### Phase V2.4 - Recovery Tools Demotion
 
-- [ ] Move raw Cloud Sync modal into admin-only recovery tools.
-- [ ] Move all-local diagram sync into recovery tools.
-- [ ] Keep export/import backup tools but separate them from publish status.
-- [ ] Add warnings that recovery tools are not the normal practice workflow.
+- [x] Move raw Cloud Sync modal into admin-only recovery tools.
+- [x] Move all-local diagram sync into recovery tools.
+- [x] Keep export/import backup tools but separate them from publish status.
+- [x] Add warnings that recovery tools are not the normal practice workflow.
 
 ### Phase V2.5 - Legacy Cleanup
 

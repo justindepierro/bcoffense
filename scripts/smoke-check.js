@@ -539,9 +539,9 @@ function checkStorageKeyUsage() {
     !/function formatDiagramSyncSummary\(result\)/.test(cloudSync) ||
     !/function formatDiagramSyncDetails\(result\)/.test(cloudSync) ||
     !/diagramSyncResult = await window\.playImages\.syncToRemote\(_playsRef\)/.test(cloudSync) ||
-    !/Publish Status/.test(cloudSync) ||
-    !/Publish Team Update/.test(cloudSync) ||
-    !/Update This Device/.test(cloudSync)
+    !/Admin Recovery Tools/.test(cloudSync) ||
+    !/Republish Local Workspace/.test(cloudSync) ||
+    !/Recover This Device/.test(cloudSync)
   ) {
     fail("cloud sync push does not wait for and report diagram sync results");
   }
@@ -1696,9 +1696,10 @@ function checkPlayerPortalContracts() {
 	    !/data-login-role/.test(auth) ||
 	    !/"refreshPlayerTeamApp"/.test(auth) ||
 	    !/"installPlayerA2HS"/.test(auth) ||
-	    /READ_ONLY_ALLOWED_ACTIONS[\s\S]*"openCloudSyncModal"[\s\S]*\]\)/.test(auth) ||
-    /READ_ONLY_ALLOWED_ACTIONS[\s\S]*"pullCloudBackup"[\s\S]*\]\)/.test(auth) ||
-    /READ_ONLY_ALLOWED_ACTIONS[\s\S]*"testCloudSyncConnection"[\s\S]*\]\)/.test(auth) ||
+      !/ADMIN_ONLY_ACTIONS[\s\S]*"openCloudSyncModal"[\s\S]*"pullCloudBackup"[\s\S]*"testCloudSyncConnection"[\s\S]*"syncPlayImagesToCloud"/.test(auth) ||
+	    /READ_ONLY_ALLOWED_ACTIONS\s*=\s*new Set\(\[[^\]]*"openCloudSyncModal"/.test(auth) ||
+	    /READ_ONLY_ALLOWED_ACTIONS\s*=\s*new Set\(\[[^\]]*"pullCloudBackup"/.test(auth) ||
+	    /READ_ONLY_ALLOWED_ACTIONS\s*=\s*new Set\(\[[^\]]*"testCloudSyncConnection"/.test(auth) ||
 	    !/currentAuthUser\.role === "player"[\s\S]*schedulePlayerTeamUpdateCheck\(\{ delay: 700, startup: true \}\)/.test(auth)
   ) {
     fail("player auth shell or tab permissions are incomplete");
@@ -3396,6 +3397,10 @@ function checkWorkspaceSyncContracts() {
     "- [x] Apply data, media manifest, app-shell, quiz, and notification freshness in",
     "- [x] Make manual player refresh call the same bootstrap path.",
     "- [x] Add diagnostics only for admins; hide technical sync terms from players.",
+    "- [x] Move raw Cloud Sync modal into admin-only recovery tools.",
+    "- [x] Move all-local diagram sync into recovery tools.",
+    "- [x] Keep export/import backup tools but separate them from publish status.",
+    "- [x] Add warnings that recovery tools are not the normal practice workflow.",
   ].forEach((token) => {
     if (!roadmap.includes(token)) {
       fail(`workspace sync roadmap missing ${token}`);
@@ -3532,6 +3537,13 @@ function checkWorkspaceSyncContracts() {
   if (/data-action="syncPlayImagesToCloud"/.test(html)) {
     fail("advanced diagram recovery upload should not appear in primary Playbook chrome");
   }
+  if (
+    !/data-action="syncPlayImagesToCloud" data-auth-admin-only="true">Admin Recovery: Upload/.test(playImages) ||
+    !/window\.syncPlayImagesToCloud = async function \(opts = \{\}\)[\s\S]*isAdminUser/.test(playImages) ||
+    !/This is a recovery upload, not the normal Publish Media workflow/.test(playImages)
+  ) {
+    fail("all-local diagram upload is not contained in admin recovery tooling");
+  }
 
   [
     ".pb-publish-media-summary",
@@ -3577,9 +3589,9 @@ function checkWorkspaceSyncContracts() {
     !/saveTeamWorkspacePullSummary\(remote, \{ restoredImages, imageWarning \}\)/.test(cloudSync) ||
     !/window\.getTeamWorkspacePullSummary = getTeamWorkspacePullSummary/.test(cloudSync) ||
     !/window\.dismissTeamWorkspacePullSummary = dismissTeamWorkspacePullSummary/.test(cloudSync) ||
-    !/Publish Status/.test(cloudSync) ||
-    !/Publish Team Update/.test(cloudSync) ||
-    !/Update This Device/.test(cloudSync)
+    !/Admin Recovery Tools/.test(cloudSync) ||
+    !/Republish Local Workspace/.test(cloudSync) ||
+    !/Recover This Device/.test(cloudSync)
   ) {
     fail("team workspace sync modal and pull summary are incomplete");
   }
@@ -3649,8 +3661,8 @@ function checkWorkspaceSyncContracts() {
     "hasWorkspaceSyncWork()",
     "Publish Media",
     "/images/manifest?sig=...",
-    "Manual Cloud Sync is an advanced fallback",
-    "Keep manual `Cloud Sync` and `Sync Diagrams` available as fallback/retry",
+    "Raw cloud push/pull is admin-only recovery tooling",
+    "Keep raw cloud recovery and all-local diagram upload under admin-only",
   ].forEach((token) => {
     if (!agentGuide.includes(token)) {
       fail(`agent workspace sync guide missing ${token}`);
