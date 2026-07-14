@@ -751,10 +751,11 @@ async function confirmSignalReviewedUpload() {
     const label = `${summary.componentLabel}: ${summary.displayValue}`;
     const result = await window.playClips.uploadPreparedForSig(sig, state.prepared, label, {
       publishType: "signals",
+      replaceExisting: true,
     });
     _sigSelected = { componentType: summary.componentType, compareKey: summary.compareKey };
     _sigUpsertRecord(summary, {
-      clipCount: Math.max(1, Number(summary.record?.clipCount || 0) + 1),
+      clipCount: 1,
       durationMs: Number(result.clip?.duration || state.preparedDuration || 0) * 1000,
       visibility: "published",
       notes: summary.record?.notes || "",

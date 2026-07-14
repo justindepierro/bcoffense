@@ -41,6 +41,10 @@ function isValidSig(sig) {
   return Boolean(sig) && sig.length <= MAX_SIG_LENGTH;
 }
 
+function isReplaceOnlySig(sig) {
+  return String(sig || "").trim().startsWith("signals/");
+}
+
 async function readManifest(store, sig) {
   const value = await store.get(manifestKey(sig), { type: "json" });
   return Array.isArray(value) ? value : [];
@@ -129,7 +133,8 @@ async function uploadClip(context) {
 
   const store = getManifestStore(context.env);
   const entries = await readManifest(store, sig);
-  if (entries.length >= MAX_CLIPS_PER_PLAY) {
+  const replaceExisting = isReplaceOnlySig(sig);
+  if (!replaceExisting && entries.length >= MAX_CLIPS_PER_PLAY) {
     return authJson(
       { ok: false, error: `This play already has the maximum of ${MAX_CLIPS_PER_PLAY} clips.` },
       { status: 409 },
@@ -156,8 +161,13 @@ async function uploadClip(context) {
     uploadedAt: new Date().toISOString(),
     uploadedBy: session.username,
   };
-  entries.push(entry);
-  await writeManifest(store, sig, entries);
+  await writeManifest(store, sig, replaceExisting ? [entry] : [...entries, entry]);
+
+  if (replaceExisting && entries.length) {
+    await Promise.allSettled(
+      entries.map((oldEntry) => bucket.delete(oldEntry.r2key || `clips/${oldEntry.id}`)),
+    );
+  }
 
   return authJson({ ok: true, clip: publicClip(entry) });
 }

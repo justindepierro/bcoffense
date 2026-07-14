@@ -4315,6 +4315,7 @@ function checkSignalPlayIntegrationContracts() {
   const scriptCss = read("css/script.css");
   const playbookEditor = read("js/playbook-editor.js");
   const roadmap = read("CONSOLIDATED_ROADMAP.md");
+  const clipManifest = read("functions/clips/manifest.js");
 
   if (
     !/function resolveSignalsForPlay\(play, options = \{\}\)/.test(signals) ||
@@ -4591,11 +4592,15 @@ function checkSignalPlayIntegrationContracts() {
     !/const shouldTrimUpload = Boolean\(opts\.trimToMaxDuration\)/.test(clips) ||
     !/async function prepareSilentVideoUpload\(file, opts = \{\}\)/.test(clips) ||
     !/async function uploadPreparedForSig\(sig, prepared, label, opts = \{\}\)/.test(clips) ||
+    !/function isReplaceOnlySig\(sig\)/.test(clips) ||
+    !/!opts\.skipExistingCheck && !opts\.replaceExisting && !isReplaceOnlySig\(sig\)/.test(clips) ||
     !/Trimming to \$\{maxDurationSec\}s and removing audio before upload/.test(clips) ||
     !/const targetDuration = shouldTrimUpload \? maxDurationSec : duration/.test(clips) ||
     !/const uploadFile = await createSilentVideoFile\(file, targetDuration\)/.test(clips) ||
     !/body: uploadFile/.test(clips) ||
     !/trimToMaxDuration: true/.test(signals) ||
+    !/replaceExisting: true/.test(signals) ||
+    !/clipCount: 1/.test(signals) ||
     !/Final preview ready/.test(signals) ||
     !/Preview Final Clip/.test(signals) ||
     !/Upload This Clip/.test(signals) ||
@@ -4621,6 +4626,10 @@ function checkSignalPlayIntegrationContracts() {
     !/configureLoopPreviewVideo,/.test(clips) ||
     !/window\.playClips\.configureLoopPreviewVideo\(video\)/.test(playbookEditor) ||
     !/window\.playClips\.configureLoopPreviewVideo\(video\)/.test(presentation) ||
+    !/function isReplaceOnlySig\(sig\)/.test(clipManifest) ||
+    !/const replaceExisting = isReplaceOnlySig\(sig\)/.test(clipManifest) ||
+    !/writeManifest\(store, sig, replaceExisting \? \[entry\] : \[\.\.\.entries, entry\]\)/.test(clipManifest) ||
+    !/Promise\.allSettled/.test(clipManifest) ||
     !/SIGNAL_IPHONE_CAPTURE_HINT/.test(signals) ||
     !/\.signals-upload-review-video/.test(signalsCss) ||
     !/\.signals-upload-review-modal/.test(signalsCss) ||

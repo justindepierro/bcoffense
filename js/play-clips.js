@@ -76,6 +76,10 @@
     return cands.length ? cands[0] : "";
   }
 
+  function isReplaceOnlySig(sig) {
+    return String(sig || "").trim().startsWith("signals/");
+  }
+
   function canManage() {
     return typeof canEditUser === "function" ? Boolean(canEditUser()) : false;
   }
@@ -425,7 +429,7 @@
         `Processed clip is ${(uploadFile.size / (1024 * 1024)).toFixed(1)} MB — the limit is 25 MB.`,
       );
     }
-    if (!opts.skipExistingCheck) {
+    if (!opts.skipExistingCheck && !opts.replaceExisting && !isReplaceOnlySig(sig)) {
       const existing = await listForSig(sig);
       if (existing.length >= MAX_CLIPS) {
         throw new Error(`This play already has the maximum of ${MAX_CLIPS} clips.`);
@@ -464,9 +468,11 @@
     if (!sig) {
       throw new Error("Missing stable clip signature.");
     }
-    const existing = await listForSig(sig);
-    if (existing.length >= MAX_CLIPS) {
-      throw new Error(`This play already has the maximum of ${MAX_CLIPS} clips.`);
+    if (!opts.replaceExisting && !isReplaceOnlySig(sig)) {
+      const existing = await listForSig(sig);
+      if (existing.length >= MAX_CLIPS) {
+        throw new Error(`This play already has the maximum of ${MAX_CLIPS} clips.`);
+      }
     }
     const prepared = await prepareSilentVideoUpload(file, opts);
     return uploadPreparedForSig(sig, prepared, label, { ...opts, skipExistingCheck: true });
