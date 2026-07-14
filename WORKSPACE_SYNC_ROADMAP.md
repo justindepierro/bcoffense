@@ -220,12 +220,12 @@ plain warnings.
 
 ### Phase V2.2 - Unified Publish Orchestrator
 
-- [ ] Introduce one `publishTeamWorkspace()` orchestration function.
+- [x] Introduce one `publishTeamWorkspace()` orchestration function.
 - [ ] Route cloud backup push, player publish metadata, media manifest updates,
   diagrams, clips, signals, quizzes, and notification freshness through that
   orchestrator.
-- [ ] Make the dock state domain-aware: data, media, quizzes, notifications.
-- [ ] Stop showing `Team cloud synced` until player-visible readiness checks are
+- [x] Make the dock state domain-aware: data, media, quizzes, notifications.
+- [x] Stop showing `Team cloud synced` until player-visible readiness checks are
   complete.
 
 ### Phase V2.3 - Player Bootstrap Contract

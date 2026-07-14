@@ -207,6 +207,124 @@
     }).join("");
   }
 
+  function getStoredPlayerPublishStatus() {
+    if (typeof getPlayerPublishStatus === "function") return getPlayerPublishStatus();
+    const raw = storageManager.get(STORAGE_KEYS.PLAYER_PUBLISH_STATUS, {});
+    return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  }
+
+  function getStoredQuizSourceSettings() {
+    const raw = storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS, {});
+    return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  }
+
+  function getStoredSignalPublishSummary() {
+    const records = storageManager.get(STORAGE_KEYS.SIGNALS, []);
+    const list = Array.isArray(records) ? records : [];
+    const published = list.filter((record) =>
+      record?.visibility === "published" && Number(record?.clipCount || 0) > 0,
+    );
+    return {
+      total: list.length,
+      published: published.length,
+    };
+  }
+
+  function buildReadinessItem(domain, status, label, detail = "") {
+    return { domain, status, label, detail };
+  }
+
+  function publishReadinessHasIssues(report) {
+    return (report?.items || []).some((item) => item.status === "warn" || item.status === "error");
+  }
+
+  function getPublishReadinessDomains(report) {
+    return (report?.items || []).map((item) => item.domain).filter(Boolean);
+  }
+
+  function formatPublishReadinessSummary(report) {
+    const items = Array.isArray(report?.items) ? report.items : [];
+    if (!items.length) return "Readiness checks did not return details.";
+    return items
+      .map((item) => `${item.label}: ${item.status === "ready" ? "ready" : item.status}${item.detail ? ` - ${item.detail}` : ""}`)
+      .join(" | ");
+  }
+
+  async function buildTeamPublishReadinessReport(pushResult = {}) {
+    const items = [];
+    const summary = pushResult.summary || {};
+    items.push(buildReadinessItem(
+      "data",
+      summary.itemCount ? "ready" : "warn",
+      "Data",
+      summary.itemCount ? `${summary.itemCount} workspace items published` : "No published workspace item count was returned",
+    ));
+
+    const publishStatus = getStoredPlayerPublishStatus();
+    const metadataDomains = ["scripts", "diagrams", "quizzes", "signals"].filter((kind) => publishStatus[kind]?.updatedAt);
+    items.push(buildReadinessItem(
+      "player metadata",
+      metadataDomains.length ? "ready" : "warn",
+      "Player metadata",
+      metadataDomains.length ? metadataDomains.join(", ") : "No player publish metadata has been recorded yet",
+    ));
+
+    if (window.playImages && typeof window.playImages.buildPlayerMediaPublishReport === "function") {
+      try {
+        const media = await window.playImages.buildPlayerMediaPublishReport();
+        const counts = media?.counts || {};
+        const diagramIssues =
+          Number(counts.stale || 0) +
+          Number(counts.unpublished || 0) +
+          Number(counts.missing || 0) +
+          Number(counts.failed || 0);
+        const clipMissing = Number(counts.clipMissing || 0);
+        const total = Array.isArray(media?.rows) ? media.rows.length : 0;
+        const status = !total || (!diagramIssues && !clipMissing) ? "ready" : "warn";
+        const detail = !total
+          ? "No player-visible scripts require media yet"
+          : `${Number(counts.ready || 0)}/${total} diagrams ready${clipMissing ? `, ${clipMissing} clip gap${clipMissing === 1 ? "" : "s"}` : ""}`;
+        items.push(buildReadinessItem("media", status, "Media", detail));
+      } catch (err) {
+        items.push(buildReadinessItem("media", "error", "Media", err?.message || "Could not check player media readiness"));
+      }
+    } else {
+      items.push(buildReadinessItem("media", "warn", "Media", "Media readiness checker is unavailable"));
+    }
+
+    const quizSettings = getStoredQuizSourceSettings();
+    const quizSources = Object.values(quizSettings).filter((entry) => entry && entry.state && entry.state !== "coach");
+    items.push(buildReadinessItem(
+      "quizzes",
+      quizSources.length ? "ready" : "warn",
+      "Quizzes",
+      quizSources.length ? `${quizSources.length} player quiz source${quizSources.length === 1 ? "" : "s"} available` : "No player quiz source is currently available",
+    ));
+
+    const signals = getStoredSignalPublishSummary();
+    items.push(buildReadinessItem(
+      "signals",
+      signals.published ? "ready" : "warn",
+      "Signals",
+      signals.published ? `${signals.published} published signal clip${signals.published === 1 ? "" : "s"}` : "No published signal clips recorded",
+    ));
+
+    const notificationsReady = typeof notifyPlayersOfTeamUpdate === "function" &&
+      (typeof navigator === "undefined" || navigator.onLine !== false);
+    items.push(buildReadinessItem(
+      "notifications",
+      notificationsReady ? "ready" : "warn",
+      "Notifications",
+      notificationsReady ? "Notification pipeline available" : "Notifications will retry when available",
+    ));
+
+    return {
+      checkedAt: new Date().toISOString(),
+      items,
+      hasIssues: items.some((item) => item.status === "warn" || item.status === "error"),
+    };
+  }
+
   function isCloudRemoteAlreadyKnown(remote, settings = getCloudSyncSettings()) {
     if (!remote?.summary) return false;
     const remoteTime = getCloudTime(remote.summary.exportDate || remote.updatedAt);
@@ -795,6 +913,7 @@
 
   async function pushCloudBackupInternal(opts = {}) {
     const silent = opts.silent === true;
+    const skipActivityLog = opts.skipActivityLog === true;
     if (!userCanPushCloudBackup()) {
       throw new Error("Only admin can push the team workspace.");
     }
@@ -843,16 +962,18 @@
         const diagramLine = formatDiagramSyncSummary(diagramSyncResult);
         const modalDetails = formatDiagramSyncDetails(diagramSyncResult);
         const hasDiagramIssues = diagramSyncResult && (diagramSyncResult.failed || diagramSyncResult.skipped);
-        recordPublishActivity({
-          versionId: buildPublishVersionId(nextSettings.lastPushAt),
-          timestamp: nextSettings.lastPushAt,
-          result: hasDiagramIssues ? "partial" : "success",
-          domains: getPublishDomainsFromBackup(backup, diagramSyncResult),
-          summary: `Published ${summary.itemCount} workspace items`,
-          failedDomain: hasDiagramIssues ? "diagrams" : "",
-          retryAction: hasDiagramIssues ? "Open Publish Media and retry failed diagrams." : "",
-          size: payloadSize,
-        });
+        if (!skipActivityLog) {
+          recordPublishActivity({
+            versionId: buildPublishVersionId(nextSettings.lastPushAt),
+            timestamp: nextSettings.lastPushAt,
+            result: hasDiagramIssues ? "partial" : "success",
+            domains: getPublishDomainsFromBackup(backup, diagramSyncResult),
+            summary: `Published ${summary.itemCount} workspace items`,
+            failedDomain: hasDiagramIssues ? "diagrams" : "",
+            retryAction: hasDiagramIssues ? "Open Publish Media and retry failed diagrams." : "",
+            size: payloadSize,
+          });
+        }
         updateCloudSyncModalStatus(
           `Pushed ${summary.itemCount} items${summary.imageCount ? ` and ${summary.imageCount} diagram entries` : ""}.${diagramLine ? ` ${diagramLine}` : ""} Last push: ${formatCloudDate(nextSettings.lastPushAt)}.`,
           hasDiagramIssues ? "warning" : "ok",
@@ -864,17 +985,110 @@
           );
         }
       } else {
-        recordPublishActivity({
-          versionId: buildPublishVersionId(nextSettings.lastPushAt),
-          timestamp: nextSettings.lastPushAt,
-          result: "success",
-          domains: getPublishDomainsFromBackup(backup, diagramSyncResult, { domains: getDirtyCloudKeyLabels() }),
-          summary: `Published ${summary.itemCount} workspace items`,
-          size: payloadSize,
-        });
+        if (!skipActivityLog) {
+          recordPublishActivity({
+            versionId: buildPublishVersionId(nextSettings.lastPushAt),
+            timestamp: nextSettings.lastPushAt,
+            result: "success",
+            domains: getPublishDomainsFromBackup(backup, diagramSyncResult, { domains: getDirtyCloudKeyLabels() }),
+            summary: `Published ${summary.itemCount} workspace items`,
+            size: payloadSize,
+          });
+        }
       }
       return { backup, summary, size: payloadSize, updatedAt: data.updatedAt || "", diagramSyncResult };
     } catch (err) {
+      if (!skipActivityLog) {
+        recordPublishActivity({
+          result: "failed",
+          domains: getDirtyCloudKeyLabels(),
+          summary: err.message || "Publish failed",
+          failedDomain: cloudAutoPushDirtyKeys.has("playImages") ? "media" : "workspace",
+          retryAction: silent ? "Use Retry from the save status chip." : "Open Publish Status and retry Publish Team Update.",
+        });
+      }
+      throw err;
+    } finally {
+      setCloudSyncBusy(false);
+    }
+  }
+
+  async function publishTeamWorkspace(opts = {}) {
+    const silent = opts.silent === true;
+    const publishJobKey = _cloudQueueJob("cloud", "team-publish", {
+      queuedLabel: "Team publish queued",
+      runningLabel: "Publishing data...",
+      doneLabel: "Ready for players",
+      errorLabel: "Publish needs attention",
+      retry: () => publishTeamWorkspace(opts),
+    });
+    _cloudStartJob(publishJobKey, { label: "Publishing data..." });
+    try {
+      if (!silent) updateCloudSyncModalStatus("Publishing team data...", "info");
+      const result = await pushCloudBackupInternal({ silent, skipActivityLog: true });
+      if (!silent) updateCloudSyncModalStatus("Checking player readiness...", "info");
+      if (typeof window.setWorkspaceSyncStatus === "function") {
+        window.setWorkspaceSyncStatus("media", "syncing", { label: "Checking media..." });
+        window.setWorkspaceSyncStatus("player", "syncing", { label: "Checking quizzes and signals..." });
+      }
+      const readiness = await buildTeamPublishReadinessReport(result);
+      const hasIssues = publishReadinessHasIssues(readiness);
+      const domains = getPublishReadinessDomains(readiness);
+      const failedItem = readiness.items.find((item) => item.status === "error") ||
+        readiness.items.find((item) => item.status === "warn") ||
+        null;
+      const timestamp = new Date().toISOString();
+      recordPublishActivity({
+        versionId: buildPublishVersionId(timestamp),
+        timestamp,
+        result: hasIssues ? "partial" : "success",
+        domains,
+        summary: formatPublishReadinessSummary(readiness),
+        failedDomain: hasIssues ? failedItem?.domain || "readiness" : "",
+        retryAction: hasIssues ? "Open Publish Status, fix the listed readiness item, then publish again." : "",
+        size: result.size,
+      });
+      cloudAutoPushPending = false;
+      cloudAutoPushLastError = "";
+      cloudAutoPushRetryCount = 0;
+      cloudAutoPushDirtyKeys.clear();
+      if (typeof window.setWorkspaceSyncStatus === "function") {
+        window.setWorkspaceSyncStatus("media", hasIssues ? "error" : "synced", {
+          label: hasIssues ? "Media needs attention" : "Media ready",
+        });
+        window.setWorkspaceSyncStatus("player", hasIssues ? "error" : "synced", {
+          label: hasIssues ? "Player readiness needs attention" : "Player readiness checked",
+        });
+      }
+      if (hasIssues) {
+        _cloudFailJob(publishJobKey, new Error("Player readiness needs attention"), {
+          label: "Publish needs attention",
+          retry: () => publishTeamWorkspace(opts),
+        });
+      } else {
+        _cloudCompleteJob(publishJobKey, { label: "Ready for players" });
+      }
+      if (!silent) {
+        updateCloudSyncModalStatus(
+          `${hasIssues ? "Published, but readiness needs attention." : "Published and ready for players."} ${formatPublishReadinessSummary(readiness)}`,
+          hasIssues ? "warn" : "ok",
+        );
+      }
+      if (hasIssues) {
+        const statusEl = document.getElementById("cloudSyncStatus");
+        if (statusEl) {
+          statusEl.textContent = "Publish needs attention - readiness checks found gaps";
+          statusEl.className = "cloud-sync-status cloud-sync-status-warn";
+        }
+      } else {
+        renderCloudSyncStatus();
+      }
+      return { ...result, readiness };
+    } catch (err) {
+      _cloudFailJob(publishJobKey, err, {
+        label: "Publish needs attention",
+        retry: () => publishTeamWorkspace(opts),
+      });
       recordPublishActivity({
         result: "failed",
         domains: getDirtyCloudKeyLabels(),
@@ -882,26 +1096,14 @@
         failedDomain: cloudAutoPushDirtyKeys.has("playImages") ? "media" : "workspace",
         retryAction: silent ? "Use Retry from the save status chip." : "Open Publish Status and retry Publish Team Update.",
       });
-      throw err;
-    } finally {
-      setCloudSyncBusy(false);
+      updateCloudSyncModalStatus(err.message, "error");
+      if (!silent) showToast(err.message, { type: "error", duration: 6000 });
+      return null;
     }
   }
 
   async function pushCloudBackup() {
-    try {
-      const result = await pushCloudBackupInternal({ silent: false });
-      cloudAutoPushPending = false;
-      cloudAutoPushLastError = "";
-      cloudAutoPushRetryCount = 0;
-      cloudAutoPushDirtyKeys.clear();
-      renderCloudSyncStatus();
-      return result;
-    } catch (err) {
-      updateCloudSyncModalStatus(err.message, "error");
-      showToast(err.message, { type: "error", duration: 6000 });
-      return null;
-    }
+    return publishTeamWorkspace({ silent: false });
   }
 
   async function restoreCloudBackup(remote, opts = {}) {
@@ -1128,7 +1330,7 @@
     statusEl.textContent = `Publish status ready - ${lastText}`;
     statusEl.className = "cloud-sync-status cloud-sync-status-ready";
     if (typeof window.setWorkspaceSyncStatus === "function") {
-      window.setWorkspaceSyncStatus("cloud", "synced", { label: "Team update published" });
+      window.setWorkspaceSyncStatus("cloud", "synced", { label: "Ready for players" });
     }
   }
 
@@ -1460,6 +1662,7 @@
   window.closeCloudSyncModal = closeCloudSyncModal;
   window.saveCloudSyncSettings = saveCloudSyncSettings;
   window.testCloudSyncConnection = testCloudSyncConnection;
+  window.publishTeamWorkspace = publishTeamWorkspace;
   window.pushCloudBackup = pushCloudBackup;
   window.pullCloudBackup = pullCloudBackup;
   window.refreshPlayerCloudBackup = refreshPlayerCloudBackup;

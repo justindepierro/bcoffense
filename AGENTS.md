@@ -383,6 +383,7 @@ window.playImages
 window.positionAnchoredMenu
 window.pullCloudBackup
 window.publishPlayerMedia
+window.publishTeamWorkspace
 window.pushCloudBackup
 window.queueCloudAutoPush
 window.queuePlayerLeaderboardSync

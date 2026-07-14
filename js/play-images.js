@@ -1686,6 +1686,7 @@
     loadKeys,
     isKeyCacheReady,
     buildSyncPlan,
+    buildPlayerMediaPublishReport,
     prefetchAll,
     compress,
     describeCompression,

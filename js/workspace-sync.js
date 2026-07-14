@@ -33,8 +33,7 @@
   }
 
   function _wsDisplayLabel(channel, state, label) {
-    if (state === "error") return label || _wsDefaultLabel(channel, state);
-    return _wsDefaultLabel(channel, state);
+    return label || _wsDefaultLabel(channel, state);
   }
 
   function ensureWorkspaceSyncDock() {

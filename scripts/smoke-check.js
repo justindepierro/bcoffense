@@ -3358,6 +3358,9 @@ function checkWorkspaceSyncContracts() {
     "- [x] Show the latest published version on Dashboard and in Publish Status.",
     "- [x] Record failed publish attempts with the exact failed domain and retry",
     "- [x] Add smoke coverage for publish status labels and activity-log rendering.",
+    "- [x] Introduce one `publishTeamWorkspace()` orchestration function.",
+    "- [x] Make the dock state domain-aware: data, media, quizzes, notifications.",
+    "- [x] Stop showing `Team cloud synced` until player-visible readiness checks are",
   ].forEach((token) => {
     if (!roadmap.includes(token)) {
       fail(`workspace sync roadmap missing ${token}`);
@@ -3378,6 +3381,7 @@ function checkWorkspaceSyncContracts() {
     "data-action=\"retryWorkspaceSyncWork\"",
     "function getWorkspaceSyncSummary()",
     "function setWorkspaceSyncStatus(channel, state, opts = {})",
+    "return label || _wsDefaultLabel(channel, state)",
     "function hasWorkspaceSyncWork()",
     "function queueWorkspaceSyncJob(channel, id, opts = {})",
     "function startWorkspaceSyncJob(key, opts = {})",
@@ -3435,6 +3439,14 @@ function checkWorkspaceSyncContracts() {
     "setWorkspaceSyncStatus(\"cloud\", \"queued\"",
     "setWorkspaceSyncStatus(\"cloud\", \"error\"",
     "setWorkspaceSyncStatus(\"cloud\", \"synced\"",
+    "async function publishTeamWorkspace(opts = {})",
+    "async function buildTeamPublishReadinessReport(pushResult = {})",
+    "function publishReadinessHasIssues(report)",
+    "window.publishTeamWorkspace = publishTeamWorkspace",
+    "pushCloudBackupInternal({ silent, skipActivityLog: true })",
+    "Checking media...",
+    "Checking quizzes and signals...",
+    "Ready for players",
     "_cloudQueueJob(\"media\", \"auto-push\"",
     "_cloudStartJob(mediaJobKey",
     "_cloudCompleteJob(mediaJobKey",
@@ -3467,6 +3479,7 @@ function checkWorkspaceSyncContracts() {
     !/function renderPlayerMediaPublishReport\(report\)/.test(playImages) ||
     !/window\.openPublishMediaModal = async function/.test(playImages) ||
     !/window\.publishPlayerMedia = async function/.test(playImages) ||
+    !/buildPlayerMediaPublishReport,/.test(playImages) ||
     !/window\.closePublishMedia = function/.test(playImages) ||
     !/getPlayerPublishedScripts\(\)/.test(playImages) ||
     !/window\.playClips\.loadIndex\(\)/.test(playImages) ||
