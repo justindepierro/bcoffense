@@ -1222,9 +1222,11 @@
       const currentUser =
         typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
       if (currentUser?.role === "player") {
-        const result = await refreshPlayerCloudBackup({ navigate: true });
+        const result = typeof refreshPlayerTeamApp === "function"
+          ? await refreshPlayerTeamApp({ quiet: false, force: true })
+          : await refreshPlayerCloudBackup({ navigate: true });
         closeCloudSyncModal();
-        if (result?.ok) {
+        if (result?.ok && result?.status !== "needs-retry") {
           showToast("Ready", {
             type: "success",
             duration: 3000,

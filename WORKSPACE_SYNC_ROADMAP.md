@@ -230,14 +230,14 @@ plain warnings.
 
 ### Phase V2.3 - Player Bootstrap Contract
 
-- [ ] Add a bounded startup readiness gate with visible statuses for secure
+- [x] Add a bounded startup readiness gate with visible statuses for secure
   session, saved data, latest coach update, dashboard shell, and media manifest
   checks.
-- [ ] Replace player-visible Cloud Sync pull behavior with one player bootstrap
+- [x] Replace player-visible Cloud Sync pull behavior with one player bootstrap
   result object.
 - [ ] Apply data, media manifest, app-shell, quiz, and notification freshness in
   one quiet startup/update path.
-- [ ] Make manual player refresh call the same bootstrap path.
+- [x] Make manual player refresh call the same bootstrap path.
 - [ ] Add diagnostics only for admins; hide technical sync terms from players.
 
 ### Phase V2.4 - Recovery Tools Demotion

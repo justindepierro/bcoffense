@@ -3070,16 +3070,34 @@ function checkStartupDiagnosticsAndRenderQueue() {
     !/initNotifications\(\{ deferFirstPoll: currentAuthUser\.role === "player" \}\)/.test(auth) ||
     !/currentAuthUser\.role !== "player"[\s\S]*Logged in as/.test(auth) ||
     !/schedulePlayerTeamUpdateCheck\(\{ delay: 700, startup: true \}\)/.test(auth) ||
-    !/function refreshPlayerTeamApp\(opts = \{\}\)[\s\S]*const quietStartup = quiet && startup/.test(appShell) ||
+    !/const PLAYER_BOOTSTRAP_STEPS = \[/.test(appShell) ||
+    !/key: "session", label: "Secure session"/.test(appShell) ||
+    !/key: "local", label: "Saved data"/.test(appShell) ||
+    !/key: "coach", label: "Coach update"/.test(appShell) ||
+    !/key: "shell", label: "App shell"/.test(appShell) ||
+    !/key: "media", label: "Media manifest"/.test(appShell) ||
+    !/async function runPlayerTeamBootstrap\(opts = \{\}\)/.test(appShell) ||
+    !/function _setPlayerBootstrapProgress\(result, key, status, opts = \{\}\)/.test(appShell) ||
+    !/function waitForPlayerStartupBootstrap\(opts = \{\}\)/.test(appShell) ||
+    !/const timeoutMs = Math\.max\(500, Number\(opts\.timeoutMs \|\| PLAYER_BOOTSTRAP_TIMEOUT_MS\)\)/.test(appShell) ||
+    !/function refreshPlayerTeamApp\(opts = \{\}\)[\s\S]*runPlayerTeamBootstrap\(opts\)/.test(appShell) ||
     !/let playerTeamRefreshPromise = null/.test(appShell) ||
     !/if \(playerTeamRefreshPromise\)/.test(appShell) ||
     !/showToast\("Checking for coach updates"/.test(appShell) ||
     !/title: "Checking for coach updates"/.test(appShell) ||
     !/state\.title \|\| "Ready"/.test(appShell) ||
-    !/title: "Try Again"/.test(appShell) ||
-    !/phaseStateOpts = quietStartup \? \{ render: false \}/.test(appShell) ||
+    !/const title = ok \? "Ready" : "Try Again"/.test(appShell) ||
+    !/stateOpts = quietStartup \? \{ render: false \}/.test(appShell) ||
     !/refreshPlayerCloudBackup\(\{[\s\S]*navigate: !quietStartup,[\s\S]*skipIfCurrent: true/.test(appShell) ||
+    !/Checking media manifest/.test(appShell) ||
+    !/Media loads on demand/.test(appShell) ||
     !/refreshNotificationStatus\(\{ render: !quietStartup \}\)/.test(appShell) ||
+    !/waitForPlayerBootstrapStartup/.test(appInit) ||
+    !/waitForPlayerStartupBootstrap\(\{ timeoutMs: 2600 \}\)/.test(appInit) ||
+    !/await waitForPlayerBootstrapStartup\(\)/.test(appInit) ||
+    !/currentUser\?\.role === "player"[\s\S]*refreshPlayerTeamApp\(\{ quiet: false, force: true \}\)/.test(cloudSync) ||
+    !/const steps = Array\.isArray\(state\.steps\)/.test(dashboardRender) ||
+    !/player-home-freshness__item--\$\{escapeHtml\(stepTone\)\}/.test(dashboardRender) ||
     !/function initNotifications\(opts = \{\}\)/.test(appNotifications) ||
     !/if \(!opts\.deferFirstPoll\) _pollUnreadCount\(\)/.test(appNotifications) ||
     !/function refreshNotificationStatus\(opts = \{\}\)[\s\S]*_pollUnreadCount\(opts\)/.test(appNotifications) ||
@@ -3362,6 +3380,9 @@ function checkWorkspaceSyncContracts() {
     "- [x] Route cloud backup push, player publish metadata, media manifest updates,",
     "- [x] Make the dock state domain-aware: data, media, quizzes, notifications.",
     "- [x] Stop showing `Team cloud synced` until player-visible readiness checks are",
+    "- [x] Add a bounded startup readiness gate with visible statuses for secure",
+    "- [x] Replace player-visible Cloud Sync pull behavior with one player bootstrap",
+    "- [x] Make manual player refresh call the same bootstrap path.",
   ].forEach((token) => {
     if (!roadmap.includes(token)) {
       fail(`workspace sync roadmap missing ${token}`);

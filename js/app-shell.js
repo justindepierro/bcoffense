@@ -2197,6 +2197,54 @@ function dismissPlayerA2HS() {
   }, { passive: true });
 }());
 
+const PLAYER_BOOTSTRAP_TIMEOUT_MS = 2600;
+const PLAYER_BOOTSTRAP_STEPS = [
+  { key: "session", label: "Secure session" },
+  { key: "local", label: "Saved data" },
+  { key: "coach", label: "Coach update" },
+  { key: "shell", label: "App shell" },
+  { key: "media", label: "Media manifest" },
+  { key: "notifications", label: "Notifications" },
+];
+
+function _createPlayerBootstrapSteps() {
+  return PLAYER_BOOTSTRAP_STEPS.map((step) => ({
+    ...step,
+    status: "pending",
+    detail: "",
+  }));
+}
+
+function _clonePlayerBootstrapSteps(steps) {
+  const source = Array.isArray(steps) && steps.length ? steps : _createPlayerBootstrapSteps();
+  return source.map((step) => ({ ...step }));
+}
+
+function _setPlayerBootstrapStep(result, key, status, detail = "") {
+  if (!result || !Array.isArray(result.steps)) return result;
+  result.steps = result.steps.map((step) => (
+    step.key === key ? { ...step, status, detail } : step
+  ));
+  return result;
+}
+
+function _isPlayerBootstrapOk(result) {
+  if (!result) return false;
+  if (["applying", "deferred", "skipped", "ready"].includes(result.status)) return true;
+  if (["missing", "restore-failed", "error", "offline", "needs-retry"].includes(result.status)) return false;
+  if (result.data?.ok === false) return false;
+  const appStatus = result.app?.status || "current";
+  return appStatus === "current" || appStatus === "unsupported" || appStatus === "applying";
+}
+
+function _playerBootstrapStepLabel(step) {
+  if (!step) return "Checking for coach updates";
+  if (step.status === "ready") return `${step.label} ready`;
+  if (step.status === "warn" || step.status === "error") return `${step.label} needs retry`;
+  if (step.status === "skipped") return `${step.label} queued`;
+  return `Checking ${step.label.toLowerCase()}...`;
+}
+
 function _setPlayerTeamRefreshState(state = {}, opts = {}) {
   window.playerTeamRefreshState = {
     tone: state.tone || "idle",
@@ -2204,6 +2252,8 @@ function _setPlayerTeamRefreshState(state = {}, opts = {}) {
     body: state.body || "Ready",
     busy: Boolean(state.busy),
     updatedAt: state.updatedAt || "",
+    steps: _clonePlayerBootstrapSteps(state.steps),
+    result: state.result || null,
   };
   if (opts.render !== false && typeof renderPlayerDashboardHome === "function") {
     renderPlayerDashboardHome();
@@ -2225,6 +2275,201 @@ function _refreshPlayerTeamSurfaces() {
 let playerTeamUpdateCheckStarted = false;
 let playerTeamRefreshPromise = null;
 
+function _setPlayerBootstrapProgress(result, key, status, opts = {}) {
+  _setPlayerBootstrapStep(result, key, status, opts.detail || "");
+  const activeStep = result.steps.find((step) => step.key === key);
+  const title = opts.title || (status === "ready" ? "Checking for coach updates" : _playerBootstrapStepLabel(activeStep));
+  if (opts.startup && typeof setStartupLoadingMessage === "function") {
+    setStartupLoadingMessage(title);
+  }
+  _setPlayerTeamRefreshState({
+    tone: status === "error" || status === "warn" ? "warn" : "checking",
+    title,
+    body: title,
+    busy: true,
+    steps: result.steps,
+    result,
+  }, opts.stateOpts || {});
+}
+
+function _finishPlayerBootstrapState(result, opts = {}) {
+  const ok = _isPlayerBootstrapOk(result);
+  const title = ok ? "Ready" : "Try Again";
+  result.ok = ok;
+  result.status = ok ? (result.status || "ready") : (result.status || "needs-retry");
+  result.finishedAt = new Date().toISOString();
+  _setPlayerTeamRefreshState({
+    tone: ok ? "ready" : "warn",
+    title,
+    body: title,
+    updatedAt: result.finishedAt,
+    steps: result.steps,
+    result,
+  }, opts.stateOpts || {});
+  return result;
+}
+
+async function runPlayerTeamBootstrap(opts = {}) {
+  const quiet = Boolean(opts.quiet);
+  const startup = Boolean(opts.startup);
+  const quietStartup = quiet && startup;
+  const stateOpts = quietStartup ? { render: false } : {};
+  const result = {
+    ok: false,
+    status: "checking",
+    startedAt: new Date().toISOString(),
+    finishedAt: "",
+    data: null,
+    app: null,
+    media: null,
+    notifications: null,
+    steps: _createPlayerBootstrapSteps(),
+  };
+
+  if (document.body?.getAttribute("data-auth-role") !== "player") {
+    result.ok = true;
+    result.status = "skipped";
+    result.steps = result.steps.map((step) => ({ ...step, status: "skipped" }));
+    return result;
+  }
+
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    _setPlayerBootstrapStep(result, "session", "ready", "Signed in");
+    _setPlayerBootstrapStep(result, "local", "ready", "Local data available");
+    result.status = "offline";
+    result.steps = result.steps.map((step) => (
+      step.status === "pending" ? { ...step, status: "warn", detail: "Try Again" } : step
+    ));
+    return _finishPlayerBootstrapState(result, { stateOpts });
+  }
+
+  _setPlayerBootstrapProgress(result, "session", "checking", {
+    startup,
+    stateOpts,
+    title: "Checking secure session...",
+  });
+  _setPlayerBootstrapProgress(result, "session", "ready", {
+    startup,
+    stateOpts,
+    title: "Secure session ready",
+    detail: "Signed in",
+  });
+
+  _setPlayerBootstrapProgress(result, "local", "checking", {
+    startup,
+    stateOpts,
+    title: "Checking saved data...",
+  });
+  _setPlayerBootstrapProgress(result, "local", "ready", {
+    startup,
+    stateOpts,
+    title: "Saved data ready",
+    detail: "Local workspace loaded",
+  });
+
+  try {
+    _setPlayerBootstrapProgress(result, "coach", "checking", {
+      startup,
+      stateOpts,
+      title: "Checking latest coach update...",
+    });
+    if (typeof refreshPlayerCloudBackup === "function") {
+      result.data = await refreshPlayerCloudBackup({
+        navigate: !quietStartup,
+        skipIfCurrent: true,
+      });
+    }
+    _setPlayerBootstrapStep(
+      result,
+      "coach",
+      result.data && result.data.ok === false ? "warn" : "ready",
+      result.data?.status || "Ready",
+    );
+    if (!quietStartup) _refreshPlayerTeamSurfaces();
+
+    _setPlayerBootstrapProgress(result, "shell", "checking", {
+      startup,
+      stateOpts,
+      title: "Checking app shell...",
+    });
+    if (typeof checkForTeamAppUpdate === "function") {
+      result.app = await checkForTeamAppUpdate({ apply: true });
+      if (result.app?.status === "applying") {
+        _setPlayerBootstrapStep(result, "shell", "ready", "Applying update");
+        result.ok = true;
+        result.status = "applying";
+        _setPlayerTeamRefreshState({
+          tone: "checking",
+          title: "Checking for coach updates",
+          body: "Checking for coach updates",
+          busy: true,
+          steps: result.steps,
+          result,
+        });
+        if (!quiet) showToast("Checking for coach updates", { type: "info", duration: 2500 });
+        return result;
+      }
+    }
+    const appCurrent = !result.app || result.app.status === "current" || result.app.status === "unsupported";
+    _setPlayerBootstrapStep(result, "shell", appCurrent ? "ready" : "warn", result.app?.status || "Ready");
+
+    _setPlayerBootstrapProgress(result, "media", "checking", {
+      startup,
+      stateOpts,
+      title: "Checking media manifest...",
+    });
+    const publishStatus =
+      typeof getPlayerPublishStatus === "function" ? getPlayerPublishStatus() : {};
+    const mediaFresh =
+      Boolean(publishStatus?.diagrams?.updatedAt) ||
+      Boolean(publishStatus?.clips?.updatedAt) ||
+      Boolean(publishStatus?.signals?.updatedAt);
+    result.media = {
+      status: mediaFresh ? "ready" : "lazy",
+      checkedAt: new Date().toISOString(),
+    };
+    _setPlayerBootstrapStep(
+      result,
+      "media",
+      "ready",
+      mediaFresh ? "Media manifest ready" : "Media loads on demand",
+    );
+
+    _setPlayerBootstrapProgress(result, "notifications", "checking", {
+      startup,
+      stateOpts,
+      title: "Checking notifications...",
+    });
+    if (typeof refreshNotificationStatus === "function") {
+      result.notifications = await refreshNotificationStatus({ render: !quietStartup }).catch((err) => ({
+        ok: false,
+        error: err?.message || "Try Again",
+      }));
+    }
+    _setPlayerBootstrapStep(
+      result,
+      "notifications",
+      result.notifications?.ok === false ? "warn" : "ready",
+      result.notifications?.ok === false ? "Try Again" : "Ready",
+    );
+
+    const dataOk = !result.data || result.data.ok;
+    const shellOk = !result.app || result.app.status === "current" || result.app.status === "unsupported";
+    result.status = dataOk && shellOk && result.data?.status !== "missing" ? "ready" : "needs-retry";
+    return _finishPlayerBootstrapState(result, { stateOpts });
+  } catch (err) {
+    _refreshPlayerTeamSurfaces();
+    result.status = "error";
+    result.error = err?.message || "Try Again";
+    result.steps = result.steps.map((step) => (
+      step.status === "checking" || step.status === "pending"
+        ? { ...step, status: "warn", detail: "Try Again" }
+        : step
+    ));
+    return _finishPlayerBootstrapState(result, { stateOpts });
+  }
+}
+
 async function refreshPlayerTeamApp(opts = {}) {
   if (playerTeamRefreshPromise) {
     if (!opts.quiet) {
@@ -2235,107 +2480,18 @@ async function refreshPlayerTeamApp(opts = {}) {
 
   const quiet = Boolean(opts.quiet);
   const startup = Boolean(opts.startup);
-  const quietStartup = quiet && startup;
-  const phaseStateOpts = quietStartup ? { render: false } : {};
+  if (startup) playerTeamUpdateCheckStarted = true;
   if (document.body?.getAttribute("data-auth-role") !== "player") {
     if (!quiet) showToast("Coach updates are for player logins.", { type: "info", duration: 2500 });
     return;
   }
-  if (typeof navigator !== "undefined" && navigator.onLine === false) {
-    _setPlayerTeamRefreshState({
-      tone: "warn",
-      title: "Try Again",
-      body: "Try Again",
-      updatedAt: new Date().toISOString(),
-    });
-    if (!quiet) {
-      showToast("Try Again", { type: "warning", duration: 3500 });
-    }
-    return;
-  }
 
   const runRefresh = async () => {
-    _setPlayerTeamRefreshState({
-      tone: "checking",
-      title: "Checking for coach updates",
-      body: "Checking for coach updates",
-      busy: true,
-    });
-
-    let dataResult = null;
-    let appResult = null;
     try {
-      if (typeof refreshPlayerCloudBackup === "function") {
-        _setPlayerTeamRefreshState({
-          tone: "checking",
-          title: "Checking for coach updates",
-          body: "Checking for coach updates",
-          busy: true,
-        }, phaseStateOpts);
-        dataResult = await refreshPlayerCloudBackup({
-          navigate: !quietStartup,
-          skipIfCurrent: true,
-        });
-      }
-      if (!quietStartup) _refreshPlayerTeamSurfaces();
-
-      if (typeof checkForTeamAppUpdate === "function") {
-        _setPlayerTeamRefreshState({
-          tone: "checking",
-          title: "Checking for coach updates",
-          body: "Checking for coach updates",
-          busy: true,
-        }, phaseStateOpts);
-        appResult = await checkForTeamAppUpdate({ apply: true });
-        if (appResult?.status === "applying") {
-          _setPlayerTeamRefreshState({
-            tone: "checking",
-            title: "Checking for coach updates",
-            body: "Checking for coach updates",
-            busy: true,
-          });
-          if (!quiet) showToast("Checking for coach updates", { type: "info", duration: 2500 });
-          return { ok: true, status: "applying" };
-        }
-      }
-
-      if (typeof refreshNotificationStatus === "function") {
-        _setPlayerTeamRefreshState({
-          tone: "checking",
-          title: "Checking for coach updates",
-          body: "Checking for coach updates",
-          busy: true,
-        }, phaseStateOpts);
-        await refreshNotificationStatus({ render: !quietStartup }).catch(() => null);
-      }
-
-      const dataOk = !dataResult || dataResult.ok;
-      const appCurrent = !appResult || appResult.status === "current" || appResult.status === "unsupported";
-      const title = dataOk && appCurrent && dataResult?.status !== "missing" ? "Ready" : "Try Again";
-      const body = title;
-      _setPlayerTeamRefreshState({
-        tone: title === "Ready" ? "ready" : "warn",
-        title,
-        body,
-        updatedAt: new Date().toISOString(),
-      });
+      const result = await runPlayerTeamBootstrap(opts);
+      const title = _isPlayerBootstrapOk(result) ? "Ready" : "Try Again";
       if (!quiet) showToast(title, { type: title === "Ready" ? "success" : "warning", duration: 3000 });
-      return { ok: dataOk, data: dataResult, app: appResult };
-    } catch (err) {
-      _refreshPlayerTeamSurfaces();
-      _setPlayerTeamRefreshState({
-        tone: "warn",
-        title: "Try Again",
-        body: "Try Again",
-        updatedAt: new Date().toISOString(),
-      });
-      if (!quiet) {
-        showToast("Try Again", {
-          type: "warning",
-          duration: 4500,
-        });
-      }
-      return { ok: false, error: err };
+      return result;
     } finally {
       playerTeamRefreshPromise = null;
     }
@@ -2343,6 +2499,29 @@ async function refreshPlayerTeamApp(opts = {}) {
 
   playerTeamRefreshPromise = runRefresh();
   return playerTeamRefreshPromise;
+}
+
+async function waitForPlayerStartupBootstrap(opts = {}) {
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  if (user?.role !== "player" || typeof refreshPlayerTeamApp !== "function") return null;
+  const timeoutMs = Math.max(500, Number(opts.timeoutMs || PLAYER_BOOTSTRAP_TIMEOUT_MS));
+  let timedOut = false;
+  const timeout = new Promise((resolve) => {
+    setTimeout(() => {
+      timedOut = true;
+      resolve({
+        ok: true,
+        status: "deferred",
+        timedOut: true,
+      });
+    }, timeoutMs);
+  });
+  const bootstrap = refreshPlayerTeamApp({ quiet: true, startup: true });
+  const result = await Promise.race([bootstrap, timeout]);
+  if (timedOut && typeof setStartupLoadingMessage === "function") {
+    setStartupLoadingMessage("Opening dashboard...");
+  }
+  return result;
 }
 
 function schedulePlayerTeamUpdateCheck(opts = {}) {

@@ -201,16 +201,36 @@ function _dashRenderPlayerFreshnessStrip(featuredScript, publishedScripts = []) 
   const needsRetry = state.tone === "warn" || state.tone === "offline";
   const label = checking ? "Checking for coach updates" : needsRetry ? "Try Again" : "Ready";
   const tone = checking ? "neutral" : needsRetry ? "warn" : "ready";
+  const steps = Array.isArray(state.steps) && state.steps.length
+    ? state.steps
+    : [
+      { label: "Coach update", status: checking ? "checking" : needsRetry ? "warn" : "ready" },
+      { label: "App shell", status: checking ? "checking" : "ready" },
+      { label: "Media manifest", status: checking ? "checking" : "ready" },
+    ];
+  const stepRows = steps.map((step) => {
+    const stepStatus = step.status || "pending";
+    const stepTone =
+      stepStatus === "ready" ? "ready" :
+        stepStatus === "warn" || stepStatus === "error" ? "warn" :
+          stepStatus === "skipped" ? "neutral" : "neutral";
+    const statusLabel =
+      stepStatus === "ready" ? "Ready" :
+        stepStatus === "warn" || stepStatus === "error" ? "Try Again" :
+          stepStatus === "skipped" ? "Queued" : "Checking";
+    return `
+      <div class="player-home-freshness__item player-home-freshness__item--${escapeHtml(stepTone)}">
+        <span>${escapeHtml(step.label || "Update")}</span>
+        <strong>${escapeHtml(statusLabel)}</strong>
+      </div>`;
+  }).join("");
   return `<section class="player-home-freshness" aria-label="Coach updates">
     <div class="player-home-freshness__head">
       <strong>${escapeHtml(label)}</strong>
       <span>${escapeHtml(label)}</span>
     </div>
     <div class="player-home-freshness__grid">
-      <div class="player-home-freshness__item player-home-freshness__item--${escapeHtml(tone)}">
-        <span>${escapeHtml(label)}</span>
-        <strong>${escapeHtml(label)}</strong>
-      </div>
+      ${stepRows}
     </div>
   </section>`;
 }

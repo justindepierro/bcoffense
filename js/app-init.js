@@ -10,6 +10,19 @@ async function initApp() {
       new Promise((resolve) => setTimeout(resolve, 4200)),
     ]);
   };
+  const waitForPlayerBootstrapStartup = () => {
+    const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    if (user?.role !== "player" || typeof waitForPlayerStartupBootstrap !== "function") {
+      return Promise.resolve(null);
+    }
+    if (typeof setStartupLoadingMessage === "function") {
+      setStartupLoadingMessage("Checking latest coach update...");
+    }
+    return Promise.race([
+      waitForPlayerStartupBootstrap({ timeoutMs: 2600 }),
+      new Promise((resolve) => setTimeout(() => resolve({ status: "deferred" }), 2800)),
+    ]);
+  };
   const runOptionalInit = (label, callback) => {
     try {
       callback();
@@ -74,6 +87,7 @@ async function initApp() {
     });
   } finally {
     await waitForAuthStartup();
+    await waitForPlayerBootstrapStartup();
     if (typeof appDiagnostics !== "undefined") {
       appDiagnostics.mark(startupFailed ? "startup:failed" : "startup:ready");
     }
