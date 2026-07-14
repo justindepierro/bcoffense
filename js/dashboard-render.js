@@ -314,6 +314,41 @@ function _dashDiagnosticItem(label, value, detail = "", tone = "") {
   </div>`;
 }
 
+function _dashGetPlayerBootstrapDiagnostic() {
+  const state = window.playerTeamRefreshState || {};
+  const result = state.result || {};
+  const steps = Array.isArray(state.steps) && state.steps.length
+    ? state.steps
+    : Array.isArray(result.steps) ? result.steps : [];
+  if (!steps.length && !result.status) {
+    return {
+      value: "Not run yet",
+      detail: "Player bootstrap has not reported on this device.",
+      tone: "warn",
+    };
+  }
+  const warnCount = steps.filter((step) => step.status === "warn" || step.status === "error").length;
+  const checkingCount = steps.filter((step) => step.status === "checking" || step.status === "pending").length;
+  const readyCount = steps.filter((step) => step.status === "ready").length;
+  const freshness = result.freshness && typeof result.freshness === "object" ? result.freshness : {};
+  const domains = Object.entries(freshness)
+    .filter(([, entry]) => entry && typeof entry === "object")
+    .map(([key, entry]) => `${key}:${entry.status || "checked"}`);
+  const value = state.busy || result.status === "checking"
+    ? "Checking"
+    : warnCount ? "Needs review" : "Ready";
+  const detailParts = [
+    `${readyCount}/${steps.length || readyCount} steps ready`,
+    domains.length ? domains.join(", ") : "",
+    result.finishedAt ? `finished ${_dashFormatDiagnosticDate(result.finishedAt)}` : "",
+  ].filter(Boolean);
+  return {
+    value,
+    detail: detailParts.join(" | "),
+    tone: warnCount ? "warn" : checkingCount ? "neutral" : "ready",
+  };
+}
+
 function renderAdminDiagnosticsTile() {
   const section = document.getElementById("dashDiagnosticsSection");
   if (!section) return;
@@ -338,6 +373,7 @@ function renderAdminDiagnosticsTile() {
     cloud.lastRemoteExportDate ? `remote ${_dashFormatDiagnosticDate(cloud.lastRemoteExportDate)}` : "",
     cloud.lastRemoteUpdatedAt ? `updated ${_dashFormatDiagnosticDate(cloud.lastRemoteUpdatedAt)}` : "",
   ].filter(Boolean).join(" | ");
+  const bootstrapDiagnostic = _dashGetPlayerBootstrapDiagnostic();
   section.innerHTML = `
     <div class="dash-diagnostics-card">
       <div class="dash-diagnostics-head">
@@ -353,6 +389,7 @@ function renderAdminDiagnosticsTile() {
         ${_dashDiagnosticItem("App cache", appVersion, "Current loaded asset version", appVersion === "Unknown" ? "warn" : "ready")}
         ${_dashDiagnosticItem("Service worker", controllerState, "Checking registration...", controllerState === "Active" ? "ready" : "warn")}
         ${_dashDiagnosticItem("Last cloud pull", _dashFormatDiagnosticDate(cloud.lastPullAt), cloudDetail || "No pull recorded on this device", cloud.lastPullAt ? "ready" : "warn")}
+        ${_dashDiagnosticItem("Player bootstrap", bootstrapDiagnostic.value, bootstrapDiagnostic.detail, bootstrapDiagnostic.tone)}
         ${_dashDiagnosticItem(
     "Last player publish",
     latestPublish ? _dashFormatDiagnosticDate(latestPublish.updatedAt) : "Not recorded",

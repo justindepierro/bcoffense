@@ -235,10 +235,10 @@ plain warnings.
   checks.
 - [x] Replace player-visible Cloud Sync pull behavior with one player bootstrap
   result object.
-- [ ] Apply data, media manifest, app-shell, quiz, and notification freshness in
+- [x] Apply data, media manifest, app-shell, quiz, and notification freshness in
   one quiet startup/update path.
 - [x] Make manual player refresh call the same bootstrap path.
-- [ ] Add diagnostics only for admins; hide technical sync terms from players.
+- [x] Add diagnostics only for admins; hide technical sync terms from players.
 
 ### Phase V2.4 - Recovery Tools Demotion
 

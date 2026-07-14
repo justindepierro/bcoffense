@@ -3076,8 +3076,15 @@ function checkStartupDiagnosticsAndRenderQueue() {
     !/key: "coach", label: "Coach update"/.test(appShell) ||
     !/key: "shell", label: "App shell"/.test(appShell) ||
     !/key: "media", label: "Media manifest"/.test(appShell) ||
+    !/key: "quiz", label: "Quizzes"/.test(appShell) ||
     !/async function runPlayerTeamBootstrap\(opts = \{\}\)/.test(appShell) ||
     !/function _setPlayerBootstrapProgress\(result, key, status, opts = \{\}\)/.test(appShell) ||
+    !/function _getPlayerBootstrapDataFreshness\(dataResult = null\)/.test(appShell) ||
+    !/function _getPlayerBootstrapAppFreshness\(appResult = null\)/.test(appShell) ||
+    !/function _getPlayerBootstrapMediaFreshness\(\)/.test(appShell) ||
+    !/function _getPlayerBootstrapQuizFreshness\(\)/.test(appShell) ||
+    !/function _getPlayerBootstrapNotificationFreshness\(notificationResult = null\)/.test(appShell) ||
+    !/freshness: \{\}/.test(appShell) ||
     !/function waitForPlayerStartupBootstrap\(opts = \{\}\)/.test(appShell) ||
     !/const timeoutMs = Math\.max\(500, Number\(opts\.timeoutMs \|\| PLAYER_BOOTSTRAP_TIMEOUT_MS\)\)/.test(appShell) ||
     !/function refreshPlayerTeamApp\(opts = \{\}\)[\s\S]*runPlayerTeamBootstrap\(opts\)/.test(appShell) ||
@@ -3091,6 +3098,8 @@ function checkStartupDiagnosticsAndRenderQueue() {
     !/refreshPlayerCloudBackup\(\{[\s\S]*navigate: !quietStartup,[\s\S]*skipIfCurrent: true/.test(appShell) ||
     !/Checking media manifest/.test(appShell) ||
     !/Media loads on demand/.test(appShell) ||
+    !/Checking quizzes/.test(appShell) ||
+    !/Quiz sources load on demand/.test(appShell) ||
     !/refreshNotificationStatus\(\{ render: !quietStartup \}\)/.test(appShell) ||
     !/waitForPlayerBootstrapStartup/.test(appInit) ||
     !/waitForPlayerStartupBootstrap\(\{ timeoutMs: 2600 \}\)/.test(appInit) ||
@@ -3098,6 +3107,8 @@ function checkStartupDiagnosticsAndRenderQueue() {
     !/currentUser\?\.role === "player"[\s\S]*refreshPlayerTeamApp\(\{ quiet: false, force: true \}\)/.test(cloudSync) ||
     !/const steps = Array\.isArray\(state\.steps\)/.test(dashboardRender) ||
     !/player-home-freshness__item--\$\{escapeHtml\(stepTone\)\}/.test(dashboardRender) ||
+    !/function _dashGetPlayerBootstrapDiagnostic\(\)/.test(dashboardRender) ||
+    !/_dashDiagnosticItem\("Player bootstrap", bootstrapDiagnostic\.value, bootstrapDiagnostic\.detail, bootstrapDiagnostic\.tone\)/.test(dashboardRender) ||
     !/function initNotifications\(opts = \{\}\)/.test(appNotifications) ||
     !/if \(!opts\.deferFirstPoll\) _pollUnreadCount\(\)/.test(appNotifications) ||
     !/function refreshNotificationStatus\(opts = \{\}\)[\s\S]*_pollUnreadCount\(opts\)/.test(appNotifications) ||
@@ -3382,7 +3393,9 @@ function checkWorkspaceSyncContracts() {
     "- [x] Stop showing `Team cloud synced` until player-visible readiness checks are",
     "- [x] Add a bounded startup readiness gate with visible statuses for secure",
     "- [x] Replace player-visible Cloud Sync pull behavior with one player bootstrap",
+    "- [x] Apply data, media manifest, app-shell, quiz, and notification freshness in",
     "- [x] Make manual player refresh call the same bootstrap path.",
+    "- [x] Add diagnostics only for admins; hide technical sync terms from players.",
   ].forEach((token) => {
     if (!roadmap.includes(token)) {
       fail(`workspace sync roadmap missing ${token}`);

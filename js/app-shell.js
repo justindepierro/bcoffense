@@ -2204,6 +2204,7 @@ const PLAYER_BOOTSTRAP_STEPS = [
   { key: "coach", label: "Coach update" },
   { key: "shell", label: "App shell" },
   { key: "media", label: "Media manifest" },
+  { key: "quiz", label: "Quizzes" },
   { key: "notifications", label: "Notifications" },
 ];
 
@@ -2292,6 +2293,94 @@ function _setPlayerBootstrapProgress(result, key, status, opts = {}) {
   }, opts.stateOpts || {});
 }
 
+function _playerBootstrapTime(value) {
+  if (!value) return 0;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function _playerBootstrapLatest(entries = []) {
+  return entries
+    .filter((entry) => entry && _playerBootstrapTime(entry.updatedAt))
+    .sort((a, b) => _playerBootstrapTime(b.updatedAt) - _playerBootstrapTime(a.updatedAt))[0] || null;
+}
+
+function _getPlayerBootstrapDataFreshness(dataResult = null) {
+  const status = dataResult?.ok === false ? "warn" : "ready";
+  const updatedAt = dataResult?.exportDate || dataResult?.updatedAt || dataResult?.pulledAt || "";
+  return {
+    status,
+    resultStatus: dataResult?.status || "ready",
+    itemCount: Number(dataResult?.summary?.itemCount || dataResult?.itemCount || 0),
+    updatedAt,
+    checkedAt: new Date().toISOString(),
+  };
+}
+
+function _getPlayerBootstrapAppFreshness(appResult = null) {
+  const appStatus = appResult?.status || "current";
+  return {
+    status: appStatus === "current" || appStatus === "unsupported" || appStatus === "applying" ? "ready" : "warn",
+    resultStatus: appStatus,
+    version: appResult?.version || appResult?.cacheName || "",
+    checkedAt: new Date().toISOString(),
+  };
+}
+
+function _getPlayerBootstrapMediaFreshness() {
+  const publishStatus =
+    typeof getPlayerPublishStatus === "function" ? getPlayerPublishStatus() : {};
+  const domains = ["diagrams", "clips", "signals"]
+    .map((kind) => ({
+      kind,
+      label: publishStatus?.[kind]?.label || kind,
+      updatedAt: publishStatus?.[kind]?.updatedAt || "",
+    }))
+    .filter((entry) => _playerBootstrapTime(entry.updatedAt));
+  const latest = _playerBootstrapLatest(domains);
+  return {
+    status: domains.length ? "ready" : "lazy",
+    domains: domains.map((entry) => entry.kind),
+    updatedAt: latest?.updatedAt || "",
+    checkedAt: new Date().toISOString(),
+  };
+}
+
+function _getPlayerBootstrapQuizFreshness() {
+  let settings = {};
+  if (typeof _getPlayerQuizSourceSettings === "function") {
+    settings = _getPlayerQuizSourceSettings();
+  } else if (typeof storageManager !== "undefined" && typeof storageManager.get === "function") {
+    settings = storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS, {});
+  }
+  const entries = Object.entries(settings && typeof settings === "object" ? settings : {})
+    .map(([key, entry]) => ({
+      key,
+      state: entry?.state || "",
+      updatedAt: entry?.updatedAt || "",
+    }));
+  const available = entries.filter((entry) => entry.state && entry.state !== "coach");
+  const latest = _playerBootstrapLatest(entries);
+  return {
+    status: available.length ? "ready" : "lazy",
+    count: entries.length,
+    availableCount: available.length,
+    updatedAt: latest?.updatedAt || "",
+    checkedAt: new Date().toISOString(),
+  };
+}
+
+function _getPlayerBootstrapNotificationFreshness(notificationResult = null) {
+  const state = notificationResult || window.playerNotificationState || {};
+  return {
+    status: state?.ok === false || state?.error ? "warn" : "ready",
+    unread: Math.max(0, Number(state?.unread) || 0),
+    updatedAt: state?.checkedAt || "",
+    error: state?.error || "",
+    checkedAt: new Date().toISOString(),
+  };
+}
+
 function _finishPlayerBootstrapState(result, opts = {}) {
   const ok = _isPlayerBootstrapOk(result);
   const title = ok ? "Ready" : "Try Again";
@@ -2322,7 +2411,9 @@ async function runPlayerTeamBootstrap(opts = {}) {
     data: null,
     app: null,
     media: null,
+    quiz: null,
     notifications: null,
+    freshness: {},
     steps: _createPlayerBootstrapSteps(),
   };
 
@@ -2385,6 +2476,7 @@ async function runPlayerTeamBootstrap(opts = {}) {
       result.data && result.data.ok === false ? "warn" : "ready",
       result.data?.status || "Ready",
     );
+    result.freshness.data = _getPlayerBootstrapDataFreshness(result.data);
     if (!quietStartup) _refreshPlayerTeamSurfaces();
 
     _setPlayerBootstrapProgress(result, "shell", "checking", {
@@ -2396,6 +2488,7 @@ async function runPlayerTeamBootstrap(opts = {}) {
       result.app = await checkForTeamAppUpdate({ apply: true });
       if (result.app?.status === "applying") {
         _setPlayerBootstrapStep(result, "shell", "ready", "Applying update");
+        result.freshness.appShell = _getPlayerBootstrapAppFreshness(result.app);
         result.ok = true;
         result.status = "applying";
         _setPlayerTeamRefreshState({
@@ -2412,27 +2505,34 @@ async function runPlayerTeamBootstrap(opts = {}) {
     }
     const appCurrent = !result.app || result.app.status === "current" || result.app.status === "unsupported";
     _setPlayerBootstrapStep(result, "shell", appCurrent ? "ready" : "warn", result.app?.status || "Ready");
+    result.freshness.appShell = _getPlayerBootstrapAppFreshness(result.app);
 
     _setPlayerBootstrapProgress(result, "media", "checking", {
       startup,
       stateOpts,
       title: "Checking media manifest...",
     });
-    const publishStatus =
-      typeof getPlayerPublishStatus === "function" ? getPlayerPublishStatus() : {};
-    const mediaFresh =
-      Boolean(publishStatus?.diagrams?.updatedAt) ||
-      Boolean(publishStatus?.clips?.updatedAt) ||
-      Boolean(publishStatus?.signals?.updatedAt);
-    result.media = {
-      status: mediaFresh ? "ready" : "lazy",
-      checkedAt: new Date().toISOString(),
-    };
+    result.media = _getPlayerBootstrapMediaFreshness();
+    result.freshness.media = result.media;
     _setPlayerBootstrapStep(
       result,
       "media",
       "ready",
-      mediaFresh ? "Media manifest ready" : "Media loads on demand",
+      result.media.status === "ready" ? "Media manifest ready" : "Media loads on demand",
+    );
+
+    _setPlayerBootstrapProgress(result, "quiz", "checking", {
+      startup,
+      stateOpts,
+      title: "Checking quizzes...",
+    });
+    result.quiz = _getPlayerBootstrapQuizFreshness();
+    result.freshness.quiz = result.quiz;
+    _setPlayerBootstrapStep(
+      result,
+      "quiz",
+      "ready",
+      result.quiz.availableCount ? "Quiz sources ready" : "Quiz sources load on demand",
     );
 
     _setPlayerBootstrapProgress(result, "notifications", "checking", {
@@ -2446,6 +2546,7 @@ async function runPlayerTeamBootstrap(opts = {}) {
         error: err?.message || "Try Again",
       }));
     }
+    result.freshness.notifications = _getPlayerBootstrapNotificationFreshness(result.notifications);
     _setPlayerBootstrapStep(
       result,
       "notifications",
