@@ -26,8 +26,9 @@ Primary runtime layers:
   reads, loop video configuration, and the clip signature index.
 - `js/signals.js` owns component-level signal records and resolves signal clips
   from playbook fields.
-- `js/script-render.js` owns the current quiz engine, quiz hub, signal games,
-  player quiz attempts, and coach quiz setup.
+- `js/script-render.js` owns Practice Script rendering surfaces.
+- `js/script-quiz.js` owns the quiz engine, quiz hub, signal games, player
+  quiz attempts, and coach quiz setup.
 - `js/workspace-sync.js` owns the shared visible save/publish queue.
 - `js/cloud-sync.js` owns team workspace publish/update, activity log, recovery
   sync, and player readiness checks.
@@ -184,7 +185,8 @@ migration explicitly changes the media domain.
 
 ## Quiz Architecture
 
-The quiz engine currently lives in `js/script-render.js`. It owns:
+The quiz engine lives in `js/script-quiz.js`, loaded immediately after
+`js/script-render.js`. It owns:
 
 - Quiz hub and mode cards.
 - Coach quiz setup, source readiness, and source preview.
@@ -222,10 +224,10 @@ Baseline audit:
 
 Highest-impact cleanup work:
 
-1. Split quiz engine internals out of `js/script-render.js`.
-   Keep the public delegated functions stable, but move pure quiz scoring,
-   question generation, source selection, signal games, and render helpers into
-   smaller files loaded before `script-render.js` or immediately after it.
+1. Continue shrinking `js/script-quiz.js` behind the same public delegated
+   functions. Pure quiz scoring, question generation, source selection, signal
+   games, and render helpers can move into smaller follow-up files once the
+   first split stays stable.
 
 2. Extend the quiz media preparation step.
    Before a quiz starts, build a small media plan for the selected source:

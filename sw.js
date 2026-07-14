@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v1095";
+const CACHE_NAME = "bcoffense-v1096";
 
 // Item 40: in-memory TTL tracker for /auth/me short-term cache
 let _authMeCacheTime = 0;
@@ -148,6 +148,7 @@ const LOCAL_ASSETS = [
   "./js/script-selection.js",
   "./js/script-timeline.js",
   "./js/script-render.js",
+  "./js/script-quiz.js",
   "./js/player-quiz-sync.js",
   "./js/script-health.js",
   "./js/script-periods.js",

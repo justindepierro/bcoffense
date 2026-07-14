@@ -83,8 +83,8 @@ The first quiz/media speed pass now focuses the code around faster launch:
   set `localStorage.bcoPerf = "1"` or load with `?perf`, then inspect
   `window.perfMonitor.report()` for `quiz:first-question-visible`,
   `quiz:media-prep`, and media batch manifest samples.
-- Split quiz logic out of `js/script-render.js` into smaller, testable files
-  while preserving delegated public functions.
+- Keep shrinking `js/script-quiz.js` into smaller, testable files while
+  preserving delegated public functions.
 
 The current static wiring audit is clean, so the highest value work is not
 missing handlers or missing assets. It is making media and quiz preparation more

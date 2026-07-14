@@ -663,7 +663,7 @@ function checkHistoryContracts() {
 
 function checkConflictContracts() {
   const utils = read("js/utils.js");
-  const scriptRender = read("js/script-render.js");
+  const scriptRender = `${read("js/script-render.js")}\n${read("js/script-quiz.js")}`;
   const scriptVision = read("js/script-vision.js");
   const callSheet = read("js/callsheet.js");
   const callSheetDrawer = read("js/callsheet-gameplan-drawer.js");
@@ -3817,8 +3817,9 @@ function checkPlayerDiagramReadinessContracts() {
 
 function checkPlayerQuizSettingsContracts() {
   const scriptRender = read("js/script-render.js");
+  const scriptQuiz = read("js/script-quiz.js");
   const scriptCss = read("css/script.css");
-  const quizSurface = `${scriptRender}\n${scriptCss}`;
+  const quizSurface = `${scriptQuiz}\n${scriptCss}`;
   const roadmap = read("CONSOLIDATED_ROADMAP.md");
 
   [
@@ -3889,40 +3890,40 @@ function checkPlayerQuizSettingsContracts() {
     }
   });
 
-  if (!/function _getQuizTier\(points, settings = _getPlayerQuizSettings\(\)\)[\s\S]*?_getQuizTierName\("champion", settings\)[\s\S]*?_getQuizTierName\("defense", settings\)/.test(scriptRender)) {
+  if (!/function _getQuizTier\(points, settings = _getPlayerQuizSettings\(\)\)[\s\S]*?_getQuizTierName\("champion", settings\)[\s\S]*?_getQuizTierName\("defense", settings\)/.test(scriptQuiz)) {
     fail("player quiz tiers do not resolve through editable tier names");
   }
 
-  if (!/function coachSaveQuizSettings\(\)[\s\S]*?tierNames:\s*{[\s\S]*?champion:\s*_readCoachQuizSettingText\("coachQuizTierChampion"\)[\s\S]*?defense:\s*_readCoachQuizSettingText\("coachQuizTierDefense"\)/.test(scriptRender)) {
+  if (!/function coachSaveQuizSettings\(\)[\s\S]*?tierNames:\s*{[\s\S]*?champion:\s*_readCoachQuizSettingText\("coachQuizTierChampion"\)[\s\S]*?defense:\s*_readCoachQuizSettingText\("coachQuizTierDefense"\)/.test(scriptQuiz)) {
     fail("coach quiz settings save does not persist tier names");
   }
 
   if (
-    !/function coachSaveQuizSettings\(\)[\s\S]*?eligibleCategories = SIGNAL_GAME_CATEGORY_OPTIONS[\s\S]*?_saveSignalGameSettings\(\{[\s\S]*?minClipCount:\s*_readCoachQuizSettingNumber\("coachSignalMinClipCount"\)[\s\S]*?includeDraftForStaff/.test(scriptRender) ||
-    !/function _getSignalQuizStatus\(\)[\s\S]*?getSignalQuizStats\(\{[\s\S]*?categories: settings\.eligibleCategories[\s\S]*?includeDraft/.test(scriptRender) ||
-    !/getSignalQuizItems\(\{[\s\S]*?includeDraft: _canUseStaffSignalClips\(signalSettings\)/.test(scriptRender) ||
-    !/await _prepareQuizMedia\(_quizPlays, \{ signalWindow: SIGNAL_QUIZ_PRELOAD_WINDOW \}\)/.test(scriptRender) ||
-    !/window\.playImages[\s\S]*checkRemoteForPlays\(diagramItems\.map/.test(scriptRender) ||
-    !/window\.playClips\.listForSigs\(clipKeys\)/.test(scriptRender) ||
-    !/mediaPrepToken !== _quizMediaPrepToken/.test(scriptRender)
+    !/function coachSaveQuizSettings\(\)[\s\S]*?eligibleCategories = SIGNAL_GAME_CATEGORY_OPTIONS[\s\S]*?_saveSignalGameSettings\(\{[\s\S]*?minClipCount:\s*_readCoachQuizSettingNumber\("coachSignalMinClipCount"\)[\s\S]*?includeDraftForStaff/.test(scriptQuiz) ||
+    !/function _getSignalQuizStatus\(\)[\s\S]*?getSignalQuizStats\(\{[\s\S]*?categories: settings\.eligibleCategories[\s\S]*?includeDraft/.test(scriptQuiz) ||
+    !/getSignalQuizItems\(\{[\s\S]*?includeDraft: _canUseStaffSignalClips\(signalSettings\)/.test(scriptQuiz) ||
+    !/await _prepareQuizMedia\(_quizPlays, \{ signalWindow: SIGNAL_QUIZ_PRELOAD_WINDOW \}\)/.test(scriptQuiz) ||
+    !/window\.playImages[\s\S]*checkRemoteForPlays\(diagramItems\.map/.test(scriptQuiz) ||
+    !/window\.playClips\.listForSigs\(clipKeys\)/.test(scriptQuiz) ||
+    !/mediaPrepToken !== _quizMediaPrepToken/.test(scriptQuiz)
   ) {
     fail("coach signal game settings or quiz media warmup do not drive quiz availability and launch");
   }
 
   if (
-    !/candidates\.push\(diagramQuestion, diagramFormationQuestion, formationQuestion, signalQuestion, typeQuestion, callQuestion/.test(scriptRender) ||
-    !/candidates\.push\(ruleQuestion, ruleToPlayQuestion, signalQuestion/.test(scriptRender) ||
-    !/\["diagram", "diagram_formation", "study_card"\]\.includes\(question\.type\)/.test(scriptRender) ||
-    !/function _quizQuestionDistractorItems\(item, question\)[\s\S]*?formation_to_play/.test(scriptRender) ||
-    !/function _quizQuestionDistractorItems\(item, question\)[\s\S]*?question\?\.type === "signal"/.test(scriptRender)
+    !/candidates\.push\(diagramQuestion, diagramFormationQuestion, formationQuestion, signalQuestion, typeQuestion, callQuestion/.test(scriptQuiz) ||
+    !/candidates\.push\(ruleQuestion, ruleToPlayQuestion, signalQuestion/.test(scriptQuiz) ||
+    !/\["diagram", "diagram_formation", "study_card"\]\.includes\(question\.type\)/.test(scriptQuiz) ||
+    !/function _quizQuestionDistractorItems\(item, question\)[\s\S]*?formation_to_play/.test(scriptQuiz) ||
+    !/function _quizQuestionDistractorItems\(item, question\)[\s\S]*?question\?\.type === "signal"/.test(scriptQuiz)
   ) {
     fail("player quiz fair fallback ladder is missing diagram, signal, formation, type, or study-card coverage");
   }
 
   if (
-    !/data-action="openCoachQuizSourceRepair"/.test(scriptRender) ||
-    !/data-action="openCoachQuizRepairPlayEditor"/.test(scriptRender) ||
-    !/Edits save to Playbook/.test(scriptRender)
+    !/data-action="openCoachQuizSourceRepair"/.test(scriptQuiz) ||
+    !/data-action="openCoachQuizRepairPlayEditor"/.test(scriptQuiz) ||
+    !/Edits save to Playbook/.test(scriptQuiz)
   ) {
     fail("coach quiz source repair list is not wired to playbook editing");
   }
@@ -3942,6 +3943,8 @@ function checkScrollOwnershipContract() {
   const shell = read("js/app-shell.js");
   const domHelpers = read("js/dom-helpers.js");
   const components = read("css/components.css");
+  const utils = read("js/utils.js");
+  const viewportHarness = read("scripts/mobile-viewport-check.mjs");
 
   // Single source of truth: app-shell decides document vs panel ownership and
   // yields to the layer when a blocking overlay is locked.
@@ -3971,6 +3974,32 @@ function checkScrollOwnershipContract() {
   const lockRule = components.match(/body\.app-layer-locked\s*\{[\s\S]*?\}/)?.[0] || "";
   if (!/overflow:\s*hidden/.test(lockRule) || !/position:\s*fixed/.test(lockRule)) {
     fail("body.app-layer-locked does not freeze document scroll");
+  }
+
+  if (
+    !/function _openCustomModalLayer\(overlay, id\)/.test(utils) ||
+    !/openLayer\(overlay,[\s\S]*trapFocus:\s*false/.test(utils) ||
+    !/function _closeCustomModalLayer\(overlay\)/.test(utils) ||
+    !/_closeCustomModalLayer\(overlay\)/.test(utils)
+  ) {
+    fail("shared custom modals do not use app layer body lock");
+  }
+
+  if (
+    !/\.custom-modal-overlay\.app-layer-safe-area/.test(components) ||
+    !/\.custom-modal-actions\s*\{[\s\S]*padding[^;]*:[\s\S]*env\(safe-area-inset-bottom\)/.test(components) ||
+    !/\.custom-modal-actions\s*\{[\s\S]*position:\s*sticky[\s\S]*bottom:\s*0/.test(components)
+  ) {
+    fail("custom modal safe-area action footer contract is missing");
+  }
+
+  if (
+    !/async function probeRealAppLayers\(page\)/.test(viewportHarness) ||
+    !/showModal\("Layer probe"/.test(viewportHarness) ||
+    !/openPbActionSheet\(\)/.test(viewportHarness) ||
+    !/realLayerBroken/.test(viewportHarness)
+  ) {
+    fail("mobile viewport harness does not probe real app layers");
   }
 
   console.log("scroll ownership contract ok");
@@ -4342,6 +4371,8 @@ function checkSignalPlayIntegrationContracts() {
   const clips = read("js/play-clips.js");
   const playbookRender = read("js/playbook-render.js");
   const scriptRender = read("js/script-render.js");
+  const scriptQuiz = read("js/script-quiz.js");
+  const quizRuntime = `${scriptQuiz}\n${scriptRender}`;
   const presentation = read("js/play-presentation.js");
   const presentationCss = read("css/play-presentation.css");
   const appEvents = read("js/app-events.js");
@@ -4437,95 +4468,95 @@ function checkSignalPlayIntegrationContracts() {
   }
 
   if (
-    !/key:\s*"signal-study"[\s\S]*label:\s*"Signal Study"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
-    !/key:\s*"signal-sprint"[\s\S]*label:\s*"100 Second Sprint"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
-    !/key:\s*"signal-battle"[\s\S]*label:\s*"6 Seconds of Battle"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
-    !/key:\s*"signal-heat"[\s\S]*label:\s*"Heat Check"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
-    !/key:\s*"signal-full-call"[\s\S]*label:\s*"Full Play Call"[\s\S]*source:\s*"signal"/.test(scriptRender) ||
-    !/const SIGNAL_SPRINT_DURATION_MS = 100000/.test(scriptRender) ||
-    !/const SIGNAL_SPRINT_TARGET_REPS = 100/.test(scriptRender) ||
-    !/const SIGNAL_BATTLE_CLIP_MS = 5000/.test(scriptRender) ||
-    !/const SIGNAL_BATTLE_ANSWER_MS = 6000/.test(scriptRender) ||
-    !/const SIGNAL_BATTLE_TARGET_REPS = 20/.test(scriptRender) ||
-    !/const SIGNAL_HEAT_CHECK_TARGET_REPS = 200/.test(scriptRender) ||
-    !/const SIGNAL_QUIZ_CORRECT_ADVANCE_MS = 90/.test(scriptRender) ||
-    !/const SIGNAL_QUIZ_WRONG_FEEDBACK_MS = 420/.test(scriptRender) ||
-    !/const SIGNAL_QUIZ_PRELOAD_WINDOW = 3/.test(scriptRender) ||
-    !/const SIGNAL_GAME_CATEGORY_OPTIONS = \[/.test(scriptRender) ||
-    !/function _isSignalSprintMode\(mode = _quizMode\)/.test(scriptRender) ||
-    !/function _isSignalBattleMode\(mode = _quizMode\)/.test(scriptRender) ||
-    !/function _isSignalHeatCheckMode\(mode = _quizMode\)/.test(scriptRender) ||
-    !/function _isSignalFullCallMode\(mode = _quizMode\)/.test(scriptRender) ||
-    !/function _isSignalAutoAdvanceMode\(mode = _quizMode\)/.test(scriptRender) ||
-    !/function _renderQuizInlineFeedback\(item, answer\)/.test(scriptRender) ||
-    !/function _configureQuizSignalVideos\(root = document\)/.test(scriptRender) ||
-    !/function _preloadUpcomingQuizSignalMedia\(startIndex = _quizIndex\)/.test(scriptRender) ||
-    !/_preloadUpcomingQuizSignalMedia\(0\)/.test(scriptRender) ||
-    !/_preloadUpcomingQuizSignalMedia\(_quizIndex\)/.test(scriptRender) ||
-    !/answer\?\.correct \? SIGNAL_QUIZ_CORRECT_ADVANCE_MS : SIGNAL_QUIZ_WRONG_FEEDBACK_MS/.test(scriptRender) ||
-    !/SIGNAL_QUIZ_HEAT_MISS_FINISH_MS/.test(scriptRender) ||
-    !/function _getSignalFullCallSourceItems\(\)/.test(scriptRender) ||
-    !/async function _buildSignalFullCallItems\(settings = _getSignalGameSettings\(\)\)/.test(scriptRender) ||
-    !/function _signalFullCallDistractorScore\(correctPlay, candidatePlay\)/.test(scriptRender) ||
-    !/function _getSignalGameSettings\(status = null\)/.test(scriptRender) ||
-    !/function toggleSignalGameCategory\(categoryId\)/.test(scriptRender) ||
-    !/function _getSignalCategoryMultiplier\(categories = _quizSignalCategories, eligibleCategories = SIGNAL_GAME_DEFAULT_SETTINGS\.eligibleCategories\)/.test(scriptRender) ||
-    !/function _buildSignalSprintItems\(items, targetCount = SIGNAL_SPRINT_TARGET_REPS\)/.test(scriptRender) ||
-    !/function _buildSignalBattleItems\(items, targetCount = SIGNAL_BATTLE_TARGET_REPS\)/.test(scriptRender) ||
-    !/function _buildSignalHeatCheckItems\(items, targetCount = SIGNAL_HEAT_CHECK_TARGET_REPS\)/.test(scriptRender) ||
-    !/function _startSignalBattleRound\(questionKey\)/.test(scriptRender) ||
-    !/function _recordSignalBattleTimeout\(questionKey = _quizRoundQuestionKey\)/.test(scriptRender) ||
-    !/function _buildSignalSprintLeaderboardRows\(attempts, player, weekKey = ""\)/.test(scriptRender) ||
-    !/function _buildSignalBattleLeaderboardRows\(attempts, player, weekKey = ""\)/.test(scriptRender) ||
-    !/function _buildSignalHeatCheckLeaderboardRows\(attempts, player, weekKey = ""\)/.test(scriptRender) ||
-    !/function _compareSignalSprintRows\(a, b\)/.test(scriptRender) ||
-    !/function _compareSignalBattleRows\(a, b\)/.test(scriptRender) ||
-    !/function _compareSignalHeatCheckRows\(a, b\)/.test(scriptRender) ||
-    !/function _renderSignalSprintLeaderboardRows\(rows, player, variant = "player"\)/.test(scriptRender) ||
-    !/function _renderSignalBattleLeaderboardRows\(rows, player, variant = "player"\)/.test(scriptRender) ||
-    !/function _renderSignalHeatCheckLeaderboardRows\(rows, player, variant = "player"\)/.test(scriptRender) ||
-    !/function _renderSignalLeaderboardTabs\(\)/.test(scriptRender) ||
-    !/function setSignalLeaderboardMode\(mode\)/.test(scriptRender) ||
-    !/weeklySignalSprintRows/.test(scriptRender) ||
-    !/seasonSignalSprintRows/.test(scriptRender) ||
-    !/weeklySignalBattleRows/.test(scriptRender) ||
-    !/seasonSignalBattleRows/.test(scriptRender) ||
-    !/weeklySignalHeatRows/.test(scriptRender) ||
-    !/seasonSignalHeatRows/.test(scriptRender) ||
-    !/100 Second Signal Sprint/.test(scriptRender) ||
-    !/6 Seconds of Battle/.test(scriptRender) ||
-    !/Heat Check/.test(scriptRender) ||
-    !/Full Play Call/.test(scriptRender) ||
-    !/correct, accuracy, speed/.test(scriptRender) ||
-    !/correct, reaction time/.test(scriptRender) ||
-    !/best streak, total correct/.test(scriptRender) ||
-    !/function _startQuizTimerIfNeeded\(\)/.test(scriptRender) ||
-    !/timeLimitMs:\s*signalMode === "signal-sprint" \? SIGNAL_SPRINT_DURATION_MS : 0/.test(scriptRender) ||
-    !/finishScriptQuiz\(\{ timedOut: true \}\)/.test(scriptRender) ||
-    !/averageAnswerMs/.test(scriptRender) ||
-    !/timedOut/.test(scriptRender) ||
-    !/async function startPlayerQuizHubSignals\(\)/.test(scriptRender) ||
-    !/getSignalQuizItems\(\{[\s\S]*?requireClip: true,[\s\S]*?categories: signalCategories,[\s\S]*?includeDraft: _canUseStaffSignalClips\(signalSettings\)/.test(scriptRender) ||
-    !/type: "signal_full_call"/.test(scriptRender) ||
-    !/question\.type === "signal_full_call"/.test(scriptRender) ||
-    !/signalFullCallClips/.test(scriptRender) ||
-    !/sq-signal-sequence-prompt/.test(scriptRender) ||
-    !/signalCategoryMultiplier/.test(scriptRender) ||
-    !/signalGame: _quizSourceType === "signal"/.test(scriptRender) ||
-    !/sourceType:\s*"signal"/.test(scriptRender) ||
-    !/function _getSignalQuizStatus\(\)/.test(scriptRender) ||
-    !/signalClipUrl/.test(scriptRender) ||
-    !/Correct/.test(scriptRender) ||
-    !/Incorrect/.test(scriptRender) ||
-    !/disablepictureinpicture/.test(scriptRender) ||
-    !/preload="auto"/.test(scriptRender) ||
-    !/function _getQuizSourceLabel\(sourceType = _quizSourceType/.test(scriptRender) ||
+    !/key:\s*"signal-study"[\s\S]*label:\s*"Signal Study"[\s\S]*source:\s*"signal"/.test(quizRuntime) ||
+    !/key:\s*"signal-sprint"[\s\S]*label:\s*"100 Second Sprint"[\s\S]*source:\s*"signal"/.test(quizRuntime) ||
+    !/key:\s*"signal-battle"[\s\S]*label:\s*"6 Seconds of Battle"[\s\S]*source:\s*"signal"/.test(quizRuntime) ||
+    !/key:\s*"signal-heat"[\s\S]*label:\s*"Heat Check"[\s\S]*source:\s*"signal"/.test(quizRuntime) ||
+    !/key:\s*"signal-full-call"[\s\S]*label:\s*"Full Play Call"[\s\S]*source:\s*"signal"/.test(quizRuntime) ||
+    !/const SIGNAL_SPRINT_DURATION_MS = 100000/.test(quizRuntime) ||
+    !/const SIGNAL_SPRINT_TARGET_REPS = 100/.test(quizRuntime) ||
+    !/const SIGNAL_BATTLE_CLIP_MS = 5000/.test(quizRuntime) ||
+    !/const SIGNAL_BATTLE_ANSWER_MS = 6000/.test(quizRuntime) ||
+    !/const SIGNAL_BATTLE_TARGET_REPS = 20/.test(quizRuntime) ||
+    !/const SIGNAL_HEAT_CHECK_TARGET_REPS = 200/.test(quizRuntime) ||
+    !/const SIGNAL_QUIZ_CORRECT_ADVANCE_MS = 90/.test(quizRuntime) ||
+    !/const SIGNAL_QUIZ_WRONG_FEEDBACK_MS = 420/.test(quizRuntime) ||
+    !/const SIGNAL_QUIZ_PRELOAD_WINDOW = 3/.test(quizRuntime) ||
+    !/const SIGNAL_GAME_CATEGORY_OPTIONS = \[/.test(quizRuntime) ||
+    !/function _isSignalSprintMode\(mode = _quizMode\)/.test(quizRuntime) ||
+    !/function _isSignalBattleMode\(mode = _quizMode\)/.test(quizRuntime) ||
+    !/function _isSignalHeatCheckMode\(mode = _quizMode\)/.test(quizRuntime) ||
+    !/function _isSignalFullCallMode\(mode = _quizMode\)/.test(quizRuntime) ||
+    !/function _isSignalAutoAdvanceMode\(mode = _quizMode\)/.test(quizRuntime) ||
+    !/function _renderQuizInlineFeedback\(item, answer\)/.test(quizRuntime) ||
+    !/function _configureQuizSignalVideos\(root = document\)/.test(quizRuntime) ||
+    !/function _preloadUpcomingQuizSignalMedia\(startIndex = _quizIndex\)/.test(quizRuntime) ||
+    !/_preloadUpcomingQuizSignalMedia\(0\)/.test(quizRuntime) ||
+    !/_preloadUpcomingQuizSignalMedia\(_quizIndex\)/.test(quizRuntime) ||
+    !/answer\?\.correct \? SIGNAL_QUIZ_CORRECT_ADVANCE_MS : SIGNAL_QUIZ_WRONG_FEEDBACK_MS/.test(quizRuntime) ||
+    !/SIGNAL_QUIZ_HEAT_MISS_FINISH_MS/.test(quizRuntime) ||
+    !/function _getSignalFullCallSourceItems\(\)/.test(quizRuntime) ||
+    !/async function _buildSignalFullCallItems\(settings = _getSignalGameSettings\(\)\)/.test(quizRuntime) ||
+    !/function _signalFullCallDistractorScore\(correctPlay, candidatePlay\)/.test(quizRuntime) ||
+    !/function _getSignalGameSettings\(status = null\)/.test(quizRuntime) ||
+    !/function toggleSignalGameCategory\(categoryId\)/.test(quizRuntime) ||
+    !/function _getSignalCategoryMultiplier\(categories = _quizSignalCategories, eligibleCategories = SIGNAL_GAME_DEFAULT_SETTINGS\.eligibleCategories\)/.test(quizRuntime) ||
+    !/function _buildSignalSprintItems\(items, targetCount = SIGNAL_SPRINT_TARGET_REPS\)/.test(quizRuntime) ||
+    !/function _buildSignalBattleItems\(items, targetCount = SIGNAL_BATTLE_TARGET_REPS\)/.test(quizRuntime) ||
+    !/function _buildSignalHeatCheckItems\(items, targetCount = SIGNAL_HEAT_CHECK_TARGET_REPS\)/.test(quizRuntime) ||
+    !/function _startSignalBattleRound\(questionKey\)/.test(quizRuntime) ||
+    !/function _recordSignalBattleTimeout\(questionKey = _quizRoundQuestionKey\)/.test(quizRuntime) ||
+    !/function _buildSignalSprintLeaderboardRows\(attempts, player, weekKey = ""\)/.test(quizRuntime) ||
+    !/function _buildSignalBattleLeaderboardRows\(attempts, player, weekKey = ""\)/.test(quizRuntime) ||
+    !/function _buildSignalHeatCheckLeaderboardRows\(attempts, player, weekKey = ""\)/.test(quizRuntime) ||
+    !/function _compareSignalSprintRows\(a, b\)/.test(quizRuntime) ||
+    !/function _compareSignalBattleRows\(a, b\)/.test(quizRuntime) ||
+    !/function _compareSignalHeatCheckRows\(a, b\)/.test(quizRuntime) ||
+    !/function _renderSignalSprintLeaderboardRows\(rows, player, variant = "player"\)/.test(quizRuntime) ||
+    !/function _renderSignalBattleLeaderboardRows\(rows, player, variant = "player"\)/.test(quizRuntime) ||
+    !/function _renderSignalHeatCheckLeaderboardRows\(rows, player, variant = "player"\)/.test(quizRuntime) ||
+    !/function _renderSignalLeaderboardTabs\(\)/.test(quizRuntime) ||
+    !/function setSignalLeaderboardMode\(mode\)/.test(quizRuntime) ||
+    !/weeklySignalSprintRows/.test(quizRuntime) ||
+    !/seasonSignalSprintRows/.test(quizRuntime) ||
+    !/weeklySignalBattleRows/.test(quizRuntime) ||
+    !/seasonSignalBattleRows/.test(quizRuntime) ||
+    !/weeklySignalHeatRows/.test(quizRuntime) ||
+    !/seasonSignalHeatRows/.test(quizRuntime) ||
+    !/100 Second Signal Sprint/.test(quizRuntime) ||
+    !/6 Seconds of Battle/.test(quizRuntime) ||
+    !/Heat Check/.test(quizRuntime) ||
+    !/Full Play Call/.test(quizRuntime) ||
+    !/correct, accuracy, speed/.test(quizRuntime) ||
+    !/correct, reaction time/.test(quizRuntime) ||
+    !/best streak, total correct/.test(quizRuntime) ||
+    !/function _startQuizTimerIfNeeded\(\)/.test(quizRuntime) ||
+    !/timeLimitMs:\s*signalMode === "signal-sprint" \? SIGNAL_SPRINT_DURATION_MS : 0/.test(quizRuntime) ||
+    !/finishScriptQuiz\(\{ timedOut: true \}\)/.test(quizRuntime) ||
+    !/averageAnswerMs/.test(quizRuntime) ||
+    !/timedOut/.test(quizRuntime) ||
+    !/async function startPlayerQuizHubSignals\(\)/.test(quizRuntime) ||
+    !/getSignalQuizItems\(\{[\s\S]*?requireClip: true,[\s\S]*?categories: signalCategories,[\s\S]*?includeDraft: _canUseStaffSignalClips\(signalSettings\)/.test(quizRuntime) ||
+    !/type: "signal_full_call"/.test(quizRuntime) ||
+    !/question\.type === "signal_full_call"/.test(quizRuntime) ||
+    !/signalFullCallClips/.test(quizRuntime) ||
+    !/sq-signal-sequence-prompt/.test(quizRuntime) ||
+    !/signalCategoryMultiplier/.test(quizRuntime) ||
+    !/signalGame: _quizSourceType === "signal"/.test(quizRuntime) ||
+    !/sourceType:\s*"signal"/.test(quizRuntime) ||
+    !/function _getSignalQuizStatus\(\)/.test(quizRuntime) ||
+    !/signalClipUrl/.test(quizRuntime) ||
+    !/Correct/.test(quizRuntime) ||
+    !/Incorrect/.test(quizRuntime) ||
+    !/disablepictureinpicture/.test(quizRuntime) ||
+    !/preload="auto"/.test(quizRuntime) ||
+    !/function _getQuizSourceLabel\(sourceType = _quizSourceType/.test(quizRuntime) ||
     !/["']toggleSignalGameCategory["']/.test(auth) ||
     !/["']setSignalLeaderboardMode["']/.test(auth)
   ) {
     fail("signal quiz study mode is incomplete");
   }
-  if (/<video src="\$\{escapeAttr\(question\.signalClipUrl\)\}"[^>]*\scontrols(?:\s|>|=)/.test(scriptRender)) {
+  if (/<video src="\$\{escapeAttr\(question\.signalClipUrl\)\}"[^>]*\scontrols(?:\s|>|=)/.test(quizRuntime)) {
     fail("signal quiz video prompt should not show browser controls");
   }
   const clipFilesWithNativeControls = [
