@@ -152,6 +152,23 @@ function showPrintPreview(contentEl, onPrint, onCancel) {
  */
 let _modalIdCounter = 0;
 
+function _openCustomModalLayer(overlay, id) {
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id,
+      exclusive: false,
+      trapFocus: false,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+  }
+}
+
+function _closeCustomModalLayer(overlay) {
+  if (typeof closeLayer !== "function") return;
+  closeLayer(overlay, { returnFocus: false });
+}
+
 function showModal(message, opts = {}) {
   return new Promise((resolve) => {
     const previouslyFocused = document.activeElement;
@@ -173,13 +190,14 @@ function showModal(message, opts = {}) {
       </div>
     `;
     document.body.appendChild(overlay);
-    trapFocus(overlay);
+    _openCustomModalLayer(overlay, `custom-modal-${mid}`);
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     const okBtn = overlay.querySelector(`#modalOkBtn${mid}`);
     okBtn.focus();
 
     function close() {
+      _closeCustomModalLayer(overlay);
       overlay.classList.remove("visible");
       overlay.style.pointerEvents = "none";
       overlay.setAttribute("aria-hidden", "true");
@@ -327,7 +345,7 @@ function showConfirm(message, opts = {}) {
       </div>
     `;
     document.body.appendChild(overlay);
-    trapFocus(overlay);
+    _openCustomModalLayer(overlay, `custom-modal-${mid}`);
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     const confirmBtn = overlay.querySelector(`#modalConfirmBtn${mid}`);
@@ -335,6 +353,7 @@ function showConfirm(message, opts = {}) {
     confirmBtn.focus();
 
     function close(result) {
+      _closeCustomModalLayer(overlay);
       overlay.classList.remove("visible");
       overlay.style.pointerEvents = "none";
       overlay.setAttribute("aria-hidden", "true");
@@ -396,7 +415,7 @@ function showPrompt(message, defaultValue = "", opts = {}) {
       </div>
     `;
     document.body.appendChild(overlay);
-    trapFocus(overlay);
+    _openCustomModalLayer(overlay, `custom-modal-${mid}`);
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     const input = overlay.querySelector(`#modalInput${mid}`);
@@ -406,6 +425,7 @@ function showPrompt(message, defaultValue = "", opts = {}) {
     input.select();
 
     function close(value) {
+      _closeCustomModalLayer(overlay);
       overlay.classList.remove("visible");
       overlay.style.pointerEvents = "none";
       overlay.setAttribute("aria-hidden", "true");
@@ -499,13 +519,14 @@ function showChoice(message, opts = {}) {
       </div>
     `;
     document.body.appendChild(overlay);
-    trapFocus(overlay);
+    _openCustomModalLayer(overlay, `custom-modal-${mid}`);
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     const firstBtn = overlay.querySelector("[data-choice-value]");
     if (firstBtn) firstBtn.focus();
 
     function close(val) {
+      _closeCustomModalLayer(overlay);
       overlay.classList.remove("visible");
       setTimeout(() => {
         overlay.remove();
@@ -593,10 +614,11 @@ function showListPicker(message, items, opts = {}) {
       </div>
     `;
     document.body.appendChild(overlay);
-    trapFocus(overlay);
+    _openCustomModalLayer(overlay, `custom-modal-${mid}`);
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     function close(val) {
+      _closeCustomModalLayer(overlay);
       overlay.classList.remove("visible");
       setTimeout(() => {
         overlay.remove();
@@ -720,7 +742,8 @@ function showCustomTagEditorModal(opts = {}) {
       </div>
     `;
     document.body.appendChild(overlay);
-    trapFocus(overlay);
+    _openCustomModalLayer(overlay, `custom-modal-${mid}`);
+    requestAnimationFrame(() => overlay.classList.add("visible"));
 
     const listEl = overlay.querySelector(`#customTagEditorList${mid}`);
     const inputEl = overlay.querySelector(`#customTagEditorInput${mid}`);
@@ -757,6 +780,7 @@ function showCustomTagEditorModal(opts = {}) {
     };
 
     const close = (value) => {
+      _closeCustomModalLayer(overlay);
       overlay.classList.remove("visible");
       setTimeout(() => {
         overlay.remove();

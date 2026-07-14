@@ -40,9 +40,17 @@ body.app-layer-locked {
 }
 
 .app-layer-safe-area {
+  padding-top: max(var(--space-md), env(safe-area-inset-top));
   padding-right: max(var(--space-md), env(safe-area-inset-right));
   padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
   padding-left: max(var(--space-md), env(safe-area-inset-left));
+}
+
+.custom-modal-overlay.app-layer-safe-area {
+  padding-top: max(clamp(16px, 4vh, 32px), env(safe-area-inset-top));
+  padding-right: max(clamp(16px, 4vh, 32px), env(safe-area-inset-right));
+  padding-bottom: max(clamp(16px, 4vh, 32px), env(safe-area-inset-bottom));
+  padding-left: max(clamp(16px, 4vh, 32px), env(safe-area-inset-left));
 }
 
 .custom-modal {
@@ -99,6 +107,12 @@ body.app-layer-locked {
   .custom-modal-actions {
     flex-wrap: wrap;
     justify-content: stretch;
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    box-shadow: 0 -1px 0 var(--color-border-light);
   }
 
   .custom-modal-actions .btn,
@@ -906,7 +920,7 @@ body.is-short-screen .auth-login-overlay--mobile .auth-login-player-shortcut,
   flex: 0 0 auto;
   gap: 8px;
   justify-content: flex-end;
-  padding: 12px 22px 18px;
+  padding: 12px 22px max(18px, calc(12px + env(safe-area-inset-bottom)));
 }
 .custom-modal-actions-stacked {
   flex-direction: column;

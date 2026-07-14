@@ -589,6 +589,73 @@ async function probeLayerScrollLock(page) {
   });
 }
 
+async function probeRealAppLayers(page) {
+  return page.evaluate(async () => {
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const isLocked = () =>
+      document.body.classList.contains("app-layer-locked") &&
+      document.body.dataset.scrollOwner === "layer";
+    const checks = [];
+
+    if (typeof window.openLayer !== "function" || typeof window.closeLayer !== "function") {
+      return { supported: false, reason: "layer api missing", checks };
+    }
+
+    if (typeof window.showModal === "function") {
+      const promise = window.showModal("Layer probe", { title: "Layer probe", icon: "i" });
+      await sleep(80);
+      const overlay = document.querySelector(".custom-modal-overlay.visible");
+      const actions = overlay?.querySelector(".custom-modal-actions");
+      const actionStyle = actions ? getComputedStyle(actions) : null;
+      const footerSafe = actionStyle
+        ? Number.parseFloat(actionStyle.paddingBottom || "0") >= 12
+        : false;
+      const check = {
+        name: "custom-modal",
+        opened: Boolean(overlay),
+        locked: isLocked(),
+        safeArea: Boolean(overlay?.classList.contains("app-layer-safe-area")),
+        footerSafe,
+        restored: false,
+      };
+      overlay?.querySelector(".custom-modal-btn")?.click();
+      await Promise.race([promise, sleep(700)]);
+      await sleep(80);
+      check.restored = !document.body.classList.contains("app-layer-locked");
+      check.ok = check.opened && check.locked && check.safeArea && check.footerSafe && check.restored;
+      checks.push(check);
+    }
+
+    if (typeof window.showTab === "function") {
+      window.showTab("playbook");
+      await sleep(120);
+    }
+    const sheet = document.getElementById("pbActionSheet");
+    if (sheet && typeof window.openPbActionSheet === "function" && typeof window.closePbActionSheet === "function") {
+      window.openPbActionSheet();
+      await sleep(80);
+      const check = {
+        name: "playbook-action-sheet",
+        opened: sheet.classList.contains("open"),
+        locked: isLocked(),
+        safeArea: sheet.classList.contains("app-layer-safe-area"),
+        restored: false,
+      };
+      window.closePbActionSheet();
+      await sleep(80);
+      check.restored = !document.body.classList.contains("app-layer-locked");
+      check.ok = check.opened && check.locked && check.safeArea && check.restored;
+      checks.push(check);
+    }
+
+    return {
+      supported: checks.length > 0,
+      checks,
+      ok: checks.length > 0 && checks.every((check) => check.ok),
+    };
+  });
+}
+
 // Role restriction probe (M-051): players must not see staff-only controls and
 // each role must be able to reach its promised tabs. Auth hides forbidden
 // controls document-wide via hidden/authHidden, so a forbidden control that is
@@ -850,6 +917,10 @@ async function run() {
           inspection.screenSize === "phone"
             ? await probeLayerScrollLock(page)
             : null;
+        const realLayers =
+          inspection.screenSize === "phone"
+            ? await probeRealAppLayers(page)
+            : null;
         const roleRestriction =
           inspection.screenSize === "phone" && role
             ? await probeRoleRestrictions(page)
@@ -879,6 +950,7 @@ async function run() {
           ...inspection,
           scrollTabs,
           layerLock,
+          realLayers,
           roleRestriction,
           tapDispatch,
           orientationProbe: orientation,
@@ -908,6 +980,12 @@ async function run() {
           result.layerLock &&
           result.layerLock.supported === true &&
           (!result.layerLock.lockOk || !result.layerLock.restoreOk);
+        const realLayerBroken =
+          result.screenSize === "phone" &&
+          Boolean(result.role) &&
+          result.realLayers &&
+          result.realLayers.supported === true &&
+          result.realLayers.ok === false;
         // M-051: players must not see staff controls; every role must reach its
         // promised tabs.
         const roleRestrictionBroken =
@@ -951,6 +1029,7 @@ async function run() {
           badPhoneScrollOwner ||
           scrollConflict ||
           layerLockBroken ||
+          realLayerBroken ||
           roleRestrictionBroken ||
           tapDispatchBroken ||
           orientationBroken ||
@@ -972,6 +1051,7 @@ async function run() {
           scrollConflict,
           scrollConflictTabs,
           layerLockBroken,
+          realLayerBroken,
           roleRestrictionBroken,
           tapDispatchBroken,
           orientationBroken,
@@ -993,6 +1073,9 @@ async function run() {
       result.scrollConflict ? `scroll conflict ${result.scrollConflictTabs.join(", ")}` : "",
       result.layerLockBroken
         ? `layer lock ${result.layerLock && result.layerLock.lockOk ? "ok" : "fail"}/restore ${result.layerLock && result.layerLock.restoreOk ? "ok" : "fail"}`
+        : "",
+      result.realLayerBroken
+        ? `real layers ${(result.realLayers?.checks || []).filter((check) => !check.ok).map((check) => check.name).join("|")}`
         : "",
       result.roleRestrictionBroken
         ? `role leak ${(result.roleRestriction.leaked || []).join("|") || "tabs:" + (result.roleRestriction.missingTabs || []).join("|")}`

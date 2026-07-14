@@ -302,6 +302,7 @@ The attached implementation brief is now mapped into this checklist as:
   - `[x]` Disable login, drawer, pulse, and active-tab animations under `prefers-reduced-motion: reduce`.
   - `[x]` Add smoke coverage for the global reduced-motion guardrail.
   - `[ ]` Extend safe-area padding to full-screen drawers, modal footers, coach dock, and landscape presentation controls.
+    - `[x]` Shared custom modals now open through `openLayer()` so mobile body lock, focus containment, and scroll-owner restore are consistent. Modal action footers use safe-area-aware sticky padding, and the viewport harness probes both a real custom modal and the Playbook phone action sheet for lock/safe-area/restore behavior.
 - Acceptance:
   - Reduced-motion users do not get nonessential motion.
   - Close buttons and action footers are reachable around notches/home indicators.
