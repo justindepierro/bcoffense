@@ -3444,6 +3444,108 @@ body[data-auth-role="player"]
   }
 }
 
+/* ── Laptop density tier ──────────────────────────────────────────────
+   Pack far more onto smaller desktops (e.g. 13" MacBook Air) without
+   touching large monitors, which stay above the 1600px cutoff. Tightens
+   the header, stats, toolbar, panels, and script rows so more plays and
+   controls fit on screen at once. */
+@media (min-width: 769px) and (max-width: 1600px) {
+  /* Header — collapse to a genuinely slim single bar. */
+  body:not(.is-mobile-screen) #script .script-header-panel {
+    padding: 3px 8px;
+    margin-bottom: 4px;
+    gap: 8px;
+  }
+  body:not(.is-mobile-screen) #script .script-header-top {
+    gap: 8px;
+  }
+  body:not(.is-mobile-screen) #script .script-title-group {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+  body:not(.is-mobile-screen) #script .script-name-input {
+    flex: 0 1 240px;
+    width: auto;
+    min-width: 120px;
+    padding: 3px 8px;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+  }
+  body:not(.is-mobile-screen) #script .script-date-input {
+    padding: 3px 6px;
+    font-size: var(--font-size-xs);
+  }
+  body:not(.is-mobile-screen) #script .script-workbench-controls {
+    gap: 6px;
+  }
+  body:not(.is-mobile-screen) #script .script-workbench-primary-actions,
+  body:not(.is-mobile-screen) #script .script-workbench-toggle-group,
+  body:not(.is-mobile-screen) #script .control-cluster {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+  body:not(.is-mobile-screen) #script .btn-sm,
+  body:not(.is-mobile-screen) #script .script-workbench-pill {
+    padding: 4px 8px;
+    font-size: var(--font-size-xs);
+    min-height: 28px;
+  }
+
+  /* Builder + panels — tighter gaps and padding. */
+  body:not(.is-mobile-screen) #script .script-builder {
+    gap: 10px;
+  }
+  body:not(.is-mobile-screen) #script .play-list,
+  body:not(.is-mobile-screen) #script .script-list {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  /* Stats bar — shorter and denser. */
+  body:not(.is-mobile-screen) #script .script-stats-bar {
+    gap: 6px;
+    padding: 4px 6px;
+  }
+  body:not(.is-mobile-screen) #script .stat-item {
+    padding: 3px 6px;
+  }
+  body:not(.is-mobile-screen) #script .stat-value {
+    font-size: var(--font-size-sm);
+  }
+  body:not(.is-mobile-screen) #script .stat-label {
+    font-size: var(--font-size-3xs);
+  }
+
+  /* Script section header + toolbar. */
+  body:not(.is-mobile-screen) #script .script-list h3,
+  body:not(.is-mobile-screen) #script .script-section-head {
+    margin: 0;
+    gap: 6px;
+  }
+  body:not(.is-mobile-screen) #script .script-toolbar {
+    gap: 6px;
+    padding: 4px 6px;
+  }
+
+  /* Script rows — pack more plays per screen. */
+  body:not(.is-mobile-screen) #script .script-container {
+    padding: 6px;
+  }
+  body:not(.is-mobile-screen) #script .script-item {
+    padding: 4px 8px;
+    margin-bottom: 2px;
+    gap: 8px;
+    contain-intrinsic-size: auto 44px;
+  }
+  body:not(.is-mobile-screen) #script .script-item .play-call .full-call {
+    font-size: var(--font-size-sm);
+  }
+}
+
 .display-options-btns {
   display: flex;
   gap: 5px;
