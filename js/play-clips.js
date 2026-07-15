@@ -669,6 +669,76 @@
     return uploadForSig(sigForPlay(play), file, label, opts);
   }
 
+  // Probe a video blob's intrinsic dimensions + duration without playing it.
+  function _probeVideoDimensions(blob) {
+    return new Promise((resolve) => {
+      let settled = false;
+      const objectUrl = URL.createObjectURL(blob);
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        try { URL.revokeObjectURL(objectUrl); } catch (_err) { /* ignore */ }
+        resolve(value);
+      };
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.muted = true;
+      video.onloadedmetadata = () => finish({
+        width: video.videoWidth || 0,
+        height: video.videoHeight || 0,
+        duration: Number.isFinite(video.duration) ? video.duration : 0,
+      });
+      video.onerror = () => finish(null);
+      setTimeout(() => finish(null), 6000);
+      video.src = objectUrl;
+    });
+  }
+
+  // Re-download one existing clip, re-encode it through the current downscale +
+  // bitrate caps, and replace it in place. Used by the admin "optimize existing
+  // clips" pass so clips uploaded before the resolution cap shrink to the same
+  // fast, player-phone-friendly size as new uploads. Returns a status object;
+  // never throws for "nothing to do" cases (already small / no size win).
+  async function recompressClipForSig(sig, clip, opts = {}) {
+    if (!canManage()) throw new Error("Only admin or coach can re-compress clips.");
+    if (!sig || !clip || !clip.id) throw new Error("Missing clip reference.");
+    const response = await fetch(fileUrlForSig(sig, clip.id), { credentials: "same-origin" });
+    if (!response.ok) throw new Error(`Could not download clip (${response.status}).`);
+    const blob = await response.blob();
+    const originalSize = blob.size || Number(clip.size || 0);
+    const dims = await _probeVideoDimensions(blob);
+    const longEdge = dims ? Math.max(dims.width, dims.height) : 0;
+    if (!opts.force && longEdge && longEdge <= SILENT_UPLOAD_MAX_EDGE) {
+      return { status: "skipped", reason: "already-optimized", originalSize, longEdge };
+    }
+    const sourceType = (blob.type || clip.contentType || "video/mp4").toLowerCase();
+    const ext = sourceType.includes("webm") ? "webm" : "mp4";
+    const sourceFile = new File([blob], `clip-${clip.id}.${ext}`, { type: sourceType });
+    const targetDuration = Number(clip.duration || dims?.duration || 0);
+    const uploadFile = await createSilentVideoFile(sourceFile, targetDuration);
+    const newSize = uploadFile.size || 0;
+    if (!opts.force && (!newSize || newSize >= originalSize)) {
+      return { status: "skipped", reason: "no-gain", originalSize, newSize, longEdge };
+    }
+    const prepared = {
+      uploadFile,
+      duration: targetDuration,
+      uploadDuration: targetDuration,
+      uploadType: (uploadFile.type || sourceType).toLowerCase(),
+    };
+    const result = await uploadPreparedForSig(sig, prepared, clip.label || "", {
+      replaceExisting: true,
+      skipExistingCheck: true,
+      publishType: opts.publishType || (isReplaceOnlySig(sig) ? "signals" : "clips"),
+    });
+    // Non-replace-only sigs (play clips) append a new clip, so drop the old one.
+    const newId = result?.clip?.id;
+    if (!isReplaceOnlySig(sig) && newId && newId !== clip.id) {
+      await removeForSig(sig, clip.id, { publishType: opts.publishType || "clips" }).catch(() => {});
+    }
+    return { status: "recompressed", originalSize, newSize, longEdge };
+  }
+
   async function removeForSig(sig, id, opts = {}) {
     if (!canManage()) {
       throw new Error("Only admin or coach can delete clips.");
@@ -951,6 +1021,7 @@
     upload,
     removeForSig,
     remove,
+    recompressClipForSig,
     loadIndex,
     has,
     hasForPlay,

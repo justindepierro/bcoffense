@@ -908,6 +908,10 @@ function renderSignals() {
           <h1>Signals</h1>
         </div>
         <div class="signals-stats">${_sigRenderStats(visibleSummaries)}</div>
+        ${_sigCanManage() ? `
+        <div class="signals-header-actions">
+          <button type="button" class="btn btn-sm btn-outline" id="sigRecompressBtn" data-action="recompressSignalClips" title="Re-encode older clips to a smaller, faster size for player phones">Optimize Clips</button>
+        </div>` : ""}
       </header>
       ${_sigRenderCoverageReport(summariesByComponent)}
       <div class="signals-layout">
@@ -1018,6 +1022,82 @@ async function deleteSignalClip(clipId) {
   } catch (err) {
     showToast(err?.message || "Could not delete signal clip.", { type: "error", duration: 3500 });
   }
+}
+
+// Admin-only pass: re-encode every stored signal clip through the current
+// downscale + bitrate caps so clips uploaded before the resolution cap shrink
+// to the same fast, player-phone-friendly size as new uploads. Runs in this
+// tab (MediaRecorder re-encodes in real time), skips already-small clips, and
+// replaces each clip in place via the signals replace-only manifest.
+async function recompressSignalClips() {
+  if (!_sigCanManage()) return;
+  if (!window.playClips || typeof window.playClips.recompressClipForSig !== "function") {
+    showToast("Clip tools are unavailable right now.", { type: "error" });
+    return;
+  }
+  const records = _sigLoadRecords().filter((record) => Number(record.clipCount || 0) > 0);
+  if (!records.length) {
+    showModal("There are no signal clips to optimize yet.", {
+      title: "Optimize Clips",
+      icon: "🎬",
+    });
+    return;
+  }
+  const proceed = await showConfirm(
+    `Optimize ${records.length} signal clip${records.length === 1 ? "" : "s"}? Each clip is ` +
+      "re-encoded in this tab in real time (about its own length), so this can take a few minutes. " +
+      "Clips that are already small are skipped automatically — keep this tab open until it finishes.",
+    { title: "Optimize Signal Clips", icon: "🎬", confirmText: "Start", cancelText: "Not now" },
+  );
+  if (!proceed) return;
+
+  const btn = document.getElementById("sigRecompressBtn");
+  const setBtn = (text, disabled) => {
+    if (!btn) return;
+    btn.textContent = text;
+    btn.disabled = Boolean(disabled);
+  };
+  setBtn(`Optimizing 0/${records.length}…`, true);
+
+  let recompressed = 0;
+  let skipped = 0;
+  let failed = 0;
+  let bytesSaved = 0;
+  let processed = 0;
+  for (const record of records) {
+    const sig = _sigClipKey(record.componentType, record.compareKey);
+    let clips = [];
+    try {
+      clips = await window.playClips.listForSig(sig, { force: true });
+    } catch (_err) {
+      clips = [];
+    }
+    for (const clip of clips) {
+      try {
+        const result = await window.playClips.recompressClipForSig(sig, clip, {
+          publishType: "signals",
+        });
+        if (result?.status === "recompressed") {
+          recompressed += 1;
+          bytesSaved += Math.max(0, (result.originalSize || 0) - (result.newSize || 0));
+        } else {
+          skipped += 1;
+        }
+      } catch (_err) {
+        failed += 1;
+      }
+    }
+    processed += 1;
+    setBtn(`Optimizing ${processed}/${records.length}…`, true);
+  }
+
+  setBtn("Optimize Clips", false);
+  const savedMb = (bytesSaved / (1024 * 1024)).toFixed(1);
+  const summary = recompressed
+    ? `Optimized ${recompressed} clip${recompressed === 1 ? "" : "s"} and saved about ${savedMb} MB. ${skipped} already small, ${failed} failed.`
+    : `Nothing to shrink — ${skipped} clip${skipped === 1 ? " was" : "s were"} already small, ${failed} failed.`;
+  showModal(summary, { title: "Clips Optimized", icon: "✅" });
+  renderSignals();
 }
 
 function resolveSignalsForPlay(play, options = {}) {
