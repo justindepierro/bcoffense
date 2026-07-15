@@ -17,9 +17,10 @@
   align-items: start;
 }
 
-/* The shared active-opponent bar is redundant on the Script tab — the game
-   plan is shown in the Script header instead. Keep it for other tabs. */
-body[data-active-tab="script"] #gameWeekBar {
+/* The shared active-opponent / game-week bar is retired from the UI. The active
+   game plan is shown in the Script header and stays editable from the Dashboard.
+   The element is kept in the DOM (other code updates it) but never displayed. */
+#gameWeekBar {
   display: none !important;
 }
 .play-list {
