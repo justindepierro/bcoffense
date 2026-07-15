@@ -445,8 +445,8 @@
         <div class="custom-modal-actions">
           <button type="button" class="btn btn-sm" data-action="openMediaInventoryReport">Refresh</button>
           ${(typeof canEditUser === "function" && canEditUser())
-            ? `<button type="button" class="btn btn-sm btn-outline" id="miOptimizeClipsBtn" data-action="optimizeAllClips" title="Re-encode older clips (playbook + signals) to a smaller, faster size for player phones">Optimize Clips</button>`
-            : ""}
+        ? `<button type="button" class="btn btn-sm btn-outline" id="miOptimizeClipsBtn" data-action="optimizeAllClips" title="Re-encode older clips (playbook + signals) to a smaller, faster size for player phones">Optimize Clips</button>`
+        : ""}
           <button type="button" class="btn btn-sm" data-action="closeMediaInventoryReport">Done</button>
         </div>
       </div>`;
@@ -482,11 +482,11 @@
     }
     const proceed = typeof showConfirm === "function"
       ? await showConfirm(
-          "Optimize every stored clip (playbook + signals)? Each clip is re-encoded in this tab in " +
-            "real time, so a large library can take several minutes. Clips that are already small are " +
-            "skipped automatically — keep this tab open until it finishes.",
-          { title: "Optimize All Clips", icon: "🎬", confirmText: "Start", cancelText: "Not now" },
-        )
+        "Optimize every stored clip (playbook + signals)? Each clip is re-encoded in this tab in " +
+        "real time, so a large library can take several minutes. Clips that are already small are " +
+        "skipped automatically — keep this tab open until it finishes.",
+        { title: "Optimize All Clips", icon: "🎬", confirmText: "Start", cancelText: "Not now" },
+      )
       : true;
     if (!proceed) return;
     const btn = document.getElementById("miOptimizeClipsBtn");

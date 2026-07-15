@@ -3344,7 +3344,9 @@ body[data-auth-role="player"]
   }
 
   /* Collapsed: remove the sidebar column entirely. */
-  body:not(.is-mobile-screen) #script.script-rail-collapsed .script-play-rail.play-list {
+  body:not(.is-mobile-screen)
+    #script.script-rail-collapsed
+    .script-play-rail.play-list {
     display: none;
   }
 
@@ -6815,16 +6817,29 @@ body:not(.is-mobile-screen) #script .script-section-head .script-stats-bar {
   padding: 0;
   border: 0;
 }
-body:not(.is-mobile-screen) #script .script-section-head .script-stats-bar .stat-item {
+body:not(.is-mobile-screen)
+  #script
+  .script-section-head
+  .script-stats-bar
+  .stat-item {
   min-height: 24px;
   padding: 1px 8px;
   gap: 4px;
 }
-body:not(.is-mobile-screen) #script .script-section-head .script-stats-bar .ratio {
+body:not(.is-mobile-screen)
+  #script
+  .script-section-head
+  .script-stats-bar
+  .ratio {
   flex: 0 1 150px;
   justify-content: flex-start;
 }
-body:not(.is-mobile-screen) #script .script-section-head .script-stats-bar .ratio .ratio-bar-wrap {
+body:not(.is-mobile-screen)
+  #script
+  .script-section-head
+  .script-stats-bar
+  .ratio
+  .ratio-bar-wrap {
   flex: 1 1 44px;
 }
 body:not(.is-mobile-screen) #script .script-section-head .stat-health-btn {
@@ -7665,9 +7680,9 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 /* ─── #144: Artifact status indicator ──────────────────────────────────────── */
 .script-save-status {
-  display: block;
+  display: inline-flex;
+  align-items: center;
   font-size: var(--font-size-xs);
-  margin-top: 4px;
   font-weight: 500;
   white-space: nowrap;
 }

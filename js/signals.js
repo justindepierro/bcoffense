@@ -1045,8 +1045,8 @@ async function recompressSignalClips() {
   }
   const proceed = await showConfirm(
     `Optimize ${records.length} signal clip${records.length === 1 ? "" : "s"}? Each clip is ` +
-      "re-encoded in this tab in real time (about its own length), so this can take a few minutes. " +
-      "Clips that are already small are skipped automatically — keep this tab open until it finishes.",
+    "re-encoded in this tab in real time (about its own length), so this can take a few minutes. " +
+    "Clips that are already small are skipped automatically — keep this tab open until it finishes.",
     { title: "Optimize Signal Clips", icon: "🎬", confirmText: "Start", cancelText: "Not now" },
   );
   if (!proceed) return;

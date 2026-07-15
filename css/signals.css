@@ -234,10 +234,15 @@
   display: grid;
   gap: var(--space-xs);
   min-width: 0;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
   border-radius: var(--radius-sm);
   padding: var(--space-sm);
-  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-bg-light));
+  background: color-mix(
+    in srgb,
+    var(--color-primary) 5%,
+    var(--color-bg-light)
+  );
 }
 
 .signal-availability-head {
@@ -606,7 +611,10 @@
   z-index: calc(var(--z-skip-link) + 4);
   display: grid;
   place-items: center;
-  padding: max(var(--space-md), env(safe-area-inset-top)) max(var(--space-md), env(safe-area-inset-right)) max(var(--space-md), env(safe-area-inset-bottom)) max(var(--space-md), env(safe-area-inset-left));
+  padding: max(var(--space-md), env(safe-area-inset-top))
+    max(var(--space-md), env(safe-area-inset-right))
+    max(var(--space-md), env(safe-area-inset-bottom))
+    max(var(--space-md), env(safe-area-inset-left));
   background: rgba(7, 12, 23, 0.78);
 }
 
@@ -687,7 +695,10 @@
   z-index: calc(var(--z-skip-link) + 4);
   display: grid;
   place-items: center;
-  padding: max(var(--space-md), env(safe-area-inset-top)) max(var(--space-md), env(safe-area-inset-right)) max(var(--space-md), env(safe-area-inset-bottom)) max(var(--space-md), env(safe-area-inset-left));
+  padding: max(var(--space-md), env(safe-area-inset-top))
+    max(var(--space-md), env(safe-area-inset-right))
+    max(var(--space-md), env(safe-area-inset-bottom))
+    max(var(--space-md), env(safe-area-inset-left));
   background: rgba(7, 12, 23, 0.72);
 }
 
@@ -1124,7 +1135,9 @@
 
   body.shell-phone:not(.shell-ipados) .signals-clip-modal-overlay {
     align-items: stretch;
-    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    padding: max(8px, env(safe-area-inset-top))
+      max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
   }
 
   body.shell-phone:not(.shell-ipados) .signals-clip-modal {

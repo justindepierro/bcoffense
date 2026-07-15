@@ -755,7 +755,7 @@
           replaceExisting: true,
           skipExistingCheck: true,
           publishType: opts.publishType || "clips",
-        }).catch(() => {});
+        }).catch(() => { });
         throw uploadErr;
       }
     }

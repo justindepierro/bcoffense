@@ -235,7 +235,11 @@ table.sortable th {
 #playbookTable .pb-player-visibility-btn.is-hidden {
   opacity: 1;
   visibility: visible;
-  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 42%,
+    var(--color-border-light)
+  );
   background: var(--color-warning-light);
   color: color-mix(in srgb, var(--color-warning-hover) 68%, var(--color-dark));
 }
@@ -397,7 +401,8 @@ table.sortable th {
   min-height: 22px;
   margin-right: 4px;
   padding: 0 7px;
-  border: 1px solid color-mix(in srgb, var(--color-warning) 40%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 40%, var(--color-border-light));
   border-radius: var(--radius-pill);
   background: var(--color-warning-light);
   color: color-mix(in srgb, var(--color-warning-hover) 68%, var(--color-dark));
@@ -423,7 +428,8 @@ table.sortable th {
   min-width: 22px;
   min-height: 22px;
   margin-right: 4px;
-  border: 1px solid color-mix(in srgb, var(--color-info) 34%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-info) 34%, var(--color-border-light));
   border-radius: var(--radius-pill);
   background: var(--color-info-light);
   color: var(--color-info);
@@ -444,7 +450,8 @@ table.sortable th {
   min-width: 22px;
   min-height: 22px;
   margin-right: 4px;
-  border: 1px solid color-mix(in srgb, var(--color-warning) 34%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 34%, var(--color-border-light));
   border-radius: var(--radius-pill);
   background: var(--color-warning-light);
   color: color-mix(in srgb, var(--color-warning-hover) 68%, var(--color-dark));
@@ -1032,7 +1039,8 @@ body.is-mobile-screen .pb-signal-badge {
   gap: 8px;
   margin-bottom: var(--space-sm);
   padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
   border-left: 5px solid var(--color-primary);
   border-radius: var(--radius-md);
   background:
@@ -1117,13 +1125,21 @@ body.is-mobile-screen .pb-signal-badge {
 }
 
 .pb-player-summary__stats span:nth-child(2) {
-  border-color: color-mix(in srgb, var(--color-info) 36%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-info) 36%,
+    var(--color-border-light)
+  );
   background: var(--color-info-light);
   color: var(--color-info-hover);
 }
 
 .pb-player-summary__stats span:nth-child(3) {
-  border-color: color-mix(in srgb, var(--color-warning) 38%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 38%,
+    var(--color-border-light)
+  );
   background: var(--color-warning-light);
   color: color-mix(in srgb, var(--color-warning-hover) 68%, var(--color-dark));
 }
@@ -1164,17 +1180,26 @@ body.is-mobile-screen .pb-signal-badge {
   border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-text-inverse);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 18%, transparent);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 .pb-player-summary__filter-pill--media {
-  border-color: color-mix(in srgb, var(--color-info) 36%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-info) 36%,
+    var(--color-border-light)
+  );
   background: var(--color-info-light);
   color: var(--color-info-hover);
 }
 
 .pb-player-summary__filter-pill--notes {
-  border-color: color-mix(in srgb, var(--color-warning) 38%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 38%,
+    var(--color-border-light)
+  );
   background: var(--color-warning-light);
   color: color-mix(in srgb, var(--color-warning-hover) 68%, var(--color-dark));
 }
@@ -1377,7 +1402,8 @@ body[data-auth-role="player"] .gp-card-btn {
   gap: 10px;
   min-width: 0;
   padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 26%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 26%, var(--color-border-light));
   border-radius: var(--radius-md);
   background: var(--color-bg-blue-tint);
 }
@@ -1767,7 +1793,8 @@ body[data-auth-role="player"] .gp-card-btn {
   border-color: var(--color-primary);
   color: var(--color-text-inverse);
   background: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 .play-readiness-score-btn.is-score-pulse {
@@ -2134,7 +2161,10 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
 
 @media (max-width: 1180px) {
   #playbook .pb-top-row {
-    grid-template-columns: max-content minmax(0, 1fr) max-content max-content 44px;
+    grid-template-columns: max-content minmax(
+        0,
+        1fr
+      ) max-content max-content 44px;
   }
 
   #playbook .pb-utility-group {
@@ -3143,7 +3173,11 @@ body.shell-phone .pb-action-sheet {
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 58%),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-primary) 10%, transparent),
+      transparent 58%
+    ),
     var(--color-bg-lighter);
   color: var(--color-text-muted);
   font: inherit;
@@ -3209,8 +3243,12 @@ body.shell-phone .pb-action-sheet {
 }
 
 @keyframes pb-media-shimmer {
-  from { background-position: 180% 0; }
-  to { background-position: -80% 0; }
+  from {
+    background-position: 180% 0;
+  }
+  to {
+    background-position: -80% 0;
+  }
 }
 
 .pb-card-media img,
@@ -3238,7 +3276,11 @@ body.shell-phone .pb-action-sheet {
 .pb-card-media--missing {
   min-height: 96px;
   border-style: dashed;
-  border-color: color-mix(in srgb, var(--color-danger) 34%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-danger) 34%,
+    var(--color-border-light)
+  );
   background:
     linear-gradient(135deg, var(--color-danger-light), transparent 62%),
     var(--color-bg-light);
@@ -3246,21 +3288,33 @@ body.shell-phone .pb-action-sheet {
 }
 
 .pb-card-media--error {
-  border-color: color-mix(in srgb, var(--color-warning) 38%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 38%,
+    var(--color-border-light)
+  );
   background:
     linear-gradient(135deg, var(--color-warning-light), transparent 62%),
     var(--color-bg-light);
 }
 
 .pb-card-media--unpublished {
-  border-color: color-mix(in srgb, var(--color-warning) 40%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 40%,
+    var(--color-border-light)
+  );
   background:
     linear-gradient(135deg, var(--color-warning-light), transparent 62%),
     var(--color-bg-light);
 }
 
 .pb-card-media--offline {
-  border-color: color-mix(in srgb, var(--color-info) 34%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-info) 34%,
+    var(--color-border-light)
+  );
   background:
     linear-gradient(135deg, var(--color-info-light), transparent 62%),
     var(--color-bg-light);
@@ -3295,7 +3349,8 @@ body.shell-phone .pb-action-sheet {
   gap: 2px;
   margin: 0 0 8px;
   padding: 8px 10px;
-  border: 1px solid color-mix(in srgb, var(--color-warning) 34%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 34%, var(--color-border-light));
   border-radius: var(--radius-md);
   background: var(--color-warning-light);
   color: var(--color-text);
@@ -3326,31 +3381,51 @@ body.shell-phone .pb-action-sheet {
 }
 
 .pb-card-study-badge--diagram {
-  border-color: color-mix(in srgb, var(--color-info) 36%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-info) 36%,
+    var(--color-border-light)
+  );
   background: var(--color-info-light);
   color: var(--color-info);
 }
 
 .pb-card-study-badge--missing {
-  border-color: color-mix(in srgb, var(--color-danger) 34%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-danger) 34%,
+    var(--color-border-light)
+  );
   background: var(--color-danger-light);
   color: var(--color-danger);
 }
 
 .pb-card-study-badge--film {
-  border-color: color-mix(in srgb, var(--color-success) 36%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 36%,
+    var(--color-border-light)
+  );
   background: var(--color-success-light);
   color: var(--color-success-hover);
 }
 
 .pb-card-study-badge--notes {
-  border-color: color-mix(in srgb, var(--color-warning) 38%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 38%,
+    var(--color-border-light)
+  );
   background: var(--color-warning-light);
   color: color-mix(in srgb, var(--color-warning-hover) 68%, var(--color-dark));
 }
 
 .pb-card-study-badge--hidden {
-  border-color: color-mix(in srgb, var(--color-warning) 44%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 44%,
+    var(--color-border-light)
+  );
   background: var(--color-warning-light);
   color: color-mix(in srgb, var(--color-warning-hover) 70%, var(--color-dark));
 }
@@ -3390,27 +3465,47 @@ body.shell-phone .pb-action-sheet {
 }
 
 .pb-card-action--ask {
-  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 42%,
+    var(--color-border-light)
+  );
   background: var(--color-warning-light);
   color: color-mix(in srgb, var(--color-warning-hover) 68%, var(--color-dark));
 }
 
 .pb-card-action--film {
-  border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 42%,
+    var(--color-border-light)
+  );
   background: var(--color-success-light);
   color: var(--color-success-hover);
 }
 
 .pb-card-action--visibility.is-hidden {
-  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 42%,
+    var(--color-border-light)
+  );
   background: var(--color-warning-light);
   color: color-mix(in srgb, var(--color-warning-hover) 70%, var(--color-dark));
 }
 
 .pb-card.is-hidden-from-players {
-  border-color: color-mix(in srgb, var(--color-warning) 34%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 34%,
+    var(--color-border-light)
+  );
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-warning-light) 44%, transparent), transparent 70%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-warning-light) 44%, transparent),
+      transparent 70%
+    ),
     var(--color-surface);
 }
 
@@ -3740,12 +3835,14 @@ body.shell-tablet #playbook .pb-card-actions {
     flex: 0 0 auto;
   }
 
-  body.is-mobile-screen[data-auth-role="player"] .pb-player-summary__filter-pill {
+  body.is-mobile-screen[data-auth-role="player"]
+    .pb-player-summary__filter-pill {
     min-height: 36px;
     padding-inline: 12px;
   }
 
-  body.is-phone-screen[data-auth-role="player"] .pb-player-summary__filter-label {
+  body.is-phone-screen[data-auth-role="player"]
+    .pb-player-summary__filter-label {
     display: none;
   }
 
@@ -6262,9 +6359,14 @@ body.shell-tablet #playbook .pb-card-actions {
   align-items: center;
   gap: 4px;
   padding: 4px 9px;
-  border: 1px solid color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--color-warning) 11%, var(--color-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 11%,
+    var(--color-surface)
+  );
   color: var(--color-text);
   font-size: 12px;
   font-weight: 850;
@@ -6273,11 +6375,20 @@ body.shell-tablet #playbook .pb-card-actions {
 .disc-reward-btn:hover,
 .disc-reward-btn:focus-visible {
   outline: 0;
-  border-color: color-mix(in srgb, var(--color-warning) 62%, var(--color-border-med));
-  background: color-mix(in srgb, var(--color-warning) 17%, var(--color-surface));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 62%,
+    var(--color-border-med)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 17%,
+    var(--color-surface)
+  );
 }
 .disc-post--reward-pending {
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--color-warning) 80%, var(--color-border-light));
+  box-shadow: inset 3px 0 0
+    color-mix(in srgb, var(--color-warning) 80%, var(--color-border-light));
 }
 .disc-action-btn--danger:hover,
 .disc-action-btn--danger:focus-visible {
@@ -7667,12 +7778,17 @@ label.disc-attach-btn {
     min-height: 0;
     margin-left: auto;
   }
-  body:not(.is-mobile-screen) #playbook .pb-readiness-card--empty .pb-readiness-main {
+  body:not(.is-mobile-screen)
+    #playbook
+    .pb-readiness-card--empty
+    .pb-readiness-main {
     display: none;
   }
-  body:not(.is-mobile-screen) #playbook .pb-readiness-card--empty .play-readiness-btn {
+  body:not(.is-mobile-screen)
+    #playbook
+    .pb-readiness-card--empty
+    .play-readiness-btn {
     min-height: 28px;
     padding: 3px 9px;
   }
 }
-

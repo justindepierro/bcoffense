@@ -250,7 +250,7 @@ This keeps thin sources useful without making kids guess.
 Goal: stop low-interest and unfair questions from reaching players.
 
 - [x] Add a `quizQuestionQuality` helper that scores each candidate question as
-  `playable`, `thin`, or `study_only`.
+      `playable`, `thin`, or `study_only`.
 - [x] Add new question types:
   - `diagram_formation`
   - `formation_to_play`
@@ -336,7 +336,7 @@ Goal: help coaches make better quizzes without extra work.
   - add coach notes to missed plays,
   - simplify long calls.
 - [x] Let coaches open Thin/Needs work saved scripts into a play repair list
-  and edit the linked master Playbook plays from there.
+      and edit the linked master Playbook plays from there.
 - [x] Flag sources that will mostly generate Study Cards.
 - [x] Add source preview examples that match the actual generator.
 
