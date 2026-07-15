@@ -136,7 +136,11 @@ Local diagram path:
    `playImages.urlForDisplayPlay()` when already cached.
 4. Async paths call `ensureUrlForPlay()` or `ensureDisplayUrlForPlay()`.
 5. Smart crop/canvas hydration is provided by
-   `playImages.hydrateSmartDiagramImages()`.
+   `playImages.hydrateSmartDiagramImages()`. `getSmartDiagramContentBounds()`
+   segments ink into horizontal bands and trims name/title text at the extreme
+   top and bottom (short, low-ink, gap-separated bands only), then re-centers
+   the play from the retained rows with padding. It never trims interior
+   content, so deep safeties and wide splits are preserved.
 
 Remote player path:
 
@@ -169,6 +173,11 @@ Current fast paths:
 - Loop previews use muted autoplay and `preload="auto"`.
 - Signal quiz media preloads a small upcoming window through hidden video
   elements.
+- New clip uploads are downscaled to a 720p long edge with a bitrate cap in
+  `createSilentVideoFile()`, so player phones decode small clips instead of full
+  1080p source. Existing clips can be shrunk in place with the admin
+  **Optimize Clips** pass (`playClips.recompressAllClips`), reachable from the
+  Media Inventory report (all clips) and the Signals page (signals only).
 
 Current cost centers:
 
@@ -231,8 +240,20 @@ Quiz media behavior:
 - Diagram questions call `_quizDiagramUrl()` and render a smart-diagram image.
 - Signal questions carry a ready clip URL on the item/record.
 - Signal quizzes call `_preloadUpcomingQuizSignalMedia()` on each render.
-- Correct signal answers can auto-advance in speed modes; wrong answers show
-  brief feedback first.
+- A correct answer auto-advances after a short celebration in every non-timed
+  quiz (`_maybeAutoAdvanceQuizAfterAnswer`); a wrong answer stays so the player
+  can study the miss. Speed signal games keep their own timed advance.
+
+Quiz question quality:
+
+- Distractors are believable look-alikes, not random plays. Signal questions
+  keep wrong answers in the same signal component type (a formation question
+  offers other formations, pulled from the full signal library including values
+  with no clip yet). Recognition/rule questions rank distractors by
+  `_quizPlayDistractorScore` (shared formation/personnel/type/base play), then
+  shuffle within a small plausibility window so repeats still vary.
+- `_quizQuestionQuality()` still downgrades a question to a study card when it
+  cannot find enough clean distractors.
 
 ## Cleanup And Performance Findings
 
@@ -304,6 +325,22 @@ Third implementation slice, landed 2026-07-14:
 3. Counted local diagram storage, largest files, unreferenced diagram keys,
    player-visible script media gaps, signal clip gaps, and quiz source readiness.
 4. Added smoke contracts for the new report and asset wiring.
+
+Fourth implementation slice, landed 2026-07-14 (quiz quality + media speed):
+
+1. Made signal-quiz distractors same-component-type and sourced them from the
+   full signal library, including values without clips.
+2. Ranked recognition/rule distractors by play similarity
+   (`_quizPlayDistractorScore`) and shuffled within a plausibility window.
+3. Added correct-answer auto-advance with a celebration to standard quizzes
+   (`_maybeAutoAdvanceQuizAfterAnswer`), keeping wrong answers for study.
+4. Extended `getSmartDiagramContentBounds()` to trim name/title text bands and
+   re-center the play from retained rows.
+5. Capped new clip uploads to a 720p long edge with a bitrate ceiling in
+   `createSilentVideoFile()`.
+6. Added `playClips.recompressClipForSig()` / `recompressAllClips()` and the
+   admin **Optimize Clips** pass (Media Inventory + Signals), with safe
+   delete-then-upload and rollback for play clips.
 
 Next implementation slice:
 

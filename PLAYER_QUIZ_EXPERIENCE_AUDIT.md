@@ -1,10 +1,24 @@
 # Player Quiz Experience Audit
 
-Last updated: 2026-07-08
+Last updated: 2026-07-14
 
 This is the active audit and roadmap for making player quizzes feel more useful,
 fair, and fun. The old `PLAYER_QUIZ_ROADMAP.md` was completed and superseded;
 this file focuses on the next generation of quiz quality.
+
+## Recently Shipped (2026-07-14)
+
+- Distractors are now believable look-alikes instead of random plays. Signal
+  questions keep wrong answers in the same component type (e.g. a formation
+  question only offers other formations) and pull from the full signal library
+  including values without clips. Recognition/rule questions rank distractors by
+  play similarity, then shuffle within a small plausibility window.
+- A correct answer now plays a quick celebration and auto-advances in every
+  non-timed quiz; a wrong answer stays put for study. Speed signal games keep
+  their own timed advance.
+- Signal-quiz video is faster: new clip uploads are capped to 720p with a
+  bitrate ceiling, and an admin **Optimize Clips** pass re-encodes existing
+  clips in place.
 
 ## Product Goal
 

@@ -41,7 +41,9 @@
 ### Service Worker (CRITICAL — do not forget)
 
 - **ALWAYS bump `CACHE_NAME`** version in `sw.js` after ANY change to HTML, CSS, or JS files
-- Current version: `bcoffense-v281` — next version will be `bcoffense-v282`
+- Read the current `bcoffense-vN` value from `sw.js` and increment `N` by one — do not
+  assume a number here (the codebase ships many times a day). `./ship.sh --bump`
+  bumps it for you and restamps the `?v=N` asset query strings in `index.html`.
 - **NEW files** must be added to `LOCAL_ASSETS` array in `sw.js` AND the `<script>` tag in `index.html`
 
 ---

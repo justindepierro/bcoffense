@@ -73,22 +73,43 @@ scripts/deploy-cloudflare.sh
 
 ## Current Architecture Priorities
 
-The first quiz/media speed pass now focuses the code around faster launch:
+The quiz/media speed and quality passes have landed. The app now launches
+faster and the quizzes feel like a study game instead of a metadata test.
 
-- Cache clip manifests and reuse them across Signal quiz and selector flows.
-- Use a bounded quiz media preparation step for first-question diagrams and
-  upcoming signal clips.
-- Use server-side batch image and clip manifest checks for player readiness and
-  quiz launch.
-- Measure quiz launch with the existing opt-in perf path:
-  set `localStorage.bcoPerf = "1"` or load with `?perf`, then inspect
-  `window.perfMonitor.report()` for `quiz:first-question-visible`,
-  `quiz:media-prep`, and media batch manifest samples.
+Shipped and load-bearing:
+
+- **Smarter quizzes.** Wrong answers are plausible look-alikes: signal questions
+  keep distractors in the same component type (a formation question offers other
+  formations, including ones with no clip yet), and recognition/rule questions
+  pull distractors from the same formation/personnel/type family. See
+  `_quizPlayDistractorScore` and `_quizQuestionDistractorItems` in
+  `js/script-quiz.js`.
+- **Auto-advance + celebration.** A correct answer plays a quick celebration and
+  advances automatically; a wrong answer stays put so the player can study the
+  miss. Speed signal games keep their own timed advance.
+- **Diagram auto-crop.** `getSmartDiagramContentBounds()` in `js/play-images.js`
+  segments ink into horizontal bands and trims name/title text at the top and
+  bottom, then re-centers the play with padding. Non-destructive; applies
+  everywhere smart diagrams render.
+- **Faster clip video.** New clip uploads are downscaled to 720p with a bitrate
+  cap for fast decode on player phones. The service worker bypasses `/clips/` so
+  browser range requests stream natively.
+- **Optimize Clips pass.** The `Media Inventory` report has an admin
+  **Optimize Clips** button that re-encodes existing playbook + signal clips to
+  the new caps in place (`playClips.recompressAllClips`). The Signals page has a
+  signals-only version.
+
+Measure quiz launch with the opt-in perf path: set `localStorage.bcoPerf = "1"`
+or load with `?perf`, then inspect `window.perfMonitor.report()` for
+`quiz:first-question-visible`, `quiz:media-prep`, and media batch manifest
+samples.
+
+Highest-value next work:
+
 - Keep shrinking `js/script-quiz.js` into smaller, testable files while
   preserving delegated public functions.
-
-The current static wiring audit is clean, so the highest value work is not
-missing handlers or missing assets. It is making media and quiz preparation more
-intentional. The Playbook `Media Inventory` report is now the staff-facing
-starting point before deleting local diagram blobs, hunting large media files,
-or tuning player quiz launch performance.
+- Share one player-readiness domain summary across publish and quiz launch
+  instead of recomputing per surface.
+- The Playbook `Media Inventory` report stays the staff-facing starting point
+  before deleting local diagram blobs, hunting large media files, or tuning
+  player quiz launch performance.
