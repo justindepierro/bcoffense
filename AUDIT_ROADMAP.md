@@ -27,7 +27,7 @@
 
 **Wave 3 — video "just plays" polish (remaining, higher effort)**
 
-- [ ] 🟠 **Video element pool** — reuse 2–3 `<video>` elements + swap `src` (what Reels does) instead of innerHTML create/destroy; removes decoder churn/GC hitches on cheap phones when advancing quiz questions. Moderate refactor of `renderScriptQuizPlay`.
+- [x] 🟠 **Video element pool** — ✅ shipped (SW v1109). `renderScriptQuizPlay` now reuses the previous render's signal `<video>` decoder elements (count-guarded positional reuse), swapping `src` only when it changes: same-question re-render keeps the clip playing; next question reuses the element instead of create/destroy churn. Generalizes the v1103 same-question preservation. — `js/script-quiz.js`
 - [ ] 🟢 **Poster frames on player videos** — capture a first-frame at publish so clips show an image instantly instead of black. Needs first-frame capture in the upload pipeline. (Note: `preload="metadata"` already shows a first frame on the gated signal grid.)
 - [ ] 🟢 **SW-cache watched clips (offline replay)** — online replay is ALREADY fast via HTTP `Cache-Control: max-age=86400`; the SW cache would only add offline. Range/206 semantics make it fiddly. Low marginal value.
 
