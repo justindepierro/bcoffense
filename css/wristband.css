@@ -3387,3 +3387,22 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
     display: none !important;
   }
 }
+
+/* ── Laptop density tier: tighten the Wristband header + library on smaller
+   desktops (13" MacBook Air). The printed card keeps its exact size. Large
+   monitors above 1700px are untouched. ── */
+@media (min-width: 769px) and (max-width: 1700px) {
+  body:not(.is-mobile-screen) #wristband .wb-page-header {
+    margin-bottom: 5px;
+  }
+  body:not(.is-mobile-screen) #wristband .wb-page-header h2 {
+    font-size: var(--font-size-md);
+  }
+  body:not(.is-mobile-screen) #wristband .wristband-container {
+    gap: 10px;
+  }
+  body:not(.is-mobile-screen) #wristband .wristband-plays {
+    padding: 8px 10px;
+  }
+}
+

@@ -3887,6 +3887,20 @@ body.is-mobile-screen[data-auth-role="player"][data-active-tab="playbook"] .page
   min-width: 0;
 }
 
+/* Laptop density: tighten the shared page header on smaller desktops (13"
+   MacBook Air) across every tab that uses it (Opponent Scout, Signals,
+   Dashboard, etc.). Pages with their own #id header rules (Script, Wristband)
+   keep those. Large monitors above 1700px are untouched. */
+@media (min-width: 769px) and (max-width: 1700px) {
+  body:not(.is-mobile-screen) .page-header-surface {
+    gap: 5px;
+    padding: 5px 10px;
+  }
+  body:not(.is-mobile-screen) .page-header-row {
+    gap: 8px;
+  }
+}
+
 .app-workspace-grid {
   display: grid;
   min-width: 0;
