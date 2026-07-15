@@ -811,7 +811,7 @@ function renderCallSheet() {
   let html = "";
   if (categories.length === 0) {
     html += `
-      <div class="callsheet-empty-state">
+      <div class="callsheet-empty-state empty-state empty-state--compact">
         <strong>No call sheet categories found.</strong>
         <span>Reset the layout to restore the default front and back boards.</span>
         <button class="btn btn-sm btn-primary" data-action="resetCategoryOrder">Reset Layout</button>

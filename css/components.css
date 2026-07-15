@@ -3804,9 +3804,16 @@ body.is-mobile-screen[data-auth-role="player"][data-active-tab="playbook"] .page
 
 /* ============ Reusable Empty State ============ */
 .empty-state {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: var(--space-sm);
   text-align: center;
   padding: 40px 20px;
-  color: var(--color-text-placeholder);
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border-med);
+  border-radius: var(--radius-md);
 }
 .empty-state--bordered {
   border: 2px dashed var(--color-border);
@@ -3815,6 +3822,10 @@ body.is-mobile-screen[data-auth-role="player"][data-active-tab="playbook"] .page
 
 .empty-state--spaced {
   margin-top: var(--space-sm);
+}
+.empty-state--compact {
+  min-height: 0;
+  padding: var(--space-lg) var(--space-md);
 }
 .empty-state__icon {
   font-size: var(--font-size-4xl);
@@ -3835,6 +3846,7 @@ body.is-mobile-screen[data-auth-role="player"][data-active-tab="playbook"] .page
   font-size: var(--font-size-sm);
   color: var(--color-text-placeholder);
 }
+.empty-state > .btn { margin-top: var(--space-xs); }
 .empty-state a {
   color: var(--color-primary);
   text-decoration: underline;

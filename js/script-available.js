@@ -448,7 +448,7 @@ function renderAvailablePlays() {
       document.getElementById("activeFilterCount")?.textContent || "0 active";
     const hasSearch = Boolean(search);
     container.innerHTML = `
-      <div class="avail-empty-state">
+      <div class="avail-empty-state empty-state empty-state--compact">
         <span class="avail-empty-icon">🔍</span>
         <p class="avail-empty-msg">No plays match the current filters.</p>
         <p class="avail-empty-hint">${activeFilters}${hasSearch ? " • search active" : ""}</p>
