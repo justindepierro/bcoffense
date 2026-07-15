@@ -17,6 +17,27 @@
 }
 body.shell-phone .app-command-toolbar .btn { min-height: 44px; }
 
+/* Shared filter trigger and popover surface. Menus can retain their own
+   content/layout while inheriting one predictable elevation and focus state. */
+.app-control-trigger {
+  min-height: 40px;
+  border-color: var(--color-border-input);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+}
+.app-control-trigger:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
+.app-control-menu {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+body.shell-phone .app-control-trigger { min-height: 44px; }
+
 /* ============ Custom Modal System ============ */
 .custom-modal-overlay {
   position: fixed;

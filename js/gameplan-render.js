@@ -81,7 +81,7 @@ function _gpRenderMultiFilterDropdown(field, label, values) {
   const countText = selected.length ? `${selected.length}` : "multi";
   return `
     <div class="gp-multi-filter ${isOpen ? "is-open" : ""}">
-      <button class="gp-multi-filter-btn" type="button"
+      <button class="gp-multi-filter-btn app-control-trigger" type="button"
         data-action="toggleGamePlanMultiFilterMenu" data-arg="${escapeHtml(field)}"
         title="Choose one or more ${escapeHtml(label.toLowerCase())}"
         aria-expanded="${isOpen ? "true" : "false"}">
@@ -89,7 +89,7 @@ function _gpRenderMultiFilterDropdown(field, label, values) {
         <span class="gp-multi-filter-count">${escapeHtml(countText)}</span>
       </button>
       ${isOpen ? `
-        <div class="gp-multi-filter-menu">
+        <div class="gp-multi-filter-menu app-control-menu">
           <div class="gp-multi-filter-menu-head">
             <span>${escapeHtml(label)}</span>
             <button class="gp-multi-filter-clear" type="button"
