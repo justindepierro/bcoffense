@@ -2032,6 +2032,23 @@ body.is-short-screen .auth-login-overlay--mobile .auth-login-player-shortcut,
   }
 }
 
+/* ── Chip / pill / toggle standardization ──
+   Same 44px-touch-target problem lived on the chip and toggle components across
+   pages, making them look oversized on desktop. Normalize them to one compact
+   scale so chips match everywhere. Mobile keeps the larger tap target. */
+@media (min-width: 769px) and (max-width: 1700px) {
+  body:not(.is-mobile-screen) .gp-jump-pill,
+  body:not(.is-mobile-screen) .gp-chip,
+  body:not(.is-mobile-screen) .gp-matchup-chip,
+  body:not(.is-mobile-screen) .cs-toggle,
+  body:not(.is-mobile-screen) .wb-library-chip {
+    min-height: 26px;
+    min-width: 0;
+    padding: 3px 9px;
+    font-size: var(--font-size-xs);
+  }
+}
+
 /* ============ Unified Badge System ============ */
 .badge {
   display: inline-flex;
