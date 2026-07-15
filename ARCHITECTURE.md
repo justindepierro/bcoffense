@@ -31,9 +31,10 @@ Primary runtime layers:
 - `js/script-render.js` owns Practice Script rendering surfaces.
 - `js/script-quiz-state.js` owns the Quiz runtime state and immutable
   configuration, loaded immediately before the Quiz runtime.
-- `js/script-quiz.js` owns the quiz engine, quiz hub, signal games, player
-  quiz attempts, and coach quiz setup. Future splits must preserve that load
-  order and delegated public actions.
+- `js/script-quiz.js` owns the quiz engine, quiz hub, signal games, and coach
+  setup UI. `js/script-quiz-progress.js` owns player/coach attempt summaries,
+  weak-area aggregation, and leaderboard data. Preserve this load order and
+  delegated public actions when splitting further.
 - `js/workspace-sync.js` owns the shared visible save/publish queue.
 - `js/cloud-sync.js` owns team workspace publish/update, activity log, recovery
   sync, and player readiness checks.
@@ -257,11 +258,13 @@ migration explicitly changes the media domain.
 ## Quiz Architecture
 
 The quiz engine lives in `js/script-quiz.js`, loaded immediately after
-`js/script-render.js`. It owns:
+`js/script-render.js`. Its progress data layer loads immediately afterward in
+`js/script-quiz-progress.js`. Together they own:
 
 - Quiz hub and mode cards.
 - Coach quiz setup, source readiness, and source preview.
-- Quiz settings, source availability, attempts, rewards, and weak areas.
+- Quiz settings and source availability; progress owns attempts, rewards,
+  leaderboard summaries, and weak areas.
 - Question generation and answer feedback.
 - Signal Sprint, 6 Seconds of Battle, Heat Check, and Full Play Call.
 - Diagram prompt rendering and signal video prompt rendering.
