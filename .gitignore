@@ -8,5 +8,6 @@
 tests/.env.test
 tests/test-results/
 tests/playwright-report/
+tests/screenshots/
 tests/node_modules/
 node_modules/
