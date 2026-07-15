@@ -32,9 +32,10 @@ Primary runtime layers:
 - `js/script-quiz-state.js` owns the Quiz runtime state and immutable
   configuration, loaded immediately before the Quiz runtime.
 - `js/script-quiz.js` owns the quiz engine, quiz hub, signal games, and coach
-  setup UI. `js/script-quiz-progress.js` owns player/coach attempt summaries,
-  weak-area aggregation, and leaderboard data. Preserve this load order and
-  delegated public actions when splitting further.
+  setup UI. `js/script-quiz-progress.js` owns player/coach attempt summaries
+  and weak-area aggregation; `js/script-quiz-leaderboard.js` owns reusable
+  leaderboard-list presentation. Preserve this load order and delegated public
+  actions when splitting further.
 - `js/workspace-sync.js` owns the shared visible save/publish queue.
 - `js/cloud-sync.js` owns team workspace publish/update, activity log, recovery
   sync, and player readiness checks.
