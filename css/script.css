@@ -3465,6 +3465,11 @@ body[data-auth-role="player"]
    the header, stats, toolbar, panels, and script rows so more plays and
    controls fit on screen at once. */
 @media (min-width: 769px) and (max-width: 1700px) {
+  /* Reclaim the panel's outer margin so the workspace starts higher and the
+     script container reaches nearly to the bottom of the screen. */
+  body:not(.is-mobile-screen) #script.panel.active {
+    --script-panel-margin-block: 6px;
+  }
   /* Header — collapse to a genuinely slim single bar. */
   body:not(.is-mobile-screen) #script .script-header-panel {
     padding: 3px 8px;

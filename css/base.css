@@ -477,28 +477,28 @@ textarea:focus {
    which have their own sizing. */
 @media (min-width: 769px) and (max-width: 1700px) {
   :root:not(.is-mobile-screen) {
-    --font-size-micro: 7px;
-    --font-size-3xs: 8px;
-    --font-size-2xs: 9px;
-    --font-size-xs: 10px;
-    --font-size-xs2: 11px;
-    --font-size-sm: 12px;
-    --font-size-base: 13px;
-    --font-size-md: 14px;
-    --font-size-lg: 16px;
-    --font-size-xl: 17px;
-    --font-size-2xl: 21px;
-    --font-size-3xl: 24px;
-    --font-size-4xl: 28px;
-    --font-size-5xl: 40px;
-    --font-size-h1: 21px;
-    --font-size-h2: 16px;
-    --font-size-h3: 14px;
+    --font-size-micro: 6px;
+    --font-size-3xs: 7px;
+    --font-size-2xs: 8px;
+    --font-size-xs: 9px;
+    --font-size-xs2: 10px;
+    --font-size-sm: 11px;
+    --font-size-base: 12px;
+    --font-size-md: 13px;
+    --font-size-lg: 15px;
+    --font-size-xl: 16px;
+    --font-size-2xl: 19px;
+    --font-size-3xl: 22px;
+    --font-size-4xl: 26px;
+    --font-size-5xl: 36px;
+    --font-size-h1: 19px;
+    --font-size-h2: 15px;
+    --font-size-h3: 13px;
 
     --space-xs: 3px;
-    --space-sm: 6px;
-    --space-md: 11px;
-    --space-lg: 17px;
-    --space-xl: 22px;
+    --space-sm: 5px;
+    --space-md: 9px;
+    --space-lg: 14px;
+    --space-xl: 18px;
   }
 }
