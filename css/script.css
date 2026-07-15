@@ -3442,6 +3442,21 @@ body[data-auth-role="player"]
     border-radius: 0;
     gap: 6px;
   }
+  /* Keep Actions / Save / Quiz on ONE row — never stack them vertically. */
+  body:not(.is-mobile-screen) #script .script-workbench-primary-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    grid-template-columns: none;
+    width: auto;
+    gap: 5px;
+  }
+  body:not(.is-mobile-screen) #script .script-workbench-primary-actions .btn {
+    width: auto;
+    min-width: 0;
+    min-height: 30px;
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
 }
 
 /* ── Laptop density tier ──────────────────────────────────────────────
@@ -3449,7 +3464,7 @@ body[data-auth-role="player"]
    touching large monitors, which stay above the 1600px cutoff. Tightens
    the header, stats, toolbar, panels, and script rows so more plays and
    controls fit on screen at once. */
-@media (min-width: 769px) and (max-width: 1600px) {
+@media (min-width: 769px) and (max-width: 1700px) {
   /* Header — collapse to a genuinely slim single bar. */
   body:not(.is-mobile-screen) #script .script-header-panel {
     padding: 3px 8px;
