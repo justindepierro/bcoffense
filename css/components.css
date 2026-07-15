@@ -2010,6 +2010,28 @@ body.is-short-screen .auth-login-overlay--mobile .auth-login-player-shortcut,
   font-weight: 500;
 }
 
+/* ── Component standardization: consistent, compact button sizing on desktop ──
+   Every page used to override the shared .btn min-height (44px touch target),
+   which is why buttons looked mismatched. Standardize it once here so all pages
+   match. Mobile/touch keeps the 44px target; 27"+ monitors (above 1700px) keep
+   the roomier base sizing. */
+@media (min-width: 769px) and (max-width: 1700px) {
+  body:not(.is-mobile-screen) .btn {
+    min-height: 32px;
+    padding: 5px 12px;
+  }
+  body:not(.is-mobile-screen) .btn-sm {
+    min-height: 30px;
+    padding: 4px 10px;
+  }
+  body:not(.is-mobile-screen) .btn-xs,
+  body:not(.is-mobile-screen) .btn-mini {
+    min-height: 26px;
+    min-width: 0;
+    padding: 3px 8px;
+  }
+}
+
 /* ============ Unified Badge System ============ */
 .badge {
   display: inline-flex;
