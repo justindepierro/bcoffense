@@ -444,6 +444,9 @@
         </div>
         <div class="custom-modal-actions">
           <button type="button" class="btn btn-sm" data-action="openMediaInventoryReport">Refresh</button>
+          ${(typeof canEditUser === "function" && canEditUser())
+            ? `<button type="button" class="btn btn-sm btn-outline" id="miOptimizeClipsBtn" data-action="optimizeAllClips" title="Re-encode older clips (playbook + signals) to a smaller, faster size for player phones">Optimize Clips</button>`
+            : ""}
           <button type="button" class="btn btn-sm" data-action="closeMediaInventoryReport">Done</button>
         </div>
       </div>`;
@@ -463,6 +466,60 @@
 
   window.closeMediaInventoryReport = function () {
     document.getElementById("mediaInventoryOverlay")?.remove();
+  };
+
+  // Admin-only global clip optimizer, invoked from the Media Inventory report.
+  // Re-encodes every stored clip (playbook + signals) through the current
+  // downscale + bitrate caps, skipping clips that are already small.
+  window.optimizeAllClips = async function () {
+    if (typeof canEditUser === "function" && !canEditUser()) return;
+    const api = window.playClips;
+    if (!api || typeof api.recompressAllClips !== "function") {
+      if (typeof showToast === "function") {
+        showToast("Clip tools are unavailable right now.", { type: "error" });
+      }
+      return;
+    }
+    const proceed = typeof showConfirm === "function"
+      ? await showConfirm(
+          "Optimize every stored clip (playbook + signals)? Each clip is re-encoded in this tab in " +
+            "real time, so a large library can take several minutes. Clips that are already small are " +
+            "skipped automatically — keep this tab open until it finishes.",
+          { title: "Optimize All Clips", icon: "🎬", confirmText: "Start", cancelText: "Not now" },
+        )
+      : true;
+    if (!proceed) return;
+    const btn = document.getElementById("miOptimizeClipsBtn");
+    const setBtn = (text, disabled) => {
+      if (!btn) return;
+      btn.textContent = text;
+      btn.disabled = Boolean(disabled);
+    };
+    setBtn("Preparing…", true);
+    let result;
+    try {
+      result = await api.recompressAllClips({
+        kind: "all",
+        onProgress: (p) => setBtn(`Optimizing ${p.processedSigs}/${p.totalSigs}…`, true),
+      });
+    } catch (err) {
+      setBtn("Optimize Clips", false);
+      if (typeof showToast === "function") {
+        showToast(err?.message || "Could not optimize clips.", { type: "error" });
+      }
+      return;
+    }
+    setBtn("Optimize Clips", false);
+    const savedMb = (result.bytesSaved / (1024 * 1024)).toFixed(1);
+    const summary = result.recompressed
+      ? `Optimized ${result.recompressed} clip${result.recompressed === 1 ? "" : "s"} and saved about ${savedMb} MB. ${result.skipped} already small, ${result.failed} failed.`
+      : `Nothing to shrink — ${result.skipped} clip${result.skipped === 1 ? " was" : "s were"} already small, ${result.failed} failed.`;
+    if (typeof showModal === "function") {
+      showModal(summary, { title: "Clips Optimized", icon: "✅" });
+    }
+    if (typeof window.openMediaInventoryReport === "function") {
+      window.openMediaInventoryReport();
+    }
   };
 
   window.buildMediaInventoryReport = buildMediaInventoryReport;

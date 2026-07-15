@@ -387,6 +387,7 @@ window.openPublishMediaModal
 window.openScriptClipViewer
 window.openScriptSignalSelector
 window.openSignalSelectorForPlay
+window.optimizeAllClips
 window.perfMonitor
 window.playClips
 window.playerNotificationState

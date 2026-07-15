@@ -1031,7 +1031,7 @@ async function deleteSignalClip(clipId) {
 // replaces each clip in place via the signals replace-only manifest.
 async function recompressSignalClips() {
   if (!_sigCanManage()) return;
-  if (!window.playClips || typeof window.playClips.recompressClipForSig !== "function") {
+  if (!window.playClips || typeof window.playClips.recompressAllClips !== "function") {
     showToast("Clip tools are unavailable right now.", { type: "error" });
     return;
   }
@@ -1057,45 +1057,25 @@ async function recompressSignalClips() {
     btn.textContent = text;
     btn.disabled = Boolean(disabled);
   };
-  setBtn(`Optimizing 0/${records.length}…`, true);
+  setBtn("Optimizing…", true);
 
-  let recompressed = 0;
-  let skipped = 0;
-  let failed = 0;
-  let bytesSaved = 0;
-  let processed = 0;
-  for (const record of records) {
-    const sig = _sigClipKey(record.componentType, record.compareKey);
-    let clips = [];
-    try {
-      clips = await window.playClips.listForSig(sig, { force: true });
-    } catch (_err) {
-      clips = [];
-    }
-    for (const clip of clips) {
-      try {
-        const result = await window.playClips.recompressClipForSig(sig, clip, {
-          publishType: "signals",
-        });
-        if (result?.status === "recompressed") {
-          recompressed += 1;
-          bytesSaved += Math.max(0, (result.originalSize || 0) - (result.newSize || 0));
-        } else {
-          skipped += 1;
-        }
-      } catch (_err) {
-        failed += 1;
-      }
-    }
-    processed += 1;
-    setBtn(`Optimizing ${processed}/${records.length}…`, true);
+  let result;
+  try {
+    result = await window.playClips.recompressAllClips({
+      kind: "signals",
+      onProgress: (p) => setBtn(`Optimizing ${p.processedSigs}/${p.totalSigs}…`, true),
+    });
+  } catch (err) {
+    setBtn("Optimize Clips", false);
+    showToast(err?.message || "Could not optimize clips.", { type: "error", duration: 3500 });
+    return;
   }
 
   setBtn("Optimize Clips", false);
-  const savedMb = (bytesSaved / (1024 * 1024)).toFixed(1);
-  const summary = recompressed
-    ? `Optimized ${recompressed} clip${recompressed === 1 ? "" : "s"} and saved about ${savedMb} MB. ${skipped} already small, ${failed} failed.`
-    : `Nothing to shrink — ${skipped} clip${skipped === 1 ? " was" : "s were"} already small, ${failed} failed.`;
+  const savedMb = (result.bytesSaved / (1024 * 1024)).toFixed(1);
+  const summary = result.recompressed
+    ? `Optimized ${result.recompressed} clip${result.recompressed === 1 ? "" : "s"} and saved about ${savedMb} MB. ${result.skipped} already small, ${result.failed} failed.`
+    : `Nothing to shrink — ${result.skipped} clip${result.skipped === 1 ? " was" : "s were"} already small, ${result.failed} failed.`;
   showModal(summary, { title: "Clips Optimized", icon: "✅" });
   renderSignals();
 }

@@ -726,17 +726,94 @@
       uploadDuration: targetDuration,
       uploadType: (uploadFile.type || sourceType).toLowerCase(),
     };
-    const result = await uploadPreparedForSig(sig, prepared, clip.label || "", {
-      replaceExisting: true,
-      skipExistingCheck: true,
-      publishType: opts.publishType || (isReplaceOnlySig(sig) ? "signals" : "clips"),
-    });
-    // Non-replace-only sigs (play clips) append a new clip, so drop the old one.
-    const newId = result?.clip?.id;
-    if (!isReplaceOnlySig(sig) && newId && newId !== clip.id) {
-      await removeForSig(sig, clip.id, { publishType: opts.publishType || "clips" }).catch(() => {});
+    if (isReplaceOnlySig(sig)) {
+      // Signal clips replace in place on POST — a single, atomic swap.
+      await uploadPreparedForSig(sig, prepared, clip.label || "", {
+        replaceExisting: true,
+        skipExistingCheck: true,
+        publishType: opts.publishType || "signals",
+      });
+    } else {
+      // Play clips APPEND on POST, and a play may already be at the clip cap, so
+      // delete the old clip first to make room, then upload the smaller one. If
+      // the replacement upload fails, roll back by re-uploading the original.
+      await removeForSig(sig, clip.id, { publishType: opts.publishType || "clips" });
+      try {
+        await uploadPreparedForSig(sig, prepared, clip.label || "", {
+          replaceExisting: true,
+          skipExistingCheck: true,
+          publishType: opts.publishType || "clips",
+        });
+      } catch (uploadErr) {
+        const originalFile = new File([blob], `clip-${clip.id}.${ext}`, { type: sourceType });
+        await uploadPreparedForSig(sig, {
+          uploadFile: originalFile,
+          duration: targetDuration,
+          uploadDuration: targetDuration,
+          uploadType: sourceType,
+        }, clip.label || "", {
+          replaceExisting: true,
+          skipExistingCheck: true,
+          publishType: opts.publishType || "clips",
+        }).catch(() => {});
+        throw uploadErr;
+      }
     }
     return { status: "recompressed", originalSize, newSize, longEdge };
+  }
+
+  // Batch pass: re-compress every stored clip of a given kind. Enumerates the
+  // clip index (all sigs that have clips), then re-compresses each clip in
+  // place. kind: "signals" (signals/* sigs), "playbook" (play clips), or "all".
+  // Reports running totals via opts.onProgress and returns the final tally.
+  async function recompressAllClips(opts = {}) {
+    if (!canManage()) throw new Error("Only admin or coach can re-compress clips.");
+    const kind = String(opts.kind || "all");
+    const onProgress = typeof opts.onProgress === "function" ? opts.onProgress : null;
+    const force = opts.force === true;
+    await loadIndex(true);
+    const allSigs = _indexSet ? [..._indexSet] : [];
+    const sigs = allSigs.filter((sig) => {
+      const isSignal = isReplaceOnlySig(sig);
+      if (kind === "signals") return isSignal;
+      if (kind === "playbook") return !isSignal;
+      return true;
+    });
+    const totals = {
+      totalSigs: sigs.length,
+      processedSigs: 0,
+      recompressed: 0,
+      skipped: 0,
+      failed: 0,
+      bytesSaved: 0,
+    };
+    for (const sig of sigs) {
+      let clips = [];
+      try {
+        clips = await listForSig(sig, { force: true });
+      } catch (_err) {
+        clips = [];
+      }
+      for (const clip of clips) {
+        try {
+          const result = await recompressClipForSig(sig, clip, {
+            force,
+            publishType: isReplaceOnlySig(sig) ? "signals" : "clips",
+          });
+          if (result?.status === "recompressed") {
+            totals.recompressed += 1;
+            totals.bytesSaved += Math.max(0, (result.originalSize || 0) - (result.newSize || 0));
+          } else {
+            totals.skipped += 1;
+          }
+        } catch (_err) {
+          totals.failed += 1;
+        }
+      }
+      totals.processedSigs += 1;
+      if (onProgress) onProgress({ ...totals });
+    }
+    return totals;
   }
 
   async function removeForSig(sig, id, opts = {}) {
@@ -1022,6 +1099,7 @@
     removeForSig,
     remove,
     recompressClipForSig,
+    recompressAllClips,
     loadIndex,
     has,
     hasForPlay,
