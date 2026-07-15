@@ -4683,3 +4683,26 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
     opacity: 0.85;
   }
 }
+
+/* ── Laptop density tier: tighten the Call Sheet toolbar/chrome on smaller
+   desktops (13" MacBook Air). The sheet grid is print-mirrored, so only the
+   editing chrome is compressed — the printable sheet keeps its fidelity.
+   Large monitors above 1700px are untouched. ── */
+@media (min-width: 769px) and (max-width: 1700px) {
+  body:not(.is-mobile-screen) #callsheet .cs-toolbar {
+    padding: 4px 8px;
+    margin-bottom: 6px;
+  }
+  body:not(.is-mobile-screen) #callsheet .cs-toolbar-left,
+  body:not(.is-mobile-screen) #callsheet .cs-toolbar-right {
+    gap: 5px;
+  }
+  body:not(.is-mobile-screen) #callsheet .cs-toolbar .btn {
+    min-height: 30px;
+    padding: 3px 9px;
+  }
+  body:not(.is-mobile-screen) #callsheet .cs-title {
+    font-size: var(--font-size-md);
+  }
+}
+
