@@ -51,6 +51,10 @@ const SIGNAL_QUIZ_PRELOAD_WINDOW = 3;
 // before auto-advancing to the next question. Wrong answers never auto-advance
 // so the player can study the miss.
 const QUIZ_CORRECT_AUTO_ADVANCE_MS = 950;
+// How many of the most-plausible (similarity-ranked) distractors to keep as the
+// candidate window before randomly choosing 3. Small enough that wrong answers
+// stay believable look-alikes, large enough that repeated quizzes still vary.
+const QUIZ_DISTRACTOR_WINDOW = 8;
 const QUIZ_DIAGRAM_PRELOAD_WINDOW = 4;
 const QUIZ_MEDIA_PREP_TIMEOUT_MS = 650;
 const SIGNAL_GAME_CATEGORY_OPTIONS = [
@@ -5935,6 +5939,29 @@ async function _buildSignalFullCallItems(settings = _getSignalGameSettings()) {
   return items;
 }
 
+// General distractor plausibility score. Higher = the candidate play looks more
+// like the correct play (same formation/personnel/type family) so it makes a
+// believable-but-wrong multiple choice answer. Used to rank recognition-style
+// question distractors ahead of random plays.
+function _quizPlayDistractorScore(correctPlay, candidatePlay) {
+  if (!correctPlay || !candidatePlay) return 0;
+  const same = (field) => {
+    const value = _quizCleanText(correctPlay[field]).toLowerCase();
+    return value && value === _quizCleanText(candidatePlay[field]).toLowerCase();
+  };
+  let score = 0;
+  if (same("type")) score += 3;
+  if (same("personnel")) score += 2;
+  if (same("formation")) score += 4;
+  if (same("formTag1")) score += 1;
+  if (same("basePlay")) score += 2;
+  if (same("protection")) score += 1;
+  if (same("preferredDown")) score += 1;
+  if (same("preferredDistance")) score += 1;
+  if (same("preferredFieldPosition")) score += 1;
+  return score;
+}
+
 function _signalFullCallDistractorScore(correctPlay, candidatePlay) {
   if (!correctPlay || !candidatePlay) return 0;
   const same = (field) => _quizCleanText(correctPlay[field]).toLowerCase() &&
@@ -5996,7 +6023,11 @@ function _quizQuestionDistractorItems(item, question) {
   const source = _quizPlays.filter((candidate) => candidate && candidate !== item && candidate?.play);
   if (question?.type === "formation_to_play") {
     const correctFormation = _quizFormationLabel(item?.play).toLowerCase();
-    return source.filter((candidate) => _quizFormationLabel(candidate.play).toLowerCase() !== correctFormation);
+    return source
+      .filter((candidate) => _quizFormationLabel(candidate.play).toLowerCase() !== correctFormation)
+      .sort((a, b) =>
+        _quizPlayDistractorScore(item.play, b.play) -
+        _quizPlayDistractorScore(item.play, a.play));
   }
   if (question?.type === "signal") {
     const correctLabel = _quizQuestionChoiceLabel(item, question).toLowerCase();
@@ -6039,7 +6070,19 @@ function _quizQuestionDistractorItems(item, question) {
         _signalFullCallDistractorScore(item.play, a.play)
       ));
   }
-  return source;
+  // "What type of play is this?" wants a spread of DIFFERENT types as wrong
+  // answers, so leave the pool unranked (dedup keeps them distinct).
+  if (question?.type === "play_type") {
+    return source;
+  }
+  // Recognition / rule questions (call, diagram, play_from_rule,
+  // responsibility): rank believable look-alikes first so wrong answers come
+  // from the same formation/personnel/type family instead of random plays.
+  return source
+    .slice()
+    .sort((a, b) =>
+      _quizPlayDistractorScore(item.play, b.play) -
+      _quizPlayDistractorScore(item.play, a.play));
 }
 
 function _quizChoiceQuality(label, questionType = "call") {
@@ -6261,7 +6304,11 @@ function _buildQuizChoices(item) {
     questionType: question.type,
   };
   const labels = new Set([correctLabel.toLowerCase()]);
-  const pool = _quizShuffle(_quizQuestionDistractorItems(item, question))
+  // Preserve the similarity ranking from _quizQuestionDistractorItems (most
+  // believable look-alikes first) instead of shuffling the whole pool. Take a
+  // plausibility window, then shuffle within it so wrong answers stay
+  // convincing while repeated quizzes still vary which ones appear.
+  const pool = _quizQuestionDistractorItems(item, question)
     .map((candidate) => {
       const label = _quizQuestionChoiceLabel(candidate, question);
       return {
@@ -6280,7 +6327,8 @@ function _buildQuizChoices(item) {
       return true;
     });
 
-  const choices = _quizShuffle([correct, ...pool.slice(0, 3)]).map((choice, idx) => ({
+  const distractors = _quizShuffle(pool.slice(0, QUIZ_DISTRACTOR_WINDOW)).slice(0, 3);
+  const choices = _quizShuffle([correct, ...distractors]).map((choice, idx) => ({
     ...choice,
     color: SCRIPT_QUIZ_CHOICE_COLORS[idx % SCRIPT_QUIZ_CHOICE_COLORS.length],
   }));

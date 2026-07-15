@@ -1637,36 +1637,100 @@
       return null;
     }
     const background = _smartDiagramBackgroundColor(pixels, sampleWidth, sampleHeight);
+    // Foreground (ink) test: opaque enough AND far enough from the paper color.
+    const isInk = (x, y) => {
+      const index = (y * sampleWidth + x) * 4;
+      if (pixels[index + 3] < 24) return false;
+      const distance = Math.max(
+        Math.abs(pixels[index] - background.red),
+        Math.abs(pixels[index + 1] - background.green),
+        Math.abs(pixels[index + 2] - background.blue),
+      );
+      return distance >= 28;
+    };
     const rowCounts = new Uint32Array(sampleHeight);
-    const columnCounts = new Uint32Array(sampleWidth);
     for (let y = 0; y < sampleHeight; y++) {
+      let count = 0;
       for (let x = 0; x < sampleWidth; x++) {
-        const index = (y * sampleWidth + x) * 4;
-        const alpha = pixels[index + 3];
-        if (alpha < 24) continue;
-        const distance = Math.max(
-          Math.abs(pixels[index] - background.red),
-          Math.abs(pixels[index + 1] - background.green),
-          Math.abs(pixels[index + 2] - background.blue),
-        );
-        if (distance < 28) continue;
-        rowCounts[y] += 1;
-        columnCounts[x] += 1;
+        if (isInk(x, y)) count += 1;
       }
+      rowCounts[y] = count;
     }
     const minimumRowPixels = Math.max(3, Math.round(sampleWidth * 0.006));
-    const minimumColumnPixels = Math.max(3, Math.round(sampleHeight * 0.006));
-    const top = rowCounts.findIndex((count) => count >= minimumRowPixels);
-    let bottom = sampleHeight - 1;
-    while (bottom >= 0 && rowCounts[bottom] < minimumRowPixels) bottom -= 1;
+
+    // Split the ink into horizontal bands separated by whitespace gaps. Rows
+    // with only a tiny gap between them (a diagram's internal whitespace) merge
+    // into one band; a clear whitespace gap starts a new band. Player names and
+    // sheet titles sit in their own thin band at the extreme top or bottom.
+    const mergeGap = Math.max(2, Math.round(sampleHeight * 0.02));
+    const bands = [];
+    let bandStart = -1;
+    let gap = 0;
+    for (let y = 0; y < sampleHeight; y++) {
+      if (rowCounts[y] >= minimumRowPixels) {
+        if (bandStart < 0) bandStart = y;
+        gap = 0;
+      } else if (bandStart >= 0) {
+        gap += 1;
+        if (gap > mergeGap) {
+          bands.push({ start: bandStart, end: y - gap });
+          bandStart = -1;
+          gap = 0;
+        }
+      }
+    }
+    if (bandStart >= 0) bands.push({ start: bandStart, end: sampleHeight - 1 - gap });
+
+    const kept = bands.filter((band) => band.end >= band.start);
+    if (!kept.length) return null;
+    kept.forEach((band) => {
+      let ink = 0;
+      for (let y = band.start; y <= band.end; y++) ink += rowCounts[y];
+      band.ink = ink;
+      band.height = band.end - band.start + 1;
+    });
+    const primaryInk = Math.max(...kept.map((band) => band.ink));
+    // A text band (name/title) at the outer edge is short, low-ink relative to
+    // the play body, and separated by a clear whitespace gap. Trim up to two
+    // such bands from the top and from the bottom — never from the interior, so
+    // real play content (deep safeties, split receivers) is preserved.
+    const isTextEdgeBand = (band, gapToBody) =>
+      band.height <= sampleHeight * 0.14 &&
+      band.ink <= primaryInk * 0.22 &&
+      gapToBody >= sampleHeight * 0.03;
+    let topTrims = 2;
+    while (topTrims-- > 0 && kept.length > 1) {
+      if (isTextEdgeBand(kept[0], kept[1].start - kept[0].end)) kept.shift();
+      else break;
+    }
+    let bottomTrims = 2;
+    while (bottomTrims-- > 0 && kept.length > 1) {
+      const last = kept[kept.length - 1];
+      const prev = kept[kept.length - 2];
+      if (isTextEdgeBand(last, last.start - prev.end)) kept.pop();
+      else break;
+    }
+
+    const top = kept[0].start;
+    const bottom = kept[kept.length - 1].end;
+
+    // Horizontal bounds from ONLY the retained rows, so a wide name band can't
+    // widen the crop and the play stays centered.
+    const columnCounts = new Uint32Array(sampleWidth);
+    for (let y = top; y <= bottom; y++) {
+      for (let x = 0; x < sampleWidth; x++) {
+        if (isInk(x, y)) columnCounts[x] += 1;
+      }
+    }
+    const minimumColumnPixels = Math.max(3, Math.round((bottom - top + 1) * 0.006));
     const left = columnCounts.findIndex((count) => count >= minimumColumnPixels);
     let right = sampleWidth - 1;
     while (right >= 0 && columnCounts[right] < minimumColumnPixels) right -= 1;
     if (top < 0 || left < 0 || bottom <= top || right <= left) return null;
     const scaleX = sourceWidth / sampleWidth;
     const scaleY = sourceHeight / sampleHeight;
-    const paddingX = sourceWidth * 0.032;
-    const paddingY = sourceHeight * 0.032;
+    const paddingX = sourceWidth * 0.038;
+    const paddingY = sourceHeight * 0.038;
     const bounds = {
       x: Math.max(0, left * scaleX - paddingX),
       y: Math.max(0, top * scaleY - paddingY),
