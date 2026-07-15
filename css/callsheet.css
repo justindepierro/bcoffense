@@ -587,12 +587,12 @@ body.shell-phone #callsheet .cs-empty-cat {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(420px, max-content);
   align-items: center;
-  padding: 8px 12px;
-  background: var(--color-bg-light);
+  padding: var(--command-toolbar-padding, 8px 12px);
+  background: var(--command-toolbar-bg, var(--color-bg-light));
   border-radius: var(--radius-md);
   margin-bottom: 10px;
-  gap: 8px;
-  border: 1px solid var(--color-border-light);
+  gap: var(--command-toolbar-gap, 8px);
+  border: 1px solid var(--command-toolbar-border, var(--color-border-light));
   box-shadow: var(--shadow-xs);
   overflow: clip;
 }

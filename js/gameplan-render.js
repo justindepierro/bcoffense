@@ -232,7 +232,7 @@ function renderGamePlan() {
 
   const toolbarHtml = _gpFilters.showFilters ? `
     <div class="gp-filters-drawer" role="region" aria-label="Play filters">
-    <div class="gp-toolbar toolbar-surface toolbar-surface--compact">
+    <div class="gp-toolbar toolbar-surface toolbar-surface--compact app-command-toolbar">
       <input type="search" id="gpSearch" placeholder="Search plays…"
         value="${escapeHtml(_gpFilters.search || "")}"
         data-oninput="updateGamePlanFilter" data-arg="search" data-pass="value" />

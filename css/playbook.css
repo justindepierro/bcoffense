@@ -2357,7 +2357,7 @@ body.shell-phone .pb-action-sheet {
 }
 
 .pb-top-row.toolbar-surface {
-  background: var(--color-surface-raised);
+  background: var(--command-toolbar-bg, var(--color-surface-raised));
 }
 
 .pb-top-row .btn {

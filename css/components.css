@@ -1,6 +1,22 @@
 /* ============ Components: Modals, Buttons, Toast, Utilities ============ */
 /* Auto-split from styles.css */
 
+/* Shared coach-command toolbar contract. Feature modules retain their layout
+   grid, while these tokens keep the command surfaces visually related. */
+.app-command-toolbar {
+  --command-toolbar-gap: var(--space-sm);
+  --command-toolbar-padding: var(--space-sm) var(--space-md);
+  --command-toolbar-bg: var(--color-surface-raised);
+  --command-toolbar-border: var(--color-border-light);
+  --command-toolbar-radius: var(--radius-md);
+  --command-toolbar-shadow: var(--shadow-xs);
+}
+.app-command-toolbar .btn {
+  min-height: 40px;
+  line-height: 1.15;
+}
+body.shell-phone .app-command-toolbar .btn { min-height: 44px; }
+
 /* ============ Custom Modal System ============ */
 .custom-modal-overlay {
   position: fixed;

@@ -185,11 +185,11 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
+  gap: var(--command-toolbar-gap, var(--space-sm));
+  padding: var(--command-toolbar-padding, var(--space-sm) var(--space-md));
+  background: var(--command-toolbar-bg, var(--color-surface-raised));
+  border: 1px solid var(--command-toolbar-border, var(--color-border-light));
+  border-radius: var(--command-toolbar-radius, var(--radius-md));
   margin-bottom: var(--space-md);
   overflow: clip;
 }
@@ -3605,4 +3605,3 @@ body.gp-printing .gp-print-detail-val {
     padding: 4px 8px;
   }
 }
-
