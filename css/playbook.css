@@ -1957,6 +1957,13 @@ body.is-mobile-screen .pb-shortcuts-hint {
   flex: 1 1 auto;
 }
 
+/* The at-a-glance type-count chips (Total / Run / RPO / …) duplicate the
+   Filters drawer's type filters and cost a full, low-contrast row. Hide them on
+   desktop — type filtering lives in the drawer. */
+body:not(.is-mobile-screen) #playbook #statsBar {
+  display: none;
+}
+
 .pb-meta-bar .pb-readiness-panel {
   flex: 0 1 auto;
   margin: 0;
