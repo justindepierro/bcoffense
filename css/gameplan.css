@@ -3577,3 +3577,32 @@ body.gp-printing .gp-print-detail-val {
 .has-open-q .gp-disc-badge {
   background: var(--color-warning);
 }
+
+/* ── Laptop density tier: pack more of the Game Plan board onto smaller
+   desktops (13" MacBook Air) — tighter header/toolbar, shorter boxes, tighter
+   grid. Large monitors above 1700px are untouched. ── */
+@media (min-width: 769px) and (max-width: 1700px) {
+  body:not(.is-mobile-screen) #gameplan .gp-header {
+    padding: 6px 10px;
+    margin-bottom: 6px;
+  }
+  body:not(.is-mobile-screen) #gameplan .gp-toolbar {
+    padding: 4px 8px;
+    margin-bottom: 6px;
+  }
+  body:not(.is-mobile-screen) #gameplan .gp-header .btn,
+  body:not(.is-mobile-screen) #gameplan .gp-toolbar .btn {
+    min-height: 30px;
+    padding: 3px 9px;
+  }
+  body:not(.is-mobile-screen) #gameplan .gp-boxes {
+    gap: 6px;
+  }
+  body:not(.is-mobile-screen) #gameplan .gp-box {
+    min-height: 100px;
+  }
+  body:not(.is-mobile-screen) #gameplan .gp-box-header {
+    padding: 4px 8px;
+  }
+}
+
