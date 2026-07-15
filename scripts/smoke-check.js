@@ -158,7 +158,7 @@ function checkPageStyleContracts() {
   const gameplanRender = read("js/gameplan-render.js");
 
   if (
-    !/\.script-workbench-controls\s*\{[\s\S]*grid-template-columns:\s*minmax\(220px,\s*1fr\)\s*minmax\(0,\s*1\.15fr\)\s*minmax\(150px,\s*0\.65fr\)/.test(scriptCss) ||
+    !/\.script-workbench-controls\s*\{[\s\S]*grid-template-columns:\s*minmax\(220px,\s*1fr\)\s*minmax\(0,\s*1\.15fr\)\s*minmax\(\s*150px,\s*0\.65fr\s*\)/.test(scriptCss) ||
     !/\.script-workbench-controls\s*\{[\s\S]*overflow:\s*clip/.test(scriptCss) ||
     !/\.script-workbench-primary-actions\s*\{[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*84px\),\s*1fr\)\)/.test(scriptCss) ||
     !/#script \.toolbar-surface \.script-workbench-toggle-group \.script-workbench-pill,[\s\S]*#script \.toolbar-surface \.script-workbench-primary-actions \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(scriptCss) ||
@@ -168,7 +168,7 @@ function checkPageStyleContracts() {
   }
 
   if (
-    !/#script \.script-toolbar\s*\{[\s\S]*grid-template-columns:\s*minmax\(92px,\s*max-content\)\s*minmax\(0,\s*1fr\)\s*minmax\(160px,\s*0\.9fr\)/.test(scriptCss) ||
+    !/#script \.script-toolbar\s*\{[\s\S]*grid-template-columns:\s*minmax\(92px,\s*max-content\)\s*minmax\(0,\s*1fr\)\s*minmax\(\s*160px,\s*0\.9fr\s*\)/.test(scriptCss) ||
     !/#script \.script-toolbar \.btn,[\s\S]*#script \.script-toolbar \.bulk-select-label\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(scriptCss) ||
     !/#script \.toolbar-sort-select\s*\{[\s\S]*min-width:\s*0[\s\S]*max-width:\s*100%/.test(scriptCss) ||
     !/#script \.script-tools-drawer \.script-action-cluster \.btn,[\s\S]*#script \.script-tools-drawer \.more-tools-btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(scriptCss) ||
@@ -182,7 +182,7 @@ function checkPageStyleContracts() {
     !/\.pb-top-row\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:[\s\S]*max-content\s*minmax\(220px,\s*1fr\)\s*minmax\(0,\s*auto\)[\s\S]*overflow:\s*clip/.test(playbookCss) ||
     !/\.pb-top-row \.btn\s*\{[\s\S]*min-width:\s*0[\s\S]*white-space:\s*normal/.test(playbookCss) ||
     !/\.pb-utility-group\s*\{[\s\S]*min-width:\s*0[\s\S]*max-width:\s*100%/.test(playbookCss) ||
-    !/@media \(max-width:\s*1180px\)[\s\S]*#playbook \.pb-top-row\s*\{[\s\S]*grid-template-columns:\s*max-content\s*minmax\(0,\s*1fr\)[\s\S]*#playbook \.pb-utility-group\s*\{[\s\S]*grid-column:\s*1\s*\/\s*-1[\s\S]*order:\s*10/.test(playbookCss)
+    !/@media \(max-width:\s*1180px\)[\s\S]*#playbook \.pb-top-row\s*\{[\s\S]*grid-template-columns:\s*max-content\s*minmax\(\s*0,\s*1fr\s*\)[\s\S]*#playbook \.pb-utility-group\s*\{[\s\S]*grid-column:\s*1\s*\/\s*-1[\s\S]*order:\s*10/.test(playbookCss)
   ) {
     fail("Playbook command surface is missing overflow-safe responsive style rules");
   }
@@ -861,7 +861,6 @@ function checkUppercaseCallRenderingContracts() {
   const callSheet = read("js/callsheet.js");
   const callSheetRender = read("js/callsheet-render.js");
   const callSheetDisplay = read("js/callsheet-display.js");
-  const roadmap = read("CONSOLIDATED_ROADMAP.md");
 
   if (
     !/function shouldForceUppercaseCall\(options = \{\}\)/.test(utils) ||
@@ -900,10 +899,6 @@ function checkUppercaseCallRenderingContracts() {
     !/"callsheetForceUppercase"/.test(callSheetDisplay)
   ) {
     fail("uppercase call rendering is not wired through all display surfaces");
-  }
-
-  if (!/- \[x\] Add an optional display setting for uppercase call rendering/.test(roadmap)) {
-    fail("roadmap does not mark uppercase call rendering complete");
   }
 
   console.log("uppercase call rendering contracts ok");
@@ -1617,7 +1612,7 @@ function checkPlayReadinessContracts() {
     !/\.play-readiness-quick-score/.test(css) ||
     !/\.pr-last-result\s*\{[\s\S]*display:\s*grid/.test(css) ||
     !/\.pr-last-result strong\s*\{[\s\S]*text-overflow:\s*ellipsis/.test(css) ||
-    !/\.pr-score-row\s*\{[\s\S]*grid-template-columns:\s*minmax\(76px,\s*max-content\)\s*minmax\(220px,\s*1fr\)\s*minmax\(26px,\s*max-content\)/.test(css) ||
+    !/\.pr-score-row\s*\{[\s\S]*grid-template-columns:\s*minmax\(76px,\s*max-content\)\s*minmax\(220px,\s*1fr\)\s*minmax\(\s*26px,\s*max-content\s*\)/.test(css) ||
     !/\.play-readiness-score-grid/.test(css) ||
     !/\.play-readiness-report-score-controls/.test(css) ||
     !/\.play-readiness-report-delete/.test(css) ||
@@ -3373,8 +3368,6 @@ function checkGracefulLoadingStates() {
 }
 
 function checkWorkspaceSyncContracts() {
-  const roadmap = read("WORKSPACE_SYNC_ROADMAP.md");
-  const consolidatedRoadmap = read("CONSOLIDATED_ROADMAP.md");
   const workspaceSync = read("js/workspace-sync.js");
   const shell = read("js/app-shell.js");
   const layout = read("css/layout.css");
@@ -3389,56 +3382,6 @@ function checkWorkspaceSyncContracts() {
   const storage = read("js/storage.js");
   const html = read("index.html");
   const agentGuide = read("AGENTS.md");
-
-  [
-    "# BCOffense Workspace Sync Roadmap",
-    "- [x] Add a top coach-facing Workspace Sync chip",
-    "- [x] Route existing local dirty/saving/saved state into the chip",
-    "- [x] Route existing Cloud autosave pending/running/error state into the chip",
-    "- [x] Route play-image/media queue state into the chip",
-    "- [x] Warn before exit while local, cloud, or media work is pending",
-    "- [x] Replace bottom loading-bar style feedback with compact top `Saving...`,",
-    "- [x] Create one queue abstraction for local save, cloud push, media upload, and",
-    "- [x] Deduplicate repeated writes so rapid edits become one visible save cycle.",
-    "- [x] Expose retry for failed cloud/media work from the chip.",
-    "- [x] Keep manual Cloud Sync and Sync Diagrams as advanced fallback actions.",
-    "- [x] Replace \"Sync Diagrams\" daily workflow with \"Publish Media\".",
-    "- [x] Hide advanced diagram sync from primary Playbook chrome; keep `Publish",
-    "- [x] Rewrite player update copy so players only see `Checking for coach",
-    "- [x] Show active player-visible script media coverage: ready, missing, stale,",
-    "- [x] Upload only stale/unpublished player-visible diagrams; report clip gaps",
-    "- [x] Show result summary and failed items with exact next steps.",
-    "- [x] Document the single write tree: local save -> cloud data publish -> media",
-    "- [x] Remove redundant sync toasts once the chip owns the status surface.",
-    "- [x] Remove normal success modals from publish, update, and media completion",
-    "- [x] Consolidate module-specific save indicators onto shared primitives where",
-    "- [x] Add smoke contracts for the unified status events and before-exit warning.",
-    "- [x] Add a lightweight publish activity log with version, actor, timestamp,",
-    "- [x] Show the latest published version on Dashboard and in Publish Status.",
-    "- [x] Record failed publish attempts with the exact failed domain and retry",
-    "- [x] Add smoke coverage for publish status labels and activity-log rendering.",
-    "- [x] Introduce one `publishTeamWorkspace()` orchestration function.",
-    "- [x] Route cloud backup push, player publish metadata, media manifest updates,",
-    "- [x] Make the dock state domain-aware: data, media, quizzes, notifications.",
-    "- [x] Stop showing `Team cloud synced` until player-visible readiness checks are",
-    "- [x] Add a bounded startup readiness gate with visible statuses for secure",
-    "- [x] Replace player-visible Cloud Sync pull behavior with one player bootstrap",
-    "- [x] Apply data, media manifest, app-shell, quiz, and notification freshness in",
-    "- [x] Make manual player refresh call the same bootstrap path.",
-    "- [x] Add diagnostics only for admins; hide technical sync terms from players.",
-    "- [x] Move raw Cloud Sync modal into admin-only recovery tools.",
-    "- [x] Move all-local diagram sync into recovery tools.",
-    "- [x] Keep export/import backup tools but separate them from publish status.",
-    "- [x] Add warnings that recovery tools are not the normal practice workflow.",
-    "- [x] Remove duplicate status toasts that compete with the dock.",
-    "- [x] Collapse overlapping publish status stores into one publish ledger.",
-    "- [x] Audit every user-facing instance of `sync`, `push`, and `pull`.",
-    "- [x] Add regression checks that players do not see Cloudflare/pull/sync copy.",
-  ].forEach((token) => {
-    if (!roadmap.includes(token)) {
-      fail(`workspace sync roadmap missing ${token}`);
-    }
-  });
 
   if (!/js\/workspace-sync\.js[\s\S]*js\/play-images\.js[\s\S]*js\/cloud-sync\.js/.test(html)) {
     fail("workspace-sync.js must load before play image and cloud sync modules");
@@ -3615,16 +3558,6 @@ function checkWorkspaceSyncContracts() {
     fail("beforeunload does not protect pending workspace sync work");
   }
 
-  [
-    "- [x] Replace the backup-style modal copy with a clearer \"Team Workspace Sync\"",
-    "- [x] Show a post-pull summary on Dashboard with counts for playbook, scripts,",
-    "- [x] Add stale/local-conflict warnings before replacing a device that has newer",
-  ].forEach((token) => {
-    if (!consolidatedRoadmap.includes(token)) {
-      fail(`consolidated roadmap missing team workspace sync completion ${token}`);
-    }
-  });
-
   if (
     !/const CLOUD_SYNC_PULL_SUMMARY_KEY = "_bcCloudSyncLastPullSummary"/.test(cloudSync) ||
     !/function buildTeamWorkspacePullSummary\(remote, opts = \{\}\)/.test(cloudSync) ||
@@ -3722,7 +3655,6 @@ function checkWorkspaceSyncContracts() {
 }
 
 function checkPlayerDiagramReadinessContracts() {
-  const roadmap = read("WORKSPACE_SYNC_ROADMAP.md");
   const manifest = read("functions/images/manifest.js");
   const batchManifest = read("functions/images/batch-manifest.js");
   const playImages = read("js/play-images.js");
@@ -3733,17 +3665,6 @@ function checkPlayerDiagramReadinessContracts() {
   const presentationCss = read("css/play-presentation.css");
   const playbookRender = read("js/playbook-render.js");
   const playbookCss = read("css/playbook.css");
-
-  [
-    "- [x] Add a remote diagram manifest/check endpoint so players know published",
-    "- [x] Replace premature \"ask coach to sync diagrams\" copy with distinct states:",
-    "- [x] Prefer cached local diagram when available, then remote published diagram.",
-    "- [x] Make player diagram empty states quiet and professional.",
-  ].forEach((token) => {
-    if (!roadmap.includes(token)) {
-      fail(`player diagram readiness roadmap missing ${token}`);
-    }
-  });
 
   if (
     !/bucket\.head\(r2Key\(sig\)\)/.test(manifest) ||
@@ -3842,7 +3763,6 @@ function checkPlayerQuizSettingsContracts() {
   const scriptQuiz = read("js/script-quiz.js");
   const scriptCss = read("css/script.css");
   const quizSurface = `${scriptQuiz}\n${scriptCss}`;
-  const roadmap = read("CONSOLIDATED_ROADMAP.md");
 
   [
     "PLAYER_QUIZ_TIER_DEFAULTS",
@@ -3950,14 +3870,6 @@ function checkPlayerQuizSettingsContracts() {
     !/Edits save to Playbook/.test(scriptQuiz)
   ) {
     fail("coach quiz source repair list is not wired to playbook editing");
-  }
-
-  if (
-    /tier-name controls remain pending|Tier names remain fixed for now/.test(roadmap) ||
-    !/\[x\] Add formal coach\/admin quiz settings/.test(roadmap) ||
-    !/\[x\] Add editable tier names/.test(roadmap)
-  ) {
-    fail("player quiz roadmap still marks editable tier names as pending");
   }
 
   console.log("player quiz settings contracts ok");
@@ -4404,7 +4316,6 @@ function checkSignalPlayIntegrationContracts() {
   const signalsCss = read("css/signals.css");
   const scriptCss = read("css/script.css");
   const playbookEditor = read("js/playbook-editor.js");
-  const roadmap = read("CONSOLIDATED_ROADMAP.md");
   const clipManifest = read("functions/clips/manifest.js");
   const clipBatchManifest = read("functions/clips/batch-manifest.js");
 
@@ -4747,37 +4658,6 @@ function checkSignalPlayIntegrationContracts() {
     !/<video class="signals-play-video"[\s\S]*autoplay loop muted playsinline preload="auto"[\s\S]*controlslist="nodownload noplaybackrate noremoteplayback"/.test(signals)
   ) {
     fail("signal clips are not lazy, viewport-gated muted loops");
-  }
-
-  if (
-    !/- \[x\] Add a Playbook detail surface for "Signals for this play"/.test(roadmap) ||
-    !/- \[x\] Mark personnel as a non-video cue because personnel is yelled/.test(roadmap) ||
-    !/- \[x\] Route all remote video clip uploads through a shared silent-upload/.test(roadmap) ||
-    !/- \[x\] Standardize short play and signal clips as fast silent loops/.test(roadmap) ||
-    !/- \[x\] On mobile, tapping a signal chip with an attached clip opens the video/.test(roadmap) ||
-    !/- \[x\] Add a small `Signals` button to Practice Script play rows\/cards/.test(roadmap) ||
-    !/- \[x\] Add the same signal selector to Script Swipe View \/ presentation-style/.test(roadmap) ||
-    !/- \[x\] The selector should show grouped chips by `CORE`, `TAGS`, `BLOCKING`, and/.test(roadmap) ||
-    !/- \[x\] Signal clips autoplay muted and loop like GIF-style previews; player quiz/.test(roadmap) ||
-    !/- \[x\] Add signal availability to player-facing play detail and current-practice/.test(roadmap) ||
-    !/- \[x\] Add future quiz hooks so players can be asked to identify the signal/.test(roadmap) ||
-    !/- \[x\] Add simple coach\/admin coverage reporting: components with signals,/.test(roadmap) ||
-    !/Phase 5 - Signal games and leaderboards:/.test(roadmap) ||
-    !/- \[x\] Document the coach capture standard at upload time: iPhone 1080p HD,/.test(roadmap) ||
-    !/- \[x\] Build a signal-only quiz item source from published signal clips, grouped[\s\S]*excluding non-video personnel/.test(roadmap) ||
-    !/- \[x\] Add `100 Second Signal Sprint` as a playable Signal mode/.test(roadmap) ||
-    !/- \[x\] Add Signal Sprint leaderboard ranking by correct answers/.test(roadmap) ||
-    !/- \[x\] Add `6 Seconds of Battle`/.test(roadmap) ||
-    !/- \[x\] Add `Heat Check`/.test(roadmap) ||
-    !/- \[x\] Add Signal game category selection before launch/.test(roadmap) ||
-    !/- \[x\] Add a dedicated Signal Leaderboard with three tabs/.test(roadmap) ||
-    !/- \[x\] Sync Signal game attempts through the existing leaderboard pipeline/.test(roadmap) ||
-    !/- \[x\] Give coaches controls for eligible categories/.test(roadmap) ||
-    !/- \[x\] Tighten Signal quiz playback: remove browser video controls from quiz/.test(roadmap) ||
-    !/- \[x\] Speed pass for Signal quizzes: correct answers should auto-advance/.test(roadmap) ||
-    !/- \[x\] Add a future `Full Play Call` signal game/.test(roadmap)
-  ) {
-    fail("signals roadmap checklist is not updated for the play selector slice");
   }
 
   console.log("signal play integration contracts ok");

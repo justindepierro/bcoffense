@@ -56,7 +56,7 @@ js/
   workspace-sync.js     ← Shared save/cloud/media/player publish queue and status dock
   play-images.js        ← IndexedDB play-image storage and backup image import/export
   cloud-sync.js         ← Cloudflare-backed complete backup push/pull sync
-  auth.js               ← Simple local login and role-based UI restrictions
+  auth.js               ← Server-session readiness, login overlay, and role-based UI restrictions
   play-clips.js         ← Remote play video clips (R2-backed) client API
   signals.js            ← Component-level signal clip collection and resolver
   vision.js             ← Vision mode UI state
@@ -1315,6 +1315,15 @@ for `!important` only for utility/override classes (`.wb-hidden`,
 6. Bump `CACHE_NAME` in `sw.js` AND restamp `?v=N` in `index.html`.
 7. `./ship.sh "message (SW vN)"` and confirm
    `Verified Cloudflare production source: <hash>` matches `HEAD`.
+
+### Pre-season player-release gate
+
+For an auth, startup, storage, publish, or player-surface release, do not rely
+on a static smoke pass alone. Run the focused hydration test and a two-account
+live pilot that covers invite/password setup, login, first-load practice,
+media, quiz, refresh, logout, and a new login. Publish status must be clear of
+player-visible media gaps before inviting the full roster. The active checklist
+lives in `CONSOLIDATED_ROADMAP.md`; do not recreate completed roadmaps.
 
 ---
 

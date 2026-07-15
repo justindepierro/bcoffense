@@ -35,19 +35,32 @@ AUTH_PLAYER_PASSWORD_SHA256
 openssl rand -hex 32
 ```
 
-Each password hash is the SHA-256 hash of:
+Player accounts are stored in D1 with PBKDF2 hashes. Before inviting the team,
+rotate the three static staff secrets to PBKDF2 as well. The secret names stay
+the same for compatibility, although the old `_SHA256` suffix is now legacy.
+Each value should be a PBKDF2 hash of:
 
 ```text
 username:password
 ```
 
-Generate each hash locally:
+Generate each PBKDF2 value locally (enter the password only in your terminal):
 
 ```bash
-printf 'admin:YOUR_ADMIN_PASSWORD' | shasum -a 256 | awk '{print $1}'
-printf 'coach:YOUR_COACH_PASSWORD' | shasum -a 256 | awk '{print $1}'
-printf 'player:YOUR_PLAYER_PASSWORD' | shasum -a 256 | awk '{print $1}'
+read -s password
+node --input-type=module -e 'import { hashPassword } from "./functions/_lib/d1-auth.js"; console.log(await hashPassword(`${process.argv[1]}:${process.argv[2]}`));' admin "$password"
+unset password
 ```
+
+Run that command once per staff username (`admin`, `coach`, and any legacy
+`player` account), then save the printed value in the matching
+`AUTH_*_PASSWORD_SHA256` Cloudflare secret. The login code accepts the previous
+SHA-256 value temporarily so the rotation can be completed without a lockout;
+do not leave it that way for the season.
+
+Session cookies use the `__Host-bc_auth` browser-enforced host-only prefix.
+The first deployment after this change signs existing browser sessions out once;
+that is expected.
 
 ## Cloudflare Pages Settings
 

@@ -1,6 +1,6 @@
 # BCOffense Architecture
 
-Last updated: 2026-07-14
+Last updated: 2026-07-15
 
 This document maps the current wiring of BCOffense and records the cleanup work
 that would make the app feel faster and more professional. It is intentionally
@@ -59,6 +59,31 @@ Current first-load sequence:
 Rule: do not put image bodies, video manifests, large quiz media, or full media
 publish checks in the blocking startup path. Gate only the data needed to show a
 stable first screen.
+
+## Authentication Contract
+
+Cloudflare middleware protects the deployed app before the SPA loads. The
+server owns authentication; `js/auth.js` only mirrors the confirmed session
+into role-aware UI after `/auth/me` resolves. The first screen stays locked
+until that bounded check completes, so no role-restricted controls flash before
+the user is known.
+
+- Sessions use the browser-enforced `__Host-bc_auth` cookie: secure, HTTP-only,
+  same-site, path-rooted, and host-only.
+- Player accounts live in D1 and use PBKDF2 password hashes, per-account
+  lockout, and server-side session invalidation on password change/reset.
+- Invitation and password-reset tokens are hashed at rest and atomically
+  consumed once.
+- Static staff credentials support PBKDF2 values in their existing Cloudflare
+  secret names during the pre-season secret rotation; legacy SHA-256 values are
+  a short-term compatibility path, not the desired steady state.
+- If `/auth/me` cannot resolve in 3.5 seconds, the app presents sign-in rather
+  than releasing an unverified session. Local cached sessions are only reused
+  offline or on localhost.
+
+The remaining external decision is availability policy during a D1 outage:
+staff can still authenticate with their static credentials, while D1 player
+login and D1-backed rate-limit checks depend on the database.
 
 ## Event And UI Wiring
 

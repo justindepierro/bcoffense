@@ -60,12 +60,12 @@ function renderForm(opts = {}) {
     <p>Welcome to the team! Choose a password to activate your account.</p>
     <input type="hidden" name="token" value="${token}">
     <label>New Password
-      <input name="password" type="password" autocomplete="new-password" required minlength="8">
+      <input name="password" type="password" autocomplete="new-password" required minlength="10">
     </label>
     <label>Confirm Password
-      <input name="confirmPassword" type="password" autocomplete="new-password" required minlength="8">
+      <input name="confirmPassword" type="password" autocomplete="new-password" required minlength="10">
     </label>
-    <p class="hint">Minimum 8 characters.</p>
+    <p class="hint">Minimum 10 characters.</p>
 
     <div class="policy-box" role="note" aria-label="Team communication expectations">
       <h2>Team Communication Standards</h2>

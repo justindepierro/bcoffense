@@ -1,4 +1,9 @@
-const SESSION_COOKIE = "bc_auth";
+import { verifyD1Credentials, verifyPassword } from "./d1-auth.js";
+
+// The __Host- prefix is enforced by browsers: Secure, Path=/, and no Domain
+// attribute are mandatory. That prevents a subdomain from setting a competing
+// session cookie for this app.
+const SESSION_COOKIE = "__Host-bc_auth";
 const SESSION_TTL_SECONDS = 12 * 60 * 60;       // staff: 12h
 const PLAYER_SESSION_TTL_SECONDS = 72 * 60 * 60;  // players: 72h
 
@@ -115,6 +120,21 @@ async function sha256Hex(value) {
   return bytesToHex(digest);
 }
 
+async function verifyStaticPasswordHash(username, password, storedHash) {
+  const expected = String(storedHash || "").trim();
+  if (!expected) return false;
+
+  // Keep existing installations working while allowing the current
+  // AUTH_*_PASSWORD_SHA256 secrets to be rotated to PBKDF2 values before
+  // rollout. The value being hashed remains username:password in either case.
+  if (expected.startsWith("pbkdf2:")) {
+    return verifyPassword(`${username}:${String(password || "")}`, expected);
+  }
+
+  const actualHash = await sha256Hex(`${username}:${String(password || "")}`);
+  return timingSafeEqual(actualHash, expected.toLowerCase());
+}
+
 async function getSigningKey(env) {
   const secret = getRequiredEnv(env, "AUTH_SESSION_SECRET");
   return crypto.subtle.importKey(
@@ -194,16 +214,14 @@ export async function verifyCredentials(username, password, env) {
   // 1. Hardcoded staff accounts (admin / coach) — env-var hash, no D1 needed
   const user = USERS[cleanUsername];
   if (user) {
-    const expectedHash = getRequiredEnv(env, user.hashEnv).trim().toLowerCase();
-    const actualHash = await sha256Hex(`${cleanUsername}:${String(password || "")}`);
-    if (!timingSafeEqual(actualHash, expectedHash)) return null;
+    const expectedHash = getRequiredEnv(env, user.hashEnv);
+    if (!(await verifyStaticPasswordHash(cleanUsername, password, expectedHash))) return null;
     return { username: cleanUsername, role: user.role, label: user.label };
   }
 
   // 2. D1 player accounts — fall through when username not in USERS map
   if (!env.DB) return null;
   try {
-    const { verifyD1Credentials } = await import("./d1-auth.js");
     return verifyD1Credentials(cleanUsername, password, env.DB);
   } catch (_) {
     return null;

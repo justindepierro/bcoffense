@@ -6,6 +6,10 @@
  */
 
 const PBKDF2_ITERATIONS = 100_000;
+// Used only to give nonexistent and inactive accounts the same PBKDF2 work as
+// a normal password check. It is not a credential and never authenticates.
+const DUMMY_PASSWORD_HASH =
+  "pbkdf2:100000:58c0d53f08b7d2d77650c52d7aacb532:0f1d7b0a04cff6fdc4019b6df6b3f3a1da7e695f699f82661848775e3f10a1c1";
 
 // ── Lockout policy ───────────────────────────────────────────────────────────
 const LOCKOUT_MAX_ATTEMPTS = 5;          // failed logins before lockout
@@ -98,9 +102,12 @@ export async function findUserById(db, id) {
  */
 export async function verifyD1Credentials(email, password, db) {
   const user = await findUserByEmail(db, email);
-  if (!user) return null;
-  if (user.status === "invited" || user.status === "disabled") return null;
-  if (!user.password_hash) return null;
+  if (!user || user.status === "invited" || user.status === "disabled" || !user.password_hash) {
+    // Do equivalent expensive work before rejecting so login timing does not
+    // reveal whether an email address belongs to an active player account.
+    await verifyPassword(password, DUMMY_PASSWORD_HASH);
+    return null;
+  }
 
   const now = Math.floor(Date.now() / 1000);
 
@@ -254,10 +261,14 @@ export async function verifyAndConsumeToken(db, rawToken, type) {
     .first();
   if (!record) return null;
 
-  await db
-    .prepare("UPDATE verification_tokens SET used_at = ? WHERE id = ?")
-    .bind(now, record.id)
+  // The initial read makes it possible to return the owning user, but this
+  // conditional update is the authority. Two simultaneous requests can no
+  // longer consume the same invitation/reset token.
+  const result = await db
+    .prepare("UPDATE verification_tokens SET used_at = ? WHERE id = ? AND used_at IS NULL AND expires_at > ?")
+    .bind(now, record.id, now)
     .run();
+  if (Number(result?.meta?.changes || 0) !== 1) return null;
 
   return record;
 }
@@ -266,7 +277,7 @@ export async function verifyAndConsumeToken(db, rawToken, type) {
 
 export function validatePassword(password) {
   const p = String(password || "");
-  if (p.length < 8) return "Password must be at least 8 characters.";
+  if (p.length < 10) return "Password must be at least 10 characters.";
   if (p.length > 128) return "Password is too long.";
   return null; // valid
 }

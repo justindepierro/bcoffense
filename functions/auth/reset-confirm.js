@@ -61,12 +61,12 @@ function renderForm(opts = {}) {
     <p>Choose a new password for your account.</p>
     <input type="hidden" name="token" value="${token}">
     <label>New Password
-      <input name="password" type="password" autocomplete="new-password" required minlength="8">
+      <input name="password" type="password" autocomplete="new-password" required minlength="10">
     </label>
     <label>Confirm Password
-      <input name="confirmPassword" type="password" autocomplete="new-password" required minlength="8">
+      <input name="confirmPassword" type="password" autocomplete="new-password" required minlength="10">
     </label>
-    <p class="hint">Minimum 8 characters.</p>
+    <p class="hint">Minimum 10 characters.</p>
     ${err}
     <button type="submit">Update Password</button>
   </form>
