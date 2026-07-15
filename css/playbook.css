@@ -7617,3 +7617,25 @@ label.disc-attach-btn {
     display: none;
   }
 }
+
+/* ── Laptop density tier: pack more plays onto smaller desktops (13" MacBook
+   Air) without touching large monitors above 1700px. Mirrors the Script page
+   treatment: denser table rows and tighter control padding. ── */
+@media (min-width: 769px) and (max-width: 1700px) {
+  body:not(.is-mobile-screen) #playbookTable td,
+  body:not(.is-mobile-screen) #playbookTable th {
+    height: 34px;
+    padding: 3px 8px;
+  }
+  body:not(.is-mobile-screen) #playbook .pb-controls-row {
+    padding: 3px 6px;
+  }
+  body:not(.is-mobile-screen) #playbook .pb-meta-bar {
+    margin-bottom: 3px;
+  }
+  body:not(.is-mobile-screen) #playbook .pb-readiness-card--empty {
+    min-height: 28px;
+    padding: 3px 8px;
+  }
+}
+
