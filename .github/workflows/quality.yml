@@ -1,0 +1,31 @@
+name: Quality Gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+      - name: Install browser-test dependencies
+        run: npm --prefix tests ci
+      - name: Install Chromium
+        run: npm --prefix tests exec -- playwright install --with-deps chromium
+      - name: Run static and contract checks
+        run: npm run audit:globals && node scripts/smoke-check.js
+      - name: Run function logic tests
+        run: npm run test:unit
+      - name: Verify first-load hydration
+        run: npm run test:e2e:local:hydration

@@ -7,12 +7,12 @@
 
 ## What This Project Is
 
-**BCOffense** is a football practice management PWA. It is a **single-page app** served statically from GitHub Pages.
+**BCOffense** is a football practice management PWA. It is a **single-page app** deployed through Cloudflare Pages and Pages Functions.
 
 - **Stack:** Vanilla HTML / CSS / JS only — zero build tools, no bundler, no npm, no TypeScript
 - **Entry point:** `index.html` (all markup lives here, ~3300 lines)
 - **Scripts load with `defer` in order** — all share the global scope, no modules
-- **Data persistence:** `localStorage` only via `storageManager` — no backend, no fetch calls to APIs
+- **Data persistence:** `storageManager` owns local data and IndexedDB-backed playbooks; Pages Functions provide auth, workspace publish, media, leaderboard, notification, and discussion APIs.
 - **Offline support:** Service worker (`sw.js`) with stale-while-revalidate caching
 
 ---
@@ -24,10 +24,10 @@
 - **NO inline `onclick`/`onchange`/`oninput`** — always use `data-action` / `data-onchange` / `data-oninput` attributes
 - **NO `import` / `export`** — this is a global-scope, no-module project
 - **NO build step** — no webpack, vite, rollup, babel, npm scripts
-- **NO `package.json`** — intentionally dependency-free
+- **NO frontend build step or runtime framework** — app code stays vanilla global-scope JavaScript. Root and `tests/` package files exist only for verification tooling.
 - **NO `innerHTML` with unsanitized user content** — always use `escapeHtml()`, `setInnerHTML()`, or `sanitizeHTML()`
 - **NEVER double-escape** `getFullCall()` output — it already escapes internally
-- **ALL persistence** goes through `storageManager.get()` / `storageManager.set()` — never raw `localStorage`
+- **ALL app persistence** goes through `storageManager.get()` / `storageManager.set()` — never raw `localStorage` except documented diagnostics or auth/session compatibility paths.
 - **ALL modals** are async Promise-based: `showModal()`, `showConfirm()`, `showPrompt()`, `showChoice()`, `showListPicker()`
 - **ALL toasts** via `showToast()` or `showUndoToast()`
 

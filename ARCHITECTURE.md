@@ -29,8 +29,11 @@ Primary runtime layers:
 - `js/signals.js` owns component-level signal records and resolves signal clips
   from playbook fields.
 - `js/script-render.js` owns Practice Script rendering surfaces.
+- `js/script-quiz-state.js` owns the Quiz runtime state and immutable
+  configuration, loaded immediately before the Quiz runtime.
 - `js/script-quiz.js` owns the quiz engine, quiz hub, signal games, player
-  quiz attempts, and coach quiz setup.
+  quiz attempts, and coach quiz setup. Future splits must preserve that load
+  order and delegated public actions.
 - `js/workspace-sync.js` owns the shared visible save/publish queue.
 - `js/cloud-sync.js` owns team workspace publish/update, activity log, recovery
   sync, and player readiness checks.
@@ -100,6 +103,19 @@ Rules:
   export manifest.
 - Keep routine save, cloud, media, and player publish state in the workspace
   sync dock, not in ad hoc toasts.
+
+## Quality Gate And Safe Refactoring
+
+`npm run test:quality` is the local V1 quality gate: static/contract checks,
+function-logic tests, and first-load hydration. GitHub Actions runs the same
+gate on pushes and pull requests. The Playwright phone/iPad suites remain the
+required focused checks after player-shell or responsive changes.
+
+The app is intentionally global-scope, so global cleanup means making the
+contract explicit—not converting it wholesale into modules. Run
+`npm run audit:globals` to verify every direct `window.X =` export is declared
+in `AGENTS.md` and to identify same-file optional guards worth reviewing in the
+next small ownership slice.
 
 ## Data Authority
 

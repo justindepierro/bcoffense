@@ -48,10 +48,10 @@ secrets, dev login is localhost-gated. The items below are hardening gaps.
 - [x] 🟠 **M1 — HMAC verify hardening.** ✅ Done. Session verification now uses `crypto.subtle.verify("HMAC", ...)` (constant-time) instead of re-sign-and-string-compare. — `functions/_lib/auth.js`
 - [ ] 🟠 **M6 — Leaderboard sync trusts client scores.** `userId` is session-derived (good), but scores/`playerName` are client-authoritative and only max-clamped. Recompute/validate server-side or sign attempt results at issue time. — `functions/api/leaderboard/sync.js`, `functions/_lib/d1-leaderboard.js`
 - [ ] 🟢 **L1 — Double session verification per request.** Middleware verifies HMAC, then each handler re-verifies. Attach the verified session to `context.data.session` and have handlers read it. — `functions/_middleware.js`
-- [ ] 🟢 **L2 — Cookie not `__Host-` prefixed.** Rename `bc_auth` → `__Host-bc_auth` (keep `Secure`, `Path=/`, omit `Domain`) so the browser enforces the flags. — `functions/_lib/auth.js`
-- [ ] 🟢 **L3 — Username enumeration via timing.** Unknown users skip hash work; valid users run PBKDF2. Run a constant dummy PBKDF2 on the unknown-user path. — `functions/_lib/auth.js` L160-182
-- [ ] 🟢 **L4 — Token consume is non-atomic SELECT-then-UPDATE.** Use `UPDATE ... WHERE id=? AND used_at IS NULL` and treat `changes === 0` as already-consumed. — `functions/_lib/d1-auth.js` L242-262
-- [ ] 🟢 **L5 — Weak password policy** (length 8–128 only). Consider common-password screening. — `functions/_lib/d1-auth.js` L268-273
+- [x] 🟢 **L2 — Host-only session cookie.** Done. Sessions use the browser-enforced `__Host-bc_auth` prefix with `Secure`, `Path=/`, and no `Domain`. — `functions/_lib/auth.js`
+- [x] 🟢 **L3 — Username-enumeration timing.** Done. Unknown/inactive D1 accounts perform equivalent dummy PBKDF2 work before rejection. — `functions/_lib/d1-auth.js`
+- [x] 🟢 **L4 — Atomic token consumption.** Done. Reset/invitation consumption requires `used_at IS NULL` in the authority update and accepts exactly one changed row. — `functions/_lib/d1-auth.js`
+- [x] 🟢 **L5 — New password minimum.** Done. Invitation and reset flows enforce a 10-character minimum. Common-password screening remains a future optional hardening step. — `functions/_lib/d1-auth.js`
 
 ---
 
@@ -121,8 +121,8 @@ _Lazy-load target abandoned; the V8 lazy-compile + SW cache means the win is sma
 
 ## Phase 6 — Guard / Global Hygiene
 
-- [ ] 🟠 **Triage the 1461 `typeof X === "function"` guards.** Keep genuinely-optional cross-module integrations; make same-file/guaranteed calls unconditional; add `console.warn` else-branches for required deps so missing dependencies surface instead of silently no-op'ing.
-- [ ] 🟢 **Reconcile 142 `window.X =` assignments vs the `window-export-manifest`** in AGENTS.md (~12 may be undocumented); consider namespacing new debug globals under `window.bc.*`.
+- [ ] 🟠 **Triage optional function guards one ownership area at a time.** The global-contract audit reports the current count and same-file candidates. Keep genuinely optional cross-module integrations; make guaranteed same-owner calls unconditional; add `console.warn` else-branches for required dependencies.
+- [x] 🟢 **Reconcile direct `window.X =` assignments with the `window-export-manifest`.** Done. `scripts/global-contract-audit.mjs --strict` and smoke both reject undocumented or stale manifest entries. New debug globals should prefer `window.bc.*`.
 - [ ] 🟢 **Confirm the 6 empty `catch {}` blocks are annotated** with why the swallow is intentional.
 
 ---

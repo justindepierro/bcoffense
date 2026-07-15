@@ -83,6 +83,34 @@ Use the safe deploy script:
 
 Do not deploy the repo root with `wrangler pages deploy .`. The repo root includes local-only files that should never be uploaded as public static assets.
 
+## Season Operations Runbook
+
+### Publish a player-ready practice
+
+1. Save the coach workspace and open **Publish Status**.
+2. Resolve every player-visible diagram or clip marked missing, stale, or
+   unpublished; use **Publish Media** for the normal media path.
+3. Publish the team workspace and wait for the status dock to say **Ready for
+   players**.
+4. Open a player account on a phone and confirm the practice, diagrams, clips,
+   and quiz source are visible before announcing the assignment.
+
+### Help a player who cannot get in
+
+1. Confirm the player accepted their invitation and is using the invited email.
+2. Use the password-reset flow; do not share a staff account or staff password.
+3. Have the player use **Refresh team app** after login if a recently published
+   practice has not appeared.
+4. If the issue persists, check Cloudflare Pages deployment status and the D1,
+   KV, and media bindings before changing player data.
+
+### Recover safely
+
+Use the admin-only Recovery Tools for exports/imports or a cloud recovery. They
+are not the normal daily publish workflow. Make a complete backup before
+replacing a local workspace, then verify the resulting playbook and active
+practice before republishing.
+
 ## Cloud Sync Storage
 
 The app expects a KV binding named:

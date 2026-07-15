@@ -4,6 +4,9 @@
   "private": true,
   "description": "BCOffense app shell and root test command shortcuts",
   "scripts": {
+    "test:unit": "node tests/threads.test.mjs && node tests/reactions.test.mjs && node tests/moderation.test.mjs && node tests/questions.test.mjs && node tests/likes.test.mjs && node tests/reply-composer.test.mjs",
+    "test:quality": "node scripts/smoke-check.js && npm run test:unit && npm run test:e2e:local:hydration",
+    "audit:globals": "node scripts/global-contract-audit.mjs --strict",
     "stress:audit": "node scripts/stress-seed-audit.mjs",
     "stress:script-perf": "node scripts/stress-seed-audit.mjs --script-perf --roles=admin --tabs=script --viewports=1280x800 --plays=900 --scripts=35 --script-plays=96 --warn-only",
     "test:e2e": "npm --prefix tests test",
