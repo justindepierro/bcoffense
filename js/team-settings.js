@@ -1054,8 +1054,30 @@ function normalizeTeamAssignmentLabelMap(labelMap = {}, fallbackMap = null) {
   return normalized;
 }
 
+// Short-TTL read cache for the team blobs. getTeamRoster / packages / swap /
+// labels are each called hundreds of times per script render (per play, per
+// slot), and every raw storageManager.get LZ-decompresses the blob. Caching the
+// RAW stored value (the getters still normalize into fresh objects, so callers
+// can't poison the cache) collapses those to one decompress per blob per render.
+// Writes invalidate immediately; the 1s TTL self-heals any external write.
+const _teamRawReadCache = new Map();
+const TEAM_READ_CACHE_TTL_MS = 1000;
+
+function _teamCachedRawGet(key, fallback) {
+  const cached = _teamRawReadCache.get(key);
+  if (cached && Date.now() - cached.at < TEAM_READ_CACHE_TTL_MS) return cached.value;
+  const value = storageManager.get(key, fallback);
+  _teamRawReadCache.set(key, { value, at: Date.now() });
+  return value;
+}
+
+function _teamInvalidateReadCache(key) {
+  if (key) _teamRawReadCache.delete(key);
+  else _teamRawReadCache.clear();
+}
+
 function getLegacyTeamAssignmentLabelMap() {
-  const stored = storageManager.get(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, {});
+  const stored = _teamCachedRawGet(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, {});
   return normalizeTeamAssignmentLabelMap(stored);
 }
 
@@ -1064,7 +1086,7 @@ function getTeamAssignmentLabelMap(personnel = "") {
   const normalizedPersonnel = String(personnel || "").trim();
   if (!normalizedPersonnel) return legacyLabels;
 
-  const storedPackages = storageManager.get(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, []);
+  const storedPackages = _teamCachedRawGet(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, []);
   if (!Array.isArray(storedPackages)) return legacyLabels;
   const match = storedPackages.find(
     (pkg) =>
@@ -1081,6 +1103,7 @@ function saveTeamAssignmentLabelMap(labelMap, personnel = "") {
   if (!normalizedPersonnel) {
     const normalized = normalizeTeamAssignmentLabelMap(labelMap);
     storageManager.set(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, normalized);
+    _teamInvalidateReadCache();
     updateTeamSettingsAutosaveStatus();
     return normalized;
   }
@@ -1154,7 +1177,7 @@ function normalizeTeamPlayer(player = {}) {
 }
 
 function getTeamRoster() {
-  const stored = storageManager.get(STORAGE_KEYS.TEAM_ROSTER, []);
+  const stored = _teamCachedRawGet(STORAGE_KEYS.TEAM_ROSTER, []);
   return Array.isArray(stored)
     ? stored.map((player) => normalizeTeamPlayer(player)).filter((player) => player.name)
     : [];
@@ -1165,6 +1188,7 @@ function saveTeamRoster(roster) {
     ? roster.map((player) => normalizeTeamPlayer(player)).filter((player) => player.name)
     : [];
   storageManager.set(STORAGE_KEYS.TEAM_ROSTER, normalized);
+  _teamInvalidateReadCache(STORAGE_KEYS.TEAM_ROSTER);
   updateTeamSettingsAutosaveStatus();
   return normalized;
 }
@@ -1244,7 +1268,7 @@ function normalizeTeamSwapGroup(group = {}) {
 }
 
 function getTeamPersonnelPackages() {
-  const stored = storageManager.get(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, []);
+  const stored = _teamCachedRawGet(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, []);
   const playbookPersonnel = getPlaybookPersonnelValues();
   const normalizedStored = Array.isArray(stored)
     ? stored
@@ -1280,12 +1304,13 @@ function saveTeamPersonnelPackages(packages) {
       .filter((pkg) => pkg.personnel)
     : [];
   storageManager.set(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, normalized);
+  _teamInvalidateReadCache(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES);
   updateTeamSettingsAutosaveStatus();
   return normalized;
 }
 
 function getTeamSwapGroups() {
-  const stored = storageManager.get(STORAGE_KEYS.TEAM_SWAP_GROUPS, []);
+  const stored = _teamCachedRawGet(STORAGE_KEYS.TEAM_SWAP_GROUPS, []);
   return Array.isArray(stored)
     ? stored
       .map((group) => normalizeTeamSwapGroup(group))
@@ -1300,6 +1325,7 @@ function saveTeamSwapGroups(groups) {
       .filter((group) => group.name)
     : [];
   storageManager.set(STORAGE_KEYS.TEAM_SWAP_GROUPS, normalized);
+  _teamInvalidateReadCache(STORAGE_KEYS.TEAM_SWAP_GROUPS);
   updateTeamSettingsAutosaveStatus();
   return normalized;
 }

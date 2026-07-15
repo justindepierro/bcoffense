@@ -48,20 +48,40 @@ function isPlayReadinessCoachRole() {
   return !user || user.role !== "player";
 }
 
+// Short-TTL cache of the readiness store. getPlayReadinessSummary → this store
+// read runs once per play on every coach script render, and each raw read
+// LZ-decompresses the entire (growing) rep-log store. The 1s TTL lets all
+// per-row reads in a render pass share one decompress; savePlayReadinessStore
+// refreshes the cache so rep logging stays instant, and the TTL self-heals any
+// external write (cloud pull / restore).
+let _playReadinessStoreCache = null;
+let _playReadinessStoreCacheAt = 0;
+const PLAY_READINESS_CACHE_TTL_MS = 1000;
+
 function getPlayReadinessStore() {
+  if (_playReadinessStoreCache && Date.now() - _playReadinessStoreCacheAt < PLAY_READINESS_CACHE_TTL_MS) {
+    return _playReadinessStoreCache;
+  }
   const stored = storageManager.get(STORAGE_KEYS.PLAY_READINESS, null);
+  let store;
   if (!stored || typeof stored !== "object" || Array.isArray(stored)) {
-    return { version: 1, records: {} };
+    store = { version: 1, records: {} };
+  } else {
+    if (!stored.records || typeof stored.records !== "object" || Array.isArray(stored.records)) {
+      stored.records = {};
+    }
+    stored.version = stored.version || 1;
+    store = stored;
   }
-  if (!stored.records || typeof stored.records !== "object" || Array.isArray(stored.records)) {
-    stored.records = {};
-  }
-  stored.version = stored.version || 1;
-  return stored;
+  _playReadinessStoreCache = store;
+  _playReadinessStoreCacheAt = Date.now();
+  return store;
 }
 
 function savePlayReadinessStore(store) {
   storageManager.set(STORAGE_KEYS.PLAY_READINESS, store);
+  _playReadinessStoreCache = store;
+  _playReadinessStoreCacheAt = Date.now();
 }
 
 function normalizePlayReadinessInstallStatus(value) {
