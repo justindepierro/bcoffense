@@ -6656,6 +6656,42 @@ body.is-mobile-screen #script .stat-health-btn {
   margin: 0;
 }
 
+/* ── Stats merged into the Script title row: render as compact inline chips
+   instead of a full-width bar, so it no longer costs a separate row. ── */
+body:not(.is-mobile-screen) #script .script-section-head .script-stats-bar {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  grid-template-columns: none;
+  padding: 0;
+  border: 0;
+}
+body:not(.is-mobile-screen) #script .script-section-head .script-stats-bar .stat-item {
+  min-height: 24px;
+  padding: 1px 8px;
+  gap: 4px;
+}
+body:not(.is-mobile-screen) #script .script-section-head .script-stats-bar .ratio {
+  flex: 0 1 150px;
+  justify-content: flex-start;
+}
+body:not(.is-mobile-screen) #script .script-section-head .script-stats-bar .ratio .ratio-bar-wrap {
+  flex: 1 1 44px;
+}
+body:not(.is-mobile-screen) #script .script-section-head .stat-health-btn {
+  min-height: 24px;
+  padding-block: 1px;
+}
+body:not(.is-mobile-screen) #script .script-section-head {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+}
+body:not(.is-mobile-screen) #script .script-section-head .period-buttons {
+  flex: 0 0 auto;
+}
+
 #script .script-toolbar {
   position: relative;
   top: auto;
