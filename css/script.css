@@ -16,6 +16,12 @@
   gap: clamp(18px, 2vw, 26px);
   align-items: start;
 }
+
+/* The shared active-opponent bar is redundant on the Script tab — the game
+   plan is shown in the Script header instead. Keep it for other tabs. */
+body[data-active-tab="script"] #gameWeekBar {
+  display: none !important;
+}
 .play-list {
   min-width: 0;
   display: flex;
@@ -3551,8 +3557,38 @@ body[data-auth-role="player"]
     gap: 6px;
   }
   body:not(.is-mobile-screen) #script .script-toolbar {
-    gap: 6px;
-    padding: 4px 6px;
+    gap: 8px;
+    padding: 2px 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  /* Flatten the toolbar's three boxed regions into one clean inline row and
+     drop the divider under the Script header, so the header + toolbar read as
+     a single tasteful command bar instead of three stacked boxes. */
+  body:not(.is-mobile-screen) #script .script-toolbar-left,
+  body:not(.is-mobile-screen) #script .script-toolbar-center,
+  body:not(.is-mobile-screen) #script .script-toolbar-right {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    flex: 0 1 auto;
+  }
+  body:not(.is-mobile-screen) #script .script-toolbar-right {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+  }
+  body:not(.is-mobile-screen) #script .script-toolbar-left::before,
+  body:not(.is-mobile-screen) #script .script-toolbar-center::before,
+  body:not(.is-mobile-screen) #script .script-toolbar-right::before {
+    display: none;
+  }
+  body:not(.is-mobile-screen) #script .script-section-head {
+    border-bottom: 0;
+    padding-bottom: 0;
   }
 
   /* Script rows — pack more plays per screen. */

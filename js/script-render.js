@@ -1441,7 +1441,7 @@ function updateScriptOpponentBadge() {
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   const opp = gw && gw.opponentName ? gw.opponentName : "";
   if (opp) {
-    badge.textContent = `vs ${opp}`;
+    badge.textContent = `🏈 Game Plan: ${opp}`;
     badge.hidden = false;
   } else {
     badge.hidden = true;
