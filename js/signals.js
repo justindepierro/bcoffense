@@ -1154,6 +1154,34 @@ function _sigRecordToQuizPlay(record) {
   };
 }
 
+// Distractor answer values for a signal quiz question. Returns display-value
+// strings of the SAME component type (e.g. other formations for a formation
+// question) so multiple-choice answers stay believable. Unlike the quiz item
+// pool this intentionally includes signals that have no filmed clip yet, giving
+// quizzes a much larger, same-category set of wrong answers to choose from.
+function getSignalDistractorValues(componentType, excludeCompareKey, options = {}) {
+  const opts = options && typeof options === "object" ? options : {};
+  const type = String(componentType || "").trim();
+  if (!type) return [];
+  const exclude = String(excludeCompareKey || "").trim().toLowerCase();
+  const includeDraft = opts.includeDraft === true && _sigCanManage();
+  const limit = Number.isFinite(opts.limit) ? Math.max(0, Math.floor(opts.limit)) : 24;
+  const seen = new Set();
+  const values = [];
+  for (const record of _sigLoadRecords()) {
+    if (record.componentType !== type) continue;
+    if (record.visibility !== "published" && !includeDraft) continue;
+    if (exclude && String(record.compareKey || "").toLowerCase() === exclude) continue;
+    const label = _sigSelectorRecordLabel(record);
+    const key = label.toLowerCase();
+    if (!label || seen.has(key)) continue;
+    seen.add(key);
+    values.push(label);
+    if (limit && values.length >= limit) break;
+  }
+  return values;
+}
+
 async function getSignalQuizItems(options = {}) {
   const opts = options && typeof options === "object" ? options : {};
   const categoryFilter = new Set(

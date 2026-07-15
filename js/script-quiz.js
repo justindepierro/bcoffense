@@ -47,6 +47,10 @@ const SIGNAL_QUIZ_CORRECT_ADVANCE_MS = 90;
 const SIGNAL_QUIZ_WRONG_FEEDBACK_MS = 420;
 const SIGNAL_QUIZ_HEAT_MISS_FINISH_MS = 520;
 const SIGNAL_QUIZ_PRELOAD_WINDOW = 3;
+// Standard (non-timed) quiz: how long the correct-answer celebration shows
+// before auto-advancing to the next question. Wrong answers never auto-advance
+// so the player can study the miss.
+const QUIZ_CORRECT_AUTO_ADVANCE_MS = 950;
 const QUIZ_DIAGRAM_PRELOAD_WINDOW = 4;
 const QUIZ_MEDIA_PREP_TIMEOUT_MS = 650;
 const SIGNAL_GAME_CATEGORY_OPTIONS = [
@@ -5971,6 +5975,23 @@ function _quizSignalRecordForQuestion(play, question) {
   }) || null;
 }
 
+// Build lightweight quiz candidates from the full signal library so that a
+// signal question can always offer same-type wrong answers, even when few of
+// those signals have filmed clips in the current quiz pool.
+function _quizSignalLibraryCandidates(componentType, excludeCompareKey) {
+  if (!componentType || typeof getSignalDistractorValues !== "function") return [];
+  const values = getSignalDistractorValues(componentType, excludeCompareKey);
+  return values.map((value, idx) => ({
+    play: { type: "Signal", play: value },
+    scriptIndex: `siglib-${componentType}-${idx}`,
+    signalRecord: {
+      id: `siglib::${componentType}::${String(value).toLowerCase()}`,
+      componentType,
+      value,
+    },
+  }));
+}
+
 function _quizQuestionDistractorItems(item, question) {
   const source = _quizPlays.filter((candidate) => candidate && candidate !== item && candidate?.play);
   if (question?.type === "formation_to_play") {
@@ -5979,10 +6000,32 @@ function _quizQuestionDistractorItems(item, question) {
   }
   if (question?.type === "signal") {
     const correctLabel = _quizQuestionChoiceLabel(item, question).toLowerCase();
-    return source.filter((candidate) => {
+    const differs = (candidate) => {
       const candidateLabel = _quizQuestionChoiceLabel(candidate, question).toLowerCase();
       return candidateLabel && candidateLabel !== correctLabel;
-    });
+    };
+    // Keep distractors in the SAME signal component type as the answer (a
+    // formation question gets other formations, not a random motion/shift/play)
+    // so the correct choice is never obvious by category. Supplement from the
+    // full signal library — including signals with no filmed clip — so short
+    // categories still get 3 believable wrong answers.
+    const correctRecord =
+      item?.signalRecord || _quizSignalRecordForQuestion(item?.play, question);
+    const correctType = correctRecord?.componentType || "";
+    if (correctType) {
+      const sameType = source.filter(
+        (candidate) =>
+          differs(candidate) &&
+          (candidate?.signalRecord?.componentType || "") === correctType,
+      );
+      const library = _quizSignalLibraryCandidates(
+        correctType,
+        correctRecord?.compareKey,
+      ).filter(differs);
+      const combined = [...sameType, ...library];
+      if (combined.length) return combined;
+    }
+    return source.filter(differs);
   }
   if (question?.type === "signal_full_call") {
     const correctLabel = _quizQuestionChoiceLabel(item, question).toLowerCase();
@@ -6837,6 +6880,46 @@ function _advanceSignalGameAfterAnswer(questionKey) {
   }, advanceDelay);
 }
 
+// Standard (non-timed) quizzes advance manually via the Next button, EXCEPT on
+// a correct answer: play a quick celebration on the chosen tile, then move to
+// the next question automatically so a good run feels fast and rewarding. A
+// wrong answer stays put so the player can read the correct call and coach note.
+function _celebrateCorrectQuizChoice(questionKey) {
+  const scenarioEl = document.getElementById("scriptQuizScenario");
+  if (!scenarioEl || scenarioEl.dataset.quizKey !== questionKey) return;
+  const correctBtn = scenarioEl.querySelector(".script-quiz-choice.is-correct");
+  if (correctBtn && !correctBtn.querySelector(".sq-choice-burst")) {
+    correctBtn.classList.add("is-celebrating");
+    const burst = document.createElement("span");
+    burst.className = "sq-choice-burst";
+    burst.setAttribute("aria-hidden", "true");
+    burst.textContent = "✓";
+    correctBtn.appendChild(burst);
+  }
+  const flash = scenarioEl.querySelector(".sq-answer-flash.is-correct");
+  if (flash) flash.classList.add("is-celebrating");
+}
+
+function _maybeAutoAdvanceQuizAfterAnswer(questionKey) {
+  if (_isSignalAutoAdvanceMode() || _quizFinished) return;
+  const answer = _quizAnswers.get(questionKey);
+  if (!answer || !answer.correct) return;
+  _celebrateCorrectQuizChoice(questionKey);
+  setTimeout(() => {
+    if (_quizFinished || _isSignalAutoAdvanceMode()) return;
+    const item = _quizPlays[_quizIndex];
+    if (!item || _quizItemKey(item) !== questionKey) return;
+    if (_quizIndex >= _quizPlays.length - 1) {
+      finishScriptQuiz();
+      return;
+    }
+    _quizIndex++;
+    _resetQuizRoundState();
+    renderScriptQuizPlay();
+    _schedulePlayerQuizDraftSave();
+  }, QUIZ_CORRECT_AUTO_ADVANCE_MS);
+}
+
 function answerScriptQuizChoice(choiceKey) {
   const item = _quizPlays[_quizIndex];
   if (!item) return;
@@ -6889,6 +6972,7 @@ function answerScriptQuizChoice(choiceKey) {
   renderScriptQuizPlay();
   _schedulePlayerQuizDraftSave();
   _advanceSignalGameAfterAnswer(questionKey);
+  _maybeAutoAdvanceQuizAfterAnswer(questionKey);
 }
 
 function _getQuizAnswerReviewRows() {

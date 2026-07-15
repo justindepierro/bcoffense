@@ -7784,6 +7784,64 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-success) 20%, transparent);
 }
 
+.script-quiz-choice.is-celebrating {
+  position: relative;
+  animation: sqCorrectPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 2;
+}
+
+.sq-choice-burst {
+  position: absolute;
+  top: -12px;
+  right: -10px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-md);
+  font-weight: 950;
+  box-shadow: var(--shadow-md);
+  transform-origin: center;
+  animation: sqCorrectBurst 0.6s ease-out;
+  pointer-events: none;
+}
+
+.sq-answer-flash.is-celebrating {
+  animation:
+    sqReveal 0.16s ease,
+    sqCorrectPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes sqCorrectPop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes sqCorrectBurst {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-25deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.15) rotate(6deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
 .script-quiz-choice.is-wrong {
   filter: saturate(0.75) brightness(0.88);
   border-color: color-mix(in srgb, var(--color-danger) 45%, white);
@@ -7952,7 +8010,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 @media (prefers-reduced-motion: reduce) {
   .sq-feedback.is-hot-streak::before,
-  .script-quiz-answer {
+  .script-quiz-answer,
+  .script-quiz-choice.is-celebrating,
+  .sq-answer-flash.is-celebrating,
+  .sq-choice-burst {
     animation: none;
   }
 }
