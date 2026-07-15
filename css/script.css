@@ -3357,9 +3357,12 @@ body[data-auth-role="player"]
   }
 
   body:not(.is-mobile-screen) #script .filters-collapsible {
-    flex: 1 1 0;
-    min-height: 84px;
-    max-height: 46%;
+    /* Only take the height the filters actually need (tiny when accordions are
+       collapsed) instead of growing to a fixed share — the play list gets the
+       rest. */
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: 34%;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
@@ -3367,8 +3370,9 @@ body[data-auth-role="player"]
   }
 
   body:not(.is-mobile-screen) #script .available-plays-container {
-    flex: 2 1 0;
-    min-height: 120px;
+    /* Dominant: the play list fills all remaining sidebar height. */
+    flex: 1 1 auto;
+    min-height: 200px;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
@@ -6208,6 +6212,19 @@ body[data-active-tab="script"] .script-display-fab {
 #script .script-play-rail .filter-actions-row .btn {
   font-size: var(--font-size-xs);
   padding: 2px 7px;
+}
+/* Denser available-play rows so many more fit in the library at once. */
+#script .script-play-rail .play-item {
+  padding: 4px 8px;
+  margin-bottom: 3px;
+}
+#script .script-play-rail .play-item .play-details {
+  margin-top: 2px;
+  line-height: 1.3;
+}
+#script .script-play-rail .available-plays-actions {
+  padding: 2px 0;
+  gap: 3px;
 }
 /* Compact selects inside the rail filters */
 #script .script-play-rail .filters select,
