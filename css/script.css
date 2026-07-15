@@ -6226,6 +6226,15 @@ body[data-active-tab="script"] .script-display-fab {
   padding: 2px 0;
   gap: 3px;
 }
+#script .script-play-rail .available-plays-actions .available-load-menu {
+  flex: 1 1 calc(50% - 2px);
+  min-width: 0;
+  display: flex;
+}
+#script .script-play-rail .available-plays-actions .available-load-btn {
+  width: 100%;
+  min-width: 0;
+}
 /* Compact selects inside the rail filters */
 #script .script-play-rail .filters select,
 #script .script-play-rail .filters input {
