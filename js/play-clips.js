@@ -26,6 +26,13 @@
   const MAX_DURATION_SEC = 15;
   const DURATION_GRACE_SEC = 2; // allow slight overage from encoder rounding
   const SILENT_UPLOAD_FPS = 30;
+  // Signal/play clips are short shots of a coach or player making a hand signal,
+  // so cap the re-encode resolution and bitrate. Smaller frames mean smaller
+  // files (faster download) and far cheaper decode on low-end player phones,
+  // with no meaningful quality loss for a 4-5s clip.
+  const SILENT_UPLOAD_MAX_EDGE = 720; // longest side, px
+  const SILENT_UPLOAD_BITS_PER_PIXEL = 0.09; // bits per pixel per frame
+  const SILENT_UPLOAD_MAX_BITRATE = 4_000_000; // hard ceiling, bps
   const MANIFEST_CACHE_TTL_MS = 30000;
   const MANIFEST_BATCH_CONCURRENCY = 6;
 
@@ -249,15 +256,35 @@
         video.src = objectUrl;
       });
 
-      const width = Math.max(2, Math.round(video.videoWidth || 1280));
-      const height = Math.max(2, Math.round(video.videoHeight || 720));
+      const sourceWidth = Math.max(2, Math.round(video.videoWidth || 1280));
+      const sourceHeight = Math.max(2, Math.round(video.videoHeight || 720));
+      // Downscale to the resolution cap (keeping aspect ratio, even dimensions
+      // for the encoder) so player phones decode a small signal clip instantly.
+      const longEdge = Math.max(sourceWidth, sourceHeight);
+      const scale = longEdge > SILENT_UPLOAD_MAX_EDGE ? SILENT_UPLOAD_MAX_EDGE / longEdge : 1;
+      const width = Math.max(2, Math.round((sourceWidth * scale) / 2) * 2);
+      const height = Math.max(2, Math.round((sourceHeight * scale) / 2) * 2);
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Could not process the video clip.");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
 
       const stream = canvas.captureStream(SILENT_UPLOAD_FPS);
-      const recorder = new MediaRecorder(stream, { mimeType });
+      const targetBitrate = Math.min(
+        SILENT_UPLOAD_MAX_BITRATE,
+        Math.round(width * height * SILENT_UPLOAD_FPS * SILENT_UPLOAD_BITS_PER_PIXEL),
+      );
+      const recorderOptions = { mimeType };
+      if (targetBitrate > 0) recorderOptions.videoBitsPerSecond = targetBitrate;
+      let recorder;
+      try {
+        recorder = new MediaRecorder(stream, recorderOptions);
+      } catch (_err) {
+        // Some browsers reject an explicit bitrate for the chosen mimeType.
+        recorder = new MediaRecorder(stream, { mimeType });
+      }
       const chunks = [];
       recorder.ondataavailable = (event) => {
         if (event.data && event.data.size) chunks.push(event.data);

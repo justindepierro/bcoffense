@@ -460,7 +460,7 @@ function _sigRenderDetailSkeleton(summary, record) {
           <span class="signals-upload-hint">${escapeHtml(component?.label || "This component")} is handled as a ${escapeHtml(component?.cueLabel || "non-video cue")} and is not counted as a missing signal clip.</span>
         </div>
       `
-    : "";
+      : "";
   const editor = manage
     ? `
       <div class="signals-field-grid">
@@ -698,9 +698,9 @@ function _sigRenderUploadReviewModal() {
       </div>
       <footer class="signals-upload-modal__actions signals-upload-review-actions">
         ${isReady
-          ? `<button type="button" class="btn btn-primary" data-action="confirmSignalReviewedUpload">Upload This Clip</button>
+      ? `<button type="button" class="btn btn-primary" data-action="confirmSignalReviewedUpload">Upload This Clip</button>
              <button type="button" class="btn btn-secondary" data-action="resetSignalUploadReview">Choose Different</button>`
-          : `<button type="button" class="btn btn-primary" data-action="processSignalUploadReview"${isProcessing ? " disabled" : ""}>${isProcessing ? "Processing..." : "Preview Final Clip"}</button>
+      : `<button type="button" class="btn btn-primary" data-action="processSignalUploadReview"${isProcessing ? " disabled" : ""}>${isProcessing ? "Processing..." : "Preview Final Clip"}</button>
              <button type="button" class="btn btn-secondary" data-action="resetSignalUploadReview"${isProcessing ? " disabled" : ""}>Choose Different</button>`}
       </footer>
     </div>`;
@@ -1314,14 +1314,14 @@ function _sigConfigureLoopVideos(root = document) {
   _sigClipObserver =
     typeof IntersectionObserver === "function"
       ? new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) _sigActivateLoopVideo(entry.target);
-              else _sigDeactivateLoopVideo(entry.target);
-            });
-          },
-          { rootMargin: "200px" },
-        )
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) _sigActivateLoopVideo(entry.target);
+            else _sigDeactivateLoopVideo(entry.target);
+          });
+        },
+        { rootMargin: "200px" },
+      )
       : null;
   nodes.forEach((video) => {
     if (video.closest(".signals-clip") && _sigClipObserver) {

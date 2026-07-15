@@ -184,13 +184,22 @@
   position: relative;
   overflow: hidden;
   border-left: 5px solid var(--color-info);
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--color-info) 7%, var(--color-surface)), var(--color-surface) 48%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-info) 7%, var(--color-surface)),
+    var(--color-surface) 48%
+  );
 }
 
-body[data-auth-role="player"] #script.script-player-awaiting-load .script-section-head,
-body[data-auth-role="player"] #script.script-player-awaiting-load .script-stats-bar,
-body[data-auth-role="player"] #script.script-player-awaiting-load #scriptTimeline,
+body[data-auth-role="player"]
+  #script.script-player-awaiting-load
+  .script-section-head,
+body[data-auth-role="player"]
+  #script.script-player-awaiting-load
+  .script-stats-bar,
+body[data-auth-role="player"]
+  #script.script-player-awaiting-load
+  #scriptTimeline,
 body[data-auth-role="player"] #script.script-player-awaiting-load #scriptPlays {
   display: none !important;
 }
@@ -199,18 +208,34 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .script-list {
   gap: 12px;
 }
 
-body[data-auth-role="player"] #script.script-player-awaiting-load .player-script-launcher {
+body[data-auth-role="player"]
+  #script.script-player-awaiting-load
+  .player-script-launcher {
   padding: 14px;
-  border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-border-light));
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 6%, var(--color-surface)), var(--color-surface-muted));
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 18%,
+    var(--color-border-light)
+  );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 6%, var(--color-surface)),
+    var(--color-surface-muted)
+  );
 }
 
 .player-script-card.is-current {
-  border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 48%,
+    var(--color-border-light)
+  );
   border-left-color: var(--color-primary);
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 13%, var(--color-surface)), var(--color-surface) 56%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-primary) 13%, var(--color-surface)),
+    var(--color-surface) 56%
+  );
   box-shadow: var(--shadow-sm);
 }
 
@@ -271,10 +296,15 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
   width: fit-content;
   max-width: 100%;
   padding: 4px 8px;
-  border: 1px solid color-mix(in srgb, var(--color-warning) 30%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 30%, var(--color-border-light));
   border-radius: var(--radius-pill);
   color: color-mix(in srgb, var(--color-warning) 38%, var(--color-text));
-  background: color-mix(in srgb, var(--color-warning) 10%, var(--color-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 10%,
+    var(--color-surface)
+  );
   font-size: var(--font-size-xs);
   font-weight: 800;
 }
@@ -299,14 +329,25 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
 
 .player-script-card__actions .btn[data-action="startPlayerQuiz"],
 .player-script-now__actions .btn[data-action="startPlayerQuiz"] {
-  border-color: color-mix(in srgb, var(--color-warning) 48%, var(--color-border));
-  background: color-mix(in srgb, var(--color-warning) 13%, var(--color-surface));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 48%,
+    var(--color-border)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 13%,
+    var(--color-surface)
+  );
   color: color-mix(in srgb, var(--color-warning) 42%, var(--color-text));
 }
 
-.player-script-card__actions .btn[data-action="openPlayerCurrentScriptPresentation"],
-.player-script-now__actions .btn[data-action="openPlayerCurrentScriptPresentation"] {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent);
+.player-script-card__actions
+  .btn[data-action="openPlayerCurrentScriptPresentation"],
+.player-script-now__actions
+  .btn[data-action="openPlayerCurrentScriptPresentation"] {
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 
 .player-script-card__loaded-label {
@@ -1040,7 +1081,10 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
 /* ── Score row (primary action — top of widget) ── */
 .pr-score-row {
   display: grid;
-  grid-template-columns: minmax(76px, max-content) minmax(220px, 1fr) minmax(26px, max-content);
+  grid-template-columns: minmax(76px, max-content) minmax(220px, 1fr) minmax(
+      26px,
+      max-content
+    );
   align-items: center;
   gap: 12px;
   min-width: 0;
@@ -3680,7 +3724,11 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
 }
 
 .coach-publish-status-item--ready {
-  border-color: color-mix(in srgb, var(--color-success) 34%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 34%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-success) 8%, var(--color-surface));
 }
 
@@ -3698,7 +3746,11 @@ body[data-auth-role="player"] #script.script-player-awaiting-load .player-script
 }
 
 .saved-card-publish-meta--visible {
-  border-color: color-mix(in srgb, var(--color-success) 34%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 34%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-success) 8%, var(--color-surface));
 }
 
@@ -5705,7 +5757,10 @@ body[data-active-tab="script"] .script-display-fab {
 
 .script-workbench-controls {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(0, 1.15fr) minmax(150px, 0.65fr);
+  grid-template-columns: minmax(220px, 1fr) minmax(0, 1.15fr) minmax(
+      150px,
+      0.65fr
+    );
   align-items: stretch;
   gap: 8px;
   background: var(--color-surface-muted);
@@ -6456,7 +6511,10 @@ body.is-mobile-screen #script .stat-health-btn {
   top: auto;
   z-index: var(--z-base);
   display: grid;
-  grid-template-columns: minmax(92px, max-content) minmax(0, 1fr) minmax(160px, 0.9fr);
+  grid-template-columns: minmax(92px, max-content) minmax(0, 1fr) minmax(
+      160px,
+      0.9fr
+    );
   align-items: center;
   gap: 8px;
   flex: 0 0 auto;
@@ -7298,7 +7356,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   inset: 0;
   z-index: calc(var(--z-modal, 9000) + 10);
   background:
-    radial-gradient(circle at 18% 10%, color-mix(in srgb, var(--color-primary) 34%, transparent), transparent 28rem),
+    radial-gradient(
+      circle at 18% 10%,
+      color-mix(in srgb, var(--color-primary) 34%, transparent),
+      transparent 28rem
+    ),
     rgba(0, 0, 0, 0.84);
   display: flex;
   align-items: center;
@@ -7313,7 +7375,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .script-quiz-panel {
   background: var(--color-bg-body);
   border-radius: var(--radius-lg);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
   box-shadow: var(--shadow-lg);
   width: min(680px, 100%);
   max-height: calc(var(--app-vh, 1vh) * 90);
@@ -7329,8 +7392,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
   border-bottom: 1px solid var(--color-border);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-light)), var(--color-bg-light));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-light)),
+    var(--color-bg-light)
+  );
   flex-shrink: 0;
 }
 .script-quiz-header-left {
@@ -7411,10 +7477,14 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .sq-scenario-block--quiz-detail {
   align-items: flex-start;
   padding: var(--space-md);
-  border: 2px solid color-mix(in srgb, var(--color-primary) 28%, var(--color-border-light));
+  border: 2px solid
+    color-mix(in srgb, var(--color-primary) 28%, var(--color-border-light));
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-body)), var(--color-bg-body));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-body)),
+    var(--color-bg-body)
+  );
 }
 .sq-scenario-block--quiz-detail .sq-scenario-label {
   color: var(--color-primary);
@@ -7465,8 +7535,16 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .sq-game-pill--timer {
-  border-color: color-mix(in srgb, var(--color-warning) 48%, var(--color-border));
-  background: color-mix(in srgb, var(--color-warning-light) 72%, var(--color-surface));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 48%,
+    var(--color-border)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-warning-light) 72%,
+    var(--color-surface)
+  );
   color: var(--color-warning);
 }
 
@@ -7481,9 +7559,14 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   display: grid;
   gap: 2px;
   padding: var(--space-sm);
-  border: 1px solid color-mix(in srgb, var(--color-info) 26%, var(--color-border));
+  border: 1px solid
+    color-mix(in srgb, var(--color-info) 26%, var(--color-border));
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-info-light) 58%, var(--color-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-info-light) 58%,
+    var(--color-surface)
+  );
   text-align: center;
 }
 
@@ -7502,7 +7585,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   display: grid;
   gap: 4px;
   overflow: hidden;
-  border: 2px solid color-mix(in srgb, var(--color-primary) 32%, var(--color-border-light));
+  border: 2px solid
+    color-mix(in srgb, var(--color-primary) 32%, var(--color-border-light));
   border-radius: var(--radius-md);
   background: var(--color-bg-body);
   box-shadow: var(--shadow-sm);
@@ -7530,12 +7614,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   background: var(--color-bg-body);
 }
 
-.sq-diagram-prompt img[data-smart-diagram-source="true"][data-smart-diagram-keep-visible="true"] {
+.sq-diagram-prompt
+  img[data-smart-diagram-source="true"][data-smart-diagram-keep-visible="true"] {
   position: absolute;
   inset: 0;
   height: 100%;
   max-height: none;
-  opacity: .01;
+  opacity: 0.01;
   pointer-events: none;
 }
 
@@ -7546,15 +7631,15 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   left: 0;
   right: 0;
   height: clamp(44px, 16%, 74px);
-  border-bottom: 1px dashed color-mix(in srgb, var(--color-primary) 42%, var(--color-border-light));
-  background:
-    repeating-linear-gradient(
-      -35deg,
-      color-mix(in srgb, var(--color-primary) 20%, var(--color-bg-body)),
-      color-mix(in srgb, var(--color-primary) 20%, var(--color-bg-body)) 8px,
-      color-mix(in srgb, var(--color-bg-body) 80%, var(--color-primary)) 8px,
-      color-mix(in srgb, var(--color-bg-body) 80%, var(--color-primary)) 16px
-    );
+  border-bottom: 1px dashed
+    color-mix(in srgb, var(--color-primary) 42%, var(--color-border-light));
+  background: repeating-linear-gradient(
+    -35deg,
+    color-mix(in srgb, var(--color-primary) 20%, var(--color-bg-body)),
+    color-mix(in srgb, var(--color-primary) 20%, var(--color-bg-body)) 8px,
+    color-mix(in srgb, var(--color-bg-body) 80%, var(--color-primary)) 8px,
+    color-mix(in srgb, var(--color-bg-body) 80%, var(--color-primary)) 16px
+  );
   backdrop-filter: blur(10px);
 }
 
@@ -7571,7 +7656,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   display: grid;
   gap: 4px;
   overflow: hidden;
-  border: 2px solid color-mix(in srgb, var(--color-accent) 36%, var(--color-border-light));
+  border: 2px solid
+    color-mix(in srgb, var(--color-accent) 36%, var(--color-border-light));
   border-radius: var(--radius-md);
   background: var(--color-bg-body);
   box-shadow: var(--shadow-sm);
@@ -7587,8 +7673,16 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .sq-signal-prompt.is-hidden {
-  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-warning-light) 54%, var(--color-bg-body));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 42%,
+    var(--color-border-light)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-warning-light) 54%,
+    var(--color-bg-body)
+  );
 }
 
 .sq-signal-hidden {
@@ -7636,7 +7730,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   display: grid;
   gap: 3px;
   padding: 4px;
-  border: 1px solid color-mix(in srgb, var(--color-accent) 32%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 32%, var(--color-border-light));
   border-radius: var(--radius-sm);
   background: var(--color-bg-body);
 }
@@ -7709,8 +7804,16 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .sq-answer-flash.is-correct {
-  border-color: color-mix(in srgb, var(--color-success) 58%, var(--color-border));
-  background: color-mix(in srgb, var(--color-success-light) 50%, var(--color-bg-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 58%,
+    var(--color-border)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-success-light) 50%,
+    var(--color-bg-light)
+  );
 }
 
 .sq-answer-flash.is-correct strong {
@@ -7718,8 +7821,16 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .sq-answer-flash.is-wrong {
-  border-color: color-mix(in srgb, var(--color-danger) 54%, var(--color-border));
-  background: color-mix(in srgb, var(--color-danger-light) 48%, var(--color-bg-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-danger) 54%,
+    var(--color-border)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-danger-light) 48%,
+    var(--color-bg-light)
+  );
 }
 
 .sq-answer-flash.is-wrong strong {
@@ -7781,7 +7892,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 .script-quiz-choice.is-correct {
   border-color: color-mix(in srgb, var(--color-success) 45%, white);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-success) 20%, transparent);
+  box-shadow: 0 0 0 4px
+    color-mix(in srgb, var(--color-success) 20%, transparent);
 }
 
 .script-quiz-choice.is-celebrating {
@@ -7899,8 +8011,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 /* Answer section */
 .script-quiz-answer {
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-success) 12%, var(--color-bg-light)), var(--color-bg-light));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-success) 12%, var(--color-bg-light)),
+    var(--color-bg-light)
+  );
   border: 2px solid var(--color-primary);
   padding: var(--space-md) var(--space-lg);
   text-align: center;
@@ -7932,7 +8047,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .sq-feedback.is-wrong .sq-feedback-result {
-  background: color-mix(in srgb, var(--color-warning) 74%, var(--color-bg-body));
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 74%,
+    var(--color-bg-body)
+  );
   color: var(--color-text);
 }
 
@@ -7960,8 +8079,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   min-width: min(100%, 190px);
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--color-warning) 38%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-warning) 12%, var(--color-bg-body));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 38%, var(--color-border-light));
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 12%,
+    var(--color-bg-body)
+  );
   color: var(--color-text);
 }
 
@@ -8051,9 +8175,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: var(--space-xs);
   padding: var(--space-sm);
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--color-info) 35%, var(--color-border-light));
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-info) 10%, var(--color-bg-body)), var(--color-bg-body));
+  border: 1px solid
+    color-mix(in srgb, var(--color-info) 35%, var(--color-border-light));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-info) 10%, var(--color-bg-body)),
+    var(--color-bg-body)
+  );
   text-align: left;
 }
 
@@ -8135,12 +8263,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   background: var(--color-bg-body);
 }
 
-.sq-review-diagram img[data-smart-diagram-source="true"][data-smart-diagram-keep-visible="true"] {
+.sq-review-diagram
+  img[data-smart-diagram-source="true"][data-smart-diagram-keep-visible="true"] {
   position: absolute;
   inset: 0;
   height: 150px;
   max-height: none;
-  opacity: .01;
+  opacity: 0.01;
   pointer-events: none;
 }
 
@@ -8185,9 +8314,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   text-align: center;
   padding: var(--space-lg);
   border-radius: var(--radius-lg);
-  border: 1px solid color-mix(in srgb, var(--color-success) 35%, var(--color-border-light));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-success) 12%, var(--color-bg-body)), var(--color-bg-body));
+  border: 1px solid
+    color-mix(in srgb, var(--color-success) 35%, var(--color-border-light));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-success) 12%, var(--color-bg-body)),
+    var(--color-bg-body)
+  );
 }
 
 .sq-result-kicker {
@@ -8248,7 +8381,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   width: 100%;
   padding: var(--space-sm);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-warning) 22%, var(--color-bg-light));
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 22%,
+    var(--color-bg-light)
+  );
   color: var(--color-text);
   font-weight: 900;
 }
@@ -8260,9 +8397,14 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: 3px;
   padding: var(--space-md);
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
   background:
-    radial-gradient(circle at top, color-mix(in srgb, var(--color-warning) 18%, transparent), transparent 58%),
+    radial-gradient(
+      circle at top,
+      color-mix(in srgb, var(--color-warning) 18%, transparent),
+      transparent 58%
+    ),
     var(--color-bg-body);
   color: var(--color-text);
 }
@@ -8290,8 +8432,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: 4px;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--color-info) 34%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-info-light) 58%, var(--color-bg-body));
+  border: 1px solid
+    color-mix(in srgb, var(--color-info) 34%, var(--color-border-light));
+  background: color-mix(
+    in srgb,
+    var(--color-info-light) 58%,
+    var(--color-bg-body)
+  );
   text-align: left;
 }
 
@@ -8312,8 +8459,16 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 .sq-result-ready-moment--locked,
 .sq-result-ready-moment--ready {
-  border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-success-light) 62%, var(--color-bg-body));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 42%,
+    var(--color-border-light)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-success-light) 62%,
+    var(--color-bg-body)
+  );
 }
 
 .sq-result-ready-moment--locked span,
@@ -8322,8 +8477,16 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .sq-result-ready-moment--review {
-  border-color: color-mix(in srgb, var(--color-warning) 40%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-warning-light) 64%, var(--color-bg-body));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 40%,
+    var(--color-border-light)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-warning-light) 64%,
+    var(--color-bg-body)
+  );
 }
 
 .sq-result-ready-moment--review span {
@@ -8336,16 +8499,27 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: var(--space-xs);
   padding: var(--space-sm);
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-warning) 16%, var(--color-bg-body)), var(--color-bg-body));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-warning) 16%, var(--color-bg-body)),
+    var(--color-bg-body)
+  );
   text-align: left;
 }
 
 .sq-result-review--clean {
-  border-color: color-mix(in srgb, var(--color-success) 38%, var(--color-border-light));
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-success) 13%, var(--color-bg-body)), var(--color-bg-body));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 38%,
+    var(--color-border-light)
+  );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-success) 13%, var(--color-bg-body)),
+    var(--color-bg-body)
+  );
 }
 
 .sq-result-review > strong {
@@ -8412,9 +8586,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   text-align: center;
   padding: var(--space-lg);
   border-radius: var(--radius-lg);
-  border: 1px solid color-mix(in srgb, var(--color-warning) 45%, var(--color-border-light));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-body)), var(--color-bg-body));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 45%, var(--color-border-light));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-body)),
+    var(--color-bg-body)
+  );
 }
 
 .sq-exit-kicker,
@@ -8488,8 +8666,16 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   inset: 0;
   z-index: calc(var(--z-modal, 9000) + 9);
   background:
-    radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--color-warning) 24%, transparent), transparent 24rem),
-    radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--color-info) 22%, transparent), transparent 22rem),
+    radial-gradient(
+      circle at 18% 12%,
+      color-mix(in srgb, var(--color-warning) 24%, transparent),
+      transparent 24rem
+    ),
+    radial-gradient(
+      circle at 88% 8%,
+      color-mix(in srgb, var(--color-info) 22%, transparent),
+      transparent 22rem
+    ),
     rgba(4, 10, 26, 0.86);
   display: flex;
   align-items: center;
@@ -8509,7 +8695,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   display: flex;
   flex-direction: column;
   background: var(--color-bg-body);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
 }
@@ -8520,8 +8707,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   justify-content: space-between;
   gap: var(--space-sm);
   padding: var(--space-md) var(--space-lg);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 90%, black), var(--color-primary-dark));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 90%, black),
+    var(--color-primary-dark)
+  );
   color: var(--color-text-inverse);
 }
 
@@ -8560,10 +8750,22 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .player-quiz-scoreboard > div {
   --player-quiz-score-accent: var(--color-primary);
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--player-quiz-score-accent) 28%, var(--color-border-light));
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--player-quiz-score-accent) 28%,
+      var(--color-border-light)
+    );
   border-top: 4px solid var(--player-quiz-score-accent);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--player-quiz-score-accent) 10%, var(--color-surface)), var(--color-surface));
+  background: linear-gradient(
+    135deg,
+    color-mix(
+      in srgb,
+      var(--player-quiz-score-accent) 10%,
+      var(--color-surface)
+    ),
+    var(--color-surface)
+  );
   padding: var(--space-md);
   display: grid;
   gap: 2px;
@@ -8619,7 +8821,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: var(--space-xs) var(--space-sm);
   align-items: center;
   padding: var(--space-sm);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 16%, var(--color-border-light));
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
 }
@@ -8671,7 +8874,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   background: var(--color-primary);
   color: var(--color-text-inverse);
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--color-primary) 22%, transparent);
 }
 
 .player-quiz-mode-grid {
@@ -8726,7 +8930,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   width: fit-content;
   padding: 2px 7px;
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-light));
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 18%,
+    var(--color-bg-light)
+  );
   color: var(--color-text-secondary);
   font-size: 0.66rem;
   font-weight: 950;
@@ -8747,9 +8955,16 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .player-quiz-weak-area-panel {
-  border-color: color-mix(in srgb, var(--color-info) 22%, var(--color-border-light));
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-info) 6%, var(--color-surface)), var(--color-surface));
+  border-color: color-mix(
+    in srgb,
+    var(--color-info) 22%,
+    var(--color-border-light)
+  );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-info) 6%, var(--color-surface)),
+    var(--color-surface)
+  );
 }
 
 .player-quiz-weak-area-grid {
@@ -8763,7 +8978,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   display: grid;
   gap: 3px;
   padding: var(--space-sm);
-  border: 1px solid color-mix(in srgb, var(--color-warning) 34%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 34%, var(--color-border-light));
   border-radius: var(--radius-md);
   background: var(--color-bg-body);
 }
@@ -8807,9 +9023,21 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   min-height: 230px;
   border-radius: var(--radius-md);
   --player-quiz-source-accent: var(--color-info);
-  border: 1px solid color-mix(in srgb, var(--player-quiz-source-accent) 30%, var(--color-border));
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--player-quiz-source-accent) 9%, var(--color-bg-body)), var(--color-bg-body) 62%);
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--player-quiz-source-accent) 30%,
+      var(--color-border)
+    );
+  background: linear-gradient(
+    135deg,
+    color-mix(
+      in srgb,
+      var(--player-quiz-source-accent) 9%,
+      var(--color-bg-body)
+    ),
+    var(--color-bg-body) 62%
+  );
   padding: var(--space-md);
   display: grid;
   gap: var(--space-sm);
@@ -8838,7 +9066,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   display: grid;
   place-items: center;
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--player-quiz-source-accent) 14%, var(--color-surface));
+  background: color-mix(
+    in srgb,
+    var(--player-quiz-source-accent) 14%,
+    var(--color-surface)
+  );
   color: var(--player-quiz-source-accent);
   font-size: 1.45rem;
 }
@@ -8908,7 +9140,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .player-quiz-script-option.is-locked .player-quiz-progress-badge {
-  border-color: color-mix(in srgb, var(--color-danger) 28%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-danger) 28%,
+    var(--color-border-light)
+  );
   background: var(--color-danger-light);
   color: var(--color-danger);
 }
@@ -8999,19 +9235,31 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .quiz-completeness-chip--ready {
-  border-color: color-mix(in srgb, var(--color-success) 34%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 34%,
+    var(--color-border-light)
+  );
   background: var(--color-success-light);
   color: var(--color-success);
 }
 
 .quiz-completeness-chip--partial {
-  border-color: color-mix(in srgb, var(--color-warning) 38%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 38%,
+    var(--color-border-light)
+  );
   background: var(--color-warning-light);
   color: var(--color-warning);
 }
 
 .quiz-completeness-chip--missing {
-  border-color: color-mix(in srgb, var(--color-danger) 30%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-danger) 30%,
+    var(--color-border-light)
+  );
   background: var(--color-danger-light);
   color: var(--color-danger);
 }
@@ -9025,7 +9273,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .player-quiz-progress-badge.has-icon {
-  background: color-mix(in srgb, var(--color-warning) 14%, var(--color-bg-body));
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 14%,
+    var(--color-bg-body)
+  );
   color: var(--color-text);
 }
 
@@ -9158,7 +9410,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .signal-leaderboard-tabs button:hover,
 .signal-leaderboard-tabs button:focus-visible,
 .signal-game-category-chip.is-selected {
-  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 45%,
+    var(--color-border-light)
+  );
   background: var(--color-primary);
   color: var(--color-text-inverse);
   outline: 0;
@@ -9170,7 +9426,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   padding: var(--space-sm);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-bg-light) 72%, var(--color-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-bg-light) 72%,
+    var(--color-surface)
+  );
 }
 
 .signal-game-category-head {
@@ -9211,19 +9471,30 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-sm);
-  border: 1px solid color-mix(in srgb, var(--color-info) 24%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-info) 24%, var(--color-border-light));
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-info-light) 58%, var(--color-bg-body)), var(--color-bg-body));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-info-light) 58%, var(--color-bg-body)),
+    var(--color-bg-body)
+  );
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
 }
 
 .signal-sprint-leader-row.is-current {
-  border-color: color-mix(in srgb, var(--color-success) 45%, var(--color-border-light));
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-success) 10%, var(--color-bg-body)), var(--color-bg-body));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 45%,
+    var(--color-border-light)
+  );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-success) 10%, var(--color-bg-body)),
+    var(--color-bg-body)
+  );
 }
 
 .signal-sprint-leader-row strong {
@@ -9260,9 +9531,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: var(--space-sm);
   padding: var(--space-md);
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--color-warning) 44%, var(--color-border-light));
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-body)), var(--color-bg-body));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 44%, var(--color-border-light));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-body)),
+    var(--color-bg-body)
+  );
 }
 
 .player-quiz-resume-card > div:first-child {
@@ -9294,8 +9569,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
       var(--app-tabs-height, 0px)
   );
   padding: var(--space-lg);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 7%, var(--color-bg-body)), var(--color-bg-body));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-primary) 7%, var(--color-bg-body)),
+    var(--color-bg-body)
+  );
 }
 
 .player-leaderboard-shell {
@@ -9312,8 +9590,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: var(--space-md);
   padding: var(--space-lg);
   border-radius: var(--radius-lg);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 92%, black), var(--color-primary-dark));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 92%, black),
+    var(--color-primary-dark)
+  );
   color: var(--color-text-inverse);
   box-shadow: var(--shadow-md);
 }
@@ -9387,9 +9668,20 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   position: relative;
   overflow: hidden;
   --player-leaderboard-accent: var(--color-primary);
-  border-color: color-mix(in srgb, var(--player-leaderboard-accent) 20%, var(--color-border-light));
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--player-leaderboard-accent) 8%, var(--color-surface)), var(--color-surface) 58%);
+  border-color: color-mix(
+    in srgb,
+    var(--player-leaderboard-accent) 20%,
+    var(--color-border-light)
+  );
+  background: linear-gradient(
+    135deg,
+    color-mix(
+      in srgb,
+      var(--player-leaderboard-accent) 8%,
+      var(--color-surface)
+    ),
+    var(--color-surface) 58%
+  );
 }
 
 .player-leaderboard-card::before {
@@ -9486,8 +9778,16 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .player-leaderboard-attempt.is-partial {
-  border-color: color-mix(in srgb, var(--color-warning) 45%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-body));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 45%,
+    var(--color-border-light)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 10%,
+    var(--color-bg-body)
+  );
 }
 
 .player-leaderboard-attempt strong {
@@ -9534,7 +9834,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 .player-quiz-leader-row:hover,
 .player-quiz-leader-row:focus-visible {
-  border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 36%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-body));
 }
 
@@ -9575,8 +9879,16 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 .player-quiz-achievement.has-stars,
 .coach-quiz-achievement.has-stars {
-  border-color: color-mix(in srgb, var(--color-warning) 48%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-body));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 48%,
+    var(--color-border-light)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 18%,
+    var(--color-bg-body)
+  );
   color: color-mix(in srgb, var(--color-warning) 44%, var(--color-text));
 }
 
@@ -9612,7 +9924,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   align-content: center;
   gap: 2px;
   padding: var(--space-xs);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 16%, var(--color-border-light));
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
   text-align: center;
@@ -9699,7 +10012,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .player-leaderboard-sticker--green {
-  background: color-mix(in srgb, var(--color-success) 13%, var(--color-bg-body));
+  background: color-mix(
+    in srgb,
+    var(--color-success) 13%,
+    var(--color-bg-body)
+  );
 }
 
 .player-leaderboard-sticker--blue,
@@ -9712,7 +10029,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .player-leaderboard-sticker--gold {
-  background: color-mix(in srgb, var(--color-warning) 19%, var(--color-bg-body));
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 19%,
+    var(--color-bg-body)
+  );
 }
 
 .player-leaderboard-sticker--purple {
@@ -9735,8 +10056,9 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   z-index: var(--z-modal);
   display: grid;
   place-items: center;
-  padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right))
-    max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  padding: max(18px, env(safe-area-inset-top))
+    max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom))
+    max(18px, env(safe-area-inset-left));
   background: color-mix(in srgb, var(--color-primary-dark) 68%, transparent);
   backdrop-filter: blur(5px);
 }
@@ -9751,7 +10073,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 18%, var(--color-border-light));
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: var(--shadow-xl);
@@ -9764,8 +10087,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: var(--space-md);
   padding: var(--space-lg);
   border-bottom: 1px solid var(--color-border-light);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 95%, black), var(--color-primary-dark));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 95%, black),
+    var(--color-primary-dark)
+  );
   color: var(--color-text-inverse);
 }
 
@@ -9795,8 +10121,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   padding: var(--space-lg);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 5%, var(--color-bg-body)), var(--color-bg-body));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-primary) 5%, var(--color-bg-body)),
+    var(--color-bg-body)
+  );
 }
 
 .player-profile-summary {
@@ -9856,15 +10185,26 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .player-profile-card--best {
-  border-color: color-mix(in srgb, var(--color-warning) 40%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 40%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-warning) 8%, var(--color-surface));
 }
 
 .player-leaderboard-card--achievement,
 .player-profile-card--achievement {
-  border-color: color-mix(in srgb, var(--color-warning) 44%, var(--color-border-light));
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-warning) 14%, var(--color-surface)), var(--color-surface));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 44%,
+    var(--color-border-light)
+  );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-warning) 14%, var(--color-surface)),
+    var(--color-surface)
+  );
 }
 
 .player-profile-card strong {
@@ -9945,8 +10285,16 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .player-profile-weak-row {
-  border-color: color-mix(in srgb, var(--color-warning) 34%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-body));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 34%,
+    var(--color-border-light)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 10%,
+    var(--color-bg-body)
+  );
 }
 
 .player-profile-weak-row strong,
@@ -9992,7 +10340,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 /* Coach/Admin Quiz Setup */
 .coach-quiz-setup-page {
-  min-height: calc(var(--app-vh, 1vh) * 100 - var(--app-header-height, 0px) - var(--tabbar-height, 0px));
+  min-height: calc(
+    var(--app-vh, 1vh) * 100 - var(--app-header-height, 0px) -
+      var(--tabbar-height, 0px)
+  );
   padding: var(--space-lg);
   background: var(--color-bg-body);
 }
@@ -10010,10 +10361,14 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   align-items: center;
   gap: var(--space-md);
   padding: var(--space-lg);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 18%, var(--color-border-light));
   border-radius: var(--radius-lg);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-body)), var(--color-surface));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-body)),
+    var(--color-surface)
+  );
   box-shadow: var(--shadow-xs);
 }
 
@@ -10055,7 +10410,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   align-content: center;
   gap: 2px;
   border-radius: 50%;
-  border: 8px solid color-mix(in srgb, var(--color-success) 58%, var(--color-border-light));
+  border: 8px solid
+    color-mix(in srgb, var(--color-success) 58%, var(--color-border-light));
   background: var(--color-bg-body);
   box-shadow: var(--shadow-sm);
   text-align: center;
@@ -10280,7 +10636,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 .coach-quiz-sticker-btn:hover,
 .coach-quiz-sticker-btn:focus-visible {
-  border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 38%,
+    var(--color-border-light)
+  );
   box-shadow: var(--shadow-xs);
 }
 
@@ -10423,7 +10783,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .coach-roster-picker-row:focus-visible,
 .coach-roster-picker-row.is-recommended {
   outline: 0;
-  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 42%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
 }
 
@@ -10434,7 +10798,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   place-items: center;
   padding: 0 8px;
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-body));
+  background: color-mix(
+    in srgb,
+    var(--color-primary) 12%,
+    var(--color-bg-body)
+  );
   color: var(--color-primary-dark);
   font-size: var(--font-size-sm);
   font-weight: 950;
@@ -10518,10 +10886,14 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   display: grid;
   gap: var(--space-md);
   padding: var(--space-md);
-  border: 1px solid color-mix(in srgb, var(--color-success) 18%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-success) 18%, var(--color-border-light));
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-success) 5%, var(--color-surface)), var(--color-surface));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-success) 5%, var(--color-surface)),
+    var(--color-surface)
+  );
 }
 
 .coach-quiz-award-history-grid {
@@ -10573,7 +10945,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .coach-quiz-award-history-row.is-pending {
-  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 42%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-warning) 8%, var(--color-bg-body));
 }
 
@@ -10632,12 +11008,20 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .coach-quiz-award-status.is-approved {
-  background: color-mix(in srgb, var(--color-success) 12%, var(--color-bg-body));
+  background: color-mix(
+    in srgb,
+    var(--color-success) 12%,
+    var(--color-bg-body)
+  );
   color: var(--color-success);
 }
 
 .coach-quiz-award-status.is-pending {
-  background: color-mix(in srgb, var(--color-warning) 16%, var(--color-bg-body));
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 16%,
+    var(--color-bg-body)
+  );
   color: var(--color-warning);
 }
 
@@ -10652,10 +11036,14 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   display: grid;
   gap: var(--space-md);
   padding: var(--space-md);
-  border: 1px solid color-mix(in srgb, var(--color-info) 20%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-info) 20%, var(--color-border-light));
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-info) 5%, var(--color-surface)), var(--color-surface));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-info) 5%, var(--color-surface)),
+    var(--color-surface)
+  );
 }
 
 .coach-quiz-roster-health-summary {
@@ -10677,17 +11065,33 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .coach-quiz-roster-health-summary span.is-good {
-  border-color: color-mix(in srgb, var(--color-success) 35%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 35%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-success) 9%, var(--color-bg-body));
 }
 
 .coach-quiz-roster-health-summary span.is-warning {
-  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-body));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 42%,
+    var(--color-border-light)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 10%,
+    var(--color-bg-body)
+  );
 }
 
 .coach-quiz-roster-health-summary span.is-danger {
-  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-danger) 40%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-danger) 9%, var(--color-bg-body));
 }
 
@@ -10780,10 +11184,14 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 .coach-quiz-leaderboard-panel {
   padding: var(--space-md);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 18%, var(--color-border-light));
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 5%, var(--color-surface)), var(--color-surface));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 5%, var(--color-surface)),
+    var(--color-surface)
+  );
   box-shadow: var(--shadow-xs);
 }
 
@@ -10829,7 +11237,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: 2px;
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-light));
+  background: color-mix(
+    in srgb,
+    var(--color-primary) 6%,
+    var(--color-bg-light)
+  );
 }
 
 .coach-quiz-selected-player strong {
@@ -10906,7 +11318,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .coach-quiz-leader-row:hover,
 .coach-quiz-leader-row:focus-visible,
 .coach-quiz-leader-row.is-selected {
-  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 40%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
 }
 
@@ -10968,7 +11384,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .coach-quiz-common-miss-card {
-  border-color: color-mix(in srgb, var(--color-info) 28%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-info) 28%,
+    var(--color-border-light)
+  );
 }
 
 .coach-quiz-common-miss-row {
@@ -11010,7 +11430,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   align-items: center;
   gap: var(--space-md);
   padding: var(--space-md);
-  border: 1px solid color-mix(in srgb, var(--color-info) 24%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-info) 24%, var(--color-border-light));
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-info) 6%, var(--color-surface));
 }
@@ -11153,7 +11574,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .coach-quiz-score-ring-btn {
   cursor: pointer;
   font: inherit;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .coach-quiz-score-ring-btn:hover,
@@ -11178,7 +11602,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .coach-quiz-score-ring[data-tone="ready"] {
-  background: color-mix(in srgb, var(--color-success) 13%, var(--color-bg-body));
+  background: color-mix(
+    in srgb,
+    var(--color-success) 13%,
+    var(--color-bg-body)
+  );
 }
 
 .coach-quiz-score-ring[data-tone="close"] {
@@ -11186,7 +11614,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .coach-quiz-score-ring[data-tone="needs"] {
-  background: color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-body));
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 18%,
+    var(--color-bg-body)
+  );
 }
 
 .coach-quiz-score-ring[data-tone="thin"] {
@@ -11291,7 +11723,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   display: grid;
   gap: var(--space-xs);
   padding: var(--space-sm);
-  border: 1px solid color-mix(in srgb, var(--color-info) 18%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-info) 18%, var(--color-border-light));
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-info) 4%, var(--color-bg-body));
 }
@@ -11352,17 +11785,29 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .coach-quiz-preview-row--ready {
-  border-color: color-mix(in srgb, var(--color-success) 36%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 36%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-success) 8%, var(--color-surface));
 }
 
 .coach-quiz-preview-row--planned {
-  border-color: color-mix(in srgb, var(--color-info) 32%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-info) 32%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-info) 7%, var(--color-surface));
 }
 
 .coach-quiz-preview-row--needs {
-  border-color: color-mix(in srgb, var(--color-warning) 28%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 28%,
+    var(--color-border-light)
+  );
 }
 
 .coach-quiz-preview-grid--actual {
@@ -11371,9 +11816,14 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 .coach-quiz-study-card-warning {
   padding: var(--space-xs) var(--space-sm);
-  border: 1px solid color-mix(in srgb, var(--color-warning) 38%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 38%, var(--color-border-light));
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--color-warning) 11%, var(--color-bg-body));
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 11%,
+    var(--color-bg-body)
+  );
   color: var(--color-text);
   font-size: var(--font-size-xs);
   font-weight: 850;
@@ -11390,17 +11840,29 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .coach-quiz-mode-recommendation--ready {
-  border-color: color-mix(in srgb, var(--color-success) 34%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 34%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-success) 7%, var(--color-bg-body));
 }
 
 .coach-quiz-mode-recommendation--planned {
-  border-color: color-mix(in srgb, var(--color-info) 32%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-info) 32%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-info) 6%, var(--color-bg-body));
 }
 
 .coach-quiz-mode-recommendation--needs {
-  border-color: color-mix(in srgb, var(--color-warning) 30%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 30%,
+    var(--color-border-light)
+  );
 }
 
 .coach-quiz-mode-recommendation > span {
@@ -11476,17 +11938,29 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .coach-quiz-readiness-split-item--ready {
-  border-color: color-mix(in srgb, var(--color-success) 38%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 38%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-success) 8%, var(--color-bg-body));
 }
 
 .coach-quiz-readiness-split-item--partial {
-  border-color: color-mix(in srgb, var(--color-info) 34%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-info) 34%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-info) 7%, var(--color-bg-body));
 }
 
 .coach-quiz-readiness-split-item--missing {
-  border-color: color-mix(in srgb, var(--color-warning) 34%, var(--color-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 34%,
+    var(--color-border-light)
+  );
   background: color-mix(in srgb, var(--color-warning) 8%, var(--color-bg-body));
 }
 
@@ -11495,7 +11969,11 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: 4px;
   padding: var(--space-sm);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-bg-light));
+  background: color-mix(
+    in srgb,
+    var(--color-primary) 5%,
+    var(--color-bg-light)
+  );
 }
 
 .coach-quiz-next-actions strong {
@@ -11570,7 +12048,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .coach-quiz-repair-note {
   margin: 0;
   padding: var(--space-sm);
-  border: 1px solid color-mix(in srgb, var(--color-info) 22%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-info) 22%, var(--color-border-light));
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--color-info) 6%, var(--color-bg-body));
   color: var(--color-text-secondary);
@@ -11670,8 +12149,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 @media (max-width: 480px) {
   .script-quiz-overlay {
     align-items: stretch;
-    padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
-      max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    padding: max(10px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
   }
 
   .script-quiz-panel {
@@ -11758,7 +12239,9 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     display: none;
   }
 
-  .script-quiz-scenario--very-long-choices .sq-scenario-block--quiz-detail .sq-scenario-value {
+  .script-quiz-scenario--very-long-choices
+    .sq-scenario-block--quiz-detail
+    .sq-scenario-value {
     display: -webkit-box;
     overflow: hidden;
     -webkit-box-orient: vertical;
@@ -11773,7 +12256,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     margin-top: 2px;
     padding: 10px 10px;
     border-radius: var(--radius-md);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 45%, var(--color-border-light));
+    border: 1px solid
+      color-mix(in srgb, var(--color-primary) 45%, var(--color-border-light));
     background: var(--color-primary);
     color: var(--color-text-inverse);
     font-size: var(--font-size-xl);
@@ -11821,7 +12305,9 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     padding: 5px 8px;
   }
 
-  .script-quiz-scenario--signal-video .sq-scenario-block--quiz-detail .sq-scenario-value {
+  .script-quiz-scenario--signal-video
+    .sq-scenario-block--quiz-detail
+    .sq-scenario-value {
     font-size: var(--font-size-xs);
     line-height: 1.15;
   }
@@ -11959,8 +12445,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
   .player-quiz-hub-overlay {
     align-items: stretch;
-    padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
-      max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    padding: max(10px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
   }
 
   .player-quiz-hub-panel {
@@ -12042,7 +12530,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     display: none;
   }
 
-  .signal-sprint-leader-row > span:not(.signal-sprint-rank):not(.signal-sprint-score) {
+  .signal-sprint-leader-row
+    > span:not(.signal-sprint-rank):not(.signal-sprint-score) {
     display: none;
   }
 
@@ -12071,7 +12560,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
   .player-leaderboard-page {
     padding: var(--space-sm) var(--space-sm)
-      calc(var(--player-bottom-nav-height, 76px) + 14px + env(safe-area-inset-bottom));
+      calc(
+        var(--player-bottom-nav-height, 76px) + 14px +
+          env(safe-area-inset-bottom)
+      );
   }
 
   .player-leaderboard-hero {
@@ -12104,8 +12596,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
   .player-leaderboard-profile-overlay {
     align-items: stretch;
-    padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
-      max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    padding: max(10px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
   }
 
   .player-leaderboard-profile-panel {

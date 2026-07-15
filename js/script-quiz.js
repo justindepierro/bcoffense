@@ -2201,8 +2201,8 @@ function _renderSignalLeaderboardTabs() {
   return `
     <div class="signal-leaderboard-tabs" role="group" aria-label="Signal leaderboard mode">
       ${modes.map((mode) => {
-        const config = _getSignalLeaderboardConfig(mode);
-        return `
+    const config = _getSignalLeaderboardConfig(mode);
+    return `
           <button type="button"
             class="${config.mode === _signalLeaderboardMode ? "is-active" : ""}"
             data-action="setSignalLeaderboardMode"
@@ -2210,7 +2210,7 @@ function _renderSignalLeaderboardTabs() {
             ${escapeHtml(config.label)}
           </button>
         `;
-      }).join("")}
+  }).join("")}
     </div>
   `;
 }
@@ -3003,8 +3003,8 @@ function _renderCoachQuizRepairRow(play, idx) {
       <div class="coach-quiz-repair-row-main">
         <strong>${escapeHtml(call)}</strong>
         <small>${target.play
-    ? `Edits save to Playbook${masterCall && masterCall !== call ? `: ${masterCall}` : ""}.`
-    : "This script copy is not linked to a playbook play."}</small>
+      ? `Edits save to Playbook${masterCall && masterCall !== call ? `: ${masterCall}` : ""}.`
+      : "This script copy is not linked to a playbook play."}</small>
         <div class="coach-quiz-repair-chip-row">${issueHtml}</div>
       </div>
       <button type="button"
@@ -3032,8 +3032,8 @@ function _renderCoachQuizSourceRepairBody(source) {
     <p class="coach-quiz-repair-note">Open a play below to fix the master Playbook record. Saved script copies may still need to be republished if they were captured before the playbook was cleaned up.</p>
     <div class="coach-quiz-repair-list">
       ${sourcePlays.length
-    ? sourcePlays.map((play, idx) => _renderCoachQuizRepairRow(play, idx)).join("")
-    : `<div class="coach-quiz-empty">No plays found in this script source.</div>`}
+      ? sourcePlays.map((play, idx) => _renderCoachQuizRepairRow(play, idx)).join("")
+      : `<div class="coach-quiz-empty">No plays found in this script source.</div>`}
     </div>
   `;
 }
@@ -3283,8 +3283,8 @@ function _renderCoachQuizModeRecommendation(source, kind) {
       <strong>${escapeHtml(recommendation.label)}</strong>
       <small>${escapeHtml(recommendation.detail)}</small>
       ${recommendation.support.length
-    ? `<div>${recommendation.support.map((item) => `<b>${escapeHtml(item)}</b>`).join("")}</div>`
-    : ""}
+      ? `<div>${recommendation.support.map((item) => `<b>${escapeHtml(item)}</b>`).join("")}</div>`
+      : ""}
     </div>
   `;
 }
@@ -5050,9 +5050,9 @@ function _renderSignalGameCategorySelector(status = _getSignalQuizStatus()) {
           <small>2x</small>
         </button>
         ${eligibleOptions.map((category) => {
-          const checked = selected.has(category.id);
-          const count = countByCategory.get(category.id) || 0;
-          return `
+    const checked = selected.has(category.id);
+    const count = countByCategory.get(category.id) || 0;
+    return `
             <button type="button"
               class="signal-game-category-chip${checked ? " is-selected" : ""}${!count ? " is-empty" : ""}"
               data-action="toggleSignalGameCategory"
@@ -5062,7 +5062,7 @@ function _renderSignalGameCategorySelector(status = _getSignalQuizStatus()) {
               <small>${count} clip${count === 1 ? "" : "s"}</small>
             </button>
           `;
-        }).join("")}
+  }).join("")}
       </div>
     </div>
   `;
@@ -6432,11 +6432,11 @@ function _renderQuizWrongReview(item, answer) {
           ? "Connect the formation clue back to the play name."
           : context.questionType === "signal"
             ? "Connect the play component to the short signal clip you studied."
-          : context.questionType === "signal_full_call"
-            ? "Read the signal sequence as a full call: formation or board cue, motion, tag, protection, and play name together."
-          : context.questionType === "play_type"
-            ? "Sort the call into run, pass, screen, RPO, or another play family."
-            : "Use the formation, personnel, and tags to identify the call.";
+            : context.questionType === "signal_full_call"
+              ? "Read the signal sequence as a full call: formation or board cue, motion, tag, protection, and play name together."
+              : context.questionType === "play_type"
+                ? "Sort the call into run, pass, screen, RPO, or another play family."
+                : "Use the formation, personnel, and tags to identify the call.";
   return `
     <div class="sq-review-card" role="note" aria-label="Wrong answer review">
       <div class="sq-review-kicker">Review this one</div>
@@ -6592,7 +6592,7 @@ function _decodeAheadImage(url) {
     const img = new Image();
     img.decoding = "async";
     img.src = url;
-    if (typeof img.decode === "function") img.decode().catch(() => {});
+    if (typeof img.decode === "function") img.decode().catch(() => { });
   } catch (_e) { /* best-effort decode warm */ }
 }
 
@@ -7638,7 +7638,7 @@ function renderScriptQuizPlay() {
       ? (battleLocked ? "Watch" : "Battle")
       : _isSignalHeatCheckMode()
         ? "Heat Check"
-      : _quizIndex === _quizPlays.length - 1 ? "Finish" : "Next ▶";
+        : _quizIndex === _quizPlays.length - 1 ? "Finish" : "Next ▶";
   }
   const shuffleBtn = document.getElementById("scriptQuizShuffleBtn");
   if (shuffleBtn) {
@@ -7674,8 +7674,8 @@ function renderScriptQuizPlay() {
     ? `
       <figure class="sq-signal-prompt${_isSignalBattleMode() && !battleLocked ? " is-hidden" : ""}" aria-label="Signal video prompt">
         ${_isSignalBattleMode() && !battleLocked
-          ? `<div class="sq-signal-hidden">Signal hidden</div>`
-          : `<video src="${escapeAttr(question.signalClipUrl)}" autoplay loop muted playsinline preload="auto" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"></video>`}
+      ? `<div class="sq-signal-hidden">Signal hidden</div>`
+      : `<video src="${escapeAttr(question.signalClipUrl)}" autoplay loop muted playsinline preload="auto" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"></video>`}
         <figcaption>${escapeHtml(_isSignalBattleMode() && !battleLocked ? "Answer window" : question.signal?.label || "Signal clip")}</figcaption>
       </figure>`
     : question.type === "signal_full_call" && Array.isArray(question.signalClips) && question.signalClips.length
@@ -7692,7 +7692,7 @@ function renderScriptQuizPlay() {
           </div>
           <figcaption>Read the signal sequence, then pick the full play call.</figcaption>
         </figure>`
-    : "";
+      : "";
 
   const situationParts = [downLabel && distLabel ? `${downLabel} ${distLabel}` : downLabel || distLabel, posLabel, hashLabel, situationLabel].filter(Boolean);
   const callContextParts = [personnelLabel, tempoLabel, typeLabel].filter(Boolean);
