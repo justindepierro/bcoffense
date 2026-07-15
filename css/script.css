@@ -6235,6 +6235,90 @@ body[data-active-tab="script"] .script-display-fab {
   width: 100%;
   min-width: 0;
 }
+
+/* ── Tabbed sidebar: Library | Tools in one collapsible column ── */
+#script .script-sidebar-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+#script .script-sidebar-tab {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-lighter);
+  color: var(--color-text-secondary);
+  font-weight: 800;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  white-space: nowrap;
+}
+#script .script-sidebar-tab.is-active {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
+}
+#script .script-sidebar-collapse {
+  flex: 0 0 auto;
+  width: 26px;
+  min-height: 28px;
+  padding: 4px 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-lighter);
+  color: var(--color-text-secondary);
+  font-weight: 900;
+  cursor: pointer;
+}
+#script .script-sidebar-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 6px;
+}
+/* Show only the active tab's panel. */
+#script .script-play-rail[data-sidebar-tab="library"] #scriptToolsDrawer,
+#script .script-play-rail[data-sidebar-tab="tools"] > [data-panel="library"] {
+  display: none;
+}
+/* Tools drawer hosted inside the sidebar renders as a plain scrolling panel,
+   not a right-side overlay. */
+#script .script-play-rail #scriptToolsDrawer {
+  position: static;
+  transform: none;
+  inset: auto;
+  width: auto;
+  max-width: none;
+  height: auto;
+  box-shadow: none;
+  z-index: auto;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#script .script-play-rail #scriptToolsDrawer .script-tools-drawer-header {
+  display: none;
+}
+#script .script-play-rail #scriptToolsDrawer .script-tools-drawer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+}
 /* Compact selects inside the rail filters */
 #script .script-play-rail .filters select,
 #script .script-play-rail .filters input {

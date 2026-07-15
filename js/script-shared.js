@@ -141,6 +141,7 @@ function applyScriptPlayRailState() {
   }
   trigger?.classList.toggle("is-active", !scriptPlayRailCollapsed);
   trigger?.setAttribute("aria-pressed", scriptPlayRailCollapsed ? "false" : "true");
+  _syncScriptSidebarTabUi();
 }
 
 function toggleScriptPlayRail() {
@@ -149,30 +150,72 @@ function toggleScriptPlayRail() {
   saveScriptDisplayOptions();
 }
 
-function setScriptToolsDrawerOpen(isOpen) {
-  const nextOpen = Boolean(isOpen);
-  const scriptPanel = document.getElementById("script");
-  const drawer = document.getElementById("scriptToolsDrawer");
-  const backdrop = document.getElementById("scriptToolsBackdrop");
-  const trigger = document.getElementById("scriptToolsDrawerToggle");
-
-  if (nextOpen && typeof closeScriptDisplayPanel === "function") {
-    closeScriptDisplayPanel();
+// The Script sidebar hosts two tabs — Library and Tools — in one collapsible
+// column. Selecting a tab opens the sidebar on that tab; selecting the tab
+// that is already showing collapses the sidebar, so the header pills toggle.
+function setScriptSidebarTab(tab) {
+  const rail = document.getElementById("scriptPlayRail");
+  if (!rail) return;
+  const next = String(tab) === "tools" ? "tools" : "library";
+  const currentTab = rail.dataset.sidebarTab || "library";
+  if (!scriptPlayRailCollapsed && currentTab === next) {
+    scriptPlayRailCollapsed = true;
+    applyScriptPlayRailState();
+    saveScriptDisplayOptions();
+    return;
   }
-  scriptToolsDrawerOpen = nextOpen;
-  scriptPanel?.classList.toggle("script-tools-open", nextOpen);
-  drawer?.classList.toggle("open", nextOpen);
-  drawer?.setAttribute("aria-hidden", nextOpen ? "false" : "true");
-  drawer?.toggleAttribute("inert", !nextOpen);
-  if (backdrop) backdrop.hidden = !nextOpen;
-  trigger?.classList.toggle("is-active", nextOpen);
-  trigger?.setAttribute("aria-expanded", nextOpen ? "true" : "false");
-  if (drawer) {
-    if (nextOpen && typeof openLayer === "function") {
-      openLayer(drawer, { id: "script-tools-drawer", exclusive: false });
-    } else if (!nextOpen && typeof closeLayer === "function") {
-      closeLayer("script-tools-drawer");
-    }
+  rail.dataset.sidebarTab = next;
+  if (scriptPlayRailCollapsed) {
+    scriptPlayRailCollapsed = false;
+    applyScriptPlayRailState();
+    saveScriptDisplayOptions();
+  } else {
+    _syncScriptSidebarTabUi();
+  }
+}
+
+function _syncScriptSidebarTabUi() {
+  const rail = document.getElementById("scriptPlayRail");
+  const tab = rail?.dataset.sidebarTab || "library";
+  const open = !scriptPlayRailCollapsed;
+  const libTab = document.getElementById("scriptSidebarTabLibrary");
+  const toolsTab = document.getElementById("scriptSidebarTabTools");
+  libTab?.classList.toggle("is-active", tab === "library");
+  libTab?.setAttribute("aria-selected", tab === "library" ? "true" : "false");
+  toolsTab?.classList.toggle("is-active", tab === "tools");
+  toolsTab?.setAttribute("aria-selected", tab === "tools" ? "true" : "false");
+  const libPill = document.getElementById("scriptPlayRailToggle");
+  const toolsPill = document.getElementById("scriptToolsDrawerToggle");
+  libPill?.classList.toggle("is-active", open && tab === "library");
+  libPill?.setAttribute("aria-pressed", open && tab === "library" ? "true" : "false");
+  toolsPill?.classList.toggle("is-active", open && tab === "tools");
+  toolsPill?.setAttribute("aria-expanded", open && tab === "tools" ? "true" : "false");
+  scriptToolsDrawerOpen = open && tab === "tools";
+}
+
+// Move the Tools drawer into the sidebar column once, so Library and Tools
+// become two tabs of one collapsible panel instead of two separate overlays.
+function relocateScriptToolsIntoSidebar() {
+  const rail = document.getElementById("scriptPlayRail");
+  const tools = document.getElementById("scriptToolsDrawer");
+  if (!rail || !tools || tools.parentElement === rail) return;
+  tools.dataset.panel = "tools";
+  tools.classList.add("open");
+  tools.removeAttribute("inert");
+  tools.setAttribute("aria-hidden", "false");
+  rail.appendChild(tools);
+  if (!rail.dataset.sidebarTab) rail.dataset.sidebarTab = "library";
+}
+
+function setScriptToolsDrawerOpen(isOpen) {
+  if (isOpen) {
+    setScriptSidebarTab("tools");
+    return;
+  }
+  if (!scriptPlayRailCollapsed) {
+    scriptPlayRailCollapsed = true;
+    applyScriptPlayRailState();
+    saveScriptDisplayOptions();
   }
 }
 
@@ -185,8 +228,13 @@ function closeScriptToolsDrawer() {
 }
 
 function toggleScriptToolsDrawer() {
-  setScriptToolsDrawerOpen(!scriptToolsDrawerOpen);
+  setScriptSidebarTab("tools");
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  relocateScriptToolsIntoSidebar();
+  _syncScriptSidebarTabUi();
+});
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && scriptToolsDrawerOpen) {
