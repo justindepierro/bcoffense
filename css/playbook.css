@@ -7632,10 +7632,40 @@ label.disc-attach-btn {
   }
   body:not(.is-mobile-screen) #playbook .pb-meta-bar {
     margin-bottom: 3px;
+    flex-wrap: wrap;
+    gap: 5px 8px;
   }
+
+  /* Tighter header buttons (search + utilities cluster). */
+  body:not(.is-mobile-screen) #playbook .pb-top-row .btn {
+    min-height: 30px;
+    padding: 3px 9px;
+  }
+  body:not(.is-mobile-screen) #playbook .pb-utility-group {
+    gap: 4px;
+  }
+  body:not(.is-mobile-screen) #playbook .pb-search-wrap input {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  /* Merge the "Showing" chips row and the readiness prompt into ONE bar:
+     strip the empty readiness card's box + label so its two buttons tuck in at
+     the right of the chips instead of taking their own row. */
   body:not(.is-mobile-screen) #playbook .pb-readiness-card--empty {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    min-height: 0;
+    margin-left: auto;
+  }
+  body:not(.is-mobile-screen) #playbook .pb-readiness-card--empty .pb-readiness-main {
+    display: none;
+  }
+  body:not(.is-mobile-screen) #playbook .pb-readiness-card--empty .play-readiness-btn {
     min-height: 28px;
-    padding: 3px 8px;
+    padding: 3px 9px;
   }
 }
 
