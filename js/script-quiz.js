@@ -7617,28 +7617,29 @@ function renderScriptQuizPlay() {
   const scenarioEl = document.getElementById("scriptQuizScenario");
   if (scenarioEl) {
     scenarioEl.className = scenarioClasses;
-    // Preserve already-loaded signal <video> elements across a same-question
-    // re-render (e.g. revealing the answer after a tap) so the clip does NOT
-    // reload/restart — a visible jank + re-decode + possible re-download on
-    // phones. Detach matching videos by src, rebuild the scenario, then swap the
-    // live elements back into their fresh placeholders.
-    const sameQuestion = scenarioEl.dataset.quizKey === questionKey;
-    const preservedVideos = sameQuestion
-      ? Array.from(scenarioEl.querySelectorAll("video"))
-      : [];
-    preservedVideos.forEach((video) => video.remove());
+    // Pool the previous render's signal <video> elements instead of letting
+    // setInnerHTML destroy and recreate them. Reusing the decoder element (and
+    // only swapping src when it actually changes) means:
+    //   • same-question re-render (answer reveal) → src unchanged → the clip
+    //     keeps playing, no reload/restart/re-decode;
+    //   • next question → reuse the element + swap src → no create/destroy
+    //     churn or decoder teardown, which hitches on cheap phones.
+    // Only pool when the video count matches so signal ↔ signal-sequence ↔
+    // diagram transitions never cross-wire elements.
+    const pooledVideos = Array.from(scenarioEl.querySelectorAll("video"));
+    pooledVideos.forEach((video) => video.remove());
     setInnerHTML(scenarioEl, scenarioHtml);
     scenarioEl.dataset.quizKey = questionKey;
-    if (preservedVideos.length) {
-      scenarioEl.querySelectorAll("video").forEach((freshVideo) => {
+    const freshVideos = Array.from(scenarioEl.querySelectorAll("video"));
+    if (pooledVideos.length && pooledVideos.length === freshVideos.length) {
+      freshVideos.forEach((freshVideo, i) => {
+        const pooled = pooledVideos[i];
         const freshSrc = freshVideo.getAttribute("src") || "";
-        const match = preservedVideos.find(
-          (video) => !video._quizReused && (video.getAttribute("src") || "") === freshSrc,
-        );
-        if (match) {
-          match._quizReused = true;
-          freshVideo.replaceWith(match);
+        if ((pooled.getAttribute("src") || "") !== freshSrc) {
+          pooled.setAttribute("src", freshSrc);
+          try { pooled.load(); } catch (_e) { /* ignore */ }
         }
+        freshVideo.replaceWith(pooled);
       });
     }
     if (window.playImages && typeof window.playImages.hydrateSmartDiagramImages === "function") {
