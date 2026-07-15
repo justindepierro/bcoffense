@@ -6847,11 +6847,35 @@ body:not(.is-mobile-screen) #script .script-section-head .stat-health-btn {
   padding-block: 1px;
 }
 body:not(.is-mobile-screen) #script .script-section-head {
+  display: grid;
+  grid-template-columns: max-content max-content minmax(0, 1fr) max-content;
+  align-items: center;
+  column-gap: 8px;
   flex-wrap: nowrap;
   justify-content: flex-start;
 }
 body:not(.is-mobile-screen) #script .script-section-head .period-buttons {
   flex: 0 0 auto;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+body:not(.is-mobile-screen) #script .script-section-head .period-buttons .btn,
+body:not(.is-mobile-screen) #script .script-section-head .period-template-quickpick {
+  min-height: 36px;
+  white-space: nowrap;
+}
+body:not(.is-mobile-screen) #script .script-section-head .btn-add-period {
+  padding-inline: 12px;
+}
+@media (max-width: 1180px) {
+  body:not(.is-mobile-screen) #script .script-section-head {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  body:not(.is-mobile-screen) #script .script-section-head .period-buttons {
+    flex-wrap: wrap;
+  }
 }
 
 #script .script-toolbar {
