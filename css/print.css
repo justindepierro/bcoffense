@@ -937,6 +937,15 @@
     line-height: 1.02;
     break-inside: avoid;
   }
+  .cs-print-page[data-callsheet-font="condensed"] .print-play {
+    font-family: var(--font-callsheet-condensed) !important;
+  }
+  .cs-print-page[data-callsheet-font="sideline"] .print-play {
+    font-family: var(--font-callsheet-sideline) !important;
+  }
+  .cs-print-page[data-callsheet-font="playbook"] .print-play {
+    font-family: var(--font-callsheet-playbook) !important;
+  }
 
   .print-play-text {
     flex: 1;

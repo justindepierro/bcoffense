@@ -317,7 +317,10 @@ function renderCallSheetPrintPage(page, opts) {
   const safePage = normalizeCallSheetPage(page);
   const categories = getCallSheetCategoriesForPage(safePage);
   const columnGroups = buildCallSheetColumns(categories, opts.columns);
-  let html = `<section class="cs-print-page ${opts.orientClass} ${opts.colsClass}" data-cs-print-page="${safePage}">`;
+  const fontKey = typeof getCallSheetFontKey === "function"
+    ? getCallSheetFontKey(opts.printOptions?.font)
+    : "standard";
+  let html = `<section class="cs-print-page ${opts.orientClass} ${opts.colsClass}" data-cs-print-page="${safePage}" data-callsheet-font="${fontKey}">`;
 
   html += '<div class="print-callsheet-grid">';
 

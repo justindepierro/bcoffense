@@ -538,6 +538,7 @@ const CALLSHEET_DISPLAY_IDS = [
   "callsheetForceUppercase",
   "callsheetHighlightHuddle",
   "callsheetHighlightCandy",
+  "callsheetFont",
   "callsheetRedBorder",
   "callsheetBlueBorder",
   "callsheetGreenBorder",
@@ -549,7 +550,15 @@ const CALLSHEET_DISPLAY_IDS = [
 
 const CALLSHEET_DISPLAY_DEFAULTS = {
   callsheetShowBack: true,
+  callsheetFont: "standard",
 };
+
+const CALLSHEET_FONT_OPTIONS = ["standard", "condensed", "sideline", "playbook"];
+
+function getCallSheetFontKey(value = "standard") {
+  const key = String(value || "").trim().toLowerCase();
+  return CALLSHEET_FONT_OPTIONS.includes(key) ? key : "standard";
+}
 
 const CALLSHEET_CELL_DISPLAY_OVERRIDE_PROPS = [
   "cellUseOneWord",
@@ -789,6 +798,7 @@ function renderCallSheet() {
 
   // Hoist display options once — avoids re-reading DOM per play
   const displayOptions = getCallSheetDisplayOptions();
+  container.dataset.callsheetFont = displayOptions.font;
   Object.defineProperty(displayOptions, "_playTextMemo", {
     value: new WeakMap(),
     enumerable: false,
@@ -1223,6 +1233,7 @@ function getCallSheetDisplayOptions() {
       document.getElementById("callsheetHighlightHuddle")?.checked ?? false,
     highlightCandy:
       document.getElementById("callsheetHighlightCandy")?.checked ?? false,
+    font: getCallSheetFontKey(document.getElementById("callsheetFont")?.value),
     // Border options
     redBorder: document.getElementById("callsheetRedBorder")?.value || "",
     blueBorder: document.getElementById("callsheetBlueBorder")?.value || "",

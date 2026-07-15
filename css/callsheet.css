@@ -165,6 +165,44 @@
   overflow-wrap: anywhere;
 }
 
+/* Call Sheet typeface is deliberately scoped to the calls, never shared
+   playbook or wristband typography. The chosen setting is persisted with
+   Call Sheet display presets and carries into print. */
+.callsheet-grid[data-callsheet-font="condensed"] .callsheet-play {
+  font-family: var(--font-callsheet-condensed);
+}
+.callsheet-grid[data-callsheet-font="sideline"] .callsheet-play {
+  font-family: var(--font-callsheet-sideline);
+}
+.callsheet-grid[data-callsheet-font="playbook"] .callsheet-play {
+  font-family: var(--font-callsheet-playbook);
+}
+
+.cs-font-picker {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 0.8fr);
+  gap: var(--space-xs) var(--space-sm);
+  align-items: center;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+.cs-font-picker select { min-height: 36px; }
+.cs-font-picker small {
+  grid-column: 1 / -1;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 500;
+}
+@media (max-width: 520px) {
+  .cs-font-picker { grid-template-columns: 1fr; }
+}
+
 .callsheet-play .remove-play:focus-visible {
   display: block;
   outline: 2px solid var(--color-focus);
@@ -4705,4 +4743,3 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
     font-size: var(--font-size-md);
   }
 }
-
