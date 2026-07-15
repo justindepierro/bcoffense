@@ -637,6 +637,15 @@ function resetPlayPresentationZoom() {
 // Also adds pinch-to-zoom and double-tap-to-zoom for phones.
 function attachPlayPresentationPan(frame) {
   if (!frame) return;
+  // Bind once per frame lifetime. This runs on EVERY diagram render (each play
+  // open + every next/prev in the reels viewer), but the frame element
+  // (#playPresentationDiagram) is persistent and the handlers read module-global
+  // pan/zoom state — so without this guard the 8 pointer/touch listeners below
+  // would stack ~8×N deep as a player flips through plays (memory + duplicate
+  // gesture math). The flag lives on the element, so it resets if the frame is
+  // ever recreated.
+  if (frame._ppPanBound) return;
+  frame._ppPanBound = true;
   frame.addEventListener("pointerdown", (event) => {
     if (playPresentationZoom.scale <= 1.001) return;
     if (event.button && event.button !== 0) return;
