@@ -3578,6 +3578,189 @@ body.gp-printing .gp-print-detail-val {
   background: var(--color-warning);
 }
 
+/* ── Coach Grid: Game Plan board ─────────────────────────────────────────
+   The drafting board is a coach workbench, not a soft card gallery. This
+   desktop-only pass consumes the shared Coach Grid tokens while retaining the
+   board's type accents, drag targets, mobile layout, and print contract. */
+@media screen and (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan {
+    padding: 8px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-cmd-bar {
+    gap: var(--coach-grid-gap);
+    padding: 4px 6px;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-cmd-main,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-cmd-identity,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-cmd-actions {
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-cmd-title {
+    font-size: var(--font-size-md);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-cmd-actions .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-toolbar .btn {
+    min-height: var(--coach-grid-control-height);
+    padding: 3px 8px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+    white-space: nowrap;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-filters-drawer {
+    margin-top: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-toolbar {
+    gap: var(--coach-grid-gap);
+    margin-bottom: var(--coach-grid-gap);
+    padding: 4px 6px;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-toolbar input[type="search"],
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-toolbar select,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-multi-filter-btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-toolbar-toggle,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-matchup-chip {
+    min-height: var(--coach-grid-control-height);
+    border-radius: var(--coach-grid-radius);
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-multi-filter-btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-matchup-chip {
+    padding: 3px 7px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-multi-filter-count,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-adv-badge {
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-layout {
+    grid-template-columns: minmax(250px, 310px) minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-library {
+    gap: var(--coach-grid-gap);
+    padding: 4px;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-library-header {
+    min-height: var(--coach-grid-control-height);
+    padding: 3px 2px;
+    border-bottom-color: var(--coach-grid-divider);
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.045em;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-library-header .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-library-bulk .btn {
+    min-height: var(--coach-grid-compact-control-height);
+    padding: 3px 6px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-play-row {
+    gap: var(--coach-grid-gap);
+    min-height: 32px;
+    padding: 3px 5px;
+    border-color: var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-play-row-type-badge {
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-boxes {
+    gap: 6px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-box {
+    min-height: 104px;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-box-header {
+    gap: var(--coach-grid-gap);
+    min-height: var(--coach-grid-control-height);
+    padding: 4px 6px;
+    border-bottom-color: var(--coach-grid-divider);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-box-title {
+    gap: var(--coach-grid-gap);
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-box-actions {
+    gap: 3px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-box-actions .btn-sm,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-box-actions .gp-box-sort {
+    min-height: var(--coach-grid-mini-control-height);
+    min-width: 0;
+    padding: 2px 5px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-box-body {
+    gap: 3px;
+    min-height: 48px;
+    padding: 4px 6px 6px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-box-play {
+    gap: var(--coach-grid-gap);
+    min-height: var(--coach-grid-compact-control-height);
+    padding: 3px 5px;
+    border-color: var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-jump-bar {
+    gap: var(--coach-grid-gap);
+    margin-bottom: 4px;
+    padding: 4px 0;
+    border-bottom-color: var(--coach-grid-divider);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-jump-pill {
+    min-height: var(--coach-grid-compact-control-height);
+    padding: 3px 6px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+}
+
 /* ── Laptop density tier: pack more of the Game Plan board onto smaller
    desktops (13" MacBook Air) — tighter header/toolbar, shorter boxes, tighter
    grid. Large monitors above 1700px are untouched. ── */

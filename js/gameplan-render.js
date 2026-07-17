@@ -137,7 +137,7 @@ function renderGamePlan() {
   const totalAssigned = assignedSigs.size;
 
   const headerHtml = `
-    <div class="gp-cmd-bar page-header-surface">
+    <div class="gp-cmd-bar page-header-surface app-command-toolbar coach-grid-command-strip">
       <div class="gp-cmd-main page-header-row">
         <div class="gp-cmd-identity toolbar-status">
           <span class="gp-cmd-title">🎯 Game Plan</span>
@@ -232,7 +232,7 @@ function renderGamePlan() {
 
   const toolbarHtml = _gpFilters.showFilters ? `
     <div class="gp-filters-drawer" role="region" aria-label="Play filters">
-    <div class="gp-toolbar toolbar-surface toolbar-surface--compact app-command-toolbar">
+    <div class="gp-toolbar toolbar-surface toolbar-surface--compact app-command-toolbar coach-grid-command-strip">
       <input type="search" id="gpSearch" placeholder="Search plays…"
         value="${escapeHtml(_gpFilters.search || "")}"
         data-oninput="updateGamePlanFilter" data-arg="search" data-pass="value" />

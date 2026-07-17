@@ -53,8 +53,9 @@ layout or responsive behavior, keep that rule in the module stylesheet.
    separate pass.
 3. **Call Sheet** — the desktop toolbar, category headers, and call cells are
    now in the Coach Grid system. Print remains its own verified contract.
-4. **Game Plan** — make board controls and boxes more grid-like without
-   weakening drag/drop affordances.
+4. **Game Plan** — the desktop command zone, filters, library, and boxes now
+   share Coach Grid density. Keep its accent borders, drag/drop states, and
+   print output as explicit exceptions.
 5. **Wristband Maker** — migrate coach controls, not the printed/player card
    design.
 6. **Scouting, Signals, Settings, and Admin** — use compact command strips and

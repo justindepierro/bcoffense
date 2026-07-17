@@ -1123,6 +1123,25 @@ function checkCoachGridCallSheetWorkbenchContract() {
   console.log("coach grid Call Sheet workbench contract ok");
 }
 
+function checkCoachGridGamePlanWorkbenchContract() {
+  const css = read("css/gameplan.css");
+  const render = read("js/gameplan-render.js");
+  const theme = read("COACH_GRID_THEME.md");
+
+  if (
+    !/Coach Grid: Game Plan board/.test(css) ||
+    !/gp-cmd-bar page-header-surface app-command-toolbar coach-grid-command-strip/.test(render) ||
+    !/gp-toolbar toolbar-surface toolbar-surface--compact app-command-toolbar coach-grid-command-strip/.test(render) ||
+    !/#gameplan \.gp-box \{[\s\S]*border-radius: var\(--coach-grid-toolbar-radius\)/.test(css) ||
+    !/#gameplan \.gp-box-play \{[\s\S]*min-height: var\(--coach-grid-compact-control-height\)/.test(css) ||
+    !/Game Plan.*desktop command zone, filters, library, and boxes/.test(theme)
+  ) {
+    fail("Coach Grid Game Plan workbench contract is missing");
+  }
+
+  console.log("coach grid Game Plan workbench contract ok");
+}
+
 function checkPlayPresentationContracts() {
   const html = read("index.html");
   const utils = read("js/utils.js");
@@ -5019,6 +5038,7 @@ checkScriptCoachRowScanningContract();
 checkCoachGridThemeContract();
 checkCoachGridPlaybookWorkbenchContract();
 checkCoachGridCallSheetWorkbenchContract();
+checkCoachGridGamePlanWorkbenchContract();
 checkPlayPresentationContracts();
 checkPlayIdentityHandoffFixtures();
 checkScriptPlayerPublishingContracts();
