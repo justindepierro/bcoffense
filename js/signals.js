@@ -901,8 +901,8 @@ function renderSignals() {
   const token = _sigLastRenderToken;
 
   root.innerHTML = `
-    <div class="signals-shell">
-      <header class="signals-header page-header-surface">
+    <div class="signals-shell coach-grid-signals-workspace">
+      <header class="signals-header page-header-surface app-command-toolbar coach-grid-command-strip">
         <div>
           <p class="signals-eyebrow">Signal Collection</p>
           <h1>Signals</h1>

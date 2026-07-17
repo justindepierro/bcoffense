@@ -65,8 +65,9 @@ layout or responsive behavior, keep that rule in the module stylesheet.
 7. **Opponent Scout** — the desktop opponent list, command strips, filters,
    stat cells, and film log now use Coach Grid scanning density. Reports,
    presentation, mobile cards, and print remain separate contracts.
-8. **Signals** — use compact command strips and clear tables where they
-   improve scanning.
+8. **Signals** — the desktop coach collection, coverage report, component
+   grid, and signal editor now use Coach Grid density. Player-facing clip
+   viewing and media presentation remain separate contracts.
 
 ## Migration rules
 
