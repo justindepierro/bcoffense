@@ -1312,7 +1312,8 @@ function checkLibrarySurfaceContract() {
     !/wb-library-row app-library-row/.test(wristbandRender) ||
     !/\.wb-play-item \{[\s\S]*border: 1px solid/.test(wristbandCss) ||
     !/\.wb-play-item \.play-name \{[\s\S]*font-weight: 700/.test(wristbandCss) ||
-    !/#wristband \.wb-available-plays \{[\s\S]*overflow: visible/.test(wristbandCss) ||
+    !/#wristband \.wb-available-plays \{[\s\S]*overflow-y: auto/.test(wristbandCss) ||
+    !/#wristband \.wristband-plays \{[\s\S]*flex-direction: column[\s\S]*overflow: hidden/.test(wristbandCss) ||
     !/gp-library app-library-pane/.test(gamePlanRender) ||
     !/gp-library-list app-library-list/.test(gamePlanRender) ||
     !/gp-play-row app-library-row/.test(gamePlanRender) ||
@@ -1323,6 +1324,7 @@ function checkLibrarySurfaceContract() {
     !/cs-picker-row app-library-row/.test(callSheetRender) ||
     !/\.cs-picker-row \{[\s\S]*grid-template-columns: auto auto minmax\(0, 1fr\) auto/.test(callSheetCss) ||
     !/\.table-container \{[\s\S]*scrollbar-gutter: stable/.test(playbookCss) ||
+    !/Wristband Maker \| `\.wb-available-plays`/.test(architecture) ||
     !/## Scroll ownership/.test(architecture)
   ) {
     fail("library surfaces no longer have isolated rows and one explicit scroll owner");

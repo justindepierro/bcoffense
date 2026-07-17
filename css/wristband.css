@@ -151,14 +151,17 @@ body.app-ready:not(.is-mobile-screen) #wristband .wristband-container {
   grid-template-columns: unset;
 }
 
-/* Library pane — fixed-width left column, independent scroll */
+/* Library pane — fixed-width left column. Its results list owns the scroll so
+   filters and library controls remain visible while a coach scans plays. */
 body.app-ready:not(.is-mobile-screen) #wristband .wristband-plays {
-  position: static; /* remove sticky — the pane itself scrolls */
-  flex: 0 0 300px;
-  min-width: 240px;
-  max-width: 340px;
+  position: static; /* remove sticky — the result list manages scrolling */
+  display: flex;
+  flex: 0 0 clamp(320px, 22vw, 390px);
+  flex-direction: column;
+  min-width: 320px;
+  max-width: 390px;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   border: none;
   border-right: 1px solid var(--color-border-light);
   border-radius: 0;
@@ -2120,19 +2123,30 @@ body.app-ready:not(.is-mobile-screen)
   overscroll-behavior: contain;
 }
 
-/* Library surface ownership: the desktop left pane scrolls as one unit.
-   The available-play list stays in normal flow so it cannot fight the pane. */
+/* Library surface ownership: only the desktop result list scrolls. This keeps
+   the library header, search, quick filters, and count in view at all times. */
 @media screen and (min-width: 821px) {
   body.app-ready:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-available-plays {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
     min-height: 0;
     max-height: none;
-    overflow: visible;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
     padding: 0;
     border: 0;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
+  }
+
+  body.app-ready:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-header,
+  body.app-ready:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-search,
+  body.app-ready:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-quick-row,
+  body.app-ready:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband #wbFiltersContainer,
+  body.app-ready:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-status,
+  body.app-ready:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-load-more {
+    flex: 0 0 auto;
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-row {
@@ -3498,7 +3512,9 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
   }
 
   body.app-ready:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wristband-plays {
-    flex-basis: 290px;
+    flex-basis: clamp(320px, 22vw, 390px);
+    min-width: 320px;
+    max-width: 390px;
     padding: 6px;
     border-right-color: var(--coach-grid-border);
     background: var(--coach-grid-surface-muted);

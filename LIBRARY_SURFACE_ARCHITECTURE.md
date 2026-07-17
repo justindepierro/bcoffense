@@ -20,7 +20,7 @@ visual fix on one screen does not accidentally alter another.
 | Surface | Desktop scroll owner | Notes |
 | --- | --- | --- |
 | Practice Script | `.script-sidebar-panel` | Filters, result rows, and pagination travel together. |
-| Wristband Maker | `.wristband-plays` | The library column is one continuous coach pane. |
+| Wristband Maker | `.wb-available-plays` | Search, filters, and library status remain visible above the scrolling results. |
 | Game Plan | `.gp-library-list` | The board stays fixed while the filtered library scrolls. |
 | Call Sheet picker | `.cs-picker-list` | The dialog filters stay visible above its results. |
 | Playbook | `.table-container` | The worksheet table is the library equivalent. |
