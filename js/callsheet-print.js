@@ -32,13 +32,26 @@ const CS_PRINT_DEFAULTS = {
   margin: "normal",          // "tight" | "normal" | "wide"
 };
 
+/* A print job has its own authority. Screen layout state can inform the
+   coach's choice, but it must never silently change the rendered paper job. */
+function normalizeCallSheetPrintOptions(opts = {}) {
+  const raw = { ...CS_PRINT_DEFAULTS, ...(opts && typeof opts === "object" ? opts : {}) };
+  return {
+    paperSize: ["letter", "legal", "tabloid"].includes(raw.paperSize) ? raw.paperSize : CS_PRINT_DEFAULTS.paperSize,
+    orientation: raw.orientation === "landscape" ? "landscape" : "portrait",
+    pages: _csNormalizePrintPages(raw.pages),
+    columns: [2, 3, 4].includes(Number(raw.columns)) ? Number(raw.columns) : CS_PRINT_DEFAULTS.columns,
+    margin: ["tight", "normal", "wide"].includes(raw.margin) ? raw.margin : CS_PRINT_DEFAULTS.margin,
+  };
+}
+
 function getCallSheetPrintOptions() {
   const stored = storageManager.get(STORAGE_KEYS.CALLSHEET_PRINT_OPTIONS, {});
-  return { ...CS_PRINT_DEFAULTS, ...(stored && typeof stored === "object" ? stored : {}) };
+  return normalizeCallSheetPrintOptions(stored);
 }
 
 function setCallSheetPrintOptions(opts) {
-  const merged = { ...CS_PRINT_DEFAULTS, ...(opts || {}) };
+  const merged = normalizeCallSheetPrintOptions(opts);
   storageManager.set(STORAGE_KEYS.CALLSHEET_PRINT_OPTIONS, merged);
   return merged;
 }
@@ -74,7 +87,8 @@ function _csPrintMarginValue(orientation, margin) {
 }
 
 function _csDescribePrintSelection(opts = {}) {
-  const pages = _csNormalizePrintPages(opts.pages);
+  const printJob = normalizeCallSheetPrintOptions(opts);
+  const pages = printJob.pages;
   const currentPage = normalizeCallSheetPage(callSheetSettings?.currentPage);
   const currentLabel = currentPage === "front" ? "Front" : "Back";
   const pageLabel =
@@ -85,16 +99,16 @@ function _csDescribePrintSelection(opts = {}) {
         : pages === "front"
           ? "Front only"
           : "Back only";
-  const paper = opts.paperSize === "legal"
+  const paper = printJob.paperSize === "legal"
     ? "Legal"
-    : opts.paperSize === "tabloid"
+    : printJob.paperSize === "tabloid"
       ? "Tabloid"
       : "Letter";
-  const orientation = opts.orientation === "landscape" ? "landscape" : "portrait";
-  const columns = [2, 3, 4].includes(opts.columns) ? opts.columns : 3;
-  const margin = opts.margin === "tight"
+  const orientation = printJob.orientation;
+  const columns = printJob.columns;
+  const margin = printJob.margin === "tight"
     ? "tight margins"
-    : opts.margin === "wide"
+    : printJob.margin === "wide"
       ? "wide margins"
       : "normal margins";
   return {
@@ -106,10 +120,6 @@ function _csDescribePrintSelection(opts = {}) {
 
 async function openCallSheetPrintModal() {
   const o = getCallSheetPrintOptions();
-  // Default the modal to current orientation toggle if user already set one
-  if (callSheetSettings && callSheetSettings.orientation) {
-    o.orientation = callSheetSettings.orientation === "landscape" ? "landscape" : "portrait";
-  }
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay";
@@ -237,15 +247,16 @@ async function openCallSheetPrintModal() {
 
 function _csRunPrint(opts) {
   try {
+    const printJob = normalizeCallSheetPrintOptions(opts);
     showToast("🖨️ Preparing call sheet…", 2500);
     const container = document.getElementById("callSheetPrint");
     const content = document.getElementById("callSheetPrintContent");
 
-    const orientation = opts.orientation === "landscape" ? "landscape" : "portrait";
-    const columns = [2, 3, 4].includes(opts.columns) ? opts.columns : 3;
+    const orientation = printJob.orientation;
+    const columns = printJob.columns;
     const orientClass = orientation === "landscape" ? "print-landscape" : "print-portrait";
     const colsClass = `print-cs-cols-${columns}`;
-    const pagesToPrint = _csGetPrintPages(opts.pages);
+    const pagesToPrint = _csGetPrintPages(printJob.pages);
 
     // Hoist display options once — avoids re-reading checkboxes per play
     const printOptions = getCallSheetDisplayOptions();
@@ -258,6 +269,7 @@ function _csRunPrint(opts) {
           orientClass,
           colsClass,
           printOptions,
+          printJob,
         }),
       )
       .join("");
@@ -266,8 +278,8 @@ function _csRunPrint(opts) {
     container.classList.remove("hidden");
     document.body.dataset.printMode = "callsheet";
 
-    const paper = ["letter", "legal", "tabloid"].includes(opts.paperSize) ? opts.paperSize : "letter";
-    const printMargin = _csPrintMarginValue(orientation, opts.margin);
+    const paper = printJob.paperSize;
+    const printMargin = _csPrintMarginValue(orientation, printJob.margin);
     setupPrintPageStyle(
       `@media print { @page { size: ${paper} ${orientation}; margin: ${printMargin}; } }`,
     );
@@ -328,7 +340,7 @@ function renderCallSheetPrintPage(page, opts) {
     html += '<div class="print-column">';
     column.forEach((cat) => {
       const data = callSheet[cat.id] || { left: [], right: [] };
-      html += renderPrintCategory(cat, data, opts.printOptions);
+      html += renderPrintCategory(cat, data, opts.printOptions, opts.printJob);
     });
     html += "</div>";
   });
@@ -340,7 +352,7 @@ function renderCallSheetPrintPage(page, opts) {
 /**
  * Render a category for print
  */
-function renderPrintCategory(cat, data, options) {
+function renderPrintCategory(cat, data, options, printJob) {
   const leftPlays = data.left || [];
   const rightPlays = data.right || [];
   const displayName = getCategoryDisplayName(cat);
@@ -372,13 +384,13 @@ function renderPrintCategory(cat, data, options) {
   `;
 
   leftPlays.forEach((play) => {
-    html += renderPrintPlay(play, options);
+    html += renderPrintPlay(play, options, printJob);
   });
 
   html += '</div><div class="print-hash-column">';
 
   rightPlays.forEach((play) => {
-    html += renderPrintPlay(play, options);
+    html += renderPrintPlay(play, options, printJob);
   });
 
   html += "</div></div></div>";
@@ -386,13 +398,13 @@ function renderPrintCategory(cat, data, options) {
   return html;
 }
 
-function getCallSheetPrintDensityClass(play, displayOptions, playText) {
+function getCallSheetPrintDensityClass(play, displayOptions, playText, printJob) {
   const plainText = String(playText || "")
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
-  const isLandscapePrint = callSheetSettings?.orientation === "landscape";
+  const isLandscapePrint = normalizeCallSheetPrintOptions(printJob).orientation === "landscape";
 
   let densityScore = plainText.length;
   if (displayOptions.showFormationTags) densityScore += 5;
@@ -417,7 +429,7 @@ function getCallSheetPrintDensityClass(play, displayOptions, playText) {
 /**
  * Render a play for print - matches screen display formatting
  */
-function renderPrintPlay(play, options) {
+function renderPrintPlay(play, options, printJob) {
   if (!options) options = getCallSheetDisplayOptions();
   const displayOptions = getCallSheetPlayDisplayOptions(play, options);
   const code = getPersonnelCode(play.personnel);
@@ -440,6 +452,7 @@ function renderPrintPlay(play, options) {
     play,
     displayOptions,
     playText,
+    printJob,
   );
 
   let styles = [];

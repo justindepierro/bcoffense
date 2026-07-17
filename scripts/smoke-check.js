@@ -2434,6 +2434,27 @@ function checkCallSheetMobileContracts() {
   console.log("call sheet mobile contracts ok");
 }
 
+function checkCallSheetPrintJobContract() {
+  const callsheetPrint = read("js/callsheet-print.js");
+  const printArchitecture = read("CALLSHEET_PRINT_ARCHITECTURE.md");
+
+  if (
+    !/function normalizeCallSheetPrintOptions\(opts = \{\}\)/.test(callsheetPrint) ||
+    !/return normalizeCallSheetPrintOptions\(stored\)/.test(callsheetPrint) ||
+    !/const printJob = normalizeCallSheetPrintOptions\(opts\)/.test(callsheetPrint) ||
+    !/printJob,\s*\n\s*\}\),/.test(callsheetPrint) ||
+    !/renderPrintCategory\(cat, data, opts\.printOptions, opts\.printJob\)/.test(callsheetPrint) ||
+    !/renderPrintPlay\(play, options, printJob\)/.test(callsheetPrint) ||
+    !/normalizeCallSheetPrintOptions\(printJob\)\.orientation/.test(callsheetPrint) ||
+    /callSheetSettings\?\.orientation/.test(callsheetPrint) ||
+    !/one authority: the normalized print job/.test(printArchitecture)
+  ) {
+    fail("Call Sheet print output is not governed by one normalized print job");
+  }
+
+  console.log("call sheet print job contract ok");
+}
+
 function checkMobileCapabilityMatrix() {
   // M-020: every critical phone control promised by the mobile capability matrix
   // must exist. Role hiding is device-independent and out of scope here; this
@@ -5148,6 +5169,7 @@ checkScriptPlayerPublishingContracts();
 checkPlayReadinessContracts();
 checkPlayerPortalContracts();
 checkCallSheetMobileContracts();
+checkCallSheetPrintJobContract();
 checkMobileCapabilityMatrix();
 checkAnchoredMenuContract();
 checkPageHelpContract();
