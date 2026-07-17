@@ -1128,6 +1128,7 @@ function checkCoachGridThemeContract() {
   const components = read("css/components.css");
   const html = read("index.html");
   const theme = read("COACH_GRID_THEME.md");
+  const roadmap = read("COACH_GRID_ROADMAP.md");
 
   if (
     !/--coach-grid-radius:\s*1px/.test(base) ||
@@ -1136,12 +1137,51 @@ function checkCoachGridThemeContract() {
     !/--coach-grid-mini-control-height:\s*26px/.test(base) ||
     !/\.coach-grid-command-strip/.test(components) ||
     (html.match(/coach-grid-command-strip/g) || []).length < 4 ||
-    !/Global tuning layer/.test(theme)
+    !/Global tuning layer/.test(theme) ||
+    !/## System ownership/.test(roadmap) ||
+    !/## Wholesale-change playbook/.test(roadmap)
   ) {
     fail("Coach Grid shared token and command-strip contract is missing");
   }
 
   console.log("coach grid shared token contract ok");
+}
+
+function checkCoachGridLibrarySystemContract() {
+  const components = read("css/components.css");
+  const html = read("index.html");
+  const scriptState = read("js/script-state.js");
+  const scriptShared = read("js/script-shared.js");
+  const scriptDisplay = read("js/script-display-options.js");
+  const scriptAvailable = read("js/script-available.js");
+  const theme = read("COACH_GRID_THEME.md");
+  const architecture = read("LIBRARY_SURFACE_ARCHITECTURE.md");
+  const roadmap = read("COACH_GRID_ROADMAP.md");
+
+  if (
+    !/\.coach-grid-library-controls/.test(components) ||
+    !/\.coach-grid-library-find/.test(components) ||
+    !/\.coach-grid-library-refine/.test(components) ||
+    !/\.coach-grid-library-advanced\.collapsed/.test(components) ||
+    !/\.coach-grid-library-status/.test(components) ||
+    !/script-sidebar-panel coach-grid-library-controls/.test(html) ||
+    !/scriptFiltersContainer" class="filters-collapsible collapsed coach-grid-library-advanced/.test(html) ||
+    !/scriptFiltersLabel/.test(html) ||
+    !/availableSelectionStatus" class="available-selection-status coach-grid-library-status/.test(html) ||
+    !/wristband-plays app-library-pane coach-grid-library-controls/.test(html) ||
+    !/wbFiltersContainer" class="filters-collapsible collapsed coach-grid-library-advanced/.test(html) ||
+    !/let filtersCollapsed = true/.test(scriptState) ||
+    !/coachGridLibraryVersion = 1/.test(scriptDisplay) ||
+    !/btn\.setAttribute\("aria-expanded", "false"\)/.test(scriptShared) ||
+    !/filtersCollapsed \? "Filters" : "Hide Filters"/.test(scriptAvailable) ||
+    !/coach-grid-library-\*/.test(theme) ||
+    !/find → refine → advanced → results/.test(architecture) ||
+    !/## Reusable library system/.test(roadmap)
+  ) {
+    fail("Coach Grid library system contract is missing");
+  }
+
+  console.log("coach grid library system contract ok");
 }
 
 function checkCoachGridPlaybookWorkbenchContract() {
@@ -5263,6 +5303,7 @@ checkCoachControlDismissalContract();
 checkScriptCoachRowScanningContract();
 checkScriptGamePlanProvenanceContract();
 checkCoachGridThemeContract();
+checkCoachGridLibrarySystemContract();
 checkCoachGridPlaybookWorkbenchContract();
 checkCoachGridCallSheetWorkbenchContract();
 checkCoachGridGamePlanWorkbenchContract();

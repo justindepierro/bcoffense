@@ -14199,6 +14199,13 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
    These rules intentionally sit at the end of the Script stylesheet so the
    coach worksheet has one clear final authority over older card-era rules. */
 
+/* The deeper filter stack is optional on every viewport. Desktop adds the
+   Coach Grid surface treatment below; this rule keeps state and accessibility
+   behavior aligned on the compact staff shell too. */
+#script #scriptFiltersContainer.collapsed {
+  display: none;
+}
+
 /* Keep the type color on the live working grid, including Print-style Rows.
    Actual print output is rendered by .script-preview in print.css, so this
    never introduces color into the packet itself. */
@@ -14270,6 +14277,24 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
 
   /* The library is a command rail, not a stack of soft cards. Its controls
      follow the same compact, square worksheet language as the play grid. */
+  #script .script-sidebar-panel.coach-grid-library-controls {
+    gap: var(--coach-grid-gap);
+  }
+
+  #script .script-play-rail .coach-grid-library-find {
+    margin: 0;
+  }
+
+  #script .script-play-rail .coach-grid-library-refine {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #script .script-play-rail #toggleFiltersBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
   #script .script-play-rail .script-sidebar-tabs {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 28px auto;
@@ -14335,6 +14360,11 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     line-height: 1;
   }
 
+  #script .script-play-rail #toggleFiltersBtn .active-filter-badge {
+    min-width: 16px;
+    padding: 0 4px;
+  }
+
   #script .script-play-rail #toggleFiltersBtn,
   #script .script-play-rail .filter-actions-row .btn,
   #script .script-play-rail .available-plays-actions .btn,
@@ -14355,6 +14385,11 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     align-items: center;
     min-height: var(--coach-grid-compact-control-height);
     padding: 2px 0;
+  }
+
+  #script .script-play-rail .coach-grid-library-advanced:not(.collapsed) {
+    margin: 0;
+    max-height: 34%;
   }
 
   #script .script-play-rail .filter-actions-row .btn {

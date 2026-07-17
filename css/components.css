@@ -66,6 +66,46 @@ body.shell-phone .app-command-toolbar .btn { min-height: 44px; }
     background: var(--coach-grid-surface);
     box-shadow: var(--coach-grid-shadow);
   }
+
+  /* Shared Coach Grid library anatomy. A feature opts into these four bands
+     without surrendering its renderer, row actions, or scroll ownership:
+     find → refine → advanced → results. */
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-library-controls {
+    gap: var(--coach-grid-gap);
+    min-width: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-library-find,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-library-refine {
+    display: grid;
+    gap: var(--coach-grid-gap);
+    min-width: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-library-advanced {
+    display: grid;
+    gap: var(--coach-grid-gap);
+    min-width: 0;
+    padding: 5px;
+    border: 1px solid var(--coach-grid-divider);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-library-advanced.collapsed {
+    display: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-library-status {
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 5px 0 3px;
+    border-bottom: 1px solid var(--coach-grid-divider);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
 }
 
 /* Shared filter trigger and popover surface. Menus can retain their own

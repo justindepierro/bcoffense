@@ -14,7 +14,9 @@ let selectedAvailablePlays = [];
 let lastScriptTargetPeriodId = null;
 let currentFilteredPlayIndices = [];
 
-let filtersCollapsed = false;
+// Coach Grid library default: search and high-frequency refiners remain in
+// view while deeper filter groups open only on request.
+let filtersCollapsed = true;
 let scriptPlayRailCollapsed = true;
 // A pinned library stays open while a coach is building a batch. By default a
 // single add returns focus to the working script.

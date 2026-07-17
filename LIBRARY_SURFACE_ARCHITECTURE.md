@@ -10,6 +10,12 @@ visual fix on one screen does not accidentally alter another.
 - `app-library-list` identifies the one element that may own list scrolling.
 - `app-library-row` identifies a selectable row with square borders, compact
   spacing, and a minimum scan height of `--coach-grid-library-row-height`.
+- `coach-grid-library-controls` is the optional control stack. Its order is
+  **find → refine → advanced → results**; `coach-grid-library-advanced` stays
+  collapsed until the coach asks for it.
+- `coach-grid-library-find`, `coach-grid-library-refine`, and
+  `coach-grid-library-status` make the control stack tunable in one place
+  without requiring shared CSS to know a renderer's fields or actions.
 - The primitives are desktop coach-only. Mobile, player, and print surfaces
   retain their existing component-specific rules.
 - A library renderer owns its row markup. Shared CSS never depends on a broad

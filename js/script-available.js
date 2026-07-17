@@ -135,18 +135,21 @@ function updateActiveFilterCount() {
   if (badge) {
     if (count > 0) {
       badge.classList.remove("hidden");
-      badge.textContent = `${count} active`;
+      badge.textContent = String(count);
+      badge.setAttribute("aria-label", `${count} active filters`);
     } else {
       badge.classList.add("hidden");
       badge.textContent = "";
+      badge.removeAttribute("aria-label");
     }
   }
 
   const toggleBtn = document.getElementById("toggleFiltersBtn");
+  const label = document.getElementById("scriptFiltersLabel");
   if (toggleBtn) {
-    toggleBtn.textContent = count > 0 ? `⚙️ Filters (${count})` : "⚙️ Filters";
     toggleBtn.classList.toggle("has-active-filters", count > 0);
   }
+  if (label) label.textContent = filtersCollapsed ? "Filters" : "Hide Filters";
 }
 
 function populateScriptCheckboxFilters() {

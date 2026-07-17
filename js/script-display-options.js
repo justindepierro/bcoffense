@@ -53,6 +53,7 @@ function saveScriptDisplayOptions() {
     document.querySelector('input[name="scriptLayoutMode"]:checked')?.value,
   );
   opts.filtersCollapsed = filtersCollapsed;
+  opts.coachGridLibraryVersion = 1;
   opts.playRailCollapsed = scriptPlayRailCollapsed;
   opts.libraryPinned = scriptLibraryPinned;
   // Preview rows are now a deliberate, preview-only surface. This marker lets
@@ -76,19 +77,23 @@ function restoreScriptDisplayOptions() {
     if (el && opts[id] !== undefined) el.checked = opts[id];
   });
   applyScriptLayoutMode(opts.layoutMode);
-  filtersCollapsed = Boolean(opts.filtersCollapsed);
+  const needsCoachGridLibraryDefault = opts.coachGridLibraryVersion !== 1;
+  filtersCollapsed = needsCoachGridLibraryDefault ? true : Boolean(opts.filtersCollapsed);
+  if (needsCoachGridLibraryDefault) opts.coachGridLibraryVersion = 1;
   scriptPlayRailCollapsed = Boolean(opts.playRailCollapsed);
   scriptLibraryPinned = Boolean(opts.libraryPinned);
+  let shouldSaveUpdatedOptions = needsCoachGridLibraryDefault;
   if (opts.previewRowsVersion !== 2) {
     const previewRows = document.getElementById("scriptShowPrintPreview");
     if (previewRows) previewRows.checked = false;
     opts.previewRowsVersion = 2;
-    storageManager.set(STORAGE_KEYS.SCRIPT_DISPLAY_OPTIONS, opts);
+    shouldSaveUpdatedOptions = true;
   }
   if (opts.lastSortField) {
     const sortSel = document.getElementById("scriptSortField");
     if (sortSel) sortSel.value = opts.lastSortField;
   }
+  if (shouldSaveUpdatedOptions) storageManager.set(STORAGE_KEYS.SCRIPT_DISPLAY_OPTIONS, opts);
   applyScriptFiltersCollapsedState();
   applyScriptPlayRailState();
   applyScriptLibraryPinState();

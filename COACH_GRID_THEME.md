@@ -37,9 +37,12 @@ implementation.
 
 `css/base.css` owns the opt-in Coach Grid tokens: radius, control heights,
 gap, border, surface, and shadow. `css/components.css` exposes
-`.coach-grid-command-strip` for shared command geometry. A module opts in with
-that class and consumes the tokens in its local layout rules; this intentionally
-does **not** globally flatten every button, modal, player card, or print sheet.
+`.coach-grid-command-strip` for shared command geometry and the
+`.coach-grid-library-*` anatomy for coach play libraries. A module opts in with
+those classes and consumes the tokens in its local layout rules; this
+intentionally does **not** globally flatten every button, modal, player card,
+or print sheet. See [Coach Grid Roadmap](COACH_GRID_ROADMAP.md) for the
+ownership map and future migration sequence.
 
 To adjust the system, change the Coach Grid tokens once. To change a module's
 layout or responsive behavior, keep that rule in the module stylesheet.

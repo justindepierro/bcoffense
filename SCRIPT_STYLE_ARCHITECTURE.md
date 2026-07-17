@@ -37,11 +37,20 @@ filters, and add controls use the same compact square treatment as the grid;
 available-play cards retain their type accents and remain a separate list
 surface.
 
+Its desktop control order is **find → refine → advanced → results**. Search,
+Game Plan, and JV stay visible; the deeper type, personnel, situation, and
+formation filters are collapsed until the coach requests them. The state is
+owned by `filtersCollapsed`, with `coachGridLibraryVersion` making that the
+one-time default for older saved display options rather than overwriting a
+coach's later choice.
+
 The shared Coach Grid density language is an opt-in layer: `css/base.css`
 owns the `--coach-grid-*` tuning tokens and `css/components.css` owns the
-`.coach-grid-command-strip` primitive. Script keeps its worksheet geometry in
-`css/script.css`, but uses those shared values so the approved coach surfaces
-can move together without flattening player, print, and legacy UI.
+`.coach-grid-command-strip` and `.coach-grid-library-*` primitives. Script
+keeps its worksheet geometry in `css/script.css`, but uses those shared values
+so the approved coach surfaces can move together without flattening player,
+print, and legacy UI. The cross-workspace ownership and next waves live in
+[Coach Grid Roadmap](COACH_GRID_ROADMAP.md).
 
 ## Coach Row Contract
 

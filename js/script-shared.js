@@ -362,14 +362,17 @@ function buildScriptDefenseDatalistState(scriptItems) {
 function applyScriptFiltersCollapsedState() {
   const container = document.getElementById("scriptFiltersContainer");
   const btn = document.getElementById("toggleFiltersBtn");
-  if (!container || !btn) return;
+  const label = document.getElementById("scriptFiltersLabel");
+  if (!container || !btn || !label) return;
 
   if (filtersCollapsed) {
     container.classList.add("collapsed");
-    btn.innerHTML = "🔽 Filters";
+    label.textContent = "Filters";
+    btn.setAttribute("aria-expanded", "false");
   } else {
     container.classList.remove("collapsed");
-    btn.innerHTML = "🔼 Filters";
+    label.textContent = "Hide Filters";
+    btn.setAttribute("aria-expanded", "true");
   }
 }
 
