@@ -1311,11 +1311,15 @@ function checkLibrarySurfaceContract() {
     !/#script \.script-sidebar-panel \{[\s\S]*overflow-y: auto/.test(scriptCss) ||
     !/wristband-plays app-library-pane/.test(html) ||
     !/wb-available-plays app-library-list/.test(html) ||
+    !/toggleWbFiltersLabel/.test(html) ||
     !/wb-library-row app-library-row/.test(wristbandRender) ||
+    !/data-wb-type=/.test(wristbandRender) ||
     !/\.wb-play-item \{[\s\S]*border: 1px solid/.test(wristbandCss) ||
     !/\.wb-play-item \.play-name \{[\s\S]*font-weight: 700/.test(wristbandCss) ||
     !/#wristband \.wb-available-plays \{[\s\S]*overflow-y: auto/.test(wristbandCss) ||
     !/#wristband \.wristband-plays \{[\s\S]*flex-direction: column[\s\S]*overflow: hidden/.test(wristbandCss) ||
+    !/#wristband \.filters-collapsible\.collapsed \{[\s\S]*display: none/.test(wristbandCss) ||
+    !/#wristband \.wb-pin-btn \{[\s\S]*min-height: var\(--coach-grid-mini-control-height\)/.test(wristbandCss) ||
     !/gp-library app-library-pane/.test(gamePlanRender) ||
     !/gp-library-list app-library-list/.test(gamePlanRender) ||
     !/gp-play-row app-library-row/.test(gamePlanRender) ||

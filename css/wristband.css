@@ -272,6 +272,10 @@ body.app-ready:not(.is-mobile-screen)
   font-size: var(--font-size-xs);
 }
 
+#wristband .filters-collapsible.collapsed {
+  display: none;
+}
+
 .wb-preview-header .text-hint {
   max-width: 420px;
   text-align: right;
@@ -3560,14 +3564,92 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-chips {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--coach-grid-gap);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-width: 0;
     min-height: var(--coach-grid-compact-control-height);
     padding: 3px 6px;
     border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-quick-row {
+    gap: 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--coach-grid-divider);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-duplicate-toggle {
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 2px 5px;
+    border: 1px solid var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband #toggleWbFiltersBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband #toggleWbFiltersBtn .active-filter-badge {
+    min-width: 16px;
+    padding: 0 4px;
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband #wbFiltersContainer:not(.collapsed) {
+    display: grid;
+    gap: 5px;
+    margin-bottom: 4px;
+    padding: 5px;
+    border: 1px solid var(--coach-grid-divider);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband #wbFiltersContainer .filter-actions-row {
+    display: flex;
+    justify-content: flex-end;
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband #wbFiltersContainer .filter-actions-row .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband #wbFiltersContainer .checkbox-filters-title {
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 3px 6px;
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband #wbFiltersContainer .checkbox-filters {
+    margin: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband #wbFiltersContainer .checkbox-filters-title {
+    border-left: 2px solid var(--coach-grid-border);
+    background: var(--coach-grid-surface);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband #wbFiltersContainer .checkbox-group label {
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-status {
+    min-height: var(--coach-grid-mini-control-height);
+    margin: 0;
+    padding: 5px 0 3px;
+    border-bottom: 1px solid var(--coach-grid-divider);
+    font-size: var(--font-size-2xs);
+    font-weight: 700;
+    text-transform: uppercase;
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-play-item {
@@ -3577,6 +3659,26 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
     border-color: var(--coach-grid-divider);
     border-radius: var(--coach-grid-radius);
     background: var(--coach-grid-surface);
+    border-left: 3px solid var(--coach-grid-divider);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-play-item[data-wb-type="run"] {
+    border-left-color: var(--color-type-run-fg);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-play-item[data-wb-type="pass"] {
+    border-left-color: var(--color-type-pass-fg);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-play-item[data-wb-type="rpo"] {
+    border-left-color: var(--color-type-rpo-fg);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-pin-btn {
+    min-width: var(--coach-grid-mini-control-height);
+    min-height: var(--coach-grid-mini-control-height);
+    margin: 0;
+    border-radius: var(--coach-grid-radius);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-type-chip,

@@ -122,9 +122,11 @@ function syncWristbandFilterUi(filterState = getWristbandFilterState()) {
   if (!badge) return;
 
   if (activeCount > 0) {
-    badge.textContent = `${activeCount} active`;
+    badge.textContent = String(activeCount);
+    badge.setAttribute("aria-label", `${activeCount} active filters`);
     badge.classList.remove("hidden");
   } else {
+    badge.removeAttribute("aria-label");
     badge.classList.add("hidden");
   }
 }
@@ -284,12 +286,15 @@ function renderWristbandPlays() {
       const lineCallDisplay = play.lineCall
         ? ` [${escapeHtml(play.lineCall)}]`
         : "";
+      const typeKey = play.type
+        ? String(play.type).trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z-]/g, "")
+        : "untyped";
       return `
-        <div class="play-item wb-play-item wb-library-row app-library-row" data-play-idx="${index}" title="Double-click to add to the next empty cell">
+        <div class="play-item wb-play-item wb-library-row app-library-row" data-play-idx="${index}" data-wb-type="${escapeAttr(typeKey)}" title="Double-click to add to the next empty cell">
           <button class="wb-pin-btn${isFav ? " pinned" : ""}" data-action="toggleWbFavorite" data-idx="${index}" title="${isFav ? "Unpin" : "Pin"} play" aria-label="${isFav ? "Unpin" : "Pin"} play" aria-pressed="${isFav}">★</button>
           <div class="play-info">
             <div class="play-name">${emoji}${escapeHtml(play.formation)} ${escapeHtml(play.protection)} ${escapeHtml(play.play)}</div>
-            <div class="play-details">${play.type ? `<span class="wb-type-chip" data-type="${escapeHtml(play.type.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z-]/g, ""))}">${escapeHtml(play.type)}</span> ` : ""}${escapeHtml([play.personnel].filter(Boolean).join(" · "))}${lineCallDisplay}
+            <div class="play-details">${play.type ? `<span class="wb-type-chip" data-type="${escapeAttr(typeKey)}">${escapeHtml(play.type)}</span> ` : ""}${escapeHtml([play.personnel].filter(Boolean).join(" · "))}${lineCallDisplay}
               ${onCardCount > 0 ? `<span class="wb-on-card-badge">On card${onCardCount > 1 ? ` ×${onCardCount}` : ""}</span>` : ""}
             </div>
           </div>
@@ -369,16 +374,18 @@ function addPlayToNextEmpty(playIndex, opts = {}) {
 function toggleWbFiltersCollapse() {
   const container = document.getElementById("wbFiltersContainer");
   const btn = document.getElementById("toggleWbFiltersBtn");
+  const label = document.getElementById("toggleWbFiltersLabel");
+  if (!container || !btn || !label) return;
   wbFiltersCollapsed = !wbFiltersCollapsed;
 
   if (wbFiltersCollapsed) {
     container.classList.add("collapsed");
-    btn.textContent = "Filters";
+    label.textContent = "Filters";
     btn.setAttribute("aria-expanded", "false");
     btn.title = "Show play filters";
   } else {
     container.classList.remove("collapsed");
-    btn.textContent = "Hide Filters";
+    label.textContent = "Hide Filters";
     btn.setAttribute("aria-expanded", "true");
     btn.title = "Hide play filters";
   }
