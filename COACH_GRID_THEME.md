@@ -40,8 +40,8 @@ implementation.
 2. **Playbook** — the desktop coach toolbar and table are now in the first
    Coach Grid pass. Preserve the editor modal and player-facing cards until a
    separate pass.
-3. **Call Sheet** — apply the worksheet grid to category headers and call
-   cells, then handle print as its own verified contract.
+3. **Call Sheet** — the desktop toolbar, category headers, and call cells are
+   now in the Coach Grid system. Print remains its own verified contract.
 4. **Game Plan** — make board controls and boxes more grid-like without
    weakening drag/drop affordances.
 5. **Wristband Maker** — migrate coach controls, not the printed/player card

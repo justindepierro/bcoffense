@@ -4743,3 +4743,118 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
     font-size: var(--font-size-md);
   }
 }
+
+/* ── Coach Grid: Call Sheet workbench ─────────────────────────────────────
+   The desktop sheet stays a dense coaching worksheet. Phone situation cards
+   and all print output intentionally keep their dedicated layouts. */
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar {
+    gap: 5px;
+    margin-bottom: 5px;
+    padding: 4px 6px;
+    border-color: var(--color-border-med);
+    border-radius: 0;
+    background: var(--color-surface-muted);
+    box-shadow: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar-left,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar-right {
+    gap: 4px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toggle {
+    min-height: 30px;
+    padding: 3px 8px;
+    border-radius: 1px;
+    box-shadow: none;
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toggle-group {
+    border-radius: 1px;
+    box-shadow: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar-divider {
+    height: 24px;
+    margin-inline: 2px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar-secondary-wrap,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar-secondary,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-unified-bar {
+    margin-bottom: 5px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar-secondary-summary {
+    min-height: 30px;
+    padding: 4px 7px;
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-category {
+    border: 1px solid var(--color-text);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .category-header {
+    min-height: 30px;
+    padding: 4px 7px;
+    border-radius: 0;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-play {
+    min-height: 28px;
+    gap: 4px;
+    padding: 3px 5px;
+    border-bottom: 1px solid var(--color-border-light);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-play .personnel-code,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-play .cs-cell-display-badge,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-play .cs-dupe-badge {
+    border-radius: 1px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-play .play-text {
+    font-size: var(--font-size-xs);
+    line-height: 1.25;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-col-footer {
+    gap: 3px;
+    margin-top: 0;
+    padding: 3px;
+    border-top: 1px solid var(--color-border-light);
+    background: var(--color-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-dropzone,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-add-blank-btn {
+    min-height: 26px;
+    padding: 3px 6px;
+    border-radius: 1px;
+    box-shadow: none;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-empty-cat {
+    min-height: 32px;
+    padding: 5px;
+    border-radius: 0;
+    font-size: 10px;
+  }
+}

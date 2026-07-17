@@ -1085,6 +1085,23 @@ function checkCoachGridPlaybookWorkbenchContract() {
   console.log("coach grid Playbook workbench contract ok");
 }
 
+function checkCoachGridCallSheetWorkbenchContract() {
+  const css = read("css/callsheet.css");
+  const theme = read("COACH_GRID_THEME.md");
+
+  if (
+    !/Coach Grid: Call Sheet workbench/.test(css) ||
+    !/#callsheet \.cs-toolbar \{[\s\S]*border-radius:\s*0/.test(css) ||
+    !/#callsheet \.callsheet-category \{[\s\S]*border-radius:\s*0/.test(css) ||
+    !/#callsheet \.callsheet-play \{[\s\S]*min-height:\s*28px/.test(css) ||
+    !/Call Sheet.*desktop toolbar, category headers, and call cells/.test(theme)
+  ) {
+    fail("Coach Grid Call Sheet workbench contract is missing");
+  }
+
+  console.log("coach grid Call Sheet workbench contract ok");
+}
+
 function checkPlayPresentationContracts() {
   const html = read("index.html");
   const utils = read("js/utils.js");
@@ -4979,6 +4996,7 @@ checkScriptPersonnelWorkspaceContract();
 checkScriptWorkspaceCommandSurface();
 checkScriptCoachRowScanningContract();
 checkCoachGridPlaybookWorkbenchContract();
+checkCoachGridCallSheetWorkbenchContract();
 checkPlayPresentationContracts();
 checkPlayIdentityHandoffFixtures();
 checkScriptPlayerPublishingContracts();
