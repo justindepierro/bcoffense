@@ -57,6 +57,10 @@ signal; it must not become a second editing grid.
 
 - The number badge is always the play type accent in the live workspace,
   including Print-style Rows. Packet output remains owned by `css/print.css`.
+- Desktop inline fields use the Coach Grid inline-field token; short fields
+  keep calls scannable without turning each play into a tall form.
+- Play rows alternate between two quiet worksheet grays and use their play-type
+  accent for the row boundary, including a restrained tinted outline.
 - Print preview rows are an explicit Display option, not part of the print
   preset or normal editing grid.
 - Period actions render through one native `details.period-actions-menu`, not a

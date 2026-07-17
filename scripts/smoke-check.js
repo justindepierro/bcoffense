@@ -1058,7 +1058,10 @@ function checkScriptCoachRowScanningContract() {
     !/script-item--alternate:not\(\.period-header\):not\(\.script-item--player\)[\s\S]*--script-row-bg: color-mix/.test(
       css,
     ) ||
-    !/script-call-edit-field input\[type="text"\],[\s\S]*min-height:\s*26px[\s\S]*height:\s*26px/.test(
+    !/border: 1px solid[\s\S]*var\(--script-row-accent, var\(--color-border-med\)\) 35%/.test(
+      css,
+    ) ||
+    !/script-call-edit-field input\[type="text"\],[\s\S]*min-height: var\(--coach-grid-inline-field-height\)[\s\S]*height: var\(--coach-grid-inline-field-height\)/.test(
       css,
     )
   ) {
