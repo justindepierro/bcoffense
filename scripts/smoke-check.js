@@ -2436,6 +2436,7 @@ function checkCallSheetMobileContracts() {
 
 function checkCallSheetPrintJobContract() {
   const callsheetPrint = read("js/callsheet-print.js");
+  const callsheetCss = read("css/callsheet.css");
   const printArchitecture = read("CALLSHEET_PRINT_ARCHITECTURE.md");
 
   if (
@@ -2446,8 +2447,14 @@ function checkCallSheetPrintJobContract() {
     !/renderPrintCategory\(cat, data, opts\.printOptions, opts\.printJob\)/.test(callsheetPrint) ||
     !/renderPrintPlay\(play, options, printJob\)/.test(callsheetPrint) ||
     !/normalizeCallSheetPrintOptions\(printJob\)\.orientation/.test(callsheetPrint) ||
+    !/function openCallSheetPrintPreview\(opts = \{\}\)/.test(callsheetPrint) ||
+    !/openCallSheetPrintPreview\(previewJob\)/.test(callsheetPrint) ||
+    !/renderCallSheetPrintPage\(page, \{[\s\S]*?printJob/.test(callsheetPrint) ||
+    !/setTimeout\(\(\) => _csRunPrint\(printJob\), 50\)/.test(callsheetPrint) ||
     /callSheetSettings\?\.orientation/.test(callsheetPrint) ||
-    !/one authority: the normalized print job/.test(printArchitecture)
+    !/one authority: the normalized print job/.test(printArchitecture) ||
+    !/same page renderer/.test(printArchitecture) ||
+    !/\.cs-print-preview-pages \.print-callsheet-grid/.test(callsheetCss)
   ) {
     fail("Call Sheet print output is not governed by one normalized print job");
   }

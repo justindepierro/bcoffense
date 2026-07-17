@@ -20,6 +20,10 @@ the renderer. It guarantees these values:
 category, and play. Density decisions therefore use the actual selected paper
 orientation rather than the live Call Sheet screen state.
 
+`openCallSheetPrintPreview()` uses that same job and the same page renderer in
+an in-app proof view. Preview is not a parallel print implementation: its
+Print action passes the exact previewed job to `_csRunPrint()`.
+
 ## Boundaries
 
 - `js/callsheet-print.js` owns print-job normalization, modal controls, print

@@ -180,6 +180,7 @@ async function openCallSheetPrintModal() {
         <div class="custom-modal-actions">
           <button type="button" class="btn custom-modal-btn custom-modal-cancel" id="csPrintCancel">Cancel</button>
           <button class="btn btn-secondary custom-modal-btn" id="csPrintSmart" type="button" title="Reset to smart defaults: portrait, 2 columns">✨ Smart defaults</button>
+          <button class="btn btn-secondary custom-modal-btn" id="csPrintPreview" type="button">Preview</button>
           <button type="button" class="btn btn-primary custom-modal-btn" id="csPrintConfirm">Print</button>
         </div>
       </div>`;
@@ -222,6 +223,11 @@ async function openCallSheetPrintModal() {
       columns: parseInt(overlay.querySelector("#csPrintColumns")?.value, 10) || o.columns,
       margin: overlay.querySelector("#csPrintMargin")?.value || o.margin,
     });
+    overlay.querySelector("#csPrintPreview").addEventListener("click", () => {
+      const previewJob = setCallSheetPrintOptions(readModalOptions());
+      close(null);
+      setTimeout(() => openCallSheetPrintPreview(previewJob), 50);
+    });
     const updateSummary = () => {
       const summary = _csDescribePrintSelection(readModalOptions());
       const target = overlay.querySelector("#csPrintPreviewSummary");
@@ -242,6 +248,69 @@ async function openCallSheetPrintModal() {
     overlay.addEventListener("keydown", (e) => {
       if (e.key === "Escape") { e.preventDefault(); close(null); }
     });
+  });
+}
+
+/* Preview uses the exact same print job and HTML renderer as the browser
+   print flow. It is a coach-facing proof step, not a second output path. */
+function openCallSheetPrintPreview(opts = {}) {
+  const printJob = normalizeCallSheetPrintOptions(opts);
+  const pagesToPreview = _csGetPrintPages(printJob.pages);
+  const orientation = printJob.orientation;
+  const columns = printJob.columns;
+  const orientClass = orientation === "landscape" ? "print-landscape" : "print-portrait";
+  const colsClass = `print-cs-cols-${columns}`;
+  const printOptions = getCallSheetDisplayOptions();
+  const summary = _csDescribePrintSelection(printJob);
+  const pagesHtml = pagesToPreview.map((page) => renderCallSheetPrintPage(page, {
+    columns,
+    orientClass,
+    colsClass,
+    printOptions,
+    printJob,
+  })).join("");
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay cs-print-preview-overlay";
+  overlay.innerHTML = `
+    <div class="custom-modal cs-print-preview-modal" role="dialog" aria-modal="true" aria-labelledby="csPrintPreviewTitle">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">👁️</span>
+        <h3 class="custom-modal-title" id="csPrintPreviewTitle">Call Sheet Print Preview</h3>
+      </div>
+      <div class="cs-print-preview-meta">
+        <strong>${escapeHtml(summary.title)}</strong>
+        <span>${escapeHtml(summary.detail)}</span>
+      </div>
+      <div class="cs-print-preview-pages" data-cs-preview-orientation="${orientation}">
+        ${pagesHtml}
+      </div>
+      <div class="custom-modal-actions">
+        <button type="button" class="btn custom-modal-btn custom-modal-cancel" data-cs-preview-action="close">Back</button>
+        <button type="button" class="btn btn-primary custom-modal-btn" data-cs-preview-action="print">Print this job</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, { id: "cs-print-preview", exclusive: false, trapFocus: false });
+  }
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+
+  const close = () => {
+    if (typeof closeLayer === "function") closeLayer("cs-print-preview");
+    overlay.classList.remove("visible");
+    setTimeout(() => overlay.remove(), 200);
+  };
+  overlay.querySelector('[data-cs-preview-action="close"]').addEventListener("click", close);
+  overlay.querySelector('[data-cs-preview-action="print"]').addEventListener("click", () => {
+    close();
+    setTimeout(() => _csRunPrint(printJob), 50);
+  });
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) close();
+  });
+  overlay.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { event.preventDefault(); close(); }
   });
 }
 

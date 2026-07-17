@@ -41,6 +41,134 @@
   font-size: var(--font-size-xs);
 }
 
+/* The preview intentionally mirrors the print renderer, but stays inside its
+   own modal surface so paper-only rules never leak back into the Call Sheet. */
+.cs-print-preview-modal {
+  width: min(1180px, calc(100vw - 32px));
+  max-width: none;
+  max-height: min(92vh, 980px);
+}
+
+.cs-print-preview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.cs-print-preview-meta strong { color: var(--color-text); }
+
+.cs-print-preview-pages {
+  display: grid;
+  gap: 18px;
+  max-height: min(68vh, 710px);
+  padding: 18px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--color-bg-dark, #334155);
+}
+
+.cs-print-preview-pages .cs-print-page {
+  width: min(100%, 900px);
+  margin-inline: auto;
+  padding: 12px;
+  box-sizing: border-box;
+  background: var(--color-white);
+  color: var(--color-text);
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.3);
+}
+.cs-print-preview-pages[data-cs-preview-orientation="portrait"] .cs-print-page { aspect-ratio: 8.5 / 11; }
+.cs-print-preview-pages[data-cs-preview-orientation="landscape"] .cs-print-page { aspect-ratio: 11 / 8.5; }
+
+.cs-print-preview-pages .print-callsheet-grid {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: 8px;
+}
+.cs-print-preview-pages .print-column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cs-print-preview-pages .print-category {
+  overflow: hidden;
+  border: 1px solid var(--color-text);
+}
+.cs-print-preview-pages .print-category-header {
+  padding: 2px 4px;
+  font-size: 8.8px;
+  font-weight: 800;
+  line-height: 1.08;
+  text-align: center;
+}
+.cs-print-preview-pages .print-hash-headers,
+.cs-print-preview-pages .print-plays-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.cs-print-preview-pages .print-hash-headers {
+  background: var(--color-bg-input);
+  font-size: 6.6px;
+  font-style: italic;
+  text-align: center;
+}
+.cs-print-preview-pages .print-hash-headers > div,
+.cs-print-preview-pages .print-hash-column {
+  min-width: 0;
+  border-right: 1px solid var(--color-border-light);
+}
+.cs-print-preview-pages .print-hash-headers > div:last-child,
+.cs-print-preview-pages .print-hash-column:last-child { border-right: 0; }
+.cs-print-preview-pages .print-hash-headers > div { padding: 0.75px 0.5px; }
+.cs-print-preview-pages .print-hash-column { padding: 0.5px; }
+.cs-print-preview-pages .print-play {
+  display: flex;
+  min-width: 0;
+  padding: 0.5px 0.75px;
+  overflow: hidden;
+  font-family: "Arial Narrow", "Liberation Sans Narrow", var(--font-sans);
+  font-size: 7.35px;
+  line-height: 1.02;
+  white-space: nowrap;
+}
+.cs-print-preview-pages .print-play-text {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: clip;
+  transform: scaleX(0.94);
+  transform-origin: left center;
+  width: 106.4%;
+}
+.cs-print-preview-pages .print-inline-code {
+  display: inline-block;
+  margin-right: 2px;
+  padding: 0 1px;
+  border-radius: 2px;
+  font-size: 0.72em;
+  font-weight: 700;
+}
+.cs-print-preview-pages .print-play--compact { font-size: 7px; }
+.cs-print-preview-pages .print-play--dense { font-size: 6.7px; }
+.cs-print-preview-pages .print-play--micro { font-size: 6.35px; }
+.cs-print-preview-pages .print-landscape .print-play { font-size: 7.95px; }
+.cs-print-preview-pages .print-cs-cols-2 .print-category-header { font-size: 11.5px; }
+.cs-print-preview-pages .print-cs-cols-2 .print-play { font-size: 10px; line-height: 1.08; padding: 1px 1.5px; }
+.cs-print-preview-pages .print-cs-cols-4 .print-category-header { font-size: 7.6px; }
+.cs-print-preview-pages .print-cs-cols-4 .print-play { font-size: 6.5px; }
+
+@media (max-width: 700px) {
+  .cs-print-preview-modal { width: calc(100vw - 16px); }
+  .cs-print-preview-pages { max-height: 64vh; padding: 10px; }
+  .cs-print-preview-pages .cs-print-page { min-width: 620px; }
+}
+
 .callsheet-columns {
   display: flex;
   gap: 12px;
