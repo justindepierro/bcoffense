@@ -1208,6 +1208,8 @@ function checkCoachGridWristbandWorkbenchContract() {
     !/#wristband \.wb-library-chip \{[\s\S]*min-height: var\(--coach-grid-compact-control-height\)/.test(css) ||
     !/#wristband \.wb-cmd-bar \{[\s\S]*border-radius: var\(--coach-grid-toolbar-radius\)/.test(css) ||
     !/#wristband \.wb-add-play-btn \{[\s\S]*border-radius: var\(--coach-grid-radius\)/.test(css) ||
+    !/Coach Grid: Wristband starter state/.test(css) ||
+    !/#wristband \.wb-type-card \{[\s\S]*grid-template-columns: 30px minmax\(0, 1fr\)/.test(css) ||
     !/Wristband Maker.*desktop library and coach controls/.test(theme)
   ) {
     fail("Coach Grid Wristband workbench contract is missing");
