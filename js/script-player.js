@@ -738,8 +738,8 @@ function loadSavedScriptsList() {
   renderPlayerLoadedScriptBar();
 }
 
-function openMobileScriptLoader() {
-  if (typeof setMobileScriptEditMode === "function") {
+function openSavedScriptsWorkspace(opts = {}) {
+  if (opts.mobile && typeof setMobileScriptEditMode === "function") {
     setMobileScriptEditMode(true, { focusCurrent: false });
   }
   if (typeof openScriptToolsDrawer === "function") {
@@ -759,6 +759,10 @@ function openMobileScriptLoader() {
     savedSection.classList.add("saved-scripts--spotlight");
     setTimeout(() => savedSection.classList.remove("saved-scripts--spotlight"), 1600);
   });
+}
+
+function openMobileScriptLoader() {
+  openSavedScriptsWorkspace({ mobile: true });
 }
 
 function loadSavedScriptRecord(scriptData, opts = {}) {

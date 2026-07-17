@@ -37,6 +37,7 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "⚙️", label: "Display", sublabel: _paScriptDisplayStatus, run: () => _paCall("toggleScriptDisplayPanel") },
     ],
     extras: [
+      { icon: "📁", label: "Saved Scripts", sublabel: "Load / Player login", run: () => _paCall("openSavedScriptsWorkspace") },
       { icon: "🗂️", label: "Print Packet", run: () => _paCall("openScriptPacketBuilder") },
       { icon: "▶️", label: "Present", run: () => _paCall("openScriptPresentation") },
       { icon: "🎯", label: "Send to Game Plan", run: () => _paCall("sendScriptToGamePlan") },

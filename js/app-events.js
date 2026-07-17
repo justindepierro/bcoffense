@@ -29,6 +29,40 @@ function _getMenuWrapFromEventTarget(target) {
   return portaledMenu?._anchoredWrap || null;
 }
 
+// Shared dismissal order for the coach-facing control surfaces. Native
+// dropdowns already close on click-away; this fills the gap for the floating
+// panels that use the same toolbar language (Actions, Display, and drawers).
+function dismissOpenCoachControlSurface() {
+  if (document.querySelector(".tool-menu-wrap.open, .more-tools-wrap.open")) {
+    _closeAllOpenMenus(null);
+    return true;
+  }
+
+  if (document.getElementById("quickTools")?.classList.contains("open")) {
+    if (typeof closeQuickToolsMenu === "function") closeQuickToolsMenu();
+    return true;
+  }
+
+  const dismissiblePanels = [
+    ["pageActionsSheet", "visible", "closePageActions"],
+    ["wbSettingsModal", "visible", "closeWbSettingsModal"],
+    ["scriptDisplayOverlay", "visible", "closeScriptDisplayPanel"],
+    ["helpOverlay", "visible", "closeHelpPanel"],
+    ["csDisplayPanel", "visible", "closeDisplayPanel"],
+    ["pbPrintPanel", "open", "togglePrintOptionsPanel"],
+    ["pbCollectionsPanel", "open", "toggleCollectionsPanel"],
+    ["scriptToolsDrawer", "open", "closeScriptToolsDrawer"],
+  ];
+  for (const [id, openClass, closeAction] of dismissiblePanels) {
+    const panel = document.getElementById(id);
+    if (!panel?.classList.contains(openClass)) continue;
+    if (typeof window[closeAction] === "function") window[closeAction]();
+    return true;
+  }
+
+  return false;
+}
+
 document.addEventListener("click", (e) => {
   const insideWrap = _getMenuWrapFromEventTarget(e.target);
   if (!insideWrap) {
@@ -41,6 +75,11 @@ document.addEventListener("click", (e) => {
   if (e.target.closest(".tool-menu:not([data-keep-open]), .more-tools-menu")) {
     _closeAllOpenMenus(null);
   }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  if (dismissOpenCoachControlSurface()) event.preventDefault();
 });
 
 /* ── Delegated click handler ─────────────────────────────────────

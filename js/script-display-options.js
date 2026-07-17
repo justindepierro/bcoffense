@@ -223,30 +223,29 @@ function setScriptDisplayPanelTriggerState(isOpen) {
   });
 }
 
-function toggleScriptDisplayPanel() {
+function setScriptDisplayPanelOpen(isOpen) {
   const overlay = document.getElementById("scriptDisplayOverlay");
   if (!overlay) return;
-  const isOpen = overlay.classList.contains("visible");
   if (isOpen) {
-    overlay.classList.remove("visible");
-    overlay.setAttribute("aria-hidden", "true");
-    overlay.setAttribute("inert", "");
-    setScriptDisplayPanelTriggerState(false);
+    overlay.removeAttribute("inert");
+    overlay.setAttribute("aria-hidden", "false");
+    overlay.classList.add("visible");
+    if (typeof closeScriptToolsDrawer === "function") closeScriptToolsDrawer();
+    setScriptDisplayPanelTriggerState(true);
     return;
   }
-  overlay.removeAttribute("inert");
-  overlay.setAttribute("aria-hidden", "false");
-  overlay.classList.add("visible");
-  if (typeof closeScriptToolsDrawer === "function") closeScriptToolsDrawer();
-  setScriptDisplayPanelTriggerState(true);
-}
-
-function closeScriptDisplayPanel(event) {
-  if (event && event.target !== event.currentTarget) return;
-  const overlay = document.getElementById("scriptDisplayOverlay");
-  if (!overlay) return;
   overlay.classList.remove("visible");
   overlay.setAttribute("aria-hidden", "true");
   overlay.setAttribute("inert", "");
   setScriptDisplayPanelTriggerState(false);
+}
+
+function toggleScriptDisplayPanel() {
+  const overlay = document.getElementById("scriptDisplayOverlay");
+  setScriptDisplayPanelOpen(!overlay?.classList.contains("visible"));
+}
+
+function closeScriptDisplayPanel(event) {
+  if (event && event.target !== event.currentTarget) return;
+  setScriptDisplayPanelOpen(false);
 }

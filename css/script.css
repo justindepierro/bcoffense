@@ -5641,7 +5641,8 @@ body[data-auth-role="player"] #script .script-tools-drawer {
   }
 }
 
-/* Script Display Overlay (non-modal popup - leaves the page interactive) */
+/* Script Display Overlay. The transparent backdrop is an intentional dismissal
+   target: every floating control surface closes by X, Escape, or clicking away. */
 .script-display-overlay {
   position: fixed;
   inset: 0;
@@ -5658,6 +5659,7 @@ body[data-auth-role="player"] #script .script-tools-drawer {
 }
 .script-display-overlay.visible {
   opacity: 1;
+  pointer-events: auto;
 }
 .script-display-overlay .script-display-panel {
   pointer-events: auto; /* but the panel itself catches clicks */

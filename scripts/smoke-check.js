@@ -1012,6 +1012,9 @@ function checkScriptWorkspaceCommandSurface() {
     !/label: "Workspace Tools", run: \(\) => _paCall\("openScriptToolsDrawer"\)/.test(
       pageActions,
     ) ||
+    !/label: "Saved Scripts", sublabel: "Load \/ Player login", run: \(\) => _paCall\("openSavedScriptsWorkspace"\)/.test(
+      pageActions,
+    ) ||
     !/function setScriptToolsDrawerOpen\(isOpen\)/.test(shared) ||
     !/function toggleScriptToolsDrawer\(\)[\s\S]*setScriptToolsDrawerOpen\(!scriptToolsDrawerOpen\)/.test(
       shared,
@@ -1033,6 +1036,28 @@ function checkScriptWorkspaceCommandSurface() {
   }
 
   console.log("script workspace command surface ok");
+}
+
+function checkCoachControlDismissalContract() {
+  const html = read("index.html");
+  const appEvents = read("js/app-events.js");
+  const scriptDisplay = read("js/script-display-options.js");
+  const scriptPlayer = read("js/script-player.js");
+  const scriptCss = read("css/script.css");
+
+  if (
+    !/id="scriptDisplayOverlay" data-action="closeScriptDisplayPanelOverlay"/.test(html) ||
+    !/data-action="closeScriptDisplayPanel"/.test(html) ||
+    !/function setScriptDisplayPanelOpen\(isOpen\)/.test(scriptDisplay) ||
+    !/function dismissOpenCoachControlSurface\(\)/.test(appEvents) ||
+    !/\["scriptDisplayOverlay", "visible", "closeScriptDisplayPanel"\]/.test(appEvents) ||
+    !/\.script-display-overlay\.visible \{[\s\S]*pointer-events:\s*auto/.test(scriptCss) ||
+    !/function openSavedScriptsWorkspace\(opts = \{\}\)/.test(scriptPlayer)
+  ) {
+    fail("coach control surfaces are missing a consistent saved-script or dismissal path");
+  }
+
+  console.log("coach control dismissal contract ok");
 }
 
 function checkScriptCoachRowScanningContract() {
@@ -5162,6 +5187,7 @@ checkWristbandTypography();
 checkPersonnelMarkerContracts();
 checkScriptPersonnelWorkspaceContract();
 checkScriptWorkspaceCommandSurface();
+checkCoachControlDismissalContract();
 checkScriptCoachRowScanningContract();
 checkScriptGamePlanProvenanceContract();
 checkCoachGridThemeContract();
