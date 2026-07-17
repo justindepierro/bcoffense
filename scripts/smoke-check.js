@@ -980,6 +980,26 @@ function checkPersonnelMarkerContracts() {
   console.log("personnel marker contracts ok");
 }
 
+function checkScriptPersonnelWorkspaceContract() {
+  const players = read("js/script-players.js");
+  const css = read("css/script.css");
+
+  if (
+    !/<details class="script-player-assignment-details">/.test(players) ||
+    !/script-player-assignment-summary/.test(players) ||
+    !/assignedSlotCount/.test(players) ||
+    !/assignmentDetailsWasOpen/.test(players) ||
+    !/replacementDetails\.open = true/.test(players) ||
+    !/script-player-assignment-details \{[\s\S]*border-top/.test(css) ||
+    !/script-player-assignment-summary \{[\s\S]*min-height:\s*32px/.test(css) ||
+    !/script-item:not\(\.period-header\):not\(\.script-item--player\)[\s\S]*border-left:\s*3px solid/.test(css)
+  ) {
+    fail("Script personnel rows are not compact, expandable, and visually separated");
+  }
+
+  console.log("script personnel workspace contract ok");
+}
+
 function checkPlayPresentationContracts() {
   const html = read("index.html");
   const utils = read("js/utils.js");
@@ -4870,6 +4890,7 @@ checkPlayCompareKeyContracts();
 checkUppercaseCallRenderingContracts();
 checkWristbandTypography();
 checkPersonnelMarkerContracts();
+checkScriptPersonnelWorkspaceContract();
 checkPlayPresentationContracts();
 checkPlayIdentityHandoffFixtures();
 checkScriptPlayerPublishingContracts();

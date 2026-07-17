@@ -143,6 +143,7 @@ function updateScriptPlayerAssignment(index, slotKey, playerId) {
   }
 
   play.playerAssignments = Object.keys(assignments).length ? assignments : undefined;
+  rerenderScriptPreservingScroll(index);
 }
 
 function rerenderScriptPreservingScroll(anchorIndex) {
@@ -171,6 +172,9 @@ function rerenderScriptPreservingScroll(anchorIndex) {
   const newGridHtml = buildScriptPlayerAssignmentGrid(play, anchorIndex, playLabel, opts);
   const existingGrid = row.querySelector(".script-player-grid");
   if (existingGrid && newGridHtml) {
+    const assignmentDetailsWasOpen = existingGrid.querySelector(
+      ".script-player-assignment-details",
+    )?.open;
     const tmp = document.createElement("div");
     // NOTE: cannot use setInnerHTML — sanitizeHTML strips <select> and <button>
     // which are the entire point of the player assignment grid. All player
@@ -178,6 +182,10 @@ function rerenderScriptPreservingScroll(anchorIndex) {
     tmp.innerHTML = newGridHtml;
     const replacement = tmp.firstElementChild;
     if (replacement) {
+      const replacementDetails = replacement.querySelector(
+        ".script-player-assignment-details",
+      );
+      if (assignmentDetailsWasOpen && replacementDetails) replacementDetails.open = true;
       existingGrid.replaceWith(replacement);
       return;
     }
@@ -189,7 +197,6 @@ function rerenderScriptPreservingScroll(anchorIndex) {
 function promoteScriptDepthPlayer(index, slotKey, playerId) {
   if (!slotKey || !playerId) return;
   updateScriptPlayerAssignment(index, slotKey, playerId);
-  rerenderScriptPreservingScroll(index);
 }
 
 function resetScriptPlayerOverrides(index) {
@@ -292,9 +299,23 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
   const hasOverrides = hasScriptPlayerOverrides(play);
   const statusLabel = getScriptPlayerStatusLabel(play);
   const subPackagePicker = buildScriptSubPackagePicker(play, index, playLabel);
+  const selectedSubPackageId = getPlaySubPackageId(play);
+  const selectedSubPackage = getApplicableTeamSwapGroups(play?.personnel).find(
+    (group) => group.id === selectedSubPackageId,
+  );
   const slotMap = new Map(
     getTeamAssignmentSlots(play?.personnel).map((slot) => [slot.key, slot]),
   );
+  const visibleSlots = [...slotMap.values()].filter((slot) => {
+    if (!opts.hideLinemen) return true;
+    return !["lt", "lg", "c", "rg", "rt"].includes(slot.key);
+  });
+  const assignedSlotCount = visibleSlots.filter((slot) => assignments[slot.key]).length;
+  const lineupLabel = selectedSubPackage
+    ? selectedSubPackage.name
+    : selectedSubPackageId
+      ? "Missing sub package"
+      : "Base lineup";
   const buildRow = (slotKeys) => {
     const slots = slotKeys.map((slotKey) => slotMap.get(slotKey)).filter(Boolean);
     if (!slots.length) return "";
@@ -365,18 +386,32 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
 
   return `
     <div class="script-player-grid ${opts.layoutMode === "compact" ? "script-player-grid--compact" : "script-player-grid--detail"}">
-      <div class="script-player-grid-head">
-        <div class="script-player-grid-meta">
-          <span class="script-player-grid-title">Personnel</span>
-          ${statusLabel ? `<span class="script-player-grid-status">${escapeHtml(statusLabel)}</span>` : ''}
+      <details class="script-player-assignment-details">
+        <summary class="script-player-assignment-summary">
+          <span class="script-player-assignment-summary-main">
+            <span class="script-player-grid-title">Personnel</span>
+            <span class="script-player-assignment-summary-lineup">${escapeHtml(lineupLabel)}</span>
+            ${statusLabel ? `<span class="script-player-grid-status">${escapeHtml(statusLabel)}</span>` : ''}
+          </span>
+          <span class="script-player-assignment-summary-end">
+            <span>${assignedSlotCount}/${visibleSlots.length} assigned</span>
+            <span class="script-player-assignment-summary-action">Adjust</span>
+          </span>
+        </summary>
+        <div class="script-player-assignment-body">
+          <div class="script-player-grid-head">
+            <div class="script-player-grid-meta">
+              <span class="script-player-grid-title">Lineup assignment</span>
+            </div>
+            <div class="script-player-grid-actions">
+              ${subPackagePicker}
+              ${hasOverrides ? `<button type="button" class="script-player-reset-btn" data-action="resetScriptPlayerOverrides" data-idx="${index}" aria-label="Reset player overrides for ${escapeHtml(playLabel)}">Reset</button>` : ''}
+            </div>
+          </div>
+          ${skillSection}
+          ${lineSection}
         </div>
-        <div class="script-player-grid-actions">
-          ${subPackagePicker}
-          ${hasOverrides ? `<button type="button" class="script-player-reset-btn" data-action="resetScriptPlayerOverrides" data-idx="${index}" aria-label="Reset player overrides for ${escapeHtml(playLabel)}">Reset</button>` : ''}
-        </div>
-      </div>
-      ${skillSection}
-      ${lineSection}
+      </details>
     </div>
   `;
 }

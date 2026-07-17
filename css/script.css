@@ -13353,10 +13353,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     align-items: stretch;
     gap: 0;
     min-height: 46px;
-    margin: 0;
+    margin: 0 0 6px;
     padding: 0;
-    border: 0;
-    border-bottom: 1px solid var(--color-border-light);
+    border: 1px solid var(--color-border-med);
+    border-left: 3px solid var(--color-border-med);
     border-radius: 0;
     background: var(--color-surface);
     box-shadow: none;
@@ -13365,7 +13365,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
   #script .script-item:not(.period-header):not(.script-item--player):hover {
     background: var(--color-bg-hover-row);
-    box-shadow: inset 3px 0 0 var(--color-primary);
+    border-left-color: var(--color-primary);
+    box-shadow: none;
   }
 
   #script .script-item > .script-select-tools,
@@ -13539,7 +13540,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
   #script .script-item.bulk-selected {
     background: var(--color-bg-blue-tint) !important;
-    box-shadow: inset 3px 0 0 var(--color-primary);
+    border-left-color: var(--color-primary);
+    box-shadow: none;
   }
 
   #script .script-item.period-header,
@@ -13562,7 +13564,174 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   }
 
   #script .script-list {
+    gap: 0;
+  }
+
+  /* Personnel is an exception panel, not a second full-size row. The summary
+     keeps substitutions visible while the 11-slot editor opens only on demand. */
+  #script .script-player-grid {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  #script .script-player-assignment-details {
+    border-top: 1px solid var(--color-border-light);
+    background: var(--color-surface-muted);
+  }
+
+  #script .script-player-assignment-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 32px;
+    padding: 5px 8px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+
+  #script .script-player-assignment-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  #script .script-player-assignment-summary::before {
+    content: "▸";
+    flex: 0 0 auto;
+    color: var(--color-text-muted);
+    font-size: 11px;
+    transition: transform var(--transition-fast);
+  }
+
+  #script .script-player-assignment-details[open] .script-player-assignment-summary::before {
+    transform: rotate(90deg);
+  }
+
+  #script .script-player-assignment-summary-main,
+  #script .script-player-assignment-summary-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+  }
+
+  #script .script-player-assignment-summary-main {
+    flex: 1 1 auto;
+  }
+
+  #script .script-player-assignment-summary-lineup {
+    overflow: hidden;
+    color: var(--color-text);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #script .script-player-assignment-summary-end {
+    flex: 0 0 auto;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+
+  #script .script-player-assignment-summary-action {
+    padding-left: 7px;
+    border-left: 1px solid var(--color-border-light);
+    color: var(--color-primary);
+    font-family: var(--font-sans);
+    font-weight: 700;
+  }
+
+  #script .script-player-assignment-details[open] .script-player-assignment-summary {
+    border-bottom: 1px solid var(--color-border-light);
+    background: var(--color-surface);
+  }
+
+  #script .script-player-assignment-body {
+    display: grid;
     gap: 5px;
+    padding: 6px 8px 8px;
+    background: var(--color-surface-muted);
+  }
+
+  #script .script-player-grid-head {
+    min-height: 28px;
+    padding-bottom: 5px;
+  }
+
+  #script .script-player-swap-group {
+    gap: 4px;
+  }
+
+  #script .script-player-swap-select,
+  #script .script-player-reset-btn {
+    min-height: 28px;
+    padding: 3px 7px;
+    border-radius: 1px;
+  }
+
+  #script .script-player-group {
+    gap: 4px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  #script .script-player-row {
+    gap: 4px;
+  }
+
+  #script .script-player-slot {
+    gap: 3px;
+    padding: 4px;
+    border-radius: 1px;
+    box-shadow: none;
+  }
+
+  #script .script-player-slot-select {
+    min-height: 24px;
+    padding: 2px 20px 2px 5px;
+    border-radius: 1px;
+  }
+
+  #script .script-player-depth-list {
+    flex-wrap: nowrap;
+    gap: 2px;
+    overflow-x: auto;
+    padding-bottom: 1px;
+    scrollbar-width: thin;
+  }
+
+  #script .script-player-depth-chip,
+  #script .script-player-current-pill {
+    min-width: max-content;
+    padding: 1px 3px;
+    border-radius: 1px;
+    font-size: 9px;
+  }
+
+  #script .script-player-slot-empty {
+    padding: 1px 3px;
+    border-radius: 1px;
+    font-size: 9px;
+  }
+
+  #script .script-item + .print-preview-row {
+    margin: -6px 0 6px;
+    padding: 3px 8px;
+    border: 1px solid var(--color-border-med);
+    border-top: 0;
+    border-radius: 0;
+    background: var(--color-surface-muted);
   }
 
   #script .script-section-head {
