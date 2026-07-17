@@ -14142,16 +14142,16 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-name-input,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-date-input {
-    min-height: 30px;
+    min-height: var(--coach-grid-control-height);
     padding-block: 3px;
-    border-radius: 1px;
+    border-radius: var(--coach-grid-radius);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-workbench-pill,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-controls-mode-select,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-workbench-primary-actions .btn {
-    min-height: 30px;
-    border-radius: 1px;
+    min-height: var(--coach-grid-control-height);
+    border-radius: var(--coach-grid-radius);
   }
 
   /* Run View keeps the live practice list readable without exposing editing
@@ -14186,7 +14186,7 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
   #script[data-controls-mode="run"] .script-item .play-control-fields {
     display: grid;
     grid-template-columns: 38px minmax(0, 1fr);
-    gap: 4px;
+    gap: var(--coach-grid-gap);
   }
 
   #script[data-controls-mode="run"] .script-item .play-call .call-meta {
@@ -14202,9 +14202,9 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     gap: 4px;
     margin: 0 0 5px;
     padding: 4px;
-    border: 1px solid var(--color-border-med);
-    border-radius: 0;
-    background: var(--color-surface-muted);
+    border: 1px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
   }
 
   #script .script-play-rail .script-sidebar-title {
@@ -14218,18 +14218,18 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
 
   #script .script-play-rail .script-sidebar-collapse,
   #script .script-play-rail .script-library-pin-toggle {
-    min-height: 28px;
-    height: 28px;
+    min-height: var(--coach-grid-compact-control-height);
+    height: var(--coach-grid-compact-control-height);
     padding: 3px 6px;
-    border: 1px solid var(--color-border-med);
-    border-radius: 1px;
-    background: var(--color-surface);
-    box-shadow: none;
+    border: 1px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface);
+    box-shadow: var(--coach-grid-shadow);
     font-size: 10px;
   }
 
   #script .script-play-rail .script-sidebar-collapse {
-    width: 28px;
+    width: var(--coach-grid-compact-control-height);
     padding-inline: 0;
   }
 
@@ -14237,11 +14237,11 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 6px;
-    min-height: 30px;
+    gap: var(--coach-grid-gap);
+    min-height: var(--coach-grid-control-height);
     margin: 0;
     padding: 3px 0 5px;
-    border-bottom: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--coach-grid-divider);
     color: var(--color-text-secondary);
     font-size: 10px;
     font-weight: 900;
@@ -14254,7 +14254,7 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     min-width: 24px;
     min-height: 22px;
     padding: 2px 5px;
-    border-radius: 1px;
+    border-radius: var(--coach-grid-radius);
     font-family: var(--font-mono);
     font-size: 10px;
     line-height: 1;
@@ -14265,9 +14265,9 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
   #script .script-play-rail .available-plays-actions .btn,
   #script .script-play-rail .available-plays-actions .select-all-label,
   #script .script-play-rail .available-load-btn {
-    min-height: 28px;
-    border-radius: 1px;
-    box-shadow: none;
+    min-height: var(--coach-grid-compact-control-height);
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
     font-size: 10px;
     font-weight: 800;
   }
@@ -14278,7 +14278,7 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
 
   #script .script-play-rail .filter-actions-row {
     align-items: center;
-    min-height: 28px;
+    min-height: var(--coach-grid-compact-control-height);
     padding: 2px 0;
   }
 
@@ -14292,10 +14292,10 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
 
   #script .script-play-rail .filters.filters-compact input,
   #script .script-play-rail .filters.filters-compact select {
-    min-height: 30px;
+    min-height: var(--coach-grid-control-height);
     padding: 3px 7px;
-    border-radius: 1px;
-    box-shadow: none;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
     font-size: var(--font-size-xs);
   }
 
@@ -14305,11 +14305,11 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
   }
 
   #script .script-play-rail .pb-gp-filter-toggle {
-    min-height: 26px;
+    min-height: var(--coach-grid-mini-control-height);
     padding: 2px 5px;
-    border: 1px solid var(--color-border-light);
-    border-radius: 1px;
-    background: var(--color-surface-muted);
+    border: 1px solid var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface-muted);
   }
 
   #script .script-play-rail .available-plays-actions {
@@ -14340,9 +14340,9 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
 
   #script .script-play-rail .checkbox-filters-title {
     padding: 4px 6px;
-    border-left: 2px solid var(--color-border-med);
-    border-radius: 0;
-    background: var(--color-surface-muted);
+    border-left: 2px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
     font-weight: 800;
   }
 }

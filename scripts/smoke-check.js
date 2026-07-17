@@ -1068,15 +1068,36 @@ function checkScriptCoachRowScanningContract() {
   console.log("script coach row scanning contract ok");
 }
 
+function checkCoachGridThemeContract() {
+  const base = read("css/base.css");
+  const components = read("css/components.css");
+  const html = read("index.html");
+  const theme = read("COACH_GRID_THEME.md");
+
+  if (
+    !/--coach-grid-radius:\s*1px/.test(base) ||
+    !/--coach-grid-control-height:\s*30px/.test(base) ||
+    !/--coach-grid-compact-control-height:\s*28px/.test(base) ||
+    !/--coach-grid-mini-control-height:\s*26px/.test(base) ||
+    !/\.coach-grid-command-strip/.test(components) ||
+    (html.match(/coach-grid-command-strip/g) || []).length < 4 ||
+    !/Global tuning layer/.test(theme)
+  ) {
+    fail("Coach Grid shared token and command-strip contract is missing");
+  }
+
+  console.log("coach grid shared token contract ok");
+}
+
 function checkCoachGridPlaybookWorkbenchContract() {
   const css = read("css/playbook.css");
   const theme = read("COACH_GRID_THEME.md");
 
   if (
     !/Coach Grid: Playbook workbench/.test(css) ||
-    !/pb-top-row \{[\s\S]*border-radius:\s*0/.test(css) ||
-    !/#playbookTable th \{[\s\S]*background: var\(--color-surface-muted\)/.test(css) ||
-    !/#playbookTable td \{[\s\S]*border-right: 1px solid var\(--color-border-light\)/.test(css) ||
+    !/pb-top-row \{[\s\S]*border-radius: var\(--coach-grid-toolbar-radius\)/.test(css) ||
+    !/#playbookTable th \{[\s\S]*background: var\(--coach-grid-surface-muted\)/.test(css) ||
+    !/#playbookTable td \{[\s\S]*border-right: 1px solid var\(--coach-grid-divider\)/.test(css) ||
     !/Playbook.*desktop coach toolbar and table/.test(theme)
   ) {
     fail("Coach Grid Playbook workbench contract is missing");
@@ -1091,9 +1112,9 @@ function checkCoachGridCallSheetWorkbenchContract() {
 
   if (
     !/Coach Grid: Call Sheet workbench/.test(css) ||
-    !/#callsheet \.cs-toolbar \{[\s\S]*border-radius:\s*0/.test(css) ||
-    !/#callsheet \.callsheet-category \{[\s\S]*border-radius:\s*0/.test(css) ||
-    !/#callsheet \.callsheet-play \{[\s\S]*min-height:\s*28px/.test(css) ||
+    !/#callsheet \.cs-toolbar \{[\s\S]*border-radius: var\(--coach-grid-toolbar-radius\)/.test(css) ||
+    !/#callsheet \.callsheet-category \{[\s\S]*border-radius: var\(--coach-grid-toolbar-radius\)/.test(css) ||
+    !/#callsheet \.callsheet-play \{[\s\S]*min-height: var\(--coach-grid-compact-control-height\)/.test(css) ||
     !/Call Sheet.*desktop toolbar, category headers, and call cells/.test(theme)
   ) {
     fail("Coach Grid Call Sheet workbench contract is missing");
@@ -4995,6 +5016,7 @@ checkPersonnelMarkerContracts();
 checkScriptPersonnelWorkspaceContract();
 checkScriptWorkspaceCommandSurface();
 checkScriptCoachRowScanningContract();
+checkCoachGridThemeContract();
 checkCoachGridPlaybookWorkbenchContract();
 checkCoachGridCallSheetWorkbenchContract();
 checkPlayPresentationContracts();

@@ -17,6 +17,30 @@
 }
 body.shell-phone .app-command-toolbar .btn { min-height: 44px; }
 
+/* Coach Grid is deliberately opt-in. Adding this class gives a desktop coach
+   command surface shared geometry without restyling player, print, or legacy
+   screens that have not been migrated yet. */
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-command-strip {
+    --command-toolbar-gap: var(--coach-grid-gap);
+    --command-toolbar-padding: 4px 6px;
+    --command-toolbar-bg: var(--coach-grid-surface-muted);
+    --command-toolbar-border: var(--coach-grid-border);
+    --command-toolbar-radius: var(--coach-grid-toolbar-radius);
+    --command-toolbar-shadow: var(--coach-grid-shadow);
+    border-radius: var(--coach-grid-toolbar-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    .coach-grid-command-strip
+    .btn {
+    min-height: var(--coach-grid-control-height);
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+}
+
 /* Shared filter trigger and popover surface. Menus can retain their own
    content/layout while inheriting one predictable elevation and focus state. */
 .app-control-trigger {

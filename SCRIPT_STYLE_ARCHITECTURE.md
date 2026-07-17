@@ -37,6 +37,12 @@ filters, and add controls use the same compact square treatment as the grid;
 available-play cards retain their type accents and remain a separate list
 surface.
 
+The shared Coach Grid density language is an opt-in layer: `css/base.css`
+owns the `--coach-grid-*` tuning tokens and `css/components.css` owns the
+`.coach-grid-command-strip` primitive. Script keeps its worksheet geometry in
+`css/script.css`, but uses those shared values so the approved coach surfaces
+can move together without flattening player, print, and legacy UI.
+
 ## Coach Row Contract
 
 `js/script-render.js` owns the row markup. The desktop coach grid is one

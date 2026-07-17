@@ -7799,31 +7799,31 @@ label.disc-attach-btn {
    contracts until they are migrated deliberately. */
 @media (min-width: 821px) {
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-top-row {
-    gap: 4px;
+    gap: var(--coach-grid-gap);
     margin-bottom: 4px;
     padding: 4px;
-    border: 1px solid var(--color-border-med);
-    border-radius: 0;
-    background: var(--color-surface-muted);
-    box-shadow: none;
+    border: 1px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+    box-shadow: var(--coach-grid-shadow);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-top-row .btn,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-top-row .pb-action-sheet-toggle,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-top-row .pb-filter-toggle-btn {
-    min-height: 30px;
+    min-height: var(--coach-grid-control-height);
     padding: 3px 8px;
-    border-radius: 1px;
-    box-shadow: none;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
     font-size: var(--font-size-xs);
     white-space: nowrap;
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-search-wrap input {
-    min-height: 30px;
+    min-height: var(--coach-grid-control-height);
     padding: 3px 28px 3px 28px;
-    border-radius: 1px;
-    box-shadow: none;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
     font-size: var(--font-size-xs);
   }
 
@@ -7836,37 +7836,37 @@ label.disc-attach-btn {
     min-width: 18px;
     height: 18px;
     margin-left: 4px;
-    border-radius: 1px;
+    border-radius: var(--coach-grid-radius);
     font-family: var(--font-mono);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-utility-group {
-    gap: 4px;
+    gap: var(--coach-grid-gap);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-meta-bar {
-    gap: 4px;
-    min-height: 28px;
+    gap: var(--coach-grid-gap);
+    min-height: var(--coach-grid-compact-control-height);
     margin-bottom: 4px;
     padding: 2px 4px;
-    border: 1px solid var(--color-border-light);
-    border-radius: 0;
-    background: var(--color-surface);
+    border: 1px solid var(--coach-grid-divider);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .table-container {
-    border-color: var(--color-border-med);
-    border-radius: 0;
-    background: var(--color-surface);
-    box-shadow: none;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface);
+    box-shadow: var(--coach-grid-shadow);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable th {
-    height: 30px;
+    height: var(--coach-grid-control-height);
     padding: 4px 7px;
-    border-right: 1px solid var(--color-border-light);
-    border-bottom: 1px solid var(--color-border-med);
-    background: var(--color-surface-muted);
+    border-right: 1px solid var(--coach-grid-divider);
+    border-bottom: 1px solid var(--coach-grid-border);
+    background: var(--coach-grid-surface-muted);
     color: var(--color-text-muted);
     font-size: 10px;
     font-weight: 800;
@@ -7880,8 +7880,8 @@ label.disc-attach-btn {
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable td {
     height: 34px;
     padding: 3px 7px;
-    border-right: 1px solid var(--color-border-light);
-    border-bottom-color: var(--color-border-light);
+    border-right: 1px solid var(--coach-grid-divider);
+    border-bottom-color: var(--coach-grid-divider);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable td:last-child {
@@ -7893,7 +7893,7 @@ label.disc-attach-btn {
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable .pb-player-visibility-btn,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable .pb-add-week-btn,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable .pb-present-btn {
-    border-radius: 1px;
-    box-shadow: none;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
   }
 }

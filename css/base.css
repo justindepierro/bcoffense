@@ -172,6 +172,21 @@
   --radius-pill: 999px;
   --radius-round: 50%;
 
+  /* Coach Grid — opt-in desktop workbench tokens. These do not replace the
+     app's legacy radii globally; migrated coach surfaces reference them so the
+     system can be tuned from one place. */
+  --coach-grid-radius: 1px;
+  --coach-grid-toolbar-radius: 0;
+  --coach-grid-control-height: 30px;
+  --coach-grid-compact-control-height: 28px;
+  --coach-grid-mini-control-height: 26px;
+  --coach-grid-gap: 4px;
+  --coach-grid-border: var(--color-border-med);
+  --coach-grid-divider: var(--color-border-light);
+  --coach-grid-surface: var(--color-surface);
+  --coach-grid-surface-muted: var(--color-surface-muted);
+  --coach-grid-shadow: none;
+
   /* Shadows — navy tinted */
   --shadow-xs: 0 1px 2px rgba(10, 18, 42, 0.05);
   --shadow-sm:

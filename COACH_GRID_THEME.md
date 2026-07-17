@@ -33,6 +33,17 @@ implementation.
 | Status marker | Small count, state, or type signal; not a primary button | Existing badge/type tokens |
 | Exception panel | Expand-on-demand detail for personnel, tools, or advanced settings | native `details`, drawers |
 
+## Global tuning layer
+
+`css/base.css` owns the opt-in Coach Grid tokens: radius, control heights,
+gap, border, surface, and shadow. `css/components.css` exposes
+`.coach-grid-command-strip` for shared command geometry. A module opts in with
+that class and consumes the tokens in its local layout rules; this intentionally
+does **not** globally flatten every button, modal, player card, or print sheet.
+
+To adjust the system, change the Coach Grid tokens once. To change a module's
+layout or responsive behavior, keep that rule in the module stylesheet.
+
 ## Module migration order
 
 1. **Practice Script** — reference surface. Coach rows and library command rail

@@ -4749,33 +4749,33 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
    and all print output intentionally keep their dedicated layouts. */
 @media (min-width: 821px) {
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar {
-    gap: 5px;
+    gap: var(--coach-grid-gap);
     margin-bottom: 5px;
     padding: 4px 6px;
-    border-color: var(--color-border-med);
-    border-radius: 0;
-    background: var(--color-surface-muted);
-    box-shadow: none;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+    box-shadow: var(--coach-grid-shadow);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar-left,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar-right {
-    gap: 4px;
+    gap: var(--coach-grid-gap);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar .btn,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toggle {
-    min-height: 30px;
+    min-height: var(--coach-grid-control-height);
     padding: 3px 8px;
-    border-radius: 1px;
-    box-shadow: none;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
     font-size: var(--font-size-xs);
     white-space: nowrap;
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toggle-group {
-    border-radius: 1px;
-    box-shadow: none;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar-divider {
@@ -4787,26 +4787,26 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar-secondary,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-unified-bar {
     margin-bottom: 5px;
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: var(--coach-grid-toolbar-radius);
+    box-shadow: var(--coach-grid-shadow);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-toolbar-secondary-summary {
-    min-height: 30px;
+    min-height: var(--coach-grid-control-height);
     padding: 4px 7px;
     font-size: var(--font-size-xs);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-category {
     border: 1px solid var(--color-text);
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: var(--coach-grid-toolbar-radius);
+    box-shadow: var(--coach-grid-shadow);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .category-header {
-    min-height: 30px;
+    min-height: var(--coach-grid-control-height);
     padding: 4px 7px;
-    border-radius: 0;
+    border-radius: var(--coach-grid-toolbar-radius);
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 0.045em;
@@ -4814,18 +4814,18 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-play {
-    min-height: 28px;
-    gap: 4px;
+    min-height: var(--coach-grid-compact-control-height);
+    gap: var(--coach-grid-gap);
     padding: 3px 5px;
-    border-bottom: 1px solid var(--color-border-light);
-    border-radius: 0;
-    box-shadow: none;
+    border-bottom: 1px solid var(--coach-grid-divider);
+    border-radius: var(--coach-grid-toolbar-radius);
+    box-shadow: var(--coach-grid-shadow);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-play .personnel-code,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-play .cs-cell-display-badge,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-play .cs-dupe-badge {
-    border-radius: 1px;
+    border-radius: var(--coach-grid-radius);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-play .play-text {
@@ -4837,16 +4837,16 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
     gap: 3px;
     margin-top: 0;
     padding: 3px;
-    border-top: 1px solid var(--color-border-light);
-    background: var(--color-surface-muted);
+    border-top: 1px solid var(--coach-grid-divider);
+    background: var(--coach-grid-surface-muted);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .callsheet-dropzone,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-add-blank-btn {
-    min-height: 26px;
+    min-height: var(--coach-grid-mini-control-height);
     padding: 3px 6px;
-    border-radius: 1px;
-    box-shadow: none;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
     font-size: 10px;
     font-weight: 800;
   }
@@ -4854,7 +4854,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #callsheet .cs-empty-cat {
     min-height: 32px;
     padding: 5px;
-    border-radius: 0;
+    border-radius: var(--coach-grid-toolbar-radius);
     font-size: 10px;
   }
 }
