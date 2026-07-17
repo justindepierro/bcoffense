@@ -1241,6 +1241,26 @@ function checkCoachGridTeamWorkspaceContract() {
   console.log("coach grid Team Workspace contract ok");
 }
 
+function checkCoachGridOpponentScoutContract() {
+  const css = read("css/tendencies.css");
+  const render = read("js/tendencies-render.js");
+  const theme = read("COACH_GRID_THEME.md");
+
+  if (
+    !/Coach Grid: Opponent Scout/.test(css) ||
+    !/td-home coach-grid-tendencies-workspace/.test(render) ||
+    !/td-detail-header app-command-toolbar coach-grid-command-strip/.test(render) ||
+    !/td-toolbar app-command-toolbar coach-grid-command-strip/.test(render) ||
+    !/\.td-table th \{[\s\S]*background: var\(--coach-grid-surface-muted\)/.test(css) ||
+    !/\.td-filter-chip \{[\s\S]*min-height: var\(--coach-grid-mini-control-height\)/.test(css) ||
+    !/Opponent Scout.*desktop opponent list, command strips, filters/.test(theme)
+  ) {
+    fail("Coach Grid Opponent Scout contract is missing");
+  }
+
+  console.log("coach grid Opponent Scout contract ok");
+}
+
 function checkLibrarySurfaceContract() {
   const base = read("css/base.css");
   const components = read("css/components.css");
@@ -5221,6 +5241,7 @@ checkCoachGridCallSheetWorkbenchContract();
 checkCoachGridGamePlanWorkbenchContract();
 checkCoachGridWristbandWorkbenchContract();
 checkCoachGridTeamWorkspaceContract();
+checkCoachGridOpponentScoutContract();
 checkLibrarySurfaceContract();
 checkPlayPresentationContracts();
 checkPlayIdentityHandoffFixtures();

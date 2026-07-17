@@ -1777,3 +1777,196 @@
     display: none;
   }
 }
+
+/* ============ Coach Grid: Opponent Scout ============ */
+/* Desktop coach worksheet treatment. Keep mobile cards, reports, and print separate. */
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace {
+    max-width: 1240px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-home-header {
+    text-align: left;
+    margin-bottom: var(--space-md);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-home-header h2 {
+    font-size: var(--font-size-2xl);
+    margin-bottom: 2px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-section-header,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-detail-header,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-toolbar {
+    border-radius: var(--coach-grid-toolbar-radius);
+    border-color: var(--coach-grid-divider);
+    box-shadow: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-section-header {
+    min-height: var(--coach-grid-control-height);
+    margin-bottom: var(--coach-grid-gap);
+    padding: 3px 5px 3px 8px;
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-section-header .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-detail-actions .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-toolbar .btn {
+    min-height: var(--coach-grid-compact-control-height);
+    border-radius: var(--coach-grid-radius);
+    padding: 3px 8px;
+    white-space: nowrap;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-opponent-list {
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-opponent-card {
+    border-radius: var(--coach-grid-toolbar-radius);
+    border-color: var(--coach-grid-divider);
+    box-shadow: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-opponent-card-main {
+    min-height: 48px;
+    padding: 7px 10px 7px 12px;
+    border-radius: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-opp-badge,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-tag {
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-detail-header {
+    gap: var(--coach-grid-gap);
+    margin-bottom: var(--coach-grid-gap);
+    padding: 5px 6px;
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-detail-header h2 {
+    font-size: var(--font-size-lg);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-detail-actions {
+    grid-template-columns: repeat(auto-fit, minmax(74px, max-content));
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .btn.td-new-play-btn {
+    padding: 3px 9px;
+    font-size: var(--font-size-sm);
+    animation: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-stats-bar {
+    gap: var(--coach-grid-gap);
+    margin-bottom: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-stat {
+    min-width: 64px;
+    min-height: 44px;
+    padding: 4px 10px;
+    border: 1px solid var(--coach-grid-divider);
+    border-radius: var(--coach-grid-toolbar-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-stat-value {
+    font-size: var(--font-size-xl);
+    line-height: 1;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-toolbar {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: var(--coach-grid-gap);
+    margin-bottom: var(--coach-grid-gap);
+    padding: 4px 5px;
+    background: var(--coach-grid-surface-muted);
+    overflow: visible;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-toolbar-left,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-toolbar-right {
+    grid-template-columns: repeat(auto-fit, minmax(70px, max-content));
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-search-input {
+    width: 176px;
+    min-height: var(--coach-grid-compact-control-height);
+    padding: 3px 26px 3px 8px;
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-search-input:focus {
+    width: 220px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-play-count {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--coach-grid-compact-control-height);
+    padding: 0 7px;
+    border: 1px solid var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface);
+    color: var(--color-text-secondary);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-filter-panel,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-column-panel {
+    border-color: var(--coach-grid-divider);
+    border-radius: var(--coach-grid-toolbar-radius);
+    box-shadow: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-filter-panel {
+    margin-bottom: var(--coach-grid-gap);
+    padding: 8px 10px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-filter-chip {
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 2px 7px;
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-table-container {
+    border: 1px solid var(--coach-grid-divider);
+    border-radius: var(--coach-grid-toolbar-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-table th {
+    padding: 6px 8px;
+    background: var(--coach-grid-surface-muted);
+    color: var(--color-text-secondary);
+    border-right: 1px solid var(--coach-grid-divider);
+    border-bottom: 1px solid var(--coach-grid-divider);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-table td {
+    min-height: var(--coach-grid-compact-control-height);
+    padding: 5px 8px;
+    border-right: 1px solid var(--coach-grid-divider);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-table th:last-child,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-table td:last-child {
+    border-right: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-table tbody tr:nth-child(even):not(.selected) {
+    background: color-mix(in srgb, var(--coach-grid-surface-muted) 60%, transparent);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-tendencies-workspace .td-play-actions .btn {
+    min-width: var(--coach-grid-mini-control-height);
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 2px 5px;
+    border-radius: var(--coach-grid-radius);
+  }
+}

@@ -62,8 +62,11 @@ layout or responsive behavior, keep that rule in the module stylesheet.
 6. **Team Workspace (Settings + Player Accounts)** — roster, personnel, and
    account management now use compact command surfaces and explicit desktop
    columns. Player portal settings retain their own player-facing contract.
-7. **Scouting and Signals** — use compact command strips and clear tables
-   where they improve scanning.
+7. **Opponent Scout** — the desktop opponent list, command strips, filters,
+   stat cells, and film log now use Coach Grid scanning density. Reports,
+   presentation, mobile cards, and print remain separate contracts.
+8. **Signals** — use compact command strips and clear tables where they
+   improve scanning.
 
 ## Migration rules
 

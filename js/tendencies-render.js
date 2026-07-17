@@ -9,7 +9,7 @@ function renderTendenciesLoading() {
   const container = document.getElementById("tendenciesContent");
   if (!container) return;
   container.innerHTML = `
-    <div class="td-home">
+    <div class="td-home coach-grid-tendencies-workspace">
       <div class="td-state td-state--loading" role="status" aria-live="polite">
         <span class="td-state__spinner" aria-hidden="true"></span>
         <p class="td-state__text">Loading Opponent Scout…</p>
@@ -117,13 +117,13 @@ function renderTendenciesHome() {
       .join("");
 
     container.innerHTML = `
-    <div class="td-home">
+    <div class="td-home coach-grid-tendencies-workspace">
       <div class="td-home-header">
         <h2>🎯 Opponent Scout</h2>
         <p class="td-subtitle">Chart defensive plays while watching film. Build opponent scouting reports and export for analysis.</p>
       </div>
       <div class="td-opponent-section">
-        <div class="td-section-header">
+        <div class="td-section-header app-command-toolbar coach-grid-command-strip">
           <h3>📋 Opponents</h3>
           <button class="btn btn-primary" data-action="addTendenciesOpponent">＋ New Opponent</button>
         </div>
@@ -361,8 +361,8 @@ function renderScoutOverview() {
   })();
 
   container.innerHTML = `
-    <div class="td-detail">
-      <div class="td-detail-header">
+    <div class="td-detail coach-grid-tendencies-workspace">
+      <div class="td-detail-header app-command-toolbar coach-grid-command-strip">
         <button class="btn btn-secondary" data-action="tendenciesGoHome">← Back</button>
         <h2>${escapeHtml(opp.name)}</h2>
         <div class="td-detail-actions action-grid">
@@ -535,8 +535,8 @@ function renderOpponentDetail() {
   ).length;
 
   container.innerHTML = `
-    <div class="td-detail">
-      <div class="td-detail-header">
+    <div class="td-detail coach-grid-tendencies-workspace">
+      <div class="td-detail-header app-command-toolbar coach-grid-command-strip">
         <button class="btn btn-secondary" data-action="tendenciesGoHome">← Back</button>
         ${totalPlays > 0 ? `<button class="btn btn-secondary" data-action="showTdOverview">⬅ Overview</button>` : ""}
         <h2>📋 ${escapeHtml(opp.name)} — Film Log</h2>
@@ -577,7 +577,7 @@ function renderOpponentDetail() {
       </div>
 
       <!-- Toolbar -->
-      <div class="td-toolbar">
+      <div class="td-toolbar app-command-toolbar coach-grid-command-strip">
         <div class="td-toolbar-left toolbar-primary">
           <div class="td-search-box">
             <input type="text" class="td-search-input" id="tdSearchInput" placeholder="🔍 Search plays…"
