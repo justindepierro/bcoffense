@@ -25,6 +25,7 @@ rotation described in `CLOUDFLARE_AUTH.md`.
   intentionally removed.
 - `AUDIT_ROADMAP.md` — active security and engineering-debt findings.
 - `MOBILE_AUDIT.md` — detailed mobile/iPad regression matrix.
+- `COACH_GRID_THEME.md` — app-wide visual system and safe module migration order.
 - `CLOUDFLARE_AUTH.md` — required Cloudflare bindings, secrets, and deployment.
 
 ## How it runs

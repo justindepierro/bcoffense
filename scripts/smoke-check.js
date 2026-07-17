@@ -1021,7 +1021,13 @@ function checkScriptWorkspaceCommandSurface() {
     !/scriptLibraryPinToggle/.test(html) ||
     !/function maybeAutoCollapseScriptPlayRail\(\)/.test(shared) ||
     !/scriptLibraryPinned/.test(shared) ||
-    !/data-controls-mode="run"/.test(css)
+    !/data-controls-mode="run"/.test(css) ||
+    !/script-sidebar-tabs \{[\s\S]*grid-template-columns: minmax\(0, 1fr\) 28px auto/.test(
+      css,
+    ) ||
+    !/available-plays-actions \{[\s\S]*grid-template-columns: 1fr 1fr/.test(
+      css,
+    )
   ) {
     fail("Script library and workspace tools still have duplicate navigation");
   }

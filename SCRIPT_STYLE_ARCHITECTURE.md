@@ -32,6 +32,11 @@ styles consume these markers; they must not recreate their own device state.
 | Print and packet output | `css/print.css` | Print is an explicit visual exception. |
 | Global device-shell behavior | `css/responsive.css` | Do not add Script-local layout rules here. Script has no selectors in this shared stylesheet; staff-tablet, coach-phone, packet, and player-panel Script behavior live in `css/script.css`. |
 
+The Script library rail is part of the coach worksheet surface. Its header,
+filters, and add controls use the same compact square treatment as the grid;
+available-play cards retain their type accents and remain a separate list
+surface.
+
 ## Coach Row Contract
 
 `js/script-render.js` owns the row markup. The desktop coach grid is one

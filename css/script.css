@@ -14192,6 +14192,159 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
   #script[data-controls-mode="run"] .script-item .play-call .call-meta {
     margin-top: 2px;
   }
+
+  /* The library is a command rail, not a stack of soft cards. Its controls
+     follow the same compact, square worksheet language as the play grid. */
+  #script .script-play-rail .script-sidebar-tabs {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 28px auto;
+    align-items: center;
+    gap: 4px;
+    margin: 0 0 5px;
+    padding: 4px;
+    border: 1px solid var(--color-border-med);
+    border-radius: 0;
+    background: var(--color-surface-muted);
+  }
+
+  #script .script-play-rail .script-sidebar-title {
+    padding: 3px 5px;
+    color: var(--color-text);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  #script .script-play-rail .script-sidebar-collapse,
+  #script .script-play-rail .script-library-pin-toggle {
+    min-height: 28px;
+    height: 28px;
+    padding: 3px 6px;
+    border: 1px solid var(--color-border-med);
+    border-radius: 1px;
+    background: var(--color-surface);
+    box-shadow: none;
+    font-size: 10px;
+  }
+
+  #script .script-play-rail .script-sidebar-collapse {
+    width: 28px;
+    padding-inline: 0;
+  }
+
+  #script .script-play-rail .script-sidebar-panel > h3 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+    margin: 0;
+    padding: 3px 0 5px;
+    border-bottom: 1px solid var(--color-border-light);
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+  }
+
+  #script .script-play-rail .script-sidebar-panel > h3 .play-count,
+  #script .script-play-rail .active-filter-badge {
+    min-width: 24px;
+    min-height: 22px;
+    padding: 2px 5px;
+    border-radius: 1px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1;
+  }
+
+  #script .script-play-rail #toggleFiltersBtn,
+  #script .script-play-rail .filter-actions-row .btn,
+  #script .script-play-rail .available-plays-actions .btn,
+  #script .script-play-rail .available-plays-actions .select-all-label,
+  #script .script-play-rail .available-load-btn {
+    min-height: 28px;
+    border-radius: 1px;
+    box-shadow: none;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  #script .script-play-rail #toggleFiltersBtn {
+    padding: 3px 7px;
+  }
+
+  #script .script-play-rail .filter-actions-row {
+    align-items: center;
+    min-height: 28px;
+    padding: 2px 0;
+  }
+
+  #script .script-play-rail .filter-actions-row .btn {
+    padding: 3px 7px;
+  }
+
+  #script .script-play-rail .filters.filters-compact {
+    margin-bottom: 4px;
+  }
+
+  #script .script-play-rail .filters.filters-compact input,
+  #script .script-play-rail .filters.filters-compact select {
+    min-height: 30px;
+    padding: 3px 7px;
+    border-radius: 1px;
+    box-shadow: none;
+    font-size: var(--font-size-xs);
+  }
+
+  #script .script-play-rail .script-gp-filters {
+    gap: 3px;
+    margin-top: 4px;
+  }
+
+  #script .script-play-rail .pb-gp-filter-toggle {
+    min-height: 26px;
+    padding: 2px 5px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 1px;
+    background: var(--color-surface-muted);
+  }
+
+  #script .script-play-rail .available-plays-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    padding: 4px 0 2px;
+  }
+
+  #script .script-play-rail .available-plays-actions .btn,
+  #script .script-play-rail .available-plays-actions .available-load-menu,
+  #script .script-play-rail .available-plays-actions .select-all-label {
+    width: auto;
+    min-width: 0;
+    margin: 0;
+  }
+
+  #script .script-play-rail .available-plays-actions .btn,
+  #script .script-play-rail .available-plays-actions .available-load-btn {
+    padding: 3px 6px;
+    white-space: nowrap;
+  }
+
+  #script .script-play-rail .available-plays-actions .select-all-label {
+    justify-content: flex-start;
+    padding: 3px 6px;
+  }
+
+  #script .script-play-rail .checkbox-filters-title {
+    padding: 4px 6px;
+    border-left: 2px solid var(--color-border-med);
+    border-radius: 0;
+    background: var(--color-surface-muted);
+    font-weight: 800;
+  }
 }
 
 /* Period-level commands are available, but they no longer form a second
