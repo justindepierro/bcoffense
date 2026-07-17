@@ -1872,3 +1872,317 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
   color: var(--color-danger);
   font-weight: 700;
 }
+
+/* ── Coach Grid: Team Workspace ──────────────────────────────────────
+   This is desktop-only coach chrome. Player portal controls and phone layouts
+   keep their existing behavior and spacing. */
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace {
+    --team-grid-gap: var(--coach-grid-gap);
+    padding: 6px;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-hero,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-name-card,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-panel,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-card {
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-hero {
+    gap: var(--team-grid-gap);
+    min-height: var(--coach-grid-control-height);
+    padding: 5px 8px;
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-eyebrow,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-chip,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-panel-badge,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-status,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-count,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-roster-health-chip {
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 2px 6px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-hero h3,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-name-card h4,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-panel h4 {
+    font-size: var(--font-size-md);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-topbar,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-grid {
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-name-card,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-panel {
+    padding: 8px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-panel-header {
+    min-height: var(--coach-grid-control-height);
+    margin: 0 0 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--coach-grid-divider);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-panel-kicker {
+    margin-bottom: 2px;
+    font-size: var(--font-size-2xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-panel-header--toggle .toggle-icon {
+    width: var(--coach-grid-mini-control-height);
+    height: var(--coach-grid-mini-control-height);
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-panel-content > p,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-name-card > p {
+    margin-bottom: 8px;
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-actions,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-add-row {
+    gap: var(--team-grid-gap);
+    margin-bottom: 6px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-actions > *,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-add-row > *,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-actions .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-add-row .btn {
+    min-height: var(--coach-grid-control-height);
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-input,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-name-input,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-roster-cell,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-name,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-slot-label-input,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-slot select,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-slot-player-select {
+    min-height: var(--coach-grid-control-height);
+    padding: 4px 7px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-roster-bulk-input {
+    min-height: 84px;
+    margin-bottom: 6px;
+    padding: 7px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-roster-health {
+    gap: var(--team-grid-gap);
+    margin: 4px 0 6px;
+    padding: 5px;
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-roster-list,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-personnel-packages,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-swap-groups {
+    gap: var(--team-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-roster-grid-head,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-roster-row {
+    display: grid;
+    grid-template-columns: 56px minmax(150px, 1fr) 92px 92px minmax(104px, 0.6fr) 90px 30px;
+    gap: var(--team-grid-gap);
+    align-items: center;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-roster-grid-head {
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 0 5px;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-2xs);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-roster-row {
+    min-height: var(--coach-grid-control-height);
+    padding: 4px;
+    border-color: var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-roster-row:nth-child(odd) {
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-roster-row .btn {
+    min-width: var(--coach-grid-control-height);
+    min-height: var(--coach-grid-control-height);
+    padding: 0;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-card {
+    padding: 7px;
+    background: var(--coach-grid-surface);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-head {
+    gap: var(--team-grid-gap);
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--coach-grid-divider);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-grid {
+    gap: var(--team-grid-gap);
+    margin-top: var(--team-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-slot {
+    gap: 3px;
+    padding: 5px;
+    border-color: var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-slot-selection,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-slot-drag-handle,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-slot-sub-add,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-slot-sub-remove {
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 3px 5px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-panel {
+    width: min(96vw, 860px);
+    border: 1px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-header {
+    min-height: var(--coach-grid-control-height);
+    padding: 6px 8px;
+    background: var(--coach-grid-surface-muted);
+    border-bottom-color: var(--coach-grid-border);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-close-btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-action-btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-invite-form .btn {
+    min-height: var(--coach-grid-control-height);
+    border: 1px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-body {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-stats,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-list {
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-stat,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-badge {
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 2px 6px;
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-list-head,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(190px, 1.2fr) 110px minmax(120px, auto);
+    gap: 6px;
+    align-items: center;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-list-head {
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 0 6px;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-2xs);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-row {
+    min-height: var(--coach-grid-control-height);
+    padding: 5px 6px;
+    border-color: var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-row:nth-child(odd) {
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-row-info {
+    display: contents;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-row-actions {
+    grid-column: 3 / -1;
+    justify-content: flex-end;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-row-name,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-row-email,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-row-meta {
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-row-meta {
+    display: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-row-actions {
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-invite-section {
+    margin-top: 2px;
+    padding-top: 7px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pa-input {
+    min-height: var(--coach-grid-control-height);
+    padding: 4px 7px;
+    border-width: 1px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+}

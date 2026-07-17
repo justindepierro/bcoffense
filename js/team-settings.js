@@ -414,7 +414,15 @@ function renderTeamSettings() {
   `;
 
   rosterContainer.innerHTML = roster.length
-    ? roster.map((player) => `
+    ? `<div class="team-roster-grid-head" aria-hidden="true">
+        <span>#</span>
+        <span>Player</span>
+        <span>Primary</span>
+        <span>Secondary</span>
+        <span>Player login</span>
+        <span>Group</span>
+        <span>Remove</span>
+      </div>${roster.map((player) => `
         <div class="team-roster-row" data-player-id="${escapeAttr(player.id)}">
           <input type="text" class="team-roster-cell team-roster-cell--num" value="${escapeAttr(player.number)}" data-field="teamPlayerNumber" data-player-id="${escapeAttr(player.id)}" placeholder="#" aria-label="Number for ${escapeHtml(player.name)}" />
           <input type="text" class="team-roster-cell team-roster-cell--name" value="${escapeAttr(player.name)}" data-field="teamPlayerName" data-player-id="${escapeAttr(player.id)}" placeholder="Player name" aria-label="Name for ${escapeHtml(player.name)}" />
@@ -432,7 +440,7 @@ function renderTeamSettings() {
           </select>
           <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamPlayer" data-player-id="${escapeAttr(player.id)}" aria-label="Remove ${escapeHtml(player.name)}">✕</button>
         </div>
-      `).join("")
+      `).join("")}`
     : '<div class="team-settings-empty">No roster yet. Add players one at a time or paste a roster below.</div>';
 
   packageContainer.innerHTML = packages.length

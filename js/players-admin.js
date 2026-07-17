@@ -18,6 +18,9 @@ function openPlayersAdmin() {
   overlay.classList.add("visible");
   overlay.removeAttribute("inert");
   overlay.removeAttribute("aria-hidden");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, { id: "players-admin", exclusive: false });
+  }
   loadPlayersAdminList();
 }
 
@@ -27,6 +30,7 @@ function closePlayersAdmin() {
   overlay.classList.remove("visible");
   overlay.setAttribute("inert", "");
   overlay.setAttribute("aria-hidden", "true");
+  if (typeof closeLayer === "function") closeLayer("players-admin");
 }
 
 // ── Load & render ─────────────────────────────────────────────────────────────
@@ -67,7 +71,7 @@ function renderPlayersAdminList(players, container) {
   setInnerHTML(
     container,
     `${statsHtml}
-    <div class="pa-list">${listHtml}</div>
+    <div class="pa-list">${players.length ? '<div class="pa-list-head" aria-hidden="true"><span>Player</span><span>Player login</span><span>Status</span><span>Actions</span></div>' : ""}${listHtml}</div>
     ${renderInviteForm()}`,
   );
 }

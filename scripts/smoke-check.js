@@ -1216,6 +1216,31 @@ function checkCoachGridWristbandWorkbenchContract() {
   console.log("coach grid Wristband workbench contract ok");
 }
 
+function checkCoachGridTeamWorkspaceContract() {
+  const html = read("index.html");
+  const css = read("css/layout.css");
+  const teamSettings = read("js/team-settings.js");
+  const playersAdmin = read("js/players-admin.js");
+  const theme = read("COACH_GRID_THEME.md");
+
+  if (
+    !/team-settings-shell coach-grid-team-workspace/.test(html) ||
+    !/role="dialog" aria-modal="true" aria-labelledby="playersAdminTitle"/.test(html) ||
+    !/Coach Grid: Team Workspace/.test(css) ||
+    !/team-roster-grid-head/.test(css) ||
+    !/\.pa-list-head/.test(css) ||
+    !/--coach-grid-control-height/.test(css) ||
+    !/team-roster-grid-head/.test(teamSettings) ||
+    !/pa-list-head/.test(playersAdmin) ||
+    !/openLayer\(overlay, \{ id: "players-admin", exclusive: false \}\)/.test(playersAdmin) ||
+    !/Team Workspace \(Settings \+ Player Accounts\)/.test(theme)
+  ) {
+    fail("Coach Grid Team Workspace contract is missing");
+  }
+
+  console.log("coach grid Team Workspace contract ok");
+}
+
 function checkLibrarySurfaceContract() {
   const base = read("css/base.css");
   const components = read("css/components.css");
@@ -5195,6 +5220,7 @@ checkCoachGridPlaybookWorkbenchContract();
 checkCoachGridCallSheetWorkbenchContract();
 checkCoachGridGamePlanWorkbenchContract();
 checkCoachGridWristbandWorkbenchContract();
+checkCoachGridTeamWorkspaceContract();
 checkLibrarySurfaceContract();
 checkPlayPresentationContracts();
 checkPlayIdentityHandoffFixtures();

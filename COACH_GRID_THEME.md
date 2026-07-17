@@ -59,8 +59,11 @@ layout or responsive behavior, keep that rule in the module stylesheet.
 5. **Wristband Maker** — the desktop library and coach controls now use Coach
    Grid density. The physical wristband and player-card/print designs remain
    separate contracts.
-6. **Scouting, Signals, Settings, and Admin** — use compact command strips and
-   clear tables where they improve scanning.
+6. **Team Workspace (Settings + Player Accounts)** — roster, personnel, and
+   account management now use compact command surfaces and explicit desktop
+   columns. Player portal settings retain their own player-facing contract.
+7. **Scouting and Signals** — use compact command strips and clear tables
+   where they improve scanning.
 
 ## Migration rules
 
