@@ -1164,6 +1164,57 @@ function checkCoachGridWristbandWorkbenchContract() {
   console.log("coach grid Wristband workbench contract ok");
 }
 
+function checkLibrarySurfaceContract() {
+  const base = read("css/base.css");
+  const components = read("css/components.css");
+  const html = read("index.html");
+  const scriptCss = read("css/script.css");
+  const scriptRender = read("js/script-available.js");
+  const wristbandCss = read("css/wristband.css");
+  const wristbandRender = read("js/wristband-library.js");
+  const gamePlanCss = read("css/gameplan.css");
+  const gamePlanRender = read("js/gameplan-render.js");
+  const callSheetCss = read("css/callsheet.css");
+  const callSheetRender = read("js/callsheet-picker-runtime.js");
+  const playbookCss = read("css/playbook.css");
+  const architecture = read("LIBRARY_SURFACE_ARCHITECTURE.md");
+
+  if (
+    !/--coach-grid-library-row-height:\s*42px/.test(base) ||
+    !/\.app-library-pane/.test(components) ||
+    !/\.app-library-list/.test(components) ||
+    !/\.app-library-row/.test(components) ||
+    !/script-play-rail app-workspace-pane app-library-pane/.test(html) ||
+    !/available-plays-container app-scroll-region app-library-list/.test(html) ||
+    !/script-library-row app-library-row/.test(scriptRender) ||
+    !/#script \.available-plays-container \{/.test(scriptCss) ||
+    /(?:^|\n)\s*\.play-item\b/m.test(scriptCss) ||
+    /(?:^|\n)\s*\.available-plays-container\b/m.test(scriptCss) ||
+    !/#script \.script-sidebar-panel \{[\s\S]*overflow-y: auto/.test(scriptCss) ||
+    !/wristband-plays app-library-pane/.test(html) ||
+    !/wb-available-plays app-library-list/.test(html) ||
+    !/wb-library-row app-library-row/.test(wristbandRender) ||
+    !/\.wb-play-item \{[\s\S]*border: 1px solid/.test(wristbandCss) ||
+    !/\.wb-play-item \.play-name \{[\s\S]*font-weight: 700/.test(wristbandCss) ||
+    !/#wristband \.wb-available-plays \{[\s\S]*overflow: visible/.test(wristbandCss) ||
+    !/gp-library app-library-pane/.test(gamePlanRender) ||
+    !/gp-library-list app-library-list/.test(gamePlanRender) ||
+    !/gp-play-row app-library-row/.test(gamePlanRender) ||
+    !/gp-play-row-call/.test(gamePlanRender) ||
+    !/grid-template-columns: 16px minmax\(0, 1fr\) auto/.test(gamePlanCss) ||
+    !/cs-picker-popup app-library-pane/.test(html) ||
+    !/cs-picker-list app-library-list/.test(html) ||
+    !/cs-picker-row app-library-row/.test(callSheetRender) ||
+    !/\.cs-picker-row \{[\s\S]*grid-template-columns: auto auto minmax\(0, 1fr\) auto/.test(callSheetCss) ||
+    !/\.table-container \{[\s\S]*scrollbar-gutter: stable/.test(playbookCss) ||
+    !/## Scroll ownership/.test(architecture)
+  ) {
+    fail("library surfaces no longer have isolated rows and one explicit scroll owner");
+  }
+
+  console.log("library surface contracts ok");
+}
+
 function checkPlayPresentationContracts() {
   const html = read("index.html");
   const utils = read("js/utils.js");
@@ -5062,6 +5113,7 @@ checkCoachGridPlaybookWorkbenchContract();
 checkCoachGridCallSheetWorkbenchContract();
 checkCoachGridGamePlanWorkbenchContract();
 checkCoachGridWristbandWorkbenchContract();
+checkLibrarySurfaceContract();
 checkPlayPresentationContracts();
 checkPlayIdentityHandoffFixtures();
 checkScriptPlayerPublishingContracts();

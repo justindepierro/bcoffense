@@ -398,7 +398,7 @@ function populateCallSheetPlayList() {
         : "";
 
       return `
-      <div class="picker-play" data-action="csPickerAddPlay" data-idx="${index}">
+      <div class="picker-play cs-picker-row app-library-row" data-action="csPickerAddPlay" data-idx="${index}">
         ${wristbandNum}
         <span class="personnel-code" style="background: ${bgColor}; color: ${textColor};">${code}</span>
         <span class="cs-picker-play-text">${escapeHtml(play.formation || "")} ${escapeHtml(play.protection || "")} <strong>${escapeHtml(play.play || "")}</strong></span>

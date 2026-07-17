@@ -492,7 +492,7 @@ function renderAvailablePlays() {
         .map((m) => `<span class="play-meta-tag play-meta-tag--${m.c}">${m.t}</span>`)
         .join("");
       return `
-            <div class="play-item play-item--${typeSlug} ${isSelected ? "selected" : ""} ${alreadyIn ? "in-script" : ""}" draggable="true" data-drag="availStart" data-idx="${playIdx}">
+            <div class="play-item script-library-row app-library-row play-item--${typeSlug} ${isSelected ? "selected" : ""} ${alreadyIn ? "in-script" : ""}" draggable="true" data-drag="availStart" data-idx="${playIdx}">
                 <div class="play-item-controls">
                   <input type="checkbox" class="available-play-cb" data-index="${playIdx}" ${isSelected ? "checked" : ""} data-field="availableSelect" data-idx="${playIdx}" />
                   <button type="button" class="available-add-menu-btn" data-action="openAvailableAddMenu" data-idx="${playIdx}" title="Add to script" aria-label="Add ${callName} to script">+</button>

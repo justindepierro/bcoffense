@@ -7859,6 +7859,7 @@ label.disc-attach-btn {
     border-radius: var(--coach-grid-toolbar-radius);
     background: var(--coach-grid-surface);
     box-shadow: var(--coach-grid-shadow);
+    scrollbar-gutter: stable;
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable th {

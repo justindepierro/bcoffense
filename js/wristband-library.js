@@ -285,7 +285,7 @@ function renderWristbandPlays() {
         ? ` [${escapeHtml(play.lineCall)}]`
         : "";
       return `
-        <div class="play-item wb-play-item" data-play-idx="${index}" title="Double-click to add to the next empty cell">
+        <div class="play-item wb-play-item wb-library-row app-library-row" data-play-idx="${index}" title="Double-click to add to the next empty cell">
           <button class="wb-pin-btn${isFav ? " pinned" : ""}" data-action="toggleWbFavorite" data-idx="${index}" title="${isFav ? "Unpin" : "Pin"} play" aria-label="${isFav ? "Unpin" : "Pin"} play" aria-pressed="${isFav}">★</button>
           <div class="play-info">
             <div class="play-name">${emoji}${escapeHtml(play.formation)} ${escapeHtml(play.protection)} ${escapeHtml(play.play)}</div>

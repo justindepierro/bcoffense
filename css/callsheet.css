@@ -1722,6 +1722,38 @@ body.shell-phone #callsheet .cs-empty-cat {
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
 }
+
+@media screen and (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cs-picker-popup {
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cs-picker-list {
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cs-picker-row {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 36px;
+    margin: 0;
+    padding: 3px 5px;
+    gap: var(--app-library-row-gap, var(--coach-grid-gap));
+    border-width: 0 0 1px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cs-picker-row .cs-picker-play-text,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cs-picker-row .cs-picker-chips {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
 .cs-picker-footer {
   margin-top: 15px;
   text-align: right;

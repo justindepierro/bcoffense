@@ -39,6 +39,33 @@ body.shell-phone .app-command-toolbar .btn { min-height: 44px; }
     border-radius: var(--coach-grid-radius);
     box-shadow: var(--coach-grid-shadow);
   }
+
+  /* Shared library geometry. This is deliberately opt-in: each feature keeps
+     one explicit scroll owner, while rows share a reliable, scan-friendly
+     grid treatment without the Script library leaking into another surface. */
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .app-library-pane {
+    --app-library-row-height: var(--coach-grid-library-row-height);
+    --app-library-row-gap: var(--coach-grid-gap);
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .app-library-list {
+    min-height: 0;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-color: var(--color-border-med) transparent;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .app-library-row {
+    min-width: 0;
+    border-color: var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface);
+    box-shadow: var(--coach-grid-shadow);
+  }
 }
 
 /* Shared filter trigger and popover surface. Menus can retain their own

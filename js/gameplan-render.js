@@ -273,7 +273,7 @@ function renderGamePlan() {
 
   const filtered = _gpFilteredLibrary(board);
   const libraryHtml = `
-    <div class="gp-library">
+    <div class="gp-library app-library-pane">
       <div class="gp-library-header">
         <span>Library</span>
         <span class="gp-library-count">${filtered.length} of ${plays.length}${_gpSelected.size > 0 ? ` • ${_gpSelected.size} selected` : ""}</span>
@@ -290,7 +290,7 @@ function renderGamePlan() {
         <button class="btn btn-sm btn-secondary" data-action="gpInvertVisibleSelection" title="Invert selection within visible">⇄ Invert</button>
         <button class="btn btn-sm" data-action="gpAddAllVisibleToBox" title="Add every visible play to a box you pick">➕ Add all visible to…</button>
       </div>
-      <div class="gp-library-list" id="gpLibraryList">
+      <div class="gp-library-list app-library-list" id="gpLibraryList">
         ${filtered.length === 0
       ? `<div class="gp-box-empty">No plays match the current filters.</div>`
       : filtered.map((p) => _gpRenderLibraryRow(p, assignedSigs, renderCtx)).join("")}
@@ -389,12 +389,12 @@ function _gpRenderLibraryRow(play, assignedSigs, renderCtx) {
   const callHtml = _gpRenderCallHtml(play, renderCtx);
   const meta = [play.type, play.personnel, play.formation].filter(Boolean).join(" • ");
   return `
-    <div class="gp-play-row ${checked ? "is-selected" : ""} ${assigned ? "is-assigned" : ""}"
+    <div class="gp-play-row app-library-row ${checked ? "is-selected" : ""} ${assigned ? "is-assigned" : ""}"
          draggable="true" data-sig="${escapeHtml(sig)}">
       <input type="checkbox" class="gp-play-row-checkbox" ${checked ? "checked" : ""}
         data-action="toggleGamePlanLibrarySelect" data-arg="${escapeHtml(sig)}" />
       <div class="gp-play-row-body">
-        <div>${callHtml}${_gpMatchupBadges(play)}</div>
+        <div class="gp-play-row-call">${callHtml}${_gpMatchupBadges(play)}</div>
         ${meta ? `<div class="gp-play-row-meta">${escapeHtml(meta)}</div>` : ""}
       </div>
       ${play.type ? `<span class="gp-play-row-type-badge">${escapeHtml(play.type)}</span>` : ""}

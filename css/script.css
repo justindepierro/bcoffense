@@ -394,7 +394,7 @@ body[data-auth-role="player"]
   font-size: var(--font-size-xl);
   line-height: 1.2;
 }
-.available-plays-container {
+#script .available-plays-container {
   flex: 1 1 auto;
   min-height: 160px;
   max-height: none;
@@ -410,7 +410,7 @@ body[data-auth-role="player"]
   scrollbar-gutter: stable;
   scrollbar-color: var(--color-border-med) transparent;
 }
-.play-item {
+#script .play-item {
   padding: 9px 12px;
   background: var(--color-surface-raised);
   margin-bottom: 6px;
@@ -426,30 +426,30 @@ body[data-auth-role="player"]
   box-shadow: var(--shadow-xs);
 }
 
-.play-item .play-info {
+#script .play-item .play-info {
   min-width: 0;
 }
-.play-item .play-name {
+#script .play-item .play-name {
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
-.play-item .play-details {
+#script .play-item .play-details {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin-top: 6px;
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
-.play-item .play-item-controls {
+#script .play-item .play-item-controls {
   display: grid;
   justify-items: center;
   align-content: start;
   gap: 8px;
 }
 
-.play-item .available-add-menu-btn {
+#script .play-item .available-add-menu-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -467,12 +467,12 @@ body[data-auth-role="player"]
   box-shadow: var(--shadow-xs);
 }
 
-.play-item.selected {
+#script .play-item.selected {
   background: var(--color-success-light);
   border-color: var(--color-success);
 }
 
-.play-item .available-play-cb {
+#script .play-item .available-play-cb {
   cursor: pointer;
   width: 18px;
   height: 18px;
@@ -4907,7 +4907,7 @@ body[data-auth-role="player"] #script .script-tools-drawer {
 }
 
 /* ── Already-in-script badge ── */
-.play-item.in-script {
+#script .play-item.in-script {
   background: color-mix(in srgb, var(--color-success) 6%, transparent);
 }
 .in-script-badge {
@@ -5064,7 +5064,7 @@ body[data-auth-role="player"] #script .script-tools-drawer {
     flex: 1 1 180px;
   }
 
-  .play-item {
+  #script .play-item {
     grid-template-columns: 34px minmax(0, 1fr);
   }
 
@@ -5323,7 +5323,7 @@ body[data-auth-role="player"] #script .script-tools-drawer {
   .script-item .script-move-menu-btn,
   .script-item .remove,
   .script-item .dup-btn,
-  .play-item .available-add-menu-btn {
+  #script .play-item .available-add-menu-btn {
     min-height: 44px;
     min-width: 44px;
     padding: 8px 10px;
@@ -6311,6 +6311,55 @@ body[data-active-tab="script"] .script-display-fab {
   flex: 1 1 auto;
   min-height: 0;
   gap: 6px;
+}
+
+/* Library surface ownership: the sidebar is the only desktop scroll owner.
+   Filters and the paged result list flow together, so the rail never traps a
+   wheel gesture in a second, competing scrollbar. */
+@media screen and (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-sidebar-panel {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-play-rail .filters-collapsible,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .available-plays-container {
+    flex: 0 0 auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .available-plays-container {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-library-row {
+    min-height: var(--app-library-row-height, var(--coach-grid-library-row-height));
+    margin: 0 0 3px;
+    padding: 3px 5px;
+    gap: var(--app-library-row-gap, var(--coach-grid-gap));
+    grid-template-columns: 24px minmax(0, 1fr);
+    border-left-color: var(--color-border-med);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-library-row .play-name-row,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-library-row .play-meta-row {
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-library-row .play-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 /* Compact selects inside the rail filters */
 #script .script-play-rail .filters select,
@@ -7610,13 +7659,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 /* Consolidated hover styles */
 @media (hover: hover) {
-  .play-item:hover {
+  #script .play-item:hover {
     background: var(--color-primary-light);
     border-color: var(--color-primary-light);
     box-shadow: var(--shadow-sm);
   }
 
-  .play-item .available-add-menu-btn:hover {
+  #script .play-item .available-add-menu-btn:hover {
     background: var(--color-success-hover);
   }
 
