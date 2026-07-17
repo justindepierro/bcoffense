@@ -1142,6 +1142,25 @@ function checkCoachGridGamePlanWorkbenchContract() {
   console.log("coach grid Game Plan workbench contract ok");
 }
 
+function checkCoachGridWristbandWorkbenchContract() {
+  const css = read("css/wristband.css");
+  const html = read("index.html");
+  const theme = read("COACH_GRID_THEME.md");
+
+  if (
+    !/Coach Grid: Wristband coach workspace/.test(css) ||
+    !/wb-cmd-bar page-header-surface app-command-toolbar coach-grid-command-strip/.test(html) ||
+    !/#wristband \.wb-library-chip \{[\s\S]*min-height: var\(--coach-grid-compact-control-height\)/.test(css) ||
+    !/#wristband \.wb-cmd-bar \{[\s\S]*border-radius: var\(--coach-grid-toolbar-radius\)/.test(css) ||
+    !/#wristband \.wb-add-play-btn \{[\s\S]*border-radius: var\(--coach-grid-radius\)/.test(css) ||
+    !/Wristband Maker.*desktop library and coach controls/.test(theme)
+  ) {
+    fail("Coach Grid Wristband workbench contract is missing");
+  }
+
+  console.log("coach grid Wristband workbench contract ok");
+}
+
 function checkPlayPresentationContracts() {
   const html = read("index.html");
   const utils = read("js/utils.js");
@@ -2684,12 +2703,12 @@ function checkWristbandWorkspaceContracts() {
   const cloudSync = read("js/cloud-sync.js");
 
   if (
-    !/class="wb-page-header page-header-surface"/.test(html) ||
-    !/class="wb-page-header-row page-header-row"/.test(html) ||
-    !/class="wb-cmd-bar page-header-surface"/.test(html) ||
-    !/class="wb-cmd-main page-header-row"/.test(html) ||
-    !/class="wb-cmd-identity toolbar-status"/.test(html) ||
-    !/class="wb-cmd-actions toolbar-secondary"/.test(html) ||
+    !/class="[^"]*\bwb-page-header\b[^"]*\bpage-header-surface\b[^"]*"/.test(html) ||
+    !/class="[^"]*\bwb-page-header-row\b[^"]*\bpage-header-row\b[^"]*"/.test(html) ||
+    !/class="[^"]*\bwb-cmd-bar\b[^"]*\bpage-header-surface\b[^"]*"/.test(html) ||
+    !/class="[^"]*\bwb-cmd-main\b[^"]*\bpage-header-row\b[^"]*"/.test(html) ||
+    !/class="[^"]*\bwb-cmd-identity\b[^"]*\btoolbar-status\b[^"]*"/.test(html) ||
+    !/class="[^"]*\bwb-cmd-actions\b[^"]*\btoolbar-secondary\b[^"]*"/.test(html) ||
     !/id="wbLibraryStatus"/.test(html) ||
     !/class="[^"]*\bwb-appearance-panel\b[^"]*"/.test(html) ||
     !/data-action="openWbDisplayPanel"/.test(html) ||
@@ -5039,6 +5058,7 @@ checkCoachGridThemeContract();
 checkCoachGridPlaybookWorkbenchContract();
 checkCoachGridCallSheetWorkbenchContract();
 checkCoachGridGamePlanWorkbenchContract();
+checkCoachGridWristbandWorkbenchContract();
 checkPlayPresentationContracts();
 checkPlayIdentityHandoffFixtures();
 checkScriptPlayerPublishingContracts();

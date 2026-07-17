@@ -3406,3 +3406,161 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
   }
 }
 
+/* ── Coach Grid: Wristband coach workspace ───────────────────────────────
+   Compact the desktop library and builder controls without touching the
+   physical wristband card, player-card surface, or their exact print rules. */
+@media screen and (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-page-header {
+    margin-bottom: 6px;
+    padding: 4px 6px;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-page-header-row,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-page-status {
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-page-kicker {
+    font-size: 9px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-page-header h2 {
+    font-size: var(--font-size-md);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-mode-badge,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-size-badge {
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 2px 6px;
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body.app-ready:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wristband-plays {
+    flex-basis: 290px;
+    padding: 6px;
+    border-right-color: var(--coach-grid-border);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wristband-preview {
+    padding: 6px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-header,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-preview-header {
+    gap: var(--coach-grid-gap);
+    min-height: var(--coach-grid-control-height);
+    margin-bottom: 4px;
+    padding: 2px 0 4px;
+    border-bottom: 1px solid var(--coach-grid-divider);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-header h3,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-preview-header h3 {
+    font-size: var(--font-size-sm);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-header .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-load-more {
+    min-height: var(--coach-grid-compact-control-height);
+    padding: 3px 6px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-search,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-quick-row {
+    margin-bottom: 4px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-search input,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .filters.filters-compact select {
+    min-height: var(--coach-grid-control-height);
+    padding-block: 3px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-chips {
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-library-chip {
+    min-width: 0;
+    min-height: var(--coach-grid-compact-control-height);
+    padding: 3px 6px;
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-play-item {
+    gap: var(--coach-grid-gap);
+    min-height: 34px;
+    padding: 3px 5px;
+    border-color: var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-type-chip,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-on-card-badge {
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-add-play-btn {
+    min-width: 0;
+    min-height: var(--coach-grid-compact-control-height);
+    padding: 3px 6px;
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-cmd-bar {
+    margin-bottom: 4px;
+    padding: 4px 6px;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-cmd-main,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-cmd-actions,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-toolbar-group {
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-cmd-actions > .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-cmd-actions > .tool-menu-wrap > .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-toolbar-group .btn {
+    min-height: var(--coach-grid-control-height);
+    padding: 3px 7px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+    white-space: nowrap;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-stats-bar {
+    gap: var(--coach-grid-gap);
+    margin-bottom: 4px;
+    padding: 4px;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-stats-bar .stat-item {
+    min-height: 40px;
+    padding: 3px 6px;
+    border-color: var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .card-tabs,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-card-viewport {
+    border-radius: var(--coach-grid-toolbar-radius);
+  }
+}

@@ -56,8 +56,9 @@ layout or responsive behavior, keep that rule in the module stylesheet.
 4. **Game Plan** — the desktop command zone, filters, library, and boxes now
    share Coach Grid density. Keep its accent borders, drag/drop states, and
    print output as explicit exceptions.
-5. **Wristband Maker** — migrate coach controls, not the printed/player card
-   design.
+5. **Wristband Maker** — the desktop library and coach controls now use Coach
+   Grid density. The physical wristband and player-card/print designs remain
+   separate contracts.
 6. **Scouting, Signals, Settings, and Admin** — use compact command strips and
    clear tables where they improve scanning.
 
