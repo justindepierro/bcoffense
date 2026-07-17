@@ -37,8 +37,9 @@ implementation.
 
 1. **Practice Script** — reference surface. Coach rows and library command rail
    are in the system; keep validating real practice-building work.
-2. **Playbook** — convert filters/table toolbar and table rows first. Preserve
-   editor modal and player-facing cards until a separate pass.
+2. **Playbook** — the desktop coach toolbar and table are now in the first
+   Coach Grid pass. Preserve the editor modal and player-facing cards until a
+   separate pass.
 3. **Call Sheet** — apply the worksheet grid to category headers and call
    cells, then handle print as its own verified contract.
 4. **Game Plan** — make board controls and boxes more grid-like without

@@ -7792,3 +7792,108 @@ label.disc-attach-btn {
     padding: 3px 9px;
   }
 }
+
+/* ── Coach Grid: Playbook workbench ───────────────────────────────────────
+   Desktop coach work uses the same compact command strip and worksheet table
+   as the Practice Script. Player cards, mobile, and print retain their own
+   contracts until they are migrated deliberately. */
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-top-row {
+    gap: 4px;
+    margin-bottom: 4px;
+    padding: 4px;
+    border: 1px solid var(--color-border-med);
+    border-radius: 0;
+    background: var(--color-surface-muted);
+    box-shadow: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-top-row .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-top-row .pb-action-sheet-toggle,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-top-row .pb-filter-toggle-btn {
+    min-height: 30px;
+    padding: 3px 8px;
+    border-radius: 1px;
+    box-shadow: none;
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-search-wrap input {
+    min-height: 30px;
+    padding: 3px 28px 3px 28px;
+    border-radius: 1px;
+    box-shadow: none;
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-search-icon {
+    left: 8px;
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-filter-count-badge {
+    min-width: 18px;
+    height: 18px;
+    margin-left: 4px;
+    border-radius: 1px;
+    font-family: var(--font-mono);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-utility-group {
+    gap: 4px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .pb-meta-bar {
+    gap: 4px;
+    min-height: 28px;
+    margin-bottom: 4px;
+    padding: 2px 4px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 0;
+    background: var(--color-surface);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbook .table-container {
+    border-color: var(--color-border-med);
+    border-radius: 0;
+    background: var(--color-surface);
+    box-shadow: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable th {
+    height: 30px;
+    padding: 4px 7px;
+    border-right: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-border-med);
+    background: var(--color-surface-muted);
+    color: var(--color-text-muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable th:last-child {
+    border-right: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable td {
+    height: 34px;
+    padding: 3px 7px;
+    border-right: 1px solid var(--color-border-light);
+    border-bottom-color: var(--color-border-light);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable td:last-child {
+    border-right: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable .play-type-chip,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable .pb-edit-btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable .pb-player-visibility-btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable .pb-add-week-btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #playbookTable .pb-present-btn {
+    border-radius: 1px;
+    box-shadow: none;
+  }
+}

@@ -1068,6 +1068,23 @@ function checkScriptCoachRowScanningContract() {
   console.log("script coach row scanning contract ok");
 }
 
+function checkCoachGridPlaybookWorkbenchContract() {
+  const css = read("css/playbook.css");
+  const theme = read("COACH_GRID_THEME.md");
+
+  if (
+    !/Coach Grid: Playbook workbench/.test(css) ||
+    !/pb-top-row \{[\s\S]*border-radius:\s*0/.test(css) ||
+    !/#playbookTable th \{[\s\S]*background: var\(--color-surface-muted\)/.test(css) ||
+    !/#playbookTable td \{[\s\S]*border-right: 1px solid var\(--color-border-light\)/.test(css) ||
+    !/Playbook.*desktop coach toolbar and table/.test(theme)
+  ) {
+    fail("Coach Grid Playbook workbench contract is missing");
+  }
+
+  console.log("coach grid Playbook workbench contract ok");
+}
+
 function checkPlayPresentationContracts() {
   const html = read("index.html");
   const utils = read("js/utils.js");
@@ -4961,6 +4978,7 @@ checkPersonnelMarkerContracts();
 checkScriptPersonnelWorkspaceContract();
 checkScriptWorkspaceCommandSurface();
 checkScriptCoachRowScanningContract();
+checkCoachGridPlaybookWorkbenchContract();
 checkPlayPresentationContracts();
 checkPlayIdentityHandoffFixtures();
 checkScriptPlayerPublishingContracts();
