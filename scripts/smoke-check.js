@@ -1024,6 +1024,30 @@ function checkScriptWorkspaceCommandSurface() {
   console.log("script workspace command surface ok");
 }
 
+function checkScriptCoachRowScanningContract() {
+  const render = read("js/script-render.js");
+  const css = read("css/script.css");
+
+  if (
+    !/playNumber % 2 === 0 \? "script-item--alternate"/.test(render) ||
+    !/--script-row-accent: var\(--color-success\)/.test(css) ||
+    !/--script-row-accent: var\(--color-primary\)/.test(css) ||
+    !/border-left: 3px solid var\(--script-row-accent, var\(--color-border-med\)\)/.test(
+      css,
+    ) ||
+    !/script-item--alternate:not\(\.period-header\):not\(\.script-item--player\)[\s\S]*--script-row-bg: color-mix/.test(
+      css,
+    ) ||
+    !/script-call-edit-field input\[type="text"\],[\s\S]*min-height:\s*26px[\s\S]*height:\s*26px/.test(
+      css,
+    )
+  ) {
+    fail("Script coach rows no longer have compact fields and scannable type accents");
+  }
+
+  console.log("script coach row scanning contract ok");
+}
+
 function checkPlayPresentationContracts() {
   const html = read("index.html");
   const utils = read("js/utils.js");
@@ -4916,6 +4940,7 @@ checkWristbandTypography();
 checkPersonnelMarkerContracts();
 checkScriptPersonnelWorkspaceContract();
 checkScriptWorkspaceCommandSurface();
+checkScriptCoachRowScanningContract();
 checkPlayPresentationContracts();
 checkPlayIdentityHandoffFixtures();
 checkScriptPlayerPublishingContracts();

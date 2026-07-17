@@ -606,6 +606,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
   const itemClasses = [
     "script-item",
     `script-item--${availTypeSlug(play.type)}`,
+    playNumber % 2 === 0 ? "script-item--alternate" : "",
     isSelected ? "bulk-selected" : "",
     opts.layoutMode === "compact" ? "script-item--compact" : "script-item--detail",
     opts.printStyle ? "script-item--printlike" : "",

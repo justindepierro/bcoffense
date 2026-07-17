@@ -6610,27 +6610,27 @@ body[data-active-tab="script"] .script-display-fab {
   color: var(--color-type-movement-fg);
 }
 
-/* Script item type accent left border (same colors as available plays) */
+/* Script item type accent token (shared by the desktop row boundary below). */
 #script .script-item--run {
-  border-left: 3px solid var(--color-success);
+  --script-row-accent: var(--color-success);
 }
 #script .script-item--pass {
-  border-left: 3px solid var(--color-primary);
+  --script-row-accent: var(--color-primary);
 }
 #script .script-item--rpo {
-  border-left: 3px solid var(--color-purple);
+  --script-row-accent: var(--color-purple);
 }
 #script .script-item--screen {
-  border-left: 3px solid var(--color-info);
+  --script-row-accent: var(--color-info);
 }
 #script .script-item--quick {
-  border-left: 3px solid var(--color-warning);
+  --script-row-accent: var(--color-warning);
 }
 #script .script-item--playaction {
-  border-left: 3px solid var(--color-danger);
+  --script-row-accent: var(--color-danger);
 }
 #script .script-item--movement {
-  border-left: 3px solid var(--color-accent);
+  --script-row-accent: var(--color-accent);
 }
 
 #script .app-scroll-region {
@@ -13311,16 +13311,15 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     margin: 0 0 6px;
     padding: 0;
     border: 1px solid var(--color-border-med);
-    border-left: 3px solid var(--color-border-med);
+    border-left: 3px solid var(--script-row-accent, var(--color-border-med));
     border-radius: 0;
-    background: var(--color-surface);
+    background: var(--script-row-bg, var(--color-surface));
     box-shadow: none;
     transition: background var(--transition-fast), box-shadow var(--transition-fast);
   }
 
   #script .script-item:not(.period-header):not(.script-item--player):hover {
     background: var(--color-bg-hover-row);
-    border-left-color: var(--color-primary);
     box-shadow: none;
   }
 
@@ -13415,6 +13414,19 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     box-shadow: none;
   }
 
+  /* These are desktop worksheet fields, not touch controls. Keep the calls
+     readable while reducing the Shift/Motion and scouting row height. */
+  #script .script-item .script-call-edit-field input[type="text"],
+  #script .script-item .hash-input select,
+  #script .script-item .defense-inputs .def-input,
+  #script .script-item input[type="number"],
+  #script .script-item .play-control-fields input[type="text"] {
+    min-height: 26px;
+    height: 26px;
+    padding-block: 2px;
+    line-height: 1.15;
+  }
+
   #script .script-item .hash-input select {
     width: 46px;
     padding: 3px 2px;
@@ -13495,8 +13507,15 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
   #script .script-item.bulk-selected {
     background: var(--color-bg-blue-tint) !important;
-    border-left-color: var(--color-primary);
     box-shadow: none;
+  }
+
+  #script .script-item--alternate:not(.period-header):not(.script-item--player) {
+    --script-row-bg: color-mix(
+      in srgb,
+      var(--color-bg-body) 58%,
+      var(--color-surface)
+    );
   }
 
   #script .script-item.period-header,
