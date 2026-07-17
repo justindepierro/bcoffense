@@ -18,7 +18,9 @@ function announceScriptA11y(message) {
 }
 
 function getScriptControlsMode() {
-  return storageManager.get(STORAGE_KEYS.SCRIPT_CONTROLS_MODE, "advanced");
+  // The default favors the concise coach-facing grid. Expanded mode keeps every
+  // field and tool available when a coach needs to work a script in depth.
+  return storageManager.get(STORAGE_KEYS.SCRIPT_CONTROLS_MODE, "basic");
 }
 
 function setScriptControlsMode(mode) {

@@ -760,15 +760,12 @@ function renderScriptRows(renderContext) {
 function renderScriptColumnHeaders() {
   return `
       <div class="script-column-headers">
-        <div class="sch-spacer"></div>
+        <div class="sch-select" aria-hidden="true"></div>
         <div class="sch-num">#</div>
         <div class="sch-play">Play Call</div>
         <div class="sch-hash">Hash</div>
-        <div class="sch-def">Front</div>
-        <div class="sch-def">Cov</div>
-        <div class="sch-def">Stunt</div>
-        <div class="sch-def">Blitz</div>
-        <div class="sch-controls">Controls</div>
+        <div class="sch-scouting">Scouting: Front · Coverage · Stunt · Blitz</div>
+        <div class="sch-controls">Reps, Notes &amp; Actions</div>
       </div>
     `;
 }

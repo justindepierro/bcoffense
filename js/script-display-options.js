@@ -19,15 +19,39 @@ const SCRIPT_DISPLAY_CHECKBOX_IDS = [
   "scriptShowPrintPreview",
 ];
 
+function normalizeScriptLayoutMode(layoutMode) {
+  return layoutMode === "compact" ? "compact" : "detail";
+}
+
+// The root marker is the CSS authority for the selected coach layout. The
+// radios remain the accessible control and storage stays in display options.
+function applyScriptLayoutMode(layoutMode) {
+  const normalized = normalizeScriptLayoutMode(layoutMode);
+  const scriptPanel = document.getElementById("script");
+  if (scriptPanel) scriptPanel.dataset.layoutMode = normalized;
+
+  const modeEl = document.querySelector(
+    `input[name="scriptLayoutMode"][value="${normalized}"]`,
+  );
+  if (modeEl) modeEl.checked = true;
+  return normalized;
+}
+
+function setScriptLayoutMode(layoutMode) {
+  applyScriptLayoutMode(layoutMode);
+  saveScriptDisplayOptions();
+  requestRenderScript();
+}
+
 function saveScriptDisplayOptions() {
   const opts = {};
   SCRIPT_DISPLAY_CHECKBOX_IDS.forEach((id) => {
     const el = document.getElementById(id);
     if (el) opts[id] = el.checked;
   });
-  opts.layoutMode =
-    document.querySelector('input[name="scriptLayoutMode"]:checked')?.value ||
-    "detail";
+  opts.layoutMode = applyScriptLayoutMode(
+    document.querySelector('input[name="scriptLayoutMode"]:checked')?.value,
+  );
   opts.filtersCollapsed = filtersCollapsed;
   opts.playRailCollapsed = scriptPlayRailCollapsed;
   opts.lastSortField = document.getElementById("scriptSortField")?.value || "";
@@ -37,6 +61,7 @@ function saveScriptDisplayOptions() {
 function restoreScriptDisplayOptions() {
   const opts = storageManager.get(STORAGE_KEYS.SCRIPT_DISPLAY_OPTIONS, null);
   if (!opts) {
+    applyScriptLayoutMode("detail");
     applyScriptPlayRailState();
     closeScriptToolsDrawer();
     return;
@@ -45,11 +70,7 @@ function restoreScriptDisplayOptions() {
     const el = document.getElementById(id);
     if (el && opts[id] !== undefined) el.checked = opts[id];
   });
-  const layoutMode = opts.layoutMode === "compact" ? "compact" : "detail";
-  const modeEl = document.querySelector(
-    `input[name="scriptLayoutMode"][value="${layoutMode}"]`,
-  );
-  if (modeEl) modeEl.checked = true;
+  applyScriptLayoutMode(opts.layoutMode);
   filtersCollapsed = Boolean(opts.filtersCollapsed);
   scriptPlayRailCollapsed = Boolean(opts.playRailCollapsed);
   if (opts.lastSortField) {
@@ -92,9 +113,9 @@ function getScriptDisplayOptions() {
       document.getElementById("scriptHideLinemen")?.checked || false,
     printStyle:
       document.getElementById("scriptPrintStyle")?.checked || false,
-    layoutMode:
-      document.querySelector('input[name="scriptLayoutMode"]:checked')?.value ||
-      "detail",
+    layoutMode: applyScriptLayoutMode(
+      document.querySelector('input[name="scriptLayoutMode"]:checked')?.value,
+    ),
   };
   const currentUser =
     typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
@@ -132,6 +153,7 @@ function clearAllScriptOptions() {
     'input[name="scriptLayoutMode"][value="detail"]',
   );
   if (detailEl) detailEl.checked = true;
+  applyScriptLayoutMode("detail");
   saveScriptDisplayOptions();
   requestRenderScript();
 }
@@ -172,10 +194,7 @@ function applyScriptDisplayPreset(presetName = "coach") {
     if (el) el.checked = enabled.has(id);
   });
 
-  const modeEl = document.querySelector(
-    `input[name="scriptLayoutMode"][value="${preset.layoutMode}"]`,
-  );
-  if (modeEl) modeEl.checked = true;
+  applyScriptLayoutMode(preset.layoutMode);
 
   saveScriptDisplayOptions();
   requestRenderScript();

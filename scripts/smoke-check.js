@@ -1664,6 +1664,9 @@ function checkPlayerPortalContracts() {
   const playbookCss = read("css/playbook.css");
   const dashboardCss = read("css/dashboard.css");
   const scriptCss = read("css/script.css");
+  const scriptRender = read("js/script-render.js");
+  const scriptDisplayOptions = read("js/script-display-options.js");
+  const scriptStyleArchitecture = read("SCRIPT_STYLE_ARCHITECTURE.md");
   const playbookRender = read("js/playbook-render.js");
   const playImages = read("js/play-images.js");
   const presentation = read("js/play-presentation.js");
@@ -1911,37 +1914,37 @@ function checkPlayerPortalContracts() {
     !/overflow-x:\s*clip/.test(responsiveCss) ||
     !/touch-action:\s*pan-y/.test(responsiveCss) ||
     !/body\.is-mobile-screen #script \.script-item,[\s\S]*content-visibility:\s*visible/.test(
-      responsiveCss,
+      scriptCss,
     ) ||
     !/body\.shell-phone\.is-staff-mobile-shell #script \.script-builder,[\s\S]*body\.shell-compact\.is-staff-mobile-shell:not\(\.shell-tablet\)[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(
-      responsiveCss,
+      scriptCss,
     ) ||
     !/body\.shell-phone\.is-staff-mobile-shell #script \.play-list,[\s\S]*body\.shell-compact\.is-staff-mobile-shell:not\(\.shell-tablet\)[\s\S]*position:\s*static[\s\S]*max-height:\s*none[\s\S]*overflow:\s*visible/.test(
-      responsiveCss,
+      scriptCss,
     ) ||
     !/body\.shell-tablet\.is-staff-mobile-shell #script \.script-builder[\s\S]*grid-template-columns:\s*minmax\(220px,\s*0\.48fr\) minmax\(0,\s*1\.52fr\)/.test(
-      responsiveCss,
+      scriptCss,
     ) ||
     !/body\.shell-tablet\.is-staff-mobile-shell #script \.script-play-rail\.play-list[\s\S]*position:\s*relative[\s\S]*transform:\s*none[\s\S]*overflow:\s*auto/.test(
-      responsiveCss,
+      scriptCss,
     ) ||
     !/body\.shell-tablet\.is-staff-mobile-shell #script \.script-item--detail,[\s\S]*body\.shell-tablet\.is-staff-mobile-shell #script \.script-item--compact[\s\S]*grid-template-columns:\s*40px minmax\(0,\s*1fr\) 56px/.test(
-      responsiveCss,
+      scriptCss,
     ) ||
     !/body\.shell-tablet\.is-staff-mobile-shell #script \.script-column-headers[\s\S]*display:\s*none/.test(
-      responsiveCss,
+      scriptCss,
     ) ||
     !/body\.is-mobile-screen\.is-staff-mobile-shell #script \.script-player-grid[\s\S]*display:\s*none/.test(
-      responsiveCss,
+      scriptCss,
     ) ||
     !/body\.is-phone-screen\.is-staff-mobile-shell #script \.defense-inputs,[\s\S]*body\.is-phone-screen\.is-staff-mobile-shell #script \.play-readiness-actions[\s\S]*display:\s*none/.test(
       responsiveCss,
     ) ||
     !/body\.is-phone-screen\.is-staff-mobile-shell #script \.script-list[\s\S]*order:\s*1/.test(
-      responsiveCss,
+      scriptCss,
     ) ||
     !/body\.is-phone-screen\.is-staff-mobile-shell #script \.play-list[\s\S]*order:\s*2/.test(
-      responsiveCss,
+      scriptCss,
     ) ||
     !/body\.is-mobile-screen #mainApp/.test(responsiveCss) ||
     !/body\.is-mobile-screen \[data-action\]/.test(responsiveCss) ||
@@ -2055,6 +2058,24 @@ function checkPlayerPortalContracts() {
     !/class="[^"]*script-container[^"]*app-scroll-region[^"]*"[^>]*id="scriptPlays"/.test(html)
   ) {
     fail("desktop script workspace scroll ownership is incomplete");
+  }
+  if (
+    !/function renderScriptColumnHeaders\(\)[\s\S]*Scouting: Front/.test(scriptRender) ||
+    /sch-def/.test(scriptRender) ||
+    !/#script \.script-column-headers[\s\S]*grid-template-columns/.test(scriptCss) ||
+    !/#script \.script-item > \.play-call[\s\S]*border-right/.test(scriptCss) ||
+    !/#script\[data-controls-mode="basic"\] \.script-column-headers \.sch-scouting/.test(scriptCss) ||
+    /#script\[data-controls-mode="basic"\] \.script-column-headers \.sch-controls[\s\S]{0,160}display:\s*none/.test(scriptCss) ||
+    !/function applyScriptLayoutMode\(layoutMode\)/.test(scriptDisplayOptions) ||
+    !/scriptPanel\.dataset\.layoutMode = normalized/.test(scriptDisplayOptions) ||
+    !/function setScriptLayoutMode\(layoutMode\)/.test(scriptDisplayOptions) ||
+    !/data-onchange="setScriptLayoutMode" data-pass="value"/.test(html) ||
+    !/## Root State Contract/.test(scriptStyleArchitecture) ||
+    !/## CSS Ownership/.test(scriptStyleArchitecture) ||
+    !/## Coach Row Contract/.test(scriptStyleArchitecture) ||
+    !/#script\[data-controls-mode="basic"\] \.script-item--detail[\s\S]*min-height:\s*42px/.test(scriptCss)
+  ) {
+    fail("coach spreadsheet style authority contract is incomplete");
   }
   if (
     !/pp-player-overview/.test(presentation) ||
