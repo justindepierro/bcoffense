@@ -7,13 +7,16 @@ new visual change from becoming a late cascade override with an unclear scope.
 
 `#script` is the visual state root for coach-owned state:
 
-- `data-controls-mode="basic|advanced"` is owned by `js/script-shared.js`.
-  Basic is the concise Coach Grid; Advanced exposes the full editing surface.
+- `data-controls-mode="basic|run|advanced"` is owned by `js/script-shared.js`.
+  Basic is the concise Coach Grid, Run View is the live call/reps view, and
+  Advanced exposes the full editing surface.
 - `data-layout-mode="detail|compact"` is owned by
   `js/script-display-options.js`. The display radios are the accessible input;
   this attribute is the CSS-facing state marker.
 - `.script-rail-collapsed` is owned by `js/script-shared.js`; the rail is
   library-only and deeper workspace tools open from the shared Actions hub.
+  `scriptLibraryPinned` persists with display options: one desktop add closes
+  the rail unless the coach pins it for batch building.
 
 The app shell owns device and role state on `body` (`is-mobile-screen`,
 `shell-phone`, `shell-tablet`, `data-auth-role`, and print classes). Script
@@ -36,7 +39,17 @@ contract: selection, number, play call, hash, scouting, and notes/actions.
 `basic` hides the scouting cell but keeps the notes/actions header. `compact`
 and `detail` alter density, not the meaning or order of cells. Period headers
 and player cards are separate surfaces and must not inherit coach-row grid
-rules.
+rules. Run View keeps only the number, call, hash, reps, notes, and type
+signal; it must not become a second editing grid.
+
+## Working-grid controls
+
+- The number badge is always the play type accent in the live workspace,
+  including Print-style Rows. Packet output remains owned by `css/print.css`.
+- Print preview rows are an explicit Display option, not part of the print
+  preset or normal editing grid.
+- Period actions render through one native `details.period-actions-menu`, not a
+  persistent button strip below every period.
 
 ## Safe Change Sequence
 
@@ -50,8 +63,10 @@ rules.
 ## Migration Boundary
 
 The current stylesheet is historical and intentionally being consolidated in
-small, behavior-preserving slices. Do not add a new late “polish” block. Route
-new work to the owning section, remove the displaced rule in the same change
-when its visual contract is proven, and extend `scripts/smoke-check.js` for
-every new Script state contract. `css/responsive.css` is now a hard boundary:
-it must remain free of Script selectors.
+small, behavior-preserving slices. Coach worksheet rules belong in the named
+`Practice Script working-grid refinements` section at the end of
+`css/script.css`; do not add a second late “polish” block. Move a superseded
+rule into that authority when its visual contract is proven, and extend
+`scripts/smoke-check.js` for every new Script state contract.
+`css/responsive.css` is now a hard boundary: it must remain free of Script
+selectors.

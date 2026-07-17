@@ -20,17 +20,23 @@ function announceScriptA11y(message) {
 function getScriptControlsMode() {
   // The default favors the concise coach-facing grid. Expanded mode keeps every
   // field and tool available when a coach needs to work a script in depth.
-  return storageManager.get(STORAGE_KEYS.SCRIPT_CONTROLS_MODE, "basic");
+  return normalizeScriptControlsMode(
+    storageManager.get(STORAGE_KEYS.SCRIPT_CONTROLS_MODE, "basic"),
+  );
+}
+
+function normalizeScriptControlsMode(mode) {
+  return ["basic", "run", "advanced"].includes(mode) ? mode : "basic";
 }
 
 function setScriptControlsMode(mode) {
-  const normalized = mode === "basic" ? "basic" : "advanced";
+  const normalized = normalizeScriptControlsMode(mode);
   storageManager.set(STORAGE_KEYS.SCRIPT_CONTROLS_MODE, normalized);
   applyScriptControlsMode(normalized);
 }
 
 function applyScriptControlsMode(mode = getScriptControlsMode()) {
-  const normalized = mode === "basic" ? "basic" : "advanced";
+  const normalized = normalizeScriptControlsMode(mode);
   const scriptPanel = document.getElementById("script");
   if (!scriptPanel) return;
 
@@ -146,6 +152,40 @@ function applyScriptPlayRailState() {
   _syncScriptSidebarTabUi();
 }
 
+function applyScriptLibraryPinState() {
+  const pinToggle = document.getElementById("scriptLibraryPinToggle");
+  if (!pinToggle) return;
+
+  pinToggle.classList.toggle("is-active", scriptLibraryPinned);
+  pinToggle.setAttribute("aria-pressed", scriptLibraryPinned ? "true" : "false");
+  pinToggle.title = scriptLibraryPinned
+    ? "Library is pinned open while you add plays"
+    : "Keep the library open while you add plays";
+}
+
+function toggleScriptLibraryPin() {
+  scriptLibraryPinned = !scriptLibraryPinned;
+  applyScriptLibraryPinState();
+  saveScriptDisplayOptions();
+}
+
+function maybeAutoCollapseScriptPlayRail() {
+  // Keep touch workflows unchanged. On desktop, a single add should return a
+  // coach to the script unless they intentionally pin the library for batching.
+  if (
+    scriptLibraryPinned ||
+    scriptPlayRailCollapsed ||
+    document.body?.classList.contains("is-mobile-screen") ||
+    document.body?.dataset.activeTab !== "script"
+  ) {
+    return;
+  }
+
+  scriptPlayRailCollapsed = true;
+  applyScriptPlayRailState();
+  saveScriptDisplayOptions();
+}
+
 function toggleScriptPlayRail() {
   scriptPlayRailCollapsed = !scriptPlayRailCollapsed;
   applyScriptPlayRailState();
@@ -206,6 +246,7 @@ function toggleScriptToolsDrawer() {
 
 document.addEventListener("DOMContentLoaded", () => {
   _syncScriptSidebarTabUi();
+  applyScriptLibraryPinState();
 });
 
 document.addEventListener("keydown", (event) => {

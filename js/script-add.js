@@ -339,6 +339,7 @@ async function addToScript(playIndex, targetSeparatorIndex = null) {
   const insertedIndices = insertPlaysIntoPeriod(resolvedTargetIndex, [
     createScriptPlayFromPlaybook(play),
   ]);
+  maybeAutoCollapseScriptPlayRail();
   renderScriptSoon(() => flashScriptPlayAtIndex(insertedIndices[0]));
   setScriptToolbarStatus(
     `Added play to ${script[resolvedTargetIndex]?.label || "selected period"}`,

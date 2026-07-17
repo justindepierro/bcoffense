@@ -14119,3 +14119,174 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     margin: 0;
   }
 }
+
+/* ── Practice Script working-grid refinements ─────────────────────────────
+   These rules intentionally sit at the end of the Script stylesheet so the
+   coach worksheet has one clear final authority over older card-era rules. */
+
+/* Keep the type color on the live working grid, including Print-style Rows.
+   Actual print output is rendered by .script-preview in print.css, so this
+   never introduces color into the packet itself. */
+@media (min-width: 821px) {
+  #script .script-item--printlike .play-num-badge {
+    border: 0;
+    background: var(--script-row-accent, var(--color-secondary));
+    color: var(--script-row-accent-text, var(--color-text-inverse));
+  }
+
+  /* One narrow command strip: title, date, workspace controls, then view. */
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-header-panel {
+    gap: 6px;
+    padding: 3px 6px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-name-input,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-date-input {
+    min-height: 30px;
+    padding-block: 3px;
+    border-radius: 1px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-workbench-pill,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-controls-mode-select,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-workbench-primary-actions .btn {
+    min-height: 30px;
+    border-radius: 1px;
+  }
+
+  /* Run View keeps the live practice list readable without exposing editing
+     chrome. Coach Grid is always one select change away for adjustments. */
+  #script[data-controls-mode="run"] .script-column-headers {
+    grid-template-columns: 36px minmax(280px, 1fr) 58px minmax(180px, 0.72fr);
+  }
+
+  #script[data-controls-mode="run"] .script-column-headers .sch-select,
+  #script[data-controls-mode="run"] .script-column-headers .sch-scouting,
+  #script[data-controls-mode="run"] .script-item .script-select-tools,
+  #script[data-controls-mode="run"] .script-item .defense-inputs,
+  #script[data-controls-mode="run"] .script-item .script-player-grid,
+  #script[data-controls-mode="run"] .script-item .play-readiness-widget,
+  #script[data-controls-mode="run"] .script-item .script-call-edits,
+  #script[data-controls-mode="run"] .script-item .play-control-actions {
+    display: none;
+  }
+
+  #script[data-controls-mode="run"] .script-item:not(.period-header):not(.script-item--player),
+  #script[data-controls-mode="run"] .script-item--detail,
+  #script[data-controls-mode="run"] .script-item--compact {
+    grid-template-columns: 36px minmax(280px, 1fr) 58px minmax(180px, 0.72fr);
+    min-height: 40px;
+  }
+
+  #script[data-controls-mode="run"] .script-item .play-controls {
+    display: block;
+    padding: 5px 6px;
+  }
+
+  #script[data-controls-mode="run"] .script-item .play-control-fields {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  #script[data-controls-mode="run"] .script-item .play-call .call-meta {
+    margin-top: 2px;
+  }
+}
+
+/* Period-level commands are available, but they no longer form a second
+   toolbar under every period. Native details keeps keyboard behavior simple. */
+#script .period-actions-toolbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  padding: 4px 8px;
+  background: var(--color-surface-muted);
+  border-top: 1px solid var(--color-border-light);
+}
+
+#script .period-actions-menu {
+  position: relative;
+}
+
+#script .period-actions-menu > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;
+  padding: 3px 8px;
+  border: 1px solid var(--color-border-med);
+  border-radius: 1px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  list-style: none;
+}
+
+#script .period-actions-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+#script .period-actions-menu[open] > summary {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+#script .period-actions-menu:not([open]) .period-actions-menu-panel {
+  display: none;
+}
+
+#script .period-actions-menu-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: var(--z-popover);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(124px, max-content));
+  gap: 4px;
+  min-width: 260px;
+  padding: 6px;
+  border: 1px solid var(--color-border-med);
+  border-radius: 1px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+
+#script .period-actions-menu-panel .pat-btn {
+  justify-content: flex-start;
+  min-height: 28px;
+  padding: 4px 7px;
+  border-radius: 1px;
+  white-space: nowrap;
+}
+
+#script .script-library-pin-toggle {
+  flex: 0 0 auto;
+  min-height: 26px;
+  padding: 3px 6px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 1px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+#script .script-library-pin-toggle.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+@media (max-width: 640px) {
+  #script .period-actions-menu-panel {
+    right: 0;
+    left: auto;
+    grid-template-columns: 1fr;
+    min-width: min(240px, calc(100vw - 32px));
+  }
+}

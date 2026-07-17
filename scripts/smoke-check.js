@@ -1016,7 +1016,12 @@ function checkScriptWorkspaceCommandSurface() {
     !/function toggleScriptToolsDrawer\(\)[\s\S]*setScriptToolsDrawerOpen\(!scriptToolsDrawerOpen\)/.test(
       shared,
     ) ||
-    !/Library-only sidebar/.test(css)
+    !/Library-only sidebar/.test(css) ||
+    !/option value="run">Run View<\/option>/.test(html) ||
+    !/scriptLibraryPinToggle/.test(html) ||
+    !/function maybeAutoCollapseScriptPlayRail\(\)/.test(shared) ||
+    !/scriptLibraryPinned/.test(shared) ||
+    !/data-controls-mode="run"/.test(css)
   ) {
     fail("Script library and workspace tools still have duplicate navigation");
   }
@@ -1039,6 +1044,11 @@ function checkScriptCoachRowScanningContract() {
     !/play-num-badge \{[\s\S]*background: var\(--script-row-accent, var\(--color-secondary\)\)/.test(
       css,
     ) ||
+    !/script-item--printlike \.play-num-badge \{[\s\S]*background: var\(--script-row-accent, var\(--color-secondary\)\)/.test(
+      css,
+    ) ||
+    !/<details class="period-actions-menu">/.test(render) ||
+    !/Period Actions/.test(render) ||
     !/script-item--alternate:not\(\.period-header\):not\(\.script-item--player\)[\s\S]*--script-row-bg: color-mix/.test(
       css,
     ) ||

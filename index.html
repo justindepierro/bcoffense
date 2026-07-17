@@ -1336,6 +1336,7 @@
               <span>View</span>
               <select id="scriptControlsMode" class="script-controls-mode-select">
                 <option value="basic">Coach Grid</option>
+                <option value="run">Run View</option>
                 <option value="advanced">Expanded</option>
               </select>
             </label>
@@ -1352,6 +1353,9 @@
             <span class="script-sidebar-title">📚 Play Library</span>
             <button type="button" class="script-sidebar-collapse" data-action="toggleScriptPlayRail"
               title="Collapse sidebar" aria-label="Collapse sidebar">«</button>
+            <button type="button" id="scriptLibraryPinToggle" class="script-library-pin-toggle"
+              data-action="toggleScriptLibraryPin" aria-pressed="false"
+              title="Keep the library open while you add plays">📌 Pin</button>
           </div>
           <div class="script-sidebar-panel" data-panel="library">
             <h3>
@@ -3967,7 +3971,7 @@
             <label><input type="checkbox" id="scriptShowWbNum" checked
                 data-onchange="renderScript;saveScriptDisplayOptions" /> Show WB#</label>
             <label><input type="checkbox" id="scriptShowPrintPreview"
-                data-onchange="renderScript;saveScriptDisplayOptions" /> 👁️ Show Print Preview</label>
+                data-onchange="renderScript;saveScriptDisplayOptions" /> 👁️ Print preview rows</label>
           </fieldset>
           <fieldset class="display-options-group">
             <legend>Highlight</legend>

@@ -16,4 +16,7 @@ let currentFilteredPlayIndices = [];
 
 let filtersCollapsed = false;
 let scriptPlayRailCollapsed = true;
+// A pinned library stays open while a coach is building a batch. By default a
+// single add returns focus to the working script.
+let scriptLibraryPinned = false;
 let scriptToolsDrawerOpen = false;

@@ -54,6 +54,10 @@ function saveScriptDisplayOptions() {
   );
   opts.filtersCollapsed = filtersCollapsed;
   opts.playRailCollapsed = scriptPlayRailCollapsed;
+  opts.libraryPinned = scriptLibraryPinned;
+  // Preview rows are now a deliberate, preview-only surface. This marker lets
+  // existing saved display settings return to the normal editing grid once.
+  opts.previewRowsVersion = 2;
   opts.lastSortField = document.getElementById("scriptSortField")?.value || "";
   storageManager.set(STORAGE_KEYS.SCRIPT_DISPLAY_OPTIONS, opts);
 }
@@ -63,6 +67,7 @@ function restoreScriptDisplayOptions() {
   if (!opts) {
     applyScriptLayoutMode("detail");
     applyScriptPlayRailState();
+    applyScriptLibraryPinState();
     closeScriptToolsDrawer();
     return;
   }
@@ -73,12 +78,20 @@ function restoreScriptDisplayOptions() {
   applyScriptLayoutMode(opts.layoutMode);
   filtersCollapsed = Boolean(opts.filtersCollapsed);
   scriptPlayRailCollapsed = Boolean(opts.playRailCollapsed);
+  scriptLibraryPinned = Boolean(opts.libraryPinned);
+  if (opts.previewRowsVersion !== 2) {
+    const previewRows = document.getElementById("scriptShowPrintPreview");
+    if (previewRows) previewRows.checked = false;
+    opts.previewRowsVersion = 2;
+    storageManager.set(STORAGE_KEYS.SCRIPT_DISPLAY_OPTIONS, opts);
+  }
   if (opts.lastSortField) {
     const sortSel = document.getElementById("scriptSortField");
     if (sortSel) sortSel.value = opts.lastSortField;
   }
   applyScriptFiltersCollapsedState();
   applyScriptPlayRailState();
+  applyScriptLibraryPinState();
   closeScriptToolsDrawer();
 }
 
@@ -179,7 +192,6 @@ function applyScriptDisplayPreset(presetName = "coach") {
         "scriptShowLineCall",
         "scriptShowWbNum",
         "scriptPrintStyle",
-        "scriptShowPrintPreview",
       ],
     },
   };

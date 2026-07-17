@@ -358,7 +358,14 @@ function renderPeriodActionsToolbar(index, periodLabel) {
 
   return `
         <div class="period-actions-toolbar">
-          ${actions.map(([action, label, icon, title, extraClass = ""]) => renderPeriodActionButton(action, index, label, icon, title, extraClass)).join("")}
+          <details class="period-actions-menu">
+            <summary aria-label="Actions for ${escapeHtml(periodLabel)}">
+              <span aria-hidden="true">⋯</span> Period Actions
+            </summary>
+            <div class="period-actions-menu-panel" role="group" aria-label="Actions for ${escapeHtml(periodLabel)}">
+              ${actions.map(([action, label, icon, title, extraClass = ""]) => renderPeriodActionButton(action, index, label, icon, title, extraClass)).join("")}
+            </div>
+          </details>
         </div>`;
 }
 
