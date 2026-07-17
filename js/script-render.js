@@ -696,7 +696,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
         <input type="checkbox" class="bulk-select-cb" data-index="${index}" ${isSelected ? "checked" : ""} data-field="bulkSelect" data-idx="${index}" title="Select for bulk edit" aria-label="Select play ${playNumber} for bulk edit">
         <button type="button" class="script-move-menu-btn" data-action="openScriptMoveMenu" data-idx="${index}" title="Move options" aria-label="Open move options for ${escapeHtml(playLabel)}">↕</button>
       </div>
-      <div class="play-num" aria-hidden="true">${playNumber}${wbBadge}</div>
+      <div class="play-num" aria-hidden="true"><span class="play-num-badge">${playNumber}</span>${wbBadge}</div>
       <div class="play-call">
         <div class="full-call">${fullCall}</div>
         <div class="call-meta">

@@ -1030,9 +1030,13 @@ function checkScriptCoachRowScanningContract() {
 
   if (
     !/playNumber % 2 === 0 \? "script-item--alternate"/.test(render) ||
+    !/<span class="play-num-badge">\$\{playNumber\}<\/span>/.test(render) ||
     !/--script-row-accent: var\(--color-success\)/.test(css) ||
     !/--script-row-accent: var\(--color-primary\)/.test(css) ||
     !/border-left: 3px solid var\(--script-row-accent, var\(--color-border-med\)\)/.test(
+      css,
+    ) ||
+    !/play-num-badge \{[\s\S]*background: var\(--script-row-accent, var\(--color-secondary\)\)/.test(
       css,
     ) ||
     !/script-item--alternate:not\(\.period-header\):not\(\.script-item--player\)[\s\S]*--script-row-bg: color-mix/.test(

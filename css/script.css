@@ -6625,12 +6625,14 @@ body[data-active-tab="script"] .script-display-fab {
 }
 #script .script-item--quick {
   --script-row-accent: var(--color-warning);
+  --script-row-accent-text: var(--color-dark);
 }
 #script .script-item--playaction {
   --script-row-accent: var(--color-danger);
 }
 #script .script-item--movement {
   --script-row-accent: var(--color-accent);
+  --script-row-accent-text: var(--color-dark);
 }
 
 #script .app-scroll-region {
@@ -13361,10 +13363,37 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   }
 
   #script .script-item .play-num {
-    padding-top: 5px;
+    padding: 0;
     font-family: var(--font-mono);
     font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
+  }
+
+  #script .script-item .play-num::before {
+    display: none;
+  }
+
+  #script .script-item .play-num-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0;
+    border-radius: 1px;
+    background: var(--script-row-accent, var(--color-secondary));
+    color: var(--script-row-accent-text, var(--color-text-inverse));
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  #script .script-item--printlike .play-num-badge {
+    border: 1px solid var(--color-text);
+    background: transparent;
+    color: var(--color-text);
   }
 
   #script .script-item .play-call .full-call {
