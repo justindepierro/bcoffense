@@ -564,9 +564,14 @@ async function reconcileScriptWithGamePlan() {
       script.splice(
         insertIdx,
         0,
-        typeof copyPlayWithSourceIdentity === "function"
-          ? copyPlayWithSourceIdentity(p, { _gpSource: true, id: Date.now() + Math.random() })
-          : { ...p, _gpSource: true },
+        typeof createScriptPlayFromGamePlan === "function"
+          ? createScriptPlayFromGamePlan(p, {
+            board,
+            boxes: allBoxes.filter((box) => (board.assignments[box.id] || []).some((candidate) => sig(candidate) === sig(p))),
+          })
+          : (typeof copyPlayWithSourceIdentity === "function"
+            ? copyPlayWithSourceIdentity(p, { _gpSource: true, id: Date.now() + Math.random() })
+            : { ...p, _gpSource: true }),
       );
       insertIdx++;
     });

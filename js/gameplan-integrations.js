@@ -471,9 +471,11 @@ async function pushGamePlanToScript() {
       if (sig && existingSigs.has(sig)) { skipped++; return; }
       if (sig) existingSigs.add(sig);
       script.push(
-        typeof copyPlayWithSourceIdentity === "function"
-          ? copyPlayWithSourceIdentity(p, { _gpSource: true, id: Date.now() + Math.random() })
-          : { ...p, playbookId: p.playbookId || p.sourcePlayId || p.id || null, _gpSource: true, id: Date.now() + Math.random() },
+        typeof createScriptPlayFromGamePlan === "function"
+          ? createScriptPlayFromGamePlan(p, { board, box: b })
+          : (typeof copyPlayWithSourceIdentity === "function"
+            ? copyPlayWithSourceIdentity(p, { _gpSource: true, id: Date.now() + Math.random() })
+            : { ...p, playbookId: p.playbookId || p.sourcePlayId || p.id || null, _gpSource: true, id: Date.now() + Math.random() }),
       );
       pushed++;
     });
@@ -641,9 +643,11 @@ async function createScriptFromGamePlan() {
       if (sig && existingSigs.has(sig)) { skipped++; return; }
       if (sig) existingSigs.add(sig);
       script.push(
-        typeof copyPlayWithSourceIdentity === "function"
-          ? copyPlayWithSourceIdentity(p, { _gpSource: true, id: Date.now() + Math.random() })
-          : { ...p, playbookId: p.id || null, _gpSource: true, id: Date.now() + Math.random() },
+        typeof createScriptPlayFromGamePlan === "function"
+          ? createScriptPlayFromGamePlan(p, { board, box: b })
+          : (typeof copyPlayWithSourceIdentity === "function"
+            ? copyPlayWithSourceIdentity(p, { _gpSource: true, id: Date.now() + Math.random() })
+            : { ...p, playbookId: p.id || null, _gpSource: true, id: Date.now() + Math.random() }),
       );
       pushed++;
     });

@@ -65,6 +65,10 @@ signal; it must not become a second editing grid.
   preset or normal editing grid.
 - Period actions render through one native `details.period-actions-menu`, not a
   persistent button strip below every period.
+- Game Plan-sourced plays retain compact provenance in their Script record:
+  board/opponent, source box or boxes, and JV status. The coach row shows a
+  compact `GP · Box` marker plus a separate JV marker; the complete context is
+  available through the marker title without widening the working grid.
 
 ## Safe Change Sequence
 

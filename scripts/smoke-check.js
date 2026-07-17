@@ -1071,6 +1071,33 @@ function checkScriptCoachRowScanningContract() {
   console.log("script coach row scanning contract ok");
 }
 
+function checkScriptGamePlanProvenanceContract() {
+  const scriptAdd = read("js/script-add.js");
+  const scriptRender = read("js/script-render.js");
+  const scriptIntegrations = read("js/script-integrations.js");
+  const gamePlanIntegrations = read("js/gameplan-integrations.js");
+  const css = read("css/script.css");
+  const architecture = read("SCRIPT_STYLE_ARCHITECTURE.md");
+
+  if (
+    !/function getGamePlanScriptSourceContext\(play, options = \{\}\)/.test(scriptAdd) ||
+    !/boardTitle: String\(options\.boardTitle \|\| board\?\.sheetTitle/.test(scriptAdd) ||
+    !/boxes,\s*\n\s*jv,/.test(scriptAdd) ||
+    !/function createScriptPlayFromGamePlan\(play, options = \{\}\)/.test(scriptAdd) ||
+    !/function getScriptGamePlanSourceDisplay\(play\)/.test(scriptAdd) ||
+    !/createScriptPlayFromGamePlan\(play/.test(scriptAdd) ||
+    !/createScriptPlayFromGamePlan\(p, \{ board, box: b \}\)/.test(gamePlanIntegrations) ||
+    !/createScriptPlayFromGamePlan\(p, \{[\s\S]*?boxes: allBoxes\.filter/.test(scriptIntegrations) ||
+    !/script-gp-jv-badge/.test(scriptRender) ||
+    !/script-gp-jv-badge \{[\s\S]*border: 1px solid var\(--color-warning\)/.test(css) ||
+    !/Game Plan-sourced plays retain compact provenance/.test(architecture)
+  ) {
+    fail("Game Plan source context is not preserved and visible in Script rows");
+  }
+
+  console.log("script Game Plan provenance contract ok");
+}
+
 function checkCoachGridThemeContract() {
   const base = read("css/base.css");
   const components = read("css/components.css");
@@ -5108,6 +5135,7 @@ checkPersonnelMarkerContracts();
 checkScriptPersonnelWorkspaceContract();
 checkScriptWorkspaceCommandSurface();
 checkScriptCoachRowScanningContract();
+checkScriptGamePlanProvenanceContract();
 checkCoachGridThemeContract();
 checkCoachGridPlaybookWorkbenchContract();
 checkCoachGridCallSheetWorkbenchContract();

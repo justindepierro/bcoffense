@@ -714,7 +714,14 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       return `${typeChip}${tempo}`;
     })()}</span>
           ${playbookSigSet && playbookSigSet.has(playSignature(play)) ? `<button type="button" class="script-pb-chip" data-action="jumpToPlayInPlaybook" data-arg="${index}" title="View this play in the Playbook" aria-label="View ${escapeHtml(playLabel)} in Playbook">📖</button>` : ""}
-          ${play._gpSource ? `<span class="script-gp-source-badge" title="Added from Game Plan">🎯 GP</span>` : ""}
+          ${(() => {
+      const gpSource = typeof getScriptGamePlanSourceDisplay === "function"
+        ? getScriptGamePlanSourceDisplay(play)
+        : (play._gpSource ? { label: "GP", title: "Added from Game Plan", jv: false } : null);
+      return gpSource
+        ? `<span class="script-gp-source-badge" title="${escapeHtml(gpSource.title)}">🎯 ${escapeHtml(gpSource.label)}</span>${gpSource.jv ? '<span class="script-gp-jv-badge" title="Marked JV in Game Plan">🟡 JV</span>' : ""}`
+        : "";
+    })()}
           ${sourceStatusBadge}
           ${readinessBadge}
           ${(() => {

@@ -19,6 +19,77 @@ function createScriptPlayFromPlaybook(play) {
     };
 }
 
+/* Game Plan → Script provenance stays with the copied Script record.  A plain
+   boolean was enough to reconcile a play, but not enough for a coach to know
+   why it is on this period or which JV/board bucket it came from. */
+function getGamePlanScriptSourceContext(play, options = {}) {
+  const board = options.board && typeof options.board === "object" ? options.board : null;
+  const opponentKey = typeof _gpActiveOpponentKey === "function"
+    ? _gpActiveOpponentKey()
+    : ((typeof getGameWeek === "function" ? getGameWeek()?.opponentName : "") || "__unassigned__");
+  const allBoxes = Array.isArray(options.boxes)
+    ? options.boxes
+    : (options.box ? [options.box] : []);
+  const boxes = allBoxes
+    .filter((box) => box && typeof box === "object")
+    .map((box) => ({
+      id: String(box.id || ""),
+      label: String(board?.boxLabels?.[box.id] || box.label || box.id || ""),
+    }))
+    .filter((box) => box.id || box.label);
+  const jv = options.jv === true || (typeof _gpHasFlag === "function" && _gpHasFlag(play, "jv"));
+
+  return {
+    kind: "gameplan",
+    boardKey: opponentKey,
+    boardTitle: String(options.boardTitle || board?.sheetTitle || "").trim(),
+    opponent: opponentKey === "__unassigned__" ? "" : opponentKey,
+    boxes,
+    jv,
+  };
+}
+
+function createScriptPlayFromGamePlan(play, options = {}) {
+  const copy = createScriptPlayFromPlaybook(play);
+  copy._gpSource = getGamePlanScriptSourceContext(play, options);
+  return copy;
+}
+
+function getScriptGamePlanSourceDisplay(play) {
+  const source = play && typeof play === "object" ? play._gpSource : null;
+  if (!source) return null;
+  // Old scripts stored a boolean. Keep those rows readable while new copies
+  // receive the richer source object above.
+  if (source === true || typeof source !== "object") {
+    return { label: "GP", title: "Added from Game Plan", jv: false };
+  }
+
+  const boxes = Array.isArray(source.boxes) ? source.boxes : [];
+  const labels = boxes.map((box) => String(box?.label || box?.id || "").trim()).filter(Boolean);
+  const boxText = labels.length > 1 ? `${labels[0]} +${labels.length - 1}` : labels[0];
+  const boardText = String(source.boardTitle || "").trim();
+  const opponentText = String(source.opponent || "").trim();
+  const titleParts = ["Added from Game Plan", boardText, opponentText ? `vs ${opponentText}` : "", labels.length ? `Box: ${labels.join(", ")}` : "", source.jv ? "JV" : ""].filter(Boolean);
+  return {
+    label: boxText ? `GP · ${boxText}` : "GP",
+    title: titleParts.join(" · "),
+    jv: source.jv === true,
+  };
+}
+
+function getGamePlanSourceContextForPlay(play, board, options = {}) {
+  const signature = typeof _gpPlaySignature === "function" ? _gpPlaySignature(play) : "";
+  const defaultBoxes = typeof GP_DEFAULT_BOXES !== "undefined" ? GP_DEFAULT_BOXES : [];
+  const allBoxes = [...defaultBoxes, ...(Array.isArray(board?.customBoxes) ? board.customBoxes : [])];
+  const boxes = Array.isArray(options.boxes)
+    ? options.boxes
+    : (options.box ? [options.box] : allBoxes.filter((box) => (board?.assignments?.[box.id] || []).some((candidate) => {
+      const candidateSignature = typeof _gpPlaySignature === "function" ? _gpPlaySignature(candidate) : "";
+      return signature && candidateSignature === signature;
+    })));
+  return getGamePlanScriptSourceContext(play, { ...options, board, boxes });
+}
+
 function renderScriptSoon(afterPaint) {
   if (typeof requestRenderScript === "function") {
     requestRenderScript();
@@ -420,7 +491,7 @@ async function addSelectedToScript() {
    Two entry points: load every play assigned to the current board, or
    load only the JV-marked plays. Both prompt for a target period.
    ----------------------------------------------------------------------- */
-async function _addGamePlanPlaysToScriptFlow(label, sourcePlays) {
+async function _addGamePlanPlaysToScriptFlow(label, sourcePlays, sourceContext = null) {
   if (!Array.isArray(sourcePlays) || sourcePlays.length === 0) {
     showToast(`No ${label} plays found in the current game plan.`, {
       type: "warning", duration: 3000,
@@ -437,7 +508,8 @@ async function _addGamePlanPlaysToScriptFlow(label, sourcePlays) {
   saveScriptState();
   insertPlaysIntoPeriod(
     targetSeparatorIndex,
-    sourcePlays.map((play) => createScriptPlayFromPlaybook(play)),
+    sourcePlays.map((play) => createScriptPlayFromGamePlan(play,
+      typeof sourceContext === "function" ? sourceContext(play) : (sourceContext || {}))),
   );
   renderScriptSoon();
   setScriptToolbarStatus(
@@ -459,7 +531,12 @@ async function loadGamePlanIntoScript() {
   }
   // Pull from playbook so we get the freshest fields, not stale snapshots.
   const sourcePlays = plays.filter((p) => sigs.has(_gpPlaySignature(p)));
-  await _addGamePlanPlaysToScriptFlow("game plan", sourcePlays);
+  const board = typeof _gpEnsureBoard === "function" ? _gpEnsureBoard() : null;
+  await _addGamePlanPlaysToScriptFlow(
+    "game plan",
+    sourcePlays,
+    (play) => getGamePlanSourceContextForPlay(play, board),
+  );
 }
 
 async function loadGamePlanJvIntoScript() {
@@ -484,7 +561,12 @@ async function loadGamePlanJvIntoScript() {
       if (!havePlaybook.has(_gpPlaySignature(p))) sourcePlays.push(p);
     });
   }
-  await _addGamePlanPlaysToScriptFlow("JV", sourcePlays);
+  const board = typeof _gpEnsureBoard === "function" ? _gpEnsureBoard() : null;
+  await _addGamePlanPlaysToScriptFlow(
+    "JV",
+    sourcePlays,
+    (play) => getGamePlanSourceContextForPlay(play, board, { jv: true }),
+  );
 }
 
 async function loadGamePlanBoxIntoScript(boxId) {
@@ -527,7 +609,13 @@ async function loadGamePlanBoxIntoScript(boxId) {
       if (!have.has(_gpPlaySignature(p))) sourcePlays.push(p);
     });
   }
-  await _addGamePlanPlaysToScriptFlow(boxLabel, sourcePlays);
+  await _addGamePlanPlaysToScriptFlow(
+    boxLabel,
+    sourcePlays,
+    (play) => getGamePlanSourceContextForPlay(play, board, {
+      box: { id: boxId, label: boxLabel },
+    }),
+  );
 }
 
 async function compareScripts() {
