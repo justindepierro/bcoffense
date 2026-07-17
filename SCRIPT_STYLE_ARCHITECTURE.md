@@ -27,7 +27,7 @@ styles consume these markers; they must not recreate their own device state.
 | Shared tokens, buttons, panels, and generic controls | `css/base.css`, `css/components.css` | Change only when at least two product areas need the behavior. |
 | Global page shell and tab-panel geometry | `css/layout.css` | Do not place Script row styling here. |
 | Print and packet output | `css/print.css` | Print is an explicit visual exception. |
-| Global device-shell behavior | `css/responsive.css` | Do not add Script-local layout rules here; the staff-tablet and coach-phone Script workspace structure now lives in `css/script.css`, and remaining legacy run-mode rules migrate in verified slices. |
+| Global device-shell behavior | `css/responsive.css` | Do not add Script-local layout rules here. Script has no selectors in this shared stylesheet; staff-tablet, coach-phone, packet, and player-panel Script behavior live in `css/script.css`. |
 
 ## Coach Row Contract
 
@@ -53,4 +53,5 @@ The current stylesheet is historical and intentionally being consolidated in
 small, behavior-preserving slices. Do not add a new late “polish” block. Route
 new work to the owning section, remove the displaced rule in the same change
 when its visual contract is proven, and extend `scripts/smoke-check.js` for
-every new Script state contract.
+every new Script state contract. `css/responsive.css` is now a hard boundary:
+it must remain free of Script selectors.

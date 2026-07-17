@@ -113,6 +113,7 @@ function checkIndexReferences() {
 function checkCssGuardrails() {
   const files = walk("css").filter((file) => file.endsWith(".css"));
   const baseCss = read("css/base.css");
+  const responsiveCss = read("css/responsive.css");
   if (
     !/@media \(prefers-reduced-motion:\s*reduce\)/.test(baseCss) ||
     !/animation-duration:\s*0\.01ms\s*!important/.test(baseCss) ||
@@ -141,6 +142,9 @@ function checkCssGuardrails() {
       fail(`${file} scales font size with viewport width`);
     }
   });
+  if (/(?:#script\b|\.script-[\w-]+)/.test(responsiveCss)) {
+    fail("Script-specific selectors leaked into shared responsive.css");
+  }
   console.log(`css guardrails ok (${files.length} files)`);
 }
 
@@ -1874,13 +1878,13 @@ function checkPlayerPortalContracts() {
     !/function mobileCoachPresentScriptCall\(\)/.test(appShell) ||
     !/body\.dataset\.mobileScriptMode/.test(appShell) ||
     !/body\.is-phone-screen\.is-staff-mobile-shell:not\(\.mobile-script-editing\)[\s\S]*#script[\s\S]*\.script-header-panel/.test(
-      responsiveCss,
+      scriptCss,
     ) ||
     !/body\.is-phone-screen\.is-staff-mobile-shell:not\(\.mobile-script-editing\)[\s\S]*#script[\s\S]*\.play-readiness-widget/.test(
-      responsiveCss,
+      scriptCss,
     ) ||
     !/body\.is-phone-screen\.is-staff-mobile-shell:not\(\.mobile-script-editing\)[\s\S]*#script[\s\S]*\.script-column-headers/.test(
-      responsiveCss,
+      scriptCss,
     )
   ) {
     fail("mobile practice script run mode is incomplete");
@@ -1902,8 +1906,11 @@ function checkPlayerPortalContracts() {
     !/body\.is-mobile-screen\[data-auth-role="player"\] #mainApp[\s\S]*overflow:\s*visible/.test(
       responsiveCss,
     ) ||
-    !/body\.is-mobile-screen\[data-auth-role="player"\] #dashboard\.panel,[\s\S]*body\.is-mobile-screen\[data-auth-role="player"\] #script\.panel[\s\S]*overflow:\s*visible/.test(
+    !/body\.is-mobile-screen\[data-auth-role="player"\] #dashboard\.panel,[\s\S]*body\.is-mobile-screen\[data-auth-role="player"\] #playbook\.panel[\s\S]*overflow:\s*visible/.test(
       responsiveCss,
+    ) ||
+    !/body\.is-mobile-screen\[data-auth-role="player"\] #script\.panel[\s\S]*overflow:\s*visible/.test(
+      scriptCss,
     ) ||
     !/body\.is-mobile-screen\[data-auth-role="player"\] #tab-dashboard::before/.test(
       responsiveCss,
@@ -1937,8 +1944,8 @@ function checkPlayerPortalContracts() {
     !/body\.is-mobile-screen\.is-staff-mobile-shell #script \.script-player-grid[\s\S]*display:\s*none/.test(
       scriptCss,
     ) ||
-    !/body\.is-phone-screen\.is-staff-mobile-shell #script \.defense-inputs,[\s\S]*body\.is-phone-screen\.is-staff-mobile-shell #script \.play-readiness-actions[\s\S]*display:\s*none/.test(
-      responsiveCss,
+    !/body\.is-phone-screen\.is-staff-mobile-shell #script[\s\S]*\.defense-inputs,[\s\S]*\.play-readiness-actions\)[\s\S]*display:\s*none/.test(
+      scriptCss,
     ) ||
     !/body\.is-phone-screen\.is-staff-mobile-shell #script \.script-list[\s\S]*order:\s*1/.test(
       scriptCss,
@@ -2173,6 +2180,7 @@ function checkMobileCapabilityMatrix() {
   const html = read("index.html");
   const appShell = read("js/app-shell.js");
   const responsiveCss = read("css/responsive.css");
+  const scriptCss = read("css/script.css");
 
   // Header overflow replacement for hidden secondary actions.
   if (
@@ -2215,7 +2223,7 @@ function checkMobileCapabilityMatrix() {
   if (
     !/function toggleMobileScriptEditMode\(\)/.test(appShell) ||
     !/body\.classList\.toggle\("mobile-script-editing"/.test(appShell) ||
-    !/:not\(\.mobile-script-editing\)/.test(responsiveCss)
+    !/:not\(\.mobile-script-editing\)/.test(scriptCss)
   ) {
     fail("phone run mode is not reversible via the Edit Sheet toggle");
   }

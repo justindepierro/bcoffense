@@ -353,7 +353,6 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
   body.is-mobile-screen .quick-tools-fab,
   body.is-mobile-screen .quick-tool-btn,
   body.is-mobile-screen .quick-tools .help-fab,
-  body.is-mobile-screen .quick-tools .script-display-fab,
   body.is-mobile-screen .quick-tools .scroll-top-fab {
     height: 46px;
     min-height: 46px;
@@ -586,167 +585,6 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
     max-width: 100%;
   }
 
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-header-panel,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .play-list,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-library-toggle-btn,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .period-buttons,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-toolbar,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-timeline,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .period-actions-toolbar,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-tools-drawer,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-rail-backdrop {
-    display: none !important;
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-builder {
-    gap: 8px;
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-list {
-    padding: 10px;
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-select-tools,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-call-edits,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-pb-chip,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-column-headers,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .play-readiness-widget,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .print-preview-row,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .ph-top,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .ph-drag-handle,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .ph-collapse-btn,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .ph-color-input,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .ph-label-input,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .ph-minutes-input,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .ph-right {
-    display: none !important;
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-item.period-header {
-    padding: 10px 12px;
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .ph-main {
-    display: block;
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .ph-left {
-    display: grid;
-    gap: 4px;
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .ph-meta-span {
-    font-size: var(--font-size-xs);
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .ph-ratio-bar {
-    max-width: 120px;
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-item--detail,
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .script-item--compact {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell:not(.mobile-script-editing)
-    #script
-    .play-call {
-    grid-column: 1 / -1;
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell #script .script-select-tools {
-    grid-row: span 2;
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell #script .play-num {
-    display: none;
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell #script .hash-input,
-  body.is-phone-screen.is-staff-mobile-shell #script .defense-inputs,
-  body.is-phone-screen.is-staff-mobile-shell #script .play-controls,
-  body.is-phone-screen.is-staff-mobile-shell #script .script-player-grid,
-  body.is-phone-screen.is-staff-mobile-shell #script .play-readiness-main,
-  body.is-phone-screen.is-staff-mobile-shell #script .play-readiness-metrics,
-  body.is-phone-screen.is-staff-mobile-shell #script .play-readiness-actions {
-    display: none;
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell #script .play-readiness-widget {
-    grid-column: 1 / -1;
-    display: block;
-    margin-top: 6px;
-    padding: 8px;
-  }
-
-  body.is-phone-screen.is-staff-mobile-shell
-    #script
-    .play-readiness-quick-score {
-    margin: 0;
-  }
-
   body.is-mobile-screen
     input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(
       [type="file"]
@@ -768,8 +606,7 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
   }
 
   body.is-mobile-screen[data-auth-role="player"] #dashboard.panel,
-  body.is-mobile-screen[data-auth-role="player"] #playbook.panel,
-  body.is-mobile-screen[data-auth-role="player"] #script.panel {
+  body.is-mobile-screen[data-auth-role="player"] #playbook.panel {
     overflow: visible;
   }
 
@@ -806,8 +643,7 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
   }
 
   body.is-phone-screen[data-auth-role="player"] #dashboard.panel,
-  body.is-phone-screen[data-auth-role="player"] #playbook.panel,
-  body.is-phone-screen[data-auth-role="player"] #script.panel {
+  body.is-phone-screen[data-auth-role="player"] #playbook.panel {
     padding-top: 10px;
   }
 
@@ -866,12 +702,6 @@ body.shell-tablet .player-notify-btn {
 
 /* ============ Responsive Design ============ */
 @media (max-width: 1024px) {
-  .script-builder {
-    grid-template-columns: 1fr;
-  }
-  .play-list {
-    max-width: 100%;
-  }
   /* Tendencies: stack toolbar items */
   .td-toolbar {
     flex-direction: column;
@@ -967,9 +797,6 @@ body.shell-tablet .player-notify-btn {
   .pb-editor-image-preview {
     width: 100%;
     max-width: 260px;
-  }
-  .script-actions {
-    flex-wrap: wrap;
   }
   .upload-box {
     padding: 30px 20px;
@@ -1305,17 +1132,4 @@ body.shell-tablet .player-notify-btn {
 #playbookTable th[aria-sort="descending"] .sort-icon::after {
   content: " ▼";
   font-size: 0.75em;
-}
-@media (max-width: 720px) {
-  .script-packet-settings {
-    grid-template-columns: 1fr;
-  }
-
-  .script-packet-selection-summary {
-    white-space: normal;
-  }
-
-  .script-packet-print-row {
-    grid-template-columns: 1fr;
-  }
 }
