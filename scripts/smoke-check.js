@@ -1000,6 +1000,30 @@ function checkScriptPersonnelWorkspaceContract() {
   console.log("script personnel workspace contract ok");
 }
 
+function checkScriptWorkspaceCommandSurface() {
+  const html = read("index.html");
+  const shared = read("js/script-shared.js");
+  const pageActions = read("js/page-actions.js");
+  const css = read("css/script.css");
+
+  if (
+    /scriptToolsDrawerToggle|scriptSidebarTabTools/.test(html) ||
+    !/script-sidebar-title/.test(html) ||
+    !/label: "Workspace Tools", run: \(\) => _paCall\("openScriptToolsDrawer"\)/.test(
+      pageActions,
+    ) ||
+    !/function setScriptToolsDrawerOpen\(isOpen\)/.test(shared) ||
+    !/function toggleScriptToolsDrawer\(\)[\s\S]*setScriptToolsDrawerOpen\(!scriptToolsDrawerOpen\)/.test(
+      shared,
+    ) ||
+    !/Library-only sidebar/.test(css)
+  ) {
+    fail("Script library and workspace tools still have duplicate navigation");
+  }
+
+  console.log("script workspace command surface ok");
+}
+
 function checkPlayPresentationContracts() {
   const html = read("index.html");
   const utils = read("js/utils.js");
@@ -4891,6 +4915,7 @@ checkUppercaseCallRenderingContracts();
 checkWristbandTypography();
 checkPersonnelMarkerContracts();
 checkScriptPersonnelWorkspaceContract();
+checkScriptWorkspaceCommandSurface();
 checkPlayPresentationContracts();
 checkPlayIdentityHandoffFixtures();
 checkScriptPlayerPublishingContracts();

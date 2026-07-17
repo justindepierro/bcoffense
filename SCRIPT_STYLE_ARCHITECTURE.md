@@ -12,8 +12,8 @@ new visual change from becoming a late cascade override with an unclear scope.
 - `data-layout-mode="detail|compact"` is owned by
   `js/script-display-options.js`. The display radios are the accessible input;
   this attribute is the CSS-facing state marker.
-- `.script-rail-collapsed` and `#scriptPlayRail[data-sidebar-tab]` are owned by
-  `js/script-shared.js`.
+- `.script-rail-collapsed` is owned by `js/script-shared.js`; the rail is
+  library-only and deeper workspace tools open from the shared Actions hub.
 
 The app shell owns device and role state on `body` (`is-mobile-screen`,
 `shell-phone`, `shell-tablet`, `data-auth-role`, and print classes). Script

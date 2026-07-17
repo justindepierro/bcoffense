@@ -43,6 +43,7 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "🃏", label: "Send to Wristband", run: () => _paCall("sendScriptToWristband") },
       { icon: "📄", label: "Send to Call Sheet", run: () => _paCall("sendScriptToCallSheet") },
       { icon: "🖨️", label: "Print Studio", run: () => _paCall("openPrintStudio") },
+      { icon: "🛠️", label: "Workspace Tools", run: () => _paCall("openScriptToolsDrawer") },
     ],
   },
 

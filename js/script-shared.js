@@ -152,21 +152,19 @@ function toggleScriptPlayRail() {
   saveScriptDisplayOptions();
 }
 
-// The Script sidebar hosts two tabs — Library and Tools — in one collapsible
-// column. Selecting a tab opens the sidebar on that tab; selecting the tab
-// that is already showing collapses the sidebar, so the header pills toggle.
+// The Script sidebar is library-only. Selecting Library toggles its compact
+// rail; deeper workspace controls live behind the shared Actions hub.
 function setScriptSidebarTab(tab) {
   const rail = document.getElementById("scriptPlayRail");
   if (!rail) return;
-  const next = String(tab) === "tools" ? "tools" : "library";
-  const currentTab = rail.dataset.sidebarTab || "library";
-  if (!scriptPlayRailCollapsed && currentTab === next) {
+  if (String(tab) !== "library") return;
+  if (!scriptPlayRailCollapsed) {
     scriptPlayRailCollapsed = true;
     applyScriptPlayRailState();
     saveScriptDisplayOptions();
     return;
   }
-  rail.dataset.sidebarTab = next;
+  rail.dataset.sidebarTab = "library";
   if (scriptPlayRailCollapsed) {
     scriptPlayRailCollapsed = false;
     applyScriptPlayRailState();
@@ -177,48 +175,21 @@ function setScriptSidebarTab(tab) {
 }
 
 function _syncScriptSidebarTabUi() {
-  const rail = document.getElementById("scriptPlayRail");
-  const tab = rail?.dataset.sidebarTab || "library";
   const open = !scriptPlayRailCollapsed;
-  const libTab = document.getElementById("scriptSidebarTabLibrary");
-  const toolsTab = document.getElementById("scriptSidebarTabTools");
-  libTab?.classList.toggle("is-active", tab === "library");
-  libTab?.setAttribute("aria-selected", tab === "library" ? "true" : "false");
-  toolsTab?.classList.toggle("is-active", tab === "tools");
-  toolsTab?.setAttribute("aria-selected", tab === "tools" ? "true" : "false");
   const libPill = document.getElementById("scriptPlayRailToggle");
-  const toolsPill = document.getElementById("scriptToolsDrawerToggle");
-  libPill?.classList.toggle("is-active", open && tab === "library");
-  libPill?.setAttribute("aria-pressed", open && tab === "library" ? "true" : "false");
-  toolsPill?.classList.toggle("is-active", open && tab === "tools");
-  toolsPill?.setAttribute("aria-expanded", open && tab === "tools" ? "true" : "false");
-  scriptToolsDrawerOpen = open && tab === "tools";
-}
-
-// Move the Tools drawer into the sidebar column once, so Library and Tools
-// become two tabs of one collapsible panel instead of two separate overlays.
-function relocateScriptToolsIntoSidebar() {
-  const rail = document.getElementById("scriptPlayRail");
-  const tools = document.getElementById("scriptToolsDrawer");
-  if (!rail || !tools || tools.parentElement === rail) return;
-  tools.dataset.panel = "tools";
-  tools.classList.add("open");
-  tools.removeAttribute("inert");
-  tools.setAttribute("aria-hidden", "false");
-  rail.appendChild(tools);
-  if (!rail.dataset.sidebarTab) rail.dataset.sidebarTab = "library";
+  libPill?.classList.toggle("is-active", open);
+  libPill?.setAttribute("aria-pressed", open ? "true" : "false");
 }
 
 function setScriptToolsDrawerOpen(isOpen) {
-  if (isOpen) {
-    setScriptSidebarTab("tools");
-    return;
-  }
-  if (!scriptPlayRailCollapsed) {
-    scriptPlayRailCollapsed = true;
-    applyScriptPlayRailState();
-    saveScriptDisplayOptions();
-  }
+  const drawer = document.getElementById("scriptToolsDrawer");
+  const backdrop = document.getElementById("scriptToolsBackdrop");
+  const open = Boolean(isOpen);
+  scriptToolsDrawerOpen = open;
+  drawer?.classList.toggle("open", open);
+  drawer?.toggleAttribute("inert", !open);
+  drawer?.setAttribute("aria-hidden", open ? "false" : "true");
+  if (backdrop) backdrop.hidden = !open;
 }
 
 function openScriptToolsDrawer() {
@@ -230,11 +201,10 @@ function closeScriptToolsDrawer() {
 }
 
 function toggleScriptToolsDrawer() {
-  setScriptSidebarTab("tools");
+  setScriptToolsDrawerOpen(!scriptToolsDrawerOpen);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  relocateScriptToolsIntoSidebar();
   _syncScriptSidebarTabUi();
 });
 
