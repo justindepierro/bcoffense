@@ -14599,6 +14599,25 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     width: 100%;
   }
 
+  /* The launcher is a short list, not a constrained dashboard grid. A grid
+     track could collapse to zero after a script loads, leaving a 22px action
+     strip on top of the current-practice card. */
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-launcher,
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-launcher-list {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-launcher-list {
+    flex: 0 0 auto;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card {
+    flex: 0 0 auto;
+    min-height: 104px;
+  }
+
   /* Final player-only override: shared coach stat rules are declared earlier
      and give these chips a 44px control height. Keep them compact so the
      practice-picker begins below, never through, the Script summary row. */
