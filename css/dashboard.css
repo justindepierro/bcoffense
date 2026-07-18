@@ -2916,6 +2916,10 @@
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-opponent-bar {
+    /* Dashboard content scrolls with the document on desktop, so a sticky
+       opponent bar detaches from the surrounding game-week controls. */
+    position: static;
+    top: auto;
     gap: var(--coach-grid-gap);
     padding: 4px 6px;
     margin-bottom: 8px;
