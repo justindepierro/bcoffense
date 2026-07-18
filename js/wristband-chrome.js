@@ -56,6 +56,7 @@ function syncWristbandModeSurface(mode = wristbandType || "") {
   const isPlayer = normalizedMode === "player";
   const typeChoice = document.getElementById("wbTypeChoice");
   const toolbar = document.querySelector(".wb-cmd-bar");
+  const stats = document.querySelector(".wb-stats-bar");
   const cardTabs = document.querySelector(".card-tabs");
   const card = document.getElementById("wristbandCard");
   const grid = document.getElementById("wristbandGrid");
@@ -75,6 +76,9 @@ function syncWristbandModeSurface(mode = wristbandType || "") {
   // visible whenever a mode is active — classic AND player. Only the type-choice
   // landing hides it.
   toolbar?.classList.toggle("wb-toolbar-hidden", !hasMode);
+  // A blank starter card is only an implementation placeholder. Do not show
+  // its 1-card / 40-empty totals before the coach has selected a format.
+  stats?.classList.toggle("wb-hidden", !hasMode);
   cardTabs?.classList.toggle("wb-hidden", !hasMode);
   card?.classList.toggle("wb-hidden", !hasMode);
   playerBar?.classList.toggle("visible", isPlayer);
