@@ -1421,6 +1421,16 @@ function ensurePlaybookPlayIds(list) {
     if (!play.createdAt) play.createdAt = Date.now();
     changed += 1;
   });
+  list.forEach((play) => {
+    if (!play || typeof play !== "object") return;
+    const sourceId = getStablePlaySourceId(play);
+    const expectedMediaId = sourceId ? `play:${sourceId}` : "";
+    const currentMediaId = play.mediaId == null ? "" : String(play.mediaId).trim();
+    if (!currentMediaId && expectedMediaId) {
+      play.mediaId = expectedMediaId;
+      changed += 1;
+    }
+  });
   return changed;
 }
 
@@ -1434,6 +1444,16 @@ function getStablePlaySourceId(play) {
   ]
     .map((value) => (value == null ? "" : String(value).trim()))
     .find(Boolean) || "";
+}
+
+// The permanent media lookup key. New cloud media always writes here; older
+// source-ID and content signatures remain read-only compatibility fallbacks.
+function getPlayMediaId(play) {
+  if (!play || typeof play !== "object") return "";
+  const existing = play.mediaId == null ? "" : String(play.mediaId).trim();
+  if (existing) return existing;
+  const sourceId = getStablePlaySourceId(play);
+  return sourceId ? `play:${sourceId}` : "";
 }
 
 function copyPlayWithSourceIdentity(play, overrides = {}) {
@@ -1450,6 +1470,7 @@ function copyPlayWithSourceIdentity(play, overrides = {}) {
       ? getPlayIdentityKey(play, "gameplan", { trim: false })
       : "");
   const copy = { ...play, ...overrides };
+  const mediaId = getPlayMediaId(play);
   if (sourceId) {
     copy.playbookId = sourceId;
     if (!copy.sourcePlayId) copy.sourcePlayId = sourceId;
@@ -1457,6 +1478,7 @@ function copyPlayWithSourceIdentity(play, overrides = {}) {
   }
   if (sourceIdentityKey) copy.sourceIdentityKey = sourceIdentityKey;
   if (sourceGamePlanKey) copy.sourceGamePlanKey = sourceGamePlanKey;
+  if (mediaId && !copy.mediaId) copy.mediaId = mediaId;
   return copy;
 }
 

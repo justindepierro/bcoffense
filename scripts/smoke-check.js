@@ -1741,8 +1741,9 @@ function checkPlayIdentityHandoffFixtures() {
   }
 
   const getStableSource = extractFunctionSource(utils, "getStablePlaySourceId");
+  const getMediaId = extractFunctionSource(utils, "getPlayMediaId");
   const copySource = extractFunctionSource(utils, "copyPlayWithSourceIdentity");
-  if (!getStableSource || !copySource) {
+  if (!getStableSource || !getMediaId || !copySource) {
     fail("play identity helper sources are missing");
     return;
   }
@@ -1765,9 +1766,9 @@ function checkPlayIdentityHandoffFixtures() {
       .map((value) => String(value || "").trim())
       .join("|");
   };
-  const { copyPlayWithSourceIdentity } = new Function(
+  const { copyPlayWithSourceIdentity, getPlayMediaId } = new Function(
     "getPlayIdentityKey",
-    `${getStableSource}\n${copySource}\nreturn { copyPlayWithSourceIdentity };`,
+    `${getStableSource}\n${getMediaId}\n${copySource}\nreturn { copyPlayWithSourceIdentity, getPlayMediaId };`,
   )(getPlayIdentityKey);
 
   const playbookPlay = {
@@ -1795,6 +1796,7 @@ function checkPlayIdentityHandoffFixtures() {
       play.playbookId !== playbookPlay.id ||
       play.sourcePlayId !== playbookPlay.id ||
       play.originalPlayId !== playbookPlay.id ||
+      play.mediaId !== getPlayMediaId(playbookPlay) ||
       play.sourceIdentityKey !== expectedSourceIdentity ||
       play.sourceGamePlanKey !== expectedGamePlanIdentity
     ) {
@@ -1812,6 +1814,9 @@ function checkPlayIdentityHandoffFixtures() {
     legacyCopy.originalPlayId !== "source-abc"
   ) {
     fail("legacy sourcePlayId is not preferred over runtime ids");
+  }
+  if (legacyCopy.mediaId !== "play:source-abc") {
+    fail("legacy sourcePlayId does not create the deterministic mediaId");
   }
 
   console.log("play identity handoff fixtures ok");

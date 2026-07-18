@@ -85,7 +85,7 @@ The browser does **not** decide whether a team asset exists. The manifest does.
 
 ### Phase 0 — inventory and recovery baseline
 
-- [ ] Add a read-only, staff-only R2 inventory endpoint/report that paginates
+- [x] Add a read-only, staff-only R2 inventory endpoint/report that paginates
   `images/` and future `media/` objects, counts canonical and legacy keys, and
   never exposes object data to players.
 - [ ] Compare R2 inventory with every player-visible play's expected media ID.
@@ -101,11 +101,11 @@ exist locally, and which have no recoverable file.
 
 ### Phase 1 — stable media identity
 
-- [ ] Add `mediaId` to the canonical play model and generate it for imports,
+- [x] Add `mediaId` to the canonical play model and generate it for imports,
   manual play creation, and restored records.
-- [ ] Backfill every existing play deterministically, preserving a migration
+- [x] Backfill every existing play deterministically, preserving a migration
   alias map for old source IDs and legacy diagram signatures.
-- [ ] Include `mediaId` in every play-copy path: script, game plan, call
+- [x] Include `mediaId` in every play-copy path: script, game plan, call
   sheet, wristband, player snapshot, export, and cloud backup.
 - [ ] Add smoke checks that reject new player-visible plays without a
   `mediaId`.

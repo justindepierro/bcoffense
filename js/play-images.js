@@ -494,6 +494,15 @@
 
   function _remoteIdentityKey(play) {
     const sourcePlay = _findSourcePlay(play) || play;
+    const mediaId = typeof getPlayMediaId === "function"
+      ? getPlayMediaId(sourcePlay)
+      : String(sourcePlay?.mediaId || "").trim();
+    if (mediaId) return mediaId;
+    return _legacyStableRemoteIdentityKey(sourcePlay);
+  }
+
+  function _legacyStableRemoteIdentityKey(play) {
+    const sourcePlay = _findSourcePlay(play) || play;
     const sourceId = typeof getStablePlaySourceId === "function"
       ? getStablePlaySourceId(sourcePlay)
       : [
@@ -521,6 +530,7 @@
   function _remoteIdentityKeysForPlay(play) {
     return [
       _remoteIdentityKey(play),
+      _legacyStableRemoteIdentityKey(play),
       _legacyContentRemoteIdentityKey(play),
       _legacyRemoteIdentityKey(play),
     ]
