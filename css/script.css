@@ -14609,6 +14609,10 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     min-height: 0;
   }
 
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-launcher {
+    flex: 0 0 auto;
+  }
+
   body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-launcher-list {
     flex: 0 0 auto;
   }
