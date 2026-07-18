@@ -88,10 +88,10 @@ The browser does **not** decide whether a team asset exists. The manifest does.
 - [x] Add a read-only, staff-only R2 inventory endpoint/report that paginates
   `images/` and future `media/` objects, counts canonical and legacy keys, and
   never exposes object data to players.
-- [ ] Compare R2 inventory with every player-visible play's expected media ID.
-- [ ] Produce a migration report with: canonical media found, legacy media
+- [x] Compare R2 inventory with every player-visible play's expected media ID.
+- [x] Produce a migration report with: canonical media found, legacy media
   found, local-only media found, and genuinely missing assets.
-- [ ] Preserve all current legacy lookup paths as read-only fallbacks while
+- [x] Preserve all current legacy lookup paths as read-only fallbacks while
   the migration is in progress.
 - [ ] Recover any diagrams that exist only in an old browser backup or device
   before declaring an asset permanently missing.

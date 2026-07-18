@@ -130,6 +130,7 @@
     if (typeof imageApi.signaturesForPlay === "function") {
       _miArray(imageApi.signaturesForPlay(play)).forEach(push);
     }
+    push(_miMediaId(play));
     if (typeof playSignature === "function") push(playSignature(play));
     return out;
   }
@@ -187,6 +188,50 @@
       orphanCount: orphanKeys.length,
       referencedCount: keys.length - orphanKeys.length,
     };
+  }
+
+  function _miMediaId(play) {
+    if (typeof getPlayMediaId === "function") return String(getPlayMediaId(play) || "").trim();
+    return String(play?.mediaId || "").trim();
+  }
+
+  function _miBuildMediaReconciliation(playerPlays, diagramInventory, cloudInventory) {
+    const expected = new Map();
+    _miArray(playerPlays).forEach((play) => {
+      const mediaId = _miMediaId(play);
+      if (mediaId && !expected.has(mediaId)) expected.set(mediaId, play);
+    });
+    const cloudObjects = _miArray(cloudInventory?.objects);
+    const canonicalMediaIds = new Set(
+      cloudObjects.filter((entry) => entry?.kind === "canonical" && entry.mediaId).map((entry) => entry.mediaId),
+    );
+    const legacyKeys = new Set(
+      cloudObjects
+        .filter((entry) => entry?.kind !== "canonical")
+        .map((entry) => String(entry?.key || "").replace(/^images\//, ""))
+        .filter(Boolean),
+    );
+    const localKeys = new Set(_miArray(diagramInventory?.keys).map((key) => String(key || "")));
+    const rows = [...expected.entries()].map(([mediaId, play]) => {
+      const compatibleKeys = _miPlayImageSigs(play);
+      const hasCanonical = canonicalMediaIds.has(mediaId);
+      const hasLegacy = compatibleKeys.some((key) => legacyKeys.has(key));
+      const hasLocal = compatibleKeys.some((key) => localKeys.has(key));
+      const status = hasCanonical ? "canonical" : hasLegacy ? "legacy" : hasLocal ? "local-only" : "missing";
+      const detail = status === "canonical"
+        ? "Current versioned R2 object found."
+        : status === "legacy"
+          ? "Recoverable legacy R2 object found; canonical migration is still needed."
+          : status === "local-only"
+            ? "Diagram exists only in this browser cache and can be recovered/uploaded."
+            : "No cloud or local diagram was found for this player-visible play.";
+      return { mediaId, play, label: _miPlayLabel(play), status, detail };
+    });
+    const counts = rows.reduce((result, row) => {
+      result[row.status] += 1;
+      return result;
+    }, { total: rows.length, canonical: 0, legacy: 0, "local-only": 0, missing: 0 });
+    return { rows, counts };
   }
 
   async function _miFetchCloudDiagramInventory() {
@@ -304,6 +349,7 @@
         : Promise.resolve({ publishedScripts, rows: [], counts: {} }),
       _miFetchCloudDiagramInventory(),
     ]);
+    const reconciliation = _miBuildMediaReconciliation(playerPlays, diagramInventory, cloudDiagrams);
     const signalRecords = _miLoadSignalRecords();
     const clipInventory = await _miBuildClipInventory(playerPlays, signalRecords);
     const quizInventory = _miBuildQuizInventory(
@@ -322,6 +368,7 @@
       publishReport,
       diagrams: diagramInventory,
       cloudDiagrams,
+      reconciliation,
       clips: clipInventory,
       quiz: quizInventory,
     };
@@ -389,12 +436,10 @@
       .filter((row) => row.diagramStatus !== "ready" || !row.hasClip);
     const cloud = report.cloudDiagrams || {};
     const cloudCounts = cloud.counts || {};
-    const cloudKeys = new Set(_miArray(cloud.objects).map((entry) => entry.key));
-    const missingCanonicalRows = _miArray(report.publishReport?.rows).filter((row) =>
-      row.identityKey && !cloudKeys.has(`images/${row.identityKey}`)
-    );
+    const reconciliation = report.reconciliation || { counts: {}, rows: [] };
+    const migrationRows = _miArray(reconciliation.rows).filter((row) => row.status !== "canonical");
     const cloudSummary = cloud.available
-      ? `${cloudCounts.total || 0} objects · ${cloudCounts.canonical || 0} canonical · ${(cloudCounts["legacy-content"] || 0) + (cloudCounts["legacy-signature"] || 0)} legacy`
+      ? `${cloudCounts.total || 0} objects · ${cloudCounts.canonical || 0} canonical · ${(cloudCounts["legacy-canonical-key"] || 0) + (cloudCounts["legacy-content"] || 0) + (cloudCounts["legacy-signature"] || 0)} legacy`
       : cloud.reason || "Cloud inventory unavailable.";
     return `
       <div class="pb-health-summary pb-publish-media-summary">
@@ -417,13 +462,19 @@
       </div>
       <section class="pb-health-section">
         <div class="pb-health-section-head">
-          <h4>Cloud Diagram Inventory</h4>
+          <h4>Canonical Media Migration</h4>
           <span>${_miEscape(cloud.available ? (cloud.truncated ? "Partial scan" : "Live R2") : "Unavailable")}</span>
         </div>
         <div class="pb-health-guidance">${_miEscape(cloudSummary)}</div>
         ${cloud.available ? `
-          <div class="pb-health-guidance">${missingCanonicalRows.length} player-visible call${missingCanonicalRows.length === 1 ? "" : "s"} do not yet have their canonical cloud object. Legacy objects remain available for migration review.</div>
-          ${_miRenderPlayRows(missingCanonicalRows, "Every player-visible call has a canonical cloud diagram object.")}
+          <div class="pb-health-summary pb-publish-media-summary">
+            ${_miRenderCard(reconciliation.counts.canonical || 0, "Canonical found")}
+            ${_miRenderCard(reconciliation.counts.legacy || 0, "Legacy found")}
+            ${_miRenderCard(reconciliation.counts["local-only"] || 0, "Local-only")}
+            ${_miRenderCard(reconciliation.counts.missing || 0, "Missing")}
+          </div>
+          ${_miRenderPlayRows(migrationRows, "Every player-visible call has a canonical cloud diagram object.")}
+          ${migrationRows.length > MEDIA_INVENTORY_SAMPLE_LIMIT ? `<div class="pb-health-more">Showing ${MEDIA_INVENTORY_SAMPLE_LIMIT} of ${migrationRows.length} migration items.</div>` : ""}
         ` : ""}
       </section>
       <section class="pb-health-section">

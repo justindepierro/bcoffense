@@ -4226,6 +4226,9 @@ function checkPlayerDiagramReadinessContracts() {
     !/window\.openMediaInventoryReport = async function/.test(mediaInventory) ||
     !/window\.closeMediaInventoryReport = function/.test(mediaInventory) ||
     !/window\.playImages\.buildPlayerMediaPublishReport/.test(mediaInventory) ||
+    !/function _miBuildMediaReconciliation\(playerPlays, diagramInventory, cloudInventory\)/.test(mediaInventory) ||
+    !/"local-only"/.test(mediaInventory) ||
+    !/Canonical Media Migration/.test(mediaInventory) ||
     !/imageApi\.loadKeys/.test(mediaInventory) ||
     !/clipApi\.listForSigs/.test(mediaInventory) ||
     !/STORAGE_KEYS\.SIGNALS/.test(mediaInventory) ||
@@ -4234,6 +4237,15 @@ function checkPlayerDiagramReadinessContracts() {
     !/"\.\/js\/media-inventory\.js"/.test(sw)
   ) {
     fail("media inventory report contract is incomplete");
+  }
+  const imageInventoryRoute = read("functions/images/inventory.js");
+  if (
+    !/CANONICAL_PREFIX = "media\/plays\/"/.test(imageInventoryRoute) ||
+    !/LEGACY_PREFIX = "images\/"/.test(imageInventoryRoute) ||
+    !/function mediaIdForObjectKey\(key\)/.test(imageInventoryRoute) ||
+    !/prefixes: \[CANONICAL_PREFIX, LEGACY_PREFIX\]/.test(imageInventoryRoute)
+  ) {
+    fail("cloud diagram inventory does not cover canonical and legacy object paths");
   }
 
   if (
