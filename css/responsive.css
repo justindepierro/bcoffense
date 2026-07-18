@@ -555,7 +555,6 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
     min-width: 58px;
     padding-right: 7px;
     padding-left: 7px;
-    font-size: var(--font-size-2xs);
   }
 
   body.is-mobile-screen .pb-shortcuts-hint,

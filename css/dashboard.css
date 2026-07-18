@@ -2579,6 +2579,17 @@
     grid-column: 1 / -1;
   }
 
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-search-input {
+    border-color: var(--color-border-light);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-search-input::placeholder {
+    color: var(--color-text-placeholder);
+    opacity: 1;
+  }
+
   body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-opponent-right {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-xs);
