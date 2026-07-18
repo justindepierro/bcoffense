@@ -1322,6 +1322,26 @@ function checkCoachGridSignalsWorkspaceContract() {
   console.log("coach grid Signals workspace contract ok");
 }
 
+function checkCoachGridDashboardContract() {
+  const html = read("index.html");
+  const css = read("css/dashboard.css");
+  const theme = read("COACH_GRID_THEME.md");
+  const roadmap = read("COACH_GRID_ROADMAP.md");
+
+  if (
+    !/dash-opponent-bar page-header-surface app-command-toolbar coach-grid-command-strip/.test(html) ||
+    !/Coach Grid: Game Week Dashboard command surface/.test(css) ||
+    !/#dashboard \.dash-opponent-bar \{[\s\S]*border-radius: var\(--coach-grid-toolbar-radius\)/.test(css) ||
+    !/#dashboard \.dash-search-input,[\s\S]*min-height: var\(--coach-grid-control-height\)/.test(css) ||
+    !/Game Week Dashboard.*desktop active-opponent command surface/.test(theme) ||
+    !/Game Week Dashboard \| Migrated/.test(roadmap)
+  ) {
+    fail("Coach Grid Game Week Dashboard command surface contract is missing");
+  }
+
+  console.log("coach grid Game Week Dashboard contract ok");
+}
+
 function checkLibrarySurfaceContract() {
   const base = read("css/base.css");
   const components = read("css/components.css");
@@ -5354,6 +5374,7 @@ checkCoachGridWristbandWorkbenchContract();
 checkCoachGridTeamWorkspaceContract();
 checkCoachGridOpponentScoutContract();
 checkCoachGridSignalsWorkspaceContract();
+checkCoachGridDashboardContract();
 checkLibrarySurfaceContract();
 checkPlayPresentationContracts();
 checkPlayIdentityHandoffFixtures();

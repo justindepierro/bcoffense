@@ -43,6 +43,7 @@ feature's filter fields, selection model, or add action.
 | Team Workspace | Migrated | Roster, personnel, and accounts; player portal is separate. |
 | Opponent Scout | Migrated | Opponent list, command strips, stats, and film log; reports and presentation are separate. |
 | Signals | Migrated | Coach collection and editor; player clip viewing is separate. |
+| Game Week Dashboard | Migrated | Desktop active-opponent command surface; player home, mobile, and dashboard summaries remain separate. |
 
 ## Next migration waves
 

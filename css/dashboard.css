@@ -2831,6 +2831,91 @@
   margin: 0;
 }
 
+/* ── Coach Grid: Game Week Dashboard command surface ────────────────────
+   The active-opponent bar is the coach's week-to-week control point. Keep
+   the player/mobile dashboard untouched while giving desktop coaches the
+   same dense worksheet geometry used by the planning workbenches. */
+@media screen and (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-container {
+    max-width: none;
+    padding: 8px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-opponent-bar {
+    gap: var(--coach-grid-gap);
+    padding: 4px 6px;
+    margin-bottom: 8px;
+    border: 1px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    color: var(--color-text);
+    background: var(--coach-grid-surface-muted);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-opponent-select-group,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-opponent-right {
+    gap: var(--coach-grid-gap);
+    flex-wrap: wrap;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-title {
+    margin: 0;
+    color: var(--color-text);
+    font-size: var(--font-size-md);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-label {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-2xs);
+    font-weight: 800;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-search-input,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-select,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-week-input,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-opponent-right .btn {
+    min-height: var(--coach-grid-control-height);
+    padding: 3px 8px;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-radius);
+    color: var(--color-text);
+    background: var(--coach-grid-surface);
+    box-shadow: var(--coach-grid-shadow);
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-search-input {
+    min-width: 180px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-select {
+    min-width: 170px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-week-input {
+    width: 108px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-search-input::placeholder,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-week-input::placeholder {
+    color: var(--color-text-placeholder);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-select option {
+    color: var(--color-text);
+    background: var(--coach-grid-surface);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-search-input:focus,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-select:focus,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #dashboard .dash-week-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-focus-sm);
+  }
+}
+
 .dash-schedule-table {
   width: 100%;
   border-collapse: collapse;

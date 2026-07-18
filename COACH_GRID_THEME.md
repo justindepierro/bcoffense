@@ -71,6 +71,9 @@ layout or responsive behavior, keep that rule in the module stylesheet.
 8. **Signals** — the desktop coach collection, coverage report, component
    grid, and signal editor now use Coach Grid density. Player-facing clip
    viewing and media presentation remain separate contracts.
+9. **Game Week Dashboard** — the desktop active-opponent command surface now
+   uses Coach Grid density. Its player home, mobile command flow, schedule,
+   and summary cards remain dedicated layouts.
 
 ## Migration rules
 
