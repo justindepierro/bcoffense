@@ -517,6 +517,11 @@ async function _addGamePlanPlaysToScriptFlow(label, sourcePlays, sourceContext =
     "success",
     AUTOSAVE_DEBOUNCE_MS,
   );
+  if (typeof confirmScriptHandoffPersistence === "function") {
+    await confirmScriptHandoffPersistence(
+      `Added ${sourcePlays.length} ${label} play${sourcePlays.length === 1 ? "" : "s"} to the Script.`,
+    );
+  }
 }
 
 async function loadGamePlanIntoScript() {

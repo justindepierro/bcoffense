@@ -14553,3 +14553,19 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     min-width: min(240px, calc(100vw - 32px));
   }
 }
+
+/* Player scripts do not render the coach library rail. The desktop workspace
+   rule above intentionally creates two columns for coaches, but it is more
+   specific than the earlier player layout rule. Without this override the
+   player script list is auto-placed into the 340px library column, leaving an
+   empty main pane beside it. */
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .script-builder {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .script-list {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}

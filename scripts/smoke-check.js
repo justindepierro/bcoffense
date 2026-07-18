@@ -5280,6 +5280,36 @@ function checkPlayerPlaybookVisibilityContracts() {
   console.log("player playbook visibility contracts ok");
 }
 
+function checkWorkflowPersistenceContracts() {
+  const scriptState = read("js/script-state.js");
+  const scriptStorage = read("js/script-storage.js");
+  const scriptPlayer = read("js/script-player.js");
+  const wristbandStorage = read("js/wristband-storage.js");
+  const gamePlanIntegrations = read("js/gameplan-integrations.js");
+  const scriptIntegrations = read("js/script-integrations.js");
+
+  if (
+    !/let activeScriptSaveId = null/.test(scriptState) ||
+    !/function finalizeScriptSave\(record\)/.test(scriptStorage) ||
+    !/String\(s\.id\) === String\(activeScriptSaveId\)/.test(scriptStorage) ||
+    !/activeScriptSaveId = scriptData\.id \?\? null/.test(scriptPlayer) ||
+    !/activeSaveId: activeScriptSaveId/.test(scriptStorage)
+  ) {
+    fail("Script active-save identity contract is incomplete");
+  }
+
+  if (
+    !/function confirmScriptHandoffPersistence\(summary\)/.test(scriptStorage) ||
+    !/function confirmWristbandHandoffPersistence\(summary\)/.test(wristbandStorage) ||
+    !/await confirmScriptHandoffPersistence\(msg\)/.test(gamePlanIntegrations) ||
+    !/await confirmWristbandHandoffPersistence\(msg\)/.test(gamePlanIntegrations) ||
+    !/await confirmWristbandHandoffPersistence\(/.test(scriptIntegrations)
+  ) {
+    fail("handoff persistence confirmation contract is incomplete");
+  }
+  console.log("workflow persistence contracts ok");
+}
+
 checkJsSyntax();
 checkServiceWorkerAssets();
 checkIndexReferences();
@@ -5356,6 +5386,7 @@ checkScriptPacketPrintContracts();
 checkScriptSelectionRenderContracts();
 checkGuideContracts();
 checkPlayerPlaybookVisibilityContracts();
+checkWorkflowPersistenceContracts();
 checkFunctionShadows();
 
 if (process.exitCode) process.exit(process.exitCode);

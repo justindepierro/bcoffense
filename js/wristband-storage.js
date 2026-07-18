@@ -166,6 +166,27 @@ function finalizeWristbandSave(record) {
   markWristbandClean();
   discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
   updateWristbandSaveChrome();
+  if (typeof recordArtifactModified === "function") recordArtifactModified("wristband");
+}
+
+async function confirmWristbandHandoffPersistence(summary) {
+  const choice = await showChoice(
+    `<p>${escapeHtml(summary)}</p><p>This is currently a local recovery draft. Save it to the Wristband Library so Script and Call Sheet can load this exact version.</p>`,
+    {
+      title: "Save Wristband Destination?",
+      icon: "💾",
+      option1: "Save to Wristband Library",
+      option2: "Keep recovery draft",
+    },
+  );
+  if (choice === "option1") return saveWristband();
+  if (choice === "option2") {
+    showToast("Wristband kept as a local recovery draft. Use Save to add it to the Wristband Library.", {
+      type: "info",
+      duration: 4500,
+    });
+  }
+  return false;
 }
 
 async function confirmEmptyWristbandSave() {
@@ -203,8 +224,6 @@ async function saveWristband() {
     );
     storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
     finalizeWristbandSave(active);
-    // Record artifact modified timestamp (#38)
-    if (typeof recordArtifactModified === "function") recordArtifactModified("wristband");
     showToast(`"${active.title}" updated!`, { type: "success" });
   } catch (err) {
     console.error("saveWristband error:", err);

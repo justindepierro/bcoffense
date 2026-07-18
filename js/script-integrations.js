@@ -422,6 +422,11 @@ async function sendScriptToWristband() {
   ) {
     startClassicWristband();
   }
+  if (added > 0 && typeof confirmWristbandHandoffPersistence === "function") {
+    await confirmWristbandHandoffPersistence(
+      `Sent ${added} Script play${added === 1 ? "" : "s"} to the Wristband.`,
+    );
+  }
   showToast(
     `Sent ${added} Script play${added === 1 ? "" : "s"} to the Wristband${repeatedCount ? ` (${repeatedCount} repeat${repeatedCount === 1 ? "" : "s"} skipped)` : ""}.`,
     { type: "success", duration: 4000, actionLabel: "→ Wristband", action: () => showTab("wristband") },

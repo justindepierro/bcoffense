@@ -22,3 +22,10 @@ let scriptPlayRailCollapsed = true;
 // single add returns focus to the working script.
 let scriptLibraryPinned = false;
 let scriptToolsDrawerOpen = false;
+
+// A Script now tracks the saved library record it was loaded from. This makes
+// Save deterministic after imports: it updates that record instead of relying
+// on a name match (or accidentally creating a copy).
+let activeScriptSaveId = null;
+let activeScriptSaveTitle = "";
+let activeScriptSavedAt = "";

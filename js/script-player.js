@@ -771,6 +771,9 @@ function loadSavedScriptRecord(scriptData, opts = {}) {
     document.getElementById("scriptName").value = scriptData.name;
     document.getElementById("scriptDate").value = scriptData.date;
     script = safeDeepClone(scriptData.plays);
+    activeScriptSaveId = scriptData.id ?? null;
+    activeScriptSaveTitle = scriptData.name || "Practice Script";
+    activeScriptSavedAt = scriptData.savedAt || "";
 
     const hasPlays = script.some((play) => !play.isSeparator);
     const hasSeparator = script.some((play) => play.isSeparator);

@@ -81,6 +81,11 @@ async function sendGamePlanToWristbandCard() {
   showToast(`Created wristband card "${cardName}" with ${Math.min(flagged.length, cellsPerCard)} plays.`, {
     duration: 3500, type: "success",
   });
+  if (typeof confirmWristbandHandoffPersistence === "function") {
+    await confirmWristbandHandoffPersistence(
+      `Created wristband card "${cardName}" from ${Math.min(flagged.length, cellsPerCard)} Game Plan play${Math.min(flagged.length, cellsPerCard) === 1 ? "" : "s"}.`,
+    );
+  }
   if (typeof showTab === "function") showTab("wristband");
   // Offer to apply current wristband sort criteria so the new card reads top-down nicely.
   if (

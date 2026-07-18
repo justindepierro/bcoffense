@@ -1473,10 +1473,18 @@ function updateScriptArtifactStatus() {
     ? `${playCount} play${playCount !== 1 ? "s" : ""}${periodCount ? ` · ${periodCount} period${periodCount !== 1 ? "s" : ""}` : ""}`
     : "";
   if (scriptDirty) {
-    el.textContent = countLabel ? `● Unsaved · ${countLabel}` : "● Unsaved changes";
+    const libraryLabel = activeScriptSaveId
+      ? `Editing ${activeScriptSaveTitle || "saved script"}`
+      : "Not in Script Library";
+    el.textContent = countLabel
+      ? `● Unsaved · ${libraryLabel} · ${countLabel}`
+      : `● Unsaved · ${libraryLabel}`;
     el.className = "script-save-status dirty";
   } else {
-    el.textContent = countLabel ? `✓ Saved · ${countLabel}` : "✓ Saved";
+    const destination = activeScriptSaveId
+      ? `Saved to Script Library${activeScriptSaveTitle ? `: ${activeScriptSaveTitle}` : ""}`
+      : "Recovery draft saved locally";
+    el.textContent = countLabel ? `✓ ${destination} · ${countLabel}` : `✓ ${destination}`;
     el.className = "script-save-status clean";
   }
 }

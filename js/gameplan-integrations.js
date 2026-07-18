@@ -502,6 +502,9 @@ async function pushGamePlanToScript() {
       if (typeof showTab === "function") showTab("script");
     },
   });
+  if (pushed > 0 && typeof confirmScriptHandoffPersistence === "function") {
+    await confirmScriptHandoffPersistence(msg);
+  }
   if (pushed > 0 && typeof showTab === "function") showTab("script");
 }
 
@@ -601,6 +604,9 @@ async function pushGamePlanToWristband() {
     if (typeof renderWristband === "function") renderWristband();
     showToast("Wristband push undone", { type: "info", duration: 2000 });
   }, 8000);
+  if (added > 0 && typeof confirmWristbandHandoffPersistence === "function") {
+    await confirmWristbandHandoffPersistence(msg);
+  }
   if (added > 0 && typeof showTab === "function") showTab("wristband");
 }
 
@@ -655,6 +661,11 @@ async function createScriptFromGamePlan() {
   if (typeof markScriptDirty === "function") markScriptDirty();
   if (typeof scheduleScriptAutosave === "function") scheduleScriptAutosave();
   if (typeof renderScript === "function") renderScript();
+  if (pushed > 0 && typeof confirmScriptHandoffPersistence === "function") {
+    await confirmScriptHandoffPersistence(
+      `Created ${pushed} Script play${pushed !== 1 ? "s" : ""} from the Game Plan.`,
+    );
+  }
   showUndoToast(`Script created: ${pushed} play${pushed !== 1 ? "s" : ""} in ${populated.length} periods${skipped > 0 ? ` · ${skipped} skipped` : ""}`, () => {
     script.splice(0, script.length, ...preSnapshot);
     if (typeof markScriptDirty === "function") markScriptDirty();

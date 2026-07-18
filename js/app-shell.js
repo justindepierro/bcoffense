@@ -1047,6 +1047,8 @@ function updateSaveStatus(state) {
     el.textContent =
       state === "saved"
         ? "✓ Saved"
+        : state === "draft"
+          ? "✓ Draft saved"
         : state === "saving"
           ? "⏳ Saving…"
           : "● Unsaved";
@@ -1054,6 +1056,8 @@ function updateSaveStatus(state) {
   if (typeof window.setWorkspaceSyncStatus !== "function") return;
   if (state === "saved") {
     window.setWorkspaceSyncStatus("local", "saved", { label: "Saved locally" });
+  } else if (state === "draft") {
+    window.setWorkspaceSyncStatus("local", "saved", { label: "Recovery draft saved locally" });
   } else if (state === "saving") {
     window.setWorkspaceSyncStatus("local", "saving", { label: "Saving workspace..." });
   } else if (state === "unsaved") {

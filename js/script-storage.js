@@ -10,6 +10,44 @@ function getScriptWorkspaceCheckboxState() {
 let scriptAutosaveTimer = null;
 let scriptEditHistoryTimer = null;
 
+function resetActiveScriptIdentity() {
+  activeScriptSaveId = null;
+  activeScriptSaveTitle = "";
+  activeScriptSavedAt = "";
+}
+
+function finalizeScriptSave(record) {
+  if (record) {
+    activeScriptSaveId = record.id;
+    activeScriptSaveTitle = record.name || "Practice Script";
+    activeScriptSavedAt = record.savedAt || new Date().toISOString();
+  }
+  markScriptClean();
+  discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
+  if (typeof recordArtifactModified === "function") recordArtifactModified("script");
+  if (typeof updateScriptArtifactStatus === "function") updateScriptArtifactStatus();
+}
+
+async function confirmScriptHandoffPersistence(summary) {
+  const choice = await showChoice(
+    `<p>${escapeHtml(summary)}</p><p>This is currently a local recovery draft. Save it to the Script Library so it appears in Load Scripts and remains part of the workflow.</p>`,
+    {
+      title: "Save Script Destination?",
+      icon: "💾",
+      option1: "Save to Script Library",
+      option2: "Keep recovery draft",
+    },
+  );
+  if (choice === "option1") return saveScript();
+  if (choice === "option2") {
+    showToast("Script kept as a local recovery draft. Use Save to add it to the Script Library.", {
+      type: "info",
+      duration: 4500,
+    });
+  }
+  return false;
+}
+
 function getScriptWorkspaceState() {
   const wbSelect = document.getElementById("scriptWristbandSelect");
   const formationFilter = document.getElementById("scriptFilterFormation");
@@ -162,8 +200,11 @@ function scheduleScriptAutosave() {
         date: document.getElementById("scriptDate")?.value || "",
         plays: script,
         workspace: getScriptWorkspaceState(),
+        activeSaveId: activeScriptSaveId,
+        activeTitle: activeScriptSaveTitle,
+        activeSavedAt: activeScriptSavedAt,
       });
-      if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
+      if (typeof updateSaveStatus === "function") updateSaveStatus("draft");
     },
     {
       delay: AUTOSAVE_DEBOUNCE_MS,
@@ -216,6 +257,7 @@ function resetScriptForNewDraft() {
   if (dateEl) dateEl.value = new Date().toISOString().split("T")[0];
 
   ensureFirstPeriod();
+  resetActiveScriptIdentity();
   renderScript();
   renderAvailablePlays();
   markScriptClean();
@@ -295,6 +337,9 @@ async function checkScriptDraft() {
       const scriptDateInput = document.getElementById("scriptDate");
       if (draft.name && scriptNameInput) scriptNameInput.value = draft.name;
       if (draft.date && scriptDateInput) scriptDateInput.value = draft.date;
+      activeScriptSaveId = draft.activeSaveId ?? null;
+      activeScriptSaveTitle = draft.activeTitle || "";
+      activeScriptSavedAt = draft.activeSavedAt || "";
 
       script = draft.plays;
       restoreSavedScriptWorkspace(draft.workspace);
@@ -324,10 +369,37 @@ async function saveScript() {
     }
 
     const savedScripts = getSavedScripts();
-    const existing = savedScripts.find(
+    const active = savedScripts.find(
+      (s) => String(s.id) === String(activeScriptSaveId),
+    );
+    const existing = active || savedScripts.find(
       (s) => s.name.toLowerCase() === name.toLowerCase(),
     );
     if (existing) {
+      if (active) {
+        existing.name = name;
+        existing.date = date;
+        existing.plays = safeDeepClone(script);
+        existing.workspace = getScriptWorkspaceState();
+        existing.savedAt = new Date().toISOString();
+        if (typeof isSavedScriptPlayerVisible === "function"
+          ? isSavedScriptPlayerVisible(existing)
+          : Boolean(existing.playerVisible)) {
+          existing.playerPublishedAt = existing.savedAt;
+          if (typeof recordPlayerPublishStatus === "function") {
+            recordPlayerPublishStatus("scripts", {
+              updatedAt: existing.playerPublishedAt,
+              label: existing.name || "Practice script",
+              id: existing.id || "",
+            });
+          }
+        }
+        storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+        loadSavedScriptsList();
+        finalizeScriptSave(existing);
+        showToast(`✅ "${name}" updated in Script Library.`);
+        return true;
+      }
       const choice = await showChoice(
         `A script named "${existing.name}" already exists.`,
         {
@@ -357,8 +429,7 @@ async function saveScript() {
         }
         storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
         loadSavedScriptsList();
-        markScriptClean();
-        discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
+        finalizeScriptSave(existing);
         showToast(`✅ "${name}" updated!`);
         return true;
       }
@@ -383,10 +454,7 @@ async function saveScript() {
     savedScripts.push(scriptData);
     storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
     loadSavedScriptsList();
-    markScriptClean();
-    discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
-    // Record artifact modified timestamp (#38)
-    if (typeof recordArtifactModified === "function") recordArtifactModified("script");
+    finalizeScriptSave(scriptData);
     showToast(`✅ "${name}" saved!`);
     return true;
   } catch (err) {
@@ -410,6 +478,10 @@ async function deleteSavedScript(id) {
   if (!ok) return;
   const filtered = savedScripts.filter((savedScript) => savedScript.id !== id);
   storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, filtered);
+  if (String(activeScriptSaveId) === String(id)) {
+    resetActiveScriptIdentity();
+    markScriptDirty();
+  }
   loadSavedScriptsList();
   showToast(`"${target.name}" deleted`);
 }
@@ -424,7 +496,14 @@ async function renameSavedScript(id) {
   });
   if (newName && newName.trim()) {
     savedScript.name = newName.trim();
+    savedScript.savedAt = new Date().toISOString();
     storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+    if (String(activeScriptSaveId) === String(id)) {
+      activeScriptSaveTitle = savedScript.name;
+      activeScriptSavedAt = savedScript.savedAt;
+      if (typeof updateScriptArtifactStatus === "function") updateScriptArtifactStatus();
+    }
+    if (typeof recordArtifactModified === "function") recordArtifactModified("script");
     loadSavedScriptsList();
     showToast(`Renamed to "${savedScript.name}"`);
   }
@@ -459,8 +538,7 @@ async function overwriteSavedScript(id) {
   }
   storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
   loadSavedScriptsList();
-  markScriptClean();
-  discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
+  finalizeScriptSave(savedScript);
   showToast(`"${savedScript.name}" updated!`);
 }
 
