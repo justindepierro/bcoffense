@@ -121,9 +121,9 @@ used, regardless of renames, edits, or copied script rows.
   size, upload time, uploader, and optional source-file label.
 - [x] Write binaries under versioned R2 paths and update the manifest only
   after the object write verifies successfully.
-- [ ] Apply authorization server-side: players can read player-safe approved
+- [x] Apply authorization server-side: players can read player-safe approved
   media; coaches/admins can write; admin recovery can inspect or migrate.
-- [ ] Return cache-safe versioned URLs/ETags so a replacement propagates
+- [x] Return cache-safe version headers/ETags so a replacement propagates
   predictably without a hard refresh.
 
 **Exit criterion:** an R2 object and its manifest cannot disagree in a way
