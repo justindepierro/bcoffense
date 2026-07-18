@@ -3,6 +3,7 @@
 (function () {
   const MEDIA_INVENTORY_SAMPLE_LIMIT = 10;
   const MEDIA_INVENTORY_BLOB_CONCURRENCY = 6;
+  let latestMediaInventoryReport = null;
 
   function _miEscape(value) {
     if (typeof escapeHtml === "function") return escapeHtml(value);
@@ -484,6 +485,9 @@
           </div>
           ${_miRenderPlayRows(migrationRows, "Every player-visible call has a canonical cloud diagram object.")}
           ${migrationRows.length > MEDIA_INVENTORY_SAMPLE_LIMIT ? `<div class="pb-health-more">Showing ${MEDIA_INVENTORY_SAMPLE_LIMIT} of ${migrationRows.length} migration items.</div>` : ""}
+          ${(typeof isAdminUser === "function" && isAdminUser() && (reconciliation.counts.legacy || 0))
+            ? `<div class="pb-health-actions"><button type="button" class="btn btn-sm" data-action="migrateRecoverableCloudDiagrams">Migrate ${reconciliation.counts.legacy} recoverable diagrams</button></div>`
+            : ""}
         ` : ""}
       </section>
       <section class="pb-health-section">
@@ -578,6 +582,7 @@
     if (typeof trapFocus === "function") trapFocus(overlay);
     try {
       const report = await buildMediaInventoryReport();
+      latestMediaInventoryReport = report;
       const body = document.getElementById("mediaInventoryBody");
       if (body) body.innerHTML = renderMediaInventoryReport(report);
     } catch (err) {
@@ -585,6 +590,37 @@
       if (body) {
         body.innerHTML = `<div class="pb-health-empty">Media inventory could not be checked: ${_miEscape(err?.message || "Unknown error")}</div>`;
       }
+    }
+  };
+
+  window.migrateRecoverableCloudDiagrams = async function () {
+    if (typeof isAdminUser === "function" && !isAdminUser()) return;
+    const recoverable = _miArray(latestMediaInventoryReport?.reconciliation?.rows)
+      .filter((row) => row.status === "legacy")
+      .map((row) => ({ mediaId: row.mediaId, legacyKeys: _miPlayImageSigs(row.play) }))
+      .filter((row) => row.mediaId && row.legacyKeys.length);
+    if (!recoverable.length) {
+      if (typeof showToast === "function") showToast("No recoverable legacy diagrams are waiting to migrate.", { type: "info" });
+      return;
+    }
+    try {
+      const response = await fetch("/images/migrate-legacy", {
+        method: "POST", credentials: "same-origin", cache: "no-store",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: recoverable }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok) throw new Error(data?.error || "Legacy diagram migration could not be started.");
+      const migrated = Number(data?.counts?.migrated || 0);
+      const failed = Number(data?.counts?.failed || 0) + Number(data?.counts?.["legacy-not-found"] || 0);
+      if (typeof showToast === "function") {
+        showToast(
+          failed ? `${migrated} diagrams migrated; ${failed} need review.` : `${migrated} legacy diagrams migrated to Cloudflare.`,
+          { type: failed ? "warning" : "success" },
+        );
+      }
+      await window.openMediaInventoryReport();
+    } catch (err) {
+      if (typeof showToast === "function") showToast(err?.message || "Legacy diagram migration failed.", { type: "error" });
     }
   };
 

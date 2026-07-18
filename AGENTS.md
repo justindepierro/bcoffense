@@ -378,6 +378,7 @@ window.isAdminUser
 window.logoutAuth
 window.openCloudSyncModal
 window.openMediaInventoryReport
+window.migrateRecoverableCloudDiagrams
 window.openSignalComponent
 window.openSignalComponentDetails
 window.openSignalClipModal

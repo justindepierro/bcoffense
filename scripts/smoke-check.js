@@ -4240,6 +4240,7 @@ function checkPlayerDiagramReadinessContracts() {
   }
   const imageInventoryRoute = read("functions/images/inventory.js");
   const cloudMediaInventoryRoute = read("functions/media/inventory.js");
+  const legacyDiagramMigrationRoute = read("functions/images/migrate-legacy.js");
   if (
     !/CANONICAL_PREFIX = "media\/plays\/"/.test(imageInventoryRoute) ||
     !/LEGACY_PREFIX = "images\/"/.test(imageInventoryRoute) ||
@@ -4259,6 +4260,17 @@ function checkPlayerDiagramReadinessContracts() {
     !/Cloud Video Recovery/.test(mediaInventory)
   ) {
     fail("complete Cloudflare media inventory contract is incomplete");
+  }
+  if (
+    !/session\.role !== "admin"/.test(legacyDiagramMigrationRoute) ||
+    !/const MAX_ITEMS = 100/.test(legacyDiagramMigrationRoute) ||
+    !/bucket\.get\(`images\/\$\{legacyKey\}`\)/.test(legacyDiagramMigrationRoute) ||
+    !/imageVersionedR2Key\(mediaId, version\)/.test(legacyDiagramMigrationRoute) ||
+    !/writeImageManifest\(context\.env, mediaId/.test(legacyDiagramMigrationRoute) ||
+    !/migrateRecoverableCloudDiagrams/.test(mediaInventory) ||
+    !/Migrate \$\{reconciliation\.counts\.legacy\} recoverable diagrams/.test(mediaInventory)
+  ) {
+    fail("legacy diagram migration contract is incomplete");
   }
 
   if (
