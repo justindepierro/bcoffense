@@ -4154,6 +4154,7 @@ function checkWorkspaceSyncContracts() {
 function checkPlayerDiagramReadinessContracts() {
   const manifest = read("functions/images/manifest.js");
   const batchManifest = read("functions/images/batch-manifest.js");
+  const imageMedia = read("functions/_lib/image-media.js");
   const playImages = read("js/play-images.js");
   const mediaInventory = read("js/media-inventory.js");
   const html = read("index.html");
@@ -4164,10 +4165,11 @@ function checkPlayerDiagramReadinessContracts() {
   const playbookCss = read("css/playbook.css");
 
   if (
-    !/bucket\.head\(r2Key\(sig\)\)/.test(manifest) ||
-    !/published:\s*false/.test(manifest) ||
-    !/published:\s*true/.test(manifest) ||
-    !/contentType:\s*object\.httpMetadata\?\.contentType/.test(manifest)
+    !/resolveImageManifest\(context\.env, bucket, sig\)/.test(manifest) ||
+    !/publicImageManifest\(sig, resolved\.manifest/.test(manifest) ||
+    !/published:\s*false/.test(imageMedia) ||
+    !/published:\s*true/.test(imageMedia) ||
+    !/version: manifest\.version/.test(imageMedia)
   ) {
     fail("remote image manifest endpoint is incomplete");
   }
@@ -4175,8 +4177,8 @@ function checkPlayerDiagramReadinessContracts() {
   if (
     !/POST \/images\/batch-manifest/.test(batchManifest) ||
     !/const MAX_BATCH_SIGS = 100/.test(batchManifest) ||
-    !/bucket\.head\(r2Key\(sig\)\)/.test(batchManifest) ||
-    !/manifests\[sig\] = publicImageStatus\(sig, object\)/.test(batchManifest) ||
+    !/resolveImageManifest\(context\.env, bucket, sig\)/.test(batchManifest) ||
+    !/manifests\[sig\] = publicImageManifest\(sig, resolved\.manifest/.test(batchManifest) ||
     !/Use POST with a sigs array/.test(batchManifest)
   ) {
     fail("remote image batch manifest endpoint is incomplete");

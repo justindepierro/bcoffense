@@ -115,11 +115,11 @@ used, regardless of renames, edits, or copied script rows.
 
 ### Phase 2 — server manifest and versioned R2 storage
 
-- [ ] Add authenticated media-manifest routes for read, create/replace,
+- [x] Add authenticated media-manifest routes for read, create/replace,
   metadata-only status, and staff deletion.
-- [ ] Store a manifest record with current versions, checksum, content type,
+- [x] Store a manifest record with current versions, checksum, content type,
   size, upload time, uploader, and optional source-file label.
-- [ ] Write binaries under versioned R2 paths and update the manifest only
+- [x] Write binaries under versioned R2 paths and update the manifest only
   after the object write verifies successfully.
 - [ ] Apply authorization server-side: players can read player-safe approved
   media; coaches/admins can write; admin recovery can inspect or migrate.
