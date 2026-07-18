@@ -4439,6 +4439,36 @@ body[data-auth-role="player"] #script .script-tools-drawer {
   display: none !important;
 }
 
+/* Player practice keeps its title and live counts in one calm summary row.
+   The coach grid uses baseline alignment for dense controls, which pulled the
+   player chips upward into the script-picker heading on wide screens. */
+@media (min-width: 641px) {
+  body[data-auth-role="player"] #script .script-section-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 2px 2px 10px;
+  }
+
+  body[data-auth-role="player"] #script .script-section-title {
+    flex: 0 0 auto;
+    min-height: 34px;
+    align-items: center;
+  }
+
+  body[data-auth-role="player"] #script .script-section-head .script-stats-bar {
+    flex: 1 1 auto;
+    align-items: center;
+    min-height: 34px;
+    margin: 0;
+  }
+
+  body[data-auth-role="player"] #script .script-section-head .script-stats-bar .stat-item {
+    min-height: 32px;
+    padding: 3px 8px;
+  }
+}
+
 /* Player screen mobile compactness — reduce header real estate */
 @media (max-width: 640px) {
   /* Hide the verbose description paragraph; the script cards speak for themselves */
