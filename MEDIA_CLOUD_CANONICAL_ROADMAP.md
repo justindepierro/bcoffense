@@ -135,12 +135,12 @@ that leaves a player without the last known-good media.
   optimistically show `Saving…`, and start upload immediately.
 - [x] Diagram attach flow now saves locally first and uploads automatically.
 - [x] Video clips retain a prepared local copy and retry automatically after reconnect.
-- [ ] On success, update local cache from the returned canonical manifest and
+- [x] On success, update local cache from the returned canonical manifest and
   clear the queue item.
 - [x] On offline/network failure, retain the compressed file and queue item,
   show `Saving when online`, and retry on reconnect, app launch, and bounded
   backoff intervals.
-- [ ] Detect duplicate retries by checksum/idempotency key so reconnects never
+- [x] Detect duplicate retries by checksum/idempotency key so reconnects never
   create duplicate versions.
 - [x] Surface only meaningful failures in the workspace sync dock: auth,
   invalid file, quota, retry exhausted, or server rejection.

@@ -64,8 +64,17 @@ export async function onRequestPut(context) {
   if (!body.byteLength) return authJson({ ok: false, error: "Empty image body." }, { status: 400 });
   if (body.byteLength > MAX_IMAGE_BYTES) return authJson({ ok: false, error: "Image exceeds 8 MB limit." }, { status: 413 });
 
-  const version = crypto.randomUUID();
   const checksum = await sha256Hex(body);
+  const idempotencyKey = (context.request.headers.get("X-BC-Idempotency-Key") || "").trim();
+  if (idempotencyKey && idempotencyKey !== checksum) {
+    return authJson({ ok: false, error: "Diagram upload checksum did not match its idempotency key." }, { status: 400 });
+  }
+  const existing = await resolveImageManifest(context.env, bucket, sig);
+  if (!existing.legacy && existing.manifest?.checksum === checksum) {
+    return authJson(publicImageManifest(sig, existing.manifest, { idempotent: true }));
+  }
+
+  const version = crypto.randomUUID();
   const r2key = imageVersionedR2Key(sig, version);
   const uploadedAt = new Date().toISOString();
   const object = await bucket.put(r2key, body, {

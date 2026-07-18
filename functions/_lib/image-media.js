@@ -63,6 +63,7 @@ export function publicImageManifest(mediaId, manifest, opts = {}) {
     uploadedAt: manifest.uploadedAt || "",
     uploadedBy: manifest.uploadedBy || "",
     legacy: Boolean(opts.legacy),
+    idempotent: Boolean(opts.idempotent),
   };
 }
 

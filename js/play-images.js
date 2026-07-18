@@ -556,6 +556,7 @@
   }
 
   async function _putRemoteImage(identityKey, blob) {
+    const idempotencyKey = await _blobChecksum(blob);
     const response = await fetch(
       `/images/file?sig=${encodeURIComponent(identityKey)}`,
       {
@@ -565,6 +566,7 @@
           Accept: "application/json",
           "X-BC-Auth-Mode": "json",
           "Content-Type": blob.type || "image/jpeg",
+          "X-BC-Idempotency-Key": idempotencyKey,
         },
         body: blob,
       },
@@ -577,7 +579,33 @@
       };
     }
     const manifest = await response.json().catch(() => null);
+    if (!manifest?.ok || !manifest.published || !manifest.version) {
+      return {
+        ok: false,
+        status: response.status,
+        error: "Diagram upload did not return a valid cloud receipt.",
+      };
+    }
     return { ok: true, status: response.status, manifest };
+  }
+
+  async function _blobChecksum(blob) {
+    if (!blob || typeof crypto === "undefined" || !crypto.subtle) return "";
+    const bytes = await blob.arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    return [...new Uint8Array(digest)]
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  function _applyRemoteManifest(identityKey, manifest) {
+    if (!identityKey || !manifest) return;
+    _remoteManifestCache.set(identityKey, _remoteManifestResult(identityKey, manifest));
+  }
+
+  function _isRetryableUploadFailure(result) {
+    const status = Number(result?.status || 0);
+    return !status || status === 408 || status === 425 || status === 429 || status >= 500;
   }
 
   function _readDiagramUploadQueue() {
@@ -614,21 +642,34 @@
     const entries = _readDiagramUploadQueue();
     if (!entries.length || !_remoteAvailable()) return { pushed: 0, pending: entries.length };
     let pushed = 0;
+    let terminalFailure = false;
     for (const entry of entries) {
       const blob = await get(entry.localSig);
       if (!blob) continue;
       try {
-        const result = await _putRemoteImage(entry.identityKey, blob);
-        if (!result.ok) throw new Error(result.error || "Cloud upload failed.");
+        const playerBlob = await _playerPublishBlob(blob);
+        const result = await _putRemoteImage(entry.identityKey, playerBlob);
+        if (!result.ok) {
+          if (_isRetryableUploadFailure(result)) throw new Error(result.error || "Cloud upload failed.");
+          _removeQueuedDiagramUpload(entry.localSig);
+          terminalFailure = true;
+          if (typeof window.failWorkspaceSyncJob === "function") {
+            window.failWorkspaceSyncJob("media:diagram-auto-upload", new Error(result.error || "Diagram upload needs attention"), {
+              label: "Diagram upload needs attention",
+            });
+          }
+          continue;
+        }
         _removeQueuedDiagramUpload(entry.localSig);
-        _remoteManifestCache.delete(entry.identityKey);
+        await set(entry.identityKey, playerBlob);
+        _applyRemoteManifest(entry.identityKey, result.manifest);
         pushed += 1;
       } catch (err) {
         _queueDiagramUpload(entry.localSig, entry.identityKey, err?.message || err);
         break;
       }
     }
-    if (!_readDiagramUploadQueue().length && typeof window.completeWorkspaceSyncJob === "function") {
+    if (!terminalFailure && !_readDiagramUploadQueue().length && typeof window.completeWorkspaceSyncJob === "function") {
       window.completeWorkspaceSyncJob("media:diagram-auto-upload", { label: "Diagram saved for players" });
     }
     return { pushed, pending: _readDiagramUploadQueue().length };
@@ -699,6 +740,9 @@
           size: Number(data?.size || 0) || 0,
           contentType: data?.contentType || "",
           uploadedAt: data?.uploadedAt || "",
+          version: data?.version || "",
+          checksum: data?.checksum || "",
+          uploadedBy: data?.uploadedBy || "",
         };
         _remoteManifestCache.set(identityKey, result);
         if (result.published) return result;
@@ -816,9 +860,17 @@
       return { ok: false, skipped: true, error: "This play does not have a stable cloud image key." };
     }
     try {
-      const result = await _putRemoteImage(identityKey, await _playerPublishBlob(blob));
-      _removeQueuedDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey);
-      _remoteManifestCache.delete(identityKey);
+      const playerBlob = await _playerPublishBlob(blob);
+      const result = await _putRemoteImage(identityKey, playerBlob);
+      if (!result.ok && _isRetryableUploadFailure(result)) {
+        _queueDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey, identityKey, result.error || "Network unavailable");
+        return { ok: true, queued: true, error: result.error || "Saving when online" };
+      }
+      if (result.ok) {
+        _removeQueuedDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey);
+        await set(identityKey, playerBlob);
+        _applyRemoteManifest(identityKey, result.manifest);
+      }
       if (result.ok && typeof window.recordPlayerPublishStatus === "function") {
         window.recordPlayerPublishStatus("diagrams", {
           label: "Play diagram uploaded to player devices",
@@ -942,8 +994,11 @@
           return;
         }
         result.attempted += 1;
-        const uploaded = await _putRemoteImage(identityKey, await _playerPublishBlob(blob));
+        const playerBlob = await _playerPublishBlob(blob);
+        const uploaded = await _putRemoteImage(identityKey, playerBlob);
         if (uploaded.ok) {
+          await set(identityKey, playerBlob);
+          _applyRemoteManifest(identityKey, uploaded.manifest);
           result.pushed += 1;
         } else {
           result.failed += 1;

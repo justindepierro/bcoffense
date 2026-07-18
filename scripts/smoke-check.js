@@ -1570,11 +1570,22 @@ function checkPlayPresentationContracts() {
     !/const identityKeys = _remoteIdentityKeysForPlay\(play\)/.test(playImages) ||
     !/_isSourceIdentityKey\(localSig\)/.test(playImages) ||
     !/"X-BC-Auth-Mode": "json"/.test(playImages) ||
+    !/"X-BC-Idempotency-Key": idempotencyKey/.test(playImages) ||
+    !/function _applyRemoteManifest\(identityKey, manifest\)/.test(playImages) ||
+    !/function _isRetryableUploadFailure\(result\)/.test(playImages) ||
     !/credentials: "same-origin"/.test(playImages) ||
     !/const result = \{[\s\S]*pushed: 0,[\s\S]*failed: 0,[\s\S]*errors: \[\]/.test(playImages) ||
     !/cloud upload failed/.test(playbookEditor)
   ) {
     fail("play diagram cloud sync diagnostics are incomplete");
+  }
+  const imageRoute = read("functions/images/file.js");
+  if (
+    !/X-BC-Idempotency-Key/.test(imageRoute) ||
+    !/existing\.manifest\?\.checksum === checksum/.test(imageRoute) ||
+    !/idempotent: true/.test(imageRoute)
+  ) {
+    fail("diagram upload idempotency contract is incomplete");
   }
   if (
     !/positionLocked:\s*false/.test(presenter) ||
