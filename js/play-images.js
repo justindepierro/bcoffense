@@ -1403,6 +1403,14 @@
     return allKeys.length;
   }
 
+  async function prefetchForPlays(playList) {
+    const list = (Array.isArray(playList) ? playList : []).filter((play) => play && !play.isSeparator);
+    await _withConcurrency(list, 3, async (play) => {
+      const remote = await checkRemoteForPlay(play);
+      if (remote.published) await _fetchRemoteForPlay(play);
+    });
+  }
+
   function _emitChange(sig) {
     try {
       window.dispatchEvent(new CustomEvent("play-images-changed", { detail: { sig } }));
@@ -2009,6 +2017,7 @@
     buildSyncPlan,
     buildPlayerMediaPublishReport,
     prefetchAll,
+    prefetchForPlays,
     compress,
     describeCompression,
     stats,

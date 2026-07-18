@@ -161,7 +161,7 @@ automatically or remains visibly queued until it does.
   swap only after the new object is ready.
 - [ ] Give every loading state a precise meaning: checking, downloading,
   cached offline, saving when online, unavailable, and load error.
-- [ ] Prefetch the current practice's manifest and diagrams after a player
+- [x] Prefetch the current practice's manifest and diagrams after a player
   opens it, with bounded concurrency and no full-library download.
 - [ ] Add explicit cache-management controls that clear only local copies, not
   team assets.

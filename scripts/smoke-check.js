@@ -1846,6 +1846,8 @@ function checkScriptPlayerPublishingContracts() {
     !/playerVisible:\s*false/.test(scriptStorage) ||
     !/function renderPlayerScriptLauncher\(\)/.test(scriptPlayer) ||
     !/function renderPlayerLoadedScriptBar\(\)/.test(scriptPlayer) ||
+    !/prefetchForPlays\(script\)/.test(scriptPlayer) ||
+    !/async function prefetchForPlays\(playList\)/.test(read("js/play-images.js")) ||
     !/function tracePlayerScriptAction\(/.test(scriptPlayer) ||
     !/function getDefaultPlayerPublishedScript\(/.test(scriptPlayer) ||
     !/function loadPublishedPlayerScript\(id,\s*opts = \{\}\)/.test(

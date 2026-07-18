@@ -680,6 +680,10 @@ function loadSavedScriptsList() {
     loadFullDayScriptList();
     renderPlayerScriptLauncher();
     renderPlayerLoadedScriptBar();
+    if (typeof getCurrentAuthUser === "function" && getCurrentAuthUser()?.role === "player" &&
+      window.playImages && typeof window.playImages.prefetchForPlays === "function") {
+      setTimeout(() => window.playImages.prefetchForPlays(script).catch(() => {}), 250);
+    }
     return;
   }
 
