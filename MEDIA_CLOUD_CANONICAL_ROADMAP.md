@@ -152,8 +152,10 @@ automatically or remains visibly queued until it does.
 
 ### Phase 4 — cloud-first coach and player loading
 
-- [ ] Resolve media by `mediaId` and manifest version first on every device.
-- [ ] Use IndexedDB only after a cloud/cache read succeeds; cache downloaded
+- [x] Resolve diagrams by `mediaId` and cloud manifest first whenever online,
+  with legacy reads retained during migration.
+- [x] Use IndexedDB as the offline fallback cache after a cloud read succeeds;
+  a live cloud manifest wins over an older local diagram.
   media for offline presentation.
 - [ ] Keep the old version on screen while a newer version downloads, then
   swap only after the new object is ready.
