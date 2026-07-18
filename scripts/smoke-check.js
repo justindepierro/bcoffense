@@ -3913,7 +3913,7 @@ function checkWorkspaceSyncContracts() {
 
   [
     ".workspace-sync-dock",
-    "top: max(10px, env(safe-area-inset-top, 10px))",
+    "bottom: max(12px, env(safe-area-inset-bottom, 12px))",
     ".workspace-sync-dock__retry",
     ".workspace-sync-dock--saving",
     ".workspace-sync-dock--syncing",

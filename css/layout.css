@@ -172,8 +172,10 @@ body[data-auth-role="player"] .save-status {
 
 .workspace-sync-dock {
   position: fixed;
-  top: max(10px, env(safe-area-inset-top, 10px));
+  /* Status should be persistent without competing with the global header. */
+  top: auto;
   right: max(12px, env(safe-area-inset-right, 12px));
+  bottom: max(12px, env(safe-area-inset-bottom, 12px));
   z-index: var(--z-toast);
   display: inline-flex;
   align-items: center;
@@ -303,6 +305,15 @@ body[data-auth-role="player"] .save-status {
 
 body[data-auth-role="player"] .workspace-sync-dock {
   display: none;
+}
+
+/* Keep the coach-facing status clear of the compact mobile command dock. */
+@media (max-width: 640px),
+  (pointer: coarse) and (max-width: 820px),
+  (pointer: coarse) and (max-height: 640px) {
+  body.is-mobile-screen .workspace-sync-dock {
+    bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 @keyframes workspaceSyncSpin {

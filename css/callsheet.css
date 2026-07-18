@@ -520,6 +520,18 @@ body.shell-phone #callsheet .cs-toggle {
   min-height: 44px;
 }
 
+/* The compact page toggle has two short, known labels. Let them use the full
+   half-width instead of wrapping character-by-character on narrow phones. */
+body.shell-phone #callsheet .cs-toggle-group.page-toggle .cs-toggle {
+  min-width: 0;
+  width: 50%;
+  padding-inline: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
+}
+
 body.shell-phone #callsheet .orientation-toggle {
   display: none;
 }
