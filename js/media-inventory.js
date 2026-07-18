@@ -513,6 +513,10 @@
     const cloudCounts = cloud.counts || {};
     const reconciliation = report.reconciliation || { counts: {}, rows: [] };
     const legacyRecovery = report.legacyRecovery || { automatic: [], ambiguous: [], unmatchedSourceCount: 0 };
+    const exactRecoveryPayload = JSON.stringify(_miArray(legacyRecovery.automatic).map((row) => ({
+      mediaId: row.mediaId,
+      legacyKeys: [row.sourceKey],
+    })));
     const migrationRows = _miArray(reconciliation.rows).filter((row) => row.status !== "canonical");
     const cloudSummary = cloud.available
       ? `${cloudCounts.total || 0} objects · ${cloudCounts.canonical || 0} canonical · ${(cloudCounts["legacy-canonical-key"] || 0) + (cloudCounts["legacy-content"] || 0) + (cloudCounts["legacy-signature"] || 0)} legacy`
@@ -567,7 +571,7 @@
           ${_miRenderPlayRows(legacyRecovery.automatic, "No additional exact legacy matches are waiting to be promoted.")}
           ${legacyRecovery.automatic.length > MEDIA_INVENTORY_SAMPLE_LIMIT ? `<div class="pb-health-more">Showing ${MEDIA_INVENTORY_SAMPLE_LIMIT} of ${legacyRecovery.automatic.length} exact recovery candidates.</div>` : ""}
           ${(typeof isAdminUser === "function" && isAdminUser() && legacyRecovery.automatic.length)
-            ? `<div class="pb-health-actions"><button type="button" class="btn btn-sm" data-action="migrateExactLegacyCloudDiagrams">Promote ${legacyRecovery.automatic.length} newest exact matches</button></div>`
+            ? `<div class="pb-health-actions"><button type="button" class="btn btn-sm" data-action="migrateExactLegacyCloudDiagrams" data-arg="${_miEscape(exactRecoveryPayload)}">Promote ${legacyRecovery.automatic.length} newest exact matches</button></div>`
             : ""}
         ` : ""}
       </section>
@@ -705,11 +709,22 @@
     }
   };
 
-  window.migrateExactLegacyCloudDiagrams = async function () {
+  window.migrateExactLegacyCloudDiagrams = async function (serializedCandidates) {
     if (typeof isAdminUser === "function" && !isAdminUser()) return;
-    const candidates = _miArray(latestMediaInventoryReport?.legacyRecovery?.automatic)
-      .map((row) => ({ mediaId: row.mediaId, legacyKeys: [row.sourceKey] }))
-      .filter((row) => row.mediaId && row.legacyKeys[0]);
+    let candidates = [];
+    try {
+      const supplied = typeof serializedCandidates === "string" ? JSON.parse(serializedCandidates) : [];
+      candidates = _miArray(supplied)
+        .map((row) => ({ mediaId: String(row?.mediaId || "").trim(), legacyKeys: _miArray(row?.legacyKeys).map((key) => String(key || "").trim()).filter(Boolean).slice(0, 1) }))
+        .filter((row) => row.mediaId && row.legacyKeys.length);
+    } catch (_err) {
+      candidates = [];
+    }
+    if (!candidates.length) {
+      candidates = _miArray(latestMediaInventoryReport?.legacyRecovery?.automatic)
+        .map((row) => ({ mediaId: String(row?.mediaId || "").trim(), legacyKeys: [String(row?.sourceKey || "").trim()].filter(Boolean) }))
+        .filter((row) => row.mediaId && row.legacyKeys.length);
+    }
     if (!candidates.length) {
       if (typeof showToast === "function") showToast("No exact legacy diagram matches are waiting to be promoted.", { type: "info" });
       return;
