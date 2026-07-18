@@ -14691,6 +14691,71 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     border-radius: var(--radius-md);
   }
 
+  /* Desktop run view: squeeze published/current practice context into utility
+     rows so the play list owns the screen. Full card detail stays on phone. */
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-launcher {
+    padding: 4px;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-launcher-header {
+    display: none;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card {
+    min-height: 50px;
+    padding: 4px 8px;
+    align-items: center;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__body,
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-now__body {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__eyebrow,
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-now__eyebrow {
+    display: none;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__title-row {
+    flex: 0 1 auto;
+    margin: 0;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__title,
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-now__title {
+    white-space: nowrap;
+    font-size: var(--font-size-sm);
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__meta,
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-now__meta {
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__quiz-progress {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__actions .btn,
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-now__actions .btn {
+    min-height: 28px;
+    padding: 3px 8px;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-now {
+    min-height: 48px;
+    padding: 5px 8px;
+  }
+
   /* Final player-only override: shared coach stat rules are declared earlier
      and give these chips a 44px control height. Keep them compact so the
      practice-picker begins below, never through, the Script summary row. */
