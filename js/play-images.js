@@ -478,8 +478,11 @@
   }
 
   // ── Remote (R2-backed) image helpers ───────────────────────────────────
-  // Images are pushed to R2 under the content-derived identity key so all
-  // auth roles (including players) can fetch them cross-device.
+  // Images are pushed to R2 under the stable playbook source ID so all auth
+  // roles (including players) resolve the exact diagram selected by a coach.
+  // Content-derived keys remain read-only fallbacks for diagrams published by
+  // earlier builds; they are not safe as a canonical key because two script
+  // copies can normalize to the same content identity.
 
   function _remoteAvailable() {
     return (
@@ -490,6 +493,21 @@
   }
 
   function _remoteIdentityKey(play) {
+    const sourcePlay = _findSourcePlay(play) || play;
+    const sourceId = typeof getStablePlaySourceId === "function"
+      ? getStablePlaySourceId(sourcePlay)
+      : [
+        sourcePlay?.playbookId,
+        sourcePlay?.sourcePlayId,
+        sourcePlay?.originalPlayId,
+        sourcePlay?.id,
+      ]
+        .map(_normalizeSig)
+        .find(Boolean);
+    return sourceId ? `play:${sourceId}` : "";
+  }
+
+  function _legacyContentRemoteIdentityKey(play) {
     return _sourceIdentityKeyForPlay(play);
   }
 
@@ -503,6 +521,7 @@
   function _remoteIdentityKeysForPlay(play) {
     return [
       _remoteIdentityKey(play),
+      _legacyContentRemoteIdentityKey(play),
       _legacyRemoteIdentityKey(play),
     ]
       .map(_normalizeSig)
@@ -812,21 +831,20 @@
       });
     }
 
-    // Build a reverse map: localSig → full identity key for R2.
-    // Old short field-derived keys are only migrated when they map to one play.
+    // Build a reverse map: localSig → canonical stable source key for R2.
+    // A content-derived local key can only be a fallback when it no longer maps
+    // to a current play. Matching plays always migrate to their source ID.
     const identityKeyFor = (localSig) => {
-      if (_isSourceIdentityKey(localSig)) return localSig;
-      // Otherwise find a matching play and derive the identity key
       if (Array.isArray(playsArray)) {
         for (const play of playsArray) {
-          const sigs = displaySignaturesForPlay(play);
+          const sigs = [...displaySignaturesForPlay(play), ...signaturesForPlay(play)];
           if (sigs.includes(localSig)) {
             const ik = _remoteIdentityKey(play);
             if (ik) return ik;
           }
         }
       }
-      return "";
+      return _isSourceIdentityKey(localSig) ? localSig : "";
     };
 
     await _withConcurrency(scopedKeys, 2, async (localSig) => {

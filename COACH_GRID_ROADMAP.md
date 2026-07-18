@@ -45,12 +45,46 @@ feature's filter fields, selection model, or add action.
 | Signals | Migrated | Coach collection and editor; player clip viewing is separate. |
 | Game Week Dashboard | Migrated | Desktop active-opponent command surface; player home, mobile, and dashboard summaries remain separate. |
 
+## Verification checklist
+
+The migration is complete. The checks below distinguish verified shared-system
+behavior from scenario coverage that still needs a deliberately exercised
+state, so this roadmap cannot accidentally imply that a static CSS review is a
+full workflow test.
+
+### Completed system checks
+
+- [x] Shared Coach Grid tokens, command-strip primitive, library primitive,
+  migrated roots, cache version, and scroll ownership are covered by
+  `node scripts/smoke-check.js`.
+- [x] Desktop coach review completed for Playbook, Practice Script, Call Sheet,
+  Game Plan, Wristband Maker, Opponent Scout, Signals, and Game Week
+  Dashboard: each loaded without runtime errors or horizontal overflow.
+- [x] Representative layout-family review completed: table (Playbook), rail
+  (Practice Script), board (Game Plan and Call Sheet), card/editor (Signals),
+  and command center (Game Week Dashboard).
+- [x] Practice Script library was checked at a 1024px laptop width with a
+  no-match search. Its empty state keeps the search context, provides clear
+  and reset actions, and does not create overflow.
+- [x] Player portal remains an explicit exception; player navigation and
+  player-facing practice context use their own readability and touch rules.
+
+### Scenario checks still worth exercising with live team data
+
+- [ ] Wristband library: long result set, no matches, active advanced filters,
+  selected rows, and narrow laptop width.
+- [ ] Practice Script library: active advanced filters and selected-row batch
+  actions at narrow laptop width.
+- [ ] Game Plan library: confirm its drag/drop library can retain the same
+  find/refine/results order without compromising board interactions.
+- [ ] Call Sheet picker: confirm the compact modal remains intentionally
+  distinct from a rail when a large playbook is loaded.
+
 ## Next migration waves
 
 ### Wave 1 — validate the shared library system
 
-- Verify Wristband and Practice Script with a long search result, no matches,
-  active advanced filters, selected rows, and narrow laptop widths.
+- Finish the unchecked scenario tests above for Wristband and Practice Script.
 - Audit Game Plan's library against the same four-band anatomy. Migrate only if
   it cannot be expressed with the shared primitives without altering drag/drop.
 - Keep Call Sheet's modal picker compact; it is not a rail and should not copy

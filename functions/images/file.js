@@ -4,8 +4,9 @@
 //   DELETE /images/file?sig=<identityKey>   (admin/coach only)
 //
 // Images are stored in the CLIPS R2 bucket under the key `images/{sig}`.
-// The sig must be the content-derived identity key (getPlayIdentityKey "tag"),
-// NOT the device-local UUID, ensuring cross-device compatibility.
+// The sig is the stable playbook source key (`play:<source-id>`). Legacy
+// content-derived keys remain readable during migration, but new uploads use
+// the stable key so player Swipe View cannot resolve a different play's image.
 
 import { authJson, getSessionFromRequest } from "../_lib/auth.js";
 
