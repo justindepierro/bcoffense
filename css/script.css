@@ -14619,7 +14619,76 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
 
   body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card {
     flex: 0 0 auto;
-    min-height: 104px;
+    min-height: 64px;
+  }
+
+  /* Player practice context is useful, but it should behave like the compact
+     command strips used elsewhere in the app—not push the actual play list
+     below the fold. Keep the richer card treatment on phones. */
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-launcher {
+    gap: 4px;
+    padding: 7px 10px;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-launcher-header h4 {
+    font-size: var(--font-size-sm);
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-launcher-header p,
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-now__hint {
+    display: none;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card {
+    gap: 12px;
+    padding: 7px 10px;
+    border-left-width: 4px;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__eyebrow,
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-now__eyebrow {
+    font-size: var(--font-size-3xs);
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__title-row {
+    margin-top: 1px;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__title,
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-now__title {
+    font-size: var(--font-size-base);
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__meta,
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-now__meta {
+    gap: 7px;
+    margin-top: 3px;
+    font-size: var(--font-size-2xs);
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__quiz-progress {
+    gap: 4px;
+    margin-top: 4px;
+    padding: 2px 6px;
+    font-size: var(--font-size-2xs);
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__actions,
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-now__actions {
+    gap: 5px;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-card__actions .btn,
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-now__actions .btn {
+    min-height: 32px;
+    padding: 4px 9px;
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .player-script-now {
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
   }
 
   /* Final player-only override: shared coach stat rules are declared earlier
