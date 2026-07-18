@@ -35,6 +35,8 @@
   const SILENT_UPLOAD_MAX_BITRATE = 4_000_000; // hard ceiling, bps
   const MANIFEST_CACHE_TTL_MS = 30000;
   const MANIFEST_BATCH_CONCURRENCY = 6;
+  const CLIP_UPLOAD_QUEUE_CACHE = "bcoffense-clip-upload-queue";
+  const CLIP_UPLOAD_QUEUE_LIMIT = 20;
 
   // Cached set of play signatures that have at least one clip, so the playbook
   // table can show a 🎬 indicator synchronously without a request per row.
@@ -651,6 +653,55 @@
     return data;
   }
 
+  function _readClipUploadQueue() {
+    const value = storageManager.get(STORAGE_KEYS.CLIP_UPLOAD_QUEUE, []);
+    return Array.isArray(value) ? value : [];
+  }
+
+  function _writeClipUploadQueue(entries) {
+    storageManager.set(STORAGE_KEYS.CLIP_UPLOAD_QUEUE, entries.slice(-CLIP_UPLOAD_QUEUE_LIMIT));
+  }
+
+  function _clipQueueRequest(id) {
+    return new Request(`/__local/clip-upload/${encodeURIComponent(id)}`);
+  }
+
+  async function _queuePreparedClip(sig, prepared, label, error) {
+    const uploadFile = prepared?.uploadFile || prepared;
+    const id = crypto.randomUUID();
+    const cache = await caches.open(CLIP_UPLOAD_QUEUE_CACHE);
+    await cache.put(_clipQueueRequest(id), new Response(uploadFile, {
+      headers: { "Content-Type": uploadFile.type || prepared?.uploadType || "video/mp4" },
+    }));
+    const entries = _readClipUploadQueue();
+    entries.push({ id, sig, label: String(label || ""), uploadDuration: Number(prepared?.uploadDuration || 0), uploadType: uploadFile.type || "video/mp4", queuedAt: new Date().toISOString(), lastError: String(error || "Network unavailable") });
+    _writeClipUploadQueue(entries);
+    if (typeof window.queueWorkspaceSyncJob === "function") {
+      window.queueWorkspaceSyncJob("media", "clip-auto-upload", {
+        queuedLabel: "Video saving when online", runningLabel: "Saving video…", doneLabel: "Video saved for players", errorLabel: "Video upload needs attention", retry: () => flushQueuedClipUploads(),
+      });
+    }
+  }
+
+  async function flushQueuedClipUploads() {
+    const entries = _readClipUploadQueue();
+    if (!entries.length || !navigator.onLine) return { pushed: 0, pending: entries.length };
+    const cache = await caches.open(CLIP_UPLOAD_QUEUE_CACHE);
+    let pushed = 0;
+    for (const entry of entries) {
+      const response = await cache.match(_clipQueueRequest(entry.id));
+      if (!response) continue;
+      try {
+        const blob = await response.blob();
+        await uploadPreparedForSig(entry.sig, { uploadFile: blob, uploadDuration: entry.uploadDuration, uploadType: entry.uploadType }, entry.label, { skipExistingCheck: true });
+        await cache.delete(_clipQueueRequest(entry.id));
+        _writeClipUploadQueue(_readClipUploadQueue().filter((item) => item.id !== entry.id));
+        pushed += 1;
+      } catch (_err) { break; }
+    }
+    return { pushed, pending: _readClipUploadQueue().length };
+  }
+
   async function uploadForSig(sig, file, label, opts = {}) {
     if (!sig) {
       throw new Error("Missing stable clip signature.");
@@ -662,7 +713,15 @@
       }
     }
     const prepared = await prepareSilentVideoUpload(file, opts);
-    return uploadPreparedForSig(sig, prepared, label, { ...opts, skipExistingCheck: true });
+    try {
+      return await uploadPreparedForSig(sig, prepared, label, { ...opts, skipExistingCheck: true });
+    } catch (err) {
+      if (navigator.onLine === false || /network|fetch|upload failed/i.test(String(err?.message || err))) {
+        await _queuePreparedClip(sig, prepared, label, err?.message || err);
+        return { ok: true, queued: true };
+      }
+      throw err;
+    }
   }
 
   async function upload(play, file, label, opts = {}) {
@@ -1096,6 +1155,7 @@
     uploadForSig,
     uploadPreparedForSig,
     upload,
+    flushQueuedClipUploads,
     removeForSig,
     remove,
     recompressClipForSig,
@@ -1110,6 +1170,7 @@
   // Warm the clip index once the page is interactive so the playbook can show
   // its 🎬 indicators on first render. Re-render media-aware surfaces once it lands.
   function _initClipIndex() {
+    flushQueuedClipUploads().catch(() => { /* queue remains durable */ });
     loadIndex().then(() => {
       if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
       else if (typeof renderPlaybook === "function") renderPlaybook();
@@ -1136,4 +1197,7 @@
   } else {
     _scheduleClipIndexWarmup();
   }
+  window.addEventListener("online", () => {
+    flushQueuedClipUploads().catch(() => { /* queue remains durable */ });
+  });
 })();

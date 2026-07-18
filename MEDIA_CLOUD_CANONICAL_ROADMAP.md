@@ -134,6 +134,7 @@ that leaves a player without the last known-good media.
 - [ ] Change the diagram/video attach flow to create a local upload intent,
   optimistically show `Saving…`, and start upload immediately.
 - [x] Diagram attach flow now saves locally first and uploads automatically.
+- [x] Video clips retain a prepared local copy and retry automatically after reconnect.
 - [ ] On success, update local cache from the returned canonical manifest and
   clear the queue item.
 - [x] On offline/network failure, retain the compressed file and queue item,
