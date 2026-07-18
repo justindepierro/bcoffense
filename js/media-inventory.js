@@ -234,26 +234,30 @@
     return { rows, counts };
   }
 
-  async function _miFetchCloudDiagramInventory() {
+  async function _miFetchCloudMediaInventory() {
     if (typeof canEditUser === "function" && !canEditUser()) {
       return { available: false, reason: "Coach access is required for cloud inventory." };
     }
     try {
-      const response = await fetch("/images/inventory", {
+      const response = await fetch("/media/inventory", {
         credentials: "same-origin",
         cache: "no-store",
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok) {
-        return { available: false, reason: data?.error || "Cloud diagram inventory is unavailable." };
+        return { available: false, reason: data?.error || "Cloud media inventory is unavailable." };
       }
       return {
         ...data,
         available: true,
-        objects: _miArray(data.objects),
+        diagrams: {
+          ...(data.diagrams || {}),
+          objects: _miArray(data?.diagrams?.objects),
+        },
+        clips: data.clips || {},
       };
     } catch (_err) {
-      return { available: false, reason: "Cloud diagram inventory could not be reached." };
+      return { available: false, reason: "Cloud media inventory could not be reached." };
     }
   }
 
@@ -342,13 +346,16 @@
     const publishedScripts = _miGetPublishedScripts(savedScripts);
     const knownPlays = _miCollectKnownPlays(savedScripts, publishedScripts);
     const playerPlays = _miCollectPlayerPlays(publishedScripts);
-    const [diagramInventory, publishReport, cloudDiagrams] = await Promise.all([
+    const [diagramInventory, publishReport, cloudMedia] = await Promise.all([
       _miBuildDiagramInventory(knownPlays),
       window.playImages && typeof window.playImages.buildPlayerMediaPublishReport === "function"
         ? window.playImages.buildPlayerMediaPublishReport()
         : Promise.resolve({ publishedScripts, rows: [], counts: {} }),
-      _miFetchCloudDiagramInventory(),
+      _miFetchCloudMediaInventory(),
     ]);
+    const cloudDiagrams = cloudMedia.available
+      ? { ...cloudMedia.diagrams, available: true }
+      : cloudMedia;
     const reconciliation = _miBuildMediaReconciliation(playerPlays, diagramInventory, cloudDiagrams);
     const signalRecords = _miLoadSignalRecords();
     const clipInventory = await _miBuildClipInventory(playerPlays, signalRecords);
@@ -368,6 +375,7 @@
       publishReport,
       diagrams: diagramInventory,
       cloudDiagrams,
+      cloudMedia,
       reconciliation,
       clips: clipInventory,
       quiz: quizInventory,
@@ -435,6 +443,7 @@
     const issueRows = _miArray(report.publishReport?.rows)
       .filter((row) => row.diagramStatus !== "ready" || !row.hasClip);
     const cloud = report.cloudDiagrams || {};
+    const cloudClips = report.cloudMedia?.clips || {};
     const cloudCounts = cloud.counts || {};
     const reconciliation = report.reconciliation || { counts: {}, rows: [] };
     const migrationRows = _miArray(reconciliation.rows).filter((row) => row.status !== "canonical");
@@ -452,13 +461,13 @@
         ${_miRenderCard(report.diagrams.orphanCount, "Cleanup candidates")}
         ${_miRenderCard(cloud.available ? (cloudCounts.total || 0) : "—", "Cloud diagrams")}
         ${_miRenderCard(cloud.available ? (cloudCounts.canonical || 0) : "—", "Canonical cloud keys")}
-        ${_miRenderCard(report.clips.clipCount, "Remote clips")}
+        ${_miRenderCard(cloud.available ? (cloudClips.clipCount || 0) : report.clips.clipCount, "Cloud clips")}
         ${_miRenderCard(_miFormatBytes(report.clips.totalBytes), "Clip manifests")}
         ${_miRenderCard(report.quiz.publishedScriptCount, "Player scripts")}
         ${_miRenderCard(report.quiz.uniquePlayerPlayCount, "Quiz source plays")}
       </div>
       <div class="pb-health-guidance">
-        This report inventories local diagram blobs, the staff-only R2 diagram inventory, remote clip manifests, player-visible script readiness, and signal clip gaps. Cleanup candidates are local diagram keys that do not match the current playbook or saved scripts on this device.
+        This report inventories local diagram blobs, every staff-visible Cloudflare diagram object, every play-video and signal-video manifest, player-visible script readiness, and signal clip gaps. Cleanup candidates are local diagram keys that do not match the current playbook or saved scripts on this device.
       </div>
       <section class="pb-health-section">
         <div class="pb-health-section-head">
@@ -476,6 +485,23 @@
           ${_miRenderPlayRows(migrationRows, "Every player-visible call has a canonical cloud diagram object.")}
           ${migrationRows.length > MEDIA_INVENTORY_SAMPLE_LIMIT ? `<div class="pb-health-more">Showing ${MEDIA_INVENTORY_SAMPLE_LIMIT} of ${migrationRows.length} migration items.</div>` : ""}
         ` : ""}
+      </section>
+      <section class="pb-health-section">
+        <div class="pb-health-section-head">
+          <h4>Cloud Video Recovery</h4>
+          <span>${_miEscape(cloud.available ? (cloudClips.truncated ? "Partial scan" : "Live Cloudflare") : "Unavailable")}</span>
+        </div>
+        ${cloud.available ? `
+          <div class="pb-health-summary pb-publish-media-summary">
+            ${_miRenderCard(cloudClips.manifestCount || 0, "Video manifests")}
+            ${_miRenderCard(cloudClips.playClipCount || 0, "Play videos")}
+            ${_miRenderCard(cloudClips.signalClipCount || 0, "Signal videos")}
+            ${_miRenderCard(cloudClips.r2ObjectCount || 0, "R2 video objects")}
+            ${_miRenderCard(cloudClips.orphanObjectCount || 0, "Unlinked video objects")}
+            ${_miRenderCard(_miFormatBytes(cloudClips.totalBytes), "Cloud video storage")}
+          </div>
+          <div class="pb-health-guidance">These are all Cloudflare video manifests, including assets that are not referenced by the current device's workspace. Unlinked objects are retained for recovery; this report does not delete anything.</div>
+        ` : `<div class="pb-health-empty">${_miEscape(report.cloudMedia?.reason || "Cloud video inventory unavailable.")}</div>`}
       </section>
       <section class="pb-health-section">
         <div class="pb-health-section-head">

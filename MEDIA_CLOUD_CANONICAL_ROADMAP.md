@@ -93,6 +93,9 @@ The browser does **not** decide whether a team asset exists. The manifest does.
   found, local-only media found, and genuinely missing assets.
 - [x] Preserve all current legacy lookup paths as read-only fallbacks while
   the migration is in progress.
+- [x] Expand the staff-only inventory to include every Cloudflare play-video
+  and signal-video manifest plus unlinked R2 video objects; recovery reports
+  never delete media.
 - [ ] Recover any diagrams that exist only in an old browser backup or device
   before declaring an asset permanently missing.
 

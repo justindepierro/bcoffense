@@ -4239,6 +4239,7 @@ function checkPlayerDiagramReadinessContracts() {
     fail("media inventory report contract is incomplete");
   }
   const imageInventoryRoute = read("functions/images/inventory.js");
+  const cloudMediaInventoryRoute = read("functions/media/inventory.js");
   if (
     !/CANONICAL_PREFIX = "media\/plays\/"/.test(imageInventoryRoute) ||
     !/LEGACY_PREFIX = "images\/"/.test(imageInventoryRoute) ||
@@ -4246,6 +4247,18 @@ function checkPlayerDiagramReadinessContracts() {
     !/prefixes: \[CANONICAL_PREFIX, LEGACY_PREFIX\]/.test(imageInventoryRoute)
   ) {
     fail("cloud diagram inventory does not cover canonical and legacy object paths");
+  }
+  if (
+    !/CLIP_MANIFEST_PREFIX = "clips:"/.test(cloudMediaInventoryRoute) ||
+    !/function isStaff\(session\)/.test(cloudMediaInventoryRoute) ||
+    !/listManifestKeys\(store\)/.test(cloudMediaInventoryRoute) ||
+    !/readManifests\(store, manifestList\.keys\)/.test(cloudMediaInventoryRoute) ||
+    !/signalClipCount/.test(cloudMediaInventoryRoute) ||
+    !/orphanObjectCount/.test(cloudMediaInventoryRoute) ||
+    !/fetch\("\/media\/inventory"/.test(mediaInventory) ||
+    !/Cloud Video Recovery/.test(mediaInventory)
+  ) {
+    fail("complete Cloudflare media inventory contract is incomplete");
   }
 
   if (
