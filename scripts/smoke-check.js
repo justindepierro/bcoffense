@@ -1566,6 +1566,7 @@ function checkPlayPresentationContracts() {
     !/function _remoteIdentityKey\(play\)[\s\S]*getStablePlaySourceId\(sourcePlay\)[\s\S]*play:\$\{sourceId\}/.test(playImages) ||
     !/function _legacyContentRemoteIdentityKey\(play\)/.test(playImages) ||
     !/function _remoteIdentityKeysForPlay\(play\)[\s\S]*_remoteIdentityKey\(play\),[\s\S]*_legacyContentRemoteIdentityKey\(play\),[\s\S]*_legacyRemoteIdentityKey\(play\),/.test(playImages) ||
+    !/legacySourceKeys = \[\s*[\s\S]*play\?\.sourceIdentityKey,[\s\S]*_sourceIdentityKeyForPlay\(play\),/.test(playImages) ||
     !/const identityKeys = _remoteIdentityKeysForPlay\(play\)/.test(playImages) ||
     !/_isSourceIdentityKey\(localSig\)/.test(playImages) ||
     !/"X-BC-Auth-Mode": "json"/.test(playImages) ||

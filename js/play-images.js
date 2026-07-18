@@ -838,7 +838,13 @@
       if (Array.isArray(playsArray)) {
         for (const play of playsArray) {
           const sigs = [...displaySignaturesForPlay(play), ...signaturesForPlay(play)];
-          if (sigs.includes(localSig)) {
+          const legacySourceKeys = [
+            play?.sourceIdentityKey,
+            _sourceIdentityKeyForPlay(play),
+          ]
+            .map(_normalizeSig)
+            .filter(Boolean);
+          if (sigs.includes(localSig) || legacySourceKeys.includes(localSig)) {
             const ik = _remoteIdentityKey(play);
             if (ik) return ik;
           }
