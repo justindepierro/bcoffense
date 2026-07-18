@@ -1294,6 +1294,16 @@
   }
 
   async function ensureDisplayUrlForPlay(play) {
+    // The cloud manifest is authoritative whenever reachable. This prevents a
+    // player device from keeping an older IndexedDB diagram after a coach
+    // replaces the approved version on another device.
+    if (_remoteAvailable()) {
+      const remote = await checkRemoteForPlay(play);
+      if (remote.published) {
+        const remoteUrl = await _fetchRemoteForPlay(play);
+        if (remoteUrl) return remoteUrl;
+      }
+    }
     for (const signature of displaySignaturesForPlay(play)) {
       const url = await ensureUrl(signature);
       if (url) return url;
@@ -1302,6 +1312,15 @@
   }
 
   async function ensureDisplayReadinessForPlay(play) {
+    if (_remoteAvailable()) {
+      const remote = await checkRemoteForPlay(play);
+      if (remote.published) {
+        const remoteUrl = await _fetchRemoteForPlay(play);
+        if (remoteUrl) {
+          return { status: "ready", source: "remote", url: remoteUrl, message: "Diagram ready" };
+        }
+      }
+    }
     for (const signature of displaySignaturesForPlay(play)) {
       const url = await ensureUrl(signature);
       if (url) {
