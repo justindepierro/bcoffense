@@ -73,3 +73,6 @@ const historyManager = {
     return this[type].future.length > 0;
   },
 };
+
+// Supports the CSP-safe integrity probe in app-shell.js.
+window.historyManager = historyManager;

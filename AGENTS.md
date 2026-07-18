@@ -370,6 +370,7 @@ window.getSignalQuizStats
 window.getTeamWorkspacePullSummary
 window.hasWorkspaceSyncWork
 window.hasPlayImage
+window.historyManager
 window.initScriptEvents
 window.initSignals
 window.isActionAllowedForRole
@@ -419,6 +420,8 @@ window.saveSignalDetails
 window.setWorkspaceSyncStatus
 window.runWorkspaceSyncJob
 window.startWorkspaceSyncJob
+window.STORAGE_KEYS
+window.storageManager
 window.syncPlayerLeaderboardNow
 window.syncPlayImagesToCloud
 window.testCloudSyncConnection

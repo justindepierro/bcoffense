@@ -954,6 +954,11 @@ const storageManager = {
   },
 };
 
+// Supports the CSP-safe integrity probe in app-shell.js. The lexical const
+// remains the canonical API; this mirrors its existing cross-file contract.
+window.STORAGE_KEYS = STORAGE_KEYS;
+window.storageManager = storageManager;
+
 (function initCrossTabProtection() {
   let _crossTabToastShown = false;
   window.addEventListener("storage", (e) => {

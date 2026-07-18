@@ -551,6 +551,13 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
     min-width: 64px;
   }
 
+  body.is-phone-screen:not([data-auth-role="player"]) .tab {
+    min-width: 58px;
+    padding-right: 7px;
+    padding-left: 7px;
+    font-size: var(--font-size-2xs);
+  }
+
   body.is-mobile-screen .pb-shortcuts-hint,
   body.is-mobile-screen .stat-item,
   body.is-mobile-screen .play-readiness-btn {

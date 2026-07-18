@@ -2552,6 +2552,69 @@
   align-items: center;
 }
 
+/* Coach dashboard controls need a deliberate stack before the desktop grid
+   becomes cramped. This keeps the week metadata inside the hero and gives
+   every touch target its own predictable row. */
+@media (max-width: 820px) {
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-opponent-bar {
+    display: grid;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-opponent-left,
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-opponent-select-group,
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-opponent-right {
+    display: grid;
+    min-width: 0;
+    width: 100%;
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-opponent-select-group {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-search-input,
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-label {
+    grid-column: 1 / -1;
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-opponent-right {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-xs);
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-opp-badge {
+    grid-column: 1 / -1;
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-opponent-right .btn {
+    min-height: 44px;
+    padding: 8px 6px;
+    font-size: var(--font-size-xs);
+    line-height: 1.15;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 480px) {
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-opponent-select-group {
+    grid-template-columns: 1fr;
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-search-input {
+    display: none;
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-opponent-right {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #dashboard .dash-opponent-right .btn:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
 .btn.dash-link-print {
   background: linear-gradient(
     135deg,
