@@ -189,6 +189,29 @@
     };
   }
 
+  async function _miFetchCloudDiagramInventory() {
+    if (typeof canEditUser === "function" && !canEditUser()) {
+      return { available: false, reason: "Coach access is required for cloud inventory." };
+    }
+    try {
+      const response = await fetch("/images/inventory", {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok) {
+        return { available: false, reason: data?.error || "Cloud diagram inventory is unavailable." };
+      }
+      return {
+        ...data,
+        available: true,
+        objects: _miArray(data.objects),
+      };
+    } catch (_err) {
+      return { available: false, reason: "Cloud diagram inventory could not be reached." };
+    }
+  }
+
   function _miLoadSignalRecords() {
     const raw = _miStorageGet(STORAGE_KEYS.SIGNALS, []);
     return _miArray(raw)
@@ -274,11 +297,12 @@
     const publishedScripts = _miGetPublishedScripts(savedScripts);
     const knownPlays = _miCollectKnownPlays(savedScripts, publishedScripts);
     const playerPlays = _miCollectPlayerPlays(publishedScripts);
-    const [diagramInventory, publishReport] = await Promise.all([
+    const [diagramInventory, publishReport, cloudDiagrams] = await Promise.all([
       _miBuildDiagramInventory(knownPlays),
       window.playImages && typeof window.playImages.buildPlayerMediaPublishReport === "function"
         ? window.playImages.buildPlayerMediaPublishReport()
         : Promise.resolve({ publishedScripts, rows: [], counts: {} }),
+      _miFetchCloudDiagramInventory(),
     ]);
     const signalRecords = _miLoadSignalRecords();
     const clipInventory = await _miBuildClipInventory(playerPlays, signalRecords);
@@ -297,6 +321,7 @@
       publishedScripts,
       publishReport,
       diagrams: diagramInventory,
+      cloudDiagrams,
       clips: clipInventory,
       quiz: quizInventory,
     };
@@ -362,6 +387,15 @@
         : "is-poor";
     const issueRows = _miArray(report.publishReport?.rows)
       .filter((row) => row.diagramStatus !== "ready" || !row.hasClip);
+    const cloud = report.cloudDiagrams || {};
+    const cloudCounts = cloud.counts || {};
+    const cloudKeys = new Set(_miArray(cloud.objects).map((entry) => entry.key));
+    const missingCanonicalRows = _miArray(report.publishReport?.rows).filter((row) =>
+      row.identityKey && !cloudKeys.has(`images/${row.identityKey}`)
+    );
+    const cloudSummary = cloud.available
+      ? `${cloudCounts.total || 0} objects · ${cloudCounts.canonical || 0} canonical · ${(cloudCounts["legacy-content"] || 0) + (cloudCounts["legacy-signature"] || 0)} legacy`
+      : cloud.reason || "Cloud inventory unavailable.";
     return `
       <div class="pb-health-summary pb-publish-media-summary">
         <div class="pb-health-score ${scoreClass}">
@@ -371,14 +405,27 @@
         ${_miRenderCard(report.diagrams.count, "Local diagrams")}
         ${_miRenderCard(_miFormatBytes(report.diagrams.totalBytes), "Diagram storage")}
         ${_miRenderCard(report.diagrams.orphanCount, "Cleanup candidates")}
+        ${_miRenderCard(cloud.available ? (cloudCounts.total || 0) : "—", "Cloud diagrams")}
+        ${_miRenderCard(cloud.available ? (cloudCounts.canonical || 0) : "—", "Canonical cloud keys")}
         ${_miRenderCard(report.clips.clipCount, "Remote clips")}
         ${_miRenderCard(_miFormatBytes(report.clips.totalBytes), "Clip manifests")}
         ${_miRenderCard(report.quiz.publishedScriptCount, "Player scripts")}
         ${_miRenderCard(report.quiz.uniquePlayerPlayCount, "Quiz source plays")}
       </div>
       <div class="pb-health-guidance">
-        This report inventories local diagram blobs, remote clip manifests, player-visible script readiness, and signal clip gaps. Cleanup candidates are local diagram keys that do not match the current playbook or saved scripts on this device.
+        This report inventories local diagram blobs, the staff-only R2 diagram inventory, remote clip manifests, player-visible script readiness, and signal clip gaps. Cleanup candidates are local diagram keys that do not match the current playbook or saved scripts on this device.
       </div>
+      <section class="pb-health-section">
+        <div class="pb-health-section-head">
+          <h4>Cloud Diagram Inventory</h4>
+          <span>${_miEscape(cloud.available ? (cloud.truncated ? "Partial scan" : "Live R2") : "Unavailable")}</span>
+        </div>
+        <div class="pb-health-guidance">${_miEscape(cloudSummary)}</div>
+        ${cloud.available ? `
+          <div class="pb-health-guidance">${missingCanonicalRows.length} player-visible call${missingCanonicalRows.length === 1 ? "" : "s"} do not yet have their canonical cloud object. Legacy objects remain available for migration review.</div>
+          ${_miRenderPlayRows(missingCanonicalRows, "Every player-visible call has a canonical cloud diagram object.")}
+        ` : ""}
+      </section>
       <section class="pb-health-section">
         <div class="pb-health-section-head">
           <h4>Player-Visible Readiness</h4>
