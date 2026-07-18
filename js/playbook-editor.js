@@ -910,13 +910,17 @@ function _wirePlayEditorImage(play, isNew) {
       const suffix = summary
         ? `${summary.dimensions ? `${summary.dimensions} • ` : ""}${summary.outputFormatted}${summary.savedPct ? `, ${summary.savedPct}% smaller` : ""}`
         : `${Math.round(blob.size / 1024)} KB`;
-      if (cloudResult && cloudResult.ok === false && !cloudResult.skipped) {
+      if (cloudResult && cloudResult.queued) {
+        showToast(`Image saved locally and will reach players when this device is online (${suffix})`, {
+          duration: 4600, type: "warning",
+        });
+      } else if (cloudResult && cloudResult.ok === false && !cloudResult.skipped) {
         showToast(
           `Image saved locally, but cloud upload failed: ${cloudResult.error || "Unknown error"}`,
           { duration: 7000, type: "warning" },
         );
       } else if (cloudResult && cloudResult.ok) {
-        showToast(`Image added and synced (${suffix})`, {
+        showToast(`Image saved for players (${suffix})`, {
           duration: 2600, type: "success",
         });
       } else {

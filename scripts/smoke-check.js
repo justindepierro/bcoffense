@@ -4000,7 +4000,8 @@ function checkWorkspaceSyncContracts() {
   }
 
   if (
-    !/data-action="openPublishMediaModal"/.test(html) ||
+    !/data-action="openMediaInventoryReport"/.test(html) ||
+    !/Media Status/.test(html) ||
     !/data-action="publishPlayerMedia"/.test(playImages) ||
     !/function buildPlayerMediaPublishReport\(\)/.test(playImages) ||
     !/function renderPlayerMediaPublishReport\(report\)/.test(playImages) ||
@@ -4012,9 +4013,12 @@ function checkWorkspaceSyncContracts() {
     !/window\.playClips\.loadIndex\(\)/.test(playImages) ||
     !/window\.playClips\.hasForPlay\(play\)/.test(playImages) ||
     !/publishableKeys/.test(playImages) ||
-    !/syncToRemote\(report\.rows\.map\(\(row\) => row\.play\), \{[\s\S]*keys: report\.publishableKeys/.test(playImages)
+    !/syncToRemote\(report\.rows\.map\(\(row\) => row\.play\), \{[\s\S]*keys: report\.publishableKeys/.test(playImages) ||
+    !/function flushQueuedDiagramUploads\(\)/.test(playImages) ||
+    !/DIAGRAM_UPLOAD_QUEUE/.test(playImages) ||
+    !/window\.addEventListener\("online"/.test(playImages)
   ) {
-    fail("publish media workflow is not wired to player-visible script media readiness and targeted diagram upload");
+    fail("automatic diagram saving and media readiness diagnostics are incomplete");
   }
   if (/data-action="syncPlayImagesToCloud"/.test(html)) {
     fail("advanced diagram recovery upload should not appear in primary Playbook chrome");
@@ -4134,7 +4138,7 @@ function checkWorkspaceSyncContracts() {
     "queueWorkspaceSyncJob()",
     "setWorkspaceSyncStatus()",
     "hasWorkspaceSyncWork()",
-    "Publish Media",
+    "Diagram attachment saves to the cloud automatically",
     "/images/manifest?sig=...",
     "Raw cloud push/pull is admin-only recovery tooling",
     "Keep raw cloud recovery and all-local diagram upload under admin-only",

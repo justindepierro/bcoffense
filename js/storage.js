@@ -141,6 +141,7 @@ const STORAGE_KEYS = {
   PLAYER_HELMET_STICKER_TYPES: "playerHelmetStickerTypes",
   PLAYER_HELMET_STICKERS: "playerHelmetStickers",
   PLAYER_LEADERBOARD_REMOTE: "playerLeaderboardRemote",
+  DIAGRAM_UPLOAD_QUEUE: "diagramUploadQueue",
   GAME_WEEK_ARCHIVE: "gameWeekArchive",
   TENDENCIES_REPORTS: "tendenciesReports",
   FIRST_USE_DISMISSED: "firstUseDismissed",

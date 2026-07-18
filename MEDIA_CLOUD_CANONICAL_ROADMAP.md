@@ -133,16 +133,17 @@ that leaves a player without the last known-good media.
 
 - [ ] Change the diagram/video attach flow to create a local upload intent,
   optimistically show `Saving…`, and start upload immediately.
+- [x] Diagram attach flow now saves locally first and uploads automatically.
 - [ ] On success, update local cache from the returned canonical manifest and
   clear the queue item.
-- [ ] On offline/network failure, retain the compressed file and queue item,
+- [x] On offline/network failure, retain the compressed file and queue item,
   show `Saving when online`, and retry on reconnect, app launch, and bounded
   backoff intervals.
 - [ ] Detect duplicate retries by checksum/idempotency key so reconnects never
   create duplicate versions.
-- [ ] Surface only meaningful failures in the workspace sync dock: auth,
+- [x] Surface only meaningful failures in the workspace sync dock: auth,
   invalid file, quota, retry exhausted, or server rejection.
-- [ ] Remove the normal `Publish Media` button and replace it with a compact
+- [x] Remove the normal `Publish Media` button and replace it with a compact
   media status indicator plus a staff-only recovery/diagnostics entry point.
 
 **Exit criterion:** a coach uploads a file once; the asset reaches Cloudflare

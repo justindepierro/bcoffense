@@ -32,6 +32,7 @@
   const EXPORT_CONCURRENCY = 3;
   const IMPORT_CONCURRENCY = 3;
   const MAX_SOURCE_BYTES = 14 * 1024 * 1024;
+  const DIAGRAM_UPLOAD_QUEUE_LIMIT = 100;
   const PLAY_IMAGE_SOURCE_FIELDS = [
     "type",
     "personnel",
@@ -575,7 +576,62 @@
         error: await _remoteErrorMessage(response, "Play diagram upload failed."),
       };
     }
-    return { ok: true, status: response.status };
+    const manifest = await response.json().catch(() => null);
+    return { ok: true, status: response.status, manifest };
+  }
+
+  function _readDiagramUploadQueue() {
+    if (typeof storageManager === "undefined" || !STORAGE_KEYS?.DIAGRAM_UPLOAD_QUEUE) return [];
+    const value = storageManager.get(STORAGE_KEYS.DIAGRAM_UPLOAD_QUEUE, []);
+    return Array.isArray(value) ? value : [];
+  }
+
+  function _writeDiagramUploadQueue(entries) {
+    if (typeof storageManager === "undefined" || !STORAGE_KEYS?.DIAGRAM_UPLOAD_QUEUE) return;
+    storageManager.set(STORAGE_KEYS.DIAGRAM_UPLOAD_QUEUE, entries.slice(-DIAGRAM_UPLOAD_QUEUE_LIMIT));
+  }
+
+  function _queueDiagramUpload(localSig, identityKey, error) {
+    const entries = _readDiagramUploadQueue().filter((entry) => entry.localSig !== localSig);
+    entries.push({ localSig, identityKey, queuedAt: new Date().toISOString(), lastError: String(error || "Network unavailable") });
+    _writeDiagramUploadQueue(entries);
+    if (typeof window.queueWorkspaceSyncJob === "function") {
+      window.queueWorkspaceSyncJob("media", "diagram-auto-upload", {
+        queuedLabel: "Diagram saving when online",
+        runningLabel: "Saving diagram…",
+        doneLabel: "Diagram saved for players",
+        errorLabel: "Diagram upload needs attention",
+        retry: () => flushQueuedDiagramUploads(),
+      });
+    }
+  }
+
+  function _removeQueuedDiagramUpload(localSig) {
+    _writeDiagramUploadQueue(_readDiagramUploadQueue().filter((entry) => entry.localSig !== localSig));
+  }
+
+  async function flushQueuedDiagramUploads() {
+    const entries = _readDiagramUploadQueue();
+    if (!entries.length || !_remoteAvailable()) return { pushed: 0, pending: entries.length };
+    let pushed = 0;
+    for (const entry of entries) {
+      const blob = await get(entry.localSig);
+      if (!blob) continue;
+      try {
+        const result = await _putRemoteImage(entry.identityKey, blob);
+        if (!result.ok) throw new Error(result.error || "Cloud upload failed.");
+        _removeQueuedDiagramUpload(entry.localSig);
+        _remoteManifestCache.delete(entry.identityKey);
+        pushed += 1;
+      } catch (err) {
+        _queueDiagramUpload(entry.localSig, entry.identityKey, err?.message || err);
+        break;
+      }
+    }
+    if (!_readDiagramUploadQueue().length && typeof window.completeWorkspaceSyncJob === "function") {
+      window.completeWorkspaceSyncJob("media:diagram-auto-upload", { label: "Diagram saved for players" });
+    }
+    return { pushed, pending: _readDiagramUploadQueue().length };
   }
 
   async function _fetchRemoteForPlay(play) {
@@ -761,6 +817,8 @@
     }
     try {
       const result = await _putRemoteImage(identityKey, await _playerPublishBlob(blob));
+      _removeQueuedDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey);
+      _remoteManifestCache.delete(identityKey);
       if (result.ok && typeof window.recordPlayerPublishStatus === "function") {
         window.recordPlayerPublishStatus("diagrams", {
           label: "Play diagram uploaded to player devices",
@@ -768,8 +826,10 @@
       }
       return result;
     } catch (err) {
+      _queueDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey, identityKey, err?.message || err);
       return {
-        ok: false,
+        ok: true,
+        queued: true,
         error: err && err.message ? err.message : "Network error while uploading play diagram.",
       };
     }
@@ -1938,6 +1998,7 @@
     pushRemote,
     deleteRemote,
     syncToRemote,
+    flushQueuedDiagramUploads,
     getSmartDiagramContentBounds,
     getSmartDiagramAspectCrop,
     drawSmartDiagram,
@@ -2361,7 +2422,11 @@
           // eslint-disable-next-line no-console
           console.warn("playImages key load failed:", err);
         });
+      flushQueuedDiagramUploads().catch(() => { /* retry remains durable */ });
       _installHoverPreview();
+    });
+    window.addEventListener("online", () => {
+      flushQueuedDiagramUploads().catch(() => { /* retry remains durable */ });
     });
     window.addEventListener("pagehide", (event) => {
       if (!event.persisted) _revokeAll();

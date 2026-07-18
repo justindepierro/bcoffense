@@ -626,6 +626,7 @@ PLAYER_REWARD_EVENTS            → "playerRewardEvents"
 PLAYER_HELMET_STICKER_TYPES     → "playerHelmetStickerTypes"
 PLAYER_HELMET_STICKERS          → "playerHelmetStickers"
 PLAYER_LEADERBOARD_REMOTE       → "playerLeaderboardRemote"
+DIAGRAM_UPLOAD_QUEUE            → "diagramUploadQueue"
 GAME_WEEK_ARCHIVE               → "gameWeekArchive"
 TENDENCIES_REPORTS              → "tendenciesReports"
 FIRST_USE_DISMISSED             → "firstUseDismissed"
@@ -654,9 +655,9 @@ publish -> media publish -> player readiness update.
 3. `js/cloud-sync.js` queues Cloud autosave/push work into the shared dock.
    Raw cloud push/pull is admin-only recovery tooling, not the daily coach
    workflow.
-4. `Publish Media` is the coach default for player-visible scripts. It uploads
-   stale/unpublished player-visible diagrams, reports clip gaps, and leaves
-   already-cloud-published clips alone.
+4. Diagram attachment saves to the cloud automatically. IndexedDB keeps the
+   blob plus a durable retry intent when offline; the workspace dock reports
+   `Saving when online`. Manual all-local upload is admin-only recovery.
 5. Player-facing diagram surfaces prefer the local cached diagram, then check
    `/images/manifest?sig=...`, then fetch `/images/file?sig=...` when the
    manifest says the diagram is published.
