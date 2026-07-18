@@ -642,10 +642,9 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
   }
 
   body.is-phone-screen[data-auth-role="player"] .auth-user-badge {
-    max-width: min(92px, 28vw);
-    min-height: 44px;
-    padding: 0 7px;
-    font-size: var(--font-size-2xs);
+    /* The account name already appears in the mobile overflow menu. Keeping
+       it here squeezes it into an unreadable sliver beside the player tools. */
+    display: none !important;
   }
 
   body.is-phone-screen[data-auth-role="player"] #dashboard.panel,
