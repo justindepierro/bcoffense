@@ -174,8 +174,10 @@ from Cloudflare without ever having opened the coach workspace.
 
 ### Phase 5 — migration and retirement
 
-- [ ] Use the Phase 0 inventory to copy recoverable legacy R2 objects to their
-  canonical `mediaId` paths and write manifests.
+- [x] Use the Phase 0 inventory to copy recoverable legacy R2 diagram objects
+  to their canonical `mediaId` paths and write manifests. Completed July 18,
+  2026: migrated 25 verified diagrams; the 194 legacy objects remain intact
+  as read-only recovery copies.
 - [ ] Offer an admin-only local-cache migration that uploads known legacy
   browser diagrams into their canonical records automatically.
 - [ ] Verify each migrated media ID from a clean player session and a second
