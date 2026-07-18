@@ -1525,9 +1525,20 @@
         settings.lastPullAt ||
         settings.lastPushAt,
       );
+      const hasLocalWorkspace = await hasSubstantiveLocalTeamData();
 
       if (!Number.isFinite(remoteTime)) return false;
       if (Number.isFinite(knownTime) && remoteTime <= knownTime + 500) {
+        // A prior build could record that it had seen the remote workspace
+        // without restoring it. Do not let that marker strand an otherwise
+        // empty coach device on the upload screen.
+        if (!hasLocalWorkspace) {
+          return restoreCloudBackup(remote, {
+            auto: true,
+            confirm: false,
+            notify: false,
+          });
+        }
         saveCloudSyncSettingsObject({
           lastRemoteExportDate: remote.summary.exportDate,
           lastRemoteUpdatedAt: remote.updatedAt,
@@ -1539,7 +1550,7 @@
       if (
         currentUser.role === "admin" &&
         !Number.isFinite(knownTime) &&
-        await hasSubstantiveLocalTeamData()
+        hasLocalWorkspace
       ) {
         showToast("Team workspace update available. An admin can use Recovery Tools to update this coach device.", {
           type: "info",
