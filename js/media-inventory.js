@@ -282,8 +282,10 @@
       }
       const newest = safeMatches[0];
       automatic.push({
-        ...candidate,
         ...newest,
+        mediaId: candidate.mediaId,
+        play: candidate.play,
+        matches: candidate.matches,
         label: _miPlayLabel(candidate.play),
         detail: `Newest exact legacy match${newest.uploadedAt ? ` · ${new Date(newest.uploadedAt).toLocaleDateString()}` : ""}.`,
       });
