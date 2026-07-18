@@ -65,6 +65,12 @@ function initAllModules() {
 
   idle(
     () => {
+      // Keep player-published script snapshots aligned with the canonical
+      // play media IDs. The normal cloud auto-publish path distributes any
+      // repaired snapshot without requiring a separate coach action.
+      if (typeof hydratePlayerScriptMediaIds === "function") {
+        hydratePlayerScriptMediaIds();
+      }
       initCollections();
       initPlaybookKeyboard();
 

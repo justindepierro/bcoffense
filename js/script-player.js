@@ -406,6 +406,38 @@ function getPlayerPublishedScripts() {
     });
 }
 
+// Published scripts are snapshots. Older snapshots can predate the permanent
+// media ID, even though their source play has since received one. Backfill the
+// snapshot before the next automatic team sync so a fresh player device asks
+// Cloudflare for the same canonical diagram as the coach workspace.
+function hydratePlayerScriptMediaIds() {
+  if (typeof canEditUser === "function" && !canEditUser()) return { changed: 0 };
+  if (typeof storageManager === "undefined" || !STORAGE_KEYS?.SAVED_SCRIPTS) return { changed: 0 };
+  const savedScripts = getSavedScripts();
+  const playbook = typeof plays !== "undefined" && Array.isArray(plays) ? plays : [];
+  if (!savedScripts.length || !playbook.length || typeof getPlayMediaId !== "function") return { changed: 0 };
+  let changed = 0;
+  savedScripts.forEach((savedScript) => {
+    if (!savedScript?.playerVisible || !Array.isArray(savedScript.plays)) return;
+    savedScript.plays.forEach((scriptPlay) => {
+      if (!scriptPlay || scriptPlay.isSeparator) return;
+      const source = typeof findPlaybookSourceForPlay === "function"
+        ? findPlaybookSourceForPlay(scriptPlay, playbook)
+        : null;
+      const mediaId = getPlayMediaId(source || scriptPlay);
+      if (!mediaId || scriptPlay.mediaId === mediaId) return;
+      scriptPlay.mediaId = mediaId;
+      changed += 1;
+    });
+  });
+  if (!changed) return { changed: 0 };
+  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+  if (typeof queueCloudAutoPush === "function") {
+    queueCloudAutoPush(STORAGE_KEYS.SAVED_SCRIPTS, "player-media-id-backfill");
+  }
+  return { changed };
+}
+
 function tracePlayerScriptAction(phase, payload = {}, level = "info") {
   const publishedScripts =
     typeof getPlayerPublishedScripts === "function"
