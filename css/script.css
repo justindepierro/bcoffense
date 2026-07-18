@@ -14598,4 +14598,28 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     grid-column: 1 / -1;
     width: 100%;
   }
+
+  /* Final player-only override: shared coach stat rules are declared earlier
+     and give these chips a 44px control height. Keep them compact so the
+     practice-picker begins below, never through, the Script summary row. */
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .script-section-head {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    margin-bottom: 10px;
+    padding: 2px;
+    gap: 10px;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .script-section-head .script-stats-bar {
+    flex: 1 1 auto;
+    min-height: 34px;
+    padding: 0;
+    border: 0;
+  }
+
+  body:not(.is-mobile-screen)[data-auth-role="player"] #script .script-section-head .script-stats-bar .stat-item {
+    min-height: 32px;
+    padding: 3px 8px;
+  }
 }
