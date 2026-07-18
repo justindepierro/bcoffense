@@ -613,12 +613,41 @@
     return typeof isAdminUser === "function" && isAdminUser();
   }
 
-  function hasLocalTeamData() {
-    return Object.values(STORAGE_KEYS).some(
-      (key) =>
-        key !== STORAGE_KEYS.CLOUD_SYNC_SETTINGS &&
-        localStorage.getItem(key) !== null,
-    );
+  async function hasSubstantiveLocalTeamData() {
+    // A new coach device writes harmless preferences and setup defaults before
+    // the startup cloud pull runs. Those values must not make the device look
+    // like it contains a competing workspace.
+    try {
+      const playbook = await storageManager.getPlaybook();
+      if (Array.isArray(playbook) && playbook.length > 0) return true;
+
+      const savedCollectionKeys = [
+        STORAGE_KEYS.SAVED_SCRIPTS,
+        STORAGE_KEYS.SCRIPT_DRAFT,
+        STORAGE_KEYS.SAVED_WRISTBANDS,
+        STORAGE_KEYS.WRISTBAND_DRAFT,
+        STORAGE_KEYS.GAME_PLAN_BOARDS,
+        STORAGE_KEYS.GAME_PLAN_SNAPSHOTS,
+        STORAGE_KEYS.GAME_PLAN_TEMPLATES,
+        STORAGE_KEYS.TEAM_ROSTER,
+        STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES,
+        STORAGE_KEYS.TEAM_SWAP_GROUPS,
+        STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS,
+        STORAGE_KEYS.DEFENSIVE_TENDENCIES,
+        STORAGE_KEYS.TENDENCIES_REPORTS,
+        STORAGE_KEYS.INSTALLATION,
+      ];
+      if (savedCollectionKeys.some((key) => hasBackupValue(storageManager.get(key, null)))) {
+        return true;
+      }
+
+      return countBackupCallSheetPlays(storageManager.get(STORAGE_KEYS.CALL_SHEET, {})) > 0;
+    } catch (err) {
+      // Preserve the recovery safeguard if this browser cannot reliably read
+      // its existing local workspace.
+      console.warn("Could not inspect local workspace before cloud auto-pull:", err);
+      return true;
+    }
   }
 
   function getCloudBackupSummary(backup) {
@@ -1510,7 +1539,7 @@
       if (
         currentUser.role === "admin" &&
         !Number.isFinite(knownTime) &&
-        hasLocalTeamData()
+        await hasSubstantiveLocalTeamData()
       ) {
         showToast("Team workspace update available. An admin can use Recovery Tools to update this coach device.", {
           type: "info",
