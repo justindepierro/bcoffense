@@ -567,9 +567,15 @@ body.play-presentation-open .quick-tools {
 
 .pp-player-panel {
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   gap: clamp(10px, 1.5vh, 18px);
-  overflow: hidden;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  align-content: start;
+  grid-auto-rows: max-content;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
 }
 
 .pp-player-call,
@@ -3054,9 +3060,15 @@ body.play-presentation-mobile.is-landscape-screen.is-compact-screen
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen
   .pp-player-panel {
-  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+  /* The rendered sections are intentionally optional (signals, notes and
+     status can appear or disappear). Let the sidebar create content-sized
+     rows instead of mapping a variable markup sequence onto fixed tracks. */
+  grid-template-rows: none;
+  grid-auto-rows: max-content;
   gap: 6px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  align-content: start;
 }
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen
@@ -3187,7 +3199,7 @@ body.play-presentation-mobile.is-landscape-screen.is-phone-screen
   min-height: 0;
   padding: 8px;
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow: visible;
 }
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen
@@ -3209,11 +3221,10 @@ body.play-presentation-mobile.is-landscape-screen.is-phone-screen
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen
   .pp-player-rule-text {
-  max-height: 74px;
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   font-size: 0.96rem;
   line-height: 1.15;
-  -webkit-overflow-scrolling: touch;
 }
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen

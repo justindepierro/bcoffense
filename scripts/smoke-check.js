@@ -1653,6 +1653,19 @@ function checkPlayPresentationContracts() {
     fail("play presentation landscape and information-mode styling is incomplete");
   }
   if (
+    !/\.pp-player-panel\s*\{[\s\S]*?overflow-y:\s*auto[\s\S]*?grid-auto-rows:\s*max-content/.test(
+      css,
+    ) ||
+    !/is-landscape-screen\.is-phone-screen\s*\n?\s*\.pp-player-panel\s*\{[\s\S]*?grid-template-rows:\s*none[\s\S]*?grid-auto-rows:\s*max-content[\s\S]*?overflow-y:\s*auto/.test(
+      css,
+    ) ||
+    !/is-landscape-screen\.is-phone-screen\s*\n?\s*\.pp-player-rule-text\s*\{[\s\S]*?max-height:\s*none[\s\S]*?overflow:\s*visible/.test(
+      css,
+    )
+  ) {
+    fail("player presentation sidebar must use content-sized rows and one scroll owner");
+  }
+  if (
     !/"\.\/css\/play-presentation\.css"/.test(sw) ||
     !/"\.\/js\/play-presentation\.js"/.test(sw)
   ) {
