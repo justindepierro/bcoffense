@@ -178,6 +178,9 @@ from Cloudflare without ever having opened the coach workspace.
   to their canonical `mediaId` paths and write manifests. Completed July 18,
   2026: migrated 25 verified diagrams; the 194 legacy objects remain intact
   as read-only recovery copies.
+- [ ] Offer confidence-scored legacy recovery: automatically promote only the
+  newest exact-signature diagram mapped to one current play; retain shared and
+  unmatched objects for review/archive.
 - [ ] Offer an admin-only local-cache migration that uploads known legacy
   browser diagrams into their canonical records automatically.
 - [ ] Verify each migrated media ID from a clean player session and a second

@@ -235,6 +235,67 @@
     return { rows, counts };
   }
 
+  // A legacy object is eligible for automatic promotion only when its exact
+  // historic signature belongs to one current play. We deliberately do not
+  // use fuzzy name matching: a wrong diagram is worse than an archived one.
+  function _miBuildLegacyRecoveryCandidates(knownPlays, cloudInventory) {
+    const cloudObjects = _miArray(cloudInventory?.objects);
+    const canonicalIds = new Set(
+      cloudObjects.filter((entry) => entry?.kind === "canonical" && entry.mediaId).map((entry) => entry.mediaId),
+    );
+    const legacyObjects = cloudObjects
+      .filter((entry) => entry?.kind !== "canonical")
+      .map((entry) => ({ ...entry, sourceKey: String(entry?.key || "").replace(/^images\//, "") }))
+      .filter((entry) => entry.sourceKey);
+    const sourceMatches = new Map();
+    const playMatches = new Map();
+    _miArray(knownPlays).forEach((play) => {
+      const mediaId = _miMediaId(play);
+      if (!mediaId) return;
+      const keys = new Set(_miPlayImageSigs(play));
+      const matches = legacyObjects.filter((entry) => keys.has(entry.sourceKey));
+      if (!matches.length) return;
+      matches.forEach((entry) => {
+        const ids = sourceMatches.get(entry.sourceKey) || new Set();
+        ids.add(mediaId);
+        sourceMatches.set(entry.sourceKey, ids);
+      });
+      if (!canonicalIds.has(mediaId)) playMatches.set(mediaId, { mediaId, play, matches });
+    });
+    const automatic = [];
+    const ambiguous = [];
+    playMatches.forEach((candidate) => {
+      const safeMatches = candidate.matches
+        .filter((entry) => (sourceMatches.get(entry.sourceKey)?.size || 0) === 1)
+        .sort((a, b) => {
+          const timeA = Date.parse(a.uploadedAt || "") || 0;
+          const timeB = Date.parse(b.uploadedAt || "") || 0;
+          return timeB - timeA || String(b.sourceKey).localeCompare(String(a.sourceKey));
+        });
+      if (!safeMatches.length) {
+        ambiguous.push({
+          ...candidate,
+          label: _miPlayLabel(candidate.play),
+          detail: "A legacy diagram signature is shared by multiple current plays; it was retained for review.",
+        });
+        return;
+      }
+      const newest = safeMatches[0];
+      automatic.push({
+        ...candidate,
+        ...newest,
+        label: _miPlayLabel(candidate.play),
+        detail: `Newest exact legacy match${newest.uploadedAt ? ` · ${new Date(newest.uploadedAt).toLocaleDateString()}` : ""}.`,
+      });
+    });
+    const matchedSourceCount = sourceMatches.size;
+    return {
+      automatic: automatic.sort((a, b) => a.label.localeCompare(b.label)),
+      ambiguous: ambiguous.sort((a, b) => a.label.localeCompare(b.label)),
+      unmatchedSourceCount: Math.max(0, legacyObjects.length - matchedSourceCount),
+    };
+  }
+
   async function _miFetchCloudMediaInventory() {
     if (typeof canEditUser === "function" && !canEditUser()) {
       return { available: false, reason: "Coach access is required for cloud inventory." };
@@ -358,6 +419,7 @@
       ? { ...cloudMedia.diagrams, available: true }
       : cloudMedia;
     const reconciliation = _miBuildMediaReconciliation(playerPlays, diagramInventory, cloudDiagrams);
+    const legacyRecovery = _miBuildLegacyRecoveryCandidates(knownPlays, cloudDiagrams);
     const signalRecords = _miLoadSignalRecords();
     const clipInventory = await _miBuildClipInventory(playerPlays, signalRecords);
     const quizInventory = _miBuildQuizInventory(
@@ -378,6 +440,7 @@
       cloudDiagrams,
       cloudMedia,
       reconciliation,
+      legacyRecovery,
       clips: clipInventory,
       quiz: quizInventory,
     };
@@ -447,6 +510,7 @@
     const cloudClips = report.cloudMedia?.clips || {};
     const cloudCounts = cloud.counts || {};
     const reconciliation = report.reconciliation || { counts: {}, rows: [] };
+    const legacyRecovery = report.legacyRecovery || { automatic: [], ambiguous: [], unmatchedSourceCount: 0 };
     const migrationRows = _miArray(reconciliation.rows).filter((row) => row.status !== "canonical");
     const cloudSummary = cloud.available
       ? `${cloudCounts.total || 0} objects · ${cloudCounts.canonical || 0} canonical · ${(cloudCounts["legacy-canonical-key"] || 0) + (cloudCounts["legacy-content"] || 0) + (cloudCounts["legacy-signature"] || 0)} legacy`
@@ -487,6 +551,21 @@
           ${migrationRows.length > MEDIA_INVENTORY_SAMPLE_LIMIT ? `<div class="pb-health-more">Showing ${MEDIA_INVENTORY_SAMPLE_LIMIT} of ${migrationRows.length} migration items.</div>` : ""}
           ${(typeof isAdminUser === "function" && isAdminUser() && (reconciliation.counts.legacy || 0))
             ? `<div class="pb-health-actions"><button type="button" class="btn btn-sm" data-action="migrateRecoverableCloudDiagrams">Migrate ${reconciliation.counts.legacy} recoverable diagrams</button></div>`
+            : ""}
+          <div class="pb-health-section-head" style="margin-top:16px">
+            <h4>Legacy Diagram Recovery</h4>
+            <span>Exact matches only</span>
+          </div>
+          <div class="pb-health-summary pb-publish-media-summary">
+            ${_miRenderCard(legacyRecovery.automatic.length, "Newest exact matches")}
+            ${_miRenderCard(legacyRecovery.ambiguous.length, "Needs review")}
+            ${_miRenderCard(legacyRecovery.unmatchedSourceCount, "Archived unmatched")}
+          </div>
+          <div class="pb-health-guidance">Automatic recovery only promotes the newest Cloudflare diagram whose exact historic signature belongs to one current play. Shared and unmatched files stay preserved in the archive.</div>
+          ${_miRenderPlayRows(legacyRecovery.automatic, "No additional exact legacy matches are waiting to be promoted.")}
+          ${legacyRecovery.automatic.length > MEDIA_INVENTORY_SAMPLE_LIMIT ? `<div class="pb-health-more">Showing ${MEDIA_INVENTORY_SAMPLE_LIMIT} of ${legacyRecovery.automatic.length} exact recovery candidates.</div>` : ""}
+          ${(typeof isAdminUser === "function" && isAdminUser() && legacyRecovery.automatic.length)
+            ? `<div class="pb-health-actions"><button type="button" class="btn btn-sm" data-action="migrateExactLegacyCloudDiagrams">Promote ${legacyRecovery.automatic.length} newest exact matches</button></div>`
             : ""}
         ` : ""}
       </section>
@@ -621,6 +700,43 @@
       await window.openMediaInventoryReport();
     } catch (err) {
       if (typeof showToast === "function") showToast(err?.message || "Legacy diagram migration failed.", { type: "error" });
+    }
+  };
+
+  window.migrateExactLegacyCloudDiagrams = async function () {
+    if (typeof isAdminUser === "function" && !isAdminUser()) return;
+    const candidates = _miArray(latestMediaInventoryReport?.legacyRecovery?.automatic)
+      .map((row) => ({ mediaId: row.mediaId, legacyKeys: [row.sourceKey] }))
+      .filter((row) => row.mediaId && row.legacyKeys[0]);
+    if (!candidates.length) {
+      if (typeof showToast === "function") showToast("No exact legacy diagram matches are waiting to be promoted.", { type: "info" });
+      return;
+    }
+    const counts = {};
+    try {
+      for (let start = 0; start < candidates.length; start += 50) {
+        const response = await fetch("/images/migrate-legacy", {
+          method: "POST", credentials: "same-origin", cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: candidates.slice(start, start + 50) }),
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data?.ok) throw new Error(data?.error || "Exact legacy diagram recovery could not be started.");
+        Object.entries(data.counts || {}).forEach(([status, value]) => {
+          counts[status] = (counts[status] || 0) + Number(value || 0);
+        });
+      }
+      const migrated = Number(counts.migrated || 0);
+      const failed = Number(counts.failed || 0) + Number(counts["legacy-not-found"] || 0);
+      if (typeof showToast === "function") {
+        showToast(
+          failed ? `${migrated} exact matches promoted; ${failed} need review.` : `${migrated} newest exact diagrams promoted to Cloudflare.`,
+          { type: failed ? "warning" : "success" },
+        );
+      }
+      await window.openMediaInventoryReport();
+    } catch (err) {
+      if (typeof showToast === "function") showToast(err?.message || "Exact legacy diagram recovery failed.", { type: "error" });
     }
   };
 
