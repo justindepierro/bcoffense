@@ -13715,8 +13715,34 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   }
 
   #script .script-item .play-control-actions {
-    grid-auto-columns: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0;
+    min-width: max-content;
+  }
+
+  /* Keep related row actions together. The controls retain their individual
+     shortcuts, but the separators make the workflow scan as study, discuss,
+     personnel, edit, then remove instead of one undifferentiated icon run. */
+  #script .script-item .script-play-action-group {
+    display: inline-flex;
+    align-items: center;
     gap: 2px;
+    min-height: 24px;
+    padding: 0 3px;
+  }
+
+  #script .script-item .script-play-action-group + .script-play-action-group {
+    border-left: 1px solid var(--color-border-light);
+  }
+
+  #script .script-item .script-play-action-group--study {
+    padding-left: 0;
+  }
+
+  #script .script-item .script-play-action-group--remove {
+    padding-right: 0;
   }
 
   #script .script-item .play-control-actions button,

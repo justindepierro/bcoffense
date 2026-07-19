@@ -502,9 +502,11 @@ function renderScriptPlayControls(play, index, playLabel, reps, signalCount = 0)
   const signalBtn = signalCount
     ? `<button class="script-signal-btn" data-action="openScriptSignalSelector" data-arg="${index}" title="Watch signals" aria-label="Watch ${signalCount} signal clips for ${escapeHtml(playLabel)}">Signals</button>`
     : "";
-  const discBtn = typeof getPlayThreadId === "function"
-    ? `<button class="script-disc-btn" data-action="openScriptDiscussion" data-arg="${index}" title="View discussion" aria-label="Discussion for ${escapeHtml(playLabel)}">💬</button>` +
-    `<button class="script-ask-coach-btn" data-action="scriptAskCoachQuestion" data-arg="${index}" title="Ask a question about this play" aria-label="Ask coach about ${escapeHtml(playLabel)}">❓</button>`
+  const discussionBtn = typeof getPlayThreadId === "function"
+    ? `<button class="script-disc-btn" data-action="openScriptDiscussion" data-arg="${index}" title="View discussion" aria-label="Discussion for ${escapeHtml(playLabel)}">💬</button>`
+    : "";
+  const askCoachBtn = typeof getPlayThreadId === "function"
+    ? `<button class="script-ask-coach-btn" data-action="scriptAskCoachQuestion" data-arg="${index}" title="Ask a question about this play" aria-label="Ask coach about ${escapeHtml(playLabel)}">❓</button>`
     : "";
   // Put the script-only personnel picker in the play's primary action strip.
   // It is intentionally beside the pencil so it is discoverable while the
@@ -518,15 +520,21 @@ function renderScriptPlayControls(play, index, playLabel, reps, signalCount = 0)
           <input class="play-reps-input" type="number" value="${reps}" min="1" data-field="reps" data-idx="${index}" title="Reps" aria-label="Reps for ${escapeHtml(playLabel)}">
           <input class="play-notes-input" type="text" value="${escapeHtml(play.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
         </div>
-        <div class="play-control-actions">
-          ${signalBtn}
-          ${clipBtn}
-          ${discBtn}
-          <button class="script-present-btn" data-action="openScriptPresentation" data-idx="${index}" title="Present this play" aria-label="Present ${escapeHtml(playLabel)}">▶</button>
-          ${personnelBtn}
-          <button class="script-edit-play-btn" data-action="openPlayEditorFromScript" data-arg="${index}" title="Edit this play in the playbook" aria-label="Edit play ${escapeHtml(playLabel)}">✏️</button>
-          <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
-          <button class="remove" data-action="removeFromScript" data-idx="${index}" aria-label="Remove ${escapeHtml(playLabel)}">✕</button>
+        <div class="play-control-actions" aria-label="Actions for ${escapeHtml(playLabel)}">
+          <div class="script-play-action-group script-play-action-group--study" aria-label="Study media">
+            ${signalBtn}
+            ${clipBtn}
+            <button class="script-present-btn" data-action="openScriptPresentation" data-idx="${index}" title="Open player study view" aria-label="Open player study view for ${escapeHtml(playLabel)}">▶</button>
+          </div>
+          ${discussionBtn || askCoachBtn ? `<div class="script-play-action-group script-play-action-group--discussion" aria-label="Discussion">${discussionBtn}${askCoachBtn}</div>` : ""}
+          ${personnelBtn ? `<div class="script-play-action-group script-play-action-group--personnel" aria-label="Script personnel">${personnelBtn}</div>` : ""}
+          <div class="script-play-action-group script-play-action-group--edit" aria-label="Playbook and script actions">
+            <button class="script-edit-play-btn" data-action="openPlayEditorFromScript" data-arg="${index}" title="Edit this play in the playbook" aria-label="Edit play ${escapeHtml(playLabel)}">✏️</button>
+            <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate this script play" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
+          </div>
+          <div class="script-play-action-group script-play-action-group--remove" aria-label="Remove from script">
+            <button class="remove" data-action="removeFromScript" data-idx="${index}" title="Remove from this script" aria-label="Remove ${escapeHtml(playLabel)}">✕</button>
+          </div>
         </div>
       </div>`;
 }
