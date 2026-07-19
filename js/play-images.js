@@ -243,7 +243,7 @@
     await Promise.all(workers);
   }
 
-  async function set(sig, blob) {
+  async function set(sig, blob, options = {}) {
     const key = _normalizeSig(sig);
     if (!key || !blob) return false;
     await _put(key, blob);
@@ -251,7 +251,10 @@
     _knownKeys.add(key);
     _keysPromise = null;
     _urlCache.set(key, URL.createObjectURL(blob));
-    _emitChange(key);
+    // Downloading an already-published diagram must not look like a coach
+    // edit. Otherwise the cache write broadcasts a change event that can
+    // rebuild an open player presentation while it is loading this same file.
+    if (options.emit !== false) _emitChange(key);
     return true;
   }
 
@@ -711,7 +714,7 @@
         const blob = await res.blob();
         if (!blob || blob.size === 0) continue;
         // Cache in IndexedDB under the identity key for future local lookups
-        await set(identityKey, blob);
+        await set(identityKey, blob, { emit: false });
         return _urlCache.get(_normalizeSig(identityKey)) || null;
       } catch (_e) {
         // Try the next compatible remote key.
