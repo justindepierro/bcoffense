@@ -150,6 +150,15 @@ mapping. Player authorization and runtime resolution use the release media-ID
 allow-list plus the current D1 manifest, so metadata snapshots are useful for
 diagnostics/prefetch but never an availability decision.
 
+**Current-practice delivery audit (July 19, 2026):** the rebuilt player release
+contains two player-visible scripts with 29 unique permanent media IDs. Ten of
+those 29 IDs have current canonical diagram pointers: `Day 1 Team Fast` has
+3/10 and `7 on 7 Script Middletown 7/09/2026` has 9/21 (two diagrammed plays
+overlap between the scripts). The remaining 19 have no canonical diagram
+pointer, so the player is correctly shown an unavailable state rather than a
+wrong diagram. Recovery must now be driven by those exact permanent media IDs
+and play records; it is not safe to infer an image from a legacy filename.
+
 **Exit criterion:** every player-visible diagram is classified as verified
 canonical, verified missing, or explicitly retained as unresolved recovery
 evidence.
