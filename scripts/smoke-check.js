@@ -4451,6 +4451,10 @@ function checkPlayerDiagramReadinessContracts() {
     !/readManifests\(store, context\.env, teamId, manifestList\.sigs\)/.test(cloudMediaInventoryRoute) ||
     !/function publicManifest\(row\)/.test(cloudMediaInventoryRoute) ||
     !/objectKey: _objectKey/.test(cloudMediaInventoryRoute) ||
+    !/async function readCurrentDiagramPointers\(env, teamId\)/.test(cloudMediaInventoryRoute) ||
+    !/function diagramPointerIntegrity\(pointerResult, objects, canonicalPrefix, truncated\)/.test(cloudMediaInventoryRoute) ||
+    !/team_media_manifests WHERE team_id = \? AND kind = 'diagram'/.test(cloudMediaInventoryRoute) ||
+    !/integrity: diagramIntegrity/.test(cloudMediaInventoryRoute) ||
     !/scope: \{ legacyIncluded: includeLegacy \}/.test(cloudMediaInventoryRoute) ||
     !/signalClipCount/.test(cloudMediaInventoryRoute) ||
     !/orphanObjectCount/.test(cloudMediaInventoryRoute) ||

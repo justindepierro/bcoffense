@@ -582,12 +582,36 @@
     const cloud = report.cloudDiagrams || {};
     const cloudClips = report.cloudMedia?.clips || {};
     const cloudCounts = cloud.counts || {};
+    const diagramIntegrity = cloud.integrity || {};
     const reconciliation = report.reconciliation || { counts: {}, rows: [] };
     const legacyRecovery = report.legacyRecovery || { automatic: [], ambiguous: [], unmatchedSourceCount: 0 };
     const migrationRows = _miArray(reconciliation.rows).filter((row) => row.status !== "canonical");
     const cloudSummary = cloud.available
       ? `${cloudCounts.total || 0} objects · ${cloudCounts.canonical || 0} canonical · ${(cloudCounts["legacy-canonical-key"] || 0) + (cloudCounts["legacy-content"] || 0) + (cloudCounts["legacy-signature"] || 0)} legacy`
       : cloud.reason || "Cloud inventory unavailable.";
+    const integrityLabel = !cloud.available
+      ? "Unavailable"
+      : !diagramIntegrity.available
+        ? "Pointer audit unavailable"
+        : !diagramIntegrity.complete
+          ? "Pointer audit partial"
+          : Number(diagramIntegrity.missingObjectCount || 0) || Number(diagramIntegrity.invalidPathCount || 0) || Number(diagramIntegrity.checksumMetadataMismatchCount || 0)
+            ? "Needs attention"
+            : "D1 ↔ R2 verified";
+    const integrityIssues = [
+      ..._miArray(diagramIntegrity.missingMediaIds).map((mediaId) => ({
+        label: mediaId,
+        detail: "Current D1 diagram pointer has no matching immutable R2 object.",
+      })),
+      ..._miArray(diagramIntegrity.invalidPathMediaIds).map((mediaId) => ({
+        label: mediaId,
+        detail: "Current D1 diagram pointer is not in the canonical team diagram path.",
+      })),
+      ..._miArray(diagramIntegrity.checksumMetadataMismatchMediaIds).map((mediaId) => ({
+        label: mediaId,
+        detail: "The immutable R2 object's checksum metadata differs from its D1 pointer.",
+      })),
+    ];
     return `
       <div class="pb-health-summary pb-publish-media-summary">
         <div class="pb-health-score ${scoreClass}">
@@ -599,6 +623,7 @@
         ${_miRenderCard(report.diagrams.orphanCount, "Cleanup candidates")}
         ${_miRenderCard(cloud.available ? (cloudCounts.total || 0) : "—", "Cloud diagrams")}
         ${_miRenderCard(cloud.available ? (cloudCounts.canonical || 0) : "—", "Canonical cloud keys")}
+        ${_miRenderCard(cloud.available && diagramIntegrity.available ? (diagramIntegrity.pointerCount || 0) : "—", "Current D1 pointers")}
         ${_miRenderCard(cloud.available ? (cloudClips.clipCount || 0) : report.clips.clipCount, "Cloud clips")}
         ${_miRenderCard(_miFormatBytes(report.clips.totalBytes), "Clip manifests")}
         ${_miRenderCard(report.quiz.publishedScriptCount, "Player scripts")}
@@ -620,6 +645,21 @@
             ${_miRenderCard(reconciliation.counts["local-only"] || 0, "Local-only")}
             ${_miRenderCard(reconciliation.counts.missing || 0, "Missing")}
           </div>
+          <div class="pb-health-section-head" style="margin-top:16px">
+            <h4>Canonical Pointer Integrity</h4>
+            <span>${_miEscape(integrityLabel)}</span>
+          </div>
+          ${diagramIntegrity.available ? `
+            <div class="pb-health-summary pb-publish-media-summary">
+              ${_miRenderCard(diagramIntegrity.pointerCount || 0, "D1 current pointers")}
+              ${_miRenderCard(diagramIntegrity.presentPointerCount || 0, "R2 objects present")}
+              ${_miRenderCard(diagramIntegrity.complete ? (diagramIntegrity.missingObjectCount || 0) : "—", "Missing pointer bytes")}
+              ${_miRenderCard(diagramIntegrity.invalidPathCount || 0, "Noncanonical paths")}
+              ${_miRenderCard(diagramIntegrity.checksumMetadataMismatchCount || 0, "Checksum mismatches")}
+            </div>
+            <div class="pb-health-guidance">This compares every current team D1 diagram pointer with the immutable R2 object list. A partial R2 scan never reports missing bytes as a failure.</div>
+            ${_miRenderPlayRows(integrityIssues, "Every current canonical diagram pointer resolves to an immutable R2 object.")}
+          ` : `<div class="pb-health-empty">${_miEscape(diagramIntegrity.error || "Current diagram pointers could not be audited.")}</div>`}
           ${_miRenderPlayRows(migrationRows, "Every player-visible call has a canonical cloud diagram object.")}
           ${migrationRows.length > MEDIA_INVENTORY_SAMPLE_LIMIT ? `<div class="pb-health-more">Showing ${MEDIA_INVENTORY_SAMPLE_LIMIT} of ${migrationRows.length} migration items.</div>` : ""}
           ${(typeof isAdminUser === "function" && isAdminUser() && (reconciliation.counts.legacy || 0))

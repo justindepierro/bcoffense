@@ -104,7 +104,9 @@ player session.
 
 - [x] Provide staff-only media inventory/reporting for local diagrams, R2
   diagrams, play clips, signal clips, player script readiness, and cleanup
-  candidates.
+  candidates. The inventory implementation now includes a read-only
+  D1-current-pointer-to-R2-object integrity comparison; it never repairs or
+  deletes a discrepancy automatically.
 - [x] Preserve legacy R2 objects and expose read-only, primary-team,
   admin-only diagram recovery/audit routes.
 - [x] Provide an admin recovery wizard that previews exact archived R2 objects,
@@ -112,8 +114,9 @@ player session.
   diagrams into canonical storage without deleting the archive.
 - [x] Add checksum-gated legacy diagram migration and repair routes that write
   a new immutable version rather than overwriting history.
-- [ ] Run a fresh, admin-authenticated row-level inventory of the actual R2
-  bucket and D1 pointers after migration 0012.
+- [ ] Deploy and run the new admin-authenticated row-level R2/D1 pointer
+  integrity inventory after migration 0012; retain its dated result as the
+  baseline before any archive cleanup.
 - [ ] Reconcile every historic diagram mapping by permanent media ID, source
   object checksum, and a visual review where necessary. Do not trust broad
   historic exact promotions or count them as migrated.

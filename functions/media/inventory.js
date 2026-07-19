@@ -68,6 +68,83 @@ function mediaIdForDiagramKey(key, canonicalPrefix) {
   return decodeComponent(encodedMediaId) || encodedMediaId;
 }
 
+async function readCurrentDiagramPointers(env, teamId) {
+  const db = env?.DB;
+  if (!db || typeof db.prepare !== "function") {
+    return { available: false, error: "Diagram manifest database is not configured.", rows: [] };
+  }
+  try {
+    const result = await db.prepare(
+      "SELECT media_id, r2_key, checksum, version, size, content_type FROM team_media_manifests WHERE team_id = ? AND kind = 'diagram' ORDER BY media_id",
+    ).bind(teamId).all();
+    const rows = Array.isArray(result?.results) ? result.results : [];
+    return {
+      available: true,
+      rows: rows.map((row) => ({
+        mediaId: String(row?.media_id || ""),
+        r2Key: String(row?.r2_key || ""),
+        checksum: String(row?.checksum || "").toLowerCase(),
+        version: String(row?.version || ""),
+        size: Math.max(0, Number(row?.size || 0)),
+        contentType: String(row?.content_type || ""),
+      })).filter((row) => row.mediaId && row.r2Key),
+    };
+  } catch (_err) {
+    return { available: false, error: "Current diagram pointers could not be read.", rows: [] };
+  }
+}
+
+function diagramPointerIntegrity(pointerResult, objects, canonicalPrefix, truncated) {
+  if (!pointerResult?.available) {
+    return {
+      available: false,
+      error: pointerResult?.error || "Current diagram pointers could not be read.",
+      complete: false,
+    };
+  }
+  const objectByKey = new Map(
+    (Array.isArray(objects) ? objects : [])
+      .map((object) => [String(object?.key || ""), object])
+      .filter(([key]) => key),
+  );
+  const pointers = Array.isArray(pointerResult.rows) ? pointerResult.rows : [];
+  const missing = [];
+  const invalidPath = [];
+  const checksumMetadataMismatch = [];
+  let present = 0;
+
+  pointers.forEach((pointer) => {
+    const object = objectByKey.get(pointer.r2Key);
+    if (!object) {
+      missing.push(pointer);
+      return;
+    }
+    present += 1;
+    if (!pointer.r2Key.startsWith(canonicalPrefix) || !pointer.r2Key.includes("/diagram/")) {
+      invalidPath.push(pointer);
+    }
+    const objectChecksum = String(object?.customMetadata?.checksum || "").trim().toLowerCase();
+    if (objectChecksum && pointer.checksum && objectChecksum !== pointer.checksum) {
+      checksumMetadataMismatch.push(pointer);
+    }
+  });
+
+  return {
+    available: true,
+    // A truncated list cannot prove a pointer is missing, even though it can
+    // still surface present objects and malformed D1 paths.
+    complete: !truncated,
+    pointerCount: pointers.length,
+    presentPointerCount: present,
+    missingObjectCount: truncated ? null : missing.length,
+    invalidPathCount: invalidPath.length,
+    checksumMetadataMismatchCount: checksumMetadataMismatch.length,
+    missingMediaIds: truncated ? [] : missing.slice(0, 25).map((pointer) => pointer.mediaId),
+    invalidPathMediaIds: invalidPath.slice(0, 25).map((pointer) => pointer.mediaId),
+    checksumMetadataMismatchMediaIds: checksumMetadataMismatch.slice(0, 25).map((pointer) => pointer.mediaId),
+  };
+}
+
 async function listR2(bucket, prefixes) {
   const objects = [];
   let truncated = false;
@@ -201,6 +278,13 @@ export async function onRequestGet(context) {
       counts[item.kind] = (counts[item.kind] || 0) + 1;
       return counts;
     }, { total: 0, totalBytes: 0, canonical: 0, "legacy-canonical-key": 0, "legacy-content": 0, "legacy-signature": 0 });
+    const pointerResult = await readCurrentDiagramPointers(context.env, teamId);
+    const diagramIntegrity = diagramPointerIntegrity(
+      pointerResult,
+      diagramList.objects,
+      diagramPrefix,
+      diagramList.truncated,
+    );
     const referencedClipKeys = new Set(manifests.flatMap((row) => row.clips.map((clip) => clip.objectKey)));
     const clipObjects = clipList.objects.map((object) => ({
       key: String(object.key || ""),
@@ -215,6 +299,7 @@ export async function onRequestGet(context) {
         objects: diagrams,
         counts: diagramCounts,
         truncated: diagramList.truncated,
+        integrity: diagramIntegrity,
       },
       clips: {
         manifests: manifests.map(publicManifest),
