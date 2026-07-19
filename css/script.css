@@ -7473,7 +7473,8 @@ body:not(.is-mobile-screen) #script .script-section-head .btn-add-period {
   display: grid;
   gap: 8px;
   flex: 0 0 auto;
-  max-height: 118px;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: 132px;
   padding: 8px;
   overflow: hidden;
   border: 1px solid var(--color-border-light);
@@ -7517,7 +7518,8 @@ body:not(.is-mobile-screen) #script .script-section-head .btn-add-period {
   grid-template-columns: none;
   gap: 8px;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
+  max-height: 72px;
   padding-bottom: 2px;
   scrollbar-gutter: stable;
 }
@@ -7525,7 +7527,7 @@ body:not(.is-mobile-screen) #script .script-section-head .btn-add-period {
 #script .script-timeline-card {
   position: relative;
   display: grid;
-  grid-template-columns: 6px minmax(0, 1fr) auto;
+  grid-template-columns: 6px minmax(0, 1fr);
   align-content: start;
   gap: 4px 7px;
   min-width: 0;
@@ -7538,7 +7540,7 @@ body:not(.is-mobile-screen) #script .script-section-head .btn-add-period {
 }
 
 #script .script-timeline-color {
-  grid-row: 1 / span 3;
+  grid-row: 1 / -1;
   width: 6px;
   border-radius: var(--radius-pill);
   background: var(--period-color, var(--color-primary));
@@ -7560,16 +7562,17 @@ body:not(.is-mobile-screen) #script .script-section-head .btn-add-period {
 }
 
 #script .script-timeline-actions {
-  grid-column: 3;
-  grid-row: 1 / span 2;
+  grid-column: 2 / -1;
+  grid-row: auto;
   display: grid;
-  grid-template-columns: repeat(2, minmax(30px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 4px;
-  align-self: start;
+  width: 100%;
 }
 
 #script .script-timeline-action {
   min-height: 24px;
+  overflow: hidden;
   padding: 3px 5px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
@@ -7579,12 +7582,25 @@ body:not(.is-mobile-screen) #script .script-section-head .btn-add-period {
   font: inherit;
   font-size: var(--font-size-3xs);
   font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 #script .script-timeline-action.is-active {
   border-color: var(--color-primary);
   background: var(--color-primary-light);
   color: var(--color-primary);
+}
+
+#script .script-timeline-action.is-mixed {
+  border-color: color-mix(in srgb, var(--color-warning) 55%, var(--color-border-med));
+  background: var(--color-warning-light);
+  color: var(--color-warning-hover);
+}
+
+#script .script-timeline-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 #script .script-timeline-jump {

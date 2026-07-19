@@ -122,6 +122,10 @@ function buildScriptTimelinePeriods(renderContext) {
     const periodPlays = getScriptTimelinePeriodPlays(index);
     const stats = getPeriodStats(index, periodStatsMap);
     const balance = buildScriptTimelineBalance(periodPlays);
+    const personnelVisibility =
+      typeof getPeriodPersonnelVisibilityState === "function"
+        ? getPeriodPersonnelVisibilityState(index)
+        : { total: periodPlays.length, visible: periodPlays.length, mode: "shown" };
     periods.push({
       id: item.id,
       index,
@@ -134,6 +138,7 @@ function buildScriptTimelinePeriods(renderContext) {
       runCount: stats.runCount,
       passCount: stats.passCount,
       hideProtection: Boolean(item.hideProtection),
+      personnelVisibility,
       ...balance,
       tempoLoad: getTopScriptTimelineBuckets(periodPlays, "tempo", "No tempo"),
       personnelLoad: getTopScriptTimelineBuckets(periodPlays, "personnel", "No personnel"),
@@ -182,6 +187,21 @@ function renderScriptTimelineActions(period) {
   const protectionTitle = period.hideProtection
     ? `Show protection for ${label}`
     : `Hide protection for ${label}`;
+  const personnelState = period.personnelVisibility || { total: 0, visible: 0, mode: "empty" };
+  const personnelLabel = personnelState.mode === "shown"
+    ? "Pers On"
+    : personnelState.mode === "hidden"
+      ? "Pers Off"
+      : personnelState.mode === "mixed"
+        ? "Pers Mix"
+        : "Pers";
+  const personnelTitle = personnelState.mode === "shown"
+    ? `Hide personnel for all ${personnelState.total} plays in ${label}`
+    : personnelState.mode === "hidden"
+      ? `Show personnel for all ${personnelState.total} plays in ${label}`
+      : personnelState.mode === "mixed"
+        ? `Show personnel for all plays in ${label}; ${personnelState.visible} of ${personnelState.total} are currently shown`
+        : `No plays in ${label} yet`;
 
   const actions = [
     ["duplicatePeriod", "Dup", `Duplicate ${label}`],
@@ -192,6 +212,13 @@ function renderScriptTimelineActions(period) {
       protectionTitle,
       period.hideProtection ? " is-active" : "",
     ],
+    [
+      "togglePeriodPersonnelVisibility",
+      personnelLabel,
+      personnelTitle,
+      personnelState.mode === "shown" ? " is-active" : personnelState.mode === "mixed" ? " is-mixed" : "",
+      !personnelState.total,
+    ],
     ["printPeriod", "Print", `Print ${label}`],
   ];
 
@@ -199,8 +226,8 @@ function renderScriptTimelineActions(period) {
     <span class="script-timeline-actions" aria-label="${escapeHtml(label)} timeline actions">
       ${actions
       .map(
-        ([action, actionLabel, title, activeClass = ""]) => `
-        <button type="button" class="script-timeline-action${activeClass}" data-action="${action}" data-arg="${period.index}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">
+        ([action, actionLabel, title, activeClass = "", disabled = false]) => `
+        <button type="button" class="script-timeline-action${activeClass}" data-action="${action}" data-arg="${period.index}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}"${disabled ? " disabled" : ""}>
           ${escapeHtml(actionLabel)}
         </button>`,
       )
@@ -296,4 +323,3 @@ function refreshScriptTimeline() {
     renderSummary: buildScriptRenderSummary(script),
   });
 }
-

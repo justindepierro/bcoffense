@@ -319,6 +319,14 @@ function setPeriodPersonnelVisibility(separatorIndex, showPersonnel) {
   announceScriptA11y(`Personnel ${stateLabel} for all plays in ${label}`);
 }
 
+function togglePeriodPersonnelVisibility(separatorIndex) {
+  const state = getPeriodPersonnelVisibilityState(separatorIndex);
+  if (!state.total) return;
+  // A mixed period resolves to "show all". Hiding every play is the next,
+  // deliberate click, which keeps the compact timeline control safe to use.
+  setPeriodPersonnelVisibility(separatorIndex, state.mode !== "shown");
+}
+
 function copyPeriodAsText(idx) {
   const sepIdx = parseInt(idx, 10);
   const separator = script[sepIdx];
