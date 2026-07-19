@@ -1314,10 +1314,6 @@
       if (!silent) updateCloudSyncModalStatus("Publishing team data...", "info");
       const result = await pushCloudBackupInternal({ silent, skipActivityLog: true });
       if (!silent) updateCloudSyncModalStatus("Checking player readiness...", "info");
-      if (typeof window.setWorkspaceSyncStatus === "function") {
-        window.setWorkspaceSyncStatus("media", "syncing", { label: "Checking media..." });
-        window.setWorkspaceSyncStatus("player", "syncing", { label: "Checking quizzes and signals..." });
-      }
       const readiness = await buildTeamPublishReadinessReport(result);
       const hasIssues = publishReadinessHasIssues(readiness);
       const domains = getPublishReadinessDomains(readiness);
@@ -1332,7 +1328,11 @@
         domains,
         summary: formatPublishReadinessSummary(readiness),
         failedDomain: hasIssues ? failedItem?.domain || "readiness" : "",
-        retryAction: hasIssues ? "Use publish readiness, fix the listed item, then publish again." : "",
+        // Readiness gaps are content to review (such as a historic play that
+        // has no diagram), not failed transport work. Re-publishing cannot
+        // repair those gaps, so keep them in the audit instead of advertising
+        // a misleading Retry action in the workspace dock.
+        retryAction: hasIssues ? "Review the Media Inventory and complete only the listed content gaps." : "",
         size: result.size,
       });
       cloudAutoPushLastError = "";
@@ -1341,22 +1341,12 @@
         cloudAutoPushPending = false;
         cloudAutoPushDirtyKeys.clear();
       }
-      if (typeof window.setWorkspaceSyncStatus === "function") {
-        window.setWorkspaceSyncStatus("media", hasIssues ? "error" : "synced", {
-          label: hasIssues ? "Media needs attention" : "Media ready",
-        });
-        window.setWorkspaceSyncStatus("player", hasIssues ? "error" : "synced", {
-          label: hasIssues ? "Player readiness needs attention" : "Player readiness checked",
-        });
-      }
-      if (hasIssues) {
-        _cloudFailJob(publishJobKey, new Error("Player readiness needs attention"), {
-          label: "Publish needs attention",
-          retry: () => publishTeamWorkspace(opts),
-        });
-      } else {
-        _cloudCompleteJob(publishJobKey, { label: "Ready for players" });
-      }
+      // The workspace did publish. A readiness warning must not become a
+      // retryable publish failure: that permanently pins the red dock and
+      // implies Retry will create media that simply does not exist yet.
+      _cloudCompleteJob(publishJobKey, {
+        label: hasIssues ? "Published; readiness reviewed" : "Ready for players",
+      });
       if (!silent) {
         updateCloudSyncModalStatus(
           `${hasIssues ? "Published, but readiness needs attention." : "Published and ready for players."} ${formatPublishReadinessSummary(readiness)}`,

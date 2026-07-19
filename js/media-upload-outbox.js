@@ -216,7 +216,14 @@
 
   async function refreshHealth() {
     const health = await getHealth();
-    if (!health.pending || typeof window.queueWorkspaceSyncJob !== "function") return health;
+    if (typeof window.queueWorkspaceSyncJob !== "function") return health;
+    // A previous health check may have created a dock job in this browser
+    // session. Clear only that job once the durable outbox is empty; the
+    // workspace queue will preserve any separate media error still unresolved.
+    if (!health.pending) {
+      window.completeWorkspaceSyncJob?.("media:durable-upload-outbox", { label: "Media saved for players" });
+      return health;
+    }
     const key = window.queueWorkspaceSyncJob("media", "durable-upload-outbox", {
       queuedLabel: health.needsAttention
         ? `${health.blocked || health.stale} media upload${(health.blocked || health.stale) === 1 ? "" : "s"} need attention`

@@ -4055,9 +4055,8 @@ function checkWorkspaceSyncContracts() {
     "jobId: \"auto-push\"",
     "Team publish queued",
     "Publishing team update...",
-    "Checking media...",
-    "Checking quizzes and signals...",
     "Ready for players",
+    "Published; readiness reviewed",
     "_cloudQueueJob(\"media\", \"auto-push\"",
     "_cloudStartJob(mediaJobKey",
     "_cloudCompleteJob(mediaJobKey",
@@ -4067,6 +4066,14 @@ function checkWorkspaceSyncContracts() {
       fail(`workspace sync cloud/media contract missing ${token}`);
     }
   });
+
+  if (
+    /setWorkspaceSyncStatus\("media", hasIssues \? "error"/.test(cloudSync) ||
+    /setWorkspaceSyncStatus\("player", hasIssues \? "error"/.test(cloudSync) ||
+    /_cloudFailJob\(publishJobKey, new Error\("Player readiness needs attention"\)/.test(cloudSync)
+  ) {
+    fail("readiness gaps must stay in the audit rather than pinning the retryable workspace dock");
+  }
 
   if (/Cloud autosaved|Cloud autosave|Cloud sync queued|Syncing team cloud|Cloud sync needs attention/.test(cloudSync) || /Play image changed\. Cloud autosave queued\./.test(cloudSync)) {
     fail("cloud autosave still uses noisy success/queued toasts instead of the workspace dock");

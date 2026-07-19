@@ -733,6 +733,9 @@
       const pending = window.mediaUploadOutbox?.pending
         ? (await window.mediaUploadOutbox.pending("clip")).length
         : 0;
+      if (!pending && typeof window.completeWorkspaceSyncJob === "function") {
+        window.completeWorkspaceSyncJob("media:clip-auto-upload", { label: "Video saved for players" });
+      }
       return { pushed, pending };
     }
     const cache = await caches.open(CLIP_UPLOAD_QUEUE_CACHE);
@@ -750,6 +753,9 @@
     const pending = window.mediaUploadOutbox?.pending
       ? (await window.mediaUploadOutbox.pending("clip")).length
       : _readClipUploadQueue().length;
+    if (!pending && !_readClipUploadQueue().length && typeof window.completeWorkspaceSyncJob === "function") {
+      window.completeWorkspaceSyncJob("media:clip-auto-upload", { label: "Video saved for players" });
+    }
     return { pushed, pending };
   }
 

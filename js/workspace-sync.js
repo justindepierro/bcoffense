@@ -123,6 +123,39 @@
     renderWorkspaceSyncDock();
   }
 
+  // A channel can have more than one kind of work at once (for example, a
+  // diagram and a clip upload). Do not let a successful job hide a separate
+  // job that is still genuinely blocked. Conversely, a new queued job should
+  // not turn a resolved channel back into an error because of a stale label.
+  function _wsReconcileChannel(channel, fallbackState = "idle", fallbackLabel = "") {
+    const normalizedChannel = _wsNormalizeChannel(channel);
+    const jobs = [...workspaceSyncJobs.values()]
+      .filter((job) => job.channel === normalizedChannel)
+      .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+    const error = jobs.find((job) => job.state === "error");
+    if (error) {
+      setWorkspaceSyncStatus(normalizedChannel, "error", {
+        label: error.errorLabel || _wsDefaultLabel(normalizedChannel, "error"),
+      });
+      return;
+    }
+    const running = jobs.find((job) => job.state === "running");
+    if (running) {
+      setWorkspaceSyncStatus(normalizedChannel, normalizedChannel === "local" ? "saving" : "syncing", {
+        label: running.runningLabel || _wsDefaultLabel(normalizedChannel, "syncing"),
+      });
+      return;
+    }
+    const queued = jobs.find((job) => job.state === "queued");
+    if (queued) {
+      setWorkspaceSyncStatus(normalizedChannel, "queued", {
+        label: queued.queuedLabel || _wsDefaultLabel(normalizedChannel, "queued"),
+      });
+      return;
+    }
+    setWorkspaceSyncStatus(normalizedChannel, fallbackState, { label: fallbackLabel });
+  }
+
   function hasWorkspaceSyncWork() {
     return Object.values(WORKSPACE_SYNC_STATES).some((item) =>
       ["dirty", "queued", "saving", "syncing", "error"].includes(item.state),
@@ -153,9 +186,7 @@
       updatedAt: new Date().toISOString(),
     };
     workspaceSyncJobs.set(key, job);
-    setWorkspaceSyncStatus(normalizedChannel, opts.status || "queued", {
-      label: job.queuedLabel || _wsDefaultLabel(normalizedChannel, "queued"),
-    });
+    _wsReconcileChannel(normalizedChannel, opts.status || "queued", job.queuedLabel || _wsDefaultLabel(normalizedChannel, "queued"));
     return key;
   }
 
@@ -165,9 +196,11 @@
     job.state = "running";
     job.updatedAt = new Date().toISOString();
     if (typeof opts.retry === "function") job.retry = opts.retry;
-    setWorkspaceSyncStatus(job.channel, opts.status || (job.channel === "local" ? "saving" : "syncing"), {
-      label: opts.label || job.runningLabel || _wsDefaultLabel(job.channel, "syncing"),
-    });
+    _wsReconcileChannel(
+      job.channel,
+      opts.status || (job.channel === "local" ? "saving" : "syncing"),
+      opts.label || job.runningLabel || _wsDefaultLabel(job.channel, "syncing"),
+    );
     return true;
   }
 
@@ -177,9 +210,11 @@
     job.state = "done";
     job.updatedAt = new Date().toISOString();
     workspaceSyncJobs.delete(key);
-    setWorkspaceSyncStatus(job.channel, opts.status || (job.channel === "local" ? "saved" : "synced"), {
-      label: opts.label || job.doneLabel || _wsDefaultLabel(job.channel, "synced"),
-    });
+    _wsReconcileChannel(
+      job.channel,
+      opts.status || (job.channel === "local" ? "saved" : "synced"),
+      opts.label || job.doneLabel || _wsDefaultLabel(job.channel, "synced"),
+    );
     return true;
   }
 
@@ -190,9 +225,8 @@
     job.error = error && error.message ? error.message : String(error || "Unknown error");
     job.updatedAt = new Date().toISOString();
     if (typeof opts.retry === "function") job.retry = opts.retry;
-    setWorkspaceSyncStatus(job.channel, "error", {
-      label: opts.label || job.errorLabel || _wsDefaultLabel(job.channel, "error"),
-    });
+    if (opts.label) job.errorLabel = opts.label;
+    _wsReconcileChannel(job.channel, "error", job.errorLabel || _wsDefaultLabel(job.channel, "error"));
     return true;
   }
 
@@ -203,9 +237,7 @@
     if (!job) return false;
     job.state = "queued";
     job.updatedAt = new Date().toISOString();
-    setWorkspaceSyncStatus(job.channel, "queued", {
-      label: job.queuedLabel || _wsDefaultLabel(job.channel, "queued"),
-    });
+    _wsReconcileChannel(job.channel, "queued", job.queuedLabel || _wsDefaultLabel(job.channel, "queued"));
     Promise.resolve()
       .then(() => job.retry())
       .catch((err) => failWorkspaceSyncJob(job.key, err));
