@@ -4,10 +4,14 @@
 
 This repository contains a Cloudflare canonical release. On July 19, 2026,
 production D1 was exported locally, migrations 0011–0017 were applied, and
-the remote ledger passed preflight. Pages deployment is the next release step.
+the remote ledger passed preflight. Pages source commit `a1075e2` was then
+deployed, and an authenticated admin published the first canonical workspace
+and player-release heads.
 
-Until Pages is deployed and verified with clean sessions, do not assume the new
-player-release, team-scoped media, or backup protections are live.
+The new player-release, team-scoped media, and backup protections are live.
+Clean admin, coach, and player-session validation plus legacy-media
+reconciliation are still required before treating every historical asset as
+canonical.
 
 ## What Cloudflare hosts after the containment release
 
@@ -88,30 +92,31 @@ It invokes a read-only D1 migration preflight before staging files. The script
 never applies migrations itself. It refuses a deployment when the remote ledger
 is behind, ahead of, or otherwise different from the local migration files.
 
-For this canonical release, the approved operator workflow is:
+For this canonical release, the approved operator workflow was completed
+through the first canonical head; the final clean-session test remains:
 
-1. Back up and inspect production D1.
+1. [x] Back up and inspect production D1.
 2. Confirm the current one-team assumption and the intended assignment for all
    currently unassigned users. Migration 0011 only backfills users when
    exactly one team exists.
-3. Review migrations 0011–0017 and apply them intentionally:
+3. [x] Review migrations 0011–0017 and apply them intentionally:
 
    ~~~bash
    wrangler d1 migrations apply bcoffense-db --remote
    ~~~
 
-4. Verify the remote ledger and new tables/indexes. In particular, confirm
+4. [x] Verify the remote ledger and new tables/indexes. In particular, confirm
    app_settings.primary_team_id, user team_id values,
    team_media_manifests, account_session_state, discussion integrity tables,
    workspace revision tables/current head, and the team-scoped play_likes
    uniqueness rule. Confirm the 0017 quarantine removed only unsafe D1
    pointers and did not delete R2 objects.
-5. Run ./scripts/deploy-cloudflare.sh again. It must pass preflight before any
+5. [x] Run ./scripts/deploy-cloudflare.sh again. It must pass preflight before any
    Pages deployment begins.
-6. Sign in as an admin and bootstrap the first canonical workspace/release head
+6. [x] Sign in as an admin and bootstrap the first canonical workspace/release head
    from retained recovery data. GET /player/release is intentionally read-only
    and will not publish a release during a player request.
-7. Test a clean player session and a second coach session before announcing a
+7. [ ] Test a clean player session and a second coach session before announcing a
    practice or changing archived media.
 
 Do not deploy the repo root directly with the generic Pages command below. The

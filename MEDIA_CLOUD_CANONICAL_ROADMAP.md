@@ -2,20 +2,22 @@
 
 ## Status and evidence rules
 
-This roadmap distinguishes the implementation checkout from the live Cloudflare
-account.
+This roadmap distinguishes code-level completion from verified live Cloudflare
+evidence.
 
-- [x] means the code or migration file exists in this checkout and is ready for
-  code-level verification. It does not mean that Cloudflare has been migrated
-  or that a production device has exercised it.
+- [x] means the relevant implementation exists and the stated verification
+  evidence has been collected. Each item names any remaining live-test scope.
 - [ ] means implementation, data reconciliation, migration, deployment, or
   production verification is still required.
-- Nothing in this document records a migration, deployment, upload, or repair
-  in the live Cloudflare account.
+- Production evidence is recorded only when it was completed against the live
+  account, never inferred from local code.
 
-On July 19, 2026, migrations 0011–0017 were applied to production after a
-local SQL export and a one-team verification. The D1 preflight now passes.
-Pages code has not yet been deployed at this point in the release record.
+On July 19, 2026, production D1 was exported locally, migrations 0011–0017
+were applied after a one-team verification, and the D1 preflight passed.
+Pages source commit `a1075e2` was deployed. An authenticated admin then
+republished the coach workspace: D1 now has one current workspace head, one
+current player-release head, and two immutable revisions of each. Clean-role
+browser and media reconciliation tests remain explicitly outstanding.
 
 ## Product contract — locked
 
@@ -58,9 +60,9 @@ They describe the remote account, not the un-deployed code below.
 | Area | Verified fact | Consequence |
 | --- | --- | --- |
 | Teams and accounts | D1 has one team and 17 user rows. Migration 0011 assigned all 17 users to the verified primary team. | Team-scoped routes now have an explicit membership basis. |
-| D1 migrations | The remote ledger records 0011–0017 and the release preflight passes. | Pages deployment may proceed from this reviewed checkout. |
+| D1 migrations | The remote ledger records 0011–0017 and the release preflight passes. | The schema gate is satisfied for the deployed canonical release. |
 | Legacy diagram metadata | The old media_manifests table has 122 rows with blank checksums and legacy media/plays/... keys. | Those rows are recovery evidence, not proof of a correct canonical mapping. |
-| New diagram table | team_media_manifests does not exist in production before migration 0012. | New team-scoped diagram routes cannot run safely against the current remote schema. |
+| New diagram table | team_media_manifests is present after migration 0012. | New team-scoped diagram routes have their required schema; legacy rows still need reconciliation. |
 | Referential integrity | PRAGMA foreign_key_check was clean. | Preserve the database; this is not a corruption-rebuild exercise. |
 | Session state | A live users.sessions_invalid_before column was observed outside the tracked migrations. | Migration 0013 uses a separate state table rather than an unsafe ALTER TABLE. |
 | KV inventory | A direct Wrangler key listing returned no keys, while an earlier UI inventory reported media/clip records. | Reconcile the binding/environment after deployment; do not treat either count as canonical evidence. |
@@ -74,8 +76,8 @@ player session.
 
 | Boundary | Implemented behavior | Important limitation |
 | --- | --- | --- |
-| Team context | Requests resolve an explicit session team; a single-team bootstrap is defined in migration 0011 rather than selecting an arbitrary team. | Live users still need the migration/backfill. Multi-team onboarding needs explicit assignment tooling. |
-| Player data | GET /player/release reads a D1-current immutable R2 release with revision/ETag support. Player startup uses it instead of raw backup restore. | A first canonical head must be bootstrapped from recovery data after migration. |
+| Team context | Requests resolve an explicit session team; migration 0011 assigned all 17 users to the verified primary team rather than selecting an arbitrary team. | Multi-team onboarding still needs explicit assignment tooling. |
+| Player data | GET /player/release reads a D1-current immutable R2 release with revision/ETag support. Player startup uses it instead of raw backup restore. | A first canonical head was bootstrapped; a clean player-session test remains. |
 | Coach workspace | Daily coach saves use immutable R2 workspace/release records and one D1 compare-and-swap head. | Concurrent-device conflicts require an explicit refresh; raw KV remains recovery-only. |
 | Raw recovery backup | /sync/backup is admin-only; a recovery write commits the same canonical workspace/release head before retaining a labeled KV snapshot. | The retained KV object is recovery evidence, never player or normal-sync authority. |
 | Diagrams | Manifest rows are keyed by team_id, media_id, and kind; bytes use media/teams/<teamId>/plays/<mediaId>/diagram/<version>. The D1 pointer is a compare-and-swap commit point. | Migration 0012 must run and legacy rows need individual reconciliation. |
@@ -85,7 +87,7 @@ player session.
 | Clips | New writes and primary reads use team-namespaced KV keys, and player reads are gated by release allow-lists. | Clip manifests are still KV-authoritative and a primary-team legacy clip fallback remains during transition. |
 | Other team boundaries | Discussion attachments, threads, and play likes are team scoped; raw attachment R2 keys are not returned. | Migration 0014 is required before the revised like uniqueness rule is live. |
 | Session/cache lifecycle | The service worker bypasses auth, release, image, and clip routes; install no longer forces uncontrolled skipWaiting. Account invalidation uses migration 0013. | Browser/session behavior still needs live validation after migration and deployment. |
-| Deployment safety | cloudflare-preflight.sh reads the remote migration ledger and makes the deploy script fail closed. | It intentionally blocks this release until the seven pending migrations are applied. |
+| Deployment safety | cloudflare-preflight.sh reads the remote migration ledger and makes the deploy script fail closed. | The production deploy at `a1075e2` passed this gate; every later release remains gated. |
 
 ## Delivery plan
 
@@ -131,8 +133,11 @@ evidence.
   runtime routes after those clip records are reconciled.
 - [x] Apply migrations 0011–0017 after backup and verify the team assignment,
   tables, and foreign keys.
-- [ ] Bootstrap a canonical workspace/release head, deploy Pages, and prove
-  all authorization paths from clean admin, coach, and player sessions.
+- [x] Back up D1, apply migrations, deploy Pages, and bootstrap a canonical
+  workspace/release head (one current head and two immutable revisions each
+  verified in production).
+- [ ] Prove all authorization and media paths from clean admin, coach, and
+  player sessions.
 
 **Exit criterion:** a player cannot request a raw workspace, unrelated team
 media, an unreleased media ID, or an archived diagram merely by being signed

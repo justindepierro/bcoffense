@@ -5,21 +5,22 @@
 **Release update (July 19, 2026):** a local SQL export was created, migrations
 0011–0017 were applied, the remote ledger/preflight passed, one primary team
 was verified, all 17 users were assigned to it, and `foreign_key_check` was
-clean. Pages deployment and canonical-head bootstrap remain separate steps.
+clean. Pages source commit `a1075e2` was deployed, and an authenticated admin
+created one current canonical workspace head and one current player-release
+head (two immutable revisions of each). Clean-role and legacy-media
+reconciliation tests remain separate release work.
 
 ## Executive conclusion
 
 The correct direction is clear: player media must be a team-scoped,
 release-authorized projection of the coach workspace, not a browser backup
-that happens to contain diagrams. The current checkout implements the first
-containment layer for that model, but it is not deployed and the remote D1
-schema is still behind it.
+that happens to contain diagrams. The containment layer is now deployed with
+the required D1 schema and initial heads; it must still earn production trust
+through clean-role tests and checksum-backed legacy-media reconciliation.
 
-The production account must not yet be described as cloud-canonical. The
-immediate safe objective is to deploy the canonical release only after
-migrations 0011–0017 are reviewed and applied, then prove the boundary from
-fresh admin, coach, and player sessions. The workspace and player release now
-use the D1/R2 revision system; remaining work is deployment validation, clip
+The production account now has the canonical workspace/release authority
+online. Do not yet describe all historical media as canonical: remaining work
+is clean-role validation, checksum-backed diagram reconciliation, clip
 migration, durable upload jobs, and operations.
 
 ## Evidence boundary and verified remote facts
@@ -30,14 +31,14 @@ account at audit time, not the code currently in the working tree.
 | Surface | Verified finding | Interpretation |
 | --- | --- | --- |
 | D1 team data | One team and 17 users were present; migration 0011 assigned all 17 users to the verified primary-team ID. | Scoped data now has explicit membership. |
-| D1 migration ledger | Migrations 0011–0017 are applied and deployment preflight passes. | The reviewed Pages deployment may proceed. |
+| D1 migration ledger | Migrations 0011–0017 are applied and deployment preflight passes. | The deployed Pages release is schema-compatible. |
 | Legacy diagram metadata | The legacy media_manifests table contains 122 rows with blank checksums and legacy media/plays/... object paths. | They are migration/recovery evidence, not verified current canonical diagram pointers. |
-| New manifest table | team_media_manifests is introduced by local migration 0012 and is not in the audited remote schema. | New diagram routes are intentionally incompatible with production until migration is applied. |
+| New manifest table | team_media_manifests exists after migration 0012. | New diagram routes have their production schema; legacy pointers remain quarantined until verified. |
 | Referential integrity | PRAGMA foreign_key_check returned clean. | Preserve and migrate the data; do not rebuild or mass-delete it. |
 | Session invalidation | A sessions_invalid_before users column existed outside the tracked migration history. | Local migration 0013 creates separate state so it works on both known schema shapes. |
 | KV inventory | Direct Wrangler listing returned no keys, while an earlier in-app report showed clip/media records. | The namespace/binding/environment needs explicit reconciliation; neither count should drive cleanup. |
 | R2 inventory | Earlier UI reports exposed legacy diagram and clip objects, but no checksum-to-play mapping was established for every object. | Retain every object; do not infer ownership from filename or UI count. |
-| Production deployment | No migration or Pages deployment was performed as part of this audit. | New security and media behavior is implementation-branch work only. |
+| Production deployment | Commit `a1075e2` was deployed after migration preflight, then admin republish created current workspace and release heads. | The canonical server authority is live; media and clean-role validation remain. |
 
 ## What the containment checkout changes
 
@@ -74,14 +75,14 @@ deployment, and live verification.
 
 ## Risks remaining after the containment code
 
-### P0 — blocked until deployment and live verification
+### P0 — live verification still required
 
-1. **The live app has not received the new boundaries.** Pages deployment and
-   clean-role verification are still required before new routes protect users.
+1. **Clean-role behavior is not yet proven.** Admin, coach, and player sessions
+   must verify the deployed routes and authorization boundaries end to end.
 2. **Legacy diagram rows are not verified media.** Migration 0012 creates the
    scoped table but deliberately does not promote ambiguous legacy metadata;
    0017 quarantines unsafe existing pointers without deleting R2 evidence.
-3. **The first player release must be built and tested.** Player release GET is
+3. **The first player release must be tested.** Player release GET is
    deliberately read-only; it will not silently publish during a player request.
 
 ### P1 — target architecture still outstanding
@@ -109,11 +110,12 @@ deployment, and live verification.
 4. Clean-device, offline/reload, concurrent-coach, and responsive portal tests
    still need to run against a deployed environment.
 
-## Required migration and deployment gate
+## Completed migration and deployment gate
 
-This is a release procedure, not an action already taken.
+The following release procedure was completed on July 19, 2026; remaining
+role/media tests are deliberately not implied by these infrastructure checks.
 
-1. Take an approved backup of production D1 and document the intended
+1. [x] Take an approved backup of production D1 and document the intended
    primary-team/user assignment.
 2. Review the migrations:
    - 0011_player_release_boundary.sql creates the primary-team setting and
@@ -128,13 +130,13 @@ This is a release procedure, not an action already taken.
      team-integrity constraints; 0016_workspace_revision_data_plane.sql adds
      the atomic workspace/release head; 0017 quarantines unverified diagram
      pointers while preserving every R2 object.
-3. Intentionally apply the migrations. The deploy script will not do this.
-4. Verify D1 migration ledger, team setting, user assignments, tables,
+3. [x] Intentionally apply the migrations. The deploy script will not do this.
+4. [x] Verify D1 migration ledger, team setting, user assignments, tables,
    indexes, and foreign keys.
-5. Deploy only through ./scripts/deploy-cloudflare.sh after preflight passes.
-6. As an admin, create/rebuild the first player release from retained recovery
+5. [x] Deploy only through ./scripts/deploy-cloudflare.sh after preflight passes.
+6. [x] As an admin, create/rebuild the first player release from retained recovery
    data. Then verify the release with a fresh player session.
-7. Run authorization, diagram replacement/conflict, player isolation, clip,
+7. [ ] Run authorization, diagram replacement/conflict, player isolation, clip,
    attachment, and recovery inventory tests before any legacy cleanup.
 
 ## Final architecture to build after containment
