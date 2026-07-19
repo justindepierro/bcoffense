@@ -631,6 +631,9 @@ document.addEventListener("click", (e) => {
     case "removeTeamSwapGroup":
       removeTeamSwapGroup(parseInt(el.dataset.groupIndex, 10));
       return;
+    case "toggleTeamPackageRow":
+      toggleTeamPackageRow(el.dataset.kind, el.dataset.itemKey);
+      return;
   }
 
   // Don't fire toggleCollapsiblePanel when the click originated inside a

@@ -1423,6 +1423,121 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
   box-shadow: var(--shadow-sm);
 }
 
+.team-package-card--row {
+  padding: 0;
+  overflow: hidden;
+}
+
+.team-package-row {
+  min-height: 52px;
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-sm);
+  padding: var(--space-xs);
+  background: var(--color-surface-raised);
+}
+
+.team-package-toggle {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 5px 7px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.team-package-toggle:hover,
+.team-package-toggle:focus-visible {
+  background: var(--color-primary-light);
+  outline: none;
+}
+
+.team-package-toggle-icon {
+  flex: 0 0 22px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--color-primary);
+  font-size: 11px;
+}
+
+.team-package-row-title {
+  min-width: 90px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-package-row-note {
+  align-self: center;
+  padding: 0 7px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.team-package-remove {
+  align-self: center;
+  min-height: 32px;
+  white-space: nowrap;
+}
+
+.team-package-editor {
+  padding: var(--space-sm) var(--space-md) var(--space-md);
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-bg-light);
+}
+
+.team-package-editor-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.team-package-editor-eyebrow,
+.team-package-name-field > span {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.team-package-editor-head p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.35;
+}
+
+.team-package-name-fields {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-sm);
+}
+
+.team-package-name-field {
+  min-width: 120px;
+}
+
+.team-package-name-field .team-package-name {
+  width: 100%;
+}
+
 .team-package-head {
   display: flex;
   gap: var(--space-sm);
@@ -2182,6 +2297,41 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
     background: var(--coach-grid-surface);
   }
 
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-card--row {
+    padding: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-row {
+    min-height: var(--coach-grid-control-height);
+    gap: var(--team-grid-gap);
+    padding: 3px;
+    background: var(--coach-grid-surface);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-toggle {
+    gap: var(--team-grid-gap);
+    padding: 3px 5px;
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-editor {
+    padding: 6px;
+    border-top-color: var(--coach-grid-divider);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-editor-head {
+    gap: var(--team-grid-gap);
+    margin-bottom: 5px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-remove {
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 2px 6px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
   body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-package-head {
     gap: var(--team-grid-gap);
     margin-bottom: 6px;
@@ -2343,5 +2493,21 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
   .pa-row-actions {
     justify-content: flex-start;
     flex-wrap: wrap;
+  }
+
+  .team-package-row,
+  .team-package-editor-head,
+  .team-package-name-fields {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .team-package-toggle {
+    flex-wrap: wrap;
+  }
+
+  .team-package-row-note,
+  .team-package-remove {
+    align-self: stretch;
   }
 }

@@ -48,6 +48,13 @@ function normalizeTeamSettingsCollapsedState(state = {}) {
     roster: Boolean(state?.roster),
     packages: Boolean(state?.packages),
     swaps: Boolean(state?.swaps),
+    portal: Boolean(state?.portal),
+    expandedPersonnel: Array.isArray(state?.expandedPersonnel)
+      ? [...new Set(state.expandedPersonnel.map((value) => String(value || "").trim()).filter(Boolean))]
+      : [],
+    expandedSubPackages: Array.isArray(state?.expandedSubPackages)
+      ? [...new Set(state.expandedSubPackages.map((value) => String(value || "").trim()).filter(Boolean))]
+      : [],
   };
 }
 
@@ -67,6 +74,32 @@ function setTeamSettingsPanelCollapsed(panelKey, isCollapsed) {
   const state = getTeamSettingsCollapsedState();
   state[panelKey] = Boolean(isCollapsed);
   saveTeamSettingsCollapsedState(state);
+}
+
+function getTeamPackageRowStateKey(kind) {
+  return kind === "sub-package" ? "expandedSubPackages" : "expandedPersonnel";
+}
+
+function isTeamPackageRowExpanded(kind, itemKey) {
+  const state = getTeamSettingsCollapsedState();
+  return state[getTeamPackageRowStateKey(kind)].includes(String(itemKey || "").trim());
+}
+
+function setTeamPackageRowExpanded(kind, itemKey, isExpanded) {
+  const key = String(itemKey || "").trim();
+  if (!key) return;
+  const state = getTeamSettingsCollapsedState();
+  const stateKey = getTeamPackageRowStateKey(kind);
+  const expanded = new Set(state[stateKey]);
+  if (isExpanded) expanded.add(key);
+  else expanded.delete(key);
+  state[stateKey] = [...expanded];
+  saveTeamSettingsCollapsedState(state);
+}
+
+function toggleTeamPackageRow(kind, itemKey) {
+  setTeamPackageRowExpanded(kind, itemKey, !isTeamPackageRowExpanded(kind, itemKey));
+  renderTeamSettings();
 }
 
 function formatTeamCountLabel(count, singular, plural = null) {
@@ -460,23 +493,35 @@ function renderTeamSettings() {
         (sum, playerIds) => sum + Math.max(playerIds.length - 1, 0),
         0,
       );
+      const packageKey = String(pkg.personnel || "").trim().toLowerCase();
+      const isExpanded = isTeamPackageRowExpanded("personnel", packageKey);
       return `
-        <div class="team-package-card" data-package-index="${pkgIndex}">
-          <div class="team-package-head">
-            <div class="team-package-meta">
-              <div class="team-package-meta-top">
-                <input type="text" class="team-package-name" value="${escapeAttr(pkg.personnel)}" data-field="teamPackagePersonnel" data-package-index="${pkgIndex}" placeholder="11" aria-label="Personnel package name" />
-                ${pkg.isAutoPrepared ? '<span class="team-package-status">Playbook Ready</span>' : ""}
-                <span class="team-package-status ${unassignedCount ? "team-package-status--attention" : "team-package-status--complete"}">${unassignedCount ? `${unassignedCount} open slot${unassignedCount === 1 ? "" : "s"}` : "Lineup complete"}</span>
-                <span class="team-package-count">${formatTeamCountLabel(starterCount, "starter")}</span>
-                <span class="team-package-count">${formatTeamCountLabel(subCount, "sub")}</span>
-              </div>
-              <p class="team-package-copy">Set players and rename the slot tags for ${escapeHtml(pkg.personnel || "this package")}.</p>
-            </div>
-            <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamPersonnelPackage" data-package-index="${pkgIndex}" aria-label="Remove ${escapeHtml(pkg.personnel)} package">✕</button>
+        <div class="team-package-card team-package-card--row ${isExpanded ? "is-expanded" : ""}" data-package-index="${pkgIndex}">
+          <div class="team-package-row">
+            <button type="button" class="team-package-toggle" data-action="toggleTeamPackageRow" data-kind="personnel" data-item-key="${escapeAttr(packageKey)}" aria-expanded="${isExpanded ? "true" : "false"}" aria-label="${isExpanded ? "Collapse" : "Expand"} ${escapeHtml(pkg.personnel)} personnel package">
+              <span class="team-package-toggle-icon" aria-hidden="true">${isExpanded ? "▼" : "▶"}</span>
+              <span class="team-package-row-title">${escapeHtml(pkg.personnel || "Untitled package")}</span>
+              ${pkg.isPlaybookPersonnel ? '<span class="team-package-status">Playbook</span>' : '<span class="team-package-status">Custom</span>'}
+              <span class="team-package-status ${unassignedCount ? "team-package-status--attention" : "team-package-status--complete"}">${unassignedCount ? `${unassignedCount} open` : "Ready"}</span>
+              <span class="team-package-count">${starterCount}/${packageSlots.length} starters</span>
+              ${subCount ? `<span class="team-package-count">${formatTeamCountLabel(subCount, "sub")}</span>` : ""}
+            </button>
+            ${pkg.isPlaybookPersonnel ? '<span class="team-package-row-note">Used in playbook</span>' : `<button type="button" class="btn btn-sm btn-danger team-package-remove" data-action="removeTeamPersonnelPackage" data-package-index="${pkgIndex}" aria-label="Remove ${escapeHtml(pkg.personnel)} package">Remove</button>`}
           </div>
-              ${renderAssignmentRow(rowOne, depthChart, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel", depthChart: true, depthKind: "package" })}
-              ${renderAssignmentRow(rowTwo, depthChart, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel", depthChart: true, depthKind: "package" })}
+          <div class="team-package-editor"${isExpanded ? "" : " hidden"}>
+            <div class="team-package-editor-head">
+              <div>
+                <span class="team-package-editor-eyebrow">Personnel setup</span>
+                <p>Assign the starters and backups that should load for ${escapeHtml(pkg.personnel || "this package")} in a script.</p>
+              </div>
+              <label class="team-package-name-field">
+                <span>Package label</span>
+                <input type="text" class="team-package-name" value="${escapeAttr(pkg.personnel)}" data-field="teamPackagePersonnel" data-package-index="${pkgIndex}" placeholder="11" aria-label="Personnel package name" />
+              </label>
+            </div>
+            ${renderAssignmentRow(rowOne, depthChart, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel", depthChart: true, depthKind: "package" })}
+            ${renderAssignmentRow(rowTwo, depthChart, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel", depthChart: true, depthKind: "package" })}
+          </div>
         </div>
       `;
     }).join("")
@@ -497,23 +542,35 @@ function renderTeamSettings() {
       const personnelCopy = group.personnel
         ? `Available on ${group.personnel} script rows.`
         : "Available on every script row.";
+      const groupKey = String(group.id || "").trim();
+      const isExpanded = isTeamPackageRowExpanded("sub-package", groupKey);
       return `
-        <div class="team-package-card team-sub-package-card" data-group-index="${groupIndex}">
-          <div class="team-package-head">
-            <div class="team-package-meta">
-              <div class="team-package-meta-top team-package-meta-top--stacked">
-                <input type="text" class="team-package-name" value="${escapeAttr(group.name)}" data-field="teamSwapGroupName" data-group-index="${groupIndex}" placeholder="Sub package name" aria-label="Sub package name" />
-                <input type="text" class="team-package-name team-package-name--short" value="${escapeAttr(group.personnel)}" data-field="teamSwapGroupPersonnel" data-group-index="${groupIndex}" placeholder="Personnel optional" aria-label="Personnel for ${escapeHtml(group.name || "sub package")}" />
-                <span class="team-package-status ${unassignedCount ? "team-package-status--attention" : "team-package-status--complete"}">${unassignedCount ? `${unassignedCount} open slot${unassignedCount === 1 ? "" : "s"}` : "Lineup complete"}</span>
-                <span class="team-package-count">${formatTeamCountLabel(starterCount, "slot")}</span>
-                <span class="team-package-count">${formatTeamCountLabel(subCount, "backup")}</span>
-              </div>
-              <p class="team-package-copy">${escapeHtml(personnelCopy)}</p>
-            </div>
-            <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamSwapGroup" data-group-index="${groupIndex}" aria-label="Remove ${escapeHtml(group.name)} sub package">✕</button>
+        <div class="team-package-card team-sub-package-card team-package-card--row ${isExpanded ? "is-expanded" : ""}" data-group-index="${groupIndex}">
+          <div class="team-package-row">
+            <button type="button" class="team-package-toggle" data-action="toggleTeamPackageRow" data-kind="sub-package" data-item-key="${escapeAttr(groupKey)}" aria-expanded="${isExpanded ? "true" : "false"}" aria-label="${isExpanded ? "Collapse" : "Expand"} ${escapeHtml(group.name)} sub package">
+              <span class="team-package-toggle-icon" aria-hidden="true">${isExpanded ? "▼" : "▶"}</span>
+              <span class="team-package-row-title">${escapeHtml(group.name || "Untitled sub package")}</span>
+              <span class="team-package-status">${escapeHtml(group.personnel || "All personnel")}</span>
+              <span class="team-package-status ${unassignedCount ? "team-package-status--attention" : "team-package-status--complete"}">${unassignedCount ? `${unassignedCount} open` : "Ready"}</span>
+              <span class="team-package-count">${starterCount}/${groupSlots.length} starters</span>
+              ${subCount ? `<span class="team-package-count">${formatTeamCountLabel(subCount, "backup")}</span>` : ""}
+            </button>
+            <button type="button" class="btn btn-sm btn-danger team-package-remove" data-action="removeTeamSwapGroup" data-group-index="${groupIndex}" aria-label="Remove ${escapeHtml(group.name)} sub package">Remove</button>
           </div>
-              ${renderAssignmentRow(rowOne, depthChart, "teamSwapGroupSlot", groupIndex, group.name || "Sub package", { depthChart: true, depthKind: "swap", addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub" })}
-              ${renderAssignmentRow(rowTwo, depthChart, "teamSwapGroupSlot", groupIndex, group.name || "Sub package", { depthChart: true, depthKind: "swap", addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub" })}
+          <div class="team-package-editor"${isExpanded ? "" : " hidden"}>
+            <div class="team-package-editor-head">
+              <div>
+                <span class="team-package-editor-eyebrow">Sub package setup</span>
+                <p>${escapeHtml(personnelCopy)} Assign the lineup this preset should apply.</p>
+              </div>
+              <div class="team-package-name-fields">
+                <label class="team-package-name-field"><span>Preset name</span><input type="text" class="team-package-name" value="${escapeAttr(group.name)}" data-field="teamSwapGroupName" data-group-index="${groupIndex}" placeholder="Sub package name" aria-label="Sub package name" /></label>
+                <label class="team-package-name-field"><span>Personnel</span><input type="text" class="team-package-name team-package-name--short" value="${escapeAttr(group.personnel)}" data-field="teamSwapGroupPersonnel" data-group-index="${groupIndex}" placeholder="All personnel" aria-label="Personnel for ${escapeHtml(group.name || "sub package")}" /></label>
+              </div>
+            </div>
+            ${renderAssignmentRow(rowOne, depthChart, "teamSwapGroupSlot", groupIndex, group.name || "Sub package", { depthChart: true, depthKind: "swap", addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub" })}
+            ${renderAssignmentRow(rowTwo, depthChart, "teamSwapGroupSlot", groupIndex, group.name || "Sub package", { depthChart: true, depthKind: "swap", addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub" })}
+          </div>
         </div>
       `;
     }).join("")
@@ -719,6 +776,7 @@ function addTeamPersonnelPackage() {
   }
   packages.push({ personnel, assignments: {} });
   saveTeamPersonnelPackages(packages);
+  setTeamPackageRowExpanded("personnel", personnel.toLowerCase(), true);
   if (input) input.value = "";
   syncTeamSettingsDependents();
   showToast(`${personnel} package added`);
@@ -741,6 +799,7 @@ function addTeamSwapGroup() {
   const groups = getTeamSwapGroups();
   groups.push(group);
   saveTeamSwapGroups(groups);
+  setTeamPackageRowExpanded("sub-package", group.id, true);
   if (nameEl) nameEl.value = "";
   if (personnelEl) personnelEl.value = "";
   syncTeamSettingsDependents();
@@ -780,6 +839,14 @@ function removeTeamPersonnelPackage(packageIndex) {
   if (!Number.isInteger(packageIndex)) return;
   const packages = getTeamPersonnelPackages();
   if (!packages[packageIndex]) return;
+  if (packages[packageIndex].isPlaybookPersonnel) {
+    showToast("This personnel is used in the playbook, so it stays available for assignments.", {
+      duration: 3200,
+      type: "info",
+    });
+    return;
+  }
+  setTeamPackageRowExpanded("personnel", String(packages[packageIndex].personnel || "").trim().toLowerCase(), false);
   packages.splice(packageIndex, 1);
   saveTeamPersonnelPackages(packages);
   syncTeamSettingsDependents();
@@ -790,6 +857,7 @@ function removeTeamSwapGroup(groupIndex) {
   if (!Number.isInteger(groupIndex)) return;
   const groups = getTeamSwapGroups();
   if (!groups[groupIndex]) return;
+  setTeamPackageRowExpanded("sub-package", groups[groupIndex].id, false);
   groups.splice(groupIndex, 1);
   saveTeamSwapGroups(groups);
   syncTeamSettingsDependents();
@@ -1298,7 +1366,7 @@ function getTeamPersonnelPackages() {
   const autoPackages = playbookPersonnel.map((personnel) => {
     const existing = byPersonnel.get(personnel.toLowerCase());
     return existing
-      ? { ...existing, isAutoPrepared: false }
+      ? { ...existing, isAutoPrepared: false, isPlaybookPersonnel: true }
       : {
         ...normalizePersonnelPackage({
           personnel,
@@ -1306,11 +1374,12 @@ function getTeamPersonnelPackages() {
           labels: getTeamAssignmentLabelMap(personnel),
         }),
         isAutoPrepared: true,
+        isPlaybookPersonnel: true,
       };
   });
   const extras = normalizedStored.filter(
     (pkg) => !playbookPersonnel.some((personnel) => personnel.toLowerCase() === pkg.personnel.toLowerCase()),
-  ).map((pkg) => ({ ...pkg, isAutoPrepared: false }));
+  ).map((pkg) => ({ ...pkg, isAutoPrepared: false, isPlaybookPersonnel: false }));
   return [...autoPackages, ...extras];
 }
 
