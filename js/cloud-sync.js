@@ -1203,6 +1203,12 @@
   async function pushCloudBackupInternal(opts = {}) {
     const silent = opts.silent === true;
     const skipActivityLog = opts.skipActivityLog === true;
+    // A normal workspace save publishes the small team-data pointer only.
+    // Diagram bytes have their own source-specific durable outbox in
+    // play-images.js. Do not turn every coach save into a legacy full-library
+    // recovery scan, since unmatched archive blobs are review work rather
+    // than upload failures and should never pin the save dock red.
+    const syncDiagrams = opts.syncDiagrams === true;
     if (!userCanPushCloudBackup()) {
       throw new Error("Coach access is required to save the team workspace.");
     }
@@ -1232,8 +1238,9 @@
         lastRemoteSize: payloadSize,
         lastWorkspaceRevision: data.revision || knownRevision,
       });
-      // Also push play images to R2 so players can access diagrams cross-device.
-      if (window.playImages && typeof window.playImages.syncToRemote === "function") {
+      // The legacy all-diagram scan is an explicit recovery action only. New
+      // or changed diagrams publish immediately through their durable outbox.
+      if (syncDiagrams && window.playImages && typeof window.playImages.syncToRemote === "function") {
         const _playsRef = typeof plays !== "undefined" ? plays : [];
         if (!silent) {
           updateCloudSyncModalStatus("Workspace published. Publishing diagrams to player devices...", "info");
@@ -1312,7 +1319,11 @@
     _cloudStartJob(publishJobKey, { label: opts.runningLabel || "Publishing data..." });
     try {
       if (!silent) updateCloudSyncModalStatus("Publishing team data...", "info");
-      const result = await pushCloudBackupInternal({ silent, skipActivityLog: true });
+      const result = await pushCloudBackupInternal({
+        silent,
+        skipActivityLog: true,
+        syncDiagrams: opts.syncDiagrams === true,
+      });
       if (!silent) updateCloudSyncModalStatus("Checking player readiness...", "info");
       const readiness = await buildTeamPublishReadinessReport(result);
       const hasIssues = publishReadinessHasIssues(readiness);
@@ -1660,14 +1671,6 @@
       doneLabel: "Team update published",
       errorLabel: "Publish needs attention",
     });
-    if (key === "playImages") {
-      _cloudQueueJob("media", "auto-push", {
-        queuedLabel: "Media upload queued",
-        runningLabel: "Uploading media...",
-        doneLabel: "Media published",
-        errorLabel: "Media upload needs retry",
-      });
-    }
     if (!cloudAutoPushFirstQueuedAt) cloudAutoPushFirstQueuedAt = Date.now();
 
     if (cloudAutoPushSaving) {
@@ -1698,23 +1701,13 @@
     cloudAutoPushSaving = true;
     cloudAutoPushPending = false;
     cloudAutoPushFirstQueuedAt = 0;
-    const syncingMedia = cloudAutoPushDirtyKeys.has("playImages");
     const cloudJobKey = _cloudQueueJob("cloud", "auto-push", {
       queuedLabel: "Team publish queued",
       runningLabel: "Publishing team update...",
       doneLabel: "Team update published",
       errorLabel: "Publish needs attention",
     });
-    const mediaJobKey = syncingMedia
-      ? _cloudQueueJob("media", "auto-push", {
-        queuedLabel: "Media upload queued",
-        runningLabel: "Uploading media...",
-        doneLabel: "Media published",
-        errorLabel: "Media upload needs retry",
-      })
-      : "";
     _cloudStartJob(cloudJobKey, { label: "Publishing team update..." });
-    _cloudStartJob(mediaJobKey, { label: "Uploading media..." });
     renderCloudSyncStatus();
 
     try {
@@ -1733,7 +1726,6 @@
       _cloudCompleteJob(cloudJobKey, { label: "Team update published" });
       if (!moreChangesQueued) {
         cloudAutoPushDirtyKeys.clear();
-        _cloudCompleteJob(mediaJobKey, { label: "Media published" });
       } else {
         cloudAutoPushFirstQueuedAt = Date.now();
         scheduleCloudAutoPushTimer(CLOUD_AUTO_PUSH_DELAY_MS);
@@ -1744,7 +1736,6 @@
       cloudAutoPushLastError = err.message || "Unknown error";
       cloudAutoPushRetryCount += 1;
       _cloudFailJob(cloudJobKey, err, { label: "Publish needs attention" });
-      _cloudFailJob(mediaJobKey, err, { label: "Media upload needs retry" });
       showToast(`Publish needs attention: ${cloudAutoPushLastError}`, {
         type: "warning",
         duration: 6000,

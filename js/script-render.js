@@ -1058,6 +1058,10 @@ function recordScriptRenderProfileSample(sample) {
 }
 
 function maybeWarnSlowScriptRender(totalMs, playCount, periodCount) {
+  // Normal scripts can legitimately take tens of milliseconds to render.
+  // Keep detailed timing available when a coach/developer explicitly enables
+  // performance diagnostics, without filling ordinary browser consoles.
+  if (!window.perfMonitor || !window.perfMonitor.enabled) return;
   const now = Date.now();
   if (totalMs < SCRIPT_RENDER_WARN_TOTAL_MS) return;
   if (now - scriptRenderWarnLastAt < SCRIPT_RENDER_WARN_COOLDOWN_MS) return;

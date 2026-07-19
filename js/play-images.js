@@ -1285,24 +1285,30 @@
       });
     }
     if (typeof window.setWorkspaceSyncStatus === "function") {
-      const hasUploadIssues = result.failed > 0 || result.skipped > 0;
-      if (syncJobKey && hasUploadIssues && typeof window.failWorkspaceSyncJob === "function") {
+      // Skipped archive blobs need a coach to match or remove them; Retry
+      // cannot solve that. Only a transport failure belongs in the retryable
+      // workspace status dock.
+      const hasRetryableUploadIssues = result.failed > 0;
+      const completionLabel = `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} published${
+        result.skipped ? `; ${result.skipped} archive item${result.skipped === 1 ? "" : "s"} to review` : ""
+      }`;
+      if (syncJobKey && hasRetryableUploadIssues && typeof window.failWorkspaceSyncJob === "function") {
         window.failWorkspaceSyncJob(syncJobKey, new Error("Some media uploads need retry"), {
           label: "Some media uploads need retry",
           retry: () => syncToRemote(playsArray, opts),
         });
       } else if (syncJobKey && typeof window.completeWorkspaceSyncJob === "function") {
         window.completeWorkspaceSyncJob(syncJobKey, {
-          label: `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} published`,
+          label: completionLabel,
         });
       } else {
         window.setWorkspaceSyncStatus(
           "media",
-          hasUploadIssues ? "error" : "synced",
+          hasRetryableUploadIssues ? "error" : "synced",
           {
-            label: hasUploadIssues
+            label: hasRetryableUploadIssues
               ? "Some media uploads need retry"
-              : `${result.pushed} diagram${result.pushed === 1 ? "" : "s"} published`,
+              : completionLabel,
           },
         );
       }

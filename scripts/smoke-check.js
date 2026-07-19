@@ -4049,7 +4049,8 @@ function checkWorkspaceSyncContracts() {
     "async function buildTeamPublishReadinessReport(pushResult = {})",
     "function publishReadinessHasIssues(report)",
     "window.publishTeamWorkspace = publishTeamWorkspace",
-    "pushCloudBackupInternal({ silent, skipActivityLog: true })",
+    "syncDiagrams: opts.syncDiagrams === true",
+    "const syncDiagrams = opts.syncDiagrams === true",
     "publishTeamWorkspace({",
     "throwOnError: true",
     "jobId: \"auto-push\"",
@@ -4057,10 +4058,6 @@ function checkWorkspaceSyncContracts() {
     "Publishing team update...",
     "Ready for players",
     "Published; readiness reviewed",
-    "_cloudQueueJob(\"media\", \"auto-push\"",
-    "_cloudStartJob(mediaJobKey",
-    "_cloudCompleteJob(mediaJobKey",
-    "_cloudFailJob(mediaJobKey",
   ].forEach((token) => {
     if (!cloudSync.includes(token)) {
       fail(`workspace sync cloud/media contract missing ${token}`);
@@ -4073,6 +4070,13 @@ function checkWorkspaceSyncContracts() {
     /_cloudFailJob\(publishJobKey, new Error\("Player readiness needs attention"\)/.test(cloudSync)
   ) {
     fail("readiness gaps must stay in the audit rather than pinning the retryable workspace dock");
+  }
+
+  if (
+    /_cloudQueueJob\("media", "auto-push"/.test(cloudSync) ||
+    /_cloud(?:Start|Complete|Fail)Job\(mediaJobKey/.test(cloudSync)
+  ) {
+    fail("ordinary workspace autosave must not create a duplicate media recovery job");
   }
 
   if (/Cloud autosaved|Cloud autosave|Cloud sync queued|Syncing team cloud|Cloud sync needs attention/.test(cloudSync) || /Play image changed\. Cloud autosave queued\./.test(cloudSync)) {
@@ -4093,10 +4097,11 @@ function checkWorkspaceSyncContracts() {
     !/startWorkspaceSyncJob\(syncJobKey/.test(playImages) ||
     !/failWorkspaceSyncJob\(syncJobKey/.test(playImages) ||
     !/completeWorkspaceSyncJob\(syncJobKey/.test(playImages) ||
-    !/const hasUploadIssues = result\.failed > 0 \|\| result\.skipped > 0/.test(playImages) ||
-    !/hasUploadIssues \? "error" : "synced"/.test(playImages)
+    !/const hasRetryableUploadIssues = result\.failed > 0/.test(playImages) ||
+    !/hasRetryableUploadIssues \? "error" : "synced"/.test(playImages) ||
+    !/archive item/.test(playImages)
   ) {
-    fail("play image sync does not route media upload progress and skipped items into workspace status");
+    fail("play image sync does not distinguish retryable uploads from archive review work");
   }
 
   if (
