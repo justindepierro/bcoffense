@@ -1957,6 +1957,12 @@ function drawPlayPresentationDiagram(canvas, frame, image, contentBounds) {
   canvas.dataset.pixelRatio = size.pixelRatio.toFixed(2);
 }
 
+function isCurrentPlayPresentationDiagram(play) {
+  const currentItem =
+    playPresentationState.items[playPresentationState.index];
+  return Boolean(currentItem?.play && currentItem.play === play);
+}
+
 function installPlayPresentationDiagramRenderer(frame, image, play, token) {
   cleanupPlayPresentationDiagramRenderer();
   const canvas = document.createElement("canvas");
@@ -2030,7 +2036,11 @@ async function loadPlayPresentationDiagram(play, token) {
             ? await window.ensurePlayImageUrl(play)
             : null,
         };
-    if (token !== playPresentationState.imageToken) return;
+    // A player-panel update can rebuild the presentation markup while this
+    // request is in flight. Keep the result when it still belongs to the
+    // displayed play; the old token alone is not enough to decide that this
+    // request is stale.
+    if (!isCurrentPlayPresentationDiagram(play)) return;
     const currentFrame = document.getElementById("playPresentationDiagram");
     if (!currentFrame) return;
     if (!readiness?.url) {
@@ -2040,13 +2050,13 @@ async function loadPlayPresentationDiagram(play, token) {
       return;
     }
     const image = await loadPlayPresentationImage(readiness.url, play);
-    if (token !== playPresentationState.imageToken) return;
+    if (!isCurrentPlayPresentationDiagram(play)) return;
     try {
       installPlayPresentationDiagramRenderer(
         currentFrame,
         image,
         play,
-        token,
+        playPresentationState.imageToken,
       );
     } catch (renderError) {
       console.warn("smart diagram rendering failed:", renderError);
@@ -2056,7 +2066,7 @@ async function loadPlayPresentationDiagram(play, token) {
     }
   } catch (err) {
     console.warn("play presentation image load failed:", err);
-    if (token !== playPresentationState.imageToken) return;
+    if (!isCurrentPlayPresentationDiagram(play)) return;
     const currentFrame = document.getElementById("playPresentationDiagram");
     const copy = getPlayPresentationDiagramStatusCopy("load-error");
     setPlayPresentationDiagramMessage(
