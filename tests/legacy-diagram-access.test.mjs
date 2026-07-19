@@ -3,6 +3,7 @@ import { isPrimaryTeam } from "../functions/_lib/team-context.js";
 import { onRequestPost as auditLegacy } from "../functions/images/audit-legacy.js";
 import { onRequestPost as migrateLegacy } from "../functions/images/migrate-legacy.js";
 import { onRequestPost as repairLegacy } from "../functions/images/repair-legacy.js";
+import { onRequestGet as legacyPreview } from "../functions/images/legacy-preview.js";
 
 let passed = 0;
 let failed = 0;
@@ -122,6 +123,7 @@ await assertTeamBCannotRead(repairLegacy, {
   expectedCurrentChecksum: checksum,
   expectedLegacyChecksum: checksum,
 }, "repair-legacy");
+await assertTeamBCannotRead(legacyPreview, undefined, "legacy-preview");
 
 const primaryChecksum = await sha256Hex("historic-diagram");
 const primary = makeEnvironment("team-a", {
