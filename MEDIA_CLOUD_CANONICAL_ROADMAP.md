@@ -186,6 +186,13 @@ from Cloudflare without ever having opened the coach workspace.
 - [x] Restrict all new legacy recovery and player fallback reads to permanent
   media IDs, stable source IDs, and unique tag identities. Content-derived
   signature keys are no longer eligible to choose a player diagram.
+- [x] Make player diagram loading canonical-only: the player reads one
+  `mediaId` manifest and may use only an offline cache stored under that same
+  media ID. It never probes legacy R2 keys.
+- [x] Add an admin-only checksum reconciliation and guarded repair API. A
+  repair requires the audited current checksum and archived checksum to still
+  match at write time, then creates a new immutable version rather than
+  overwriting history.
 - [ ] Offer an admin-only local-cache migration that uploads known legacy
   browser diagrams into their canonical records automatically.
 - [ ] Verify each migrated media ID from a clean player session and a second
