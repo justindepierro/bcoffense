@@ -1396,7 +1396,7 @@
     return publishTeamWorkspace({ silent: false });
   }
 
-  async function restoreCloudBackup(remote, opts = {}) {
+  async function applyCloudBackupImmediately(remote, opts = {}) {
     const shouldConfirm = opts.confirm !== false;
     const shouldReload = opts.reload !== false;
     const shouldNotify = opts.notify !== false;
@@ -1410,7 +1410,12 @@
           : (typeof canAccessTab !== "function" || canAccessTab("dashboard"))
             ? "dashboard"
             : "";
-    const summary = remote.summary;
+    // Recovery tooling may read an older retained object. Reapply the same
+    // strict team boundary here (including unattended empty-device recovery)
+    // rather than trusting a historic browser-shaped backup at restore time.
+    const backup = buildCanonicalTeamWorkspace(remote?.backup || {});
+    const summary = getCloudBackupSummary(backup);
+    if (!summary.valid) throw new Error(summary.errors.join(" "));
     if (shouldConfirm) {
       const pullRisks = getTeamWorkspacePullRisks(remote);
       const riskLines = pullRisks.risks
@@ -1437,16 +1442,23 @@
 
     cloudAutoPushSuppress = true;
     try {
-      if (!(await storageManager.restoreAllData(remote.backup, { confirmOverwrite: false }))) {
+      const canonicalKeys = Array.from(CANONICAL_TEAM_WORKSPACE_KEYS);
+      if (!(await storageManager.restoreAllData(backup, {
+        confirmOverwrite: false,
+        // A normal recovery source is a complete, server-allowlisted team
+        // workspace. Replace only those team fields; drafts, auth, uploads,
+        // browser caches, and player-private data stay local.
+        replaceMissingKeys: opts.replaceMissingKeys === false ? undefined : canonicalKeys,
+      }))) {
         return false;
       }
 
       let restoredImages = 0;
       let imageWarning = "";
-      if (Object.prototype.hasOwnProperty.call(remote.backup, "playImages")) {
+      if (Object.prototype.hasOwnProperty.call(backup, "playImages")) {
         if (window.playImages && typeof window.playImages.importAll === "function") {
           try {
-            restoredImages = await window.playImages.importAll(remote.backup.playImages || {}, {
+            restoredImages = await window.playImages.importAll(backup.playImages || {}, {
               replace: true,
               onProgress: getProgressReporter("Restoring play images"),
             });
@@ -1459,13 +1471,15 @@
         }
       }
 
-      saveCloudSyncSettingsObject({
-        lastPullAt: new Date().toISOString(),
-        lastRemoteExportDate: summary.exportDate,
-        lastRemoteUpdatedAt: remote.updatedAt,
-        lastRemoteSize: remote.size,
-      });
-      saveTeamWorkspacePullSummary(remote, { restoredImages, imageWarning });
+      if (!opts.localRollback) {
+        saveCloudSyncSettingsObject({
+          lastPullAt: new Date().toISOString(),
+          lastRemoteExportDate: summary.exportDate,
+          lastRemoteUpdatedAt: remote.updatedAt,
+          lastRemoteSize: remote.size,
+        });
+        saveTeamWorkspacePullSummary({ ...remote, backup, summary }, { restoredImages, imageWarning });
+      }
       await reloadAppFromStorage(targetTab ? { targetTab } : {});
       if (targetTab && typeof setWorkspaceSurface === "function") {
         setWorkspaceSurface("app", { initModules: false });
@@ -1498,6 +1512,16 @@
     } finally {
       cloudAutoPushSuppress = false;
     }
+  }
+
+  async function restoreCloudBackup(remote, opts = {}) {
+    // Manual recovery is intentionally staged once the recovery UI has
+    // loaded. Startup pulls still run without a modal because they only occur
+    // on an empty device and must finish before the app can continue.
+    if (!opts.auto && opts.staged !== false && window.stagedRestore?.open) {
+      return window.stagedRestore.open(remote, opts);
+    }
+    return applyCloudBackupImmediately(remote, opts);
   }
 
   async function pullCloudBackup() {
@@ -1982,6 +2006,7 @@
           <button type="button" class="btn btn-secondary custom-modal-btn" data-action="testCloudSyncConnection" data-cloud-sync-action="test">Check Recovery Status</button>
           ${canPush ? '<button type="button" class="btn btn-secondary custom-modal-btn" data-action="rebuildPlayerRelease" data-cloud-sync-action="rebuild-release">Rebuild Player Release</button>' : ""}
           <button type="button" class="btn btn-secondary custom-modal-btn" data-action="pullCloudBackup" data-cloud-sync-action="pull">Recover This Device</button>
+          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="openStagedRestoreHistory">Undo Device Recovery</button>
           ${canPush ? '<button type="button" class="btn btn-primary custom-modal-btn" data-action="pushCloudBackup" data-cloud-sync-action="push" data-auth-admin-only="true">Republish Local Workspace</button>' : ""}
         </div>
       </div>
@@ -2038,6 +2063,9 @@
   window.publishTeamWorkspace = publishTeamWorkspace;
   window.pushCloudBackup = pushCloudBackup;
   window.pullCloudBackup = pullCloudBackup;
+  window.applyCloudBackupImmediately = applyCloudBackupImmediately;
+  window.buildCanonicalTeamWorkspace = buildCanonicalTeamWorkspace;
+  window.getCanonicalTeamWorkspaceKeys = () => Array.from(CANONICAL_TEAM_WORKSPACE_KEYS);
   window.refreshPlayerRelease = refreshPlayerRelease;
   window.refreshPlayerCloudBackup = refreshPlayerCloudBackup;
   window.autoPullLatestCloudBackup = autoPullLatestCloudBackup;

@@ -99,7 +99,7 @@ player session.
 | Raw recovery backup | /sync/backup is admin-only; a recovery write commits the same canonical workspace/release head before retaining a labeled KV snapshot. | The retained KV object is recovery evidence, never player or normal-sync authority. |
 | Diagrams | Manifest rows are keyed by team_id, media_id, and kind; bytes use media/teams/<teamId>/plays/<mediaId>/diagram/<version>. The D1 pointer is a compare-and-swap commit point. Production now has 104 checksum-verified canonical pointers. | Individual legacy mappings still need visual and clean-player-session reconciliation. |
 | Player diagram correctness | Player diagrams are authorized by release media ID, resolve only through the team D1 manifest, and cache in a player-only IndexedDB database. | Must be proven on clean coach and player devices after deployment. |
-| Diagram saving | A chosen diagram saves locally first, uploads automatically, sends an expected version/checksum, and keeps an immutable candidate if a replacement conflicts. Delete removes only the pointer. | Diagram retry metadata and the binary are not yet one unified durable outbox record. |
+| Diagram saving | A chosen diagram saves locally first, uploads automatically, sends an expected version/checksum, and keeps an immutable candidate if a replacement conflicts. Delete removes only the pointer. | New uploads use one durable IndexedDB outbox record; terminal-state and queue-reconciliation work remains. |
 | Legacy diagrams | Player runtime resolution has no legacy diagram fallback. Admin-only audit, migration, and repair routes require a primary-team context and checksum evidence. | Archived legacy objects remain; they are not fully reconciled or retired. |
 | Clips | New writes and primary reads use team-namespaced KV keys, and player reads are gated by release allow-lists. | Clip manifests are still KV-authoritative and a primary-team legacy clip fallback remains during transition. |
 | Other team boundaries | Discussion attachments, threads, and play likes are team scoped; raw attachment R2 keys are not returned. | Migration 0014 is required before the revised like uniqueness rule is live. |
@@ -253,12 +253,14 @@ to a player, and concurrent writes cannot silently replace it.
   a meaningful conflict instead of retrying an overwrite forever.
 - [x] Isolate coach and player diagram IndexedDB databases so a shared device
   cannot reuse a coach blob for a player release or vice versa.
-- [ ] Store each upload intent and its binary blob together in one IndexedDB
-  outbox with attempt state, backoff, cancellation, and a server receipt.
+- [x] Store each new upload intent and its binary blob together in one IndexedDB
+  outbox with attempt state, backoff, and a retained server receipt.
 - [ ] Make diagram, play-video, signal-video, and workspace jobs report from
   the same durable job model.
-- [ ] Make clip/video uploads survive reload and reconnect with their original
-  file, checksum/idempotency key, and exactly-once commit semantics.
+- [x] Make new clip/video uploads survive reload and reconnect with their
+  original file, checksum/idempotency key, and server receipt.
+- [ ] Add user-facing cancellation, server-enforced exactly-once commit
+  semantics, and durable terminal states for every upload kind.
 - [x] Make ordinary team workspace saves produce an immutable workspace and
   player-release revision through one D1 compare-and-swap head.
 - [ ] Add explicit terminal states for invalid media, auth failure, quota,
@@ -326,8 +328,10 @@ or arbitrary old R2 objects.
   authorized coach startup. Verified in production on July 19, 2026: the
   workspace and player release advanced together to their third immutable
   revisions after a fresh coach reload.
-- [ ] Stage and validate a restore, capture a local pre-restore recovery
-  snapshot, and provide rollback rather than applying mixed stores in place.
+- [x] Stage and validate manual recovery restores, capture a canonical local
+  pre-restore snapshot in IndexedDB, replace only the strict team allowlist,
+  retain five snapshots per team for 30 days, and provide rollback without
+  changing cloud media or the server workspace.
 - [ ] Classify every persistence key as team, player-private, user-private, or
   device-private and make only team mutations schedule shared cloud work.
 
@@ -396,7 +400,8 @@ The remaining live acceptance sequence is:
   uses a legacy diagram or clip fallback.
 - [ ] Offline/reload behavior keeps the original blob and produces exactly one
   committed version after reconnect.
-- [ ] Backup/restore is staged, filtered, revisioned, and recoverable.
+- [x] Manual backup/restore is staged, filtered, revisioned, and recoverable
+  on-device; automatic empty-device bootstrap remains non-destructive.
 - [ ] Player release, media authorization, migration, visual responsiveness,
   and post-deploy contract tests all pass.
 

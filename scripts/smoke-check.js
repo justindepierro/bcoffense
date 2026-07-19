@@ -4116,7 +4116,7 @@ function checkWorkspaceSyncContracts() {
   if (
     !/const CLOUD_SYNC_PULL_SUMMARY_KEY = "_bcCloudSyncLastPullSummary"/.test(cloudSync) ||
     !/function buildTeamWorkspacePullSummary\(remote, opts = \{\}\)/.test(cloudSync) ||
-    !/saveTeamWorkspacePullSummary\(remote, \{ restoredImages, imageWarning \}\)/.test(cloudSync) ||
+    !/saveTeamWorkspacePullSummary\(\{ \.\.\.remote, backup, summary \}, \{ restoredImages, imageWarning \}\)/.test(cloudSync) ||
     !/window\.getTeamWorkspacePullSummary = getTeamWorkspacePullSummary/.test(cloudSync) ||
     !/window\.dismissTeamWorkspacePullSummary = dismissTeamWorkspacePullSummary/.test(cloudSync) ||
     !/Admin Recovery Tools/.test(cloudSync) ||

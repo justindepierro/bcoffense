@@ -1102,6 +1102,23 @@ const storageManager = {
       console.warn("restoreAllData: player release cache clear failed:", err);
     }
 
+    // Recovery normally merges a portable browser backup, but a staged team
+    // workspace recovery needs exact replacement semantics for its explicitly
+    // allowlisted keys. This is what makes the pre-restore snapshot a real
+    // rollback point: data which exists only in the incoming workspace is
+    // removed again when rolling back to a snapshot that does not contain it.
+    const replaceMissingKeys = Array.isArray(options.replaceMissingKeys)
+      ? new Set(options.replaceMissingKeys.map((key) => String(key || "")).filter(Boolean))
+      : null;
+    if (replaceMissingKeys) {
+      replaceMissingKeys.forEach((key) => {
+        if (key === STORAGE_KEYS.PLAYBOOK) return;
+        if (!Object.prototype.hasOwnProperty.call(backup, key)) {
+          localStorage.removeItem(_localStorageKeyFor(key));
+        }
+      });
+    }
+
     Object.values(STORAGE_KEYS).forEach((key) => {
       if (key === STORAGE_KEYS.PLAYBOOK) return; // stored in IDB below
       if (backup[key] !== undefined) {
@@ -1133,6 +1150,14 @@ const storageManager = {
         }
       } catch (err) {
         console.error("restoreAllData: IDB playbook write failed:", err);
+      }
+    } else if (replaceMissingKeys?.has(STORAGE_KEYS.PLAYBOOK)) {
+      try {
+        await _idbSetPlaybook([]);
+        _pbEstimatedBytes = 0;
+        localStorage.removeItem(STORAGE_KEYS.PLAYBOOK);
+      } catch (err) {
+        console.error("restoreAllData: IDB playbook clear failed:", err);
       }
     }
 

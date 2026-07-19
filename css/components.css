@@ -3441,6 +3441,55 @@ kbd {
   flex-wrap: wrap;
 }
 
+.staged-restore-modal { max-width: 720px; }
+.staged-restore-flow,
+.staged-restore-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+.staged-restore-flow {
+  padding: var(--space-xs);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  text-align: center;
+}
+.staged-restore-metric {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+}
+.staged-restore-metric span,
+.staged-restore-metric small,
+.staged-restore-muted { color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.staged-restore-metric strong { color: var(--color-text); font-size: var(--font-size-md); }
+.staged-restore-changes,
+.staged-restore-result,
+.staged-restore-note,
+.staged-restore-error {
+  margin-top: var(--space-sm);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+}
+.staged-restore-changes { color: var(--color-text); }
+.staged-restore-changes ul { display: grid; gap: 4px; margin: var(--space-xs) 0 0; padding-left: 18px; color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.staged-restore-changes li strong { color: var(--color-primary); }
+.staged-restore-note { color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.staged-restore-result { display: grid; gap: 3px; }
+.staged-restore-result span { font-size: var(--font-size-sm); }
+.staged-restore-result-ok { border-color: var(--color-status-ok-border); background: var(--color-status-ok-bg); color: var(--color-status-ok-text); }
+.staged-restore-result-warn { border-color: var(--color-status-warn-border); background: var(--color-status-warn-bg); color: var(--color-status-warn-text); }
+.staged-restore-error { border-color: var(--color-status-error-border); background: var(--color-status-error-bg); color: var(--color-status-error-text); font-size: var(--font-size-sm); }
+
 @media (max-width: 640px) {
   .cloud-sync-flow-grid {
     grid-template-columns: 1fr;
@@ -3459,6 +3508,8 @@ kbd {
     flex-direction: column;
     gap: var(--space-xs);
   }
+  .staged-restore-flow,
+  .staged-restore-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .btn-inline-offset {
