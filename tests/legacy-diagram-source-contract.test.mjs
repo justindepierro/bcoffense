@@ -41,12 +41,14 @@ function makeEnvironment(options = {}) {
   const sourceBytes = new TextEncoder().encode(options.sourceText || "legacy-diagram-source");
   const calls = { gets: [], puts: [], deletes: [], lists: [], dbWrites: [] };
   const current = options.currentManifest || null;
+  const duplicateChecksumOwner = options.duplicateChecksumOwner || null;
   const db = {
     prepare(sql) {
       return {
         bind(...args) {
           return {
             async first() {
+              if (sql.includes("checksum = ?")) return duplicateChecksumOwner;
               if (sql.includes("FROM team_media_manifests")) return current;
               return null;
             },
@@ -101,6 +103,29 @@ function makeEnvironment(options = {}) {
     sourceKey,
     sourceBytes,
   };
+}
+
+// An exact archived key is still unsafe when the checksum proves its bytes
+// already belong to a different canonical play. Historic aliases caused this
+// exact failure mode; retain the archive for review instead of duplicating a
+// known-wrong diagram onto the requested media ID.
+{
+  const sourceText = "RIFF0000WEBPduplicate-canonical-content";
+  const checksum = await sha256Hex(sourceText);
+  const { env, calls, sourceKey } = makeEnvironment({
+    sourceText,
+    duplicateChecksumOwner: { media_id: "play:correct-owner" },
+  });
+  const response = await migrateLegacy({
+    request: await adminRequest(env, "/images/migrate-legacy", "POST", {
+      items: [{ mediaId: "play:wrong-alias", sourceKey, expectedLegacyChecksum: checksum }],
+    }),
+    env,
+  });
+  const payload = await response.json();
+  assert(response.status === 200 && payload.results?.[0]?.status === "duplicate-canonical-content", "migration rejects legacy bytes already owned by another canonical play");
+  assert(payload.results?.[0]?.canonicalChecksumOwner === "play:correct-owner", "migration identifies the existing canonical checksum owner");
+  assert(calls.puts.length === 0 && calls.deletes.length === 0, "duplicate canonical content never creates or deletes media objects");
 }
 
 async function adminRequest(env, path, method, body) {

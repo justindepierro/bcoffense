@@ -159,6 +159,13 @@ pointer, so the player is correctly shown an unavailable state rather than a
 wrong diagram. Recovery must now be driven by those exact permanent media IDs
 and play records; it is not safe to infer an image from a legacy filename.
 
+**Collision safeguard verified:** two apparent exact legacy candidates (`Rip
+Halo` and `Lex Q Ali`) were visually checked and had identical bytes already
+owned by the canonical `Lex T Knights` diagram. They were rejected without
+promotion. Legacy migration now checks whether verified bytes already belong
+to a different canonical media ID and returns them for review rather than
+creating another wrong-play mapping.
+
 **Exit criterion:** every player-visible diagram is classified as verified
 canonical, verified missing, or explicitly retained as unresolved recovery
 evidence.

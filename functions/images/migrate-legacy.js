@@ -25,6 +25,13 @@ function requestedSourceKey(item) {
   return normalizeLegacyDiagramSourceKey(hasSourceKey ? item.sourceKey : item?.legacyKey);
 }
 
+async function findCanonicalChecksumOwner(env, teamId, checksum) {
+  const row = await env.DB.prepare(
+    "SELECT media_id FROM team_media_manifests WHERE team_id = ? AND kind = 'diagram' AND checksum = ? LIMIT 1",
+  ).bind(teamId, checksum).first();
+  return String(row?.media_id || "").trim();
+}
+
 async function bodyJson(request) {
   try { return await request.json(); } catch (_err) { return null; }
 }
@@ -68,6 +75,15 @@ export async function onRequestPost(context) {
       const checksum = await sha256Hex(bytes);
       if (checksum !== expectedLegacyChecksum) {
         results.push({ mediaId, sourceKey, status: "checksum-mismatch" });
+        continue;
+      }
+      // A legacy key can be exact while its old bytes were already copied to
+      // a different play. That is evidence of historic key corruption, not a
+      // reason to duplicate a known wrong diagram onto another player play.
+      // Require an explicit visual/manual replacement in that case.
+      const canonicalChecksumOwner = await findCanonicalChecksumOwner(context.env, teamId, checksum);
+      if (canonicalChecksumOwner && canonicalChecksumOwner !== mediaId) {
+        results.push({ mediaId, sourceKey, status: "duplicate-canonical-content", canonicalChecksumOwner });
         continue;
       }
       const contentType = detectImageContentType(bytes);
