@@ -14761,6 +14761,17 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
   }
 }
 
+/* The worksheet labels belong to the first period, not to a floating card
+   above it. Fuse the first period to the column strip; later periods keep
+   their small separation so repeated practice blocks remain scannable. */
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script .script-column-headers + .period-header-wrapper {
+    margin-top: 0;
+    border-top-width: 0;
+  }
+}
+
 /* At wide desktop widths the section header has room for its five actual
    groups. Explicit columns prevent the toolbar from becoming an implicit,
    visually detached second row. Narrow desktop keeps the existing wrap. */

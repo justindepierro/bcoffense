@@ -529,13 +529,12 @@ function renderScriptPersonnelOverrideButton(play, index, playLabel, options = {
   if (options.printStyle || !play || play.isSeparator) return "";
   const sourcePersonnel = String(play.personnel || "").trim();
   const displayPersonnel = getScriptPersonnelDisplay(play);
-  if (!sourcePersonnel && !displayPersonnel) return "";
 
   const isOverridden = Boolean(normalizeScriptPersonnelOverride(play.scriptPersonnelOverride));
   const title = isOverridden
     ? `Visual script personnel: ${displayPersonnel}. Playbook remains ${sourcePersonnel || "unchanged"}.`
     : `Personnel: ${displayPersonnel || sourcePersonnel}. Choose a visual script-only override.`;
-  return `<button type="button" class="script-personnel-override-btn${isOverridden ? " is-overridden" : ""}" data-action="openScriptPersonnelOverrideModal" data-idx="${index}" title="${escapeHtml(title)}" aria-label="Change script-only personnel color for ${escapeHtml(playLabel)}"><span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Personnel")} · Change</span></button>`;
+  return `<button type="button" class="script-personnel-override-btn${isOverridden ? " is-overridden" : ""}" data-action="openScriptPersonnelOverrideModal" data-idx="${index}" title="${escapeHtml(title)}" aria-label="Change script-only personnel color for ${escapeHtml(playLabel)}"><span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Color")} · Change</span></button>`;
 }
 
 function closeScriptPersonnelOverrideModal() {
@@ -556,7 +555,7 @@ function updateScriptPersonnelOverrideControl(index) {
   buttons.forEach((button) => {
     button.classList.toggle("is-overridden", isOverridden);
     button.title = title;
-    button.innerHTML = `<span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Personnel")} · Change</span>`;
+    button.innerHTML = `<span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Color")} · Change</span>`;
   });
 }
 
