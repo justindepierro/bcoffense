@@ -15,8 +15,8 @@ evidence.
 On July 19, 2026, production D1 was exported locally, migrations 0011–0017
 were applied after a one-team verification, and the D1 preflight passed. The
 canonical data-plane release was deployed and later production releases added
-the verified recovery wizard and Playbook media filters (latest source commit
-`fa74f30`). An authenticated admin republished the coach workspace: D1 has
+the verified recovery wizard, Playbook media filters, and D1-to-R2 pointer
+integrity audit (latest source commit `3aafc25`). An authenticated admin republished the coach workspace: D1 has
 one current workspace head and one current player-release head. Clean-role
 browser and final media reconciliation tests remain explicitly outstanding.
 
@@ -96,7 +96,7 @@ player session.
 | Clips | New writes and primary reads use team-namespaced KV keys, and player reads are gated by release allow-lists. | Clip manifests are still KV-authoritative and a primary-team legacy clip fallback remains during transition. |
 | Other team boundaries | Discussion attachments, threads, and play likes are team scoped; raw attachment R2 keys are not returned. | Migration 0014 is required before the revised like uniqueness rule is live. |
 | Session/cache lifecycle | The service worker bypasses auth, release, image, and clip routes; install no longer forces uncontrolled skipWaiting. Account invalidation uses migration 0013. | Browser/session behavior still needs live validation after migration and deployment. |
-| Deployment safety | cloudflare-preflight.sh reads the remote migration ledger and makes the deploy script fail closed. | The canonical production release and later `fa74f30` release passed this gate; every later release remains gated. |
+| Deployment safety | cloudflare-preflight.sh reads the remote migration ledger and makes the deploy script fail closed. | The canonical production release and later `3aafc25` release passed this gate; every later release remains gated. |
 
 ## Delivery plan
 
@@ -114,9 +114,9 @@ player session.
   diagrams into canonical storage without deleting the archive.
 - [x] Add checksum-gated legacy diagram migration and repair routes that write
   a new immutable version rather than overwriting history.
-- [ ] Deploy and run the new admin-authenticated row-level R2/D1 pointer
-  integrity inventory after migration 0012; retain its dated result as the
-  baseline before any archive cleanup.
+- [ ] Run the deployed admin-authenticated row-level R2/D1 pointer integrity
+  inventory after migration 0012; retain its dated result as the baseline
+  before any archive cleanup.
 - [ ] Reconcile every historic diagram mapping by permanent media ID, source
   object checksum, and a visual review where necessary. Do not trust broad
   historic exact promotions or count them as migrated.
