@@ -60,6 +60,25 @@ the configured R2 bucket after diagram cleanup:
   runtime uses. A direct Wrangler CLI sample did not see that object and is
   treated as an audit-client binding discrepancy, not player-data loss.
 
+### July 19 automatic-guard release — current evidence
+
+- [x] Migration 0018 added durable server-side media-health history and
+  coalesced 513 unread media-update alerts down to 15 current player alerts.
+  Migration 0019 refreshed the remaining current alert copy. New player
+  publish events are coalesced server-side (media: six hours; scripts/quizzes:
+  30 minutes), so a reload or second device cannot create a bell flood.
+- [x] Diagram upload now performs an R2 `head` verification for size, team,
+  permanent media ID, version, and checksum before advancing the D1 pointer.
+  The prior approved diagram remains player-visible if that verification fails.
+- [x] Device outboxes assess themselves on startup, reconnect, and each minute
+  while open; after eight automatic attempts or 15 minutes waiting, the shared
+  workspace dock exposes a durable Retry action.
+- [ ] The new `bcoffense-media-health` Worker code and staff status endpoint
+  are deployed, but Cloudflare rejected this account's cron-schedule API call
+  with HTTP 403. No hourly server run is claimed until the account can grant
+  cron-trigger management; then rerun `wrangler deploy --config
+  wrangler.media-health.toml` and verify the first `media_health_runs` row.
+
 ## Product contract — locked
 
 Diagrams and videos are team assets, not browser assets. The intended daily
