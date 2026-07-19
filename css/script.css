@@ -611,6 +611,10 @@ body[data-auth-role="player"]
   text-transform: uppercase;
 }
 
+.script-call-edit-field--notes {
+  grid-column: 1 / -1;
+}
+
 .script-item .script-call-edit-field input[type="text"] {
   width: 100%;
   min-width: 0;
@@ -624,6 +628,66 @@ body[data-auth-role="player"]
 
 .script-item--compact .script-call-edit-field span {
   display: none;
+}
+
+.script-call-prefix,
+.script-call-suffix {
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+.script-custom-call-text {
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.script-call-override-modal {
+  max-width: 560px;
+}
+
+.script-call-override-copy,
+.script-call-override-source {
+  margin: 0 0 var(--space-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+
+.script-call-override-source {
+  padding: var(--space-sm);
+  border-left: 3px solid var(--color-primary);
+  background: var(--color-bg-light);
+}
+
+.script-call-override-field {
+  display: grid;
+  gap: 5px;
+  margin-top: var(--space-sm);
+}
+
+.script-call-override-field span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.script-call-override-field em {
+  color: var(--color-text-muted);
+  font-style: normal;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.script-call-override-field input {
+  width: 100%;
+}
+
+.script-call-override-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
 }
 .script-item .play-call .call-meta {
   display: inline-flex;
@@ -13640,9 +13704,14 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   }
 
   #script .script-item .script-call-edits {
+    grid-template-columns: minmax(72px, 0.8fr) minmax(72px, 0.8fr) minmax(126px, 1.35fr);
     gap: 4px;
     margin-top: 3px;
     max-width: none;
+  }
+
+  #script .script-item .script-call-edit-field--notes {
+    grid-column: auto;
   }
 
   #script .script-item .script-call-edit-field {
@@ -13743,6 +13812,18 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
   #script .script-item .script-play-action-group--remove {
     padding-right: 0;
+  }
+
+  #script .script-item .script-call-override-btn {
+    width: 28px;
+    color: var(--color-primary);
+    font-size: 10px;
+    font-weight: 900;
+  }
+
+  #script .script-item .script-call-override-btn.is-customized {
+    border-color: color-mix(in srgb, var(--color-primary) 52%, var(--color-border-med));
+    background: var(--color-primary-light);
   }
 
   #script .script-item .play-control-actions button,

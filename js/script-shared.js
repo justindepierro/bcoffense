@@ -642,7 +642,7 @@ function getScriptPlaySummaryText(play) {
   const displayPlay = getScriptDisplayPlay(play);
   if (!displayPlay) return "play";
 
-  return [
+  const sourceText = [
     displayPlay.formation,
     displayPlay.formTag1,
     displayPlay.formTag2,
@@ -659,12 +659,18 @@ function getScriptPlaySummaryText(play) {
     .map((value) => String(value || "").trim())
     .filter(Boolean)
     .join(" ");
+  return buildScriptCallTextLabel(play, sourceText);
 }
 
 function getScriptFullCall(play, options = {}) {
   const displayPlay = getScriptDisplayPlay(play);
   if (!displayPlay) return "";
+  const callOverrides = getScriptCallTextOverrides(play);
   const oneWordCall = String(displayPlay.oneWord || "").trim();
+  if (callOverrides.call) {
+    const customCall = `<span class="script-custom-call-text">${escapeHtml(formatPlayCallText(callOverrides.call, options))}</span>`;
+    return wrapScriptCallTextOverrides(customCall, callOverrides, options);
+  }
   if (options.showOneWordOnly && oneWordCall) {
     const text = formatPlayCallText(oneWordCall, options);
     const oneWordParts = [];
@@ -677,7 +683,115 @@ function getScriptFullCall(play, options = {}) {
       );
     }
     oneWordParts.push(`<span class="script-one-word-call">${escapeHtml(text)}</span>`);
-    return oneWordParts.join(" ");
+    return wrapScriptCallTextOverrides(oneWordParts.join(" "), callOverrides, options);
   }
-  return getFullCall(displayPlay, options);
+  return wrapScriptCallTextOverrides(getFullCall(displayPlay, options), callOverrides, options);
+}
+
+function normalizeScriptCallText(value) {
+  return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+function getScriptCallTextOverrides(play) {
+  return {
+    prefix: normalizeScriptCallText(play?.scriptCallPrefix),
+    call: normalizeScriptCallText(play?.scriptCallOverride),
+    suffix: normalizeScriptCallText(play?.scriptCallSuffix),
+  };
+}
+
+function hasScriptCallTextOverrides(play) {
+  const overrides = getScriptCallTextOverrides(play);
+  return Boolean(overrides.prefix || overrides.call || overrides.suffix);
+}
+
+function buildScriptCallTextLabel(play, sourceText) {
+  const overrides = getScriptCallTextOverrides(play);
+  return [overrides.prefix, overrides.call || sourceText, overrides.suffix]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function wrapScriptCallTextOverrides(callHtml, overrides, options = {}) {
+  const prefix = overrides.prefix
+    ? `<span class="script-call-prefix">${escapeHtml(formatPlayCallText(overrides.prefix, options))}</span>`
+    : "";
+  const suffix = overrides.suffix
+    ? `<span class="script-call-suffix">${escapeHtml(formatPlayCallText(overrides.suffix, options))}</span>`
+    : "";
+  return [prefix, callHtml, suffix].filter(Boolean).join(" ");
+}
+
+function renderScriptCallOverrideButton(play, index, playLabel) {
+  const isCustomized = hasScriptCallTextOverrides(play);
+  const title = isCustomized
+    ? "Customize script call wording (prefix, call, suffix)"
+    : "Add script-only call wording (prefix, call, suffix)";
+  return `<button type="button" class="script-call-override-btn${isCustomized ? " is-customized" : ""}" data-action="openScriptCallOverrideModal" data-idx="${index}" title="${title}" aria-label="${title} for ${escapeHtml(playLabel)}">Aa</button>`;
+}
+
+function closeScriptCallOverrideModal() {
+  document.getElementById("scriptCallOverrideModalOverlay")?.remove();
+}
+
+function openScriptCallOverrideModal(index) {
+  const play = script[index];
+  if (!play || play.isSeparator) return;
+  closeScriptCallOverrideModal();
+
+  const overrides = getScriptCallTextOverrides(play);
+  const sourceCall = getScriptPlaySummaryText({
+    ...play,
+    scriptCallPrefix: "",
+    scriptCallOverride: "",
+    scriptCallSuffix: "",
+  });
+  const overlay = document.createElement("div");
+  overlay.id = "scriptCallOverrideModalOverlay";
+  overlay.className = "modal-overlay show";
+  overlay.innerHTML = `
+    <div class="modal-content modal-content-sm script-call-override-modal" role="dialog" aria-modal="true" aria-labelledby="scriptCallOverrideTitle">
+      <div class="modal-header-row">
+        <h3 class="modal-title" id="scriptCallOverrideTitle">Script-only call wording</h3>
+        <button type="button" class="modal-close-btn" aria-label="Close">✕</button>
+      </div>
+      <p class="script-call-override-copy">Use this for practice-specific language. It changes this script only; the Playbook call remains untouched.</p>
+      <p class="script-call-override-source"><strong>Playbook:</strong> ${escapeHtml(sourceCall || "Untitled play")}</p>
+      <label class="script-call-override-field"><span>Prefix</span><input type="text" name="prefix" value="${escapeHtml(overrides.prefix)}" placeholder="Example: Alert"></label>
+      <label class="script-call-override-field"><span>Custom call <em>optional</em></span><input type="text" name="call" value="${escapeHtml(overrides.call)}" placeholder="Leave blank to use the Playbook call"></label>
+      <label class="script-call-override-field"><span>Suffix / tag</span><input type="text" name="suffix" value="${escapeHtml(overrides.suffix)}" placeholder="Example: On whistle"></label>
+      <div class="script-call-override-actions">
+        <button type="button" class="btn btn-secondary" data-script-call-reset>Reset to Playbook</button>
+        <button type="button" class="btn btn-primary" data-script-call-save>Save wording</button>
+      </div>
+    </div>`;
+  overlay.querySelector(".modal-close-btn")?.addEventListener("click", closeScriptCallOverrideModal);
+  overlay.querySelector("[data-script-call-reset]")?.addEventListener("click", () => {
+    overlay.querySelectorAll("input").forEach((input) => { input.value = ""; });
+  });
+  overlay.querySelector("[data-script-call-save]")?.addEventListener("click", () => {
+    const next = {
+      prefix: overlay.querySelector('[name="prefix"]')?.value || "",
+      call: overlay.querySelector('[name="call"]')?.value || "",
+      suffix: overlay.querySelector('[name="suffix"]')?.value || "",
+    };
+    const normalized = {
+      prefix: normalizeScriptCallText(next.prefix),
+      call: normalizeScriptCallText(next.call),
+      suffix: normalizeScriptCallText(next.suffix),
+    };
+    const current = getScriptCallTextOverrides(play);
+    if (JSON.stringify(normalized) !== JSON.stringify(current)) {
+      beginScriptEdit();
+      [["scriptCallPrefix", normalized.prefix], ["scriptCallOverride", normalized.call], ["scriptCallSuffix", normalized.suffix]].forEach(([key, value]) => {
+        if (value) play[key] = value;
+        else delete play[key];
+      });
+    }
+    closeScriptCallOverrideModal();
+    requestRenderScript();
+  });
+  wireScriptOverlayDismiss(overlay);
+  document.body.appendChild(overlay);
+  overlay.querySelector('[name="prefix"]')?.focus();
 }

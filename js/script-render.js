@@ -518,7 +518,6 @@ function renderScriptPlayControls(play, index, playLabel, reps, signalCount = 0)
       <div class="play-controls">
         <div class="play-control-fields">
           <input class="play-reps-input" type="number" value="${reps}" min="1" data-field="reps" data-idx="${index}" title="Reps" aria-label="Reps for ${escapeHtml(playLabel)}">
-          <input class="play-notes-input" type="text" value="${escapeHtml(play.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
         </div>
         <div class="play-control-actions" aria-label="Actions for ${escapeHtml(playLabel)}">
           <div class="script-play-action-group script-play-action-group--study" aria-label="Study media">
@@ -528,6 +527,9 @@ function renderScriptPlayControls(play, index, playLabel, reps, signalCount = 0)
           </div>
           ${discussionBtn || askCoachBtn ? `<div class="script-play-action-group script-play-action-group--discussion" aria-label="Discussion">${discussionBtn}${askCoachBtn}</div>` : ""}
           ${personnelBtn ? `<div class="script-play-action-group script-play-action-group--personnel" aria-label="Script personnel">${personnelBtn}</div>` : ""}
+          <div class="script-play-action-group script-play-action-group--call" aria-label="Script call wording">
+            ${typeof renderScriptCallOverrideButton === "function" ? renderScriptCallOverrideButton(play, index, playLabel) : ""}
+          </div>
           <div class="script-play-action-group script-play-action-group--edit" aria-label="Playbook and script actions">
             <button class="script-edit-play-btn" data-action="openPlayEditorFromScript" data-arg="${index}" title="Edit this play in the playbook" aria-label="Edit play ${escapeHtml(playLabel)}">✏️</button>
             <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate this script play" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
@@ -549,6 +551,10 @@ function renderScriptInlineCallEdits(play, index, playLabel) {
         <label class="script-call-edit-field">
           <span>Motion</span>
           <input type="text" value="${escapeHtml(play.motion || "")}" placeholder="Motion" data-field="motion" data-idx="${index}" aria-label="Motion for ${escapeHtml(playLabel)}">
+        </label>
+        <label class="script-call-edit-field script-call-edit-field--notes">
+          <span>Notes</span>
+          <input class="play-notes-input" type="text" value="${escapeHtml(play.notes || "")}" placeholder="Practice note" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
         </label>
       </div>`;
 }

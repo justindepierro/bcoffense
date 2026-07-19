@@ -105,6 +105,9 @@ function initScriptEvents() {
           e.preventDefault();
           openScriptPersonnelOverrideModal(idx);
           break;
+        case "openScriptCallOverrideModal":
+          openScriptCallOverrideModal(idx);
+          break;
         case "movePlay":
           movePlay(idx, Number.isNaN(dir) ? rawDir : dir);
           break;
