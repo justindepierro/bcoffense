@@ -13,11 +13,20 @@ evidence.
   account, never inferred from local code.
 
 On July 19, 2026, production D1 was exported locally, migrations 0011–0017
-were applied after a one-team verification, and the D1 preflight passed.
-Pages source commit `a1075e2` was deployed. An authenticated admin then
-republished the coach workspace: D1 now has one current workspace head, one
-current player-release head, and two immutable revisions of each. Clean-role
-browser and media reconciliation tests remain explicitly outstanding.
+were applied after a one-team verification, and the D1 preflight passed. The
+canonical data-plane release was deployed and later production releases added
+the verified recovery wizard and Playbook media filters (latest source commit
+`fa74f30`). An authenticated admin republished the coach workspace: D1 has
+one current workspace head and one current player-release head. Clean-role
+browser and final media reconciliation tests remain explicitly outstanding.
+
+Also on July 19, an admin began deliberate archived-diagram recovery through
+the checksum-gated wizard. A read-only production D1 audit now records **104
+current canonical diagram pointers**, all with a checksum and canonical
+team-namespaced R2 path; **103** were created by the verified legacy-migration
+flow and one was a normal admin upload. This is strong recovery progress, not
+permission to mark every mapping complete: the remaining archived candidates
+still need their permanent-media-ID and visual/player-session verification.
 
 ## Product contract — locked
 
@@ -80,14 +89,14 @@ player session.
 | Player data | GET /player/release reads a D1-current immutable R2 release with revision/ETag support. Player startup uses it instead of raw backup restore. | A first canonical head was bootstrapped; a clean player-session test remains. |
 | Coach workspace | Daily coach saves use immutable R2 workspace/release records and one D1 compare-and-swap head. | Concurrent-device conflicts require an explicit refresh; raw KV remains recovery-only. |
 | Raw recovery backup | /sync/backup is admin-only; a recovery write commits the same canonical workspace/release head before retaining a labeled KV snapshot. | The retained KV object is recovery evidence, never player or normal-sync authority. |
-| Diagrams | Manifest rows are keyed by team_id, media_id, and kind; bytes use media/teams/<teamId>/plays/<mediaId>/diagram/<version>. The D1 pointer is a compare-and-swap commit point. | Migration 0012 must run and legacy rows need individual reconciliation. |
+| Diagrams | Manifest rows are keyed by team_id, media_id, and kind; bytes use media/teams/<teamId>/plays/<mediaId>/diagram/<version>. The D1 pointer is a compare-and-swap commit point. Production now has 104 checksum-verified canonical pointers. | Individual legacy mappings still need visual and clean-player-session reconciliation. |
 | Player diagram correctness | Player diagrams are authorized by release media ID, resolve only through the team D1 manifest, and cache in a player-only IndexedDB database. | Must be proven on clean coach and player devices after deployment. |
 | Diagram saving | A chosen diagram saves locally first, uploads automatically, sends an expected version/checksum, and keeps an immutable candidate if a replacement conflicts. Delete removes only the pointer. | Diagram retry metadata and the binary are not yet one unified durable outbox record. |
 | Legacy diagrams | Player runtime resolution has no legacy diagram fallback. Admin-only audit, migration, and repair routes require a primary-team context and checksum evidence. | Archived legacy objects remain; they are not fully reconciled or retired. |
 | Clips | New writes and primary reads use team-namespaced KV keys, and player reads are gated by release allow-lists. | Clip manifests are still KV-authoritative and a primary-team legacy clip fallback remains during transition. |
 | Other team boundaries | Discussion attachments, threads, and play likes are team scoped; raw attachment R2 keys are not returned. | Migration 0014 is required before the revised like uniqueness rule is live. |
 | Session/cache lifecycle | The service worker bypasses auth, release, image, and clip routes; install no longer forces uncontrolled skipWaiting. Account invalidation uses migration 0013. | Browser/session behavior still needs live validation after migration and deployment. |
-| Deployment safety | cloudflare-preflight.sh reads the remote migration ledger and makes the deploy script fail closed. | The production deploy at `a1075e2` passed this gate; every later release remains gated. |
+| Deployment safety | cloudflare-preflight.sh reads the remote migration ledger and makes the deploy script fail closed. | The canonical production release and later `fa74f30` release passed this gate; every later release remains gated. |
 
 ## Delivery plan
 
@@ -112,6 +121,22 @@ player session.
   declaring an asset permanently missing.
 - [ ] Reconcile the direct KV inventory with the earlier UI inventory and
   identify the active namespace/environment for each retained clip manifest.
+
+**Current recovery progress:** an admin has checksum-migrated 103 archived
+diagrams into canonical team paths, with one additional standard admin diagram
+for 104 current canonical pointers total. Continue from the wizard's remaining
+candidate list; do not bulk-promote the remainder by filename, timestamp, or
+count alone.
+
+**Current player-release parity:** the live release authorizes 492 permanent
+media IDs. Of the 104 canonical diagram pointers, 102 are authorized by that
+release; the remaining two belong to current coach-workspace plays that are
+not in any player-visible script (`Movement Troop Rt Roll` and `RPO Sugar Deer
+Kick`). This is intentional scope, not a broken player authorization mapping.
+The release's one-entry `media.diagrams` metadata snapshot predates recovery;
+it is diagnostic/prefetch metadata only. Player authorization and runtime
+resolution use the release media-ID allow-list plus the current D1 manifest, so
+the snapshot must never be used as an availability decision.
 
 **Exit criterion:** every player-visible diagram is classified as verified
 canonical, verified missing, or explicitly retained as unresolved recovery
@@ -179,8 +204,10 @@ change which diagram belongs to a play.
   the finished fast-cache contract.
 - [ ] Move video/current-clip pointers into D1 and use the same permanent
   media identity and immutable-version model as diagrams.
-- [ ] Apply migration 0012 and validate that no legacy row with a blank
-  checksum is treated as a trusted canonical pointer.
+- [x] Apply migration 0012 and validate that current canonical diagram
+  pointers have a checksum and a team-namespaced immutable R2 path. The July
+  19 production audit found 104 of 104 current pointers satisfied this check;
+  blank-checksum legacy rows remain recovery evidence only.
 
 **Exit criterion:** only a team-scoped D1 pointer can select the diagram shown
 to a player, and concurrent writes cannot silently replace it.
@@ -283,38 +310,41 @@ sync engine or player data plane.
 - [ ] Measure route-level D1/R2 latency and implement private,
   version-aware caching only after authorization correctness is proven.
 
-## Required deployment sequence
+## Deployment and current validation sequence
 
-No deployment is recorded yet. When this release is intentionally promoted,
-the safe order is:
+The foundational production deployment is complete:
 
-1. Back up and inspect production D1. Confirm that the sole existing team is
-   the intended primary team and that assigning all 17 unassigned users to it
-   is correct.
-2. Review and intentionally apply migrations 0011–0017. In particular, 0015
-   repairs discussion integrity, 0016 establishes the revision data plane,
-   and 0017 removes only unverified diagram pointers (never R2 bytes). Do not
-   ask the deploy script to apply them; it never will.
-3. Validate the D1 post-migration state: primary-team setting, non-null user
-   team assignments, team_media_manifests, account_session_state, and the
-   rebuilt team-scoped play_likes uniqueness constraint.
-4. Treat copied legacy diagram pointers from migration 0012 as provisional
-   recovery records until their checksums and object ownership are reconciled.
-5. Deploy through ./scripts/deploy-cloudflare.sh; its preflight must pass.
-6. As an admin, bootstrap the first player release from retained recovery data,
-   then test it with a fresh player session.
-7. Test admin, coach, and player diagram/clip permissions; attach and replace
-   a diagram from two coach sessions; verify a player receives only the
-   released practice and its authorized media.
-8. Run the full recovery inventory before changing or deleting any archived
-   object.
+- [x] Backed up and inspected production D1; confirmed the one intended team
+  and assigned all 17 users to it.
+- [x] Intentionally applied migrations 0011–0017, validated the post-migration
+  schema and foreign keys, and preserved archived R2 bytes.
+- [x] Deployed through `./scripts/deploy-cloudflare.sh`; the remote migration
+  preflight passed.
+- [x] Bootstrapped and republished the canonical workspace/player-release
+  heads.
+- [x] Added the checksum-gated recovery workflow, recovered 103 archived
+  diagrams into canonical paths, and deployed the latest related UI changes.
+
+The remaining live acceptance sequence is:
+
+1. Continue explicit recovery-wizard review for remaining archived candidates;
+   retain unresolved bytes and record intentional missing diagrams.
+2. From a clean player session, verify the released practice receives the
+   exact current canonical diagram for a recovered play and for a normal new
+   upload.
+3. From a second coach session, replace the same diagram with a stale-write
+   attempt and confirm the 409 conflict/recovery behavior.
+4. Reconcile active and retained clip manifests before removing their last
+   legacy runtime fallback.
+5. Only after those checks, set a retention date for archived objects; no
+   archived byte is deleted as part of this rollout.
 
 ## Release gates
 
 - [x] Remote D1 records migrations 0011–0017 as applied and passes foreign-key
   validation.
-- [ ] All users have the intended explicit team assignment; no second team can
-  inherit the primary team's data by accident.
+- [x] All 17 current users have the intended explicit primary-team assignment;
+  no request derives membership by selecting an arbitrary team.
 - [ ] A fresh player receives only the released projection and cannot access
   /sync/backup, unrelated team media, or unreleased media IDs.
 - [ ] A clean player and a second coach see the correct diagram after a
