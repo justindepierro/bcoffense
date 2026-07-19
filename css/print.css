@@ -67,6 +67,7 @@
   .offline-banner,
   .loading-overlay,
   .modal-overlay,
+  .workspace-sync-dock,
   #liveAnnouncer {
     display: none !important;
   }
@@ -288,6 +289,31 @@
     padding: 0 !important;
     margin: 0 !important;
     background: white !important;
+  }
+  /* The desktop app intentionally owns a fixed-height scroll shell and reserves
+     a scrollbar gutter. A script print is a paper artifact instead: release
+     those screen-only bounds so Chrome cannot print a gray gutter beside the
+     table or clip the end of the preview. */
+  body.print-script #mainApp,
+  body.print-script #script,
+  body.print-script #previewContainer {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    scrollbar-gutter: auto !important;
+    contain: none !important;
+  }
+  body.print-script #mainApp {
+    display: block !important;
+    flex: none !important;
+  }
+  /* The persistent sync chip is useful on screen, but must never be part of a
+     coach's printed script—even when a cloud publish is still queued. */
+  body.print-script .workspace-sync-dock {
+    display: none !important;
   }
   body.print-script .tabs,
   body.print-script .panel:not(#script),

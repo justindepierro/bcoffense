@@ -5131,6 +5131,26 @@ function checkScriptPacketPrintContracts() {
   console.log("script packet print contracts ok");
 }
 
+function checkScriptPrintIsolationContract() {
+  const printCss = read("css/print.css");
+
+  if (
+    !/body\.print-script \.workspace-sync-dock[\s\S]*display:\s*none\s*!important/.test(
+      printCss,
+    ) ||
+    !/body\.print-script #mainApp,[\s\S]*?body\.print-script #previewContainer[\s\S]*?scrollbar-gutter:\s*auto\s*!important/.test(
+      printCss,
+    ) ||
+    !/body\.print-script #mainApp\s*\{[\s\S]*?display:\s*block\s*!important/.test(
+      printCss,
+    )
+  ) {
+    fail("script print is not isolated from workspace chrome and scroll gutters");
+  }
+
+  console.log("script print isolation contract ok");
+}
+
 function checkScriptSelectionRenderContracts() {
   const selection = read("js/script-selection.js");
   const updateBulkSelectUi = extractFunctionSource(selection, "updateBulkSelectUI");
@@ -5830,6 +5850,7 @@ checkWindowExportManifest();
 checkModulePrefixManifest();
 checkWristbandConstantUsage();
 checkScriptPacketPrintContracts();
+checkScriptPrintIsolationContract();
 checkScriptSelectionRenderContracts();
 checkGuideContracts();
 checkPlayerPlaybookVisibilityContracts();
