@@ -14776,9 +14776,25 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-container {
     margin: 0;
+    /* Match the specificity of the older desktop density rule. Without this,
+       it restores 6px of inner padding and leaves the sticky worksheet labels
+       floating in a white moat when the play list scrolls. */
+    padding: 0;
+    position: relative;
+    isolation: isolate;
     border-color: var(--coach-grid-border);
     border-radius: 0 0 var(--coach-grid-toolbar-radius) var(--coach-grid-toolbar-radius);
     box-shadow: none;
+  }
+
+  /* This is the fixed worksheet edge while rows move underneath it. Keep the
+     background fully opaque and its stacking context above every row control
+     so a select/input can never peek through the Front/Coverage heading. */
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script .script-column-headers {
+    z-index: 4;
+    isolation: isolate;
+    background: var(--coach-grid-surface-muted);
   }
 }
 
