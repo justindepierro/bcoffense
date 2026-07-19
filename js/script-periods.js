@@ -5,12 +5,16 @@ let templateModalMode = "insert";
 let templateModalSearchTerm = "";
 
 const SCRIPT_PERIOD_COLOR_PALETTE = [
-  { name: "Navy", value: "#18345f" }, { name: "Blue", value: "#2563eb" },
-  { name: "Sky", value: "#0369a1" }, { name: "Teal", value: "#0f766e" },
-  { name: "Green", value: "#15803d" }, { name: "Olive", value: "#4d7c0f" },
-  { name: "Gold", value: "#a16207" }, { name: "Orange", value: "#c2410c" },
+  { name: "Navy", value: "#18345f" }, { name: "Royal Blue", value: "#1d4ed8" },
+  { name: "Blue", value: "#2563eb" }, { name: "Sky", value: "#0369a1" },
+  { name: "Cyan", value: "#0e7490" }, { name: "Teal", value: "#0f766e" },
+  { name: "Mint", value: "#047857" }, { name: "Green", value: "#15803d" },
+  { name: "Lime", value: "#4d7c0f" }, { name: "Olive", value: "#3f6212" },
+  { name: "Gold", value: "#a16207" }, { name: "Amber", value: "#b45309" },
+  { name: "Orange", value: "#c2410c" }, { name: "Coral", value: "#be4b3a" },
   { name: "Red", value: "#b91c1c" }, { name: "Rose", value: "#be123c" },
-  { name: "Magenta", value: "#a21caf" }, { name: "Purple", value: "#6d28d9" },
+  { name: "Pink", value: "#be185d" }, { name: "Magenta", value: "#a21caf" },
+  { name: "Purple", value: "#7e22ce" }, { name: "Violet", value: "#6d28d9" },
   { name: "Indigo", value: "#4338ca" }, { name: "Steel", value: "#475569" },
   { name: "Slate", value: "#334155" }, { name: "Charcoal", value: "#1f2937" },
 ];
@@ -25,7 +29,7 @@ function renderScriptPeriodPaletteButtons(selectedColor, attributeName, attribut
 
 function renderScriptPeriodColorControl(index, color, label) {
   return `
-    <button type="button" class="ph-color-palette-btn" data-action="openScriptPeriodColorPalette" data-idx="${index}" title="Choose from 16 standard period colors" aria-label="Choose color for ${escapeHtml(label)}" style="--period-color-swatch: ${color};"><span aria-hidden="true"></span></button>
+    <button type="button" class="ph-color-palette-btn" data-action="openScriptPeriodColorPalette" data-idx="${index}" title="Choose from 24 standard period colors" aria-label="Choose color for ${escapeHtml(label)}" style="--period-color-swatch: ${color};"><span aria-hidden="true"></span></button>
     <input type="color" class="ph-color-input" value="${color}" data-field="periodColor" data-idx="${index}" tabindex="-1" aria-hidden="true">
   `;
 }

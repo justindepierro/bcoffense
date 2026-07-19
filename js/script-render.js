@@ -382,9 +382,9 @@ function renderPeriodActionsToolbar(index, periodLabel) {
               <button class="pat-btn" data-action="hidePeriodPersonnel" data-idx="${index}"${personnelState.total ? "" : " disabled"} title="Hide personnel for every play in ${escapeHtml(periodLabel)}"><span class="pat-btn-icon" aria-hidden="true">⊘</span><span class="pat-btn-label">Hide all personnel</span></button>
             </div>
           </details>
-          <details class="period-actions-menu">
-            <summary aria-label="Actions for ${escapeHtml(periodLabel)}">
-              <span aria-hidden="true">⋯</span> Period Actions
+          <details class="period-actions-menu period-tools-menu">
+            <summary title="More organization and sharing tools for ${escapeHtml(periodLabel)}" aria-label="More tools for ${escapeHtml(periodLabel)}">
+              <span aria-hidden="true">⋯</span> More tools
             </summary>
             <div class="period-actions-menu-panel" role="group" aria-label="Actions for ${escapeHtml(periodLabel)}">
               ${actions.map(([action, label, icon, title, extraClass = ""]) => renderPeriodActionButton(action, index, label, icon, title, extraClass)).join("")}

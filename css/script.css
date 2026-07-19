@@ -14897,6 +14897,17 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
   position: relative;
 }
 
+/* Native period menus must be allowed to escape the otherwise clipped period
+   card. The card uses containment for row-render performance; dropping it
+   only while a menu is open keeps that performance without hiding the menu. */
+#script .period-header-wrapper:has(.period-actions-menu[open]) {
+  position: relative;
+  z-index: calc(var(--z-popover) - 1);
+  overflow: visible;
+  contain: layout style;
+  content-visibility: visible;
+}
+
 #script .period-actions-menu > summary {
   display: inline-flex;
   align-items: center;
@@ -14964,6 +14975,10 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
   border-radius: 1px;
   background: var(--color-surface);
   box-shadow: var(--shadow-md);
+}
+
+#script .period-tools-menu .period-actions-menu-panel {
+  min-width: 300px;
 }
 
 #script .period-actions-menu-panel .pat-btn {
