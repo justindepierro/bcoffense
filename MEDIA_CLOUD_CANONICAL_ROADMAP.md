@@ -178,10 +178,14 @@ from Cloudflare without ever having opened the coach workspace.
   to their canonical `mediaId` paths and write manifests. Completed July 18,
   2026: migrated 25 verified diagrams; the 194 legacy objects remain intact
   as read-only recovery copies.
-- [x] Offer confidence-scored legacy recovery: automatically promote only the
-  newest exact-signature diagram mapped to one current play; retain shared and
-  unmatched objects for review/archive. Completed July 18, 2026: promoted 97
-  exact matches; seven unmatched objects remain archived for later recovery.
+- [ ] Reconcile every legacy-migrated diagram before legacy retirement:
+  compare its canonical checksum with the one uniquely attributable stable/tag
+  legacy key, repair only verified mismatches, and retain all old versions for
+  audit. The July 18, 2026 batch of 97 broad "exact" promotions is now
+  provisional after a Smaug→Halo mismatch was found and repaired.
+- [x] Restrict all new legacy recovery and player fallback reads to permanent
+  media IDs, stable source IDs, and unique tag identities. Content-derived
+  signature keys are no longer eligible to choose a player diagram.
 - [ ] Offer an admin-only local-cache migration that uploads known legacy
   browser diagrams into their canonical records automatically.
 - [ ] Verify each migrated media ID from a clean player session and a second
@@ -222,7 +226,8 @@ is publishing the media.
 - [ ] Authorization test: players cannot write, coaches cannot perform admin
   cleanup, and no inventory/object listing is exposed to players.
 - [ ] Migration test: legacy R2 and IndexedDB examples resolve to the correct
-  canonical media ID with no cross-play diagram reuse.
+  canonical media ID with no cross-play diagram reuse; checksum reconciliation
+  must pass for every legacy-migrated player-visible diagram.
 - [ ] Responsive test: media status is understandable on coach desktop,
   tablet, phone, and player portal widths.
 - [ ] Backup/restore test: restoring a workspace restores media metadata and
