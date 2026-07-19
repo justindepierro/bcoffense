@@ -916,27 +916,33 @@
     let method = missing.length ? "fallback" : "cache";
     if (missing.length > 1 && typeof fetch === "function") {
       try {
-        const response = await fetch("/images/batch-manifest", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-BC-Auth-Mode": "json",
-          },
-          body: JSON.stringify({ sigs: missing }),
-        });
-        if (response.ok) {
-          const data = await response.json().catch(() => null);
-          const manifests = data && data.manifests && typeof data.manifests === "object"
-            ? data.manifests
-            : {};
-          missing.forEach((identityKey) => {
-            const item = manifests[identityKey] || { ok: true, sig: identityKey, published: false };
+        // The API intentionally limits each request to 100 media IDs. Split
+        // large Playbook filters so omitted IDs are never mislabeled missing.
+        const batches = [];
+        for (let index = 0; index < missing.length; index += 100) {
+          batches.push(missing.slice(index, index + 100));
+        }
+        const responses = await Promise.all(batches.map(async (batch) => {
+          const response = await fetch("/images/batch-manifest", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "X-BC-Auth-Mode": "json",
+            },
+            body: JSON.stringify({ sigs: batch }),
+          });
+          return { batch, data: response.ok ? await response.json().catch(() => null) : null };
+        }));
+        responses.forEach(({ batch, data }) => {
+          if (!data?.manifests || typeof data.manifests !== "object") return;
+          batch.forEach((identityKey) => {
+            const item = data.manifests[identityKey] || { ok: true, sig: identityKey, published: false };
             _cacheRemoteManifest(identityKey, _remoteManifestResult(identityKey, item));
           });
           method = "batch";
-        }
+        });
       } catch (_err) {
         // Fall back to existing one-at-a-time checks below.
       }

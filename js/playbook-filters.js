@@ -1,5 +1,8 @@
 let highlightedWristbandPlays = [];
 let highlightedWristbandPlayKeys = new Set();
+const playbookMediaFilters = new Set();
+const _playbookMediaFilterChecks = new Set();
+let _playbookMediaFilterRefreshPending = false;
 
 const PB_PICTURE_FILTER_LABELS = {
   wideZone: "Wide Zone",
@@ -134,6 +137,53 @@ function _playbookHasStoredDiagram(play) {
   );
 }
 
+function _playbookHasDiagram(play) {
+  if (_playbookHasStoredDiagram(play)) return true;
+  const remote = typeof window !== "undefined" && typeof window.playImages?.getCachedRemoteManifestForPlay === "function"
+    ? window.playImages.getCachedRemoteManifestForPlay(play)
+    : null;
+  return Boolean(remote?.published);
+}
+
+function _warmPlaybookMediaFilterManifests(playList) {
+  if (
+    _playbookMediaFilterRefreshPending ||
+    !window.playImages ||
+    typeof window.playImages.checkRemoteForPlays !== "function" ||
+    typeof getPlayMediaId !== "function"
+  ) return false;
+  const pending = playList.filter((play) => {
+    const mediaId = String(getPlayMediaId(play) || "").trim();
+    return mediaId && !_playbookMediaFilterChecks.has(mediaId);
+  });
+  if (!pending.length) return false;
+  _playbookMediaFilterRefreshPending = true;
+  window.playImages.checkRemoteForPlays(pending)
+    .then(() => {
+      pending.forEach((play) => {
+        const mediaId = String(getPlayMediaId(play) || "").trim();
+        if (mediaId) _playbookMediaFilterChecks.add(mediaId);
+      });
+      filterPlays();
+    })
+    .finally(() => { _playbookMediaFilterRefreshPending = false; });
+  return true;
+}
+
+function togglePlaybookMediaFilter(value) {
+  const key = String(value || "");
+  if (!key) return;
+  if (key === "hasDiagram") playbookMediaFilters.delete("noDiagram");
+  if (key === "noDiagram") playbookMediaFilters.delete("hasDiagram");
+  if (playbookMediaFilters.has(key)) playbookMediaFilters.delete(key);
+  else playbookMediaFilters.add(key);
+  document.querySelectorAll("[data-pb-media-filter]").forEach((button) => {
+    button.classList.toggle("active", playbookMediaFilters.has(button.dataset.pbMediaFilter));
+  });
+  currentPage = 0;
+  filterPlays();
+}
+
 function _playbookHasClip(play) {
   return Boolean(
     play &&
@@ -179,6 +229,11 @@ function filterPlays() {
     document.getElementById("pbInWeekFilter")?.checked || false;
   const unusedOnly =
     document.getElementById("pbUnusedFilter")?.checked || false;
+  const hasDiagramOnly = playbookMediaFilters.has("hasDiagram");
+  const noDiagramOnly = playbookMediaFilters.has("noDiagram");
+  const hasClipsOnly = playbookMediaFilters.has("hasClips");
+  const checkingDiagramFilter = (hasDiagramOnly || noDiagramOnly)
+    && _warmPlaybookMediaFilterManifests(plays);
   const gameWeek = getGameWeek();
   const taggedForOpponent = gamePlanOnly && gameWeek.opponentName && typeof getGamePlanTags === "function"
     ? new Set((getGamePlanTags()[gameWeek.opponentName] || []))
@@ -217,6 +272,11 @@ function filterPlays() {
       if (inWeekOnly && !inWeek) return false;
       if (unusedOnly && inWeek) return false;
     }
+    if (!checkingDiagramFilter) {
+      if (hasDiagramOnly && !_playbookHasDiagram(play)) return false;
+      if (noDiagramOnly && _playbookHasDiagram(play)) return false;
+    }
+    if (hasClipsOnly && !_playbookHasClip(play)) return false;
     if (playerPlaybookStudyFilters.size > 0) {
       if (playerPlaybookStudyFilters.has("diagram") && !_playbookHasStoredDiagram(play)) return false;
       if (playerPlaybookStudyFilters.has("missingDiagram") && _playbookHasStoredDiagram(play)) return false;
@@ -287,6 +347,7 @@ function clearFilters() {
   activeTypeChips.clear();
   activePersonnelChips.clear();
   activePictureChips.clear();
+  playbookMediaFilters.clear();
   document
     .querySelectorAll(".pb-chip.active")
     .forEach((chip) => chip.classList.remove("active"));
@@ -596,6 +657,14 @@ function updateActiveFilterBar() {
       value,
     });
   });
+  const mediaFilterLabels = {
+    hasDiagram: "🖼️ Has diagram",
+    noDiagram: "◻️ No diagram",
+    hasClips: "🎬 Has clips",
+  };
+  playbookMediaFilters.forEach((value) => {
+    parts.push({ label: mediaFilterLabels[value] || value, layer: "media", value });
+  });
   // Show/hide bulk add button based on whether any plays are filtered
   const bulkBtn = document.getElementById("pbBulkAddBtn");
   if (bulkBtn) bulkBtn.style.display = filteredPlays.length < plays.length ? "" : "none";
@@ -653,6 +722,11 @@ function removeFilter(layer, value) {
     if (el) el.value = "";
   } else if (layer === "playerStudy") {
     playerPlaybookStudyFilters.delete(value);
+  } else if (layer === "media") {
+    playbookMediaFilters.delete(value);
+    document.querySelectorAll("[data-pb-media-filter]").forEach((button) => {
+      button.classList.toggle("active", playbookMediaFilters.has(button.dataset.pbMediaFilter));
+    });
   } else {
     const el = document.getElementById(layer);
     if (el) el.value = "";
