@@ -470,6 +470,22 @@ function getPeriodCallDisplayOptions(separator, baseOptions = {}) {
   return { ...baseOptions, hideProtection: true };
 }
 
+const SCRIPT_PERSONNEL_VISUAL_OPTIONS = [
+  "Red", "Blue", "Green", "Yellow", "Orange", "Purple", "Brown", "White", "Black", "Navy",
+];
+
+function normalizeScriptPersonnelOverride(value) {
+  const candidate = String(value || "").trim();
+  return SCRIPT_PERSONNEL_VISUAL_OPTIONS.find(
+    (option) => option.toLowerCase() === candidate.toLowerCase(),
+  ) || "";
+}
+
+function getScriptPersonnelDisplay(play) {
+  return normalizeScriptPersonnelOverride(play?.scriptPersonnelOverride) ||
+    String(play?.personnel || "").trim();
+}
+
 function getScriptDisplayPlay(play) {
   if (!play) return play;
 
@@ -480,9 +496,13 @@ function getScriptDisplayPlay(play) {
     .map((entry) => `(${formatSharedCustomTagEntryText(entry)})`)
     .filter(Boolean);
 
-  if (!customFormationTags.length && !customBackTags.length) return play;
+  const visualPersonnel = getScriptPersonnelDisplay(play);
+  const personnelChanged = visualPersonnel !== String(play.personnel || "").trim();
+  if (!customFormationTags.length && !customBackTags.length && !personnelChanged) return play;
 
   const displayPlay = { ...play };
+
+  if (personnelChanged) displayPlay.personnel = visualPersonnel;
 
   if (customFormationTags.length) {
     const formationTagText = customFormationTags.join(" ");
@@ -503,6 +523,98 @@ function getScriptDisplayPlay(play) {
   }
 
   return displayPlay;
+}
+
+function renderScriptPersonnelOverrideButton(play, index, playLabel, options = {}) {
+  if (options.printStyle || !play || play.isSeparator) return "";
+  const sourcePersonnel = String(play.personnel || "").trim();
+  const displayPersonnel = getScriptPersonnelDisplay(play);
+  if (!sourcePersonnel && !displayPersonnel) return "";
+
+  const isOverridden = Boolean(normalizeScriptPersonnelOverride(play.scriptPersonnelOverride));
+  const title = isOverridden
+    ? `Visual script personnel: ${displayPersonnel}. Playbook remains ${sourcePersonnel || "unchanged"}.`
+    : `Personnel: ${displayPersonnel || sourcePersonnel}. Choose a visual script-only override.`;
+  return `<button type="button" class="script-personnel-override-btn${isOverridden ? " is-overridden" : ""}" data-action="openScriptPersonnelOverrideModal" data-idx="${index}" title="${escapeHtml(title)}" aria-label="Change visual personnel for ${escapeHtml(playLabel)}"><span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Personnel")}</span></button>`;
+}
+
+function closeScriptPersonnelOverrideModal() {
+  document.getElementById("scriptPersonnelOverrideModalOverlay")?.remove();
+}
+
+function updateScriptPersonnelOverrideControl(index) {
+  const play = script[index];
+  const row = document.querySelector(`.script-item[data-idx="${index}"]`);
+  const button = row?.querySelector(".script-personnel-override-btn");
+  if (!play || !button) return;
+  const sourcePersonnel = String(play.personnel || "").trim();
+  const displayPersonnel = getScriptPersonnelDisplay(play);
+  const isOverridden = Boolean(normalizeScriptPersonnelOverride(play.scriptPersonnelOverride));
+  button.classList.toggle("is-overridden", isOverridden);
+  button.title = isOverridden
+    ? `Visual script personnel: ${displayPersonnel}. Playbook remains ${sourcePersonnel || "unchanged"}.`
+    : `Personnel: ${displayPersonnel || sourcePersonnel}. Choose a visual script-only override.`;
+  button.innerHTML = `<span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Personnel")}</span>`;
+}
+
+function setScriptPersonnelOverride(index, value) {
+  const play = script[index];
+  if (!play || play.isSeparator) return;
+  const next = normalizeScriptPersonnelOverride(value);
+  const current = normalizeScriptPersonnelOverride(play.scriptPersonnelOverride);
+  if (next === current) {
+    closeScriptPersonnelOverrideModal();
+    return;
+  }
+
+  beginScriptEdit();
+  if (next) play.scriptPersonnelOverride = next;
+  else delete play.scriptPersonnelOverride;
+  closeScriptPersonnelOverrideModal();
+  updateScriptCallDisplay(index);
+  updateScriptPersonnelOverrideControl(index);
+  showToast(
+    next
+      ? `Using ${next} as this script's visual personnel marker.`
+      : "Using the playbook personnel marker.",
+    { type: "success", duration: 1800 },
+  );
+}
+
+function openScriptPersonnelOverrideModal(index) {
+  const play = script[index];
+  if (!play || play.isSeparator) return;
+  closeScriptPersonnelOverrideModal();
+
+  const sourcePersonnel = String(play.personnel || "").trim();
+  const current = normalizeScriptPersonnelOverride(play.scriptPersonnelOverride);
+  const playLabel = getScriptPlaySummaryText(play);
+  const choices = [
+    `<button type="button" class="script-personnel-override-choice${!current ? " is-selected" : ""}" data-personnel-value="">Match playbook${sourcePersonnel ? ` · ${escapeHtml(sourcePersonnel)}` : ""}</button>`,
+    ...SCRIPT_PERSONNEL_VISUAL_OPTIONS.map((option) =>
+      `<button type="button" class="script-personnel-override-choice${current === option ? " is-selected" : ""}" data-personnel-value="${option}"><span aria-hidden="true">${getPersonnelEmoji(option)}</span> ${option}</button>`,
+    ),
+  ].join("");
+  const overlay = document.createElement("div");
+  overlay.id = "scriptPersonnelOverrideModalOverlay";
+  overlay.className = "modal-overlay show";
+  overlay.innerHTML = `
+    <div class="modal-content modal-content-sm script-personnel-override-modal" role="dialog" aria-modal="true" aria-labelledby="scriptPersonnelOverrideTitle">
+      <div class="modal-header-row">
+        <h3 class="modal-title" id="scriptPersonnelOverrideTitle">Visual personnel</h3>
+        <button type="button" class="modal-close-btn" aria-label="Close">✕</button>
+      </div>
+      <p class="script-personnel-override-copy"><strong>${escapeHtml(playLabel)}</strong></p>
+      <p class="script-personnel-override-copy">This changes only this saved script's visual personnel marker. The Playbook personnel${sourcePersonnel ? ` stays ${escapeHtml(sourcePersonnel)}` : " is unchanged"}.</p>
+      <div class="script-personnel-override-options" aria-label="Choose visual personnel">${choices}</div>
+    </div>`;
+  overlay.querySelector(".modal-close-btn")?.addEventListener("click", closeScriptPersonnelOverrideModal);
+  overlay.querySelectorAll("[data-personnel-value]").forEach((choice) => {
+    choice.addEventListener("click", () => setScriptPersonnelOverride(index, choice.dataset.personnelValue));
+  });
+  wireScriptOverlayDismiss(overlay);
+  document.body.appendChild(overlay);
+  overlay.querySelector(".modal-close-btn")?.focus();
 }
 
 function getScriptPlaySummaryText(play) {

@@ -204,7 +204,8 @@ table.sortable th {
 /* ── Row action buttons: invisible until row hover on desktop ── */
 #playbookTable .pb-present-btn,
 #playbookTable .pb-edit-btn,
-#playbookTable .pb-player-visibility-btn {
+#playbookTable .pb-player-visibility-btn,
+#playbookTable .pb-readiness-btn {
   opacity: 0;
   visibility: hidden;
   min-width: 24px;
@@ -216,14 +217,16 @@ table.sortable th {
 @media (hover: hover) {
   #playbookTable tbody tr:hover .pb-present-btn,
   #playbookTable tbody tr:hover .pb-edit-btn,
-  #playbookTable tbody tr:hover .pb-player-visibility-btn {
+  #playbookTable tbody tr:hover .pb-player-visibility-btn,
+  #playbookTable tbody tr:hover .pb-readiness-btn {
     opacity: 1;
     visibility: visible;
   }
 }
 
 #playbookTable .pb-edit-btn,
-#playbookTable .pb-player-visibility-btn {
+#playbookTable .pb-player-visibility-btn,
+#playbookTable .pb-readiness-btn {
   margin-left: 4px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
@@ -531,6 +534,14 @@ body.is-mobile-screen .pb-signal-badge {
 /* Badge is clickable when playbookIdx is wired */
 .play-cell .play-readiness-badge--playbook-table[data-action] {
   cursor: pointer;
+}
+
+#playbookTable .pb-readiness-btn {
+  margin-left: 4px;
+  padding-inline: 6px;
+  border-color: color-mix(in srgb, var(--color-primary) 34%, var(--color-border-light));
+  color: var(--color-primary);
+  font-weight: 800;
 }
 @media (hover: hover) {
   .play-cell .play-readiness-badge--playbook-table[data-action]:hover {

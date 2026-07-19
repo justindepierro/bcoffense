@@ -711,7 +711,10 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       const typeKey = play.type ? play.type.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z-]/g, "") : "";
       const typeChip = play.type ? `<span class="script-type-chip" data-type="${typeKey}">${escapeHtml(play.type)}</span>` : "";
       const tempo = play.tempo ? `<span class="script-tempo-text">· ${escapeHtml(play.tempo)}</span>` : "";
-      return `${typeChip}${tempo}`;
+      const personnelOverride = typeof renderScriptPersonnelOverrideButton === "function"
+        ? renderScriptPersonnelOverrideButton(play, index, playLabel, opts)
+        : "";
+      return `${typeChip}${tempo}${personnelOverride}`;
     })()}</span>
           ${playbookSigSet && playbookSigSet.has(playSignature(play)) ? `<button type="button" class="script-pb-chip" data-action="jumpToPlayInPlaybook" data-arg="${index}" title="View this play in the Playbook" aria-label="View ${escapeHtml(playLabel)} in Playbook">📖</button>` : ""}
           ${(() => {

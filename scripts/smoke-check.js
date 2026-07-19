@@ -1966,6 +1966,7 @@ function checkPlayReadinessContracts() {
   const storage = read("js/storage.js");
   const auth = read("js/auth.js");
   const scriptRender = read("js/script-render.js");
+  const scriptShared = read("js/script-shared.js");
   const playbookNavigation = read("js/playbook-navigation.js");
   const playbookRender = read("js/playbook-render.js");
   const presentation = read("js/play-presentation.js");
@@ -2036,8 +2037,11 @@ function checkPlayReadinessContracts() {
     !/readinessBadge/.test(playbookRender) ||
     !/\$\{readinessMarkup\}/.test(scriptRender) ||
     !/quickPlayReadinessScriptScore/.test(readiness) ||
-    !/renderSelectedPlaybookReadinessPanel\(index\)/.test(playbookNavigation) ||
-    !/renderSelectedPlaybookReadinessPanel\(selectedRowIndex\)/.test(playbookRender) ||
+    /renderSelectedPlaybookReadinessPanel\(index\)/.test(playbookNavigation) ||
+    /renderSelectedPlaybookReadinessPanel\(selectedRowIndex\)/.test(playbookRender) ||
+    !/closePlaybookReadinessPanel\(\)/.test(playbookNavigation) ||
+    !/showPlayReadinessPlaybookHistory/.test(playbookRender) ||
+    !/pb-readiness-btn/.test(playbookRender) ||
     !/renderPlayReadinessPresentationCoachCard\(play\)/.test(presentation) ||
     !/renderPlayReadinessPresentationScoreRail\(play\)/.test(presentation) ||
     !/"openPlayReadinessRepModal"/.test(auth) ||
@@ -2049,6 +2053,17 @@ function checkPlayReadinessContracts() {
     !/"deletePlayReadinessReport"/.test(auth)
   ) {
     fail("play readiness script integration or coach permissions are incomplete");
+  }
+  if (
+    !/const SCRIPT_PERSONNEL_VISUAL_OPTIONS = \[/.test(scriptShared) ||
+    !/function getScriptPersonnelDisplay\(play\)/.test(scriptShared) ||
+    !/function openScriptPersonnelOverrideModal\(index\)/.test(scriptShared) ||
+    !/function setScriptPersonnelOverride\(index, value\)/.test(scriptShared) ||
+    !/scriptPersonnelOverride/.test(scriptShared) ||
+    !/renderScriptPersonnelOverrideButton\(play, index, playLabel, opts\)/.test(scriptRender) ||
+    !/\.script-personnel-override-btn/.test(css)
+  ) {
+    fail("script-only personnel visual override is incomplete");
   }
   if (
     /type="checkbox"\s+name="(?:explosive|turnover|penalty)"/.test(readiness) ||

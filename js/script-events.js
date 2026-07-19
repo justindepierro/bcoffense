@@ -99,6 +99,9 @@ function initScriptEvents() {
         case "openScriptMoveMenu":
           openScriptMoveMenu(e, idx);
           break;
+        case "openScriptPersonnelOverrideModal":
+          openScriptPersonnelOverrideModal(idx);
+          break;
         case "movePlay":
           movePlay(idx, Number.isNaN(dir) ? rawDir : dir);
           break;

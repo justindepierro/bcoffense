@@ -183,7 +183,6 @@ function renderPlaybook() {
           ? renderPlayReadinessCompactBadgeFromSummary(readinessSummary, {
             variant: "playbook-table",
             detail: false,
-            playbookIdx: start + localIdx,
           })
           : "";
       const readinessCardBadge =
@@ -226,6 +225,7 @@ function renderPlaybook() {
           typeof isPlayHiddenFromPlayers === "function"
             ? isPlayHiddenFromPlayers(play)
             : false,
+        readinessSummary,
         readinessBadge,
         readinessCardBadge,
       };
@@ -293,6 +293,9 @@ function renderPlaybook() {
         const playerVisibilityButton = canTogglePlayerVisibility
           ? `<button class="pb-player-visibility-btn${item.playerHidden ? " is-hidden" : ""}" data-action="togglePlayPlayerVisibility" data-idx="${idx}" data-arg="${idx}" title="${item.playerHidden ? "Show this play to players" : "Hide this play from players"}" aria-label="${item.playerHidden ? "Show" : "Hide"} ${escapeHtml(play.play || "this play")} ${item.playerHidden ? "in" : "from"} the player playbook">${item.playerHidden ? "🙈" : "👁️"}</button>`
           : "";
+        const readinessButton = item.readinessSummary
+          ? `<button type="button" class="pb-readiness-btn" data-action="showPlayReadinessPlaybookHistory" data-arg="${idx}" title="Open readiness for this play" aria-label="Open readiness for ${escapeHtml(play.play || "this play")}">Readiness</button>`
+          : "";
 
         return `
             <tr class="${wbClass}${gpClass}${hiddenClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-arg="${idx}"
@@ -306,7 +309,7 @@ function renderPlaybook() {
                 <td class="col-back">${highlight(play.back || "-")}</td>
                 <td class="col-motion">${highlight(play.motion || "-")}</td>
                 <td class="col-protection">${highlight(play.protection || "-")}</td>
-                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${_renderWorkflowChips(play, idx, _wfScriptLookup, _wfScoutLookup)}${item.readinessBadge}${playerVisibilityButton}${editButton}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button><button class="pb-add-week-btn" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet">⊕</button>${typeof askCoachAboutPlay === "function" ? `<button class="pb-ask-coach-btn" data-action="askCoachAboutPlay" data-arg="${idx}" title="Ask a question about this play" aria-label="Ask a question about ${escapeHtml(play.play)}">❓</button>` : ""}</td>
+                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${_renderWorkflowChips(play, idx, _wfScriptLookup, _wfScoutLookup)}${item.readinessBadge}${readinessButton}${playerVisibilityButton}${editButton}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button><button class="pb-add-week-btn" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet">⊕</button>${typeof askCoachAboutPlay === "function" ? `<button class="pb-ask-coach-btn" data-action="askCoachAboutPlay" data-arg="${idx}" title="Ask a question about this play" aria-label="Ask a question about ${escapeHtml(play.play)}">❓</button>` : ""}</td>
                 <td class="col-basePlay">${escapeHtml(play.basePlay || "-")}</td>
                 <td class="col-tempo">${escapeHtml(play.tempo || "-")}</td>
             </tr>
@@ -363,6 +366,9 @@ function renderPlaybook() {
         const cardEditButton = isReadOnlyViewer
           ? ""
           : `<button type="button" class="pb-card-action" data-action="openPlayEditor" data-idx="${idx}" data-arg="${idx}" title="Edit this play" aria-label="Edit ${escapeHtml(play.play)}">Edit</button>`;
+        const cardReadinessButton = item.readinessCardBadge
+          ? `<button type="button" class="pb-card-action" data-action="showPlayReadinessPlaybookHistory" data-arg="${idx}" title="Open readiness for this play">Readiness</button>`
+          : "";
         const cardPlayerVisibilityButton = canTogglePlayerVisibility
           ? `<button type="button" class="pb-card-action pb-card-action--visibility${item.playerHidden ? " is-hidden" : ""}" data-action="togglePlayPlayerVisibility" data-idx="${idx}" data-arg="${idx}" title="${item.playerHidden ? "Show this play to players" : "Hide this play from players"}" aria-label="${item.playerHidden ? "Show" : "Hide"} ${escapeHtml(play.play || "this play")} ${item.playerHidden ? "in" : "from"} the player playbook">${item.playerHidden ? "🙈 Hidden" : "👁️ Players"}</button>`
           : "";
@@ -370,6 +376,7 @@ function renderPlaybook() {
           ? ""
           : `<div class="pb-card-actions pb-card-actions--staff" aria-label="Coach play actions">
               <button type="button" class="pb-card-action pb-card-action--study" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">Present</button>
+              ${cardReadinessButton}
               ${cardPlayerVisibilityButton}
               ${cardEditButton}
               <button type="button" class="pb-card-action" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet" aria-label="Add ${escapeHtml(play.play)} to week">Add Week</button>
@@ -462,9 +469,7 @@ function renderPlaybook() {
     }
 
     applyColumnVisibility();
-    if (typeof renderSelectedPlaybookReadinessPanel === "function") {
-      renderSelectedPlaybookReadinessPanel(selectedRowIndex);
-    }
+    if (typeof closePlaybookReadinessPanel === "function") closePlaybookReadinessPanel();
 
     const tableWrap = document.querySelector(".table-container");
     if (tableWrap) {

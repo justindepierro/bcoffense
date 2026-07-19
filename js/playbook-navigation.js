@@ -56,9 +56,10 @@ function selectPlaybookRow(index) {
   }
 
   selectedRowIndex = index;
-  if (typeof renderSelectedPlaybookReadinessPanel === "function") {
-    renderSelectedPlaybookReadinessPanel(index);
-  }
+  // Selecting a row is intentionally lightweight. Readiness has its own
+  // explicit per-play button so a normal click/double-click never expands a
+  // large panel above the table and steals the editor interaction.
+  if (typeof closePlaybookReadinessPanel === "function") closePlaybookReadinessPanel();
 }
 
 function copyPlayName(playName) {
