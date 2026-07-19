@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v1206";
+const CACHE_NAME = "bcoffense-v1207";
 
 // Item 40: in-memory TTL tracker for /auth/me short-term cache
 let _authMeCacheTime = 0;
@@ -295,6 +295,19 @@ self.addEventListener("fetch", (event) => {
   // Video clips stream from R2 via Range requests — let them bypass the worker
   // entirely so the browser handles partial (206) responses directly.
   if (url.pathname.startsWith("/clips/")) return;
+
+  // Diagram manifests and files are authenticated, per-play API responses.
+  // They must never use the generic query-insensitive cache path below: that
+  // can serve one play's result for another and leave the player view waiting.
+  if (url.pathname.startsWith("/images/")) {
+    event.respondWith(
+      fetch(event.request).catch(() => new Response("Diagram service unavailable", {
+        status: 503,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      })),
+    );
+    return;
+  }
 
   // Item 40: serve /auth/me from cache for up to 30s to unblock slow-network PWA opens
   if (url.pathname === "/auth/me") {

@@ -33,6 +33,7 @@
   const IMPORT_CONCURRENCY = 3;
   const MAX_SOURCE_BYTES = 14 * 1024 * 1024;
   const DIAGRAM_UPLOAD_QUEUE_LIMIT = 100;
+  const REMOTE_MEDIA_TIMEOUT_MS = 15000;
   const PLAY_IMAGE_SOURCE_FIELDS = [
     "type",
     "personnel",
@@ -493,6 +494,17 @@
     );
   }
 
+  async function _remoteFetch(resource, options = {}) {
+    if (typeof AbortController === "undefined") return fetch(resource, options);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REMOTE_MEDIA_TIMEOUT_MS);
+    try {
+      return await fetch(resource, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   function _remoteIdentityKey(play) {
     const sourcePlay = _findSourcePlay(play) || play;
     const mediaId = typeof getPlayMediaId === "function"
@@ -680,7 +692,7 @@
     const identityKeys = _remoteIdentityKeysForPlay(play);
     for (const identityKey of identityKeys) {
       try {
-        const res = await fetch(
+        const res = await _remoteFetch(
           `/images/file?sig=${encodeURIComponent(identityKey)}`,
         );
         if (!res.ok) continue;
@@ -713,7 +725,7 @@
         continue;
       }
       try {
-        const response = await fetch(`/images/manifest?sig=${encodeURIComponent(identityKey)}`, {
+        const response = await _remoteFetch(`/images/manifest?sig=${encodeURIComponent(identityKey)}`, {
           credentials: "same-origin",
           headers: { Accept: "application/json" },
         });
@@ -747,8 +759,15 @@
         _remoteManifestCache.set(identityKey, result);
         if (result.published) return result;
         lastResult = result;
-      } catch (_err) {
-        return { ok: false, status: "offline", published: false, sig: identityKey, reason: "network" };
+      } catch (err) {
+        const timedOut = err?.name === "AbortError";
+        return {
+          ok: false,
+          status: timedOut ? "error" : "offline",
+          published: false,
+          sig: identityKey,
+          reason: timedOut ? "timeout" : "network",
+        };
       }
     }
     return lastResult || { ok: true, status: "unpublished", published: false, sig: identityKeys[0] || "" };
@@ -811,7 +830,7 @@
     await Promise.all(identityKeys.map(async (identityKey) => {
       if (!_remoteManifestCache.has(identityKey)) {
         try {
-          const response = await fetch(`/images/manifest?sig=${encodeURIComponent(identityKey)}`, {
+        const response = await _remoteFetch(`/images/manifest?sig=${encodeURIComponent(identityKey)}`, {
             credentials: "same-origin",
             headers: { Accept: "application/json" },
           });
