@@ -254,6 +254,8 @@ function updatePeriodHeaderLabelDisplay(index) {
 
   const colorInput = header.querySelector(".ph-color-input");
   if (colorInput) colorInput.setAttribute("aria-label", `Color for ${periodLabel}`);
+  const colorButton = header.querySelector(".ph-color-palette-btn");
+  if (colorButton) colorButton.setAttribute("aria-label", `Choose color for ${periodLabel}`);
 
   const labelInput = header.querySelector(".ph-label-input");
   if (labelInput) labelInput.setAttribute("aria-label", `Name for ${periodLabel}`);
@@ -320,7 +322,7 @@ function renderScriptEmptyPeriodHeaders() {
         <div class="ph-main">
           <div class="ph-left">
             <button type="button" class="ph-drag-handle" draggable="true" data-drag="periodStart" data-period-id="${periodId}" data-idx="${index}" title="Drag to reorder period" aria-label="Drag ${escapeHtml(periodLabel)} to reorder">☰</button>
-            <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${index}" title="Period color" aria-label="Color for ${escapeHtml(periodLabel)}">
+            ${renderScriptPeriodColorControl(index, periodColor, periodLabel)}
             <input type="text" class="ph-label-input" value="${escapeHtml(periodLabel)}" data-field="periodLabel" data-idx="${index}" placeholder="Period name" aria-label="Name for ${escapeHtml(periodLabel)}">
             <input type="number" class="ph-minutes-input" value="${period.minutes || ""}" data-field="periodMinutes" data-idx="${index}" placeholder="min" title="Time in minutes" aria-label="Minutes for ${escapeHtml(periodLabel)}">
           </div>
@@ -455,7 +457,7 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
           <div class="ph-left">
             <button type="button" class="ph-drag-handle" draggable="true" data-drag="periodStart" data-period-id="${periodId}" data-idx="${index}" title="Drag to reorder period" aria-label="Drag ${escapeHtml(periodLabel)} to reorder">☰</button>
             <button class="ph-collapse-btn" data-action="togglePeriodCollapse" data-period-id="${periodId}" title="${isCollapsed ? "Expand" : "Collapse"}" aria-label="${isCollapsed ? "Expand" : "Collapse"} ${escapeHtml(periodLabel)}" aria-expanded="${isCollapsed ? "false" : "true"}">${collapseIcon}</button>
-            <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${index}" title="Period color" aria-label="Color for ${escapeHtml(periodLabel)}">
+            ${renderScriptPeriodColorControl(index, periodColor, periodLabel)}
             <input type="text" class="ph-label-input" value="${escapeHtml(periodLabel)}" data-field="periodLabel" data-idx="${index}" aria-label="Name for ${escapeHtml(periodLabel)}">
             <input type="number" class="ph-minutes-input" value="${separator.minutes || ""}" data-field="periodMinutes" data-idx="${index}" placeholder="min" title="Time in minutes" aria-label="Minutes for ${escapeHtml(periodLabel)}">
             <span class="ph-meta-span">${metaText}</span>

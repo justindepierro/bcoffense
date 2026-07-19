@@ -474,6 +474,17 @@ const SCRIPT_PERSONNEL_VISUAL_OPTIONS = [
   "Red", "Blue", "Green", "Yellow", "Orange", "Purple", "Brown", "White", "Black", "Navy",
 ];
 
+const SCRIPT_CALL_TEXT_COLORS = [
+  { name: "Navy", value: "#18345f" },
+  { name: "Blue", value: "#2563eb" },
+  { name: "Green", value: "#15803d" },
+  { name: "Orange", value: "#c2410c" },
+  { name: "Red", value: "#b91c1c" },
+  { name: "Purple", value: "#6d28d9" },
+  { name: "Gray", value: "#475569" },
+  { name: "Black", value: "#111827" },
+];
+
 function normalizeScriptPersonnelOverride(value) {
   const candidate = String(value || "").trim();
   return SCRIPT_PERSONNEL_VISUAL_OPTIONS.find(
@@ -700,6 +711,8 @@ function getScriptCallTextOverrides(play) {
     prefix: normalizeScriptCallText(play?.scriptCallPrefix),
     call: normalizeScriptCallText(play?.scriptCallOverride),
     suffix: normalizeScriptCallText(play?.scriptCallSuffix),
+    prefixColor: normalizeScriptCallTextColor(play?.scriptCallPrefixColor),
+    suffixColor: normalizeScriptCallTextColor(play?.scriptCallSuffixColor),
   };
 }
 
@@ -718,12 +731,30 @@ function buildScriptCallTextLabel(play, sourceText) {
 
 function wrapScriptCallTextOverrides(callHtml, overrides, options = {}) {
   const prefix = overrides.prefix
-    ? `<span class="script-call-prefix">${escapeHtml(formatPlayCallText(overrides.prefix, options))}</span>`
+    ? `<span class="script-call-prefix"${getScriptCallTextColorStyle(overrides.prefixColor)}>${escapeHtml(formatPlayCallText(overrides.prefix, options))}</span>`
     : "";
   const suffix = overrides.suffix
-    ? `<span class="script-call-suffix">${escapeHtml(formatPlayCallText(overrides.suffix, options))}</span>`
+    ? `<span class="script-call-suffix"${getScriptCallTextColorStyle(overrides.suffixColor)}>${escapeHtml(formatPlayCallText(overrides.suffix, options))}</span>`
     : "";
   return [prefix, callHtml, suffix].filter(Boolean).join(" ");
+}
+
+function normalizeScriptCallTextColor(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return SCRIPT_CALL_TEXT_COLORS.some((color) => color.value === normalized)
+    ? normalized
+    : "";
+}
+
+function getScriptCallTextColorStyle(color) {
+  return color ? ` style="color: ${color};"` : "";
+}
+
+function renderScriptCallTextColorChoices(part, selectedColor) {
+  return `
+    <div class="script-call-color-choices" data-script-call-color-group="${part}" aria-label="${part === "prefix" ? "Prefix" : "Suffix"} color">
+      ${SCRIPT_CALL_TEXT_COLORS.map((color) => `<button type="button" class="script-call-color-choice${selectedColor === color.value ? " is-selected" : ""}" data-script-call-color="${color.value}" data-script-call-color-part="${part}" title="${color.name}" aria-label="${color.name} ${part} color" style="--script-call-choice-color: ${color.value};"><span aria-hidden="true"></span></button>`).join("")}
+    </div>`;
 }
 
 function renderScriptCallOverrideButton(play, index, playLabel) {
@@ -762,8 +793,10 @@ function openScriptCallOverrideModal(index) {
       <p class="script-call-override-copy">Use this for practice-specific language. It changes this script only; the Playbook call remains untouched.</p>
       <p class="script-call-override-source"><strong>Playbook:</strong> ${escapeHtml(sourceCall || "Untitled play")}</p>
       <label class="script-call-override-field"><span>Prefix</span><input type="text" name="prefix" value="${escapeHtml(overrides.prefix)}" placeholder="Example: Alert"></label>
+      <div class="script-call-color-row"><span>Prefix color</span>${renderScriptCallTextColorChoices("prefix", overrides.prefixColor)}</div>
       <label class="script-call-override-field"><span>Custom call <em>optional</em></span><input type="text" name="call" value="${escapeHtml(overrides.call)}" placeholder="Leave blank to use the Playbook call"></label>
       <label class="script-call-override-field"><span>Suffix / tag</span><input type="text" name="suffix" value="${escapeHtml(overrides.suffix)}" placeholder="Example: On whistle"></label>
+      <div class="script-call-color-row"><span>Suffix color</span>${renderScriptCallTextColorChoices("suffix", overrides.suffixColor)}</div>
       <label class="script-call-override-toggle"><input type="checkbox" name="showPersonnel"${personnelVisible ? " checked" : ""}> <span>Show personnel for this play in this script</span></label>
       <div class="script-call-override-actions">
         <button type="button" class="btn btn-secondary" data-script-call-reset>Reset to Playbook</button>
@@ -775,6 +808,14 @@ function openScriptCallOverrideModal(index) {
     overlay.querySelectorAll('input[type="text"]').forEach((input) => { input.value = ""; });
     const personnelInput = overlay.querySelector('[name="showPersonnel"]');
     if (personnelInput) personnelInput.checked = true;
+    overlay.querySelectorAll(".script-call-color-choice").forEach((choice) => choice.classList.remove("is-selected"));
+  });
+  overlay.querySelectorAll("[data-script-call-color]").forEach((choice) => {
+    choice.addEventListener("click", () => {
+      const group = choice.closest("[data-script-call-color-group]");
+      group?.querySelectorAll(".script-call-color-choice").forEach((item) => item.classList.remove("is-selected"));
+      choice.classList.add("is-selected");
+    });
   });
   overlay.querySelector("[data-script-call-save]")?.addEventListener("click", () => {
     const next = {
@@ -782,17 +823,21 @@ function openScriptCallOverrideModal(index) {
       call: overlay.querySelector('[name="call"]')?.value || "",
       suffix: overlay.querySelector('[name="suffix"]')?.value || "",
       showPersonnel: Boolean(overlay.querySelector('[name="showPersonnel"]')?.checked),
+      prefixColor: overlay.querySelector('[data-script-call-color-group="prefix"] .is-selected')?.dataset.scriptCallColor || "",
+      suffixColor: overlay.querySelector('[data-script-call-color-group="suffix"] .is-selected')?.dataset.scriptCallColor || "",
     };
     const normalized = {
       prefix: normalizeScriptCallText(next.prefix),
       call: normalizeScriptCallText(next.call),
       suffix: normalizeScriptCallText(next.suffix),
+      prefixColor: normalizeScriptCallTextColor(next.prefixColor),
+      suffixColor: normalizeScriptCallTextColor(next.suffixColor),
     };
     const current = getScriptCallTextOverrides(play);
     const personnelChanged = Boolean(play.scriptHidePersonnel) === normalized.showPersonnel;
     if (JSON.stringify(normalized) !== JSON.stringify(current) || personnelChanged) {
       beginScriptEdit();
-      [["scriptCallPrefix", normalized.prefix], ["scriptCallOverride", normalized.call], ["scriptCallSuffix", normalized.suffix]].forEach(([key, value]) => {
+      [["scriptCallPrefix", normalized.prefix], ["scriptCallOverride", normalized.call], ["scriptCallSuffix", normalized.suffix], ["scriptCallPrefixColor", normalized.prefixColor], ["scriptCallSuffixColor", normalized.suffixColor]].forEach(([key, value]) => {
         if (value) play[key] = value;
         else delete play[key];
       });

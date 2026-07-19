@@ -683,6 +683,53 @@ body[data-auth-role="player"]
   width: 100%;
 }
 
+.script-call-color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.script-call-color-choices {
+  display: flex;
+  gap: 5px;
+}
+
+.script-call-color-choice {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.script-call-color-choice span {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--script-call-choice-color);
+}
+
+.script-call-color-choice:hover,
+.script-call-color-choice.is-selected {
+  border-color: var(--color-text);
+}
+
+.script-call-color-choice:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
 .script-call-override-toggle {
   display: flex;
   align-items: center;
@@ -2532,11 +2579,100 @@ body[data-auth-role="player"]
 }
 
 .ph-color-input {
+  display: none;
+}
+
+.ph-color-palette-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 24px;
+  min-width: 24px;
   height: 24px;
-  border: none;
+  padding: 0;
+  border: 1px solid var(--color-white-alpha-50);
+  border-radius: var(--radius-sm);
+  background: rgb(255 255 255 / 12%);
   cursor: pointer;
-  background: transparent;
+}
+
+.ph-color-palette-btn span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--period-color-swatch);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 45%);
+}
+
+.script-period-color-modal {
+  max-width: 430px;
+}
+
+.script-period-color-modal p {
+  margin: 0 0 var(--space-md);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.script-period-color-palette {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.script-period-color-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+
+.script-period-color-swatch span {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 14%);
+}
+
+.script-period-color-swatch:hover,
+.script-period-color-swatch.is-selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.script-period-color-swatch:focus-visible,
+.ph-color-palette-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.script-period-custom-color {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.script-period-custom-color input {
+  width: 34px;
+  height: 28px;
+  padding: 1px;
+}
+
+.script-period-color-palette--create {
+  flex: 1 1 100%;
+  max-width: 280px;
+  margin-top: 4px;
 }
 
 .ph-label-input {
@@ -14391,7 +14527,7 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
       .script-tools-drawer, .script-rail-backdrop, .script-select-tools,
       .script-call-edits, .script-pb-chip, .script-column-headers,
       .play-readiness-widget, .print-preview-row, .ph-top, .ph-drag-handle,
-      .ph-collapse-btn, .ph-color-input, .ph-label-input, .ph-minutes-input,
+      .ph-collapse-btn, .ph-color-input, .ph-color-palette-btn, .ph-label-input, .ph-minutes-input,
       .ph-right) {
     display: none !important;
   }
@@ -15130,8 +15266,9 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     border-radius: var(--coach-grid-radius);
   }
 
-  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .period-header .ph-color-input {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .period-header .ph-color-palette-btn {
     width: 22px;
+    min-width: 22px;
     height: 28px;
     padding: 1px;
     border: 1px solid var(--color-white-alpha-50);

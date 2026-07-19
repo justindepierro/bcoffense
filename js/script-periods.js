@@ -4,6 +4,32 @@ let selectedPeriodTemplateIndex = -1;
 let templateModalMode = "insert";
 let templateModalSearchTerm = "";
 
+const SCRIPT_PERIOD_COLOR_PALETTE = [
+  { name: "Navy", value: "#18345f" }, { name: "Blue", value: "#2563eb" },
+  { name: "Sky", value: "#0369a1" }, { name: "Teal", value: "#0f766e" },
+  { name: "Green", value: "#15803d" }, { name: "Olive", value: "#4d7c0f" },
+  { name: "Gold", value: "#a16207" }, { name: "Orange", value: "#c2410c" },
+  { name: "Red", value: "#b91c1c" }, { name: "Rose", value: "#be123c" },
+  { name: "Magenta", value: "#a21caf" }, { name: "Purple", value: "#6d28d9" },
+  { name: "Indigo", value: "#4338ca" }, { name: "Steel", value: "#475569" },
+  { name: "Slate", value: "#334155" }, { name: "Charcoal", value: "#1f2937" },
+];
+
+function renderScriptPeriodPaletteButtons(selectedColor, attributeName, attributeValue = "") {
+  const normalized = String(selectedColor || "").trim().toLowerCase();
+  return SCRIPT_PERIOD_COLOR_PALETTE.map((color) => `
+    <button type="button" class="script-period-color-swatch${normalized === color.value ? " is-selected" : ""}" ${attributeName}="${attributeValue}" data-period-color="${color.value}" title="${color.name}" aria-label="${color.name}">
+      <span style="background: ${color.value};" aria-hidden="true"></span>
+    </button>`).join("");
+}
+
+function renderScriptPeriodColorControl(index, color, label) {
+  return `
+    <button type="button" class="ph-color-palette-btn" data-action="openScriptPeriodColorPalette" data-idx="${index}" title="Choose from 16 standard period colors" aria-label="Choose color for ${escapeHtml(label)}" style="--period-color-swatch: ${color};"><span aria-hidden="true"></span></button>
+    <input type="color" class="ph-color-input" value="${color}" data-field="periodColor" data-idx="${index}" tabindex="-1" aria-hidden="true">
+  `;
+}
+
 function ensureFirstPeriod() {
   const hasSeparator = script.some((item) => item?.isSeparator);
   if (hasSeparator) return;
@@ -19,6 +45,7 @@ function ensureFirstPeriod() {
 }
 
 function addSeparator() {
+  const defaultColor = (typeof getActiveColorPreset === "function" && getActiveColorPreset()?.primary) || UI_COLORS.periodDefault;
   const overlay = document.createElement("div");
   overlay.className = "period-create-overlay";
   overlay.innerHTML = `
@@ -35,7 +62,11 @@ function addSeparator() {
         </div>
         <div class="pcf-row">
           <label>Color</label>
-          <input type="color" id="newPeriodColor" value="${(typeof getActiveColorPreset === 'function' && getActiveColorPreset()?.primary) || UI_COLORS.periodDefault}" />
+          <input type="hidden" id="newPeriodColor" value="${defaultColor}">
+          <div class="script-period-color-palette script-period-color-palette--create" aria-label="Choose a standard period color">
+            ${renderScriptPeriodPaletteButtons(defaultColor, "data-period-create-color")}
+          </div>
+          <label class="script-period-custom-color">Custom <input type="color" value="${defaultColor}" aria-label="Custom period color"></label>
         </div>
       </div>
       <div class="period-create-presets">
@@ -57,6 +88,18 @@ function addSeparator() {
   `;
   wireScriptOverlayDismiss(overlay);
   document.body.appendChild(overlay);
+  const createColorInput = overlay.querySelector("#newPeriodColor");
+  const setCreateColor = (color) => {
+    if (!createColorInput) return;
+    createColorInput.value = color;
+    overlay.querySelectorAll(".script-period-color-swatch").forEach((swatch) => {
+      swatch.classList.toggle("is-selected", swatch.dataset.periodColor === color);
+    });
+  };
+  overlay.querySelectorAll("[data-period-create-color]").forEach((swatch) => {
+    swatch.addEventListener("click", () => setCreateColor(swatch.dataset.periodColor));
+  });
+  overlay.querySelector(".script-period-custom-color input")?.addEventListener("input", (event) => setCreateColor(event.target.value));
   setTimeout(() => document.getElementById("newPeriodName")?.focus(), 50);
 }
 
@@ -119,19 +162,58 @@ function expandAllPeriods() {
 }
 
 function updatePeriodColor(index, el) {
-  if (!script[index] || script[index].color === el.value) return;
+  setScriptPeriodColor(index, el?.value);
+}
+
+function setScriptPeriodColor(index, color) {
+  if (!script[index] || !script[index].isSeparator || !color || script[index].color === color) return;
   saveScriptState();
-  script[index].color = el.value;
-  const header = el.closest(".period-header");
-  if (header) header.style.background = el.value;
-  const wrapper = el.closest(".period-header-wrapper");
-  if (wrapper) wrapper.style.borderLeftColor = el.value;
+  script[index].color = color;
+  const header = document.querySelector(`.period-header .ph-color-input[data-idx="${index}"]`)?.closest(".period-header");
+  if (header) header.style.background = color;
+  const wrapper = header?.closest(".period-header-wrapper");
+  if (wrapper) wrapper.style.borderLeftColor = color;
+  document.querySelectorAll(`.ph-color-input[data-idx="${index}"]`).forEach((input) => { input.value = color; });
+  document.querySelectorAll(`.ph-color-palette-btn[data-idx="${index}"]`).forEach((button) => { button.style.setProperty("--period-color-swatch", color); });
   // Clear the color scheme preset — user has set a custom period color
   setActiveColorPreset("");
   const schemeSelect = document.getElementById("scriptColorSchemeSelect");
   if (schemeSelect) schemeSelect.value = "";
   if (typeof refreshScriptTimeline === "function") refreshScriptTimeline();
   announceScriptA11y(`Updated color for ${script[index]?.label || "period"}`);
+}
+
+function openScriptPeriodColorPalette(index) {
+  const period = script[index];
+  if (!period?.isSeparator) return;
+  document.getElementById("scriptPeriodColorModalOverlay")?.remove();
+  const currentColor = period.color || UI_COLORS.periodDefault;
+  const overlay = document.createElement("div");
+  overlay.id = "scriptPeriodColorModalOverlay";
+  overlay.className = "modal-overlay show";
+  overlay.innerHTML = `
+    <div class="modal-content modal-content-sm script-period-color-modal" role="dialog" aria-modal="true" aria-labelledby="scriptPeriodColorTitle">
+      <div class="modal-header-row">
+        <h3 class="modal-title" id="scriptPeriodColorTitle">${escapeHtml(period.label || "Period")} color</h3>
+        <button type="button" class="modal-close-btn" aria-label="Close">✕</button>
+      </div>
+      <p>Choose one of the standard coaching colors.</p>
+      <div class="script-period-color-palette" aria-label="Standard period colors">${renderScriptPeriodPaletteButtons(currentColor, "data-period-palette-color")}</div>
+      <label class="script-period-custom-color">Custom color <input type="color" value="${currentColor}" aria-label="Custom period color"></label>
+    </div>`;
+  overlay.querySelector(".modal-close-btn")?.addEventListener("click", () => overlay.remove());
+  overlay.querySelectorAll("[data-period-palette-color]").forEach((swatch) => {
+    swatch.addEventListener("click", () => {
+      setScriptPeriodColor(index, swatch.dataset.periodColor);
+      overlay.remove();
+    });
+  });
+  overlay.querySelector(".script-period-custom-color input")?.addEventListener("change", (event) => {
+    setScriptPeriodColor(index, event.target.value);
+    overlay.remove();
+  });
+  wireScriptOverlayDismiss(overlay);
+  document.body.appendChild(overlay);
 }
 
 function updatePeriodLabel(index, label, live = false) {

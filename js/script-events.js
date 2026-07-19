@@ -108,6 +108,9 @@ function initScriptEvents() {
         case "openScriptCallOverrideModal":
           openScriptCallOverrideModal(idx);
           break;
+        case "openScriptPeriodColorPalette":
+          openScriptPeriodColorPalette(idx);
+          break;
         case "movePlay":
           movePlay(idx, Number.isNaN(dir) ? rawDir : dir);
           break;
