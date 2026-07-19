@@ -4580,6 +4580,15 @@ function checkPlayerDiagramReadinessContracts() {
     fail("player playbook card diagram readiness states are incomplete");
   }
 
+  if (
+    !/const _playbookKnownCloudDiagramMediaIds = new Set\(\)/.test(playbookRender) ||
+    !/_playbookKnownCloudDiagramMediaIds\.has\(mediaId\)/.test(playbookRender) ||
+    !/remoteImage\?\.status !== "unpublished"/.test(playbookRender) ||
+    !/\["offline", "error"\]\.includes\(manifest\.status\)/.test(playbookRender)
+  ) {
+    fail("playbook diagram badges do not preserve confirmed page-level cloud state");
+  }
+
   [
     '[data-status="unpublished"]',
     '[data-status="offline"]',

@@ -1,5 +1,9 @@
 let _playbookImageKeyRefreshPending = false;
 const _playbookRemoteImageBadgeChecks = new Set();
+// A single diagram preview downloads that diagram and emits a Playbook render.
+// Keep the page's already-confirmed cloud markers through that render instead
+// of briefly rebuilding the table with only the just-opened diagram visible.
+const _playbookKnownCloudDiagramMediaIds = new Set();
 let _playbookRemoteImageBadgeRefreshPending = false;
 
 function renderPlaybookLoadingState(message = "Loading playbook...") {
@@ -76,6 +80,7 @@ function ensurePlaybookRemoteImageBadgesReady(playList = []) {
   if (
     !window.playImages ||
     typeof window.playImages.checkRemoteForPlays !== "function" ||
+    typeof window.playImages.getCachedRemoteManifestForPlay !== "function" ||
     typeof getPlayMediaId !== "function"
   ) return;
   const pending = playList.filter((play) => {
@@ -88,7 +93,16 @@ function ensurePlaybookRemoteImageBadgesReady(playList = []) {
     .then(() => {
       pending.forEach((play) => {
         const mediaId = String(getPlayMediaId(play) || "").trim();
-        if (mediaId) _playbookRemoteImageBadgeChecks.add(mediaId);
+        if (!mediaId) return;
+        const manifest = window.playImages.getCachedRemoteManifestForPlay(play);
+        // Only a definitive response should suppress future warming. A
+        // transient offline/error response must retry when the next render has
+        // a network connection.
+        if (manifest && !["offline", "error"].includes(manifest.status)) {
+          _playbookRemoteImageBadgeChecks.add(mediaId);
+        }
+        if (manifest?.published) _playbookKnownCloudDiagramMediaIds.add(mediaId);
+        if (manifest?.status === "unpublished") _playbookKnownCloudDiagramMediaIds.delete(mediaId);
       });
       if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
     })
@@ -196,9 +210,23 @@ function renderPlaybook() {
       const remoteImage = typeof window.playImages?.getCachedRemoteManifestForPlay === "function"
         ? window.playImages.getCachedRemoteManifestForPlay(play)
         : null;
-      const remoteImageSig = remoteImage?.published && typeof getPlayMediaId === "function"
+      const mediaId = typeof getPlayMediaId === "function"
         ? String(getPlayMediaId(play) || "").trim()
         : "";
+      if (mediaId && remoteImage?.published) _playbookKnownCloudDiagramMediaIds.add(mediaId);
+      if (mediaId && remoteImage?.status === "unpublished") {
+        _playbookKnownCloudDiagramMediaIds.delete(mediaId);
+      }
+      // Do not remove an already-confirmed marker merely because a single
+      // diagram click caused a render while this page's manifest batch is
+      // still in flight. An explicit unpublished answer remains authoritative.
+      const hasCloudDiagram = Boolean(
+        remoteImage?.published ||
+        (mediaId &&
+          _playbookKnownCloudDiagramMediaIds.has(mediaId) &&
+          remoteImage?.status !== "unpublished"),
+      );
+      const remoteImageSig = hasCloudDiagram ? mediaId : "";
       return {
         play,
         idx: start + localIdx,
@@ -209,7 +237,7 @@ function renderPlaybook() {
         installBadge: typeof getPlayStarBadge === "function" ? getPlayStarBadge(play) : "",
         picturePill: picturePillFor(play),
         imageSig: localImageSig || remoteImageSig,
-        hasCloudDiagram: Boolean(remoteImage?.published),
+        hasCloudDiagram,
         hasClips:
           typeof window !== "undefined" &&
             window.playClips &&
