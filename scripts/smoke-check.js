@@ -2061,12 +2061,14 @@ function checkPlayReadinessContracts() {
     !/function openScriptPersonnelOverrideModal\(index\)/.test(scriptShared) ||
     !/function setScriptPersonnelOverride\(index, value\)/.test(scriptShared) ||
     !/scriptPersonnelOverride/.test(scriptShared) ||
-    !/renderScriptPersonnelOverrideButton\(play, index, playLabel, opts\)/.test(scriptRender) ||
     !/personnelOverrideControl/.test(scriptPlayers) ||
     !/function buildScriptPlayerAssignmentGrid\(play, index, playLabel, opts = \{\}\) \{[\s\S]*?const personnelOverrideControl\s*=[\s\S]*?renderScriptPersonnelOverrideButton\(play, index, playLabel, opts\)/.test(scriptPlayers) ||
     !/\.script-personnel-override-btn/.test(css)
   ) {
     fail("script-only personnel visual override is incomplete");
+  }
+  if (/const personnelOverride\s*=\s*typeof renderScriptPersonnelOverrideButton/.test(scriptRender)) {
+    fail("script personnel color control should appear once in the explicit PERSONNEL line");
   }
   if (
     /type="checkbox"\s+name="(?:explosive|turnover|penalty)"/.test(readiness) ||

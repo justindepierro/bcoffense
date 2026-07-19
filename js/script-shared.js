@@ -535,7 +535,7 @@ function renderScriptPersonnelOverrideButton(play, index, playLabel, options = {
   const title = isOverridden
     ? `Visual script personnel: ${displayPersonnel}. Playbook remains ${sourcePersonnel || "unchanged"}.`
     : `Personnel: ${displayPersonnel || sourcePersonnel}. Choose a visual script-only override.`;
-  return `<button type="button" class="script-personnel-override-btn${isOverridden ? " is-overridden" : ""}" data-action="openScriptPersonnelOverrideModal" data-idx="${index}" title="${escapeHtml(title)}" aria-label="Change visual personnel for ${escapeHtml(playLabel)}"><span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Personnel")}</span></button>`;
+  return `<button type="button" class="script-personnel-override-btn${isOverridden ? " is-overridden" : ""}" data-action="openScriptPersonnelOverrideModal" data-idx="${index}" title="${escapeHtml(title)}" aria-label="Change script-only personnel color for ${escapeHtml(playLabel)}"><span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Personnel")} · Change</span></button>`;
 }
 
 function closeScriptPersonnelOverrideModal() {
@@ -556,7 +556,7 @@ function updateScriptPersonnelOverrideControl(index) {
   buttons.forEach((button) => {
     button.classList.toggle("is-overridden", isOverridden);
     button.title = title;
-    button.innerHTML = `<span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Personnel")}</span>`;
+    button.innerHTML = `<span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Personnel")} · Change</span>`;
   });
 }
 
@@ -604,7 +604,7 @@ function openScriptPersonnelOverrideModal(index) {
   overlay.innerHTML = `
     <div class="modal-content modal-content-sm script-personnel-override-modal" role="dialog" aria-modal="true" aria-labelledby="scriptPersonnelOverrideTitle">
       <div class="modal-header-row">
-        <h3 class="modal-title" id="scriptPersonnelOverrideTitle">Visual personnel</h3>
+        <h3 class="modal-title" id="scriptPersonnelOverrideTitle">Script-only personnel color</h3>
         <button type="button" class="modal-close-btn" aria-label="Close">✕</button>
       </div>
       <p class="script-personnel-override-copy"><strong>${escapeHtml(playLabel)}</strong></p>

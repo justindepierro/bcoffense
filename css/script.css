@@ -14718,6 +14718,49 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
   }
 }
 
+/* Script header and worksheet form one continuous grid surface. Earlier
+   responsive rules tried to keep every command in one row at intermediate
+   desktop widths, which let the sort/search controls overflow behind the
+   column header. Keep a deliberately compact second command line instead. */
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-list {
+    gap: 0;
+    padding: 6px;
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-section-head {
+    margin: 0;
+    border-radius: var(--coach-grid-toolbar-radius) var(--coach-grid-toolbar-radius) 0 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-section-head .script-toolbar {
+    min-width: 0;
+    overflow: visible;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-container {
+    margin: 0;
+    border-color: var(--coach-grid-border);
+    border-radius: 0 0 var(--coach-grid-toolbar-radius) var(--coach-grid-toolbar-radius);
+    box-shadow: none;
+  }
+}
+
+@media (min-width: 1440px) and (max-width: 1840px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-section-head {
+    grid-template-columns: max-content max-content minmax(0, 1fr) max-content;
+    grid-template-rows: auto minmax(var(--coach-grid-control-height), auto);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script .script-section-head .script-toolbar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+  }
+}
+
 /* At wide desktop widths the section header has room for its five actual
    groups. Explicit columns prevent the toolbar from becoming an implicit,
    visually detached second row. Narrow desktop keeps the existing wrap. */
