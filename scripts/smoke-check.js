@@ -2063,7 +2063,7 @@ function checkPlayReadinessContracts() {
     !/scriptPersonnelOverride/.test(scriptShared) ||
     !/renderScriptPersonnelOverrideButton\(play, index, playLabel, opts\)/.test(scriptRender) ||
     !/personnelOverrideControl/.test(scriptPlayers) ||
-    !/renderScriptPersonnelOverrideButton\(play, index, playLabel, opts\)/.test(scriptPlayers) ||
+    !/function buildScriptPlayerAssignmentGrid\(play, index, playLabel, opts = \{\}\) \{[\s\S]*?const personnelOverrideControl\s*=[\s\S]*?renderScriptPersonnelOverrideButton\(play, index, playLabel, opts\)/.test(scriptPlayers) ||
     !/\.script-personnel-override-btn/.test(css)
   ) {
     fail("script-only personnel visual override is incomplete");

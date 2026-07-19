@@ -97,10 +97,6 @@ function getScriptPlayerStatusLabel(play) {
 function buildScriptPlayerSummaryCard(play, index, playLabel, playerSummary) {
   const hasOverrides = hasScriptPlayerOverrides(play);
   const statusLabel = getScriptPlayerStatusLabel(play);
-  const personnelOverrideControl =
-    typeof renderScriptPersonnelOverrideButton === "function"
-      ? renderScriptPersonnelOverrideButton(play, index, playLabel, opts)
-      : "";
   const summaryText = playerSummary || "No assignments set";
 
   return `
@@ -302,6 +298,10 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
   const depthChart = getScriptPlayerDepthChart(play);
   const hasOverrides = hasScriptPlayerOverrides(play);
   const statusLabel = getScriptPlayerStatusLabel(play);
+  const personnelOverrideControl =
+    typeof renderScriptPersonnelOverrideButton === "function"
+      ? renderScriptPersonnelOverrideButton(play, index, playLabel, opts)
+      : "";
   const subPackagePicker = buildScriptSubPackagePicker(play, index, playLabel);
   const selectedSubPackageId = getPlaySubPackageId(play);
   const selectedSubPackage = getApplicableTeamSwapGroups(play?.personnel).find(
