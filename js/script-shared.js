@@ -697,6 +697,14 @@ function getScriptFullCall(play, options = {}) {
       );
     }
     oneWordParts.push(`<span class="script-one-word-call">${escapeHtml(text)}</span>`);
+    const referenceCall = getFullCall(visiblePlay, {
+      ...options,
+      showEmoji: false,
+      underEmoji: false,
+    });
+    if (referenceCall) {
+      oneWordParts.push(`<span class="script-one-word-reference">(${referenceCall})</span>`);
+    }
     return wrapScriptCallTextOverrides(oneWordParts.join(" "), callOverrides, options);
   }
   return wrapScriptCallTextOverrides(getFullCall(visiblePlay, options), callOverrides, options);
