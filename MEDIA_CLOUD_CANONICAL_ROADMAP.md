@@ -16,7 +16,7 @@ On July 19, 2026, production D1 was exported locally, migrations 0011–0017
 were applied after a one-team verification, and the D1 preflight passed. The
 canonical data-plane release was deployed and later production releases added
 the verified recovery wizard, Playbook media filters, D1-to-R2 pointer
-integrity audit, and legacy workspace repair (latest source commit `ff4af48`). An authenticated admin republished the coach workspace: D1 has
+integrity audit, and legacy workspace repair (latest source commit `682d303`). An authenticated admin republished the coach workspace: D1 has
 one current workspace head and one current player-release head. Clean-role
 browser and final media reconciliation tests remain explicitly outstanding.
 
@@ -35,6 +35,30 @@ startup must repair—not strand—the team. The deployed migration boundary now
 removes only the explicitly classified device fields, keeps unknown future
 fields fail-closed, and has a coach device commit the cleaned revision once
 with compare-and-swap. Normal autosave now sends only team-safe data.
+
+### July 19 production audit — current evidence
+
+The following audit is read-only and was run against production D1, KV, and
+the configured R2 bucket after diagram cleanup:
+
+- **D1 topology:** 17/17 migrations applied; one team; all 17 users have a
+  team assignment; `PRAGMA foreign_key_check` returned no rows.
+- **Canonical diagrams:** 124 current diagram pointers, 124 permanent media
+  IDs, 124 distinct SHA-256 checksums, non-empty sizes, and 124 canonical
+  team-namespaced path strings. No current checksum is shared by two plays.
+- **Release atomicity:** the current workspace and player-release heads refer
+  to the same workspace/release pair. All three retained workspace revisions
+  have matching player-release revisions and atomic commits; no head points to
+  a missing revision.
+- **Retained clip manifests:** KV contains 40 clip manifests: 37 signal
+  manifests and 3 legacy play manifests. The two retained workspace backup
+  records are recovery-only, not player authority.
+- **Critical follow-up:** a direct CLI read of a sampled current D1 `r2_key`
+  from the configured `bcoffense-clips` bucket returned “key does not exist.”
+  This can be either R2-binding/configuration drift or an actual dangling
+  pointer. Do not declare diagrams player-ready until the authenticated
+  in-app pointer audit confirms the bucket/object view and any discrepancy is
+  resolved. No data was changed during this audit.
 
 ## Product contract — locked
 
@@ -78,7 +102,7 @@ They describe the remote account, not the un-deployed code below.
 | --- | --- | --- |
 | Teams and accounts | D1 has one team and 17 user rows. Migration 0011 assigned all 17 users to the verified primary team. | Team-scoped routes now have an explicit membership basis. |
 | D1 migrations | The remote ledger records 0011–0017 and the release preflight passes. | The schema gate is satisfied for the deployed canonical release. |
-| Legacy diagram metadata | The old media_manifests table has 122 rows with blank checksums and legacy media/plays/... keys. | Those rows are recovery evidence, not proof of a correct canonical mapping. |
+| Legacy diagram metadata | The old media_manifests table has 122 rows and now records checksums, but it remains a legacy evidence table. | It is not proof of a correct canonical mapping or player authority. |
 | New diagram table | team_media_manifests is present after migration 0012. | New team-scoped diagram routes have their required schema; legacy rows still need reconciliation. |
 | Referential integrity | PRAGMA foreign_key_check was clean. | Preserve the database; this is not a corruption-rebuild exercise. |
 | Session state | A live users.sessions_invalid_before column was observed outside the tracked migrations. | Migration 0013 uses a separate state table rather than an unsafe ALTER TABLE. |
@@ -97,7 +121,7 @@ player session.
 | Player data | GET /player/release reads a D1-current immutable R2 release with revision/ETag support. Player startup uses it instead of raw backup restore. | A first canonical head was bootstrapped; a clean player-session test remains. |
 | Coach workspace | Daily coach saves use immutable R2 workspace/release records and one D1 compare-and-swap head. | Concurrent-device conflicts require an explicit refresh; raw KV remains recovery-only. |
 | Raw recovery backup | /sync/backup is admin-only; a recovery write commits the same canonical workspace/release head before retaining a labeled KV snapshot. | The retained KV object is recovery evidence, never player or normal-sync authority. |
-| Diagrams | Manifest rows are keyed by team_id, media_id, and kind; bytes use media/teams/<teamId>/plays/<mediaId>/diagram/<version>. The D1 pointer is a compare-and-swap commit point. Production now has 104 checksum-verified canonical pointers. | Individual legacy mappings still need visual and clean-player-session reconciliation. |
+| Diagrams | Manifest rows are keyed by team_id, media_id, and kind; bytes use media/teams/<teamId>/plays/<mediaId>/diagram/<version>. The D1 pointer is a compare-and-swap commit point. Production now has 124 checksum-verified canonical pointers. | Reconcile the current R2 binding/object view, then complete visual and clean-player-session verification. |
 | Player diagram correctness | Player diagrams are authorized by release media ID, resolve only through the team D1 manifest, and cache in a player-only IndexedDB database. | Must be proven on clean coach and player devices after deployment. |
 | Diagram saving | A chosen diagram saves locally first, uploads automatically, sends an expected version/checksum, and keeps an immutable candidate if a replacement conflicts. Delete removes only the pointer. | New uploads use one durable IndexedDB outbox record; terminal-state and queue-reconciliation work remains. |
 | Legacy diagrams | Player runtime resolution has no legacy diagram fallback. Admin-only audit, migration, and repair routes require a primary-team context and checksum evidence. | Archived legacy objects remain; they are not fully reconciled or retired. |
@@ -122,9 +146,10 @@ player session.
   diagrams into canonical storage without deleting the archive.
 - [x] Add checksum-gated legacy diagram migration and repair routes that write
   a new immutable version rather than overwriting history.
-- [ ] Run the deployed admin-authenticated row-level R2/D1 pointer integrity
-  inventory after migration 0012; retain its dated result as the baseline
-  before any archive cleanup.
+- [ ] Run and retain an authenticated row-level R2/D1 pointer integrity
+  inventory after diagram cleanup. The July 19 direct CLI sample found a
+  configured-bucket R2 read failure for a current D1 pointer, so this gate is
+  explicitly still open until binding/object reconciliation is complete.
 - [ ] Reconcile every historic diagram mapping by permanent media ID, source
   object checksum, and a visual review where necessary. Do not trust broad
   historic exact promotions or count them as migrated.
@@ -133,11 +158,10 @@ player session.
 - [ ] Reconcile the direct KV inventory with the earlier UI inventory and
   identify the active namespace/environment for each retained clip manifest.
 
-**Current recovery progress:** an admin has checksum-migrated 103 archived
-diagrams into canonical team paths, with one additional standard admin diagram
-for 104 current canonical pointers total. Continue from the wizard's remaining
-candidate list; do not bulk-promote the remainder by filename, timestamp, or
-count alone.
+**Current recovery progress:** production now has 124 current canonical
+diagram pointers, each with a distinct checksum. Continue treating the
+recovery wizard’s remaining candidates as review evidence; do not bulk-promote
+by filename, timestamp, or count alone.
 
 **Current player-release parity:** a fresh authorized coach read rebuilt the
 live atomic workspace/player-release head on July 19, 2026. The release
@@ -234,8 +258,8 @@ change which diagram belongs to a play.
   media identity and immutable-version model as diagrams.
 - [x] Apply migration 0012 and validate that current canonical diagram
   pointers have a checksum and a team-namespaced immutable R2 path. The July
-  19 production audit found 104 of 104 current pointers satisfied this check;
-  blank-checksum legacy rows remain recovery evidence only.
+  19 production audit found 124 of 124 current pointers satisfied this D1
+  structural check; the separate R2 object-existence check remains open.
 
 **Exit criterion:** only a team-scoped D1 pointer can select the diagram shown
 to a player, and concurrent writes cannot silently replace it.
