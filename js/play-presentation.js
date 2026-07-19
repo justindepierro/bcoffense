@@ -1106,6 +1106,22 @@ function getPlayPresentationPlayLabel(play) {
     .join(" ") || "Untitled Play";
 }
 
+// A practice script can carry visual-only call adjustments (including a
+// personnel color override).  Presentation must honor those adjustments for
+// coaches and players, but the original play remains the media identity for
+// diagrams, clips, signals, and readiness checks.  Never replace item.play
+// with this display clone.
+function getPlayPresentationDisplayPlay(play) {
+  if (!play || play.isSeparator) return play;
+  const displayPlay =
+    typeof getScriptDisplayPlay === "function"
+      ? getScriptDisplayPlay(play)
+      : play;
+
+  if (!play.scriptHidePersonnel || !displayPlay?.personnel) return displayPlay;
+  return { ...displayPlay, personnel: "" };
+}
+
 function getPlayPresentationItemsFromPlaybook() {
   return (Array.isArray(filteredPlays) ? filteredPlays : [])
     .filter(Boolean)
@@ -1618,12 +1634,13 @@ function movePlayPresentation(direction) {
 }
 
 function getPlayPresentationChipMarkup(play) {
+  const displayPlay = getPlayPresentationDisplayPlay(play);
   return [
-    play.personnel,
-    play.type,
-    play.tempo,
-    play.preferredDown ? `${play.preferredDown} Down` : "",
-    play.preferredDistance,
+    displayPlay.personnel,
+    displayPlay.type,
+    displayPlay.tempo,
+    displayPlay.preferredDown ? `${displayPlay.preferredDown} Down` : "",
+    displayPlay.preferredDistance,
   ]
     .filter(Boolean)
     .map((value) => `<span class="pp-chip">${escapeHtml(value)}</span>`)
@@ -2096,11 +2113,12 @@ function getPlayPresentationPlayerStatusMarkup({ assignment, selected, responsib
 
 function getPlayPresentationMinimumMarkup(item) {
   const play = item.play;
+  const displayPlay = getPlayPresentationDisplayPlay(play);
   return `
     <div class="pp-layout pp-layout-minimum">
       <section class="pp-minimum-top">
         <div class="pp-eyebrow">${escapeHtml(item.context || "")}</div>
-        <div class="pp-call pp-minimum-call">${getFullCall(play, {
+        <div class="pp-call pp-minimum-call">${getFullCall(displayPlay, {
     showEmoji: true,
     showLineCall: true,
     boldShifts: true,
@@ -2189,6 +2207,7 @@ function hydratePlayPresentationPlayerControls() {
 
 function getPlayPresentationPlayerMarkup(item) {
   const play = item.play;
+  const displayPlay = getPlayPresentationDisplayPlay(play);
   const selected = getPlayPresentationSelectedPosition();
   const assignment = String(play[selected.key] || "").trim();
   const responsibilityNotes = String(play.respNotes || "").trim();
@@ -2203,14 +2222,14 @@ function getPlayPresentationPlayerMarkup(item) {
       })
       : "";
   const playerChips = [
-    play.type,
-    play.personnel ? `${play.personnel} pers` : "",
-    play.preferredDown && play.preferredDistance
-      ? `${_ordinalDown(play.preferredDown)} & ${play.preferredDistance}`
-      : play.preferredDown
-        ? `${_ordinalDown(play.preferredDown)} down`
+    displayPlay.type,
+    displayPlay.personnel ? `${displayPlay.personnel} pers` : "",
+    displayPlay.preferredDown && displayPlay.preferredDistance
+      ? `${_ordinalDown(displayPlay.preferredDown)} & ${displayPlay.preferredDistance}`
+      : displayPlay.preferredDown
+        ? `${_ordinalDown(displayPlay.preferredDown)} down`
         : "",
-    play.preferredFieldPosition,
+    displayPlay.preferredFieldPosition,
   ].filter(Boolean);
   const ruleStatusCopy = assignment
     ? `Showing ${selected.label} rule`
@@ -2241,7 +2260,7 @@ function getPlayPresentationPlayerMarkup(item) {
       responsibilityNotes,
       playerNotes,
     })}
-        <div class="pp-player-call">${getFullCall(play, {
+        <div class="pp-player-call">${getFullCall(displayPlay, {
     showEmoji: true,
     showLineCall: true,
     boldShifts: true,
@@ -2366,52 +2385,53 @@ function getPlayPresentationCoachNotesMarkup(play) {
 }
 
 function getPlayPresentationDetailRowGroups(play) {
+  const displayPlay = getPlayPresentationDisplayPlay(play);
   return {
     callRows: [
       {
         label: "Personnel / Type",
-        values: [play.personnel, play.type],
+        values: [displayPlay.personnel, displayPlay.type],
       },
       {
         label: "Formation",
         values: [
-          play.formation,
-          [play.formTag1, play.formTag2].filter(Boolean).join(", "),
+          displayPlay.formation,
+          [displayPlay.formTag1, displayPlay.formTag2].filter(Boolean).join(", "),
         ],
       },
       {
         label: "Backfield",
-        values: [play.under, play.back, play.shift, play.motion],
+        values: [displayPlay.under, displayPlay.back, displayPlay.shift, displayPlay.motion],
       },
       {
         label: "Protection",
-        values: [play.protection, play.lineCall],
+        values: [displayPlay.protection, displayPlay.lineCall],
       },
       {
         label: "Play Call",
         values: [
-          play.play,
-          [play.playTag1, play.playTag2].filter(Boolean).join(", "),
-          play.basePlay,
+          displayPlay.play,
+          [displayPlay.playTag1, displayPlay.playTag2].filter(Boolean).join(", "),
+          displayPlay.basePlay,
         ],
       },
     ],
     situationRows: [
       {
         label: "Down / Distance",
-        values: [play.preferredDown, play.preferredDistance],
+        values: [displayPlay.preferredDown, displayPlay.preferredDistance],
       },
       {
         label: "Field / Hash",
         values: [
-          play.hash || play.preferredHash,
-          play.preferredSituation,
-          play.preferredFieldPosition,
+          displayPlay.hash || displayPlay.preferredHash,
+          displayPlay.preferredSituation,
+          displayPlay.preferredFieldPosition,
         ],
       },
       {
         label: "Tempo / Word",
-        values: [play.tempo, play.oneWord],
+        values: [displayPlay.tempo, displayPlay.oneWord],
       },
     ],
     defenseRows: [
@@ -2458,6 +2478,7 @@ function getPlayPresentationDetailRowGroups(play) {
 
 function getPlayPresentationCoachMarkup(item) {
   const play = item.play;
+  const displayPlay = getPlayPresentationDisplayPlay(play);
   const responsibilityMarkup = getPlayPresentationPositions()
     .filter((position) => String(play[position.key] || "").trim())
     .map(
@@ -2525,7 +2546,7 @@ function getPlayPresentationCoachMarkup(item) {
   return `
     <div class="pp-layout pp-layout-coaches">
       <section class="pp-coach-visual">
-        <div class="pp-coach-call">${getFullCall(play, {
+        <div class="pp-coach-call">${getFullCall(displayPlay, {
     showEmoji: true,
     showLineCall: true,
     boldShifts: true,
