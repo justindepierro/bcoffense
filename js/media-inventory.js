@@ -813,20 +813,84 @@
     return assets;
   }
 
-  function _miRecoveryPlayOptions(report, selectedMediaId, query = "") {
+  function _miRecoveryPlayCandidates(report) {
     const canonicalIds = new Set(_miArray(report?.cloudDiagrams?.objects)
       .filter((item) => item?.kind === "canonical" && item.mediaId)
       .map((item) => String(item.mediaId)));
     const seen = new Set();
-    const normalizedQuery = String(query || "").trim().toLowerCase();
-    const candidates = _miArray(report?.knownPlays)
+    return _miArray(report?.knownPlays)
       .map((play) => ({ play, mediaId: _miMediaId(play), label: _miPlayLabel(play) }))
       .filter((item) => item.mediaId && !canonicalIds.has(item.mediaId) && !seen.has(item.mediaId) && seen.add(item.mediaId))
       .sort((a, b) => a.label.localeCompare(b.label));
-    const visible = normalizedQuery
-      ? candidates.filter((item) => `${item.label} ${item.mediaId}`.toLowerCase().includes(normalizedQuery) || item.mediaId === selectedMediaId)
-      : candidates;
-    return visible
+  }
+
+  function _miRecoverySearchText(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  function _miRecoveryEditDistance(left, right) {
+    const a = String(left || "");
+    const b = String(right || "");
+    const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+    for (let row = 1; row <= a.length; row += 1) {
+      let diagonal = previous[0];
+      previous[0] = row;
+      for (let column = 1; column <= b.length; column += 1) {
+        const above = previous[column];
+        previous[column] = Math.min(
+          previous[column] + 1,
+          previous[column - 1] + 1,
+          diagonal + (a[row - 1] === b[column - 1] ? 0 : 1),
+        );
+        diagonal = above;
+      }
+    }
+    return previous[b.length];
+  }
+
+  function _miRecoverySearchScore(candidate, query) {
+    const normalizedQuery = _miRecoverySearchText(query);
+    if (!normalizedQuery) return -1;
+    const queryTokens = normalizedQuery.split(" ").filter(Boolean);
+    const candidateText = _miRecoverySearchText(`${candidate.label} ${candidate.mediaId}`);
+    const candidateTokens = candidateText.split(" ").filter(Boolean);
+    let score = 0;
+    for (const token of queryTokens) {
+      if (candidateText.includes(token)) {
+        score += 100 + token.length;
+        continue;
+      }
+      const closest = candidateTokens.reduce((best, candidateToken) => {
+        const distance = _miRecoveryEditDistance(token, candidateToken);
+        return Math.min(best, distance);
+      }, Infinity);
+      // Short search terms need to be precise; longer terms can tolerate a
+      // couple of typos (for example, "Gergia" still finds "Georgia").
+      const maxDistance = token.length >= 7 ? 2 : token.length >= 4 ? 1 : 0;
+      if (closest > maxDistance) return -1;
+      score += 40 + token.length - closest * 8;
+    }
+    return score;
+  }
+
+  function _miSearchRecoveryPlayCandidates(report, query, limit = 8) {
+    const matches = _miRecoveryPlayCandidates(report)
+      .map((candidate) => ({ candidate, score: _miRecoverySearchScore(candidate, query) }))
+      .filter((item) => item.score >= 0)
+      .sort((a, b) => b.score - a.score || a.candidate.label.localeCompare(b.candidate.label));
+    return {
+      total: matches.length,
+      items: matches.slice(0, limit).map((item) => item.candidate),
+    };
+  }
+
+  function _miRecoveryPlayOptions(report, selectedMediaId) {
+    return _miRecoveryPlayCandidates(report)
       .map((item) => `<option value="${_miEscape(item.mediaId)}"${item.mediaId === selectedMediaId ? " selected" : ""}>${_miEscape(item.label)}</option>`)
       .join("");
   }
@@ -861,18 +925,23 @@
           const target = targets.get(asset.sourceKey) || "";
           const isSelected = selected.has(asset.sourceKey) && Boolean(target);
           const query = targetQueries.get(asset.sourceKey) || "";
+          const searchResults = query ? _miSearchRecoveryPlayCandidates(report, query) : { total: 0, items: [] };
           return `<article class="pb-recovery-card${asset.exact ? " is-exact" : ""}">
             <img class="pb-recovery-preview" src="${_miEscape(_miLegacyPreviewUrl(asset.sourceKey))}" alt="Archived diagram preview" loading="lazy">
             <div class="pb-recovery-card-body">
               <label class="pb-recovery-select"><input type="checkbox" data-recovery-select="${_miEscape(asset.sourceKey)}"${isSelected ? " checked" : ""}> Recover this diagram</label>
               <strong>${asset.exact ? "Exact archived match" : "Choose the correct play"}</strong>
               <code title="${_miEscape(asset.sourceKey)}">${_miEscape(asset.sourceKey)}</code>
-              <label class="pb-recovery-search"><span>Search plays</span><input type="search" data-recovery-target-search="${_miEscape(asset.sourceKey)}" value="${_miEscape(query)}" placeholder="Type a play name…" autocomplete="off"></label>
+              <label class="pb-recovery-search"><span>Search plays</span><input type="search" data-recovery-target-search="${_miEscape(asset.sourceKey)}" value="${_miEscape(query)}" placeholder="Type a play name or partial call…" autocomplete="off" aria-label="Search plays for this archived diagram"></label>
+              ${query ? `<div class="pb-recovery-search-results" role="listbox" aria-label="Play search results">
+                <span>${searchResults.total ? `${searchResults.total} fuzzy match${searchResults.total === 1 ? "" : "es"}${searchResults.total > searchResults.items.length ? ` · showing best ${searchResults.items.length}` : ""}` : "No matching plays"}</span>
+                ${searchResults.items.map((item) => `<button type="button" role="option" data-recovery-action="choose-target" data-recovery-source-key="${_miEscape(asset.sourceKey)}" data-recovery-media-id="${_miEscape(item.mediaId)}">${_miEscape(item.label)}</button>`).join("")}
+              </div>` : ""}
               <select data-recovery-target="${_miEscape(asset.sourceKey)}">
                 <option value="">Keep archived / do not map yet</option>
-                ${_miRecoveryPlayOptions(report, target, query)}
+                ${_miRecoveryPlayOptions(report, target)}
               </select>
-              <small>${asset.exact ? `Suggested: ${_miEscape(asset.proposedLabel)}` : "No safe automatic match was found."} ${query ? "Showing matching plays only." : ""}</small>
+              <small>${asset.exact ? `Suggested: ${_miEscape(asset.proposedLabel)}` : "No safe automatic match was found."} ${query ? "Choose a fuzzy-match result or use the full list below." : ""}</small>
             </div>
           </article>`;
         }).join("") || `<div class="pb-health-empty">No unrecovered archived diagrams were found.</div>`}
@@ -920,6 +989,17 @@
     overlay.addEventListener("click", (event) => {
       const action = event.target?.closest?.("[data-recovery-action]")?.dataset?.recoveryAction;
       if (!action || !legacyRecoveryState) return;
+      if (action === "choose-target") {
+        const button = event.target.closest("[data-recovery-action]");
+        const sourceKey = String(button?.dataset?.recoverySourceKey || "");
+        const mediaId = String(button?.dataset?.recoveryMediaId || "");
+        if (!sourceKey || !mediaId) return;
+        legacyRecoveryState.targets.set(sourceKey, mediaId);
+        legacyRecoveryState.targetQueries.delete(sourceKey);
+        legacyRecoveryState.selected.add(sourceKey);
+        _miRenderLegacyRecoveryWizard();
+        return;
+      }
       if (action === "previous") legacyRecoveryState.page -= 1;
       if (action === "next") legacyRecoveryState.page += 1;
       if (action === "clear-selection") legacyRecoveryState.selected.clear();
