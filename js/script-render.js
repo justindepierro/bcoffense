@@ -595,7 +595,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
   const isSelected = selectedIndexSet.has(index);
   const hashOptions = getCachedHashOptions(play);
   const playLabel = getCachedSummaryText(play);
-  const shouldRenderAssignmentGrid = !opts.hidePersonnel;
+  const shouldRenderAssignmentGrid = !opts.hidePersonnel && !play.scriptHidePersonnel;
   const playerSummary = showPrintPreview ? getCachedPlayerSummary(play) : "";
   const playerPersonnelMarkup = shouldRenderAssignmentGrid
     ? buildScriptPlayerAssignmentGrid(play, index, playLabel, opts)

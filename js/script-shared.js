@@ -665,8 +665,11 @@ function getScriptPlaySummaryText(play) {
 function getScriptFullCall(play, options = {}) {
   const displayPlay = getScriptDisplayPlay(play);
   if (!displayPlay) return "";
+  const visiblePlay = play?.scriptHidePersonnel
+    ? { ...displayPlay, personnel: "" }
+    : displayPlay;
   const callOverrides = getScriptCallTextOverrides(play);
-  const oneWordCall = String(displayPlay.oneWord || "").trim();
+  const oneWordCall = String(visiblePlay.oneWord || "").trim();
   if (callOverrides.call) {
     const customCall = `<span class="script-custom-call-text">${escapeHtml(formatPlayCallText(callOverrides.call, options))}</span>`;
     return wrapScriptCallTextOverrides(customCall, callOverrides, options);
@@ -674,18 +677,18 @@ function getScriptFullCall(play, options = {}) {
   if (options.showOneWordOnly && oneWordCall) {
     const text = formatPlayCallText(oneWordCall, options);
     const oneWordParts = [];
-    if (options.showEmoji && displayPlay.personnel) {
-      oneWordParts.push(getPersonnelEmoji(displayPlay.personnel, options.useSquares));
+    if (options.showEmoji && visiblePlay.personnel) {
+      oneWordParts.push(getPersonnelEmoji(visiblePlay.personnel, options.useSquares));
     }
-    if (!options.showEmoji && displayPlay.personnel) {
+    if (!options.showEmoji && visiblePlay.personnel) {
       oneWordParts.push(
-        `<span class="script-one-word-personnel">${escapeHtml(displayPlay.personnel)}</span>`,
+        `<span class="script-one-word-personnel">${escapeHtml(visiblePlay.personnel)}</span>`,
       );
     }
     oneWordParts.push(`<span class="script-one-word-call">${escapeHtml(text)}</span>`);
     return wrapScriptCallTextOverrides(oneWordParts.join(" "), callOverrides, options);
   }
-  return wrapScriptCallTextOverrides(getFullCall(displayPlay, options), callOverrides, options);
+  return wrapScriptCallTextOverrides(getFullCall(visiblePlay, options), callOverrides, options);
 }
 
 function normalizeScriptCallText(value) {
@@ -702,6 +705,7 @@ function getScriptCallTextOverrides(play) {
 
 function hasScriptCallTextOverrides(play) {
   const overrides = getScriptCallTextOverrides(play);
+  const personnelVisible = !play.scriptHidePersonnel;
   return Boolean(overrides.prefix || overrides.call || overrides.suffix);
 }
 
@@ -760,6 +764,7 @@ function openScriptCallOverrideModal(index) {
       <label class="script-call-override-field"><span>Prefix</span><input type="text" name="prefix" value="${escapeHtml(overrides.prefix)}" placeholder="Example: Alert"></label>
       <label class="script-call-override-field"><span>Custom call <em>optional</em></span><input type="text" name="call" value="${escapeHtml(overrides.call)}" placeholder="Leave blank to use the Playbook call"></label>
       <label class="script-call-override-field"><span>Suffix / tag</span><input type="text" name="suffix" value="${escapeHtml(overrides.suffix)}" placeholder="Example: On whistle"></label>
+      <label class="script-call-override-toggle"><input type="checkbox" name="showPersonnel"${personnelVisible ? " checked" : ""}> <span>Show personnel for this play in this script</span></label>
       <div class="script-call-override-actions">
         <button type="button" class="btn btn-secondary" data-script-call-reset>Reset to Playbook</button>
         <button type="button" class="btn btn-primary" data-script-call-save>Save wording</button>
@@ -767,13 +772,16 @@ function openScriptCallOverrideModal(index) {
     </div>`;
   overlay.querySelector(".modal-close-btn")?.addEventListener("click", closeScriptCallOverrideModal);
   overlay.querySelector("[data-script-call-reset]")?.addEventListener("click", () => {
-    overlay.querySelectorAll("input").forEach((input) => { input.value = ""; });
+    overlay.querySelectorAll('input[type="text"]').forEach((input) => { input.value = ""; });
+    const personnelInput = overlay.querySelector('[name="showPersonnel"]');
+    if (personnelInput) personnelInput.checked = true;
   });
   overlay.querySelector("[data-script-call-save]")?.addEventListener("click", () => {
     const next = {
       prefix: overlay.querySelector('[name="prefix"]')?.value || "",
       call: overlay.querySelector('[name="call"]')?.value || "",
       suffix: overlay.querySelector('[name="suffix"]')?.value || "",
+      showPersonnel: Boolean(overlay.querySelector('[name="showPersonnel"]')?.checked),
     };
     const normalized = {
       prefix: normalizeScriptCallText(next.prefix),
@@ -781,12 +789,15 @@ function openScriptCallOverrideModal(index) {
       suffix: normalizeScriptCallText(next.suffix),
     };
     const current = getScriptCallTextOverrides(play);
-    if (JSON.stringify(normalized) !== JSON.stringify(current)) {
+    const personnelChanged = Boolean(play.scriptHidePersonnel) === normalized.showPersonnel;
+    if (JSON.stringify(normalized) !== JSON.stringify(current) || personnelChanged) {
       beginScriptEdit();
       [["scriptCallPrefix", normalized.prefix], ["scriptCallOverride", normalized.call], ["scriptCallSuffix", normalized.suffix]].forEach(([key, value]) => {
         if (value) play[key] = value;
         else delete play[key];
       });
+      if (normalized.showPersonnel) delete play.scriptHidePersonnel;
+      else play.scriptHidePersonnel = true;
     }
     closeScriptCallOverrideModal();
     requestRenderScript();

@@ -961,7 +961,7 @@ function checkPersonnelMarkerContracts() {
   }
   if (
     !/getPersonnelEmoji\(play\.personnel, useSquares\)/.test(wristband) ||
-    !/getPersonnelEmoji\(displayPlay\.personnel, options\.useSquares\)/.test(
+    !/getPersonnelEmoji\((?:displayPlay|visiblePlay)\.personnel, options\.useSquares\)/.test(
       scriptShared,
     ) ||
     !/getFullCall\(play, \{ showLineCall: false, showEmoji: true \}\)/.test(

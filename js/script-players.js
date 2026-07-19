@@ -293,7 +293,7 @@ function buildScriptSubPackagePicker(play, index, playLabel) {
 }
 
 function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
-  if (opts && opts.hidePersonnel) return "";
+  if ((opts && opts.hidePersonnel) || play?.scriptHidePersonnel) return "";
   const assignments = getScriptPlayerAssignments(play);
   const depthChart = getScriptPlayerDepthChart(play);
   const hasOverrides = hasScriptPlayerOverrides(play);

@@ -141,7 +141,7 @@ function executeLoadWbToScript() {
 }
 
 function getScriptVisiblePlayerLineup(play, opts = {}) {
-  if (opts.hidePersonnel) return [];
+  if (opts.hidePersonnel || play?.scriptHidePersonnel) return [];
 
   return getTeamAssignmentSlots(play?.personnel)
     .filter((slot) => {
