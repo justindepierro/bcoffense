@@ -981,6 +981,20 @@
     return result;
   }
 
+  // Cache-only lookup for dense coach surfaces. Callers warm the batch
+  // manifest first, then use this result without a network request per row.
+  function getCachedRemoteManifestForPlay(play) {
+    const identityKeys = _remoteIdentityKeysForPlay(play);
+    let fallback = null;
+    for (const identityKey of identityKeys) {
+      const cached = _getCachedRemoteManifest(identityKey);
+      if (!cached) continue;
+      if (cached.published) return cached;
+      fallback = cached;
+    }
+    return fallback;
+  }
+
   async function pushRemote(play, blob) {
     if (!_remoteAvailable()) {
       return { ok: false, skipped: true, error: "Cloud media publish is not available on this page." };
@@ -2282,6 +2296,7 @@
     ensureDisplayReadinessForPlay,
     checkRemoteForPlay,
     checkRemoteForPlays,
+    getCachedRemoteManifestForPlay,
     hasForPlay,
     hasDisplayForPlay,
     storedSignatureForPlay,
@@ -2767,7 +2782,12 @@
       const sig = el.getAttribute("data-img-sig");
       if (!sig) return;
       activeEl = el;
-      const url = urlFor(sig) || await ensureUrl(sig);
+      const playIdx = parseInt(el.getAttribute("data-img-play-idx") || "", 10);
+      const play = Number.isInteger(playIdx) && typeof filteredPlays !== "undefined" && Array.isArray(filteredPlays)
+        ? filteredPlays[playIdx]
+        : null;
+      const readiness = play ? await ensureDisplayReadinessForPlay(play) : null;
+      const url = urlFor(sig) || readiness?.url || await ensureUrl(sig);
       if (activeEl !== el) return;
       if (!url) return;
       const pop = _ensurePopover();

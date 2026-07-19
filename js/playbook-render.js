@@ -1,4 +1,6 @@
 let _playbookImageKeyRefreshPending = false;
+const _playbookRemoteImageBadgeChecks = new Set();
+let _playbookRemoteImageBadgeRefreshPending = false;
 
 function renderPlaybookLoadingState(message = "Loading playbook...") {
   const tbody = document.querySelector("#playbookTable tbody");
@@ -70,6 +72,29 @@ function ensurePlaybookImageBadgesReady() {
     });
 }
 
+function ensurePlaybookRemoteImageBadgesReady(playList = []) {
+  if (
+    !window.playImages ||
+    typeof window.playImages.checkRemoteForPlays !== "function" ||
+    typeof getPlayMediaId !== "function"
+  ) return;
+  const pending = playList.filter((play) => {
+    const mediaId = String(getPlayMediaId(play) || "").trim();
+    return mediaId && !_playbookRemoteImageBadgeChecks.has(mediaId);
+  });
+  if (!pending.length || _playbookRemoteImageBadgeRefreshPending) return;
+  _playbookRemoteImageBadgeRefreshPending = true;
+  window.playImages.checkRemoteForPlays(pending)
+    .then(() => {
+      pending.forEach((play) => {
+        const mediaId = String(getPlayMediaId(play) || "").trim();
+        if (mediaId) _playbookRemoteImageBadgeChecks.add(mediaId);
+      });
+      if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+    })
+    .finally(() => { _playbookRemoteImageBadgeRefreshPending = false; });
+}
+
 function renderPlaybook() {
   // Guard against early renders (e.g. clip-index warm-up) firing before app.js
   // has declared the `plays` global; a proper render follows once it loads.
@@ -125,6 +150,7 @@ function renderPlaybook() {
     const usageIndex =
       typeof getPlayUsageIndex === "function" ? getPlayUsageIndex() : null;
     ensurePlaybookImageBadgesReady();
+    ensurePlaybookRemoteImageBadgesReady(pageSlice);
     const imageSignatureFor = (play, fallbackSig) => {
       if (
         typeof window !== "undefined" &&
@@ -167,6 +193,13 @@ function renderPlaybook() {
             detail: true,
           })
           : "";
+      const localImageSig = imageSignatureFor(play, tagSig);
+      const remoteImage = typeof window.playImages?.getCachedRemoteManifestForPlay === "function"
+        ? window.playImages.getCachedRemoteManifestForPlay(play)
+        : null;
+      const remoteImageSig = remoteImage?.published && typeof getPlayMediaId === "function"
+        ? String(getPlayMediaId(play) || "").trim()
+        : "";
       return {
         play,
         idx: start + localIdx,
@@ -176,7 +209,8 @@ function renderPlaybook() {
         gpActive: !!(activeTags && activeTags.has(tagSig)),
         installBadge: typeof getPlayStarBadge === "function" ? getPlayStarBadge(play) : "",
         picturePill: picturePillFor(play),
-        imageSig: imageSignatureFor(play, tagSig),
+        imageSig: localImageSig || remoteImageSig,
+        hasCloudDiagram: Boolean(remoteImage?.published),
         hasClips:
           typeof window !== "undefined" &&
             window.playClips &&
@@ -235,7 +269,7 @@ function renderPlaybook() {
           : "";
         const imgBadge =
           imageSig
-            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(imageSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
+            ? `<span class="pb-img-badge${item.hasCloudDiagram ? " is-cloud" : ""}" data-img-sig="${escapeHtml(imageSig)}" data-img-play-idx="${idx}" role="button" tabindex="0" aria-label="Preview play image" title="${item.hasCloudDiagram ? "Cloud diagram ready — hover to preview" : "Hover to preview image"}">\ud83d\uddbc\ufe0f</span>`
             : "";
         const clipBadge = item.hasClips
           ? `<span class="pb-clip-badge" data-action="openPlaybookClipViewer" data-arg="${idx}" role="button" tabindex="0" title="Watch video clips" aria-label="Watch video clips">\ud83c\udfac</span>`
@@ -303,7 +337,7 @@ function renderPlaybook() {
           : "";
         const cardImgBadge =
           imageSig
-            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(imageSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
+            ? `<span class="pb-img-badge${item.hasCloudDiagram ? " is-cloud" : ""}" data-img-sig="${escapeHtml(imageSig)}" data-img-play-idx="${idx}" role="button" tabindex="0" aria-label="Preview play image" title="${item.hasCloudDiagram ? "Cloud diagram ready — hover to preview" : "Hover to preview image"}">\ud83d\uddbc\ufe0f</span>`
             : "";
         const cardClipBadge = item.hasClips
           ? `<span class="pb-clip-badge" data-action="openPlaybookClipViewer" data-arg="${idx}" role="button" tabindex="0" title="Watch video clips" aria-label="Watch video clips">\ud83c\udfac</span>`
