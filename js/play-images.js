@@ -556,14 +556,11 @@
   }
 
   function _remoteIdentityKeysForPlay(play) {
-    return [
-      _remoteIdentityKey(play),
-      _legacyStableRemoteIdentityKey(play),
-      _legacyRemoteIdentityKey(play),
-    ]
-      .map(_normalizeSig)
-      .filter(Boolean)
-      .filter((sig, index, list) => list.indexOf(sig) === index);
+    // Player-facing cloud reads are deliberately canonical-only. Legacy keys
+    // are recovery evidence, never an alternate way to select a diagram at
+    // runtime. That prevents a historic collision from showing another play's
+    // media on a fresh device.
+    return [_remoteIdentityKey(play)].map(_normalizeSig).filter(Boolean);
   }
 
   async function _remoteErrorMessage(res, fallback) {
@@ -1382,26 +1379,24 @@
   }
 
   async function ensureDisplayUrlForPlay(play) {
-    // The cloud manifest is authoritative whenever reachable. This prevents a
-    // player device from keeping an older IndexedDB diagram after a coach
-    // replaces the approved version on another device.
-    if (_remoteAvailable()) {
-      const remote = await checkRemoteForPlay(play);
-      if (remote.published) {
-        const remoteUrl = await _fetchRemoteForPlay(play);
-        if (remoteUrl) return remoteUrl;
-      }
-    }
-    for (const signature of displaySignaturesForPlay(play)) {
-      const url = await ensureUrl(signature);
-      if (url) return url;
-    }
-    return _fetchRemoteForPlay(play);
+    const readiness = await ensureDisplayReadinessForPlay(play);
+    return readiness.url || null;
   }
 
   async function ensureDisplayReadinessForPlay(play) {
+    const mediaId = _remoteIdentityKey(play);
+    if (!mediaId) {
+      return {
+        status: "unpublished",
+        source: "remote",
+        url: "",
+        message: "Diagram has not been assigned a permanent media ID.",
+      };
+    }
+
+    let remote = null;
     if (_remoteAvailable()) {
-      const remote = await checkRemoteForPlay(play);
+      remote = await checkRemoteForPlay(play);
       if (remote.published) {
         const remoteUrl = await _fetchRemoteForPlay(play);
         if (remoteUrl) {
@@ -1409,18 +1404,21 @@
         }
       }
     }
-    for (const signature of displaySignaturesForPlay(play)) {
-      const url = await ensureUrl(signature);
-      if (url) {
-        return {
-          status: "ready",
-          source: "local",
-          url,
-          message: "Diagram ready",
-        };
-      }
+
+    // Only a locally cached copy under this play's permanent media ID may be
+    // used as an offline/temporary fallback. Content and historic signature
+    // keys are intentionally excluded from player display resolution.
+    const cachedUrl = await ensureUrl(mediaId);
+    if (cachedUrl && (!remote || remote.status === "offline" || remote.status === "error")) {
+      return {
+        status: "ready",
+        source: "local",
+        url: cachedUrl,
+        message: "Diagram ready from offline cache",
+      };
     }
-    const remote = await checkRemoteForPlay(play);
+
+    if (!remote) remote = await checkRemoteForPlay(play);
     if (remote.status === "offline") {
       return {
         status: "offline",
@@ -1435,15 +1433,6 @@
         source: "remote",
         url: "",
         message: "Diagram has not been published for players yet.",
-      };
-    }
-    const url = await _fetchRemoteForPlay(play);
-    if (url) {
-      return {
-        status: "ready",
-        source: "remote",
-        url,
-        message: "Diagram ready",
       };
     }
     return {

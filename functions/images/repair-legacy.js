@@ -3,7 +3,7 @@
 // this creates a new immutable version and atomically repoints its manifest.
 
 import { authJson, getSessionFromRequest } from "../_lib/auth.js";
-import { imageVersionedR2Key, sha256Hex, writeImageManifest } from "../_lib/image-media.js";
+import { imageVersionedR2Key, readImageManifest, sha256Hex, writeImageManifest } from "../_lib/image-media.js";
 
 const MAX_MEDIA_ID_LENGTH = 512;
 const MAX_LEGACY_KEY_LENGTH = 1000;
@@ -22,15 +22,24 @@ export async function onRequestPost(context) {
   try { body = await context.request.json(); } catch (_err) { body = null; }
   const mediaId = clean(body?.mediaId, MAX_MEDIA_ID_LENGTH);
   const legacyKey = clean(body?.legacyKey, MAX_LEGACY_KEY_LENGTH);
-  if (!mediaId || !legacyKey || legacyKey.startsWith("/") || legacyKey.includes("..")) {
-    return authJson({ ok: false, error: "A valid media ID and archived diagram key are required." }, { status: 400 });
+  const expectedCurrentChecksum = clean(body?.expectedCurrentChecksum, 128);
+  const expectedLegacyChecksum = clean(body?.expectedLegacyChecksum, 128);
+  if (!mediaId || !legacyKey || !expectedCurrentChecksum || !expectedLegacyChecksum || legacyKey.startsWith("/") || legacyKey.includes("..")) {
+    return authJson({ ok: false, error: "A media ID, archived key, and both verified checksums are required." }, { status: 400 });
   }
 
   try {
+    const current = await readImageManifest(context.env, mediaId);
+    if (!current || current.checksum !== expectedCurrentChecksum) {
+      return authJson({ ok: false, error: "The canonical diagram changed; rerun reconciliation before repairing." }, { status: 409 });
+    }
     const source = await bucket.get(`images/${legacyKey}`);
     if (!source?.body) return authJson({ ok: false, error: "The archived diagram was not found." }, { status: 404 });
     const bytes = await source.arrayBuffer();
     const checksum = await sha256Hex(bytes);
+    if (checksum !== expectedLegacyChecksum) {
+      return authJson({ ok: false, error: "The archived diagram changed; rerun reconciliation before repairing." }, { status: 409 });
+    }
     const version = crypto.randomUUID();
     const contentType = source.httpMetadata?.contentType || "image/jpeg";
     const uploadedAt = new Date().toISOString();

@@ -1564,8 +1564,7 @@ function checkPlayPresentationContracts() {
   if (
     !/async function _putRemoteImage\(identityKey, blob\)/.test(playImages) ||
     !/function _remoteIdentityKey\(play\)[\s\S]*getStablePlaySourceId\(sourcePlay\)[\s\S]*play:\$\{sourceId\}/.test(playImages) ||
-    !/function _legacyContentRemoteIdentityKey\(play\)/.test(playImages) ||
-    !/function _remoteIdentityKeysForPlay\(play\)[\s\S]*_remoteIdentityKey\(play\),[\s\S]*_legacyContentRemoteIdentityKey\(play\),[\s\S]*_legacyRemoteIdentityKey\(play\),/.test(playImages) ||
+    !/function _remoteIdentityKeysForPlay\(play\)[\s\S]*canonical-only[\s\S]*return \[_remoteIdentityKey\(play\)\]/.test(playImages) ||
     !/legacySourceKeys = \[\s*[\s\S]*play\?\.sourceIdentityKey,[\s\S]*_sourceIdentityKeyForPlay\(play\),/.test(playImages) ||
     !/const identityKeys = _remoteIdentityKeysForPlay\(play\)/.test(playImages) ||
     !/_isSourceIdentityKey\(localSig\)/.test(playImages) ||
@@ -4210,7 +4209,9 @@ function checkPlayerDiagramReadinessContracts() {
     !/checkRemoteForPlays,/.test(playImages) ||
     !/\/images\/manifest\?sig=\$\{encodeURIComponent\(identityKey\)\}/.test(playImages) ||
     !/async function ensureDisplayReadinessForPlay\(play\)/.test(playImages) ||
-    !/for \(const signature of displaySignaturesForPlay\(play\)\)[\s\S]*const remote = await checkRemoteForPlay\(play\)/.test(playImages) ||
+    !/const mediaId = _remoteIdentityKey\(play\)/.test(playImages) ||
+    !/const cachedUrl = await ensureUrl\(mediaId\)/.test(playImages) ||
+    !/return \[_remoteIdentityKey\(play\)\]\.map\(_normalizeSig\)\.filter\(Boolean\)/.test(playImages) ||
     !/status:\s*"offline"/.test(playImages) ||
     !/status:\s*"unpublished"/.test(playImages) ||
     !/status:\s*"load-error"/.test(playImages) ||
