@@ -104,7 +104,7 @@ player session.
 | Clips | New writes and primary reads use team-namespaced KV keys, and player reads are gated by release allow-lists. | Clip manifests are still KV-authoritative and a primary-team legacy clip fallback remains during transition. |
 | Other team boundaries | Discussion attachments, threads, and play likes are team scoped; raw attachment R2 keys are not returned. | Migration 0014 is required before the revised like uniqueness rule is live. |
 | Session/cache lifecycle | The service worker bypasses auth, release, image, and clip routes; install no longer forces uncontrolled skipWaiting. Account invalidation uses migration 0013. | Browser/session behavior still needs live validation after migration and deployment. |
-| Deployment safety | cloudflare-preflight.sh reads the remote migration ledger and makes the deploy script fail closed. | The canonical production release and later `ff4af48` release passed this gate; every later release remains gated. |
+| Deployment safety | cloudflare-preflight.sh reads the remote migration ledger and makes the deploy script fail closed. | The canonical production release and later `beee6bf` release passed this gate; every later release remains gated. |
 
 ## Delivery plan
 
@@ -139,15 +139,16 @@ for 104 current canonical pointers total. Continue from the wizard's remaining
 candidate list; do not bulk-promote the remainder by filename, timestamp, or
 count alone.
 
-**Current player-release parity:** the live release authorizes 492 permanent
-media IDs. Of the 104 canonical diagram pointers, 102 are authorized by that
-release; the remaining two belong to current coach-workspace plays that are
-not in any player-visible script (`Movement Troop Rt Roll` and `RPO Sugar Deer
-Kick`). This is intentional scope, not a broken player authorization mapping.
-The release's one-entry `media.diagrams` metadata snapshot predates recovery;
-it is diagnostic/prefetch metadata only. Player authorization and runtime
-resolution use the release media-ID allow-list plus the current D1 manifest, so
-the snapshot must never be used as an availability decision.
+**Current player-release parity:** a fresh authorized coach read rebuilt the
+live atomic workspace/player-release head on July 19, 2026. The release
+authorizes 492 permanent media IDs and carries 102 canonical diagram metadata
+snapshots. Of the 104 canonical diagram pointers, those same 102 are authorized
+by the release; the remaining two belong to current coach-workspace plays that
+are not in any player-visible script (`Movement Troop Rt Roll` and `RPO Sugar
+Deer Kick`). This is intentional scope, not a broken player authorization
+mapping. Player authorization and runtime resolution use the release media-ID
+allow-list plus the current D1 manifest, so metadata snapshots are useful for
+diagnostics/prefetch but never an availability decision.
 
 **Exit criterion:** every player-visible diagram is classified as verified
 canonical, verified missing, or explicitly retained as unresolved recovery
@@ -302,8 +303,9 @@ or arbitrary old R2 objects.
 - [x] Repair known legacy mixed browser backups through the same strict
   allowlist: strip only classified device fields, reject unclassified fields,
   and atomically commit the cleaned workspace/release revision on the next
-  authorized coach startup. The implementation is deployed; its one-time live
-  commit remains to be verified from a fresh authorized coach session.
+  authorized coach startup. Verified in production on July 19, 2026: the
+  workspace and player release advanced together to their third immutable
+  revisions after a fresh coach reload.
 - [ ] Stage and validate a restore, capture a local pre-restore recovery
   snapshot, and provide rollback rather than applying mixed stores in place.
 - [ ] Classify every persistence key as team, player-private, user-private, or
@@ -340,6 +342,10 @@ The foundational production deployment is complete:
   heads.
 - [x] Added the checksum-gated recovery workflow, recovered 103 archived
   diagrams into canonical paths, and deployed the latest related UI changes.
+- [x] Repaired the legacy mixed workspace boundary from a fresh authorized
+  coach startup: browser-only fields were removed, a new workspace/player
+  release pair committed atomically, and the rebuilt release contains 102
+  recovered diagram metadata snapshots.
 
 The remaining live acceptance sequence is:
 
