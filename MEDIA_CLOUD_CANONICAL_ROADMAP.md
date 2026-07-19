@@ -53,12 +53,12 @@ the configured R2 bucket after diagram cleanup:
 - **Retained clip manifests:** KV contains 40 clip manifests: 37 signal
   manifests and 3 legacy play manifests. The two retained workspace backup
   records are recovery-only, not player authority.
-- **Critical follow-up:** a direct CLI read of a sampled current D1 `r2_key`
-  from the configured `bcoffense-clips` bucket returned “key does not exist.”
-  This can be either R2-binding/configuration drift or an actual dangling
-  pointer. Do not declare diagrams player-ready until the authenticated
-  in-app pointer audit confirms the bucket/object view and any discrepancy is
-  resolved. No data was changed during this audit.
+- **Authoritative pointer verification:** the authenticated production Media
+  Inventory queried through the active Pages R2 binding verified **124 D1
+  current pointers = 124 immutable R2 objects**, with zero missing bytes,
+  noncanonical paths, or checksum mismatches. This is the binding the player
+  runtime uses. A direct Wrangler CLI sample did not see that object and is
+  treated as an audit-client binding discrepancy, not player-data loss.
 
 ## Product contract — locked
 
@@ -121,7 +121,7 @@ player session.
 | Player data | GET /player/release reads a D1-current immutable R2 release with revision/ETag support. Player startup uses it instead of raw backup restore. | A first canonical head was bootstrapped; a clean player-session test remains. |
 | Coach workspace | Daily coach saves use immutable R2 workspace/release records and one D1 compare-and-swap head. | Concurrent-device conflicts require an explicit refresh; raw KV remains recovery-only. |
 | Raw recovery backup | /sync/backup is admin-only; a recovery write commits the same canonical workspace/release head before retaining a labeled KV snapshot. | The retained KV object is recovery evidence, never player or normal-sync authority. |
-| Diagrams | Manifest rows are keyed by team_id, media_id, and kind; bytes use media/teams/<teamId>/plays/<mediaId>/diagram/<version>. The D1 pointer is a compare-and-swap commit point. Production now has 124 checksum-verified canonical pointers. | Reconcile the current R2 binding/object view, then complete visual and clean-player-session verification. |
+| Diagrams | Manifest rows are keyed by team_id, media_id, and kind; bytes use media/teams/<teamId>/plays/<mediaId>/diagram/<version>. The D1 pointer is a compare-and-swap commit point. Production has 124 checksum-verified pointers and the active Pages binding verified all 124 immutable objects. | Complete visual and clean-player-session verification. |
 | Player diagram correctness | Player diagrams are authorized by release media ID, resolve only through the team D1 manifest, and cache in a player-only IndexedDB database. | Must be proven on clean coach and player devices after deployment. |
 | Diagram saving | A chosen diagram saves locally first, uploads automatically, sends an expected version/checksum, and keeps an immutable candidate if a replacement conflicts. Delete removes only the pointer. | New uploads use one durable IndexedDB outbox record; terminal-state and queue-reconciliation work remains. |
 | Legacy diagrams | Player runtime resolution has no legacy diagram fallback. Admin-only audit, migration, and repair routes require a primary-team context and checksum evidence. | Archived legacy objects remain; they are not fully reconciled or retired. |
@@ -146,10 +146,10 @@ player session.
   diagrams into canonical storage without deleting the archive.
 - [x] Add checksum-gated legacy diagram migration and repair routes that write
   a new immutable version rather than overwriting history.
-- [ ] Run and retain an authenticated row-level R2/D1 pointer integrity
-  inventory after diagram cleanup. The July 19 direct CLI sample found a
-  configured-bucket R2 read failure for a current D1 pointer, so this gate is
-  explicitly still open until binding/object reconciliation is complete.
+- [x] Run and retain the authenticated row-level R2/D1 pointer integrity
+  inventory after diagram cleanup. On July 19, the active Pages binding
+  verified 124 current pointers against 124 immutable R2 objects with zero
+  missing bytes, noncanonical paths, or checksum mismatches.
 - [ ] Reconcile every historic diagram mapping by permanent media ID, source
   object checksum, and a visual review where necessary. Do not trust broad
   historic exact promotions or count them as migrated.
@@ -259,7 +259,8 @@ change which diagram belongs to a play.
 - [x] Apply migration 0012 and validate that current canonical diagram
   pointers have a checksum and a team-namespaced immutable R2 path. The July
   19 production audit found 124 of 124 current pointers satisfied this D1
-  structural check; the separate R2 object-existence check remains open.
+  structural check, and the authenticated Pages R2 scan confirmed every
+  pointer has its immutable object.
 
 **Exit criterion:** only a team-scoped D1 pointer can select the diagram shown
 to a player, and concurrent writes cannot silently replace it.
