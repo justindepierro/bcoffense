@@ -15,8 +15,8 @@ evidence.
 On July 19, 2026, production D1 was exported locally, migrations 0011–0017
 were applied after a one-team verification, and the D1 preflight passed. The
 canonical data-plane release was deployed and later production releases added
-the verified recovery wizard, Playbook media filters, and D1-to-R2 pointer
-integrity audit (latest source commit `3aafc25`). An authenticated admin republished the coach workspace: D1 has
+the verified recovery wizard, Playbook media filters, D1-to-R2 pointer
+integrity audit, and legacy workspace repair (latest source commit `ff4af48`). An authenticated admin republished the coach workspace: D1 has
 one current workspace head and one current player-release head. Clean-role
 browser and final media reconciliation tests remain explicitly outstanding.
 
@@ -104,7 +104,7 @@ player session.
 | Clips | New writes and primary reads use team-namespaced KV keys, and player reads are gated by release allow-lists. | Clip manifests are still KV-authoritative and a primary-team legacy clip fallback remains during transition. |
 | Other team boundaries | Discussion attachments, threads, and play likes are team scoped; raw attachment R2 keys are not returned. | Migration 0014 is required before the revised like uniqueness rule is live. |
 | Session/cache lifecycle | The service worker bypasses auth, release, image, and clip routes; install no longer forces uncontrolled skipWaiting. Account invalidation uses migration 0013. | Browser/session behavior still needs live validation after migration and deployment. |
-| Deployment safety | cloudflare-preflight.sh reads the remote migration ledger and makes the deploy script fail closed. | The canonical production release and later `3aafc25` release passed this gate; every later release remains gated. |
+| Deployment safety | cloudflare-preflight.sh reads the remote migration ledger and makes the deploy script fail closed. | The canonical production release and later `ff4af48` release passed this gate; every later release remains gated. |
 
 ## Delivery plan
 
@@ -302,7 +302,8 @@ or arbitrary old R2 objects.
 - [x] Repair known legacy mixed browser backups through the same strict
   allowlist: strip only classified device fields, reject unclassified fields,
   and atomically commit the cleaned workspace/release revision on the next
-  authorized coach startup.
+  authorized coach startup. The implementation is deployed; its one-time live
+  commit remains to be verified from a fresh authorized coach session.
 - [ ] Stage and validate a restore, capture a local pre-restore recovery
   snapshot, and provide rollback rather than applying mixed stores in place.
 - [ ] Classify every persistence key as team, player-private, user-private, or
