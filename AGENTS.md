@@ -337,6 +337,7 @@ window.canEditUser
 window.canManageSettings
 window.closeAnchoredMenu
 window.closeCloudSyncModal
+window.closeLegacyDiagramRecoveryWizard
 window.closeMediaInventoryReport
 window.closeSignalClipModal
 window.closeSignalUploadModal
@@ -361,6 +362,7 @@ window.getPlayImageUrl
 window.getPublishActivityLog
 window.rebuildPlayerRelease
 window.recordPublishActivity
+window.recoverSelectedLegacyDiagrams
 window.getRemotePlayerLeaderboardMeta
 window.getRemotePlayerLeaderboardRows
 window.getScriptVisiblePlayerSummary
@@ -378,9 +380,8 @@ window.isActionAllowedForRole
 window.isAdminUser
 window.logoutAuth
 window.openCloudSyncModal
+window.openLegacyDiagramRecoveryWizard
 window.openMediaInventoryReport
-window.migrateExactLegacyCloudDiagrams
-window.migrateRecoverableCloudDiagrams
 window.openSignalComponent
 window.openSignalComponentDetails
 window.openSignalClipModal

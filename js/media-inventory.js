@@ -504,6 +504,7 @@
       generatedAt: new Date().toISOString(),
       playbookPlayCount: _miCurrentPlaybook().filter(_miIsPlayable).length,
       knownPlayCount: knownPlays.length,
+      knownPlays,
       playerPlayCount: playerPlays.length,
       savedScripts,
       publishedScripts,
@@ -583,10 +584,6 @@
     const cloudCounts = cloud.counts || {};
     const reconciliation = report.reconciliation || { counts: {}, rows: [] };
     const legacyRecovery = report.legacyRecovery || { automatic: [], ambiguous: [], unmatchedSourceCount: 0 };
-    const exactRecoveryPayload = JSON.stringify(_miArray(legacyRecovery.automatic).map((row) => ({
-      mediaId: row.mediaId,
-      sourceKeys: [row.sourceKey],
-    })));
     const migrationRows = _miArray(reconciliation.rows).filter((row) => row.status !== "canonical");
     const cloudSummary = cloud.available
       ? `${cloudCounts.total || 0} objects · ${cloudCounts.canonical || 0} canonical · ${(cloudCounts["legacy-canonical-key"] || 0) + (cloudCounts["legacy-content"] || 0) + (cloudCounts["legacy-signature"] || 0)} legacy`
@@ -626,7 +623,7 @@
           ${_miRenderPlayRows(migrationRows, "Every player-visible call has a canonical cloud diagram object.")}
           ${migrationRows.length > MEDIA_INVENTORY_SAMPLE_LIMIT ? `<div class="pb-health-more">Showing ${MEDIA_INVENTORY_SAMPLE_LIMIT} of ${migrationRows.length} migration items.</div>` : ""}
           ${(typeof isAdminUser === "function" && isAdminUser() && (reconciliation.counts.legacy || 0))
-            ? `<div class="pb-health-actions"><button type="button" class="btn btn-sm" data-action="migrateRecoverableCloudDiagrams">Migrate ${reconciliation.counts.legacy} recoverable diagrams</button></div>`
+            ? `<div class="pb-health-actions"><button type="button" class="btn btn-sm btn-primary" data-action="openLegacyDiagramRecoveryWizard">Recover archived diagrams</button></div>`
             : ""}
           <div class="pb-health-section-head" style="margin-top:16px">
             <h4>Legacy Diagram Recovery</h4>
@@ -641,7 +638,7 @@
           ${_miRenderPlayRows(legacyRecovery.automatic, "No additional exact legacy matches are waiting to be promoted.")}
           ${legacyRecovery.automatic.length > MEDIA_INVENTORY_SAMPLE_LIMIT ? `<div class="pb-health-more">Showing ${MEDIA_INVENTORY_SAMPLE_LIMIT} of ${legacyRecovery.automatic.length} exact recovery candidates.</div>` : ""}
           ${(typeof isAdminUser === "function" && isAdminUser() && legacyRecovery.automatic.length)
-            ? `<div class="pb-health-actions"><button type="button" class="btn btn-sm" data-action="migrateExactLegacyCloudDiagrams" data-arg="${_miEscape(exactRecoveryPayload)}">Promote ${legacyRecovery.automatic.length} newest exact matches</button></div>`
+            ? `<div class="pb-health-actions"><button type="button" class="btn btn-sm" data-action="openLegacyDiagramRecoveryWizard">Review ${legacyRecovery.automatic.length} exact matches</button></div>`
             : ""}
         ` : ""}
       </section>
@@ -748,23 +745,213 @@
     }
   };
 
-  window.migrateRecoverableCloudDiagrams = async function () {
-    if (typeof isAdminUser === "function" && !isAdminUser()) return;
-    if (typeof showModal === "function") {
-      showModal(
-        "Automatic legacy promotion is paused. A migration now requires one exact archived key and a verified SHA-256 checksum before it can become a player diagram.",
-        { title: "Verification Required", icon: "🔒" },
-      );
+  const LEGACY_RECOVERY_PAGE_SIZE = 12;
+  let legacyRecoveryState = null;
+
+  function _miRecoveryAssets(report) {
+    const canonicalIds = new Set(_miArray(report?.cloudDiagrams?.objects)
+      .filter((item) => item?.kind === "canonical" && item.mediaId)
+      .map((item) => String(item.mediaId)));
+    const exactBySource = new Map(_miArray(report?.legacyRecovery?.automatic)
+      .map((item) => [item.sourceKey, item]));
+    const assets = _miArray(report?.cloudDiagrams?.objects)
+      .filter((item) => item?.kind !== "canonical")
+      .map((item) => ({ ...item, sourceKey: _miNormalizeLegacyDiagramSourceKey(item?.key) }))
+      .filter((item) => item.sourceKey)
+      .map((item) => {
+        const exact = exactBySource.get(item.sourceKey) || null;
+        return {
+          ...item,
+          exact,
+          proposedMediaId: exact?.mediaId || "",
+          proposedLabel: exact?.label || "",
+          canRecover: !exact || !canonicalIds.has(String(exact.mediaId || "")),
+        };
+      })
+      .filter((item) => item.canRecover)
+      .sort((a, b) => Number(Boolean(b.exact)) - Number(Boolean(a.exact)) || String(b.uploadedAt || "").localeCompare(String(a.uploadedAt || "")));
+    return assets;
+  }
+
+  function _miRecoveryPlayOptions(report, selectedMediaId) {
+    const canonicalIds = new Set(_miArray(report?.cloudDiagrams?.objects)
+      .filter((item) => item?.kind === "canonical" && item.mediaId)
+      .map((item) => String(item.mediaId)));
+    const seen = new Set();
+    return _miArray(report?.knownPlays)
+      .map((play) => ({ play, mediaId: _miMediaId(play), label: _miPlayLabel(play) }))
+      .filter((item) => item.mediaId && !canonicalIds.has(item.mediaId) && !seen.has(item.mediaId) && seen.add(item.mediaId))
+      .sort((a, b) => a.label.localeCompare(b.label))
+      .map((item) => `<option value="${_miEscape(item.mediaId)}"${item.mediaId === selectedMediaId ? " selected" : ""}>${_miEscape(item.label)}</option>`)
+      .join("");
+  }
+
+  function _miLegacyPreviewUrl(sourceKey) {
+    return `/images/legacy-preview?sourceKey=${encodeURIComponent(sourceKey)}`;
+  }
+
+  function _miRenderLegacyRecoveryWizard() {
+    const body = document.getElementById("legacyDiagramRecoveryBody");
+    if (!body || !legacyRecoveryState) return;
+    const { report, assets, selected, targets } = legacyRecoveryState;
+    const totalPages = Math.max(1, Math.ceil(assets.length / LEGACY_RECOVERY_PAGE_SIZE));
+    legacyRecoveryState.page = Math.max(0, Math.min(legacyRecoveryState.page, totalPages - 1));
+    const start = legacyRecoveryState.page * LEGACY_RECOVERY_PAGE_SIZE;
+    const pageItems = assets.slice(start, start + LEGACY_RECOVERY_PAGE_SIZE);
+    const selectedCount = [...selected].filter((sourceKey) => targets.get(sourceKey)).length;
+    body.innerHTML = `
+      <div class="pb-health-summary pb-recovery-summary">
+        ${_miRenderCard(assets.length, "Archived diagrams")}
+        ${_miRenderCard(_miArray(report?.legacyRecovery?.automatic).length, "Unique exact suggestions")}
+        ${_miRenderCard(selectedCount, "Ready to recover")}
+      </div>
+      <div class="pb-health-guidance">Every card is an archived Cloudflare image. Exact suggestions are preselected, but you can inspect the thumbnail and change or uncheck any mapping. A recovery copies the confirmed bytes into the permanent team store; it never deletes the archive.</div>
+      <div class="pb-recovery-toolbar">
+        <button type="button" class="btn btn-sm" data-recovery-action="select-exact">Select exact suggestions</button>
+        <button type="button" class="btn btn-sm btn-outline" data-recovery-action="clear-selection">Clear selection</button>
+        <span>Showing ${assets.length ? start + 1 : 0}–${Math.min(start + LEGACY_RECOVERY_PAGE_SIZE, assets.length)} of ${assets.length}</span>
+      </div>
+      <div class="pb-recovery-grid">
+        ${pageItems.map((asset) => {
+          const target = targets.get(asset.sourceKey) || "";
+          const isSelected = selected.has(asset.sourceKey) && Boolean(target);
+          return `<article class="pb-recovery-card${asset.exact ? " is-exact" : ""}">
+            <img class="pb-recovery-preview" src="${_miEscape(_miLegacyPreviewUrl(asset.sourceKey))}" alt="Archived diagram preview" loading="lazy">
+            <div class="pb-recovery-card-body">
+              <label class="pb-recovery-select"><input type="checkbox" data-recovery-select="${_miEscape(asset.sourceKey)}"${isSelected ? " checked" : ""}> Recover this diagram</label>
+              <strong>${asset.exact ? "Exact archived match" : "Choose the correct play"}</strong>
+              <code title="${_miEscape(asset.sourceKey)}">${_miEscape(asset.sourceKey)}</code>
+              <select data-recovery-target="${_miEscape(asset.sourceKey)}">
+                <option value="">Keep archived / do not map yet</option>
+                ${_miRecoveryPlayOptions(report, target)}
+              </select>
+              <small>${asset.exact ? `Suggested: ${_miEscape(asset.proposedLabel)}` : "No safe automatic match was found."}</small>
+            </div>
+          </article>`;
+        }).join("") || `<div class="pb-health-empty">No unrecovered archived diagrams were found.</div>`}
+      </div>
+      <div class="pb-recovery-footer">
+        <button type="button" class="btn btn-sm" data-recovery-action="previous"${legacyRecoveryState.page === 0 ? " disabled" : ""}>← Previous</button>
+        <span>Page ${legacyRecoveryState.page + 1} of ${totalPages}</span>
+        <button type="button" class="btn btn-sm" data-recovery-action="next"${legacyRecoveryState.page >= totalPages - 1 ? " disabled" : ""}>Next →</button>
+      </div>`;
+    const promote = document.getElementById("legacyDiagramRecoveryPromoteBtn");
+    if (promote) promote.textContent = selectedCount ? `Recover ${selectedCount} confirmed diagram${selectedCount === 1 ? "" : "s"}` : "Recover selected diagrams";
+    const status = document.getElementById("legacyDiagramRecoveryStatus");
+    if (status) status.textContent = selectedCount ? `${selectedCount} confirmed mapping${selectedCount === 1 ? "" : "s"} ready.` : "Select a diagram and its correct play to recover it.";
+  }
+
+  function _miBindLegacyRecoveryWizard(overlay) {
+    overlay.addEventListener("change", (event) => {
+      const sourceKey = event.target?.dataset?.recoverySelect || event.target?.dataset?.recoveryTarget;
+      if (!sourceKey || !legacyRecoveryState) return;
+      if (event.target.dataset.recoverySelect) {
+        if (event.target.checked && legacyRecoveryState.targets.get(sourceKey)) legacyRecoveryState.selected.add(sourceKey);
+        else legacyRecoveryState.selected.delete(sourceKey);
+      } else {
+        legacyRecoveryState.targets.set(sourceKey, event.target.value || "");
+        if (event.target.value) legacyRecoveryState.selected.add(sourceKey);
+        else legacyRecoveryState.selected.delete(sourceKey);
+      }
+      _miRenderLegacyRecoveryWizard();
+    });
+    overlay.addEventListener("click", (event) => {
+      const action = event.target?.closest?.("[data-recovery-action]")?.dataset?.recoveryAction;
+      if (!action || !legacyRecoveryState) return;
+      if (action === "previous") legacyRecoveryState.page -= 1;
+      if (action === "next") legacyRecoveryState.page += 1;
+      if (action === "clear-selection") legacyRecoveryState.selected.clear();
+      if (action === "select-exact") {
+        legacyRecoveryState.assets.filter((asset) => asset.exact && legacyRecoveryState.targets.get(asset.sourceKey))
+          .forEach((asset) => legacyRecoveryState.selected.add(asset.sourceKey));
+      }
+      _miRenderLegacyRecoveryWizard();
+    });
+  }
+
+  async function _miReadLegacyChecksum(sourceKey) {
+    const response = await fetch(_miLegacyPreviewUrl(sourceKey), { credentials: "same-origin", cache: "no-store" });
+    const checksum = String(response.headers.get("X-BC-Legacy-Checksum") || "").toLowerCase();
+    if (!response.ok || !/^[a-f0-9]{64}$/.test(checksum)) {
+      throw new Error("The archived image could not be checksum-verified.");
     }
+    return checksum;
+  }
+
+  window.openLegacyDiagramRecoveryWizard = async function () {
+    if (typeof isAdminUser === "function" && !isAdminUser()) return;
+    const report = latestMediaInventoryReport || await buildMediaInventoryReport();
+    const assets = _miRecoveryAssets(report);
+    const targets = new Map(assets.filter((asset) => asset.proposedMediaId).map((asset) => [asset.sourceKey, asset.proposedMediaId]));
+    legacyRecoveryState = {
+      report,
+      assets,
+      targets,
+      selected: new Set(assets.filter((asset) => asset.proposedMediaId).map((asset) => asset.sourceKey)),
+      page: 0,
+    };
+    document.getElementById("legacyDiagramRecoveryOverlay")?.remove();
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay visible";
+    overlay.id = "legacyDiagramRecoveryOverlay";
+    overlay.dataset.action = "closeLegacyDiagramRecoveryWizardOverlay";
+    overlay.innerHTML = `<div class="custom-modal pb-health-modal pb-recovery-modal" role="dialog" aria-modal="true" aria-labelledby="legacyDiagramRecoveryTitle">
+      <div class="custom-modal-header"><span class="custom-modal-icon">🗂️</span><h3 class="custom-modal-title" id="legacyDiagramRecoveryTitle">Recover Archived Diagrams</h3><button class="modal-close" aria-label="Close" data-action="closeLegacyDiagramRecoveryWizard">×</button></div>
+      <div class="custom-modal-body pb-health-body" id="legacyDiagramRecoveryBody"></div>
+      <div class="custom-modal-actions"><span id="legacyDiagramRecoveryStatus" class="pb-health-more"></span><button type="button" class="btn btn-primary btn-sm" id="legacyDiagramRecoveryPromoteBtn" data-action="recoverSelectedLegacyDiagrams">Recover selected diagrams</button><button type="button" class="btn btn-sm" data-action="closeLegacyDiagramRecoveryWizard">Done</button></div>
+    </div>`;
+    document.body.appendChild(overlay);
+    if (typeof trapFocus === "function") trapFocus(overlay);
+    _miBindLegacyRecoveryWizard(overlay);
+    _miRenderLegacyRecoveryWizard();
   };
 
-  window.migrateExactLegacyCloudDiagrams = async function (serializedCandidates) {
-    if (typeof isAdminUser === "function" && !isAdminUser()) return;
-    if (typeof showModal === "function") {
-      showModal(
-        "Exact promotion now requires a reconciliation checksum. Use the verified reconciliation/repair workflow; broad historical key matching is no longer allowed.",
-        { title: "Verification Required", icon: "🔒" },
-      );
+  window.closeLegacyDiagramRecoveryWizard = function () {
+    document.getElementById("legacyDiagramRecoveryOverlay")?.remove();
+    legacyRecoveryState = null;
+  };
+
+  window.recoverSelectedLegacyDiagrams = async function () {
+    if (!legacyRecoveryState || (typeof isAdminUser === "function" && !isAdminUser())) return;
+    const selectedItems = legacyRecoveryState.assets
+      .filter((asset) => legacyRecoveryState.selected.has(asset.sourceKey) && legacyRecoveryState.targets.get(asset.sourceKey))
+      .map((asset) => ({ sourceKey: asset.sourceKey, mediaId: legacyRecoveryState.targets.get(asset.sourceKey) }));
+    if (!selectedItems.length) {
+      if (typeof showToast === "function") showToast("Select at least one confirmed diagram mapping first.", { type: "warning" });
+      return;
+    }
+    const proceed = typeof showConfirm === "function"
+      ? await showConfirm(`Recover ${selectedItems.length} confirmed diagram${selectedItems.length === 1 ? "" : "s"}? Each archived image will be checksum-verified and copied into canonical Cloudflare storage. The archived originals remain untouched.`, { title: "Recover Diagrams", icon: "🗂️", confirmText: "Recover", cancelText: "Review" })
+      : true;
+    if (!proceed) return;
+    const button = document.getElementById("legacyDiagramRecoveryPromoteBtn");
+    if (button) { button.disabled = true; button.textContent = "Verifying archived diagrams…"; }
+    try {
+      const items = [];
+      for (const item of selectedItems) {
+        items.push({ ...item, expectedLegacyChecksum: await _miReadLegacyChecksum(item.sourceKey) });
+      }
+      const results = [];
+      for (let index = 0; index < items.length; index += 100) {
+        const response = await fetch("/images/migrate-legacy", {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: items.slice(index, index + 100) }),
+        });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok || !payload?.ok) throw new Error(payload?.error || "Diagram recovery could not be completed.");
+        results.push(..._miArray(payload.results));
+      }
+      const migrated = results.filter((item) => item.status === "migrated").length;
+      const skipped = results.length - migrated;
+      if (typeof showToast === "function") showToast(`${migrated} diagram${migrated === 1 ? "" : "s"} recovered${skipped ? `; ${skipped} kept for review` : ""}.`, { type: migrated ? "success" : "warning" });
+      latestMediaInventoryReport = await buildMediaInventoryReport();
+      await window.openLegacyDiagramRecoveryWizard();
+    } catch (err) {
+      if (typeof showToast === "function") showToast(err?.message || "Diagram recovery could not be completed.", { type: "error" });
+      if (button) { button.disabled = false; button.textContent = "Recover selected diagrams"; }
     }
   };
 

@@ -98,6 +98,9 @@ player session.
   candidates.
 - [x] Preserve legacy R2 objects and expose read-only, primary-team,
   admin-only diagram recovery/audit routes.
+- [x] Provide an admin recovery wizard that previews exact archived R2 objects,
+  makes each play mapping explicit, checksum-verifies it, and copies confirmed
+  diagrams into canonical storage without deleting the archive.
 - [x] Add checksum-gated legacy diagram migration and repair routes that write
   a new immutable version rather than overwriting history.
 - [ ] Run a fresh, admin-authenticated row-level inventory of the actual R2

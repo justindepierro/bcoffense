@@ -13,6 +13,7 @@ import { normalizeLegacyDiagramSourceKey } from "../functions/_lib/legacy-image-
 import { onRequestPost as auditLegacy } from "../functions/images/audit-legacy.js";
 import { onRequestPost as migrateLegacy } from "../functions/images/migrate-legacy.js";
 import { onRequestPost as repairLegacy } from "../functions/images/repair-legacy.js";
+import { onRequestGet as legacyPreview } from "../functions/images/legacy-preview.js";
 import { onRequestGet as inventoryMedia } from "../functions/media/inventory.js";
 
 const TEAM_ID = "team-a";
@@ -122,6 +123,13 @@ async function adminRequest(env, path, method, body) {
   return new Request(`https://bcoffense.test${path}`, init);
 }
 
+async function adminGetRequest(env, path) {
+  const sessionCookie = await createSessionCookie({ username: "admin", role: "admin", label: "Admin" }, env);
+  return new Request(`https://bcoffense.test${path}`, {
+    headers: { Cookie: sessionCookie.split(";")[0] },
+  });
+}
+
 console.log("\n▸ Legacy diagram full-source-key contract");
 
 assert(normalizeLegacyDiagramSourceKey("images/historic-call") === "images/historic-call", "allows an exact images/ source key");
@@ -134,6 +142,21 @@ assert(!normalizeLegacyDiagramSourceKey("/images/historic-call"), "rejects an ab
 const inventoryClientSource = readFileSync(new URL("../js/media-inventory.js", import.meta.url), "utf8");
 assert(inventoryClientSource.includes("entry?.sourceKey || entry?.key"), "inventory reconciliation carries the full server source key forward");
 assert(!inventoryClientSource.includes('replace(/^images\\//, "")'), "inventory never strips an images/ prefix before recovery");
+
+// Preview is admin-only recovery evidence: it reads one exact key, validates
+// image bytes, and exposes the checksum that the migration must verify again.
+{
+  const sourceText = "RIFF0000WEBPpreview-media-plays";
+  const checksum = await sha256Hex(sourceText);
+  const { env, calls, sourceKey } = makeEnvironment({ sourceText });
+  const response = await legacyPreview({
+    request: await adminGetRequest(env, `/images/legacy-preview?sourceKey=${encodeURIComponent(sourceKey)}`),
+    env,
+  });
+  assert(response.status === 200, "preview serves an exact archived media/plays image to an admin");
+  assert(response.headers.get("X-BC-Legacy-Checksum") === checksum, "preview returns the checksum required for migration");
+  assert(JSON.stringify(calls.gets) === JSON.stringify([sourceKey]), "preview reads the exact archived source key");
+}
 
 // Audit must read the supplied media/plays key verbatim and return it for the
 // checksum-gated decision that follows.
