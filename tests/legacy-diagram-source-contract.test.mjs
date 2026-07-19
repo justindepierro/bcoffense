@@ -14,6 +14,7 @@ import { onRequestPost as auditLegacy } from "../functions/images/audit-legacy.j
 import { onRequestPost as migrateLegacy } from "../functions/images/migrate-legacy.js";
 import { onRequestPost as repairLegacy } from "../functions/images/repair-legacy.js";
 import { onRequestGet as legacyPreview } from "../functions/images/legacy-preview.js";
+import { onRequestGet as duplicateGroups } from "../functions/images/legacy-duplicate-groups.js";
 import { onRequestGet as inventoryMedia } from "../functions/media/inventory.js";
 
 const TEAM_ID = "team-a";
@@ -105,6 +106,44 @@ function makeEnvironment(options = {}) {
   };
 }
 
+function makeDuplicateAnalysisEnvironment(canonicalChecksum = "") {
+  const contents = new Map([
+    ["images/archive-a.webp", "RIFF0000WEBPduplicate-bytes"],
+    ["media/plays/archive-b.webp", "RIFF0000WEBPduplicate-bytes"],
+    ["images/unique.webp", "RIFF0000WEBPunique-bytes"],
+  ]);
+  const bucket = {
+    async list({ prefix }) {
+      return {
+        objects: [...contents.entries()]
+          .filter(([key]) => key.startsWith(prefix))
+          .map(([key, value]) => ({ key, size: new TextEncoder().encode(value).byteLength, uploaded: new Date("2026-01-01T00:00:00Z") })),
+        truncated: false,
+      };
+    },
+    async get(key) {
+      const value = contents.get(key);
+      if (!value) return null;
+      const bytes = new TextEncoder().encode(value);
+      return { body: {}, size: bytes.byteLength, async arrayBuffer() { return bytes.buffer.slice(0); } };
+    },
+  };
+  const db = {
+    prepare() {
+      return {
+        bind() {
+          return {
+            async all() {
+              return { results: [{ media_id: "play:already-canonical", checksum: canonicalChecksum }] };
+            },
+          };
+        },
+      };
+    },
+  };
+  return { env: { AUTH_SESSION_SECRET: "duplicate-groups-session-secret", AUTH_PRIMARY_TEAM_ID: TEAM_ID, CLIPS: bucket, DB: db } };
+}
+
 // An exact archived key is still unsafe when the checksum proves its bytes
 // already belong to a different canonical play. Historic aliases caused this
 // exact failure mode; retain the archive for review instead of duplicating a
@@ -173,6 +212,19 @@ assert(inventoryClientSource.includes("pb-recovery-search-results"), "typed reco
 assert(inventoryClientSource.includes("_miRecoveryEditDistance"), "recovery play search tolerates small spelling errors");
 assert(inventoryClientSource.includes("metadataFields"), "recovery search indexes play metadata beyond the display name");
 assert(inventoryClientSource.includes("all results shown"), "recovery search does not truncate matches to an arbitrary shortlist");
+
+// Duplicate analysis is read-only and works from exact byte checksums. It
+// narrows a large historic archive without conflating visual similarity with
+// permission to map a diagram to a different play.
+{
+  const { env } = makeDuplicateAnalysisEnvironment(await sha256Hex("RIFF0000WEBPduplicate-bytes"));
+  const response = await duplicateGroups({ request: await adminGetRequest(env, "/images/legacy-duplicate-groups"), env });
+  const payload = await response.json();
+  assert(response.status === 200 && payload.ok, "duplicate analysis is available to the primary-team admin");
+  assert(payload.groups?.some((group) => group.sources?.length === 2), "duplicate analysis groups identical archived objects");
+  assert(payload.groups?.some((group) => group.canonicalMediaIds?.includes("play:already-canonical")), "duplicate analysis identifies bytes already used by a canonical play");
+  assert(!payload.groups?.some((group) => group.sources?.some((source) => source.sourceKey === "images/../private")), "duplicate analysis only returns exact safe legacy keys");
+}
 
 // Preview is admin-only recovery evidence: it reads one exact key, validates
 // image bytes, and exposes the checksum that the migration must verify again.
