@@ -1113,13 +1113,12 @@ function getPlayPresentationPlayLabel(play) {
 // with this display clone.
 function getPlayPresentationDisplayPlay(play) {
   if (!play || play.isSeparator) return play;
-  const displayPlay =
-    typeof getScriptDisplayPlay === "function"
-      ? getScriptDisplayPlay(play)
-      : play;
-
-  if (!play.scriptHidePersonnel || !displayPlay?.personnel) return displayPlay;
-  return { ...displayPlay, personnel: "" };
+  // A script may hide its lineup assignment (sub package and player names),
+  // but that must never remove the play's personnel color/marker from a study
+  // surface. The call marker and the lineup are separate concerns.
+  return typeof getScriptDisplayPlay === "function"
+    ? getScriptDisplayPlay(play)
+    : play;
 }
 
 function getPlayPresentationItemsFromPlaybook() {

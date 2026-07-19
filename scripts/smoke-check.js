@@ -982,6 +982,10 @@ function checkPersonnelMarkerContracts() {
 
 function checkScriptPersonnelWorkspaceContract() {
   const players = read("js/script-players.js");
+  const render = read("js/script-render.js");
+  const timeline = read("js/script-timeline.js");
+  const shared = read("js/script-shared.js");
+  const presentation = read("js/play-presentation.js");
   const css = read("css/script.css");
 
   if (
@@ -992,12 +996,17 @@ function checkScriptPersonnelWorkspaceContract() {
     !/replacementDetails\.open = true/.test(players) ||
     !/script-player-assignment-details \{[\s\S]*border-top/.test(css) ||
     !/script-player-assignment-summary \{[\s\S]*min-height:\s*32px/.test(css) ||
-    !/script-item:not\(\.period-header\):not\(\.script-item--player\)[\s\S]*border-left:\s*3px solid/.test(css)
+    !/script-item:not\(\.period-header\):not\(\.script-item--player\)[\s\S]*border-left:\s*3px solid/.test(css) ||
+    !/Lineup On/.test(timeline) ||
+    !/Show all lineups/.test(render) ||
+    !/Show lineup assignment \(sub package and players\)/.test(shared) ||
+    /scriptHidePersonnel\s*\?\s*\{\s*\.\.\.displayPlay,\s*personnel:\s*""\s*\}/.test(shared) ||
+    /if \(!play\.scriptHidePersonnel \|\| !displayPlay\?\.personnel\)/.test(presentation)
   ) {
-    fail("Script personnel rows are not compact, expandable, and visually separated");
+    fail("Script lineup controls no longer preserve personnel markers while hiding player assignments");
   }
 
-  console.log("script personnel workspace contract ok");
+  console.log("script lineup workspace contract ok");
 }
 
 function checkScriptWorkspaceCommandSurface() {

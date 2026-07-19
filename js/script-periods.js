@@ -316,7 +316,7 @@ function setPeriodPersonnelVisibility(separatorIndex, showPersonnel) {
     shouldShow ? Boolean(script[index]?.scriptHidePersonnel) : !script[index]?.scriptHidePersonnel,
   );
   if (!changedIndexes.length) {
-    showToast(`Personnel is already ${shouldShow ? "shown" : "hidden"} for every play in "${separator.label || "Period"}".`);
+    showToast(`Lineup assignments are already ${shouldShow ? "shown" : "hidden"} for every play in "${separator.label || "Period"}".`);
     return;
   }
 
@@ -329,8 +329,8 @@ function setPeriodPersonnelVisibility(separatorIndex, showPersonnel) {
 
   const label = separator.label || "Period";
   const stateLabel = shouldShow ? "shown" : "hidden";
-  showToast(`Personnel ${stateLabel} for all ${playIndexes.length} plays in "${label}".`);
-  announceScriptA11y(`Personnel ${stateLabel} for all plays in ${label}`);
+  showToast(`Lineup assignments ${stateLabel} for all ${playIndexes.length} plays in "${label}".`);
+  announceScriptA11y(`Lineup assignments ${stateLabel} for all plays in ${label}`);
 }
 
 function togglePeriodPersonnelVisibility(separatorIndex) {

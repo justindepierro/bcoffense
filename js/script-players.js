@@ -103,7 +103,7 @@ function buildScriptPlayerSummaryCard(play, index, playLabel, playerSummary) {
     <div class="script-player-summary-card">
       <div class="script-player-summary-head">
         <div class="script-player-summary-meta">
-          <span class="script-player-summary-title">Personnel</span>
+          <span class="script-player-summary-title">Lineup</span>
           ${statusLabel ? `<span class="script-player-summary-status">${escapeHtml(statusLabel)}</span>` : ""}
         </div>
         <div class="script-player-summary-actions">
@@ -393,7 +393,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
       <details class="script-player-assignment-details">
         <summary class="script-player-assignment-summary">
           <span class="script-player-assignment-summary-main">
-            <span class="script-player-grid-title">Personnel</span>
+            <span class="script-player-grid-title">Lineup</span>
             ${personnelOverrideControl}
             <span class="script-player-assignment-summary-lineup">${escapeHtml(lineupLabel)}</span>
             ${statusLabel ? `<span class="script-player-grid-status">${escapeHtml(statusLabel)}</span>` : ''}

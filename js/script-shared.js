@@ -757,16 +757,16 @@ function getScriptPlaySummaryText(play) {
 function getScriptFullCall(play, options = {}) {
   const displayPlay = getScriptDisplayPlay(play);
   if (!displayPlay) return "";
-  const visiblePlay = play?.scriptHidePersonnel
-    ? { ...displayPlay, personnel: "" }
-    : displayPlay;
   const callOverrides = getScriptCallTextOverrides(play);
-  const leadMarkers = getScriptCallLeadMarkers(visiblePlay, options);
+  // `scriptHidePersonnel` controls the lineup assignment (sub package and
+  // player names), not the play's visual personnel marker. Coaches still need
+  // that color/emoji at a glance in the script and on the printed call.
+  const leadMarkers = getScriptCallLeadMarkers(displayPlay, options);
   // Keep the source formatter from inserting its own emoji before the
   // script-only prefix. The Script owns that order: personnel marker, prefix,
   // source/custom call, then suffix.
   const sourceCallOptions = { ...options, showEmoji: false, underEmoji: false };
-  const oneWordCall = String(visiblePlay.oneWord || "").trim();
+  const oneWordCall = String(displayPlay.oneWord || "").trim();
   if (callOverrides.call) {
     const customCall = `<span class="script-custom-call-text">${escapeHtml(formatPlayCallText(callOverrides.call, sourceCallOptions))}</span>`;
     return wrapScriptCallTextOverrides(customCall, callOverrides, { ...options, leadMarkers });
@@ -774,13 +774,13 @@ function getScriptFullCall(play, options = {}) {
   if (options.showOneWordOnly && oneWordCall) {
     const text = formatPlayCallText(oneWordCall, sourceCallOptions);
     const oneWordParts = [];
-    if (!options.showEmoji && visiblePlay.personnel) {
+    if (!options.showEmoji && displayPlay.personnel) {
       oneWordParts.push(
-        `<span class="script-one-word-personnel">${escapeHtml(visiblePlay.personnel)}</span>`,
+        `<span class="script-one-word-personnel">${escapeHtml(displayPlay.personnel)}</span>`,
       );
     }
     oneWordParts.push(`<span class="script-one-word-call">${escapeHtml(text)}</span>`);
-    const referenceCall = getFullCall(visiblePlay, {
+    const referenceCall = getFullCall(displayPlay, {
       ...sourceCallOptions,
     });
     if (referenceCall) {
@@ -789,7 +789,7 @@ function getScriptFullCall(play, options = {}) {
     return wrapScriptCallTextOverrides(oneWordParts.join(" "), callOverrides, { ...options, leadMarkers });
   }
   return wrapScriptCallTextOverrides(
-    getFullCall(visiblePlay, sourceCallOptions),
+    getFullCall(displayPlay, sourceCallOptions),
     callOverrides,
     { ...options, leadMarkers },
   );
@@ -882,7 +882,7 @@ function openScriptCallOverrideModal(index) {
   closeScriptCallOverrideModal();
 
   const overrides = getScriptCallTextOverrides(play);
-  const personnelVisible = !Boolean(play.scriptHidePersonnel);
+  const lineupVisible = !Boolean(play.scriptHidePersonnel);
   const sourceCall = getScriptPlaySummaryText({
     ...play,
     scriptCallPrefix: "",
@@ -905,7 +905,7 @@ function openScriptCallOverrideModal(index) {
       <label class="script-call-override-field"><span>Custom call <em>optional</em></span><input type="text" name="call" value="${escapeHtml(overrides.call)}" placeholder="Leave blank to use the Playbook call"></label>
       <label class="script-call-override-field"><span>Suffix / tag</span><input type="text" name="suffix" value="${escapeHtml(overrides.suffix)}" placeholder="Example: On whistle"></label>
       <div class="script-call-color-row"><span>Suffix color</span>${renderScriptCallTextColorChoices("suffix", overrides.suffixColor)}</div>
-      <label class="script-call-override-toggle"><input type="checkbox" name="showPersonnel"${personnelVisible ? " checked" : ""}> <span>Show personnel for this play in this script</span></label>
+      <label class="script-call-override-toggle"><input type="checkbox" name="showLineup"${lineupVisible ? " checked" : ""}> <span>Show lineup assignment (sub package and players) for this play</span></label>
       <div class="script-call-override-actions">
         <button type="button" class="btn btn-secondary" data-script-call-reset>Reset to Playbook</button>
         <button type="button" class="btn btn-primary" data-script-call-save>Save wording</button>
@@ -914,8 +914,8 @@ function openScriptCallOverrideModal(index) {
   overlay.querySelector(".modal-close-btn")?.addEventListener("click", closeScriptCallOverrideModal);
   overlay.querySelector("[data-script-call-reset]")?.addEventListener("click", () => {
     overlay.querySelectorAll('input[type="text"]').forEach((input) => { input.value = ""; });
-    const personnelInput = overlay.querySelector('[name="showPersonnel"]');
-    if (personnelInput) personnelInput.checked = true;
+    const lineupInput = overlay.querySelector('[name="showLineup"]');
+    if (lineupInput) lineupInput.checked = true;
     overlay.querySelectorAll(".script-call-color-choice").forEach((choice) => choice.classList.remove("is-selected"));
   });
   overlay.querySelectorAll("[data-script-call-color]").forEach((choice) => {
@@ -930,7 +930,7 @@ function openScriptCallOverrideModal(index) {
       prefix: overlay.querySelector('[name="prefix"]')?.value || "",
       call: overlay.querySelector('[name="call"]')?.value || "",
       suffix: overlay.querySelector('[name="suffix"]')?.value || "",
-      showPersonnel: Boolean(overlay.querySelector('[name="showPersonnel"]')?.checked),
+      showLineup: Boolean(overlay.querySelector('[name="showLineup"]')?.checked),
       prefixColor: overlay.querySelector('[data-script-call-color-group="prefix"] .is-selected')?.dataset.scriptCallColor || "",
       suffixColor: overlay.querySelector('[data-script-call-color-group="suffix"] .is-selected')?.dataset.scriptCallColor || "",
     };
@@ -943,14 +943,15 @@ function openScriptCallOverrideModal(index) {
     };
     const current = getScriptCallTextOverrides(play);
     const callChanged = JSON.stringify(normalized) !== JSON.stringify(current);
-    const personnelChanged = Boolean(play.scriptHidePersonnel) === next.showPersonnel;
-    if (callChanged || personnelChanged) {
+    const shouldHideLineup = !next.showLineup;
+    const lineupChanged = Boolean(play.scriptHidePersonnel) !== shouldHideLineup;
+    if (callChanged || lineupChanged) {
       beginScriptEdit();
       [["scriptCallPrefix", normalized.prefix], ["scriptCallOverride", normalized.call], ["scriptCallSuffix", normalized.suffix], ["scriptCallPrefixColor", normalized.prefixColor], ["scriptCallSuffixColor", normalized.suffixColor]].forEach(([key, value]) => {
         if (value) play[key] = value;
         else delete play[key];
       });
-      if (next.showPersonnel) delete play.scriptHidePersonnel;
+      if (next.showLineup) delete play.scriptHidePersonnel;
       else play.scriptHidePersonnel = true;
     }
     closeScriptCallOverrideModal();

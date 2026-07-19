@@ -189,18 +189,18 @@ function renderScriptTimelineActions(period) {
     : `Hide protection for ${label}`;
   const personnelState = period.personnelVisibility || { total: 0, visible: 0, mode: "empty" };
   const personnelLabel = personnelState.mode === "shown"
-    ? "Pers On"
+    ? "Lineup On"
     : personnelState.mode === "hidden"
-      ? "Pers Off"
+      ? "Lineup Off"
       : personnelState.mode === "mixed"
-        ? "Pers Mix"
-        : "Pers";
+        ? "Lineup Mix"
+        : "Lineup";
   const personnelTitle = personnelState.mode === "shown"
-    ? `Hide personnel for all ${personnelState.total} plays in ${label}`
+    ? `Hide lineup assignments (sub package and player names) for all ${personnelState.total} plays in ${label}`
     : personnelState.mode === "hidden"
-      ? `Show personnel for all ${personnelState.total} plays in ${label}`
+      ? `Show lineup assignments (sub package and player names) for all ${personnelState.total} plays in ${label}`
       : personnelState.mode === "mixed"
-        ? `Show personnel for all plays in ${label}; ${personnelState.visible} of ${personnelState.total} are currently shown`
+        ? `Show lineup assignments for all plays in ${label}; ${personnelState.visible} of ${personnelState.total} are currently shown`
         : `No plays in ${label} yet`;
 
   const actions = [
