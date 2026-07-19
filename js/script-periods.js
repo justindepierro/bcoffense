@@ -5,17 +5,17 @@ let templateModalMode = "insert";
 let templateModalSearchTerm = "";
 
 const SCRIPT_PERIOD_COLOR_PALETTE = [
-  { name: "Navy", value: "#18345f" }, { name: "Royal Blue", value: "#1d4ed8" },
-  { name: "Blue", value: "#2563eb" }, { name: "Sky", value: "#0369a1" },
-  { name: "Cyan", value: "#0e7490" }, { name: "Teal", value: "#0f766e" },
-  { name: "Mint", value: "#047857" }, { name: "Green", value: "#15803d" },
-  { name: "Lime", value: "#4d7c0f" }, { name: "Olive", value: "#3f6212" },
-  { name: "Gold", value: "#a16207" }, { name: "Amber", value: "#b45309" },
-  { name: "Orange", value: "#c2410c" }, { name: "Coral", value: "#be4b3a" },
-  { name: "Red", value: "#b91c1c" }, { name: "Rose", value: "#be123c" },
-  { name: "Pink", value: "#be185d" }, { name: "Magenta", value: "#a21caf" },
-  { name: "Purple", value: "#7e22ce" }, { name: "Violet", value: "#6d28d9" },
-  { name: "Indigo", value: "#4338ca" }, { name: "Steel", value: "#475569" },
+  { name: "Navy", value: "#0b2f63" }, { name: "Royal", value: "#1248d6" },
+  { name: "Electric Blue", value: "#1463e8" }, { name: "Sky", value: "#0077b6" },
+  { name: "Cyan", value: "#008eab" }, { name: "Teal", value: "#007c78" },
+  { name: "Emerald", value: "#00866a" }, { name: "Green", value: "#19863d" },
+  { name: "Lime", value: "#5b9300" }, { name: "Olive", value: "#587000" },
+  { name: "Gold", value: "#b27a00" }, { name: "Amber", value: "#ca7900" },
+  { name: "Orange", value: "#d95700" }, { name: "Tangerine", value: "#e45a16" },
+  { name: "Red", value: "#cf2525" }, { name: "Rose", value: "#d11245" },
+  { name: "Pink", value: "#cf1764" }, { name: "Magenta", value: "#ae1897" },
+  { name: "Purple", value: "#7b1fa2" }, { name: "Violet", value: "#6826d7" },
+  { name: "Indigo", value: "#3f3bc4" }, { name: "Steel", value: "#3f5870" },
   { name: "Slate", value: "#334155" }, { name: "Charcoal", value: "#1f2937" },
 ];
 
@@ -24,7 +24,14 @@ function renderScriptPeriodPaletteButtons(selectedColor, attributeName, attribut
   return SCRIPT_PERIOD_COLOR_PALETTE.map((color) => `
     <button type="button" class="script-period-color-swatch${normalized === color.value ? " is-selected" : ""}" ${attributeName}="${attributeValue}" data-period-color="${color.value}" title="${color.name}" aria-label="${color.name}">
       <span style="background: ${color.value};" aria-hidden="true"></span>
+      <strong>${color.name}</strong>
     </button>`).join("");
+}
+
+function getScriptPeriodTextColor(color) {
+  return typeof isColorDark === "function" && isColorDark(color)
+    ? UI_COLORS.textWhite
+    : UI_COLORS.textDark;
 }
 
 function renderScriptPeriodColorControl(index, color, label) {
@@ -174,7 +181,10 @@ function setScriptPeriodColor(index, color) {
   saveScriptState();
   script[index].color = color;
   const header = document.querySelector(`.period-header .ph-color-input[data-idx="${index}"]`)?.closest(".period-header");
-  if (header) header.style.background = color;
+  if (header) {
+    header.style.background = color;
+    header.style.color = getScriptPeriodTextColor(color);
+  }
   const wrapper = header?.closest(".period-header-wrapper");
   if (wrapper) wrapper.style.borderLeftColor = color;
   document.querySelectorAll(`.ph-color-input[data-idx="${index}"]`).forEach((input) => { input.value = color; });
@@ -201,7 +211,7 @@ function openScriptPeriodColorPalette(index) {
         <h3 class="modal-title" id="scriptPeriodColorTitle">${escapeHtml(period.label || "Period")} color</h3>
         <button type="button" class="modal-close-btn" aria-label="Close">✕</button>
       </div>
-      <p>Choose one of the standard coaching colors.</p>
+      <p>High-contrast coaching colors. Header text adjusts automatically for readability.</p>
       <div class="script-period-color-palette" aria-label="Standard period colors">${renderScriptPeriodPaletteButtons(currentColor, "data-period-palette-color")}</div>
       <label class="script-period-custom-color">Custom color <input type="color" value="${currentColor}" aria-label="Custom period color"></label>
     </div>`;

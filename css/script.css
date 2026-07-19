@@ -2612,7 +2612,7 @@ body[data-auth-role="player"]
 }
 
 .script-period-color-modal {
-  max-width: 430px;
+  max-width: 540px;
 }
 
 .script-period-color-modal p {
@@ -2623,34 +2623,49 @@ body[data-auth-role="player"]
 
 .script-period-color-palette {
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
 }
 
 .script-period-color-swatch {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
-  justify-content: center;
+  gap: 6px;
   min-width: 0;
-  height: 30px;
-  padding: 0;
+  height: 38px;
+  padding: 4px 6px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
   cursor: pointer;
 }
 
 .script-period-color-swatch span {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 14%);
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 18%), 0 1px 2px rgb(0 0 0 / 16%);
+}
+
+.script-period-color-swatch strong {
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .script-period-color-swatch:hover,
 .script-period-color-swatch.is-selected {
   border-color: var(--color-primary);
-  background: var(--color-primary-light);
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 34%, transparent);
 }
 
 .script-period-color-swatch:focus-visible,

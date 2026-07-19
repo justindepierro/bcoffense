@@ -311,6 +311,9 @@ function renderScriptEmptyPeriodHeaders() {
       return;
     }
     const periodColor = period.color || UI_COLORS.periodDefault;
+    const periodTextColor = typeof getScriptPeriodTextColor === "function"
+      ? getScriptPeriodTextColor(periodColor)
+      : UI_COLORS.textWhite;
     const periodLabel = period.label || "Period";
     const periodNotes = period.notes || "";
     const periodId = escapeHtml(String(period.id));
@@ -319,7 +322,7 @@ function renderScriptEmptyPeriodHeaders() {
       ? `Show protection for ${periodLabel}`
       : `Hide protection for ${periodLabel}`;
     periodHeaders += `
-      <div class="script-item period-header" data-period-id="${periodId}" data-period-drop-id="${periodId}" style="background: ${periodColor}; color: var(--color-text-inverse);" role="group" aria-label="${escapeHtml(periodLabel)} period header">
+      <div class="script-item period-header" data-period-id="${periodId}" data-period-drop-id="${periodId}" style="background: ${periodColor}; color: ${periodTextColor};" role="group" aria-label="${escapeHtml(periodLabel)} period header">
         <div class="ph-top">
           <textarea class="ph-notes-input" data-field="periodNotes" data-idx="${index}" rows="2" placeholder="Period notes" aria-label="Notes for ${escapeHtml(periodLabel)}">${escapeHtml(periodNotes)}</textarea>
         </div>
@@ -422,6 +425,9 @@ function renderPlayerScriptPeriodHeader(separator, index, renderContext) {
     renderContext?.periodStatsBySeparatorIndex,
   );
   const periodColor = separator.color || UI_COLORS.periodDefault;
+  const periodTextColor = typeof getScriptPeriodTextColor === "function"
+    ? getScriptPeriodTextColor(periodColor)
+    : UI_COLORS.textWhite;
   const periodLabel = separator.label || "Period";
   const periodNotes = separator.notes || "";
   const metaText = formatPeriodMetaText(
@@ -475,7 +481,7 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
 
   return `
     <div class="period-header-wrapper" data-separator-id="${periodId}" data-period-id="${periodId}" data-period-drop-id="${periodId}" data-period-index="${index}" style="border-left: 4px solid ${periodColor};" role="region" aria-label="${escapeHtml(periodLabel)} period">
-      <div class="script-item period-header" style="background: ${periodColor}; color: var(--color-text-inverse);">
+      <div class="script-item period-header" style="background: ${periodColor}; color: ${periodTextColor};">
         <div class="ph-top">
           <textarea class="ph-notes-input" data-field="periodNotes" data-idx="${index}" rows="2" placeholder="Period notes" aria-label="Notes for ${escapeHtml(periodLabel)}">${escapeHtml(periodNotes)}</textarea>
         </div>
