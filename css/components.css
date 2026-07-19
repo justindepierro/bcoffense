@@ -4825,7 +4825,16 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   font-size: 8.5px !important;
   table-layout: fixed !important;
   border: 0.6px solid var(--script-print-grid) !important;
+  /* Match the physical print surface so a transparent final column cannot
+     reveal the gray preview canvas behind it. */
+  background: #fff !important;
   color: var(--script-print-ink) !important;
+}
+.print-preview-content .script-table colgroup,
+.print-preview-content .script-table col,
+.print-preview-content .script-table thead,
+.print-preview-content .script-table tbody {
+  background: #fff !important;
 }
 .print-preview-content .script-table th {
   background: white !important;
@@ -4852,6 +4861,9 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   overflow-wrap: anywhere !important;
   word-break: break-word !important;
   vertical-align: top !important;
+}
+.print-preview-content .script-table tr:not([style]) > td {
+  background-color: #fff;
 }
 .print-preview-content .script-table .print-period-header td {
   border: 0.6px solid var(--script-print-grid) !important;

@@ -365,7 +365,17 @@
     table-layout: fixed !important;
     font-size: 8.5px !important;
     border: 0.6px solid var(--script-print-grid) !important;
+    /* Keep every ordinary column on the paper surface. Without an explicit
+       table/column background, transparent cells can expose the preview or
+       browser-print backdrop as a gray stripe (most visible at Reps). */
+    background: #fff !important;
     color: var(--script-print-ink) !important;
+  }
+  body.print-script .script-table colgroup,
+  body.print-script .script-table col,
+  body.print-script .script-table thead,
+  body.print-script .script-table tbody {
+    background: #fff !important;
   }
   body.print-script .script-table thead {
     display: table-header-group !important;
@@ -404,6 +414,11 @@
     overflow-wrap: anywhere !important;
     word-break: break-word !important;
     vertical-align: top !important;
+  }
+  /* Colored rows use an inline row background and remain intentionally
+     transparent here. Plain rows get an opaque white cell surface. */
+  body.print-script .script-table tr:not([style]) > td {
+    background-color: #fff;
   }
   body.print-script .script-table .script-print-period-block {
     break-inside: avoid-page !important;
