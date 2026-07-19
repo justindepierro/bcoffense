@@ -275,9 +275,6 @@ function renderScriptTimeline(renderContext) {
           `${period.label}, ${period.playCount} plays, ${period.reps} reps, ` +
           `${period.minutes || 0} minutes, ${period.runPct}% run and ${period.passPct}% pass by reps. ` +
           `Top situations: ${period.situationLoad.map((bucket) => bucket.label).join(", ")}. Jump to period or drag to reorder.`;
-        const noteHtml = period.notes
-          ? `<span class="script-timeline-note">${escapeHtml(period.notes)}</span>`
-          : "";
         const periodId = escapeHtml(String(period.id));
 
         return `
@@ -286,28 +283,11 @@ function renderScriptTimeline(renderContext) {
           <span class="script-timeline-card-main">
             <button type="button" class="script-timeline-jump" data-action="jumpToPeriod" data-arg="${periodId}" title="Jump to ${escapeHtml(period.label)}">
               <span class="script-timeline-title">${escapeHtml(period.label)}</span>
+              <span class="script-timeline-meta">${period.playCount} plays • ${period.reps} reps • ${period.minutes || 0} min</span>
             </button>
-            <span class="script-timeline-meta">${period.playCount} plays • ${period.reps} reps • ${period.minutes || 0} min</span>
+            <span class="script-timeline-load" aria-label="${loadPct}% of ${hasTimedPlan ? "practice time" : "practice reps"}"><span></span></span>
           </span>
           ${renderScriptTimelineActions(period)}
-          <span class="script-timeline-split">
-            <span><strong>${period.runCount}</strong> Run</span>
-            <span><strong>${period.passCount}</strong> Pass</span>
-          </span>
-          ${renderScriptTimelineBalance(period)}
-          <span class="script-timeline-load" aria-hidden="true"><span></span></span>
-          <span class="script-timeline-situations">
-            ${period.playCount
-            ? renderScriptTimelineLoadChips("Situation", period.situationLoad, "Situation not set")
-            : '<span class="script-timeline-chip script-timeline-chip--muted">Situation not set</span>'}
-          </span>
-          <span class="script-timeline-chips">
-            ${period.playCount
-            ? renderScriptTimelineLoadChips("Tempo", period.tempoLoad, "Tempo not set") +
-            renderScriptTimelineLoadChips("Personnel", period.personnelLoad, "Personnel not set")
-            : '<span class="script-timeline-chip script-timeline-chip--muted">No plays yet</span>'}
-          </span>
-          ${noteHtml}
         </article>`;
       })
       .join("")}
