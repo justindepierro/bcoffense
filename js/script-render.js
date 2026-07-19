@@ -346,6 +346,19 @@ function renderPeriodActionButton(action, index, label, icon, title, extraClass 
 }
 
 function renderPeriodActionsToolbar(index, periodLabel) {
+  const personnelState = typeof getPeriodPersonnelVisibilityState === "function"
+    ? getPeriodPersonnelVisibilityState(index)
+    : { total: 0, visible: 0, mode: "empty" };
+  const personnelCopy = personnelState.mode === "shown"
+    ? "All shown"
+    : personnelState.mode === "hidden"
+      ? "All hidden"
+      : personnelState.mode === "mixed"
+        ? `${personnelState.visible}/${personnelState.total} shown`
+        : "No plays";
+  const personnelTitle = personnelState.total
+    ? `Personnel visibility for ${periodLabel}: ${personnelCopy}. Choose show or hide for every play in this period.`
+    : `Personnel visibility for ${periodLabel}. Add a play to enable it.`;
   const actions = [
     ["selectPeriodPlays", "Select", "☑", `Select or deselect plays in ${periodLabel}`],
     ["openPeriodReorderModal", "Reorder", "🗂️", `Reorder plays in ${periodLabel}`],
@@ -360,6 +373,15 @@ function renderPeriodActionsToolbar(index, periodLabel) {
 
   return `
         <div class="period-actions-toolbar">
+          <details class="period-actions-menu period-personnel-menu is-${personnelState.mode}">
+            <summary title="${escapeHtml(personnelTitle)}" aria-label="${escapeHtml(personnelTitle)}">
+              <span aria-hidden="true">👥</span> Personnel <span class="period-personnel-summary">${escapeHtml(personnelCopy)}</span>
+            </summary>
+            <div class="period-actions-menu-panel" role="group" aria-label="Personnel visibility for ${escapeHtml(periodLabel)}">
+              <button class="pat-btn" data-action="showPeriodPersonnel" data-idx="${index}"${personnelState.total ? "" : " disabled"} title="Show personnel for every play in ${escapeHtml(periodLabel)}"><span class="pat-btn-icon" aria-hidden="true">👁</span><span class="pat-btn-label">Show all personnel</span></button>
+              <button class="pat-btn" data-action="hidePeriodPersonnel" data-idx="${index}"${personnelState.total ? "" : " disabled"} title="Hide personnel for every play in ${escapeHtml(periodLabel)}"><span class="pat-btn-icon" aria-hidden="true">⊘</span><span class="pat-btn-label">Hide all personnel</span></button>
+            </div>
+          </details>
           <details class="period-actions-menu">
             <summary aria-label="Actions for ${escapeHtml(periodLabel)}">
               <span aria-hidden="true">⋯</span> Period Actions

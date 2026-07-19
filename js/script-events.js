@@ -138,6 +138,12 @@ function initScriptEvents() {
         case "togglePeriodProtection":
           togglePeriodProtection(idx);
           break;
+        case "showPeriodPersonnel":
+          setPeriodPersonnelVisibility(idx, true);
+          break;
+        case "hidePeriodPersonnel":
+          setPeriodPersonnelVisibility(idx, false);
+          break;
         case "selectPeriodPlays":
           selectPeriodPlays(idx);
           break;

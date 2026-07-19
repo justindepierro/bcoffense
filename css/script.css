@@ -14906,6 +14906,30 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
   color: var(--color-primary);
 }
 
+#script .period-personnel-menu > summary {
+  border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border-med));
+  color: var(--color-primary);
+}
+
+#script .period-personnel-menu.is-hidden > summary {
+  border-color: color-mix(in srgb, var(--color-text-secondary) 50%, var(--color-border-med));
+  color: var(--color-text-secondary);
+}
+
+#script .period-personnel-menu.is-mixed > summary {
+  border-color: color-mix(in srgb, var(--color-warning) 55%, var(--color-border-med));
+  color: var(--color-warning-hover);
+}
+
+#script .period-personnel-summary {
+  color: inherit;
+  font-weight: 700;
+}
+
+#script .period-personnel-menu .period-actions-menu-panel {
+  grid-template-columns: minmax(188px, max-content);
+}
+
 #script .period-actions-menu:not([open]) .period-actions-menu-panel {
   display: none;
 }

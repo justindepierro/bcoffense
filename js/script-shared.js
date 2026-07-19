@@ -726,7 +726,6 @@ function getScriptCallTextOverrides(play) {
 
 function hasScriptCallTextOverrides(play) {
   const overrides = getScriptCallTextOverrides(play);
-  const personnelVisible = !play.scriptHidePersonnel;
   return Boolean(overrides.prefix || overrides.call || overrides.suffix);
 }
 
@@ -851,7 +850,7 @@ function openScriptCallOverrideModal(index) {
         if (value) play[key] = value;
         else delete play[key];
       });
-      if (normalized.showPersonnel) delete play.scriptHidePersonnel;
+      if (next.showPersonnel) delete play.scriptHidePersonnel;
       else play.scriptHidePersonnel = true;
     }
     closeScriptCallOverrideModal();

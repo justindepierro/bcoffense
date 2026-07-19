@@ -262,6 +262,63 @@ function togglePeriodProtection(idx) {
   announceScriptA11y(`Protection ${stateLabel} for ${label}`);
 }
 
+function getPeriodPlayIndexes(separatorIndex) {
+  const indexes = [];
+  const start = parseInt(separatorIndex, 10);
+  if (!Number.isInteger(start) || !script[start]?.isSeparator) return indexes;
+
+  for (let index = start + 1; index < script.length; index++) {
+    if (script[index]?.isSeparator) break;
+    if (script[index]) indexes.push(index);
+  }
+  return indexes;
+}
+
+function getPeriodPersonnelVisibilityState(separatorIndex) {
+  const playIndexes = getPeriodPlayIndexes(separatorIndex);
+  const visible = playIndexes.filter((index) => !script[index]?.scriptHidePersonnel).length;
+  const total = playIndexes.length;
+  return {
+    total,
+    visible,
+    hidden: total - visible,
+    mode: total === 0 ? "empty" : visible === total ? "shown" : visible === 0 ? "hidden" : "mixed",
+  };
+}
+
+function setPeriodPersonnelVisibility(separatorIndex, showPersonnel) {
+  const parsedIndex = parseInt(separatorIndex, 10);
+  const separator = script[parsedIndex];
+  if (!separator?.isSeparator) return;
+
+  const shouldShow = showPersonnel === true || showPersonnel === "true";
+  const playIndexes = getPeriodPlayIndexes(parsedIndex);
+  if (!playIndexes.length) {
+    showToast("This period does not have any plays yet.", { type: "warning" });
+    return;
+  }
+
+  const changedIndexes = playIndexes.filter((index) =>
+    shouldShow ? Boolean(script[index]?.scriptHidePersonnel) : !script[index]?.scriptHidePersonnel,
+  );
+  if (!changedIndexes.length) {
+    showToast(`Personnel is already ${shouldShow ? "shown" : "hidden"} for every play in "${separator.label || "Period"}".`);
+    return;
+  }
+
+  saveScriptState();
+  changedIndexes.forEach((index) => {
+    if (shouldShow) delete script[index].scriptHidePersonnel;
+    else script[index].scriptHidePersonnel = true;
+  });
+  requestRenderScript();
+
+  const label = separator.label || "Period";
+  const stateLabel = shouldShow ? "shown" : "hidden";
+  showToast(`Personnel ${stateLabel} for all ${playIndexes.length} plays in "${label}".`);
+  announceScriptA11y(`Personnel ${stateLabel} for all plays in ${label}`);
+}
+
 function copyPeriodAsText(idx) {
   const sepIdx = parseInt(idx, 10);
   const separator = script[sepIdx];
