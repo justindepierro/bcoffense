@@ -33,7 +33,7 @@
   const IMPORT_CONCURRENCY = 3;
   const MAX_SOURCE_BYTES = 14 * 1024 * 1024;
   const DIAGRAM_UPLOAD_QUEUE_LIMIT = 100;
-  const REMOTE_MEDIA_TIMEOUT_MS = 15000;
+  const REMOTE_MEDIA_TIMEOUT_MS = 8000;
   const PLAY_IMAGE_SOURCE_FIELDS = [
     "type",
     "personnel",
@@ -495,11 +495,23 @@
   }
 
   async function _remoteFetch(resource, options = {}) {
-    if (typeof AbortController === "undefined") return fetch(resource, options);
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), REMOTE_MEDIA_TIMEOUT_MS);
+    const controller = typeof AbortController === "undefined" ? null : new AbortController();
+    let timer = null;
+    const request = fetch(resource, {
+      ...options,
+      cache: "no-store",
+      ...(controller ? { signal: controller.signal } : {}),
+    });
+    const deadline = new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        controller?.abort();
+        const error = new Error("Cloud diagram request timed out.");
+        error.name = "AbortError";
+        reject(error);
+      }, REMOTE_MEDIA_TIMEOUT_MS);
+    });
     try {
-      return await fetch(resource, { ...options, signal: controller.signal });
+      return await Promise.race([request, deadline]);
     } finally {
       clearTimeout(timer);
     }
