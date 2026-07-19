@@ -14731,6 +14731,11 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-section-head {
     margin: 0;
+    /* The toolbar may intentionally occupy a second grid row at intermediate
+       desktop widths.  Do not let the surrounding flex worksheet shrink this
+       header back to a single-row height, or those controls bleed underneath
+       the column labels below. */
+    flex: 0 0 auto;
     border-radius: var(--coach-grid-toolbar-radius) var(--coach-grid-toolbar-radius) 0 0;
   }
 
