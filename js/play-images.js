@@ -559,7 +559,6 @@
     return [
       _remoteIdentityKey(play),
       _legacyStableRemoteIdentityKey(play),
-      _legacyContentRemoteIdentityKey(play),
       _legacyRemoteIdentityKey(play),
     ]
       .map(_normalizeSig)

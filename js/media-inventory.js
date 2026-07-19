@@ -136,6 +136,29 @@
     return out;
   }
 
+  // Historic source-content keys are intentionally excluded here. They can
+  // describe a script copy rather than the original play and have already
+  // proven capable of pointing one play at another play's diagram. Legacy
+  // recovery may only use a stable source ID or a unique tag identity.
+  function _miSafeLegacyRecoveryKeys(play) {
+    const out = [];
+    const push = (value) => {
+      const key = String(value || "").trim();
+      if (key && !out.includes(key)) out.push(key);
+    };
+    [
+      play?.playbookId,
+      play?.sourcePlayId,
+      play?.originalPlayId,
+      play?.id,
+      _miMediaId(play),
+    ].forEach(push);
+    if (typeof getPlayIdentityKey === "function") {
+      push(getPlayIdentityKey(play, "tag"));
+    }
+    return out;
+  }
+
   async function _miReadDiagramBlobs(keys) {
     const imageApi = window.playImages || {};
     const entries = [];
@@ -252,7 +275,7 @@
     _miArray(knownPlays).forEach((play) => {
       const mediaId = _miMediaId(play);
       if (!mediaId) return;
-      const keys = new Set(_miPlayImageSigs(play));
+      const keys = new Set(_miSafeLegacyRecoveryKeys(play));
       const matches = legacyObjects.filter((entry) => keys.has(entry.sourceKey));
       if (!matches.length) return;
       matches.forEach((entry) => {
@@ -682,7 +705,7 @@
     if (typeof isAdminUser === "function" && !isAdminUser()) return;
     const recoverable = _miArray(latestMediaInventoryReport?.reconciliation?.rows)
       .filter((row) => row.status === "legacy")
-      .map((row) => ({ mediaId: row.mediaId, legacyKeys: _miPlayImageSigs(row.play) }))
+      .map((row) => ({ mediaId: row.mediaId, legacyKeys: _miSafeLegacyRecoveryKeys(row.play) }))
       .filter((row) => row.mediaId && row.legacyKeys.length);
     if (!recoverable.length) {
       if (typeof showToast === "function") showToast("No recoverable legacy diagrams are waiting to migrate.", { type: "info" });
