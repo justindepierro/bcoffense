@@ -212,6 +212,9 @@ assert(inventoryClientSource.includes("pb-recovery-search-results"), "typed reco
 assert(inventoryClientSource.includes("_miRecoveryEditDistance"), "recovery play search tolerates small spelling errors");
 assert(inventoryClientSource.includes("metadataFields"), "recovery search indexes play metadata beyond the display name");
 assert(inventoryClientSource.includes("all results shown"), "recovery search does not truncate matches to an arbitrary shortlist");
+assert(inventoryClientSource.includes("verifiedCanonicalTarget"), "only checksum matches tied to the proposed media ID are treated as correct ownership");
+assert(inventoryClientSource.includes("checksumConflict"), "cross-play checksum collisions remain visible for manual review");
+assert(inventoryClientSource.includes("targetContentMismatch"), "an archived source stays visible when its proposed play has different current canonical bytes");
 
 // Duplicate analysis is read-only and works from exact byte checksums. It
 // narrows a large historic archive without conflating visual similarity with
@@ -223,6 +226,7 @@ assert(inventoryClientSource.includes("all results shown"), "recovery search doe
   assert(response.status === 200 && payload.ok, "duplicate analysis is available to the primary-team admin");
   assert(payload.groups?.some((group) => group.sources?.length === 2), "duplicate analysis groups identical archived objects");
   assert(payload.groups?.some((group) => group.canonicalMediaIds?.includes("play:already-canonical")), "duplicate analysis identifies bytes already used by a canonical play");
+  assert(payload.canonicalDiagrams?.some((diagram) => diagram.mediaId === "play:already-canonical"), "duplicate analysis returns canonical ownership needed to verify the proposed target");
   assert(!payload.groups?.some((group) => group.sources?.some((source) => source.sourceKey === "images/../private")), "duplicate analysis only returns exact safe legacy keys");
 }
 

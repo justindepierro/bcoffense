@@ -4428,6 +4428,7 @@ function checkPlayerDiagramReadinessContracts() {
   const legacyDiagramMigrationRoute = read("functions/images/migrate-legacy.js");
   const legacyDiagramAuditRoute = read("functions/images/audit-legacy.js");
   const legacyDiagramRepairRoute = read("functions/images/repair-legacy.js");
+  const legacyDiagramDuplicateGroupsRoute = read("functions/images/legacy-duplicate-groups.js");
   if (
     !/const LEGACY_CANONICAL_PREFIX = "media\/plays\/"/.test(imageInventoryRoute) ||
     !/LEGACY_PREFIX = "images\/"/.test(imageInventoryRoute) ||
@@ -4508,8 +4509,11 @@ function checkPlayerDiagramReadinessContracts() {
     !/writeImageManifest\(context\.env, teamId, mediaId/.test(legacyDiagramRepairRoute) ||
     !/expectedVersion: current\.version/.test(legacyDiagramRepairRoute) ||
     /bucket\.delete\(/.test(legacyDiagramRepairRoute) ||
-    !/Automatic legacy promotion is paused/.test(mediaInventory) ||
-    !/broad historical key matching is no longer allowed/.test(mediaInventory)
+    !/verifiedCanonicalTarget/.test(mediaInventory) ||
+    !/targetContentMismatch/.test(mediaInventory) ||
+    !/checksumConflict/.test(mediaInventory) ||
+    !/session\.role !== "admin"/.test(legacyDiagramDuplicateGroupsRoute) ||
+    !/canonicalDiagrams/.test(legacyDiagramDuplicateGroupsRoute)
   ) {
     fail("legacy diagram recovery is not admin-only, checksum-verified, and non-destructive");
   }

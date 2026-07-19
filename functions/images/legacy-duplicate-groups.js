@@ -55,7 +55,10 @@ async function canonicalChecksumOwners(db, teamId) {
     ids.push(mediaId);
     owners.set(checksum, ids);
   }
-  return owners;
+  return {
+    owners,
+    diagrams: [...owners.entries()].flatMap(([checksum, mediaIds]) => mediaIds.map((mediaId) => ({ mediaId, checksum }))),
+  };
 }
 
 export async function onRequestGet(context) {
@@ -72,7 +75,7 @@ export async function onRequestGet(context) {
   if (!bucket || !db) return authJson({ ok: false, error: "Diagram storage is not configured." }, { status: 503 });
 
   try {
-    const [{ objects, truncated }, ownersByChecksum] = await Promise.all([
+    const [{ objects, truncated }, canonical] = await Promise.all([
       listLegacyObjects(bucket),
       canonicalChecksumOwners(db, teamId),
     ]);
@@ -108,7 +111,7 @@ export async function onRequestGet(context) {
             checksum,
             contentType,
             status: "ready",
-            canonicalMediaIds: ownersByChecksum.get(checksum) || [],
+            canonicalMediaIds: canonical.owners.get(checksum) || [],
           });
         } catch (_err) {
           entries.push({ ...object, status: "unreadable" });
@@ -141,7 +144,7 @@ export async function onRequestGet(context) {
       unsupported: entries.filter((entry) => entry.status !== "ready").length,
       uniqueGroups: groups.length,
     };
-    return authJson({ ok: true, generatedAt: new Date().toISOString(), truncated, groups, counts });
+    return authJson({ ok: true, generatedAt: new Date().toISOString(), truncated, groups, counts, canonicalDiagrams: canonical.diagrams });
   } catch (_err) {
     return authJson({ ok: false, error: "Archived diagram duplicate analysis could not be completed." }, { status: 502 });
   }

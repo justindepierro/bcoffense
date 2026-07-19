@@ -789,9 +789,6 @@
   let legacyRecoveryState = null;
 
   function _miRecoveryAssets(report) {
-    const canonicalIds = new Set(_miArray(report?.cloudDiagrams?.objects)
-      .filter((item) => item?.kind === "canonical" && item.mediaId)
-      .map((item) => String(item.mediaId)));
     const exactBySource = new Map(_miArray(report?.legacyRecovery?.automatic)
       .map((item) => [item.sourceKey, item]));
     const assets = _miArray(report?.cloudDiagrams?.objects)
@@ -805,7 +802,10 @@
           exact,
           proposedMediaId: exact?.mediaId || "",
           proposedLabel: exact?.label || "",
-          canRecover: !exact || !canonicalIds.has(String(exact.mediaId || "")),
+          // A pointer existing for the proposed play is not proof that its
+          // bytes match this archive. The explicit checksum analysis decides
+          // whether a source is verified-correct or needs comparison.
+          canRecover: true,
         };
       })
       .filter((item) => item.canRecover)
@@ -826,15 +826,32 @@
     if (!legacyRecoveryState) return;
     const allAssets = _miArray(legacyRecoveryState.allAssets);
     legacyRecoveryState.assets = legacyRecoveryState.duplicateAnalysis && !legacyRecoveryState.showExcluded
-      ? allAssets.filter((asset) => !asset.alreadyCanonical && !asset.duplicateArchiveCopy)
+      // Only a checksum match to the same permanent media ID is safe to hide.
+      // A match owned by a different play is valuable evidence of a historic
+      // wrong mapping and must remain visible for manual review.
+      ? allAssets.filter((asset) => !asset.verifiedCanonicalTarget && !asset.duplicateArchiveCopy)
       : allAssets;
     legacyRecoveryState.page = 0;
+  }
+
+  function _miDuplicateReviewCounts(assets) {
+    return _miArray(assets).reduce((counts, asset) => {
+      if (asset.verifiedCanonicalTarget) counts.verifiedCorrect += 1;
+      if (asset.checksumConflict || asset.targetContentMismatch) counts.conflicts += 1;
+      if (asset.duplicateArchiveCopy) counts.duplicateCopies += 1;
+      return counts;
+    }, { verifiedCorrect: 0, conflicts: 0, duplicateCopies: 0 });
   }
 
   function _miApplyLegacyDuplicateAnalysis(analysis) {
     if (!legacyRecoveryState || !analysis?.groups) return;
     const state = legacyRecoveryState;
     const labels = _miRecoveryPlayLabels(state.report);
+    const canonicalChecksumByMediaId = new Map(
+      _miArray(analysis.canonicalDiagrams)
+        .map((diagram) => [String(diagram?.mediaId || ""), String(diagram?.checksum || "").toLowerCase()])
+        .filter(([mediaId, checksum]) => mediaId && /^[a-f0-9]{64}$/.test(checksum)),
+    );
     const assetsBySource = new Map(_miArray(state.allAssets).map((asset) => [asset.sourceKey, asset]));
     const annotations = new Map();
     _miArray(analysis.groups).forEach((group) => {
@@ -844,26 +861,35 @@
       if (!groupSources.length) return;
       const canonicalMediaIds = _miArray(group?.canonicalMediaIds).map((mediaId) => String(mediaId || "")).filter(Boolean);
       const representative = [...groupSources].sort((left, right) => {
+        const leftVerified = Number(canonicalMediaIds.includes(String(state.targets.get(left.sourceKey) || left.proposedMediaId || "")));
+        const rightVerified = Number(canonicalMediaIds.includes(String(state.targets.get(right.sourceKey) || right.proposedMediaId || "")));
         const leftSuggested = Number(Boolean(state.targets.get(left.sourceKey)));
         const rightSuggested = Number(Boolean(state.targets.get(right.sourceKey)));
         const leftTime = Date.parse(left.uploadedAt || "") || 0;
         const rightTime = Date.parse(right.uploadedAt || "") || 0;
-        return rightSuggested - leftSuggested || rightTime - leftTime || left.sourceKey.localeCompare(right.sourceKey);
+        return rightVerified - leftVerified || rightSuggested - leftSuggested || rightTime - leftTime || left.sourceKey.localeCompare(right.sourceKey);
       })[0];
       groupSources.forEach((asset) => {
+        const proposedMediaId = String(state.targets.get(asset.sourceKey) || asset.proposedMediaId || "");
+        const verifiedCanonicalTarget = Boolean(proposedMediaId && canonicalMediaIds.includes(proposedMediaId));
+        const proposedCanonicalChecksum = canonicalChecksumByMediaId.get(proposedMediaId) || "";
+        const targetContentMismatch = Boolean(proposedMediaId && proposedCanonicalChecksum && proposedCanonicalChecksum !== String(group?.checksum || "").toLowerCase());
+        const checksumConflict = Boolean(canonicalMediaIds.length && !verifiedCanonicalTarget);
         annotations.set(asset.sourceKey, {
           checksum: String(group?.checksum || ""),
           duplicateGroupSize: groupSources.length,
           canonicalMediaIds,
           canonicalLabels: canonicalMediaIds.map((mediaId) => labels.get(mediaId) || mediaId),
-          alreadyCanonical: canonicalMediaIds.length > 0,
-          duplicateArchiveCopy: groupSources.length > 1 && asset.sourceKey !== representative?.sourceKey,
+          verifiedCanonicalTarget,
+          targetContentMismatch,
+          checksumConflict,
+          duplicateArchiveCopy: groupSources.length > 1 && asset.sourceKey !== representative?.sourceKey && !checksumConflict && !targetContentMismatch,
         });
       });
     });
     state.allAssets = _miArray(state.allAssets).map((asset) => ({ ...asset, ...(annotations.get(asset.sourceKey) || {}) }));
     state.allAssets.forEach((asset) => {
-      if (asset.alreadyCanonical || asset.duplicateArchiveCopy) state.selected.delete(asset.sourceKey);
+      if (asset.verifiedCanonicalTarget || asset.checksumConflict || asset.targetContentMismatch || asset.duplicateArchiveCopy) state.selected.delete(asset.sourceKey);
     });
     state.duplicateAnalysis = analysis;
     state.showExcluded = false;
@@ -1010,45 +1036,46 @@
     const start = legacyRecoveryState.page * LEGACY_RECOVERY_PAGE_SIZE;
     const pageItems = assets.slice(start, start + LEGACY_RECOVERY_PAGE_SIZE);
     const selectedCount = [...selected].filter((sourceKey) => targets.get(sourceKey)).length;
+    const duplicateCounts = _miDuplicateReviewCounts(allAssets);
     body.innerHTML = `
       <div class="pb-health-summary pb-recovery-summary">
         ${_miRenderCard(assets.length, duplicateAnalysis ? "Review candidates" : "Archived diagrams")}
-        ${_miRenderCard(duplicateAnalysis ? Number(duplicateAnalysis?.counts?.alreadyCanonical || 0) : _miArray(report?.legacyRecovery?.automatic).length, duplicateAnalysis ? "Already used by a play" : "Unique exact suggestions")}
-        ${_miRenderCard(duplicateAnalysis ? Number(duplicateAnalysis?.counts?.duplicateArchiveCopies || 0) : 0, duplicateAnalysis ? "Duplicate copies hidden" : "Duplicate analysis")}
+        ${_miRenderCard(duplicateAnalysis ? duplicateCounts.verifiedCorrect : _miArray(report?.legacyRecovery?.automatic).length, duplicateAnalysis ? "Verified correct target" : "Unique exact suggestions")}
+        ${_miRenderCard(duplicateAnalysis ? duplicateCounts.conflicts : 0, duplicateAnalysis ? "Cross-play checksum conflicts" : "Duplicate analysis")}
         ${_miRenderCard(selectedCount, "Ready to recover")}
       </div>
-      <div class="pb-health-guidance">Every card is an archived Cloudflare image. Exact suggestions are preselected, but you can inspect the thumbnail and change or uncheck any mapping. Run duplicate analysis to checksum every archived byte, hide images already used by a canonical play, and collapse identical archive copies. A recovery copies confirmed bytes into the permanent team store; it never deletes the archive.</div>
+      <div class="pb-health-guidance">Every card is an archived Cloudflare image. Exact suggestions are preselected, but you can inspect the thumbnail and change or uncheck any mapping. Duplicate analysis hides an image only when its checksum is already attached to that same permanent play. If identical bytes belong to a different play, the card stays visible as a blocked cross-play conflict for review. A recovery copies confirmed bytes into the permanent team store; it never deletes the archive.</div>
       <div class="pb-recovery-toolbar">
         <button type="button" class="btn btn-sm" data-recovery-action="select-exact">Select exact suggestions</button>
         <button type="button" class="btn btn-sm btn-outline" data-recovery-action="clear-selection">Clear selection</button>
-        ${duplicateAnalysis ? `<button type="button" class="btn btn-sm" data-recovery-action="toggle-excluded">${showExcluded ? "Hide used and duplicate copies" : `Show ${Math.max(0, allAssets.length - assets.length)} used / duplicate copies`}</button>` : `<button type="button" class="btn btn-sm btn-primary" data-recovery-action="analyze-duplicates"${analyzingDuplicates ? " disabled" : ""}>${analyzingDuplicates ? "Analyzing archived bytes…" : "Analyze duplicate archived images"}</button>`}
+        ${duplicateAnalysis ? `<button type="button" class="btn btn-sm" data-recovery-action="toggle-excluded">${showExcluded ? "Hide verified / duplicate copies" : `Show ${Math.max(0, allAssets.length - assets.length)} verified / duplicate copies`}</button>` : `<button type="button" class="btn btn-sm btn-primary" data-recovery-action="analyze-duplicates"${analyzingDuplicates ? " disabled" : ""}>${analyzingDuplicates ? "Analyzing archived bytes…" : "Analyze duplicate archived images"}</button>`}
         <span>Showing ${assets.length ? start + 1 : 0}–${Math.min(start + LEGACY_RECOVERY_PAGE_SIZE, assets.length)} of ${assets.length}${duplicateAnalysis ? ` · ${Number(duplicateAnalysis?.counts?.uniqueGroups || 0)} unique byte groups` : ""}</span>
       </div>
       ${duplicateAnalysisError ? `<div class="pb-health-empty">${_miEscape(duplicateAnalysisError)}</div>` : ""}
       <div class="pb-recovery-grid">
         ${pageItems.map((asset) => {
           const target = targets.get(asset.sourceKey) || "";
-          const excluded = Boolean(asset.alreadyCanonical || asset.duplicateArchiveCopy);
-          const isSelected = !excluded && selected.has(asset.sourceKey) && Boolean(target);
+          const blocked = Boolean(asset.verifiedCanonicalTarget || asset.checksumConflict || asset.targetContentMismatch || asset.duplicateArchiveCopy);
+          const isSelected = !blocked && selected.has(asset.sourceKey) && Boolean(target);
           const query = targetQueries.get(asset.sourceKey) || "";
           const searchResults = query ? _miSearchRecoveryPlayCandidates(report, query) : { total: 0, items: [] };
-          return `<article class="pb-recovery-card${asset.exact ? " is-exact" : ""}${excluded ? " is-excluded" : ""}">
+          return `<article class="pb-recovery-card${asset.exact ? " is-exact" : ""}${asset.verifiedCanonicalTarget || asset.duplicateArchiveCopy ? " is-excluded" : ""}${asset.checksumConflict || asset.targetContentMismatch ? " is-conflict" : ""}">
             <img class="pb-recovery-preview" src="${_miEscape(_miLegacyPreviewUrl(asset.sourceKey))}" alt="Archived diagram preview" loading="lazy">
             <div class="pb-recovery-card-body">
-              <label class="pb-recovery-select"><input type="checkbox" data-recovery-select="${_miEscape(asset.sourceKey)}"${isSelected ? " checked" : ""}${excluded ? " disabled" : ""}> Recover this diagram</label>
+              <label class="pb-recovery-select"><input type="checkbox" data-recovery-select="${_miEscape(asset.sourceKey)}"${isSelected ? " checked" : ""}${blocked ? " disabled" : ""}> Recover this diagram</label>
               <strong>${asset.exact ? "Exact archived match" : "Choose the correct play"}</strong>
               <code title="${_miEscape(asset.sourceKey)}">${_miEscape(asset.sourceKey)}</code>
-              ${asset.alreadyCanonical ? `<div class="pb-recovery-duplicate-note is-canonical">Already used by: ${_miEscape(asset.canonicalLabels.join(" · ") || asset.canonicalMediaIds.join(" · "))}</div>` : asset.duplicateArchiveCopy ? `<div class="pb-recovery-duplicate-note">Duplicate archive copy · grouped with ${asset.duplicateGroupSize} identical bytes</div>` : asset.duplicateGroupSize > 1 ? `<div class="pb-recovery-duplicate-note is-primary">Representative of ${asset.duplicateGroupSize} identical archive copies</div>` : ""}
+              ${asset.verifiedCanonicalTarget ? `<div class="pb-recovery-duplicate-note is-canonical">Verified correct target: ${_miEscape(asset.canonicalLabels.join(" · ") || asset.canonicalMediaIds.join(" · "))}</div>` : asset.targetContentMismatch ? `<div class="pb-recovery-duplicate-note is-conflict">Target has a different current diagram · archive suggests ${_miEscape(asset.proposedLabel || asset.proposedMediaId)}</div>` : asset.checksumConflict ? `<div class="pb-recovery-duplicate-note is-conflict">Cross-play checksum conflict · bytes already belong to ${_miEscape(asset.canonicalLabels.join(" · ") || asset.canonicalMediaIds.join(" · "))}${asset.proposedLabel ? `, while this archive suggests ${_miEscape(asset.proposedLabel)}` : ""}</div>` : asset.duplicateArchiveCopy ? `<div class="pb-recovery-duplicate-note">Duplicate archive copy · grouped with ${asset.duplicateGroupSize} identical bytes</div>` : asset.duplicateGroupSize > 1 ? `<div class="pb-recovery-duplicate-note is-primary">Representative of ${asset.duplicateGroupSize} identical archive copies</div>` : ""}
               <label class="pb-recovery-search"><span>Search plays</span><input type="search" data-recovery-target-search="${_miEscape(asset.sourceKey)}" value="${_miEscape(query)}" placeholder="Type a play name or partial call…" autocomplete="off" aria-label="Search plays for this archived diagram"></label>
               ${query ? `<div class="pb-recovery-search-results" role="listbox" aria-label="Play search results">
                 <span>${searchResults.total ? `${searchResults.total} fuzzy match${searchResults.total === 1 ? "" : "es"} · all results shown` : "No matching plays"}</span>
                 ${searchResults.items.map((item) => `<button type="button" role="option" data-recovery-action="choose-target" data-recovery-source-key="${_miEscape(asset.sourceKey)}" data-recovery-media-id="${_miEscape(item.mediaId)}"><strong>${_miEscape(item.label)}</strong>${item.metadata.length ? `<small>${_miEscape(item.metadata.slice(0, 5).join(" · "))}</small>` : ""}</button>`).join("")}
               </div>` : ""}
-              <select data-recovery-target="${_miEscape(asset.sourceKey)}"${excluded ? " disabled" : ""}>
+              <select data-recovery-target="${_miEscape(asset.sourceKey)}"${blocked ? " disabled" : ""}>
                 <option value="">Keep archived / do not map yet</option>
                 ${_miRecoveryPlayOptions(report, target)}
               </select>
-              <small>${asset.alreadyCanonical ? "This byte checksum already belongs to the listed canonical play, so recovery is intentionally disabled." : asset.duplicateArchiveCopy ? "Shown for inspection only. Use the representative archive copy if this image is the correct one." : `${asset.exact ? `Suggested: ${_miEscape(asset.proposedLabel)}` : "No safe automatic match was found."} ${query ? "Search uses call, formation, tags, back, motion, protection, base call, one word, situation, and defensive metadata." : ""}`}</small>
+              <small>${asset.verifiedCanonicalTarget ? "This checksum is verified on the same proposed permanent play, so no recovery is needed." : asset.targetContentMismatch ? "The archive and this play’s current canonical diagram have different bytes. It remains visible for comparison, but automatic recovery is disabled." : asset.checksumConflict ? "Automatic recovery is disabled: identical bytes on a different play are evidence to review, not proof that this play should receive them." : asset.duplicateArchiveCopy ? "Shown for inspection only. Use the representative archive copy if this image is the correct one." : `${asset.exact ? `Suggested: ${_miEscape(asset.proposedLabel)}` : "No safe automatic match was found."} ${query ? "Search uses call, formation, tags, back, motion, protection, base call, one word, situation, and defensive metadata." : ""}`}</small>
             </div>
           </article>`;
         }).join("") || `<div class="pb-health-empty">No unrecovered archived diagrams were found.</div>`}
@@ -1119,7 +1146,7 @@
       if (action === "next") legacyRecoveryState.page += 1;
       if (action === "clear-selection") legacyRecoveryState.selected.clear();
       if (action === "select-exact") {
-        legacyRecoveryState.assets.filter((asset) => asset.exact && !asset.alreadyCanonical && !asset.duplicateArchiveCopy && legacyRecoveryState.targets.get(asset.sourceKey))
+        legacyRecoveryState.assets.filter((asset) => asset.exact && !asset.verifiedCanonicalTarget && !asset.checksumConflict && !asset.targetContentMismatch && !asset.duplicateArchiveCopy && legacyRecoveryState.targets.get(asset.sourceKey))
           .forEach((asset) => legacyRecoveryState.selected.add(asset.sourceKey));
       }
       _miRenderLegacyRecoveryWizard();
