@@ -715,11 +715,25 @@
     storageManager.set(STORAGE_KEYS.DIAGRAM_UPLOAD_QUEUE, entries.slice(-DIAGRAM_UPLOAD_QUEUE_LIMIT));
   }
 
-  function _queueDiagramUpload(localSig, identityKey, error, opts = {}) {
+  async function _queueDiagramUpload(localSig, identityKey, error, opts = {}) {
+    let outboxId = "";
+    const sourceBlob = opts.blob || await get(localSig).catch(() => null);
+    if (sourceBlob && window.mediaUploadOutbox?.enqueue) {
+      const job = await window.mediaUploadOutbox.enqueue({
+        kind: "diagram",
+        target: identityKey,
+        localSig,
+        blob: sourceBlob,
+        contentType: sourceBlob.type || "image/webp",
+        checksum: opts.checksum || "",
+      });
+      outboxId = job.id;
+    }
     const entries = _readDiagramUploadQueue().filter((entry) => entry.localSig !== localSig);
     entries.push({
       localSig,
       identityKey,
+      outboxId,
       queuedAt: new Date().toISOString(),
       lastError: String(error || "Network unavailable"),
       blocked: opts.blocked === true,
@@ -736,16 +750,54 @@
     }
   }
 
-  function _removeQueuedDiagramUpload(localSig) {
-    _writeDiagramUploadQueue(_readDiagramUploadQueue().filter((entry) => entry.localSig !== localSig));
+  async function _removeQueuedDiagramUpload(localSig, identityKey = "") {
+    const removed = _readDiagramUploadQueue().filter((entry) => entry.localSig === localSig || (identityKey && entry.identityKey === identityKey));
+    _writeDiagramUploadQueue(_readDiagramUploadQueue().filter((entry) => !removed.includes(entry)));
+    if (window.mediaUploadOutbox?.remove) {
+      await Promise.all(removed.map((entry) => entry.outboxId ? window.mediaUploadOutbox.remove(entry.outboxId) : null));
+    }
   }
 
   async function flushQueuedDiagramUploads() {
     const entries = _readDiagramUploadQueue();
-    if (!entries.length || !_remoteAvailable()) return { pushed: 0, pending: entries.length };
+    if (!_remoteAvailable()) return { pushed: 0, pending: entries.length };
+    const durableJobs = window.mediaUploadOutbox?.pending
+      ? await window.mediaUploadOutbox.pending("diagram")
+      : [];
+    if (!entries.length && !durableJobs.length) return { pushed: 0, pending: 0 };
     let pushed = 0;
     let terminalFailure = false;
-    for (const entry of entries) {
+    if (durableJobs.length) {
+      for (const job of durableJobs) {
+        if (job.state === "blocked" || (job.nextAttemptAt && Date.parse(job.nextAttemptAt) > Date.now())) continue;
+        try {
+          const playerBlob = await _playerPublishBlob(job.blob);
+          const result = await _putRemoteImage(job.target, playerBlob);
+          if (!result.ok) {
+            const blocked = Number(result.status) === 409;
+            await window.mediaUploadOutbox.markRetry(job.id, result.error || "Cloud upload failed.", { terminal: blocked });
+            if (blocked) {
+              terminalFailure = true;
+              if (result.current) _applyRemoteManifest(job.target, result.current);
+              if (typeof window.failWorkspaceSyncJob === "function") {
+                window.failWorkspaceSyncJob("media:diagram-auto-upload", new Error(result.error || "Diagram conflict needs review"), { label: "Diagram conflict needs review" });
+              }
+            }
+            break;
+          }
+          await window.mediaUploadOutbox.markComplete(job.id, { manifest: result.manifest || null, uploadedAt: new Date().toISOString() });
+          _writeDiagramUploadQueue(_readDiagramUploadQueue().filter((entry) => entry.outboxId !== job.id));
+          if (job.localSig) await set(job.target, playerBlob);
+          _applyRemoteManifest(job.target, result.manifest);
+          pushed += 1;
+        } catch (err) {
+          await window.mediaUploadOutbox.markRetry(job.id, err);
+          break;
+        }
+      }
+    }
+    const legacyEntries = _readDiagramUploadQueue().filter((entry) => !entry.outboxId);
+    for (const entry of legacyEntries) {
       if (entry?.blocked) {
         // A conflict needs an explicit coach decision; automatic retries must
         // never overwrite a newer diagram simply because connectivity returns.
@@ -761,7 +813,7 @@
           if (_isRetryableUploadFailure(result)) throw new Error(result.error || "Cloud upload failed.");
           if (Number(result.status) === 409) {
             if (result.current) _applyRemoteManifest(entry.identityKey, result.current);
-            _queueDiagramUpload(
+            await _queueDiagramUpload(
               entry.localSig,
               entry.identityKey,
               result.error || "This diagram changed on another device.",
@@ -775,7 +827,7 @@
             }
             continue;
           }
-          _removeQueuedDiagramUpload(entry.localSig);
+          await _removeQueuedDiagramUpload(entry.localSig, entry.identityKey);
           terminalFailure = true;
           if (typeof window.failWorkspaceSyncJob === "function") {
             window.failWorkspaceSyncJob("media:diagram-auto-upload", new Error(result.error || "Diagram upload needs attention"), {
@@ -784,19 +836,22 @@
           }
           continue;
         }
-        _removeQueuedDiagramUpload(entry.localSig);
+        await _removeQueuedDiagramUpload(entry.localSig, entry.identityKey);
         await set(entry.identityKey, playerBlob);
         _applyRemoteManifest(entry.identityKey, result.manifest);
         pushed += 1;
       } catch (err) {
-        _queueDiagramUpload(entry.localSig, entry.identityKey, err?.message || err);
+        await _queueDiagramUpload(entry.localSig, entry.identityKey, err?.message || err);
         break;
       }
     }
     if (!terminalFailure && !_readDiagramUploadQueue().length && typeof window.completeWorkspaceSyncJob === "function") {
       window.completeWorkspaceSyncJob("media:diagram-auto-upload", { label: "Diagram saved for players" });
     }
-    return { pushed, pending: _readDiagramUploadQueue().length };
+    const durablePending = window.mediaUploadOutbox?.pending
+      ? (await window.mediaUploadOutbox.pending("diagram")).length
+      : 0;
+    return { pushed, pending: Math.max(_readDiagramUploadQueue().length, durablePending) };
   }
 
   async function _fetchRemoteForPlay(play) {
@@ -1015,18 +1070,18 @@
     try {
       // This is an explicit coach action (attach/replace), so it supersedes a
       // previously blocked offline conflict for the same local diagram.
-      _removeQueuedDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey);
+      await _removeQueuedDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey, identityKey);
       const playerBlob = await _playerPublishBlob(blob);
       const result = await _putRemoteImage(identityKey, playerBlob);
       if (!result.ok && Number(result.status) === 409 && result.current) {
         _applyRemoteManifest(identityKey, result.current);
       }
       if (!result.ok && _isRetryableUploadFailure(result)) {
-        _queueDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey, identityKey, result.error || "Network unavailable");
+        await _queueDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey, identityKey, result.error || "Network unavailable", { blob: playerBlob });
         return { ok: true, queued: true, error: result.error || "Saving when online" };
       }
       if (result.ok) {
-        _removeQueuedDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey);
+        await _removeQueuedDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey, identityKey);
         await set(identityKey, playerBlob);
         _applyRemoteManifest(identityKey, result.manifest);
       }
@@ -1037,7 +1092,7 @@
       }
       return result;
     } catch (err) {
-      _queueDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey, identityKey, err?.message || err);
+      await _queueDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey, identityKey, err?.message || err, { blob });
       return {
         ok: true,
         queued: true,

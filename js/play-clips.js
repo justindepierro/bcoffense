@@ -676,12 +676,27 @@
   async function _queuePreparedClip(sig, prepared, label, error) {
     const uploadFile = prepared?.uploadFile || prepared;
     const id = crypto.randomUUID();
-    const cache = await caches.open(CLIP_UPLOAD_QUEUE_CACHE);
-    await cache.put(_clipQueueRequest(id), new Response(uploadFile, {
-      headers: { "Content-Type": uploadFile.type || prepared?.uploadType || "video/mp4" },
-    }));
+    let outboxId = "";
+    if (window.mediaUploadOutbox?.enqueue) {
+      const job = await window.mediaUploadOutbox.enqueue({
+        kind: "clip",
+        target: sig,
+        blob: uploadFile,
+        contentType: uploadFile.type || prepared?.uploadType || "video/mp4",
+        label,
+        duration: Number(prepared?.uploadDuration || 0),
+      });
+      outboxId = job.id;
+    } else {
+      // Compatibility only for an older cached app shell. New uploads always
+      // keep their blob and intent together in the IndexedDB media outbox.
+      const cache = await caches.open(CLIP_UPLOAD_QUEUE_CACHE);
+      await cache.put(_clipQueueRequest(id), new Response(uploadFile, {
+        headers: { "Content-Type": uploadFile.type || prepared?.uploadType || "video/mp4" },
+      }));
+    }
     const entries = _readClipUploadQueue();
-    entries.push({ id, sig, label: String(label || ""), uploadDuration: Number(prepared?.uploadDuration || 0), uploadType: uploadFile.type || "video/mp4", queuedAt: new Date().toISOString(), lastError: String(error || "Network unavailable") });
+    entries.push({ id, outboxId, sig, label: String(label || ""), uploadDuration: Number(prepared?.uploadDuration || 0), uploadType: uploadFile.type || "video/mp4", queuedAt: new Date().toISOString(), lastError: String(error || "Network unavailable") });
     _writeClipUploadQueue(entries);
     if (typeof window.queueWorkspaceSyncJob === "function") {
       window.queueWorkspaceSyncJob("media", "clip-auto-upload", {
@@ -692,10 +707,36 @@
 
   async function flushQueuedClipUploads() {
     const entries = _readClipUploadQueue();
-    if (!entries.length || !navigator.onLine) return { pushed: 0, pending: entries.length };
-    const cache = await caches.open(CLIP_UPLOAD_QUEUE_CACHE);
+    if (!navigator.onLine) return { pushed: 0, pending: entries.length };
     let pushed = 0;
-    for (const entry of entries) {
+    if (window.mediaUploadOutbox?.pending) {
+      const durableJobs = await window.mediaUploadOutbox.pending("clip");
+      for (const job of durableJobs) {
+        if (job.state === "blocked" || (job.nextAttemptAt && Date.parse(job.nextAttemptAt) > Date.now())) continue;
+        try {
+          const receipt = await uploadPreparedForSig(job.target, {
+            uploadFile: job.blob,
+            uploadDuration: Number(job.duration || 0),
+            uploadType: job.contentType,
+          }, job.label, { skipExistingCheck: true });
+          await window.mediaUploadOutbox.markComplete(job.id, { clip: receipt?.clip || null, uploadedAt: new Date().toISOString() });
+          _writeClipUploadQueue(_readClipUploadQueue().filter((item) => item.outboxId !== job.id));
+          pushed += 1;
+        } catch (err) {
+          await window.mediaUploadOutbox.markRetry(job.id, err);
+          break;
+        }
+      }
+    }
+    const legacyEntries = _readClipUploadQueue().filter((entry) => !entry.outboxId);
+    if (!legacyEntries.length) {
+      const pending = window.mediaUploadOutbox?.pending
+        ? (await window.mediaUploadOutbox.pending("clip")).length
+        : 0;
+      return { pushed, pending };
+    }
+    const cache = await caches.open(CLIP_UPLOAD_QUEUE_CACHE);
+    for (const entry of legacyEntries) {
       const response = await cache.match(_clipQueueRequest(entry.id));
       if (!response) continue;
       try {
@@ -706,7 +747,10 @@
         pushed += 1;
       } catch (_err) { break; }
     }
-    return { pushed, pending: _readClipUploadQueue().length };
+    const pending = window.mediaUploadOutbox?.pending
+      ? (await window.mediaUploadOutbox.pending("clip")).length
+      : _readClipUploadQueue().length;
+    return { pushed, pending };
   }
 
   async function uploadForSig(sig, file, label, opts = {}) {

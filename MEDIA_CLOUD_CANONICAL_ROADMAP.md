@@ -245,6 +245,10 @@ to a player, and concurrent writes cannot silently replace it.
 - [x] Save diagram attachments locally and begin automatic Cloudflare upload;
   routine success uses the workspace status surface rather than a publish
   button.
+- [x] Add a durable IndexedDB media outbox for new diagram, play-video, and
+  signal-video uploads. Each queued record keeps the binary blob, stable
+  target, retry/backoff state, last error, and final server receipt together;
+  pending jobs repopulate the shared workspace status dock after reload.
 - [x] Send an expected diagram version and checksum/idempotency value; surface
   a meaningful conflict instead of retrying an overwrite forever.
 - [x] Isolate coach and player diagram IndexedDB databases so a shared device

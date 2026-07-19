@@ -126,7 +126,7 @@
   function hasWorkspaceSyncWork() {
     return Object.values(WORKSPACE_SYNC_STATES).some((item) =>
       ["dirty", "queued", "saving", "syncing", "error"].includes(item.state),
-    );
+    ) || Boolean(window.mediaUploadOutbox?.hasPendingCached?.());
   }
 
   function _wsHasRetryableJob(channel) {
