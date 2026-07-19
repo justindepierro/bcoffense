@@ -536,6 +536,87 @@ function getScriptDisplayPlay(play) {
   return displayPlay;
 }
 
+/*
+ * A Script play is a linked snapshot of its Playbook source: the source owns
+ * the football call and teaching data, while the Script owns the practice
+ * plan.  Refreshing a source must therefore replace the source fields without
+ * wiping reps, defensive looks, player assignments, or script-only wording.
+ */
+const SCRIPT_PLAYBOOK_REFRESH_LOCAL_FIELDS = new Set([
+  "id",
+  "reps",
+  "notes",
+  "hash",
+  "defFront",
+  "defCoverage",
+  "defStunt",
+  "defBlitz",
+  "playerAssignments",
+  "playerSubPackageId",
+  "subPackageId",
+  "scriptBackTags",
+  "scriptFormationTags",
+  "scriptHidePersonnel",
+  "scriptPersonnelOverride",
+  "scriptCallPrefix",
+  "scriptCallPrefixColor",
+  "scriptCallOverride",
+  "scriptCallSuffix",
+  "scriptCallSuffixColor",
+  "_gpSource",
+  "_scriptSource",
+]);
+
+function getScriptPlaybookRefreshOverrides(scriptPlay) {
+  const overrides = {};
+  Object.keys(scriptPlay || {}).forEach((key) => {
+    if (
+      SCRIPT_PLAYBOOK_REFRESH_LOCAL_FIELDS.has(key) ||
+      key.startsWith("script") ||
+      (key.startsWith("_") && key !== "_lastEditedBy" && key !== "_createdBy")
+    ) {
+      overrides[key] = scriptPlay[key];
+    }
+  });
+  return overrides;
+}
+
+function refreshLinkedScriptPlaysFromPlaybook(sourcePlay) {
+  if (!sourcePlay || !Array.isArray(script)) return 0;
+  const sourceId = typeof getStablePlaySourceId === "function"
+    ? getStablePlaySourceId(sourcePlay)
+    : String(sourcePlay.id || "").trim();
+  if (!sourceId) return 0;
+
+  const linkedIndexes = [];
+  script.forEach((scriptPlay, index) => {
+    if (!scriptPlay || scriptPlay.isSeparator) return;
+    const scriptSourceId = typeof getStablePlaySourceId === "function"
+      ? getStablePlaySourceId(scriptPlay)
+      : String(scriptPlay.playbookId || scriptPlay.sourcePlayId || "").trim();
+    if (scriptSourceId === sourceId) linkedIndexes.push(index);
+  });
+  if (!linkedIndexes.length) return 0;
+
+  // One history checkpoint lets the coach undo the complete source refresh.
+  if (typeof saveScriptState === "function") saveScriptState();
+
+  linkedIndexes.forEach((index) => {
+    const current = script[index];
+    const overrides = getScriptPlaybookRefreshOverrides(current);
+    const refreshed = typeof copyPlayWithSourceIdentity === "function"
+      ? copyPlayWithSourceIdentity(sourcePlay, overrides)
+      : { ...sourcePlay, ...overrides, playbookId: sourceId };
+    Object.keys(current).forEach((key) => delete current[key]);
+    Object.assign(current, refreshed);
+  });
+
+  if (typeof renderScriptSoon === "function") renderScriptSoon();
+  else if (typeof renderScript === "function") renderScript();
+  if (typeof refreshScriptTimeline === "function") refreshScriptTimeline();
+  return linkedIndexes.length;
+}
+
 function renderScriptPersonnelOverrideButton(play, index, playLabel, options = {}) {
   // Print-style rows are still an editable coach surface. The real packet
   // renderer has its own controls, so do not hide this script-only editor

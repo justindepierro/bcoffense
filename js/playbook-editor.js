@@ -547,6 +547,7 @@ function _populateEditorForm(play, isNew) {
 function savePlayEditor(opts = {}) {
   const keepOpen = opts && opts.keepOpen === true;
   const wasNew = _editingMasterIdx < 0;
+  let refreshedScriptRows = 0;
   const body = document.getElementById("playEditorBody");
   const fields = body.querySelectorAll("[data-field]");
   const assignmentFields = body.querySelectorAll("[data-player-slot]");
@@ -593,7 +594,6 @@ function savePlayEditor(opts = {}) {
       if (u && u.username) existing._lastEditedBy = u.username;
     }
     _syncGamePlanCheckbox(existing);
-    showToast("✏️ Play updated", { duration: 2000, type: "success" });
   } else {
     const newPlay = {};
     _EDITOR_SECTIONS.forEach((section) =>
@@ -624,6 +624,9 @@ function savePlayEditor(opts = {}) {
 
   storageManager.setPlaybook(plays);
   const savedPlay = _editingMasterIdx >= 0 ? plays[_editingMasterIdx] : null;
+  if (!wasNew && savedPlay && typeof refreshLinkedScriptPlaysFromPlaybook === "function") {
+    refreshedScriptRows = refreshLinkedScriptPlaysFromPlaybook(savedPlay);
+  }
   if (wasNew && savedPlay) {
     _flushPendingPlayEditorMedia(savedPlay);
   }
@@ -638,6 +641,12 @@ function savePlayEditor(opts = {}) {
       try { firstInput.focus(); } catch (_e) { /* ignore */ }
     }
     return;
+  }
+  if (!wasNew) {
+    const scriptNote = refreshedScriptRows
+      ? ` · refreshed in ${refreshedScriptRows} script ${refreshedScriptRows === 1 ? "row" : "rows"}`
+      : "";
+    showToast(`✏️ Play updated${scriptNote}`, { duration: 2200, type: "success" });
   }
   closePlayEditor();
 }
@@ -1241,6 +1250,9 @@ function _autoSaveCurrentEditorFields() {
   }
   if (changed) {
     storageManager.setPlaybook(plays);
+    if (typeof refreshLinkedScriptPlaysFromPlaybook === "function") {
+      refreshLinkedScriptPlaysFromPlaybook(existing);
+    }
     invalidateFilterCache();
   }
   _syncGamePlanCheckbox(existing);
