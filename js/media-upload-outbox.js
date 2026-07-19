@@ -160,6 +160,9 @@
     };
     await _withStore("readwrite", async (store) => _request(store.put(completed)));
     if (["queued", "blocked"].includes(job.state)) pendingCount = Math.max(0, pendingCount - 1);
+    if (pendingCount === 0 && typeof window.completeWorkspaceSyncJob === "function") {
+      window.completeWorkspaceSyncJob("media:durable-upload-outbox", { label: "Media saved for players" });
+    }
     return _publicJob(completed, false);
   }
 
