@@ -171,6 +171,8 @@ assert(inventoryClientSource.includes("data-recovery-target-search"), "recovery 
 assert(inventoryClientSource.includes("targetQueries"), "recovery selector keeps search state separate from the selected mapping");
 assert(inventoryClientSource.includes("pb-recovery-search-results"), "typed recovery searches render visible choices instead of silently filtering a native select");
 assert(inventoryClientSource.includes("_miRecoveryEditDistance"), "recovery play search tolerates small spelling errors");
+assert(inventoryClientSource.includes("metadataFields"), "recovery search indexes play metadata beyond the display name");
+assert(inventoryClientSource.includes("all results shown"), "recovery search does not truncate matches to an arbitrary shortlist");
 
 // Preview is admin-only recovery evidence: it reads one exact key, validates
 // image bytes, and exposes the checksum that the migration must verify again.

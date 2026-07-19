@@ -5130,7 +5130,7 @@ body.shell-tablet #playbook .pb-card-actions {
 .pb-recovery-search-results {
   display: grid;
   gap: 3px;
-  max-height: 192px;
+  max-height: 360px;
   overflow: auto;
   padding: 6px;
   border: 1px solid var(--color-primary);
@@ -5146,8 +5146,10 @@ body.shell-tablet #playbook .pb-card-actions {
 }
 
 .pb-recovery-search-results button {
+  display: grid;
   width: 100%;
-  padding: 6px 7px;
+  gap: 2px;
+  padding: 7px;
   border: 0;
   border-radius: 4px;
   background: transparent;
@@ -5157,6 +5159,13 @@ body.shell-tablet #playbook .pb-card-actions {
   font-size: var(--font-size-xs);
   font-weight: 750;
   text-align: left;
+}
+
+.pb-recovery-search-results button small {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  font-weight: 650;
+  line-height: 1.25;
 }
 
 .pb-recovery-search-results button:hover,

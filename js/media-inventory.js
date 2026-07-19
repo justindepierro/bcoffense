@@ -819,7 +819,25 @@
       .map((item) => String(item.mediaId)));
     const seen = new Set();
     return _miArray(report?.knownPlays)
-      .map((play) => ({ play, mediaId: _miMediaId(play), label: _miPlayLabel(play) }))
+      .map((play) => {
+        const metadataFields = [
+          ["Type", play?.type], ["Personnel", play?.personnel], ["Formation", play?.formation],
+          ["Tag", play?.formTag1], ["Tag", play?.formTag2], ["Back", play?.back],
+          ["Shift", play?.shift], ["Motion", play?.motion], ["Protection", play?.protection],
+          ["Line", play?.lineCall], ["Play tag", play?.playTag1], ["Play tag", play?.playTag2],
+          ["Base", play?.basePlay], ["One word", play?.oneWord], ["Situation", play?.preferredSituation],
+          ["Tempo", play?.tempo], ["Front", play?.practiceFront], ["Defense", play?.practiceDefense],
+          ["Coverage", play?.practiceCoverage], ["Blitz", play?.practiceBlitz],
+        ].filter(([, value]) => String(value || "").trim());
+        const metadata = metadataFields.map(([label, value]) => `${label}: ${String(value).trim()}`);
+        return {
+          play,
+          mediaId: _miMediaId(play),
+          label: _miPlayLabel(play),
+          metadata,
+          searchText: `${_miPlayLabel(play)} ${metadata.join(" ")}`,
+        };
+      })
       .filter((item) => item.mediaId && !canonicalIds.has(item.mediaId) && !seen.has(item.mediaId) && seen.add(item.mediaId))
       .sort((a, b) => a.label.localeCompare(b.label));
   }
@@ -857,7 +875,7 @@
     const normalizedQuery = _miRecoverySearchText(query);
     if (!normalizedQuery) return -1;
     const queryTokens = normalizedQuery.split(" ").filter(Boolean);
-    const candidateText = _miRecoverySearchText(`${candidate.label} ${candidate.mediaId}`);
+    const candidateText = _miRecoverySearchText(`${candidate.searchText || candidate.label} ${candidate.mediaId}`);
     const candidateTokens = candidateText.split(" ").filter(Boolean);
     let score = 0;
     for (const token of queryTokens) {
@@ -878,14 +896,14 @@
     return score;
   }
 
-  function _miSearchRecoveryPlayCandidates(report, query, limit = 8) {
+  function _miSearchRecoveryPlayCandidates(report, query) {
     const matches = _miRecoveryPlayCandidates(report)
       .map((candidate) => ({ candidate, score: _miRecoverySearchScore(candidate, query) }))
       .filter((item) => item.score >= 0)
       .sort((a, b) => b.score - a.score || a.candidate.label.localeCompare(b.candidate.label));
     return {
       total: matches.length,
-      items: matches.slice(0, limit).map((item) => item.candidate),
+      items: matches.map((item) => item.candidate),
     };
   }
 
@@ -934,14 +952,14 @@
               <code title="${_miEscape(asset.sourceKey)}">${_miEscape(asset.sourceKey)}</code>
               <label class="pb-recovery-search"><span>Search plays</span><input type="search" data-recovery-target-search="${_miEscape(asset.sourceKey)}" value="${_miEscape(query)}" placeholder="Type a play name or partial call…" autocomplete="off" aria-label="Search plays for this archived diagram"></label>
               ${query ? `<div class="pb-recovery-search-results" role="listbox" aria-label="Play search results">
-                <span>${searchResults.total ? `${searchResults.total} fuzzy match${searchResults.total === 1 ? "" : "es"}${searchResults.total > searchResults.items.length ? ` · showing best ${searchResults.items.length}` : ""}` : "No matching plays"}</span>
-                ${searchResults.items.map((item) => `<button type="button" role="option" data-recovery-action="choose-target" data-recovery-source-key="${_miEscape(asset.sourceKey)}" data-recovery-media-id="${_miEscape(item.mediaId)}">${_miEscape(item.label)}</button>`).join("")}
+                <span>${searchResults.total ? `${searchResults.total} fuzzy match${searchResults.total === 1 ? "" : "es"} · all results shown` : "No matching plays"}</span>
+                ${searchResults.items.map((item) => `<button type="button" role="option" data-recovery-action="choose-target" data-recovery-source-key="${_miEscape(asset.sourceKey)}" data-recovery-media-id="${_miEscape(item.mediaId)}"><strong>${_miEscape(item.label)}</strong>${item.metadata.length ? `<small>${_miEscape(item.metadata.slice(0, 5).join(" · "))}</small>` : ""}</button>`).join("")}
               </div>` : ""}
               <select data-recovery-target="${_miEscape(asset.sourceKey)}">
                 <option value="">Keep archived / do not map yet</option>
                 ${_miRecoveryPlayOptions(report, target)}
               </select>
-              <small>${asset.exact ? `Suggested: ${_miEscape(asset.proposedLabel)}` : "No safe automatic match was found."} ${query ? "Choose a fuzzy-match result or use the full list below." : ""}</small>
+              <small>${asset.exact ? `Suggested: ${_miEscape(asset.proposedLabel)}` : "No safe automatic match was found."} ${query ? "Search uses call, formation, tags, back, motion, protection, base call, one word, situation, and defensive metadata." : ""}</small>
             </div>
           </article>`;
         }).join("") || `<div class="pb-health-empty">No unrecovered archived diagrams were found.</div>`}
