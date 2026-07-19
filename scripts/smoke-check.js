@@ -1038,6 +1038,24 @@ function checkScriptWorkspaceCommandSurface() {
   console.log("script workspace command surface ok");
 }
 
+function checkScriptPeriodColorContract() {
+  const periods = read("js/script-periods.js");
+  const render = read("js/script-render.js");
+  const css = read("css/script.css");
+
+  if (
+    !/function getScriptPeriodTextColor\(color\)/.test(periods) ||
+    !/High-contrast coaching colors/.test(periods) ||
+    !/function renderScriptPeriodHeader\([\s\S]*?const periodTextColor = typeof getScriptPeriodTextColor/.test(render) ||
+    !/style="background: \$\{periodColor\}; color: \$\{periodTextColor\};"/.test(render) ||
+    !/script-period-color-swatch strong/.test(css)
+  ) {
+    fail("script period color contrast is incomplete or references an undefined header color");
+  }
+
+  console.log("script period color contract ok");
+}
+
 function checkCoachControlDismissalContract() {
   const html = read("index.html");
   const appEvents = read("js/app-events.js");
@@ -5741,6 +5759,7 @@ checkWristbandTypography();
 checkPersonnelMarkerContracts();
 checkScriptPersonnelWorkspaceContract();
 checkScriptWorkspaceCommandSurface();
+checkScriptPeriodColorContract();
 checkCoachControlDismissalContract();
 checkScriptCoachRowScanningContract();
 checkScriptGamePlanProvenanceContract();

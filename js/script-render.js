@@ -470,6 +470,9 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
     renderContext?.periodStatsBySeparatorIndex,
   );
   const periodColor = separator.color || UI_COLORS.periodDefault;
+  const periodTextColor = typeof getScriptPeriodTextColor === "function"
+    ? getScriptPeriodTextColor(periodColor)
+    : UI_COLORS.textWhite;
   const periodLabel = separator.label || "Period";
   const periodNotes = separator.notes || "";
   const metaText = formatPeriodMetaText(playCount, periodReps, separator.minutes, runCount, passCount);
