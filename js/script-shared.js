@@ -537,7 +537,15 @@ function renderScriptPersonnelOverrideButton(play, index, playLabel, options = {
   const title = isOverridden
     ? `Visual script personnel: ${displayPersonnel}. Playbook remains ${sourcePersonnel || "unchanged"}.`
     : `Personnel: ${displayPersonnel || sourcePersonnel}. Choose a visual script-only override.`;
-  return `<button type="button" class="script-personnel-override-btn${isOverridden ? " is-overridden" : ""}" data-action="openScriptPersonnelOverrideModal" data-idx="${index}" title="${escapeHtml(title)}" aria-label="Change script-only personnel color for ${escapeHtml(playLabel)}"><span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Color")} · Change</span></button>`;
+  const compact = options.compact === true;
+  const className = `script-personnel-override-btn${compact ? " script-personnel-override-btn--quick" : ""}${isOverridden ? " is-overridden" : ""}`;
+  const label = compact
+    ? `Change script-only personnel color for ${playLabel}; currently ${displayPersonnel || sourcePersonnel || "unset"}`
+    : `Change script-only personnel color for ${playLabel}`;
+  const content = compact
+    ? `<span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span class="script-personnel-override-chevron" aria-hidden="true">⌄</span>`
+    : `<span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Color")} · Change</span>`;
+  return `<button type="button" class="${className}" data-action="openScriptPersonnelOverrideModal" data-idx="${index}" title="${escapeHtml(title)}" aria-label="${escapeHtml(label)}">${content}</button>`;
 }
 
 function closeScriptPersonnelOverrideModal() {
@@ -558,6 +566,14 @@ function updateScriptPersonnelOverrideControl(index) {
   buttons.forEach((button) => {
     button.classList.toggle("is-overridden", isOverridden);
     button.title = title;
+    if (button.classList.contains("script-personnel-override-btn--quick")) {
+      button.setAttribute(
+        "aria-label",
+        `Change script-only personnel color for ${getScriptPlaySummaryText(play)}; currently ${displayPersonnel || sourcePersonnel || "unset"}`,
+      );
+      button.innerHTML = `<span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span class="script-personnel-override-chevron" aria-hidden="true">⌄</span>`;
+      return;
+    }
     button.innerHTML = `<span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Color")} · Change</span>`;
   });
 }

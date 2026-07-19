@@ -506,6 +506,12 @@ function renderScriptPlayControls(play, index, playLabel, reps, signalCount = 0)
     ? `<button class="script-disc-btn" data-action="openScriptDiscussion" data-arg="${index}" title="View discussion" aria-label="Discussion for ${escapeHtml(playLabel)}">💬</button>` +
     `<button class="script-ask-coach-btn" data-action="scriptAskCoachQuestion" data-arg="${index}" title="Ask a question about this play" aria-label="Ask coach about ${escapeHtml(playLabel)}">❓</button>`
     : "";
+  // Put the script-only personnel picker in the play's primary action strip.
+  // It is intentionally beside the pencil so it is discoverable while the
+  // pencil continues to mean "edit the source Playbook play."
+  const personnelBtn = typeof renderScriptPersonnelOverrideButton === "function"
+    ? renderScriptPersonnelOverrideButton(play, index, playLabel, { compact: true })
+    : "";
   return `
       <div class="play-controls">
         <div class="play-control-fields">
@@ -517,6 +523,7 @@ function renderScriptPlayControls(play, index, playLabel, reps, signalCount = 0)
           ${clipBtn}
           ${discBtn}
           <button class="script-present-btn" data-action="openScriptPresentation" data-idx="${index}" title="Present this play" aria-label="Present ${escapeHtml(playLabel)}">▶</button>
+          ${personnelBtn}
           <button class="script-edit-play-btn" data-action="openPlayEditorFromScript" data-arg="${index}" title="Edit this play in the playbook" aria-label="Edit play ${escapeHtml(playLabel)}">✏️</button>
           <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
           <button class="remove" data-action="removeFromScript" data-idx="${index}" aria-label="Remove ${escapeHtml(playLabel)}">✕</button>

@@ -6591,6 +6591,36 @@ body[data-active-tab="script"] .script-display-fab {
   outline: none;
 }
 
+/* A direct, compact picker lives in the row action strip beside the pencil.
+   The dot shows the active visual personnel while the chevron makes its
+   purpose explicit without stealing room from the play controls. */
+#script .play-control-actions .script-personnel-override-btn--quick {
+  flex: 0 0 auto;
+  min-width: 28px;
+  min-height: 26px;
+  margin: 0;
+  padding: 2px 4px;
+  gap: 1px;
+  border: 1px solid var(--color-border-med);
+  border-radius: var(--coach-grid-radius, var(--radius-sm));
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 13px;
+  line-height: 1;
+}
+
+#script .play-control-actions .script-personnel-override-btn--quick:hover,
+#script .play-control-actions .script-personnel-override-btn--quick:focus-visible,
+#script .play-control-actions .script-personnel-override-btn--quick.is-overridden {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+#script .script-personnel-override-chevron {
+  font-size: 11px;
+  line-height: 1;
+}
+
 .script-personnel-override-modal {
   max-width: 560px;
 }
