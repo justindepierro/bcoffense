@@ -35,10 +35,11 @@ function updateAvailableActionsUI(filteredCount = 0, pageCount = 0) {
   }
 
   if (statusEl) {
+    const search = document.getElementById("scriptSearchPlay")?.value.trim() || "";
     statusEl.textContent =
       selectedCount > 0
         ? `${selectedCount} selected overall • ${pageCount} on this page`
-        : `${filteredCount} filtered • ${pageCount} on this page`;
+        : `${filteredCount} ${search ? "ranked matches" : "filtered"} • ${pageCount} on this page`;
   }
 }
 
@@ -273,7 +274,7 @@ function devowelScriptSearchText(value) {
 const _scriptHaystackCache = new WeakMap();
 
 function _scriptPlayHash(play) {
-  return `${play.play || ""}|${play.basePlay || ""}|${play.formation || ""}|${play.protection || ""}|${play.motion || ""}|${play.shift || ""}|${play.back || ""}|${play.personnel || ""}|${play.oneWord || ""}|${play.playTag1 || ""}|${play.playTag2 || ""}`;
+  return `${play.type || ""}|${play.play || ""}|${play.basePlay || ""}|${play.formation || ""}|${play.protection || ""}|${play.motion || ""}|${play.shift || ""}|${play.back || ""}|${play.personnel || ""}|${play.oneWord || ""}|${play.playTag1 || ""}|${play.playTag2 || ""}`;
 }
 
 function buildScriptSearchHaystack(play) {
@@ -281,60 +282,166 @@ function buildScriptSearchHaystack(play) {
   const cached = _scriptHaystackCache.get(play);
   if (cached && cached.hash === currentHash) return cached.result;
 
-  const raw = [
-    play.play,
-    play.basePlay,
-    play.formation,
-    play.protection,
-    play.motion,
-    play.shift,
-    play.back,
-    play.personnel,
-    play.oneWord,
-    play.playTag1,
-    play.playTag2,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const normalized = normalizeScriptSearchText(raw);
+  const fields = {
+    play: normalizeScriptSearchText(play.play),
+    call: normalizeScriptSearchText([play.formation, play.protection, play.play].filter(Boolean).join(" ")),
+    base: normalizeScriptSearchText(play.basePlay),
+    formation: normalizeScriptSearchText(play.formation),
+    personnel: normalizeScriptSearchText(play.personnel),
+    type: normalizeScriptSearchText(play.type),
+    tags: normalizeScriptSearchText([play.playTag1, play.playTag2, play.oneWord].filter(Boolean).join(" ")),
+    detail: normalizeScriptSearchText([play.protection, play.motion, play.shift, play.back].filter(Boolean).join(" ")),
+  };
+  const normalized = Object.values(fields).filter(Boolean).join(" ");
   const result = {
     normalized,
-    condensed: normalized.replace(/\s+/g, ""),
-    devoweled: devowelScriptSearchText(normalized),
-    tokens: normalized.split(/\s+/).filter(Boolean),
+    fields,
+    tokensByField: Object.fromEntries(
+      Object.entries(fields).map(([key, value]) => [key, value.split(/\s+/).filter(Boolean)]),
+    ),
   };
 
   _scriptHaystackCache.set(play, { hash: currentHash, result });
   return result;
 }
 
-function playMatchesScriptSearch(play, search) {
-  if (!search) return true;
+const _SCRIPT_SEARCH_QUALIFIERS = {
+  personnel: "personnel",
+  pers: "personnel",
+  formation: "formation",
+  form: "formation",
+  type: "type",
+  base: "base",
+  tag: "tags",
+  tags: "tags",
+  motion: "detail",
+  shift: "detail",
+  protection: "detail",
+  prot: "detail",
+};
 
-  const normalizedQuery = normalizeScriptSearchText(search);
-  if (!normalizedQuery) return true;
+const _SCRIPT_SEARCH_FIELD_WEIGHTS = {
+  play: 14,
+  call: 10,
+  base: 8,
+  formation: 7,
+  personnel: 7,
+  type: 6,
+  tags: 6,
+  detail: 4,
+};
 
-  const queryTokens = normalizedQuery.split(/\s+/).filter(Boolean);
-  const condensedQuery = normalizedQuery.replace(/\s+/g, "");
-  const devoweledQuery = devowelScriptSearchText(normalizedQuery);
-  const haystack = buildScriptSearchHaystack(play);
-
-  if (haystack.normalized.includes(normalizedQuery)) return true;
-  if (condensedQuery && haystack.condensed.includes(condensedQuery)) return true;
-  if (devoweledQuery && haystack.devoweled.includes(devoweledQuery)) return true;
-
-  return queryTokens.every((token) =>
-    haystack.tokens.some(
-      (candidate) =>
-        candidate.includes(token) ||
-        candidate.startsWith(token) ||
-        token.includes(candidate) ||
-        devowelScriptSearchText(candidate).includes(devowelScriptSearchText(token)),
-    ) ||
-    haystack.condensed.includes(token) ||
-    haystack.devoweled.includes(devowelScriptSearchText(token)),
+function parseScriptSearchQuery(search) {
+  const qualifiers = [];
+  const remainder = String(search || "").replace(
+    /\b([a-z]+)\s*:\s*("[^"]+"|'[^']+'|[^\s]+)/gi,
+    (match, key, value) => {
+      const field = _SCRIPT_SEARCH_QUALIFIERS[String(key || "").toLowerCase()];
+      const normalizedValue = normalizeScriptSearchText(String(value || "").replace(/^['"]|['"]$/g, ""));
+      if (field && normalizedValue) qualifiers.push({ field, value: normalizedValue });
+      return field ? " " : match;
+    },
   );
+  const phrase = normalizeScriptSearchText(remainder);
+  return { phrase, tokens: phrase.split(/\s+/).filter(Boolean), qualifiers };
+}
+
+function scriptSearchEditDistance(left, right, maxDistance) {
+  if (Math.abs(left.length - right.length) > maxDistance) return maxDistance + 1;
+  let previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    const current = [leftIndex];
+    let smallest = current[0];
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      const next = Math.min(
+        previous[rightIndex] + 1,
+        current[rightIndex - 1] + 1,
+        previous[rightIndex - 1] + (left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1),
+      );
+      current.push(next);
+      smallest = Math.min(smallest, next);
+    }
+    if (smallest > maxDistance) return maxDistance + 1;
+    previous = current;
+  }
+  return previous[right.length];
+}
+
+function scoreScriptSearchToken(token, candidate) {
+  if (!token || !candidate) return 0;
+  if (candidate === token) return 100;
+  if (token.length >= 2 && candidate.startsWith(token)) return 68;
+  if (token.length >= 3 && candidate.includes(token)) return 40;
+  if (token.length >= 4 && candidate.length >= 4) {
+    const maxDistance = token.length >= 7 ? 2 : 1;
+    const distance = scriptSearchEditDistance(token, candidate, maxDistance);
+    if (distance <= maxDistance) return distance === 1 ? 28 : 18;
+  }
+  return 0;
+}
+
+function scoreScriptSearchField(value, tokens, queryTokens) {
+  if (!queryTokens.length) return 0;
+  if (!value) return null;
+  let score = 0;
+  for (const token of queryTokens) {
+    let tokenScore = 0;
+    for (const candidate of tokens) {
+      tokenScore = Math.max(tokenScore, scoreScriptSearchToken(token, candidate));
+    }
+    if (!tokenScore) return null;
+    score += tokenScore;
+  }
+  return score;
+}
+
+function scoreScriptPlaySearch(play, search) {
+  const query = parseScriptSearchQuery(search);
+  if (!query.phrase && !query.qualifiers.length) return 0;
+  const haystack = buildScriptSearchHaystack(play);
+  let score = 0;
+
+  for (const qualifier of query.qualifiers) {
+    const qualifiedTokens = qualifier.value.split(/\s+/).filter(Boolean);
+    const qualifiedScore = scoreScriptSearchField(
+      haystack.fields[qualifier.field],
+      haystack.tokensByField[qualifier.field] || [],
+      qualifiedTokens,
+    );
+    if (qualifiedScore === null) return null;
+    score += 650 + qualifiedScore * (_SCRIPT_SEARCH_FIELD_WEIGHTS[qualifier.field] || 1);
+  }
+
+  if (query.tokens.length) {
+    let tokenScore = 0;
+    for (const token of query.tokens) {
+      let best = 0;
+      Object.entries(haystack.tokensByField).forEach(([field, candidates]) => {
+        const fieldMatch = candidates.reduce(
+          (max, candidate) => Math.max(max, scoreScriptSearchToken(token, candidate)),
+          0,
+        );
+        best = Math.max(best, fieldMatch * (_SCRIPT_SEARCH_FIELD_WEIGHTS[field] || 1));
+      });
+      if (!best) return null;
+      tokenScore += best;
+    }
+    score += tokenScore;
+  }
+
+  if (query.phrase) {
+    if (haystack.fields.play.includes(query.phrase)) score += 1300;
+    else if (haystack.fields.call.includes(query.phrase)) score += 950;
+    else if (haystack.fields.base.includes(query.phrase)) score += 720;
+    else if (haystack.fields.formation.includes(query.phrase)) score += 640;
+    else if (haystack.fields.tags.includes(query.phrase)) score += 480;
+  }
+
+  return score;
+}
+
+function playMatchesScriptSearch(play, search) {
+  return scoreScriptPlaySearch(play, search) !== null;
 }
 
 function availPagePrev() {
@@ -402,8 +509,7 @@ function renderAvailablePlays() {
     return selectedArr.includes(normalized);
   };
 
-  const filtered = [];
-  const filteredIndices = [];
+  const filteredEntries = [];
   for (let playIdx = 0; playIdx < plays.length; playIdx += 1) {
     const play = plays[playIdx];
     if (!matchesFilter(play.type, scriptSelectedTypes)) continue;
@@ -421,7 +527,8 @@ function renderAvailablePlays() {
     if (!matchesFilter(play.personnel, scriptSelectedPersonnel)) continue;
     if (formation && play.formation !== formation) continue;
     if (basePlay && play.basePlay !== basePlay) continue;
-    if (!playMatchesScriptSearch(play, search)) continue;
+    const searchScore = scoreScriptPlaySearch(play, search);
+    if (searchScore === null) continue;
     if (gamePlanOnly) {
       if (typeof isPlayInGamePlanBoard !== "function") continue;
       if (!isPlayInGamePlanBoard(play)) continue;
@@ -430,9 +537,19 @@ function renderAvailablePlays() {
       if (typeof isPlayFlaggedInGamePlan !== "function") continue;
       if (!isPlayFlaggedInGamePlan(play, "jv")) continue;
     }
-    filtered.push(play);
-    filteredIndices.push(playIdx);
+    filteredEntries.push({ play, playIdx, searchScore });
   }
+
+  if (search) {
+    filteredEntries.sort((left, right) =>
+      right.searchScore - left.searchScore ||
+      String(left.play.play || "").localeCompare(String(right.play.play || "")) ||
+      left.playIdx - right.playIdx,
+    );
+  }
+
+  const filtered = filteredEntries.map((entry) => entry.play);
+  const filteredIndices = filteredEntries.map((entry) => entry.playIdx);
 
   const container = document.getElementById("availablePlays");
   currentFilteredPlayIndices = filteredIndices;
