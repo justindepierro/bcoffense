@@ -1,7 +1,10 @@
 (function () {
   const LEGACY_CLOUD_SYNC_TOKEN_KEY = "_bcCloudSyncToken";
   const LEGACY_CLOUD_SYNC_SESSION_TOKEN_KEY = "_bcCloudSyncSessionToken";
-  const CLOUD_SYNC_AUTO_PULL_SESSION_KEY = "_bcCloudSyncAutoPullChecked";
+  // Version this guard whenever startup recovery semantics change. A previous
+  // build set the old guard before its request and retained it after a 502,
+  // which left that tab permanently unable to retry the canonical workspace.
+  const CLOUD_SYNC_AUTO_PULL_SESSION_KEY = "_bcCloudSyncAutoPullCheckedV2";
   const CLOUD_SYNC_AUTO_PULL_APPLIED_KEY = "_bcCloudSyncAutoPullApplied";
   const CLOUD_SYNC_PULL_SUMMARY_KEY = "_bcCloudSyncLastPullSummary";
   const PLAYER_RELEASE_ETAG_KEY = "_bcPlayerReleaseEtag";
@@ -1872,6 +1875,10 @@
       }
       return restored;
     } catch (err) {
+      // A failed startup check must never consume this tab's single attempt.
+      // Keep the guard only after a completed request so a reload—or a later
+      // auth-ready retry—can recover from a transient worker/network failure.
+      sessionStorage.removeItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY);
       console.warn("Cloud auto-pull failed:", err);
       if (err.status !== 401 && err.status !== 404) {
         showToast(currentUser.role === "player" ? "Try Again" : `Team workspace update failed: ${err.message}`, {

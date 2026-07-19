@@ -196,10 +196,15 @@ async function getWorkspace(context, opts = {}) {
         if (committed.committed || committed.current?.workspaceRevision !== current.pointer.workspaceRevision) {
           return getWorkspace(context, { allowLegacyRepair: false });
         }
-      } catch (_err) {
+      } catch (err) {
         // Serving the already-sanitized projection is safer than turning a
         // transient one-time repair failure back into a blocking 502. The
         // next authenticated staff read retries the same idempotent repair.
+        console.error("Canonical workspace legacy repair failed", {
+          teamId: principal.teamId,
+          expectedWorkspaceRevision: current.pointer.workspaceRevision,
+          error: err?.message || String(err),
+        });
       }
     }
     const etag = `"${current.pointer.workspaceRevision}"`;
