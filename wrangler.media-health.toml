@@ -1,0 +1,24 @@
+name = "bcoffense-media-health"
+main = "workers/media-health-monitor.js"
+compatibility_date = "2026-05-17"
+workers_dev = false
+
+[triggers]
+crons = [ "17 * * * *" ]
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[[kv_namespaces]]
+binding = "SYNC_KV"
+id = "aa7a47d6139544bc9bb2aef6622c8bb2"
+
+[[r2_buckets]]
+binding = "CLIPS"
+bucket_name = "bcoffense-clips"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bcoffense-db"
+database_id = "5def1774-55ad-4c92-afed-5b1f7f199f26"

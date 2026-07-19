@@ -408,8 +408,8 @@ function _notificationPayloadForPublish(kind, details = {}) {
   if (kind === "scripts") {
     return {
       type: "script_published",
-      title: label ? `Coach published ${label}` : "Coach published a practice",
-      body: "Open it before practice and review your calls.",
+      title: label ? `Practice ready: ${label}` : "A practice is ready",
+      body: "Open it to review your calls, signals, and quiz work.",
       deepLink: id ? `script:${id}` : "script",
       tag: id ? `script-published-${id}` : "script-published",
     };
@@ -426,10 +426,10 @@ function _notificationPayloadForPublish(kind, details = {}) {
   if (kind === "diagrams" || kind === "clips") {
     return {
       type: "media_update",
-      title: kind === "clips" ? "New play video is available" : "New play diagram is available",
-      body: label || "Open your practice or playbook to review the update.",
+      title: "Practice media updated",
+      body: label || "New diagrams or videos are ready in your current practice.",
       deepLink: "script",
-      tag: `media-update-${kind}`,
+      tag: "practice-media",
     };
   }
   if (kind === "announcements") {

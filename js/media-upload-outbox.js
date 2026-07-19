@@ -9,6 +9,8 @@
   const STORE = "jobs";
   const RETAIN_COMPLETED_MS = 7 * 24 * 60 * 60 * 1000;
   const MAX_RETRY_DELAY_MS = 5 * 60 * 1000;
+  const STUCK_UPLOAD_MS = 15 * 60 * 1000;
+  const MAX_AUTOMATIC_ATTEMPTS = 8;
   let dbPromise = null;
   let pendingCount = 0;
 
@@ -135,7 +137,11 @@
     const nextAttemptAt = new Date(Date.now() + delay).toISOString();
     const updated = {
       ...job,
-      state: opts.terminal ? "blocked" : "queued",
+      // A retryable server failure (including a failed R2 verification) stays
+      // durable and automatic. After repeated attempts it becomes visible as
+      // blocked instead of silently retrying forever; a coach can retry it
+      // after reconnecting or correcting the underlying problem.
+      state: opts.terminal || attempts >= MAX_AUTOMATIC_ATTEMPTS ? "blocked" : "queued",
       attempts,
       lastError: _cleanText(error?.message || error || "Upload failed", 1000),
       nextAttemptAt,
@@ -188,11 +194,33 @@
     return jobs;
   }
 
-  async function restorePendingWorkspaceStatus() {
-    const jobs = await pending();
-    if (!jobs.length || typeof window.queueWorkspaceSyncJob !== "function") return jobs.length;
-    window.queueWorkspaceSyncJob("media", "durable-upload-outbox", {
-      queuedLabel: `${jobs.length} media upload${jobs.length === 1 ? "" : "s"} saving when online`,
+  async function getHealth() {
+    const jobs = await list({ states: ["queued", "blocked"] });
+    const now = Date.now();
+    const queued = jobs.filter((job) => job.state === "queued");
+    const blocked = jobs.filter((job) => job.state === "blocked");
+    const stale = jobs.filter((job) => {
+      const queuedAt = Date.parse(job.queuedAt || "") || 0;
+      return Number(job.attempts || 0) >= MAX_AUTOMATIC_ATTEMPTS
+        || (queuedAt > 0 && now - queuedAt >= STUCK_UPLOAD_MS);
+    });
+    return {
+      pending: jobs.length,
+      queued: queued.length,
+      blocked: blocked.length,
+      stale: stale.length,
+      needsAttention: blocked.length > 0 || stale.length > 0,
+      oldestQueuedAt: jobs[0]?.queuedAt || "",
+    };
+  }
+
+  async function refreshHealth() {
+    const health = await getHealth();
+    if (!health.pending || typeof window.queueWorkspaceSyncJob !== "function") return health;
+    const key = window.queueWorkspaceSyncJob("media", "durable-upload-outbox", {
+      queuedLabel: health.needsAttention
+        ? `${health.blocked || health.stale} media upload${(health.blocked || health.stale) === 1 ? "" : "s"} need attention`
+        : `${health.pending} media upload${health.pending === 1 ? "" : "s"} saving when online`,
       runningLabel: "Saving media…",
       doneLabel: "Media saved for players",
       errorLabel: "Media upload needs attention",
@@ -201,7 +229,17 @@
         window.playClips?.flushQueuedClipUploads?.(),
       ]),
     });
-    return jobs.length;
+    if (health.needsAttention && typeof window.failWorkspaceSyncJob === "function") {
+      window.failWorkspaceSyncJob(key, new Error("One or more media uploads have been waiting too long."), {
+        label: `${health.blocked || health.stale} media upload${(health.blocked || health.stale) === 1 ? "" : "s"} need attention`,
+      });
+    }
+    return health;
+  }
+
+  async function restorePendingWorkspaceStatus() {
+    const health = await refreshHealth();
+    return health.pending;
   }
 
   window.mediaUploadOutbox = {
@@ -213,6 +251,8 @@
     markComplete,
     remove,
     clearExpiredCompleted,
+    getHealth,
+    refreshHealth,
     restorePendingWorkspaceStatus,
     hasPendingCached: () => pendingCount > 0,
   };
@@ -220,4 +260,10 @@
     clearExpiredCompleted().catch(() => { /* cleanup is best effort */ });
     restorePendingWorkspaceStatus().catch(() => { /* upload owners retry on reconnect */ });
   }, { once: true });
+  window.addEventListener("online", () => {
+    refreshHealth().catch(() => { /* upload owners retry separately on reconnect */ });
+  });
+  window.setInterval(() => {
+    refreshHealth().catch(() => { /* status refresh is best effort */ });
+  }, 60 * 1000);
 })();

@@ -8,6 +8,14 @@ import { sendPushToUser } from "./d1-push.js";
 import { getReactorsByKey } from "./d1-threads.js";
 
 const NOTIF_EXPIRY_DAYS = 30;
+// Team-wide publish events can be emitted several times while a coach saves a
+// script and its media. These are useful as one current alert, not dozens.
+const TEAM_UPDATE_DEDUPE_WINDOWS = Object.freeze({
+  media_update: 6 * 60 * 60,
+  script_published: 30 * 60,
+  new_quiz: 30 * 60,
+  team_announcement: 10 * 60,
+});
 
 /**
  * Create a notification for a user.
@@ -26,6 +34,28 @@ export async function createNotification(db, { userId, type, title, body = null,
     .bind(id, userId, type, title, body, deepLink, now, expiresAt)
     .run();
   return id;
+}
+
+async function createOrRefreshTeamNotification(db, { userId, type, title, body, deepLink }) {
+  const now = Math.floor(Date.now() / 1000);
+  const windowSeconds = TEAM_UPDATE_DEDUPE_WINDOWS[type] || 0;
+  if (windowSeconds > 0) {
+    const existing = await db.prepare(
+      `SELECT id FROM notifications
+       WHERE user_id = ? AND type = ? AND COALESCE(deep_link, '') = COALESCE(?, '')
+         AND created_at >= ?
+       ORDER BY created_at DESC LIMIT 1`,
+    ).bind(userId, type, deepLink, now - windowSeconds).first();
+    if (existing?.id) {
+      await db.prepare(
+        `UPDATE notifications
+         SET title = ?, body = ?, read_at = NULL, created_at = ?, expires_at = ?
+         WHERE id = ? AND user_id = ?`,
+      ).bind(title, body, now, now + NOTIF_EXPIRY_DAYS * 86400, existing.id, userId).run();
+      return { id: existing.id, coalesced: true };
+    }
+  }
+  return { id: await createNotification(db, { userId, type, title, body, deepLink }), coalesced: false };
 }
 
 /**
@@ -51,11 +81,12 @@ export async function notifyTeamPlayers(db, teamId, notification = {}, env = nul
   let recipients = 0;
   let pushSent = 0;
   let pushTotal = 0;
+  let coalesced = 0;
   const body = notification.body ? String(notification.body).slice(0, 240) : null;
   const deepLink = notification.deepLink ? String(notification.deepLink).slice(0, 512) : null;
 
   for (const row of rows.results || []) {
-    await createNotification(db, {
+    const notificationResult = await createOrRefreshTeamNotification(db, {
       userId: row.id,
       type: notification.type,
       title: String(notification.title).slice(0, 160),
@@ -63,6 +94,10 @@ export async function notifyTeamPlayers(db, teamId, notification = {}, env = nul
       deepLink,
     });
     recipients += 1;
+    if (notificationResult.coalesced) {
+      coalesced += 1;
+      continue;
+    }
 
     if (env) {
       const result = await sendPushToUser(env, db, row.id, {
@@ -78,7 +113,7 @@ export async function notifyTeamPlayers(db, teamId, notification = {}, env = nul
     }
   }
 
-  return { recipients, pushSent, pushTotal };
+  return { recipients, coalesced, pushSent, pushTotal };
 }
 
 /**

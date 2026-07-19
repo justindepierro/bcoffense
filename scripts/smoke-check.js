@@ -1582,7 +1582,10 @@ function checkPlayPresentationContracts() {
   if (
     !/X-BC-Idempotency-Key/.test(imageRoute) ||
     !/existing\.manifest\?\.checksum === checksum/.test(imageRoute) ||
-    !/idempotent: true/.test(imageRoute)
+    !/idempotent: true/.test(imageRoute) ||
+    !/async function verifyStoredDiagram\(bucket, r2key, expected = \{\}\)/.test(imageRoute) ||
+    !/await verifyStoredDiagram\(bucket, r2key/.test(imageRoute) ||
+    !/previous approved diagram remains active/.test(imageRoute)
   ) {
     fail("diagram upload idempotency contract is incomplete");
   }
@@ -3601,6 +3604,9 @@ function checkStartupDiagnosticsAndRenderQueue() {
   const cloudSync = read("js/cloud-sync.js");
   const appShell = read("js/app-shell.js");
   const appNotifications = read("js/app-notifications.js");
+  const notificationStore = read("functions/_lib/d1-notifications.js");
+  const mediaOutbox = read("js/media-upload-outbox.js");
+  const mediaHealthWorker = read("workers/media-health-monitor.js");
   const playClips = read("js/play-clips.js");
   const html = read("index.html");
 
@@ -3683,6 +3689,21 @@ function checkStartupDiagnosticsAndRenderQueue() {
     !/if \(currentUser\.role === "player"\) \{[\s\S]*refreshPlayerRelease\(\{ force: false, navigate: false \}\)/.test(cloudSync)
   ) {
     fail("player first-impression startup refresh is not ordered and quiet");
+  }
+  if (
+    !/TEAM_UPDATE_DEDUPE_WINDOWS/.test(notificationStore) ||
+    !/createOrRefreshTeamNotification/.test(notificationStore) ||
+    !/notificationResult\.coalesced/.test(notificationStore) ||
+    !/Practice media updated/.test(appNotifications) ||
+    !/MAX_AUTOMATIC_ATTEMPTS/.test(mediaOutbox) ||
+    !/async function getHealth\(\)/.test(mediaOutbox) ||
+    !/async function refreshHealth\(\)/.test(mediaOutbox) ||
+    !/verifyStoredDiagram/.test(read("functions/images/file.js")) ||
+    !/async function runTeamHealth\(env, teamId, includeLegacy\)/.test(mediaHealthWorker) ||
+    !/missingClips/.test(mediaHealthWorker) ||
+    !/team_player_release_current/.test(mediaHealthWorker)
+  ) {
+    fail("automatic media health or notification coalescing contracts are incomplete");
   }
   const playerReleaseRefresh = extractFunctionSource(cloudSync, "refreshPlayerRelease");
   if (
@@ -4418,6 +4439,9 @@ function checkPlayerDiagramReadinessContracts() {
     !/clipApi\.listForSigs/.test(mediaInventory) ||
     !/STORAGE_KEYS\.SIGNALS/.test(mediaInventory) ||
     !/STORAGE_KEYS\.SAVED_SCRIPTS/.test(mediaInventory) ||
+    !/async function _miFetchScheduledMediaHealth\(\)/.test(mediaInventory) ||
+    !/Automatic Cloud Health/.test(mediaInventory) ||
+    !/mediaUploadOutbox\?\.getHealth/.test(mediaInventory) ||
     !/data-action="openMediaInventoryReport"/.test(html) ||
     !/"\.\/js\/media-inventory\.js"/.test(sw)
   ) {

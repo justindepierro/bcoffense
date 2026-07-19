@@ -280,6 +280,9 @@ to a player, and concurrent writes cannot silently replace it.
   cannot reuse a coach blob for a player release or vice versa.
 - [x] Store each new upload intent and its binary blob together in one IndexedDB
   outbox with attempt state, backoff, and a retained server receipt.
+- [x] Verify every newly written diagram from the same R2 binding before its
+  D1 current pointer advances. A failed verification leaves the prior approved
+  diagram active and the browser's durable outbox retries safely.
 - [ ] Make diagram, play-video, signal-video, and workspace jobs report from
   the same durable job model.
 - [x] Make new clip/video uploads survive reload and reconnect with their
@@ -288,8 +291,11 @@ to a player, and concurrent writes cannot silently replace it.
   semantics, and durable terminal states for every upload kind.
 - [x] Make ordinary team workspace saves produce an immutable workspace and
   player-release revision through one D1 compare-and-swap head.
-- [ ] Add explicit terminal states for invalid media, auth failure, quota,
-  retry exhaustion, and unresolved conflict.
+- [x] Make retry exhaustion a visible durable outbox state: after eight
+  automatic attempts, the shared workspace dock offers an explicit retry and
+  the device health check keeps the issue visible.
+- [ ] Add explicit terminal states for invalid media, auth failure, and quota
+  with specific coach repair guidance.
 
 **Exit criterion:** a coach selects media once; it commits automatically or
 remains visibly and durably queued until it can.
@@ -372,7 +378,12 @@ sync engine or player data plane.
 - [ ] Add structured audit events and metrics for D1/R2 operations, release
   freshness, queue age, conflicts, pointer mismatches, and recovery actions.
 - [ ] Schedule reconciliation for dangling pointers, orphan immutable bytes,
-  checksum mismatches, stale outbox jobs, and release readiness.
+  checksum mismatches, stale outbox jobs, and release readiness. The hourly
+  monitor implementation is ready to deploy: it checks current diagram
+  pointers against immutable R2 bytes, clip manifests against video bytes,
+  and release age; first live scheduled-run evidence is still required before
+  this item is marked complete. Browser-owned outboxes are checked on startup,
+  reconnect, and once per minute while the app is open.
 - [ ] Define retention/lifecycle policy for object versions and snapshots.
 - [ ] Measure route-level D1/R2 latency and implement private,
   version-aware caching only after authorization correctness is proven.

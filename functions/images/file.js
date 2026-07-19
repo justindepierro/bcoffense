@@ -21,6 +21,20 @@ function readSig(request) {
 
 function validSig(sig) { return Boolean(sig) && sig.length <= MAX_SIG_LENGTH; }
 
+// The immutable object must be readable from the same R2 binding before D1
+// advances the player-facing pointer. A failed verification leaves the prior
+// approved manifest untouched; the durable browser outbox can retry safely.
+async function verifyStoredDiagram(bucket, r2key, expected = {}) {
+  const object = await bucket.head(r2key);
+  if (!object) return false;
+  const metadata = object.customMetadata || {};
+  return Number(object.size || 0) === Number(expected.size || 0)
+    && String(metadata.teamId || "") === String(expected.teamId || "")
+    && String(metadata.mediaId || "") === String(expected.mediaId || "")
+    && String(metadata.version || "") === String(expected.version || "")
+    && String(metadata.checksum || "").toLowerCase() === String(expected.checksum || "").toLowerCase();
+}
+
 export async function onRequestGet(context) {
   const bucket = context.env && context.env.CLIPS;
   if (!bucket) return authJson({ ok: false, error: "Image storage is not configured." }, { status: 503 });
@@ -95,6 +109,19 @@ export async function onRequestPut(context) {
     httpMetadata: { contentType },
     customMetadata: { teamId: access.teamId, mediaId: sig, version, checksum },
   });
+  const stored = await verifyStoredDiagram(bucket, r2key, {
+    size: object?.size || body.byteLength,
+    teamId: access.teamId,
+    mediaId: sig,
+    version,
+    checksum,
+  }).catch(() => false);
+  if (!stored) {
+    return authJson({
+      ok: false,
+      error: "Diagram upload could not be verified yet. The previous approved diagram remains active; retry safely.",
+    }, { status: 502 });
+  }
   const manifest = {
     version,
     r2key,
