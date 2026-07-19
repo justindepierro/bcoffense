@@ -10,6 +10,52 @@
 
 let _paPlayers = [];
 
+function normalizePlayerAccountEmail(value = "") {
+  return String(value || "").trim().toLowerCase();
+}
+
+function getPlayerAccountRosterLinkContext() {
+  const roster = typeof getTeamRoster === "function" ? getTeamRoster() : [];
+  const byAccount = new Map();
+  roster.forEach((player) => {
+    const account = normalizePlayerAccountEmail(player.accountUsername);
+    if (account) byAccount.set(account, player);
+  });
+  return { roster, byAccount };
+}
+
+function formatPlayerAccountRosterLabel(player) {
+  const number = String(player?.number || "").trim();
+  const name = String(player?.name || "Unnamed player").trim();
+  const position = String(player?.primaryPosition || player?.position || "").trim();
+  return [number ? `#${number}` : "", name, position].filter(Boolean).join(" · ");
+}
+
+function renderPlayerAccountRosterLink(p, context) {
+  const account = normalizePlayerAccountEmail(p.email);
+  if (p.role !== "player" || !account) {
+    return '<div class="pa-roster-link pa-roster-link--not-player"><span>Staff account</span><small>Roster links are for player portal accounts.</small></div>';
+  }
+
+  const linkedPlayer = context.byAccount.get(account);
+  const options = context.roster.map((rosterPlayer) => {
+    const rosterAccount = normalizePlayerAccountEmail(rosterPlayer.accountUsername);
+    const belongsToAnotherAccount = rosterAccount && rosterAccount !== account;
+    const suffix = belongsToAnotherAccount ? " — linked elsewhere" : "";
+    return `<option value="${escapeAttr(rosterPlayer.id)}"${linkedPlayer?.id === rosterPlayer.id ? " selected" : ""}${belongsToAnotherAccount ? " disabled" : ""}>${escapeHtml(`${formatPlayerAccountRosterLabel(rosterPlayer)}${suffix}`)}</option>`;
+  }).join("");
+
+  return `
+    <label class="pa-roster-link">
+      <span>Roster link</span>
+      <select data-onchange="linkPlayerAccountToRoster" data-pass="event" data-player-email="${escapeAttr(account)}" aria-label="Roster link for ${escapeHtml(p.displayName || p.email)}">
+        <option value="">Not linked to roster</option>
+        ${options}
+      </select>
+      <small>${linkedPlayer ? `Linked to ${escapeHtml(formatPlayerAccountRosterLabel(linkedPlayer))}` : "Connect this login to show the right roster identity in the portal, quizzes, and leaderboards."}</small>
+    </label>`;
+}
+
 // ── Open / close ──────────────────────────────────────────────────────────────
 
 function openPlayersAdmin() {
@@ -56,27 +102,32 @@ function renderPlayersAdminList(players, container) {
   const active = players.filter((p) => p.status === "active").length;
   const invited = players.filter((p) => p.status === "invited").length;
   const disabled = players.filter((p) => p.status === "disabled").length;
+  const playerAccounts = players.filter((p) => p.role === "player");
+  const linkContext = getPlayerAccountRosterLinkContext();
+  const linkedAccounts = playerAccounts.filter((p) => linkContext.byAccount.has(normalizePlayerAccountEmail(p.email))).length;
 
   const statsHtml = `
     <div class="pa-stats">
       <span class="pa-stat pa-stat--active">✅ ${active} Active</span>
       <span class="pa-stat pa-stat--invited">📨 ${invited} Pending</span>
       ${disabled ? `<span class="pa-stat pa-stat--disabled">🚫 ${disabled} Disabled</span>` : ""}
+      <span class="pa-stat pa-stat--links">🔗 ${linkedAccounts}/${linkContext.roster.length} roster links</span>
     </div>`;
 
   const listHtml = players.length
-    ? players.map(renderPlayerRow).join("")
+    ? players.map((player) => renderPlayerRow(player, linkContext)).join("")
     : '<p class="pa-empty">No player accounts yet. Invite your first player below.</p>';
 
   setInnerHTML(
     container,
     `${statsHtml}
-    <div class="pa-list">${players.length ? '<div class="pa-list-head" aria-hidden="true"><span>Player</span><span>Player login</span><span>Status</span><span>Actions</span></div>' : ""}${listHtml}</div>
+    <p class="pa-linking-intro">Link each player portal login to one roster record. The roster remains the source of truth for personnel, while the account controls portal identity, quiz credit, and leaderboard names.</p>
+    <div class="pa-list">${players.length ? '<div class="pa-list-head" aria-hidden="true"><span>Player account</span><span>Roster link</span><span>Access</span></div>' : ""}${listHtml}</div>
     ${renderInviteForm()}`,
   );
 }
 
-function renderPlayerRow(p) {
+function renderPlayerRow(p, linkContext = getPlayerAccountRosterLinkContext()) {
   const statusLabel = { active: "Active", invited: "Pending", disabled: "Disabled" }[p.status] || p.status;
   const statusClass = { active: "pa-badge--active", invited: "pa-badge--invited", disabled: "pa-badge--disabled" }[p.status] || "";
 
@@ -104,11 +155,59 @@ function renderPlayerRow(p) {
         <span class="pa-row-email">${escapeHtml(p.email)}</span>
         <span class="pa-row-meta">${lastLogin}</span>
       </div>
+      ${renderPlayerAccountRosterLink(p, linkContext)}
       <div class="pa-row-actions">
         <span class="pa-badge ${statusClass}">${statusLabel}</span>
         ${actions}
       </div>
     </div>`;
+}
+
+function linkPlayerAccountToRoster(event) {
+  const select = event?.target;
+  const account = normalizePlayerAccountEmail(select?.dataset?.playerEmail);
+  const rosterPlayerId = String(select?.value || "").trim();
+  if (!select || !account || typeof getTeamRoster !== "function" || typeof saveTeamRoster !== "function") return;
+
+  const roster = getTeamRoster();
+  const target = rosterPlayerId ? roster.find((player) => player.id === rosterPlayerId) : null;
+  if (rosterPlayerId && !target) {
+    renderPlayersAdminList(_paPlayers, document.getElementById("playersAdminBody"));
+    return;
+  }
+
+  const targetAccount = normalizePlayerAccountEmail(target?.accountUsername);
+  if (target && targetAccount && targetAccount !== account) {
+    showToast(`${target.name} is already linked to another portal account. Unlink that account first.`, {
+      type: "warning",
+      duration: 4200,
+    });
+    renderPlayersAdminList(_paPlayers, document.getElementById("playersAdminBody"));
+    return;
+  }
+
+  let changed = false;
+  roster.forEach((player) => {
+    if (normalizePlayerAccountEmail(player.accountUsername) === account && player.id !== rosterPlayerId) {
+      player.accountUsername = "";
+      changed = true;
+    }
+  });
+  if (target && normalizePlayerAccountEmail(target.accountUsername) !== account) {
+    target.accountUsername = account;
+    changed = true;
+  }
+
+  if (!changed) return;
+  saveTeamRoster(roster);
+  if (document.getElementById("teamRosterList") && typeof renderTeamSettings === "function") {
+    renderTeamSettings();
+  }
+  renderPlayersAdminList(_paPlayers, document.getElementById("playersAdminBody"));
+  showToast(target ? `${target.name} is now linked to ${account}.` : "Roster link removed.", {
+    type: "success",
+    duration: 2600,
+  });
 }
 
 function renderInviteForm() {

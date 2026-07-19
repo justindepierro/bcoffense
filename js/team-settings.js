@@ -181,6 +181,7 @@ function buildTeamRosterHealthMarkup(roster) {
     return `
       <span class="team-roster-health-chip team-roster-health-chip--empty">No active roster yet</span>
       <span class="team-roster-health-copy">Add players here first. Quiz rewards and stickers will pull from this roster.</span>
+      <button type="button" class="team-roster-health-link" data-action="openPlayersAdmin">Manage player links</button>
     `;
   }
   const health = getTeamRosterHealth(roster);
@@ -197,7 +198,8 @@ function buildTeamRosterHealthMarkup(roster) {
     <span class="team-roster-health-chip team-roster-health-chip--${positionState}">
       ${health.missingPosition.length ? escapeHtml(`${health.missingPosition.length} missing POS`) : "Positions set"}
     </span>
-    <span class="team-roster-health-copy">Use the login column to connect each player account to the roster name shown on leaderboards.</span>
+    <span class="team-roster-health-copy">Link each portal account once so roster identity carries into player views, quizzes, and leaderboards.</span>
+    <button type="button" class="team-roster-health-link" data-action="openPlayersAdmin">Manage player links</button>
   `;
 }
 
@@ -419,7 +421,7 @@ function renderTeamSettings() {
         <span>Player</span>
         <span>Primary</span>
         <span>Secondary</span>
-        <span>Player login</span>
+        <span>Portal account</span>
         <span>Group</span>
         <span>Remove</span>
       </div>${roster.map((player) => `
@@ -432,7 +434,10 @@ function renderTeamSettings() {
           <select class="team-roster-cell team-roster-cell--pos" data-field="teamPlayerSecondaryPosition" data-player-id="${escapeAttr(player.id)}" aria-label="Secondary position for ${escapeHtml(player.name)}">
             ${buildTeamRosterPositionOptions(player.secondaryPosition, "Secondary")}
           </select>
-          <input type="text" class="team-roster-cell team-roster-cell--account" value="${escapeAttr(player.accountUsername)}" data-field="teamPlayerAccount" data-player-id="${escapeAttr(player.id)}" placeholder="login" aria-label="Account username for ${escapeHtml(player.name)}" />
+          <button type="button" class="team-roster-account-link ${player.accountUsername ? "is-linked" : ""}" data-action="openPlayersAdmin" title="Manage ${escapeHtml(player.name)}'s portal account link">
+            <span aria-hidden="true">${player.accountUsername ? "🔗" : "＋"}</span>
+            <span>${escapeHtml(player.accountUsername || "Link account")}</span>
+          </button>
           <select class="team-roster-cell team-roster-cell--group" data-field="teamPlayerPositionGroup" data-player-id="${escapeAttr(player.id)}" aria-label="Position group for ${escapeHtml(player.name)}">
             <option value="" ${player.positionGroup ? "" : "selected"}>Role type</option>
             <option value="skill" ${player.positionGroup === "skill" ? "selected" : ""}>Skill</option>
@@ -450,6 +455,7 @@ function renderTeamSettings() {
       const rowTwo = packageSlots.filter((slot) => slot.row === 1);
       const depthChart = normalizeTeamDepthChart(pkg.depthChart, pkg.assignments);
       const starterCount = Object.values(depthChart).filter((playerIds) => playerIds.length > 0).length;
+      const unassignedCount = Math.max(packageSlots.length - starterCount, 0);
       const subCount = Object.values(depthChart).reduce(
         (sum, playerIds) => sum + Math.max(playerIds.length - 1, 0),
         0,
@@ -461,6 +467,7 @@ function renderTeamSettings() {
               <div class="team-package-meta-top">
                 <input type="text" class="team-package-name" value="${escapeAttr(pkg.personnel)}" data-field="teamPackagePersonnel" data-package-index="${pkgIndex}" placeholder="11" aria-label="Personnel package name" />
                 ${pkg.isAutoPrepared ? '<span class="team-package-status">Playbook Ready</span>' : ""}
+                <span class="team-package-status ${unassignedCount ? "team-package-status--attention" : "team-package-status--complete"}">${unassignedCount ? `${unassignedCount} open slot${unassignedCount === 1 ? "" : "s"}` : "Lineup complete"}</span>
                 <span class="team-package-count">${formatTeamCountLabel(starterCount, "starter")}</span>
                 <span class="team-package-count">${formatTeamCountLabel(subCount, "sub")}</span>
               </div>
@@ -482,6 +489,7 @@ function renderTeamSettings() {
       const rowTwo = groupSlots.filter((slot) => slot.row === 1);
       const depthChart = normalizeTeamDepthChart(group.depthChart, group.assignments);
       const starterCount = Object.values(depthChart).filter((playerIds) => playerIds.length > 0).length;
+      const unassignedCount = Math.max(groupSlots.length - starterCount, 0);
       const subCount = Object.values(depthChart).reduce(
         (sum, playerIds) => sum + Math.max(playerIds.length - 1, 0),
         0,
@@ -496,6 +504,7 @@ function renderTeamSettings() {
               <div class="team-package-meta-top team-package-meta-top--stacked">
                 <input type="text" class="team-package-name" value="${escapeAttr(group.name)}" data-field="teamSwapGroupName" data-group-index="${groupIndex}" placeholder="Sub package name" aria-label="Sub package name" />
                 <input type="text" class="team-package-name team-package-name--short" value="${escapeAttr(group.personnel)}" data-field="teamSwapGroupPersonnel" data-group-index="${groupIndex}" placeholder="Personnel optional" aria-label="Personnel for ${escapeHtml(group.name || "sub package")}" />
+                <span class="team-package-status ${unassignedCount ? "team-package-status--attention" : "team-package-status--complete"}">${unassignedCount ? `${unassignedCount} open slot${unassignedCount === 1 ? "" : "s"}` : "Lineup complete"}</span>
                 <span class="team-package-count">${formatTeamCountLabel(starterCount, "slot")}</span>
                 <span class="team-package-count">${formatTeamCountLabel(subCount, "backup")}</span>
               </div>
