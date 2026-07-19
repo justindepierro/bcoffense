@@ -193,6 +193,11 @@ from Cloudflare without ever having opened the coach workspace.
   repair requires the audited current checksum and archived checksum to still
   match at write time, then creates a new immutable version rather than
   overwriting history.
+- [x] Reconcile the first player-visible batch (July 19, 2026): 29 uniquely
+  attributable plays audited; 6 verified, 5 checksum-proven mismatches
+  repaired into new immutable versions, 4 diagrams missing a canonical
+  record, and 14 retained as unverified because no unique archived tag file
+  exists. No ambiguous item was auto-repaired.
 - [ ] Offer an admin-only local-cache migration that uploads known legacy
   browser diagrams into their canonical records automatically.
 - [ ] Verify each migrated media ID from a clean player session and a second
