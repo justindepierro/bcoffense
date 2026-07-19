@@ -27,8 +27,8 @@ const TEAM_WORKSPACE_KEYS = new Set([
   "sortPresets", "customSortOrders", "scriptCustomSortOrders", "periodTemplates",
   "scriptTemplates", "callSheet", "callSheetSettings", "columnVisibility",
   "playbookState", "scriptDisplayOptions", "scriptControlsMode", "playReadiness",
-  "callsheetDisplayOptions", "callsheetDisplayPresets", "callsheetTemplates",
-  "callsheetCategoryOrder", "callsheetNotes", "callsheetTargets", "callSheetSnapshots",
+  "callSheetDisplayOptions", "callSheetDisplayPresets", "callSheetTemplates",
+  "callSheetCategoryOrder", "callSheetNotes", "callSheetTargets", "callSheetSnapshots",
   "defensiveTendencies", "tendenciesSettings", "gameWeek", "installationData",
   "installationTemplates", "playCollections", "callSheetConstraints", "ob_playRatings",
   "schedule", "gamePlanTags", "printStudioSettings", "presentationSetup",
@@ -39,6 +39,22 @@ const TEAM_WORKSPACE_KEYS = new Set([
   "playerPortalBranding", "playerQuizSettings", "playerQuizSourceSettings",
   "playerSignalGameSettings", "playerPublishStatus", "signals",
   "playerHelmetStickerTypes", "gameWeekArchive", "tendenciesReports",
+]);
+
+// These keys were historically included in complete browser backups. They are
+// never team workspace data: keeping them in the canonical snapshot can leak
+// device/session state and makes an otherwise-valid legacy snapshot fail the
+// stricter allowlist introduced by the revision data plane. Recognize only
+// this explicit migration set; any unfamiliar future key remains an error so
+// it must be classified deliberately before becoming shared data.
+const LEGACY_DEVICE_ONLY_KEYS = new Set([
+  "scriptDraft", "wristbandDraft", "callSheetDraft", "tendenciesDraft",
+  "callSheetCollapsed", "csQuickActionsOpen", "pageHelpOpen", "lastActiveTab",
+  "theme", "visionMode", "mobileCoachLock", "cloudSyncSettings",
+  "publishActivityLog", "colorPreset", "authSession", "a2hsDismissed",
+  "playerReady", "playerQuizResults", "playerQuizDraft", "playerRewardEvents",
+  "playerHelmetStickers", "playerLeaderboardRemote", "diagramUploadQueue",
+  "clipUploadQueue", "firstUseDismissed", "playImages",
 ]);
 
 function isStaff(session) {
@@ -75,21 +91,36 @@ function readJson(value, fallback) {
   try { return JSON.parse(value); } catch (_err) { return fallback; }
 }
 
-function validateWorkspace(workspace) {
+export function sanitizeTeamWorkspace(workspace) {
   if (!workspace || typeof workspace !== "object" || Array.isArray(workspace)) {
-    return "Workspace must be a JSON object.";
+    return { ok: false, error: "Workspace must be a JSON object.", workspace: null, omittedKeys: [] };
   }
   if (workspace.app && workspace.app !== "BCOffense") {
-    return "Workspace is not a BCOffense workspace.";
+    return { ok: false, error: "Workspace is not a BCOffense workspace.", workspace: null, omittedKeys: [] };
   }
   if (workspace.exportDate && Number.isNaN(new Date(workspace.exportDate).getTime())) {
-    return "Workspace export date is invalid.";
+    return { ok: false, error: "Workspace export date is invalid.", workspace: null, omittedKeys: [] };
   }
-  const unknownKey = Object.keys(workspace).find((key) => !TEAM_WORKSPACE_KEYS.has(key));
+  const unknownKey = Object.keys(workspace).find((key) =>
+    !TEAM_WORKSPACE_KEYS.has(key) && !LEGACY_DEVICE_ONLY_KEYS.has(key),
+  );
   if (unknownKey) {
-    return `Workspace contains a non-team field (${unknownKey}). Refresh this device and retry.`;
+    return {
+      ok: false,
+      error: `Workspace contains an unclassified field (${unknownKey}). Refresh this device and retry.`,
+      workspace: null,
+      omittedKeys: [],
+    };
   }
-  return "";
+  const sanitized = {};
+  TEAM_WORKSPACE_KEYS.forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(workspace, key)) sanitized[key] = workspace[key];
+  });
+  return {
+    ok: true,
+    workspace: sanitized,
+    omittedKeys: Object.keys(workspace).filter((key) => LEGACY_DEVICE_ONLY_KEYS.has(key)),
+  };
 }
 
 function requestExpectedRevision(request) {
@@ -132,10 +163,11 @@ async function getWorkspace(context) {
     if (await sha256Hex(text) !== String(current.metadata.checksum || "").toLowerCase()) {
       return workspaceError("The canonical workspace failed its integrity check.", 502);
     }
-    let workspace = null;
-    try { workspace = JSON.parse(text); } catch (_err) { /* handled below */ }
-    const validationError = validateWorkspace(workspace);
-    if (validationError) return workspaceError("The canonical workspace is invalid. Use admin recovery tools.", 502);
+    let rawWorkspace = null;
+    try { rawWorkspace = JSON.parse(text); } catch (_err) { /* handled below */ }
+    const normalized = sanitizeTeamWorkspace(rawWorkspace);
+    if (!normalized.ok) return workspaceError("The canonical workspace is invalid. Use admin recovery tools.", 502);
+    const workspace = normalized.workspace;
     const etag = `"${current.pointer.workspaceRevision}"`;
     if (context.request.headers.get("If-None-Match") === etag) {
       return withSecurityHeaders(new Response(null, {
@@ -151,6 +183,8 @@ async function getWorkspace(context) {
       updatedAt: isoFromSeconds(current.pointer.updatedAt),
       size: current.metadata.size,
       summary: summarizeWorkspace(workspace),
+      needsCanonicalRepair: normalized.omittedKeys.length > 0,
+      omittedLegacyFieldCount: normalized.omittedKeys.length,
     }, { headers: { "Cache-Control": "private, no-store", "ETag": etag, "Vary": "Cookie" } });
   } catch (_err) {
     return workspaceError("The canonical workspace could not be loaded.", 502);
@@ -165,10 +199,11 @@ async function putWorkspace(context) {
   const text = await context.request.text();
   if (!text || byteLength(text) > MAX_WORKSPACE_BYTES) return workspaceError("Workspace exceeds the 25 MiB delivery limit.", 413);
 
-  let workspace = null;
-  try { workspace = JSON.parse(text); } catch (_err) { return workspaceError("Workspace must be valid JSON."); }
-  const validationError = validateWorkspace(workspace);
-  if (validationError) return workspaceError(validationError);
+  let rawWorkspace = null;
+  try { rawWorkspace = JSON.parse(text); } catch (_err) { return workspaceError("Workspace must be valid JSON."); }
+  const normalized = sanitizeTeamWorkspace(rawWorkspace);
+  if (!normalized.ok) return workspaceError(normalized.error);
+  const workspace = normalized.workspace;
 
   let current = null;
   try { current = await readCurrentWorkspacePointer(context.env, principal.teamId); } catch (_err) {

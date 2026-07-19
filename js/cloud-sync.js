@@ -12,6 +12,44 @@
   const CLOUD_AUTO_PUSH_RETRY_MS = 60 * 1000;
   const CLOUD_AUTO_PUSH_MAX_RETRIES = 3;
 
+  // Daily workspace commits are deliberately narrower than a complete browser
+  // backup. Keep this list aligned with the server allowlist in
+  // functions/workspace/revision.js: local drafts, auth/session data, theme,
+  // queues, player-private progress, and IndexedDB image blobs never cross the
+  // normal team sync boundary.
+  const CANONICAL_TEAM_WORKSPACE_KEYS = new Set([
+    "app", "version", "exportDate",
+    STORAGE_KEYS.PLAYBOOK, STORAGE_KEYS.SAVED_SCRIPTS, STORAGE_KEYS.SAVED_WRISTBANDS,
+    STORAGE_KEYS.WRISTBAND_TEMPLATES, STORAGE_KEYS.SORT_PRESETS,
+    STORAGE_KEYS.CUSTOM_SORT_ORDERS, STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS,
+    STORAGE_KEYS.PERIOD_TEMPLATES, STORAGE_KEYS.SCRIPT_TEMPLATES,
+    STORAGE_KEYS.CALL_SHEET, STORAGE_KEYS.CALL_SHEET_SETTINGS,
+    STORAGE_KEYS.COLUMN_VISIBILITY, STORAGE_KEYS.PLAYBOOK_STATE,
+    STORAGE_KEYS.SCRIPT_DISPLAY_OPTIONS, STORAGE_KEYS.SCRIPT_CONTROLS_MODE,
+    STORAGE_KEYS.PLAY_READINESS, STORAGE_KEYS.CALLSHEET_DISPLAY_OPTIONS,
+    STORAGE_KEYS.CALLSHEET_DISPLAY_PRESETS, STORAGE_KEYS.CALLSHEET_TEMPLATES,
+    STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, STORAGE_KEYS.CALLSHEET_NOTES,
+    STORAGE_KEYS.CALLSHEET_TARGETS, STORAGE_KEYS.CALLSHEET_SNAPSHOTS,
+    STORAGE_KEYS.DEFENSIVE_TENDENCIES, STORAGE_KEYS.TENDENCIES_SETTINGS,
+    STORAGE_KEYS.GAME_WEEK, STORAGE_KEYS.INSTALLATION,
+    STORAGE_KEYS.INSTALLATION_TEMPLATES, STORAGE_KEYS.PLAY_COLLECTIONS,
+    STORAGE_KEYS.CALLSHEET_CONSTRAINTS, STORAGE_KEYS.OB_PLAY_RATINGS,
+    STORAGE_KEYS.SCHEDULE, STORAGE_KEYS.GAME_PLAN_TAGS,
+    STORAGE_KEYS.PRINT_STUDIO_SETTINGS, STORAGE_KEYS.PRESENTATION_SETUP,
+    STORAGE_KEYS.WRISTBAND_SORT_CRITERIA, STORAGE_KEYS.WRISTBAND_FAVORITES,
+    STORAGE_KEYS.WRISTBAND_RECENT_PLAYS, STORAGE_KEYS.WRISTBAND_LOGO_CARD,
+    STORAGE_KEYS.TEAM_ROSTER, STORAGE_KEYS.TEAM_NAME,
+    STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, STORAGE_KEYS.TEAM_SWAP_GROUPS,
+    STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, STORAGE_KEYS.TEAM_SETTINGS_COLLAPSED,
+    STORAGE_KEYS.GAME_PLAN_BOARDS, STORAGE_KEYS.GAME_PLAN_SNAPSHOTS,
+    STORAGE_KEYS.GAME_PLAN_TEMPLATES, STORAGE_KEYS.CALLSHEET_PRINT_OPTIONS,
+    STORAGE_KEYS.MOTD, STORAGE_KEYS.PLAYER_PORTAL_BRANDING,
+    STORAGE_KEYS.PLAYER_QUIZ_SETTINGS, STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS,
+    STORAGE_KEYS.PLAYER_SIGNAL_GAME_SETTINGS, STORAGE_KEYS.PLAYER_PUBLISH_STATUS,
+    STORAGE_KEYS.SIGNALS, STORAGE_KEYS.PLAYER_HELMET_STICKER_TYPES,
+    STORAGE_KEYS.GAME_WEEK_ARCHIVE, STORAGE_KEYS.TENDENCIES_REPORTS,
+  ]);
+
   const DEFAULT_SETTINGS = {
     provider: "cloudflare-d1-r2",
     lastPushAt: "",
@@ -22,58 +60,11 @@
     lastWorkspaceRevision: "",
   };
 
-  const CLOUD_AUTO_PUSH_KEYS = new Set([
-    "playImages",
-    STORAGE_KEYS.PLAYBOOK,
-    STORAGE_KEYS.SAVED_SCRIPTS,
-    STORAGE_KEYS.SAVED_WRISTBANDS,
-    STORAGE_KEYS.WRISTBAND_TEMPLATES,
-    STORAGE_KEYS.SORT_PRESETS,
-    STORAGE_KEYS.CUSTOM_SORT_ORDERS,
-    STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS,
-    STORAGE_KEYS.PERIOD_TEMPLATES,
-    STORAGE_KEYS.SCRIPT_TEMPLATES,
-    STORAGE_KEYS.CALL_SHEET,
-    STORAGE_KEYS.CALL_SHEET_SETTINGS,
-    STORAGE_KEYS.CALLSHEET_DISPLAY_OPTIONS,
-    STORAGE_KEYS.CALLSHEET_DISPLAY_PRESETS,
-    STORAGE_KEYS.CALLSHEET_TEMPLATES,
-    STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER,
-    STORAGE_KEYS.CALLSHEET_NOTES,
-    STORAGE_KEYS.CALLSHEET_TARGETS,
-    STORAGE_KEYS.DEFENSIVE_TENDENCIES,
-    STORAGE_KEYS.TENDENCIES_SETTINGS,
-    STORAGE_KEYS.GAME_WEEK,
-    STORAGE_KEYS.INSTALLATION,
-    STORAGE_KEYS.INSTALLATION_TEMPLATES,
-    STORAGE_KEYS.PLAY_COLLECTIONS,
-    STORAGE_KEYS.CALLSHEET_CONSTRAINTS,
-    STORAGE_KEYS.OB_PLAY_RATINGS,
-    STORAGE_KEYS.SCHEDULE,
-    STORAGE_KEYS.GAME_PLAN_TAGS,
-    STORAGE_KEYS.WRISTBAND_SORT_CRITERIA,
-    STORAGE_KEYS.WRISTBAND_FAVORITES,
-    STORAGE_KEYS.WRISTBAND_LOGO_CARD,
-    STORAGE_KEYS.TEAM_ROSTER,
-    STORAGE_KEYS.TEAM_NAME,
-    STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES,
-    STORAGE_KEYS.TEAM_SWAP_GROUPS,
-    STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS,
-    STORAGE_KEYS.GAME_PLAN_BOARDS,
-    STORAGE_KEYS.GAME_PLAN_SNAPSHOTS,
-    STORAGE_KEYS.GAME_PLAN_TEMPLATES,
-    // These values are inputs to the server-generated player release. Leaving
-    // any one of them out turns an automatic coach save into a stale player
-    // portal until someone remembers an unrelated recovery publish.
-    STORAGE_KEYS.MOTD,
-    STORAGE_KEYS.PLAYER_PORTAL_BRANDING,
-    STORAGE_KEYS.PLAYER_QUIZ_SETTINGS,
-    STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS,
-    STORAGE_KEYS.PLAYER_SIGNAL_GAME_SETTINGS,
-    STORAGE_KEYS.PLAYER_PUBLISH_STATUS,
-    STORAGE_KEYS.PLAYER_HELMET_STICKER_TYPES,
-    STORAGE_KEYS.SIGNALS,
-  ]);
+  // Every field eligible for the canonical snapshot schedules the same shared
+  // save work. This prevents a team-safe field from becoming a local-only
+  // change merely because its module was added after the original autosave
+  // list was written.
+  const CLOUD_AUTO_PUSH_KEYS = new Set(["playImages", ...CANONICAL_TEAM_WORKSPACE_KEYS]);
 
   let cloudAutoPushTimer = null;
   let cloudAutoPushFirstQueuedAt = 0;
@@ -83,6 +74,15 @@
   let cloudAutoPushRetryCount = 0;
   let cloudAutoPushSuppress = false;
   const cloudAutoPushDirtyKeys = new Set();
+
+  function buildCanonicalTeamWorkspace(backup) {
+    const source = backup && typeof backup === "object" && !Array.isArray(backup) ? backup : {};
+    const workspace = {};
+    CANONICAL_TEAM_WORKSPACE_KEYS.forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(source, key)) workspace[key] = source[key];
+    });
+    return workspace;
+  }
 
   function _cloudQueueJob(channel, id, opts = {}) {
     if (typeof window.queueWorkspaceSyncJob !== "function") return "";
@@ -780,7 +780,7 @@
 
   async function buildCloudBackupPayload(opts = {}) {
     const interactive = opts.interactive !== false;
-    const backup = await storageManager.getAllData();
+    const completeBrowserBackup = await storageManager.getAllData();
 
     // Canonical workspace revisions contain only structured team data. Diagram
     // bytes already live in their own immutable R2 objects and are saved by
@@ -790,7 +790,7 @@
     if (opts.includeRecoveryImages === true && window.playImages && typeof window.playImages.exportAll === "function") {
       try {
         if (interactive) showToast("Preparing team workspace...", { duration: 1200 });
-        backup.playImages = await window.playImages.exportAll({
+        completeBrowserBackup.playImages = await window.playImages.exportAll({
           onProgress: getProgressReporter("Exporting play images"),
         });
       } catch (err) {
@@ -811,6 +811,7 @@
       }
     }
 
+    const backup = buildCanonicalTeamWorkspace(completeBrowserBackup);
     const summary = getCloudBackupSummary(backup);
     if (!summary.valid) {
       throw new Error(summary.errors.join(" "));
@@ -882,6 +883,12 @@
     }
   }
 
+  async function repairCanonicalWorkspace(remote) {
+    if (!remote?.needsCanonicalRepair || !remote?.backup || !remote?.revision) return null;
+    const payload = JSON.stringify(remote.backup);
+    return workspaceRevisionRequest("PUT", payload, remote.revision);
+  }
+
   async function workspaceRevisionRequest(method, bodyText = "", expectedRevision = "") {
     const headers = {
       Accept: "application/json",
@@ -923,6 +930,8 @@
         playerReleaseRevision: String(data.playerReleaseRevision || ""),
         updatedAt: data.updatedAt || "",
         size: Number(data.size || 0) || 0,
+        needsCanonicalRepair: data.needsCanonicalRepair === true,
+        omittedLegacyFieldCount: Math.max(0, Number(data.omittedLegacyFieldCount || 0) || 0),
       };
     } catch (err) {
       if (opts.allowMissing && err.status === 404) return null;
@@ -1764,6 +1773,31 @@
       // over the canonical team head during a routine device bootstrap.
       const remote = await fetchCanonicalWorkspace({ allowMissing: true });
       if (!remote) return false;
+
+      // A pre-data-plane snapshot can be checksum-valid while still carrying
+      // old browser-only fields. The server has already removed only its
+      // explicit migration set from this response. Commit that sanitized
+      // payload with CAS once so future coaches and players read a clean
+      // canonical revision without a manual publish or recovery action.
+      if (remote.needsCanonicalRepair && canAutoPushCloudBackup()) {
+        try {
+          const repaired = await repairCanonicalWorkspace(remote);
+          if (repaired?.ok) {
+            saveCloudSyncSettingsObject({
+              lastWorkspaceRevision: repaired.revision || remote.revision,
+              lastRemoteUpdatedAt: repaired.updatedAt || remote.updatedAt,
+              lastRemoteSize: Number(repaired.size || remote.size) || 0,
+            });
+            return false;
+          }
+        } catch (repairError) {
+          // A concurrent coach already won the same repair; the next regular
+          // fetch sees that current head without turning a harmless CAS race
+          // into a scary startup warning.
+          if (repairError?.status === 409) return false;
+          throw repairError;
+        }
+      }
 
       const settings = getCloudSyncSettings();
       const remoteTime = getCloudTime(remote.summary.exportDate || remote.updatedAt);

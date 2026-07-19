@@ -28,6 +28,14 @@ flow and one was a normal admin upload. This is strong recovery progress, not
 permission to mark every mapping complete: the remaining archived candidates
 still need their permanent-media-ID and visual/player-session verification.
 
+Later that day, a checksum-valid pre-data-plane workspace revision was found
+to contain 16 known browser-only backup fields alongside 43 team fields. The
+new strict route correctly rejected that mixed snapshot with a 502, but routine
+startup must repair—not strand—the team. The deployed migration boundary now
+removes only the explicitly classified device fields, keeps unknown future
+fields fail-closed, and has a coach device commit the cleaned revision once
+with compare-and-swap. Normal autosave now sends only team-safe data.
+
 ## Product contract — locked
 
 Diagrams and videos are team assets, not browser assets. The intended daily
@@ -291,6 +299,10 @@ or arbitrary old R2 objects.
 - [x] Filter the normal team workspace through a strict server allowlist;
   exclude auth, drafts, local queues, browser caches, device UI state, and
   per-user private state.
+- [x] Repair known legacy mixed browser backups through the same strict
+  allowlist: strip only classified device fields, reject unclassified fields,
+  and atomically commit the cleaned workspace/release revision on the next
+  authorized coach startup.
 - [ ] Stage and validate a restore, capture a local pre-restore recovery
   snapshot, and provide rollback rather than applying mixed stores in place.
 - [ ] Classify every persistence key as team, player-private, user-private, or

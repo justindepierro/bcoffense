@@ -4463,6 +4463,20 @@ function checkPlayerDiagramReadinessContracts() {
   ) {
     fail("complete Cloudflare media inventory contract is incomplete");
   }
+  const workspaceRevisionRoute = read("functions/workspace/revision.js");
+  const cloudSync = read("js/cloud-sync.js");
+  if (
+    !/export function sanitizeTeamWorkspace\(workspace\)/.test(workspaceRevisionRoute) ||
+    !/const LEGACY_DEVICE_ONLY_KEYS = new Set\(\[/.test(workspaceRevisionRoute) ||
+    !/needsCanonicalRepair: normalized\.omittedKeys\.length > 0/.test(workspaceRevisionRoute) ||
+    !/const CANONICAL_TEAM_WORKSPACE_KEYS = new Set\(\[/.test(cloudSync) ||
+    !/function buildCanonicalTeamWorkspace\(backup\)/.test(cloudSync) ||
+    !/const CLOUD_AUTO_PUSH_KEYS = new Set\(\["playImages", \.\.\.CANONICAL_TEAM_WORKSPACE_KEYS\]\)/.test(cloudSync) ||
+    !/remote\.needsCanonicalRepair && canAutoPushCloudBackup\(\)/.test(cloudSync) ||
+    !/repairCanonicalWorkspace\(remote\)/.test(cloudSync)
+  ) {
+    fail("workspace revision migration boundary is incomplete");
+  }
   if (
     !/session\.role !== "admin"/.test(legacyDiagramMigrationRoute) ||
     !/const MAX_ITEMS = 100/.test(legacyDiagramMigrationRoute) ||
