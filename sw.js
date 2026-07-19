@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v1208";
+const CACHE_NAME = "bcoffense-v1209";
 
 // Item 40: in-memory TTL tracker for /auth/me short-term cache
 let _authMeCacheTime = 0;
@@ -237,8 +237,8 @@ const LOCAL_ASSETS = [
   "./offline.html",
 ];
 
-// Install: let an updated worker wait until existing app tabs close. Pre-cache
-// assets resiliently — one failure won't block.
+// Install: media fixes need to take effect promptly on active player devices.
+// Pre-cache assets resiliently — one failure won't block.
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
@@ -249,7 +249,7 @@ self.addEventListener("install", (event) => {
             .catch(() => { /* skip missing/failed assets silently */ }),
         ),
       ),
-    ),
+    ).then(() => self.skipWaiting()),
   );
 });
 
