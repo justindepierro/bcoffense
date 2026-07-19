@@ -1967,6 +1967,7 @@ function checkPlayReadinessContracts() {
   const auth = read("js/auth.js");
   const scriptRender = read("js/script-render.js");
   const scriptShared = read("js/script-shared.js");
+  const scriptPlayers = read("js/script-players.js");
   const playbookNavigation = read("js/playbook-navigation.js");
   const playbookRender = read("js/playbook-render.js");
   const presentation = read("js/play-presentation.js");
@@ -2061,6 +2062,8 @@ function checkPlayReadinessContracts() {
     !/function setScriptPersonnelOverride\(index, value\)/.test(scriptShared) ||
     !/scriptPersonnelOverride/.test(scriptShared) ||
     !/renderScriptPersonnelOverrideButton\(play, index, playLabel, opts\)/.test(scriptRender) ||
+    !/personnelOverrideControl/.test(scriptPlayers) ||
+    !/renderScriptPersonnelOverrideButton\(play, index, playLabel, opts\)/.test(scriptPlayers) ||
     !/\.script-personnel-override-btn/.test(css)
   ) {
     fail("script-only personnel visual override is incomplete");

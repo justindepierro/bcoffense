@@ -97,6 +97,10 @@ function getScriptPlayerStatusLabel(play) {
 function buildScriptPlayerSummaryCard(play, index, playLabel, playerSummary) {
   const hasOverrides = hasScriptPlayerOverrides(play);
   const statusLabel = getScriptPlayerStatusLabel(play);
+  const personnelOverrideControl =
+    typeof renderScriptPersonnelOverrideButton === "function"
+      ? renderScriptPersonnelOverrideButton(play, index, playLabel, opts)
+      : "";
   const summaryText = playerSummary || "No assignments set";
 
   return `
@@ -390,6 +394,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
         <summary class="script-player-assignment-summary">
           <span class="script-player-assignment-summary-main">
             <span class="script-player-grid-title">Personnel</span>
+            ${personnelOverrideControl}
             <span class="script-player-assignment-summary-lineup">${escapeHtml(lineupLabel)}</span>
             ${statusLabel ? `<span class="script-player-grid-status">${escapeHtml(statusLabel)}</span>` : ''}
           </span>

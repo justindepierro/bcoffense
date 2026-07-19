@@ -14639,6 +14639,102 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
   color: var(--color-primary);
 }
 
+/* ── Desktop Coach Grid finish: one command plane, not stacked floating cards ── */
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-header-panel,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-list,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-play-rail.play-list {
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-builder {
+    gap: 8px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-section-head {
+    min-height: 34px;
+    padding: 3px 6px;
+    border: 1px solid var(--coach-grid-border);
+    border-bottom: 0;
+    background: var(--coach-grid-surface-muted);
+    column-gap: 6px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script .script-section-head .script-stats-bar {
+    gap: 0;
+    border-left: 1px solid var(--coach-grid-divider);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script .script-section-head .script-stats-bar .stat-item {
+    min-height: var(--coach-grid-compact-control-height);
+    padding: 2px 6px;
+    border: 0;
+    border-left: 1px solid var(--coach-grid-divider);
+    border-radius: 0;
+    background: transparent;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script .script-section-head .script-stats-bar .stat-item:first-child {
+    border-left: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script .script-section-head .period-buttons .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script .script-section-head .period-template-quickpick,
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script .script-section-head .script-library-toggle-btn {
+    min-height: var(--coach-grid-control-height);
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  /* The personnel line is the actual working surface for a script override.
+     Keep its color control beside the line-up state, not hidden in call meta. */
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script .script-player-assignment-summary .script-personnel-override-btn {
+    min-height: 22px;
+    margin: 0;
+    padding: 1px 6px;
+    border-color: var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface);
+    color: var(--color-primary);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script .script-player-assignment-summary .script-personnel-override-btn.is-overridden {
+    border-color: color-mix(in srgb, var(--color-primary) 56%, var(--coach-grid-border));
+    background: var(--color-primary-light);
+  }
+}
+
+/* At wide desktop widths the section header has room for its five actual
+   groups. Explicit columns prevent the toolbar from becoming an implicit,
+   visually detached second row. Narrow desktop keeps the existing wrap. */
+@media (min-width: 1500px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-section-head {
+    grid-template-columns: max-content max-content minmax(300px, 1fr) max-content minmax(280px, auto);
+    grid-template-rows: minmax(var(--coach-grid-control-height), auto);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-section-head .script-toolbar {
+    grid-column: 5;
+    grid-row: 1;
+    min-width: 280px;
+    margin: 0;
+  }
+}
+
 @media (max-width: 640px) {
   #script .period-actions-menu-panel {
     right: 0;

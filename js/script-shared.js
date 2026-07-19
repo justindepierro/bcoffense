@@ -545,16 +545,19 @@ function closeScriptPersonnelOverrideModal() {
 function updateScriptPersonnelOverrideControl(index) {
   const play = script[index];
   const row = document.querySelector(`.script-item[data-idx="${index}"]`);
-  const button = row?.querySelector(".script-personnel-override-btn");
-  if (!play || !button) return;
+  const buttons = row?.querySelectorAll(".script-personnel-override-btn");
+  if (!play || !buttons?.length) return;
   const sourcePersonnel = String(play.personnel || "").trim();
   const displayPersonnel = getScriptPersonnelDisplay(play);
   const isOverridden = Boolean(normalizeScriptPersonnelOverride(play.scriptPersonnelOverride));
-  button.classList.toggle("is-overridden", isOverridden);
-  button.title = isOverridden
+  const title = isOverridden
     ? `Visual script personnel: ${displayPersonnel}. Playbook remains ${sourcePersonnel || "unchanged"}.`
     : `Personnel: ${displayPersonnel || sourcePersonnel}. Choose a visual script-only override.`;
-  button.innerHTML = `<span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Personnel")}</span>`;
+  buttons.forEach((button) => {
+    button.classList.toggle("is-overridden", isOverridden);
+    button.title = title;
+    button.innerHTML = `<span aria-hidden="true">${getPersonnelEmoji(displayPersonnel) || "●"}</span><span>${escapeHtml(displayPersonnel || "Personnel")}</span>`;
+  });
 }
 
 function setScriptPersonnelOverride(index, value) {

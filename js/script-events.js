@@ -100,6 +100,9 @@ function initScriptEvents() {
           openScriptMoveMenu(e, idx);
           break;
         case "openScriptPersonnelOverrideModal":
+          // A button inside the native <summary> must not also toggle the
+          // assignment details while it opens the script-only color picker.
+          e.preventDefault();
           openScriptPersonnelOverrideModal(idx);
           break;
         case "movePlay":
