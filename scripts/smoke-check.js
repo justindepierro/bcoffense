@@ -2070,6 +2070,9 @@ function checkPlayReadinessContracts() {
   if (/const personnelOverride\s*=\s*typeof renderScriptPersonnelOverrideButton/.test(scriptRender)) {
     fail("script personnel color control should appear once in the explicit PERSONNEL line");
   }
+  if (/function renderScriptPersonnelOverrideButton\([\s\S]*?options\.printStyle[\s\S]*?return ""/.test(scriptShared)) {
+    fail("print-style rows must retain the interactive script personnel color control");
+  }
   if (
     /type="checkbox"\s+name="(?:explosive|turnover|penalty)"/.test(readiness) ||
     /data-action="seedPlayReadinessSampleData"/.test(readiness) ||

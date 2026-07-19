@@ -526,7 +526,10 @@ function getScriptDisplayPlay(play) {
 }
 
 function renderScriptPersonnelOverrideButton(play, index, playLabel, options = {}) {
-  if (options.printStyle || !play || play.isSeparator) return "";
+  // Print-style rows are still an editable coach surface. The real packet
+  // renderer has its own controls, so do not hide this script-only editor
+  // merely because the worksheet is using the denser visual treatment.
+  if (!play || play.isSeparator) return "";
   const sourcePersonnel = String(play.personnel || "").trim();
   const displayPersonnel = getScriptPersonnelDisplay(play);
 
