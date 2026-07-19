@@ -783,6 +783,7 @@ function openScriptCallOverrideModal(index) {
   closeScriptCallOverrideModal();
 
   const overrides = getScriptCallTextOverrides(play);
+  const personnelVisible = !Boolean(play.scriptHidePersonnel);
   const sourceCall = getScriptPlaySummaryText({
     ...play,
     scriptCallPrefix: "",
@@ -842,8 +843,9 @@ function openScriptCallOverrideModal(index) {
       suffixColor: normalizeScriptCallTextColor(next.suffixColor),
     };
     const current = getScriptCallTextOverrides(play);
-    const personnelChanged = Boolean(play.scriptHidePersonnel) === normalized.showPersonnel;
-    if (JSON.stringify(normalized) !== JSON.stringify(current) || personnelChanged) {
+    const callChanged = JSON.stringify(normalized) !== JSON.stringify(current);
+    const personnelChanged = Boolean(play.scriptHidePersonnel) === next.showPersonnel;
+    if (callChanged || personnelChanged) {
       beginScriptEdit();
       [["scriptCallPrefix", normalized.prefix], ["scriptCallOverride", normalized.call], ["scriptCallSuffix", normalized.suffix], ["scriptCallPrefixColor", normalized.prefixColor], ["scriptCallSuffixColor", normalized.suffixColor]].forEach(([key, value]) => {
         if (value) play[key] = value;
