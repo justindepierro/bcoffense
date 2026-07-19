@@ -1,4 +1,5 @@
 import { verifyD1Credentials, verifyPassword } from "./d1-auth.js";
+import { getPrimaryTeamId } from "./team-context.js";
 
 // The __Host- prefix is enforced by browsers: Secure, Path=/, and no Domain
 // attribute are mandatory. That prevents a subdomain from setting a competing
@@ -277,19 +278,35 @@ export async function getSessionFromRequest(request, env) {
     const isStaticSession = !isD1Session && USERS[session.username] && USERS[session.username].role === session.role;
     if (!isD1Session && !isStaticSession) return null;
 
-    // For D1 sessions: check sessions_invalid_before (logout-all support)
-    if (isD1Session && env && env.DB && session.iat) {
+    let teamId = "";
+    // D1 sessions are checked against the current principal, not merely the
+    // signed cookie. A disable, role change, or team reassignment therefore
+    // takes effect at every protected endpoint. Fail closed if D1 is down.
+    if (isD1Session) {
+      if (!env?.DB || !session.iat) return null;
       try {
         const row = await env.DB
-          .prepare("SELECT sessions_invalid_before FROM users WHERE id = ? LIMIT 1")
+          .prepare(`SELECT users.role, users.status, users.team_id,
+              COALESCE(account_session_state.invalid_before, 0) AS sessions_invalid_before
+            FROM users
+            LEFT JOIN account_session_state ON account_session_state.user_id = users.id
+            WHERE users.id = ?
+            LIMIT 1`)
           .bind(session.d1_user_id)
           .first();
-        if (row && row.sessions_invalid_before && session.iat < row.sessions_invalid_before) {
+        if (!row || row.status !== "active" || row.role !== session.role) return null;
+        teamId = String(row.team_id || "").trim();
+        if (!teamId) return null;
+        if (row.sessions_invalid_before && session.iat < row.sessions_invalid_before) {
           return null; // session was invalidated by logout-all
         }
       } catch (_) {
-        // If D1 check fails, allow the session (fail open for availability)
+        return null;
       }
+    } else {
+      // Static accounts are transitional, but they still receive an explicit
+      // team pointer instead of inheriting an arbitrary D1 row.
+      teamId = await getPrimaryTeamId(env);
     }
 
     return {
@@ -297,6 +314,7 @@ export async function getSessionFromRequest(request, env) {
       role: session.role,
       label: session.label || (isStaticSession ? USERS[session.username].label : ""),
       d1UserId: session.d1_user_id || null,
+      teamId,
       loginAt: session.iat ? new Date(session.iat * 1000).toISOString() : "",
       expiresAt: new Date(session.exp * 1000).toISOString(),
     };

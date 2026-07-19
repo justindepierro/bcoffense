@@ -10,10 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v1213";
-
-// Item 40: in-memory TTL tracker for /auth/me short-term cache
-let _authMeCacheTime = 0;
+const CACHE_NAME = "bcoffense-v1215";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -237,48 +234,48 @@ const LOCAL_ASSETS = [
   "./offline.html",
 ];
 
-// Install: media fixes need to take effect promptly on active player devices.
-// Pre-cache assets resiliently — one failure won't block.
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      Promise.allSettled(
-        LOCAL_ASSETS.map((url) =>
-          fetch(url, { cache: "reload" })
-            .then((res) => { if (res.ok) cache.put(url, res); })
-            .catch(() => { /* skip missing/failed assets silently */ }),
-        ),
-      ),
-    ).then(() => self.skipWaiting()),
+// Install: pre-cache assets resiliently, but do not take over an active tab.
+// A waiting worker is applied only through the app's explicit update action,
+// which prevents a live coach workspace from running mixed old/new code.
+async function precacheLocalAssets() {
+  const cache = await caches.open(CACHE_NAME);
+  await Promise.allSettled(
+    LOCAL_ASSETS.map(async (url) => {
+      try {
+        const response = await fetch(url, { cache: "reload" });
+        if (response.ok) await cache.put(url, response);
+      } catch (_err) {
+        // One optional/offline asset must not block an install.
+      }
+    }),
   );
+}
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(precacheLocalAssets());
 });
 
 // Activate: clean up old caches and notify any newly controlled tabs.
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => key !== CACHE_NAME)
-            .map((key) => caches.delete(key)),
-        ),
-      )
-      .then(() => {
-        // Notify open tabs that the active worker version changed.
-        self.clients.matchAll({ type: "window" }).then((clients) => {
-          clients.forEach((client) =>
-            client.postMessage({ type: "SW_ACTIVATED", version: CACHE_NAME }),
-          );
-        });
-      }),
+async function activateCurrentCache() {
+  const keys = await caches.keys();
+  await Promise.all(
+    keys
+      .filter((key) => key !== CACHE_NAME)
+      .map((key) => caches.delete(key)),
   );
+  const clients = await self.clients.matchAll({ type: "window" });
+  clients.forEach((client) =>
+    client.postMessage({ type: "SW_ACTIVATED", version: CACHE_NAME }),
+  );
+}
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(activateCurrentCache());
 });
 
 self.addEventListener("message", (event) => {
   if (event.data?.type === "SKIP_WAITING") {
-    self.skipWaiting();
+    event.waitUntil(self.skipWaiting());
   }
 });
 
@@ -292,9 +289,14 @@ self.addEventListener("fetch", (event) => {
   // Skip non-http(s) schemes (e.g. chrome-extension://) — can't be cached
   if (!event.request.url.startsWith("http")) return;
 
-  // Video clips stream from R2 via Range requests — let them bypass the worker
-  // entirely so the browser handles partial (206) responses directly.
-  if (url.pathname.startsWith("/clips/")) return;
+  // Auth identity, player releases, and video clips are all private,
+  // role-scoped responses. Let the browser make a direct network request;
+  // never let this worker replay another user's cached identity/release.
+  if (
+    url.pathname.startsWith("/clips/") ||
+    url.pathname === "/auth/me" ||
+    url.pathname === "/player/release"
+  ) return;
 
   // Diagram manifests and files are authenticated, per-play API responses.
   // They must never use the generic query-insensitive cache path below: that
@@ -305,33 +307,6 @@ self.addEventListener("fetch", (event) => {
         status: 503,
         headers: { "Content-Type": "text/plain; charset=utf-8" },
       })),
-    );
-    return;
-  }
-
-  // Item 40: serve /auth/me from cache for up to 30s to unblock slow-network PWA opens
-  if (url.pathname === "/auth/me") {
-    event.respondWith(
-      (async () => {
-        const cache = await caches.open(CACHE_NAME);
-        if (Date.now() - _authMeCacheTime < 30000) {
-          const cached = await cache.match(event.request);
-          if (cached) return cached;
-        }
-        try {
-          const response = await fetch(event.request);
-          if (response.ok) {
-            _authMeCacheTime = Date.now();
-            cachePut(event.request, response.clone());
-          }
-          return response;
-        } catch {
-          return (
-            (await cache.match(event.request)) ||
-            new Response("Offline", { status: 503, headers: { "Content-Type": "text/plain" } })
-          );
-        }
-      })()
     );
     return;
   }

@@ -16,6 +16,7 @@ export async function onRequestGet(context) {
   try {
     const url = new URL(request.url);
     const teamId = await getLeaderboardTeamId(env.DB, session);
+    if (!teamId) return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
     const summary = await getLeaderboardSummary(env.DB, teamId, {
       weekKey: url.searchParams.get("weekKey") || "",
     });

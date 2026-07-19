@@ -21,6 +21,7 @@ export async function onRequest(context) {
   if (!env.DB) return authJson({ ok: false, error: "Database not configured." }, { status: 503 });
 
   const teamId = await getTeamId(env.DB, session);
+  if (!teamId) return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
   const stats = await getModerationStats(env.DB, teamId);
 
   return withSecurityHeaders(authJson({ ok: true, stats }));

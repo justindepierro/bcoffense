@@ -2223,12 +2223,15 @@ function checkPlayerPortalContracts() {
   }
   if (
     !/function ensureMobileStartupSurface\(\)[\s\S]*const isPlayer = currentUser\?\.role === "player"[\s\S]*setWorkspaceSurface\("app"/.test(appBootstrap) ||
+    !/async function refreshPlayerRelease\(opts = \{\}\)/.test(cloudSync) ||
     !/function refreshPlayerCloudBackup\(opts = \{\}\)/.test(cloudSync) ||
-    !/targetTab:\s*"dashboard"/.test(cloudSync) ||
-    !/currentUser\?\.role === "player"[\s\S]*refreshPlayerCloudBackup\(\{ navigate: true \}\)[\s\S]*closeCloudSyncModal\(\)/.test(cloudSync) ||
+    !/async function refreshPlayerCloudBackup\(opts = \{\}\)\s*\{\s*return refreshPlayerRelease\(opts\);\s*\}/.test(cloudSync) ||
+    !/const targetTab = opts\.navigate === false \? "" : "dashboard"/.test(cloudSync) ||
+    !/await reloadAppFromStorage\(targetTab \? \{ targetTab \} : \{\}\)/.test(cloudSync) ||
+    !/currentUser\?\.role === "player"[\s\S]*refreshPlayerTeamApp\(\{ quiet: false, force: true \}\)[\s\S]*closeCloudSyncModal\(\)/.test(cloudSync) ||
     !/setWorkspaceSurface\("app", \{ initModules: false \}\)/.test(cloudSync)
   ) {
-    fail("player cloud refresh does not land safely on Dashboard");
+    fail("player release refresh does not preserve the player app surface");
   }
   if (
     !/window\.visualViewport/.test(appShell) ||
@@ -3368,6 +3371,12 @@ function checkServiceWorkerLifecycle() {
   const installBlock = sw.match(
     /self\.addEventListener\("install"[\s\S]*?\n\}\);/,
   )?.[0] || "";
+  const activateBlock = sw.match(
+    /self\.addEventListener\("activate"[\s\S]*?\n\}\);/,
+  )?.[0] || "";
+  const messageBlock = sw.match(
+    /self\.addEventListener\("message"[\s\S]*?\n\}\);/,
+  )?.[0] || "";
 
   if (/postMessage\(\s*["']skipWaiting["']/.test(registrationBlock)) {
     fail("service worker registration automatically activates waiting updates");
@@ -3377,6 +3386,24 @@ function checkServiceWorkerLifecycle() {
   }
   if (/skipWaiting\(\)/.test(installBlock)) {
     fail("service worker install forces takeover of active app tabs");
+  }
+  if (/clients\.claim\(\)/.test(activateBlock)) {
+    fail("service worker activation claims active tabs without an explicit update action");
+  }
+  if (
+    !/event\.waitUntil\(precacheLocalAssets\(\)\)/.test(installBlock) ||
+    !/event\.data\?\.type === "SKIP_WAITING"/.test(messageBlock) ||
+    !/event\.waitUntil\(self\.skipWaiting\(\)\)/.test(messageBlock)
+  ) {
+    fail("service worker update activation is not explicitly user-gated");
+  }
+  if (
+    !/url\.pathname === "\/auth\/me"/.test(sw) ||
+    !/url\.pathname === "\/player\/release"/.test(sw) ||
+    !/url\.pathname\.startsWith\("\/images\/"\)/.test(sw) ||
+    !/url\.pathname\.startsWith\("\/clips\/"\)/.test(sw)
+  ) {
+    fail("service worker can cache private player or media responses");
   }
   if (!/function isCacheableResponse\(/.test(sw)) {
     fail("service worker does not guard cache writes by response status/policy");
@@ -3629,7 +3656,9 @@ function checkStartupDiagnosticsAndRenderQueue() {
     !/state\.title \|\| "Ready"/.test(appShell) ||
     !/const title = ok[\s\S]*\? "Updates checked"[\s\S]*: result\.status === "offline" \? "Offline practice ready" : "Update check paused"/.test(appShell) ||
     !/stateOpts = quietStartup \? \{ render: false \}/.test(appShell) ||
-    !/refreshPlayerCloudBackup\(\{[\s\S]*navigate: !quietStartup,[\s\S]*skipIfCurrent: true/.test(appShell) ||
+    !/typeof window\.refreshPlayerRelease === "function" \|\| typeof window\.refreshPlayerCloudBackup === "function"/.test(appShell) ||
+    !/const refresh = typeof window\.refreshPlayerRelease === "function"[\s\S]*\? window\.refreshPlayerRelease[\s\S]*: window\.refreshPlayerCloudBackup/.test(appShell) ||
+    !/result\.data = await refresh\(\{[\s\S]*navigate: !quietStartup,[\s\S]*skipIfCurrent: true/.test(appShell) ||
     !/Checking media manifest/.test(appShell) ||
     !/Media loads on demand/.test(appShell) ||
     !/Checking quizzes/.test(appShell) ||
@@ -3646,10 +3675,23 @@ function checkStartupDiagnosticsAndRenderQueue() {
     !/function initNotifications\(opts = \{\}\)/.test(appNotifications) ||
     !/if \(!opts\.deferFirstPoll\) _pollUnreadCount\(\)/.test(appNotifications) ||
     !/function refreshNotificationStatus\(opts = \{\}\)[\s\S]*_pollUnreadCount\(opts\)/.test(appNotifications) ||
-    !/function isCloudRemoteAlreadyKnown\(remote/.test(cloudSync) ||
-    !/opts\.skipIfCurrent !== false && isCloudRemoteAlreadyKnown\(remote\)/.test(cloudSync)
+    !/async function fetchPlayerRelease\(opts = \{\}\)/.test(cloudSync) ||
+    !/fetch\("\/player\/release"/.test(cloudSync) ||
+    !/cache: "no-store"/.test(cloudSync) ||
+    !/headers\["If-None-Match"\] = meta\.etag/.test(cloudSync) ||
+    !/async function refreshPlayerRelease\(opts = \{\}\)[\s\S]*fetchPlayerRelease\(/.test(cloudSync) ||
+    !/if \(currentUser\.role === "player"\) \{[\s\S]*refreshPlayerRelease\(\{ force: false, navigate: false \}\)/.test(cloudSync)
   ) {
     fail("player first-impression startup refresh is not ordered and quiet");
+  }
+  const playerReleaseRefresh = extractFunctionSource(cloudSync, "refreshPlayerRelease");
+  if (
+    !playerReleaseRefresh ||
+    !/fetchPlayerRelease\(/.test(playerReleaseRefresh) ||
+    !/applyPlayerRelease\(/.test(playerReleaseRefresh) ||
+    /fetchCloudBackup\(|restoreCloudBackup\(|cloudSyncRequest\(|\/sync\/backup/.test(playerReleaseRefresh)
+  ) {
+    fail("player startup refresh can still use the broad recovery workspace");
   }
   if (
     /No cloud backup has been pushed yet|Getting team app ready|Already checking team updates|Home is ready|Checking team updates|Waiting on coach update|Team app ready|No team workspace has been pushed yet|Team app could not refresh|Refresh needs connection/.test(appShell) ||
@@ -4151,7 +4193,8 @@ function checkWorkspaceSyncContracts() {
     "setWorkspaceSyncStatus()",
     "hasWorkspaceSyncWork()",
     "Diagram attachment saves to the cloud automatically",
-    "/images/manifest?sig=...",
+    "authorized, team-scoped cloud",
+    "/images/file?sig=...",
     "Raw cloud push/pull is admin-only recovery tooling",
     "Keep raw cloud recovery and all-local diagram upload under admin-only",
   ].forEach((token) => {
@@ -4170,8 +4213,21 @@ function checkWorkspaceSyncContracts() {
 function checkPlayerDiagramReadinessContracts() {
   const manifest = read("functions/images/manifest.js");
   const batchManifest = read("functions/images/batch-manifest.js");
+  const imageFile = read("functions/images/file.js");
   const imageMedia = read("functions/_lib/image-media.js");
+  const mediaAccess = read("functions/_lib/media-access.js");
+  const playerRelease = read("functions/_lib/player-release.js");
+  const playerReleaseRoute = read("functions/player/release.js");
+  const playerReleaseAdminRoute = read("functions/admin/player-release.js");
+  const rawWorkspaceRoute = read("functions/sync/backup.js");
+  const teamContext = read("functions/_lib/team-context.js");
+  const teamWorkspace = read("functions/_lib/team-workspace.js");
+  const clipManifest = read("functions/clips/manifest.js");
+  const clipBatchManifest = read("functions/clips/batch-manifest.js");
+  const clipFile = read("functions/clips/file.js");
+  const clipSigs = read("functions/clips/sigs.js");
   const playImages = read("js/play-images.js");
+  const storage = read("js/storage.js");
   const mediaInventory = read("js/media-inventory.js");
   const html = read("index.html");
   const sw = read("sw.js");
@@ -4181,23 +4237,56 @@ function checkPlayerDiagramReadinessContracts() {
   const playbookCss = read("css/playbook.css");
 
   if (
-    !/resolveImageManifest\(context\.env, bucket, sig\)/.test(manifest) ||
+    !/getMediaAccess\(context\.request, context\.env, "diagram", sig\)/.test(manifest) ||
+    !/resolveImageManifest\(context\.env, bucket, access\.teamId, sig\)/.test(manifest) ||
     !/publicImageManifest\(sig, resolved\.manifest/.test(manifest) ||
     !/published:\s*false/.test(imageMedia) ||
     !/published:\s*true/.test(imageMedia) ||
     !/version: manifest\.version/.test(imageMedia)
   ) {
-    fail("remote image manifest endpoint is incomplete");
+    fail("remote image manifest endpoint is not team-scoped and release-authorized");
   }
 
   if (
     !/POST \/images\/batch-manifest/.test(batchManifest) ||
     !/const MAX_BATCH_SIGS = 100/.test(batchManifest) ||
-    !/resolveImageManifest\(context\.env, bucket, sig\)/.test(batchManifest) ||
+    !/getMediaPrincipal\(context\.request, context\.env\)/.test(batchManifest) ||
+    !/releaseAllowsDiagram\(principal\.release, sig\)/.test(batchManifest) ||
+    !/resolveImageManifest\(context\.env, bucket, principal\.teamId, sig\)/.test(batchManifest) ||
     !/manifests\[sig\] = publicImageManifest\(sig, resolved\.manifest/.test(batchManifest) ||
     !/Use POST with a sigs array/.test(batchManifest)
   ) {
-    fail("remote image batch manifest endpoint is incomplete");
+    fail("remote image batch manifest endpoint is not team-scoped and release-authorized");
+  }
+
+  const imageManifestResolver = imageMedia.match(
+    /export async function resolveImageManifest\([\s\S]*?\n\}/,
+  )?.[0] || "";
+  const imageDeleteRoute = imageFile.match(
+    /export async function onRequestDelete\([\s\S]*?\n\}/,
+  )?.[0] || "";
+  if (
+    !/function imageManifestKey\(teamId, mediaId\)/.test(imageMedia) ||
+    !/function imageVersionedR2Key\(teamId, mediaId, version\)/.test(imageMedia) ||
+    !/team_media_manifests WHERE team_id = \? AND media_id = \? AND kind = 'diagram'/.test(imageMedia) ||
+    !/ON CONFLICT\(team_id, media_id, kind\) DO UPDATE SET/.test(imageMedia) ||
+    !/WHERE team_media_manifests\.version = \?/.test(imageMedia) ||
+    !/return \{ committed: changes > 0, changes \}/.test(imageMedia) ||
+    !/return \{ manifest: null, legacy: false \}/.test(imageManifestResolver) ||
+    /legacyImageR2Key\(|bucket\.get\(/.test(imageManifestResolver)
+  ) {
+    fail("diagram manifest storage is missing team-scoped compare-and-swap or still has a legacy runtime fallback");
+  }
+  if (
+    !/getStaffWriteAccess\(context\.request, context\.env\)/.test(imageFile) ||
+    !/X-BC-Expected-Version/.test(imageFile) ||
+    !/imageVersionedR2Key\(access\.teamId, sig, version\)/.test(imageFile) ||
+    !/writeImageManifest\(context\.env, access\.teamId, sig, manifest, \{ expectedVersion \}\)/.test(imageFile) ||
+    !/status: 409/.test(imageFile) ||
+    !/deleteImageManifest\(context\.env, access\.teamId, sig, \{/.test(imageDeleteRoute) ||
+    /bucket\.delete\(/.test(imageDeleteRoute)
+  ) {
+    fail("diagram writes do not use immutable versioned objects, CAS conflicts, and recoverable pointer deletes");
   }
 
   if (
@@ -4222,6 +4311,101 @@ function checkPlayerDiagramReadinessContracts() {
   }
 
   if (
+    !/const COACH_DB_NAME = "bcoffense-images"/.test(playImages) ||
+    !/const PLAYER_DB_NAME = "bcoffense-player-images"/.test(playImages) ||
+    !/return user\?\.role === "player" \? PLAYER_DB_NAME : COACH_DB_NAME/.test(playImages) ||
+    !/function clearPlayerReleaseCache\(\)/.test(playImages) ||
+    !/Player-facing cloud reads are deliberately canonical-only/.test(playImages) ||
+    !/return \[_remoteIdentityKey\(play\)\]\.map\(_normalizeSig\)\.filter\(Boolean\)/.test(playImages) ||
+    !/X-BC-Expected-Version/.test(playImages) ||
+    !/Number\(result\.status\) === 409/.test(playImages) ||
+    !/const _PLAYER_RELEASE_DB_NAME = "bcoffense-player-release"/.test(storage) ||
+    !/async replacePlayerReleaseData\(release\)/.test(storage) ||
+    !/PLAYER_RELEASE_STORAGE_PREFIX = "_bcPlayerRelease:"/.test(storage) ||
+    !/Do not scrub generic localStorage here/.test(storage)
+  ) {
+    fail("player release application can still collide with coach diagram or workspace storage");
+  }
+
+  if (
+    !/export const PLAYER_RELEASE_SCHEMA = "bcoffense\.player-release\/v1"/.test(playerRelease) ||
+    !/function mediaIdForPlay\(play\)/.test(playerRelease) ||
+    !/return sourceId \? `play:\$\{sourceId\}` : ""/.test(playerRelease) ||
+    !/const diagramMediaIds = \[\.\.\.new Set\(playbook\.map\(\(play\) => cleanString\(play\.mediaId, 512\)\)\.filter\(Boolean\)\)\]\.sort\(\)/.test(playerRelease) ||
+    !/Authorization is the permanent media ID/.test(playerRelease) ||
+    !/readImageManifests\(opts\.env, teamId, diagramMediaIds\)/.test(playerRelease) ||
+    !/function releaseAllowsDiagram\(release, mediaId\)/.test(playerRelease) ||
+    !/function releaseAllowsClip\(release, sig\)/.test(playerRelease) ||
+    !/session\.role !== "player"/.test(playerReleaseRoute) ||
+    !/async function loadRelease\(env, teamId\)/.test(playerReleaseRoute) ||
+    !/return readStoredPlayerRelease\(env, teamId\)/.test(playerReleaseRoute) ||
+    !/loadRelease\(context\.env, teamId\)/.test(playerReleaseRoute) ||
+    !/If-None-Match/.test(playerReleaseRoute) ||
+    !/Cache-Control": "private, no-store"/.test(playerReleaseRoute) ||
+    /sync\/backup|rebuildStoredPlayerRelease|writeStoredPlayerRelease/.test(playerReleaseRoute) ||
+    !/readCanonicalPlayerRelease\(env, teamId\)/.test(playerRelease) ||
+    !/readCurrentPlayerReleaseRevision\(env, env\?\.CLIPS, teamId\)/.test(playerRelease) ||
+    !/session\.role !== "admin"/.test(playerReleaseAdminRoute) ||
+    !/readCurrentWorkspaceRevision\(context\.env, context\.env\.CLIPS, teamId\)/.test(playerReleaseAdminRoute) ||
+    !/commitWorkspaceAndPlayerRelease\(context\.env, context\.env\.CLIPS, \{/.test(playerReleaseAdminRoute)
+  ) {
+    fail("player release boundary is not a read-only, team-pinned projection with admin-only recovery");
+  }
+  const rawWorkspaceRead = extractFunctionSource(rawWorkspaceRoute, "readBackup");
+  const rawWorkspaceWrite = extractFunctionSource(rawWorkspaceRoute, "writeBackup");
+  if (
+    !rawWorkspaceRead ||
+    !rawWorkspaceWrite ||
+    !/session\.role !== "admin"/.test(rawWorkspaceRead) ||
+    !/resolveSessionTeamId\(session, context\.env\)/.test(rawWorkspaceRead) ||
+    !/readTeamWorkspaceRecord\(store, context\.env, teamId\)/.test(rawWorkspaceRead) ||
+    !/session\.role !== "admin"/.test(rawWorkspaceWrite) ||
+    !/resolveSessionTeamId\(session, context\.env\)/.test(rawWorkspaceWrite) ||
+    !/commitWorkspaceAndPlayerRelease\(context\.env, context\.env\.CLIPS, \{/.test(rawWorkspaceWrite) ||
+    !/writeTeamWorkspace\(store, teamId, backupText/.test(rawWorkspaceWrite)
+  ) {
+    fail("raw workspace recovery can bypass the admin/team release boundary");
+  }
+
+  if (
+    !/function teamWorkspaceKey\(teamId\)/.test(teamContext) ||
+    !/function teamClipManifestKey\(teamId, sig\)/.test(teamContext) ||
+    !/encodeURIComponent\(requireTeamId\(teamId\)\)/.test(teamContext) ||
+    !/if \(session\?\.d1UserId\) return ""/.test(teamContext) ||
+    !/function isPrimaryTeam\(env, teamId\)/.test(teamContext) ||
+    !/const LEGACY_TEAM_WORKSPACE_KEY = "team-backup"/.test(teamWorkspace) ||
+    !/if \(!\(await canReadLegacyForTeam\(env, teamId\)\)\) return/.test(teamWorkspace) ||
+    !/writeTeamWorkspace\(store, teamId, value/.test(teamWorkspace) ||
+    !/writeTeamClipManifest\(store, teamId, sig, entries\)/.test(teamWorkspace)
+  ) {
+    fail("team workspace or clip manifests can bypass the explicit tenant boundary");
+  }
+
+  if (
+    !/getMediaPrincipal\(request, env\)/.test(mediaAccess) ||
+    !/readStoredPlayerRelease\(env, teamId\)/.test(mediaAccess) ||
+    !/releaseAllowsDiagram\(principal\.release, identifier\)/.test(mediaAccess) ||
+    !/releaseAllowsClip\(principal\.release, identifier\)/.test(mediaAccess) ||
+    !/status: 404/.test(mediaAccess) ||
+    !/getStaffWriteAccess\(request, env\)/.test(mediaAccess) ||
+    !/getMediaAccess\(context\.request, context\.env, "clip", sig\)/.test(clipManifest) ||
+    !/async function readManifest\(store, env, teamId, sig\)/.test(clipManifest) ||
+    !/return readTeamClipManifest\(store, env, teamId, sig\)/.test(clipManifest) ||
+    !/readManifest\(store, context\.env, access\.teamId, sig\)/.test(clipManifest) ||
+    !/canonicalClipR2Key\(access\.teamId, id\)/.test(clipManifest) ||
+    !/writeTeamClipManifest\(store, access\.teamId, sig/.test(clipManifest) ||
+    !/getMediaPrincipal\(context\.request, context\.env\)/.test(clipBatchManifest) ||
+    !/releaseAllowsClip\(principal\.release, sig\)/.test(clipBatchManifest) ||
+    !/readTeamClipManifest\(store, context\.env, principal\.teamId, sig\)/.test(clipBatchManifest) ||
+    !/getMediaAccess\(context\.request, context\.env, "clip", sig\)/.test(clipFile) ||
+    !/readTeamClipManifest\(store, context\.env, access\.teamId, sig\)/.test(clipFile) ||
+    !/principal\.session\?\.role === "player"/.test(clipSigs) ||
+    !/principal\.release\?\.media\?\.clipSigs/.test(clipSigs)
+  ) {
+    fail("clip access is not consistently release-authorized and team-scoped");
+  }
+
+  if (
     !/async function buildMediaInventoryReport\(\)/.test(mediaInventory) ||
     !/window\.buildMediaInventoryReport = buildMediaInventoryReport/.test(mediaInventory) ||
     !/window\.openMediaInventoryReport = async function/.test(mediaInventory) ||
@@ -4242,19 +4426,32 @@ function checkPlayerDiagramReadinessContracts() {
   const imageInventoryRoute = read("functions/images/inventory.js");
   const cloudMediaInventoryRoute = read("functions/media/inventory.js");
   const legacyDiagramMigrationRoute = read("functions/images/migrate-legacy.js");
+  const legacyDiagramAuditRoute = read("functions/images/audit-legacy.js");
+  const legacyDiagramRepairRoute = read("functions/images/repair-legacy.js");
   if (
-    !/CANONICAL_PREFIX = "media\/plays\/"/.test(imageInventoryRoute) ||
+    !/const LEGACY_CANONICAL_PREFIX = "media\/plays\/"/.test(imageInventoryRoute) ||
     !/LEGACY_PREFIX = "images\/"/.test(imageInventoryRoute) ||
-    !/function mediaIdForObjectKey\(key\)/.test(imageInventoryRoute) ||
-    !/prefixes: \[CANONICAL_PREFIX, LEGACY_PREFIX\]/.test(imageInventoryRoute)
+    !/function teamDiagramPrefix\(teamId\)/.test(imageInventoryRoute) ||
+    !/resolveSessionTeamId\(session, context\.env\)/.test(imageInventoryRoute) ||
+    !/const includeLegacy = await canInspectLegacyForTeam\(context\.env, teamId\)/.test(imageInventoryRoute) ||
+    !/canonicalPrefix,\s*\.\.\.\(includeLegacy \? \[LEGACY_CANONICAL_PREFIX, LEGACY_PREFIX\] : \[\]\)/.test(imageInventoryRoute) ||
+    !/function mediaIdForObjectKey\(key, canonicalPrefix\)/.test(imageInventoryRoute) ||
+    !/scope: \{ legacyIncluded: includeLegacy \}/.test(imageInventoryRoute)
   ) {
-    fail("cloud diagram inventory does not cover canonical and legacy object paths");
+    fail("cloud diagram inventory is not team-scoped with primary-team-only legacy recovery");
   }
   if (
-    !/CLIP_MANIFEST_PREFIX = "clips:"/.test(cloudMediaInventoryRoute) ||
+    !/LEGACY_CLIP_MANIFEST_PREFIX = "clips:"/.test(cloudMediaInventoryRoute) ||
     !/function isStaff\(session\)/.test(cloudMediaInventoryRoute) ||
-    !/listManifestKeys\(store\)/.test(cloudMediaInventoryRoute) ||
-    !/readManifests\(store, manifestList\.keys\)/.test(cloudMediaInventoryRoute) ||
+    !/function teamMediaPrefix\(teamId\)/.test(cloudMediaInventoryRoute) ||
+    !/teamClipManifestPrefix\(teamId\)/.test(cloudMediaInventoryRoute) ||
+    !/readTeamClipManifest\(store, env, teamId, sig\)/.test(cloudMediaInventoryRoute) ||
+    !/const includeLegacy = await canInspectLegacyForTeam\(context\.env, teamId\)/.test(cloudMediaInventoryRoute) ||
+    !/listManifestSigs\(store, teamId, includeLegacy\)/.test(cloudMediaInventoryRoute) ||
+    !/readManifests\(store, context\.env, teamId, manifestList\.sigs\)/.test(cloudMediaInventoryRoute) ||
+    !/function publicManifest\(row\)/.test(cloudMediaInventoryRoute) ||
+    !/objectKey: _objectKey/.test(cloudMediaInventoryRoute) ||
+    !/scope: \{ legacyIncluded: includeLegacy \}/.test(cloudMediaInventoryRoute) ||
     !/signalClipCount/.test(cloudMediaInventoryRoute) ||
     !/orphanObjectCount/.test(cloudMediaInventoryRoute) ||
     !/fetch\("\/media\/inventory"/.test(mediaInventory) ||
@@ -4265,13 +4462,38 @@ function checkPlayerDiagramReadinessContracts() {
   if (
     !/session\.role !== "admin"/.test(legacyDiagramMigrationRoute) ||
     !/const MAX_ITEMS = 100/.test(legacyDiagramMigrationRoute) ||
-    !/bucket\.get\(`images\/\$\{legacyKey\}`\)/.test(legacyDiagramMigrationRoute) ||
-    !/imageVersionedR2Key\(mediaId, version\)/.test(legacyDiagramMigrationRoute) ||
-    !/writeImageManifest\(context\.env, mediaId/.test(legacyDiagramMigrationRoute) ||
-    !/migrateRecoverableCloudDiagrams/.test(mediaInventory) ||
-    !/Migrate \$\{reconciliation\.counts\.legacy\} recoverable diagrams/.test(mediaInventory)
+    !/resolveSessionTeamId\(session, context\.env\)/.test(legacyDiagramMigrationRoute) ||
+    !/isPrimaryTeam\(context\.env, teamId\)/.test(legacyDiagramMigrationRoute) ||
+    !/expectedLegacyChecksum/.test(legacyDiagramMigrationRoute) ||
+    !/\^\[a-f0-9\]\{64\}\$/.test(legacyDiagramMigrationRoute) ||
+    !/readImageManifest\(context\.env, teamId, mediaId\)/.test(legacyDiagramMigrationRoute) ||
+    !/normalizeLegacyDiagramSourceKey/.test(legacyDiagramMigrationRoute) ||
+    !/bucket\.get\(sourceKey\)/.test(legacyDiagramMigrationRoute) ||
+    !/detectImageContentType\(bytes\)/.test(legacyDiagramMigrationRoute) ||
+    !/imageVersionedR2Key\(teamId, mediaId, version\)/.test(legacyDiagramMigrationRoute) ||
+    !/writeImageManifest\(context\.env, teamId, mediaId/.test(legacyDiagramMigrationRoute) ||
+    !/expectedVersion: ""/.test(legacyDiagramMigrationRoute) ||
+    /bucket\.delete\(/.test(legacyDiagramMigrationRoute) ||
+    !/session\.role !== "admin"/.test(legacyDiagramAuditRoute) ||
+    !/isPrimaryTeam\(context\.env, teamId\)/.test(legacyDiagramAuditRoute) ||
+    !/normalizeLegacyDiagramSourceKey/.test(legacyDiagramAuditRoute) ||
+    !/sha256Hex\(await legacy\.arrayBuffer\(\)\)/.test(legacyDiagramAuditRoute) ||
+    /writeImageManifest|bucket\.put|bucket\.delete/.test(legacyDiagramAuditRoute) ||
+    !/session\.role !== "admin"/.test(legacyDiagramRepairRoute) ||
+    !/isPrimaryTeam\(context\.env, teamId\)/.test(legacyDiagramRepairRoute) ||
+    !/expectedCurrentChecksum/.test(legacyDiagramRepairRoute) ||
+    !/expectedLegacyChecksum/.test(legacyDiagramRepairRoute) ||
+    !/normalizeLegacyDiagramSourceKey/.test(legacyDiagramRepairRoute) ||
+    !/bucket\.get\(sourceKey\)/.test(legacyDiagramRepairRoute) ||
+    !/detectImageContentType\(bytes\)/.test(legacyDiagramRepairRoute) ||
+    !/imageVersionedR2Key\(teamId, mediaId, version\)/.test(legacyDiagramRepairRoute) ||
+    !/writeImageManifest\(context\.env, teamId, mediaId/.test(legacyDiagramRepairRoute) ||
+    !/expectedVersion: current\.version/.test(legacyDiagramRepairRoute) ||
+    /bucket\.delete\(/.test(legacyDiagramRepairRoute) ||
+    !/Automatic legacy promotion is paused/.test(mediaInventory) ||
+    !/broad historical key matching is no longer allowed/.test(mediaInventory)
   ) {
-    fail("legacy diagram migration contract is incomplete");
+    fail("legacy diagram recovery is not admin-only, checksum-verified, and non-destructive");
   }
 
   if (
@@ -5190,11 +5412,13 @@ function checkSignalPlayIntegrationContracts() {
     !/window\.playClips\.configureLoopPreviewVideo\(video\)/.test(presentation) ||
     !/function isReplaceOnlySig\(sig\)/.test(clipManifest) ||
     !/const replaceExisting = isReplaceOnlySig\(sig\)/.test(clipManifest) ||
-    !/writeManifest\(store, sig, replaceExisting \? \[entry\] : \[\.\.\.entries, entry\]\)/.test(clipManifest) ||
+    !/writeTeamClipManifest\(store, access\.teamId, sig, replaceExisting \? \[entry\] : \[\.\.\.entries, entry\]\)/.test(clipManifest) ||
     !/Promise\.allSettled/.test(clipManifest) ||
     !/POST \/clips\/batch-manifest/.test(clipBatchManifest) ||
     !/const MAX_BATCH_SIGS = 100/.test(clipBatchManifest) ||
-    !/manifestKey\(sig\)/.test(clipBatchManifest) ||
+    !/getMediaPrincipal\(context\.request, context\.env\)/.test(clipBatchManifest) ||
+    !/releaseAllowsClip\(principal\.release, sig\)/.test(clipBatchManifest) ||
+    !/readTeamClipManifest\(store, context\.env, principal\.teamId, sig\)/.test(clipBatchManifest) ||
     !/manifests\[sig\] = entries\.map\(publicClip\)/.test(clipBatchManifest) ||
     !/Use POST with a sigs array/.test(clipBatchManifest) ||
     !/SIGNAL_IPHONE_CAPTURE_HINT/.test(signals) ||

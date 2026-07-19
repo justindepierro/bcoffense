@@ -29,9 +29,13 @@ export async function onRequest(context) {
     return authJson({ ok: false, error: "Database not configured." }, { status: 503 });
   }
 
-  // Resolve team_id for this player (defense in depth — scope queries to their team)
-  const userRow = await env.DB.prepare("SELECT team_id FROM users WHERE id = ? LIMIT 1").bind(userId).first();
-  const teamId = userRow?.team_id || null;
+  // auth.js revalidates a D1 principal and resolves this value on every
+  // request. Never degrade to an unscoped personal-query path if a malformed
+  // legacy session lacks it.
+  const teamId = String(session.teamId || "").trim();
+  if (!teamId) {
+    return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
+  }
 
   const url = new URL(request.url);
   const stateFilter = url.searchParams.get("state") || ""; // "open"|"answered"|"resolved"|""
@@ -49,9 +53,8 @@ export async function onRequest(context) {
     stateBinds = [stateFilter];
   }
 
-  // Team scope clause — if team_id is known, add it for defense in depth
-  const teamWhere = teamId ? "AND pt.team_id = ?" : "";
-  const teamBinds = teamId ? [teamId] : [];
+  const teamWhere = "AND pt.team_id = ?";
+  const teamBinds = [teamId];
 
   const mainQuery = `
     SELECT
@@ -116,22 +119,15 @@ export async function onRequest(context) {
   }));
 
   // Summary counts (all states, regardless of filter)
-  const summaryQuery = teamId
-    ? `SELECT
-         COUNT(CASE WHEN dp.question_state IN ('open','reopened') THEN 1 END) AS open_count,
-         COUNT(CASE WHEN dp.question_state = 'answered' THEN 1 END)           AS answered_count,
-         COUNT(CASE WHEN dp.question_state = 'resolved' THEN 1 END)           AS resolved_count
-       FROM discussion_posts dp
-       JOIN play_threads pt ON pt.id = dp.thread_id
-       WHERE dp.author_id = ? AND dp.post_type = 'question' AND dp.deleted_at IS NULL AND pt.team_id = ?`
-    : `SELECT
-         COUNT(CASE WHEN question_state IN ('open','reopened') THEN 1 END) AS open_count,
-         COUNT(CASE WHEN question_state = 'answered' THEN 1 END)           AS answered_count,
-         COUNT(CASE WHEN question_state = 'resolved' THEN 1 END)           AS resolved_count
-       FROM discussion_posts
-       WHERE author_id = ? AND post_type = 'question' AND deleted_at IS NULL`;
+  const summaryQuery = `SELECT
+       COUNT(CASE WHEN dp.question_state IN ('open','reopened') THEN 1 END) AS open_count,
+       COUNT(CASE WHEN dp.question_state = 'answered' THEN 1 END)           AS answered_count,
+       COUNT(CASE WHEN dp.question_state = 'resolved' THEN 1 END)           AS resolved_count
+     FROM discussion_posts dp
+     JOIN play_threads pt ON pt.id = dp.thread_id
+     WHERE dp.author_id = ? AND dp.post_type = 'question' AND dp.deleted_at IS NULL AND pt.team_id = ?`;
 
-  const summaryBinds = teamId ? [userId, teamId] : [userId];
+  const summaryBinds = [userId, teamId];
   const summary = await env.DB.prepare(summaryQuery).bind(...summaryBinds).first();
 
   return withSecurityHeaders(authJson({

@@ -5,6 +5,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Pages Functions can reference tables introduced by the same release. Confirm
+# the remote schema is current before staging or uploading any Pages assets.
+# The preflight is read-only and refuses to apply migrations on its own.
+./scripts/cloudflare-preflight.sh
+
 # Use globally-installed wrangler directly (faster than npx)
 WRANGLER="$(which wrangler 2>/dev/null || echo "npx wrangler")"
 

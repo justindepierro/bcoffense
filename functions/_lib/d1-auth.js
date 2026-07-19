@@ -140,6 +140,12 @@ export async function verifyD1Credentials(email, password, db) {
 
   return {
     d1_user_id: user.id,
+    // The login JSON response is used immediately by the player bootstrap.
+    // Keep these browser-facing aliases alongside the cookie-facing snake_case
+    // value so the first login can bind its isolated player cache to the
+    // validated D1 principal without waiting for a second /auth/me request.
+    d1UserId: user.id,
+    teamId: String(user.team_id || "").trim(),
     username: user.email.toLowerCase(),
     role: user.role,
     label: user.display_name,
@@ -172,9 +178,24 @@ export async function changeD1Password(db, userId, currentPassword, newPassword)
  */
 export async function invalidateAllD1Sessions(db, userId) {
   const now = Math.floor(Date.now() / 1000);
+  await setD1SessionInvalidBefore(db, userId, now);
+}
+
+/**
+ * Store session invalidation separately from users so the contract works on
+ * every production database, including installations that predate the column
+ * that an earlier untracked deployment added to users.
+ */
+export async function setD1SessionInvalidBefore(db, userId, invalidBefore) {
+  const value = Math.max(0, Number(invalidBefore) || 0);
+  const now = Math.floor(Date.now() / 1000);
   await db
-    .prepare("UPDATE users SET sessions_invalid_before = ?, updated_at = ? WHERE id = ?")
-    .bind(now, now, userId)
+    .prepare(`INSERT INTO account_session_state (user_id, invalid_before, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(user_id) DO UPDATE SET
+        invalid_before = excluded.invalid_before,
+        updated_at = excluded.updated_at`)
+    .bind(userId, value, now)
     .run();
 }
 
@@ -208,10 +229,11 @@ export async function createD1User(db, { email, displayName, firstName, lastName
 export async function activateD1User(db, userId, password) {
   const hash = await hashPassword(password);
   const now = Math.floor(Date.now() / 1000);
-  await db
-    .prepare("UPDATE users SET password_hash = ?, status = 'active', password_changed_at = ?, updated_at = ? WHERE id = ?")
+  const result = await db
+    .prepare("UPDATE users SET password_hash = ?, status = 'active', password_changed_at = ?, updated_at = ? WHERE id = ? AND status = 'invited'")
     .bind(hash, now, now, userId)
     .run();
+  return Number(result?.meta?.changes || 0) === 1;
 }
 
 /**
@@ -225,9 +247,10 @@ export async function updateD1Password(db, userId, password) {
   const hash = await hashPassword(password);
   const now = Math.floor(Date.now() / 1000);
   await db
-    .prepare("UPDATE users SET password_hash = ?, password_changed_at = ?, sessions_invalid_before = ?, updated_at = ? WHERE id = ?")
-    .bind(hash, now, now, now, userId)
+    .prepare("UPDATE users SET password_hash = ?, password_changed_at = ?, updated_at = ? WHERE id = ?")
+    .bind(hash, now, now, userId)
     .run();
+  await setD1SessionInvalidBefore(db, userId, now);
 }
 
 // ── Verification tokens ───────────────────────────────────────────────────────
@@ -241,10 +264,22 @@ export async function createVerificationToken(db, userId, type, expiresInSeconds
   const tokenHash = await hashToken(rawToken);
   const id = crypto.randomUUID();
   const exp = Math.floor(Date.now() / 1000) + expiresInSeconds;
-  await db
+  const now = Math.floor(Date.now() / 1000);
+  const revokeOutstanding = db
+    .prepare("UPDATE verification_tokens SET used_at = ? WHERE user_id = ? AND type = ? AND used_at IS NULL")
+    .bind(now, userId, type);
+  const insert = db
     .prepare("INSERT INTO verification_tokens (id, user_id, type, token_hash, expires_at) VALUES (?, ?, ?, ?, ?)")
-    .bind(id, userId, type, tokenHash, exp)
-    .run();
+    .bind(id, userId, type, tokenHash, exp);
+  // D1 batch is transactional: a newly issued invite/reset makes every prior
+  // unused link of that type invalid before the replacement becomes visible.
+  // The fallback exists only for the tiny in-memory test doubles used by this
+  // repository; production D1 always takes the atomic branch.
+  if (typeof db.batch === "function") await db.batch([revokeOutstanding, insert]);
+  else {
+    await revokeOutstanding.run();
+    await insert.run();
+  }
   return rawToken;
 }
 

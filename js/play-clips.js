@@ -1,7 +1,7 @@
 /* play-clips.js — Remote, player-accessible video clips for plays.
    Blobs live in Cloudflare R2 behind auth-gated Pages Functions; this module is
-   the browser-side client. Clips are keyed by the same play signature used for
-   play images so the editor and presentation viewer resolve the same set.
+   the browser-side client. New clips use the permanent play media ID, matching
+   diagrams. Historic signature manifests remain read-only staff recovery data.
 
    Public API (global window.playClips):
      playClips.sigForPlay(play)            → canonical signature string ("" if none)
@@ -44,13 +44,9 @@
   let _indexPromise = null;
   const _manifestCache = new Map();
 
-  // Candidate signature keys for a play, most-canonical first. Clips are SHARED
-  // across devices via R2, so the primary key must be content-derived and
-  // device-stable. getPlayIdentityKey(play,"tag") is derived purely from play
-  // fields, so a coach and a player compute the same key for the same play.
-  // NEVER key by play.id / playSignature here: play.id is a random per-device
-  // id (createPlayId), so it would never match across devices. Alternate keys
-  // are kept only as read-side fallbacks for clips uploaded under older keys.
+  // Candidate keys are permanent-media-ID first. Tag/content-derived keys are
+  // historical fallbacks only; a player route accepts one only when the active
+  // release has proved that the legacy key identifies exactly one released play.
   function candidateSigs(play) {
     if (!play) return [];
     const out = [];
@@ -58,6 +54,11 @@
       const v = value ? String(value) : "";
       if (v && !out.includes(v)) out.push(v);
     };
+    if (typeof getPlayMediaId === "function") {
+      push(getPlayMediaId(play));
+    } else {
+      push(play?.mediaId);
+    }
     if (typeof getPlayIdentityKey === "function") {
       push(getPlayIdentityKey(play, "tag"));
     }
@@ -133,6 +134,12 @@
     } else {
       _manifestCache.clear();
     }
+  }
+
+  function resetReleaseCache() {
+    _indexSet = null;
+    _indexPromise = null;
+    _manifestCache.clear();
   }
 
   function getManifestCache() {
@@ -1148,6 +1155,7 @@
     fileUrl,
     fileUrlForSig,
     getManifestCache,
+    resetReleaseCache,
     listForSig,
     listForSigs,
     list,

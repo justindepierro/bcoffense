@@ -23,6 +23,10 @@ import {
   getCustomTermOpts,
   createPostAttachment,
 } from "../../_lib/d1-threads.js";
+import {
+  isCanonicalDiscussionAttachmentKey,
+  normalizeDiscussionAttachmentId,
+} from "../../_lib/discussion-attachments.js";
 import { notifyOnCoachPost, notifyOnReply, notifyOnVisualReply, createNotification } from "../../_lib/d1-notifications.js";
 
 export async function onRequest(context) {
@@ -36,6 +40,9 @@ export async function onRequest(context) {
   if (!playId) return authJson({ ok: false, error: "Play ID required." }, { status: 400 });
 
   const teamId = await getTeamId(env.DB, session);
+  if (!teamId) {
+    return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
+  }
 
   // ── GET — load thread + posts ─────────────────────────────────────────────
   if (request.method === "GET") {
@@ -76,7 +83,7 @@ export async function onRequest(context) {
       return authJson({ ok: false, error: "Player account required to post." }, { status: 403 });
     }
     // Coaches/admins get a synthetic user if not in D1 yet
-    const authorId = await resolveAuthorId(env.DB, session);
+    const authorId = await resolveAuthorId(env.DB, session, teamId);
     if (!authorId) return authJson({ ok: false, error: "Could not resolve author." }, { status: 500 });
 
     let body = {};
@@ -99,6 +106,23 @@ export async function onRequest(context) {
       ? body.attachment : null;
 
     if (!postBody) return authJson({ ok: false, error: "Post body required." }, { status: 422 });
+
+    // An attachment upload happens before the discussion post is created. Bind
+    // it back to the post only when its opaque R2 key is exactly the canonical
+    // key for this authenticated team and still exists with matching metadata.
+    // This blocks a client from submitting another team's known attachment ID
+    // or a legacy unscoped key as the attachment on a new post.
+    let attachment = null;
+    if (attachmentMeta) {
+      if (!isStaff) {
+        return authJson({ ok: false, error: "Only coaches may attach images." }, { status: 403 });
+      }
+      const attachmentValidation = await validateUploadedAttachment(env, teamId, attachmentMeta);
+      if (attachmentValidation.error) {
+        return authJson({ ok: false, error: attachmentValidation.error }, { status: 422 });
+      }
+      attachment = attachmentValidation.attachment;
+    }
 
     // ── Mute check (temporary post ban from coach action) ─────────────────
     const muteUntil = await getPlayerMuteUntil(env.DB, authorId);
@@ -144,15 +168,15 @@ export async function onRequest(context) {
     if (result?.error) return authJson({ ok: false, error: result.error }, { status: 422 });
 
     // ── Create attachment record if image was uploaded before posting ──────
-    if (attachmentMeta?.r2_key && isStaff) {
+    if (attachment) {
       await createPostAttachment(env.DB, {
-        id: attachmentMeta.id || crypto.randomUUID(),
+        id: attachment.id,
         postId: result.id,
-        type: attachmentMeta.type === "markup" ? "markup" : "image",
-        r2Key: String(attachmentMeta.r2_key),
-        caption: String(attachmentMeta.caption || "").slice(0, 500) || null,
-        sourcePlayId: String(attachmentMeta.sourcePlayId || "").slice(0, 512) || null,
-        sizeBytes: Number(attachmentMeta.sizeBytes) || null,
+        type: attachment.type,
+        r2Key: attachment.r2Key,
+        caption: attachment.caption,
+        sourcePlayId: attachment.sourcePlayId,
+        sizeBytes: attachment.sizeBytes,
       }).catch(() => { /* non-fatal — attachment metadata loss is acceptable */ });
     }
 
@@ -162,7 +186,7 @@ export async function onRequest(context) {
         "SELECT post_type, question_state FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1"
       ).bind(parentPostId).first();
       if (parent?.post_type === "question" && (parent.question_state === "open" || parent.question_state === "reopened")) {
-        await setQuestionState(env.DB, parentPostId, "answered", session);
+        await setQuestionState(env.DB, teamId, parentPostId, "answered", session);
       }
     }
 
@@ -179,7 +203,7 @@ export async function onRequest(context) {
     }
 
     // Notify when a coach posts a visual (markup/image) reply (fire-and-forget)
-    if (isStaff && parentPostId && attachmentMeta?.r2_key) {
+    if (isStaff && parentPostId && attachment) {
       const posterName = session.label || session.username;
       notifyOnVisualReply(env.DB, parentPostId, posterName, playId, env).catch(() => { });
     }
@@ -203,6 +227,43 @@ export async function onRequest(context) {
   }
 
   return authJson({ ok: false, error: "Method not allowed." }, { status: 405 });
+}
+
+async function validateUploadedAttachment(env, teamId, attachmentMeta) {
+  const attachmentId = normalizeDiscussionAttachmentId(attachmentMeta?.id);
+  const r2Key = String(attachmentMeta?.r2_key || "").trim();
+  const type = attachmentMeta?.type === "markup" ? "markup" : attachmentMeta?.type === "image" ? "image" : "";
+  if (!attachmentId || !r2Key || !type || !isCanonicalDiscussionAttachmentKey(teamId, attachmentId, r2Key)) {
+    return { error: "Attachment is invalid or belongs to a different team. Please upload it again." };
+  }
+  if (!env.CLIPS) {
+    return { error: "Attachment storage is temporarily unavailable. Please try again." };
+  }
+
+  let object;
+  try {
+    object = await env.CLIPS.head(r2Key);
+  } catch (err) {
+    console.error("Attachment validation lookup failed:", err);
+    return { error: "Attachment storage is temporarily unavailable. Please try again." };
+  }
+  if (!object) return { error: "Attachment upload was not found. Please upload it again." };
+
+  const metadata = object.customMetadata || {};
+  if (String(metadata.teamId || "").trim() !== String(teamId) || String(metadata.type || "").trim() !== type) {
+    return { error: "Attachment is invalid or belongs to a different team. Please upload it again." };
+  }
+
+  return {
+    attachment: {
+      id: attachmentId,
+      r2Key,
+      type,
+      caption: String(attachmentMeta.caption || "").slice(0, 500).trim() || null,
+      sourcePlayId: String(attachmentMeta.sourcePlayId || "").slice(0, 512).trim() || null,
+      sizeBytes: Number(attachmentMeta.sizeBytes) || null,
+    },
+  };
 }
 
 function formatPost(p) {
@@ -231,20 +292,20 @@ function formatPost(p) {
 }
 
 /** Resolve or create a D1 user record for hardcoded staff accounts. */
-async function resolveAuthorId(db, session) {
+async function resolveAuthorId(db, session, teamId) {
   if (session.d1UserId) return session.d1UserId;
 
   // Hardcoded staff — look up by email (username) or create a synthetic record
   const email = `${session.username}@bcoffense.internal`;
-  const existing = await db.prepare("SELECT id FROM users WHERE email = ? LIMIT 1").bind(email).first();
-  if (existing) return existing.id;
+  const existing = await db.prepare("SELECT id, team_id FROM users WHERE email = ? LIMIT 1").bind(email).first();
+  if (existing) return String(existing.team_id || "") === String(teamId) ? existing.id : null;
 
   const id = crypto.randomUUID();
   const now = Math.floor(Date.now() / 1000);
   await db.prepare(
-    `INSERT INTO users (id, email, display_name, role, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, 'active', ?, ?)`,
-  ).bind(id, email, session.label || session.username, session.role, now, now).run();
+    `INSERT INTO users (id, email, display_name, role, team_id, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 'active', ?, ?)`,
+  ).bind(id, email, session.label || session.username, session.role, teamId, now, now).run();
 
   return id;
 }

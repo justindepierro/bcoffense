@@ -359,6 +359,7 @@ window.getDefaultAuthTab
 window.getLatestPublishActivity
 window.getPlayImageUrl
 window.getPublishActivityLog
+window.rebuildPlayerRelease
 window.recordPublishActivity
 window.getRemotePlayerLeaderboardMeta
 window.getRemotePlayerLeaderboardRows
@@ -410,6 +411,7 @@ window.queuePlayerLeaderboardSync
 window.queueWorkspaceSyncJob
 window.refreshPlayerCloudBackup
 window.refreshPlayerLeaderboardSummary
+window.refreshPlayerRelease
 window.resetAnchoredMenu
 window.resetCloudSyncAutoPull
 window.resetSignalUploadReview
@@ -628,6 +630,8 @@ PLAYER_REWARD_EVENTS            → "playerRewardEvents"
 PLAYER_HELMET_STICKER_TYPES     → "playerHelmetStickerTypes"
 PLAYER_HELMET_STICKERS          → "playerHelmetStickers"
 PLAYER_LEADERBOARD_REMOTE       → "playerLeaderboardRemote"
+PLAYER_RELEASE_STATE            → "playerReleaseState"
+PLAYER_DEVICE_OWNER             → "playerDeviceOwner"
 DIAGRAM_UPLOAD_QUEUE            → "diagramUploadQueue"
 CLIP_UPLOAD_QUEUE               → "clipUploadQueue"
 GAME_WEEK_ARCHIVE               → "gameWeekArchive"
@@ -658,11 +662,14 @@ publish -> media publish -> player readiness update.
 3. `js/cloud-sync.js` queues Cloud autosave/push work into the shared dock.
    Raw cloud push/pull is admin-only recovery tooling, not the daily coach
    workflow.
-4. Diagram attachment saves to the cloud automatically. IndexedDB keeps the
-   blob plus a durable retry intent when offline; the workspace dock reports
-   `Saving when online`. Manual all-local upload is admin-only recovery.
-5. Player-facing diagram surfaces prefer the local cached diagram, then check
-   `/images/manifest?sig=...`, then fetch `/images/file?sig=...` when the
+4. Diagram attachment saves to the cloud automatically. The binary remains in
+   IndexedDB and retry metadata is retained locally when offline; the workspace
+   dock reports `Saving when online`. Phase 3 still needs a single durable
+   outbox that stores each intent and its blob together. Manual all-local
+   upload is admin-only recovery.
+5. Player-facing diagram surfaces resolve the authorized, team-scoped cloud
+   manifest first, then cache the current media ID in a player-only IndexedDB
+   database for offline use. They fetch `/images/file?sig=...` only when the
    manifest says the diagram is published.
 
 Rules:

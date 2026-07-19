@@ -20,9 +20,13 @@ export async function onRequest(context) {
   const limit = Math.min(parseInt(url.searchParams.get("limit") || "20", 10), 50);
 
   if (!rootPostId) return authJson({ ok: false, error: "parentId required." }, { status: 400 });
+  const teamId = await getTeamId(env.DB, session);
+  if (!teamId) return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
+  const playId = decodeURIComponent(String(params.playId || "")).trim();
+  if (!playId) return authJson({ ok: false, error: "Play ID required." }, { status: 400 });
 
   const userId = session.d1UserId || null;
-  const { replies, hasMore } = await getPostReplies(env.DB, rootPostId, { limit, afterId, userId });
+  const { replies, hasMore } = await getPostReplies(env.DB, teamId, playId, rootPostId, { limit, afterId, userId });
 
   return withSecurityHeaders(authJson({
     ok: true,

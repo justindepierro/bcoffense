@@ -16,12 +16,11 @@
  */
 
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
+import { discussionAttachmentR2Key } from "../../_lib/discussion-attachments.js";
+import { validateImagePayload } from "../../_lib/image-media.js";
 import { moderateContent } from "../../_lib/moderation.js";
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
-const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const PREFIX = "disc-attachments";
-
 function uuid() {
   return crypto.randomUUID();
 }
@@ -30,26 +29,6 @@ function extForType(mime) {
   if (mime === "image/png") return "png";
   if (mime === "image/webp") return "webp";
   return "jpg";
-}
-
-/**
- * Verify the actual file signature (magic bytes) matches the declared MIME type.
- * Prevents type confusion and malicious file uploads.
- */
-function checkMagicBytes(buf, mime) {
-  const b = new Uint8Array(buf.slice(0, 12));
-  if (mime === "image/jpeg" || mime === "image/jpg") {
-    return b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF;
-  }
-  if (mime === "image/png") {
-    return b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47;
-  }
-  if (mime === "image/webp") {
-    // RIFF....WEBP
-    return b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46
-      && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
-  }
-  return false;
 }
 
 export async function onRequestPost(context) {
@@ -67,6 +46,14 @@ export async function onRequestPost(context) {
 
   if (!env.CLIPS) {
     return authJson({ ok: false, error: "Storage not configured." }, { status: 503 });
+  }
+
+  // The session middleware resolves this from the authenticated D1 user or
+  // the explicitly configured primary staff team. Never create an unscoped
+  // attachment key: an attachment ID is later visible in thread responses.
+  const teamId = String(session.teamId || "").trim();
+  if (!teamId) {
+    return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
   }
 
   // ── Parse multipart form ────────────────────────────────────────────────
@@ -90,15 +77,6 @@ export async function onRequestPost(context) {
     return authJson({ ok: false, error: "type must be 'markup' or 'image'." }, { status: 422 });
   }
 
-  // ── Validate MIME type ──────────────────────────────────────────────────
-  const mimeType = file.type || "application/octet-stream";
-  if (!ALLOWED_TYPES.includes(mimeType)) {
-    return authJson(
-      { ok: false, error: "Unsupported file type. Use JPEG, PNG, or WebP." },
-      { status: 415 },
-    );
-  }
-
   // ── Validate size ───────────────────────────────────────────────────────
   const arrayBuffer = await file.arrayBuffer();
   const sizeBytes = arrayBuffer.byteLength;
@@ -113,12 +91,14 @@ export async function onRequestPost(context) {
   }
 
   // ── Validate file signature (magic bytes) ───────────────────────────────
-  if (!checkMagicBytes(arrayBuffer, mimeType)) {
+  const imageValidation = validateImagePayload(arrayBuffer, file.type || "");
+  if (!imageValidation.ok) {
     return authJson(
-      { ok: false, error: "File content does not match declared type." },
+      { ok: false, error: imageValidation.error },
       { status: 415 },
     );
   }
+  const mimeType = imageValidation.contentType;
 
   // ── Moderate caption text ───────────────────────────────────────────────
   if (caption) {
@@ -134,14 +114,17 @@ export async function onRequestPost(context) {
   // ── Upload to R2 ────────────────────────────────────────────────────────
   const id = uuid();
   const ext = extForType(mimeType);
-  const r2Key = `${PREFIX}/${id}.${ext}`;
+  const r2Key = discussionAttachmentR2Key(teamId, id, ext);
+  if (!r2Key) {
+    return authJson({ ok: false, error: "Could not prepare team attachment storage." }, { status: 503 });
+  }
 
   try {
     await env.CLIPS.put(r2Key, arrayBuffer, {
       httpMetadata: { contentType: mimeType },
       customMetadata: {
-        uploadedBy: session.userId,
-        teamId: session.teamId || "",
+        uploadedBy: session.d1UserId || session.username || "",
+        teamId,
         type,
         playId,
       },

@@ -16,25 +16,52 @@ const REACTION_KEYS = new Set([
 
 // ── Team helpers ──────────────────────────────────────────────────────────────
 
-/** Return the first team in DB, or create a default one. */
-export async function getOrCreateDefaultTeam(db) {
-  const existing = await db.prepare("SELECT id FROM teams LIMIT 1").first();
-  if (existing) return existing.id;
-  const id = crypto.randomUUID();
-  const now = Math.floor(Date.now() / 1000);
-  await db.prepare("INSERT INTO teams (id, name, created_at, updated_at) VALUES (?, 'BCOffense', ?, ?)")
-    .bind(id, now, now).run();
-  return id;
+/**
+ * Resolve the team already validated at the authentication boundary.
+ *
+ * New sessions always carry `teamId`: D1 principals are revalidated against
+ * `users.team_id` on every request and static staff sessions receive the
+ * configured primary-team ID. Keep the D1 lookup only for legacy callers that
+ * pass an older session shape. A D1 principal with no team must fail closed;
+ * it must never inherit an arbitrary team's discussion data.
+ */
+export async function getTeamId(db, session) {
+  const directTeamId = String(session?.teamId || session?.team_id || "").trim();
+  if (directTeamId) return directTeamId;
+
+  const d1UserId = String(session?.d1UserId || session?.d1_user_id || "").trim();
+  if (d1UserId) {
+    const user = await db.prepare("SELECT team_id FROM users WHERE id = ? LIMIT 1")
+      .bind(d1UserId).first();
+    return String(user?.team_id || "").trim();
+  }
+
+  // Do not select or create a fallback team here. A missing team context is a
+  // configuration/authentication error, not permission to act on whichever
+  // team happens to be first in D1.
+  return "";
 }
 
-/** Get team ID for a session user (D1 user has team_id; staff use default). */
-export async function getTeamId(db, session) {
-  if (session.d1UserId) {
-    const user = await db.prepare("SELECT team_id FROM users WHERE id = ? LIMIT 1")
-      .bind(session.d1UserId).first();
-    if (user?.team_id) return user.team_id;
-  }
-  return getOrCreateDefaultTeam(db);
+/**
+ * Load a post only after proving its owning thread belongs to `teamId`.
+ *
+ * Post IDs are globally addressable UUIDs and appear in several client URLs,
+ * so an ID by itself must never be treated as authorization. Keep this join at
+ * the data-helper layer so edits, reactions, moderation, and question-state
+ * changes all fail closed consistently.
+ */
+export async function getTeamScopedPost(db, teamId, postId, opts = {}) {
+  const cleanTeamId = String(teamId || "").trim();
+  const cleanPostId = String(postId || "").trim();
+  if (!cleanTeamId || !cleanPostId) return null;
+  const includeDeleted = opts.includeDeleted === true;
+  return db.prepare(
+    `SELECT p.*, t.team_id, t.play_id
+     FROM discussion_posts p
+     JOIN play_threads t ON t.id = p.thread_id
+     WHERE p.id = ? AND t.team_id = ?${includeDeleted ? "" : " AND p.deleted_at IS NULL"}
+     LIMIT 1`,
+  ).bind(cleanPostId, cleanTeamId).first() || null;
 }
 
 // ── Thread helpers ────────────────────────────────────────────────────────────
@@ -180,29 +207,47 @@ export async function getThreadPosts(db, threadId, { limit = 20, afterId = null,
 }
 
 /** Load replies for a specific root post (for "load more replies" expansion). */
-export async function getPostReplies(db, rootPostId, { limit = 20, afterId = null, userId = null } = {}) {
+export async function getPostReplies(db, teamId, playId, rootPostId, { limit = 20, afterId = null, userId = null } = {}) {
+  const root = await db.prepare(
+    `SELECT p.id, p.thread_id
+     FROM discussion_posts p
+     JOIN play_threads t ON t.id = p.thread_id
+     WHERE p.id = ?
+       AND p.depth = 0
+       AND p.deleted_at IS NULL
+       AND t.team_id = ?
+       AND t.play_id = ?
+     LIMIT 1`,
+  ).bind(rootPostId, teamId, playId).first();
+  // Use the same no-results shape for an unknown, deleted, different-team, or
+  // different-play root. That avoids turning this endpoint into a post-ID
+  // enumeration oracle.
+  if (!root) return { replies: [], hasMore: false };
+
   let query, binds;
   if (afterId) {
     const cursor = await db
-      .prepare("SELECT created_at FROM discussion_posts WHERE id = ? LIMIT 1")
-      .bind(afterId).first();
+      .prepare("SELECT created_at FROM discussion_posts WHERE id = ? AND thread_id = ? LIMIT 1")
+      .bind(afterId, root.thread_id).first();
     if (cursor) {
       query = `SELECT ${POST_SELECT} FROM discussion_posts p
                JOIN users u ON u.id = p.author_id
                WHERE p.root_post_id = ? AND p.deleted_at IS NULL
+                 AND p.thread_id = ?
                  AND p.moderation_status = 'approved' AND p.depth > 0
                  AND p.created_at > ?
                ORDER BY p.created_at ASC LIMIT ?`;
-      binds = [rootPostId, cursor.created_at, limit + 1];
+      binds = [rootPostId, root.thread_id, cursor.created_at, limit + 1];
     }
   }
   if (!query) {
     query = `SELECT ${POST_SELECT} FROM discussion_posts p
              JOIN users u ON u.id = p.author_id
              WHERE p.root_post_id = ? AND p.deleted_at IS NULL
+               AND p.thread_id = ?
                AND p.moderation_status = 'approved' AND p.depth > 0
              ORDER BY p.created_at ASC LIMIT ?`;
-    binds = [rootPostId, limit + 1];
+    binds = [rootPostId, root.thread_id, limit + 1];
   }
   const rows = await db.prepare(query).bind(...binds).all();
   const all = rows.results || [];
@@ -236,8 +281,8 @@ export async function createPost(db, { threadId, authorId, postType, body, paren
   let depth = 0;
   if (parentPostId) {
     const parent = await db
-      .prepare("SELECT id, root_post_id, depth FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1")
-      .bind(parentPostId).first();
+      .prepare("SELECT id, root_post_id, depth FROM discussion_posts WHERE id = ? AND thread_id = ? AND deleted_at IS NULL LIMIT 1")
+      .bind(parentPostId, threadId).first();
     if (!parent) return { error: "Parent post not found." };
     rootPostId = parent.root_post_id || parent.id; // parent is root if it has no root_post_id
     depth = Math.min((parent.depth || 0) + 1, 2);  // cap visual depth at 2
@@ -286,9 +331,8 @@ export async function createPost(db, { threadId, authorId, postType, body, paren
 }
 
 /** Edit a post. Runs moderation on new body. Returns updated post or { error }. */
-export async function editPost(db, postId, newBody, session) {
-  const post = await db.prepare("SELECT * FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1")
-    .bind(postId).first();
+export async function editPost(db, teamId, postId, newBody, session) {
+  const post = await getTeamScopedPost(db, teamId, postId);
   if (!post) return { error: "Post not found." };
 
   const isAuthor = session.d1UserId === post.author_id;
@@ -332,9 +376,8 @@ export async function editPost(db, postId, newBody, session) {
 }
 
 /** Soft-delete a post. Returns { ok } or { error }. */
-export async function deletePost(db, postId, session) {
-  const post = await db.prepare("SELECT * FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1")
-    .bind(postId).first();
+export async function deletePost(db, teamId, postId, session) {
+  const post = await getTeamScopedPost(db, teamId, postId);
   if (!post) return { error: "Post not found." };
 
   const isAuthor = session.d1UserId === post.author_id;
@@ -405,12 +448,11 @@ export async function getReactionsForPosts(db, postIds, userId) {
  * Toggle a reaction on a post. Returns { ok, added, reactions } or { error }.
  * reactions is the updated list for the post.
  */
-export async function toggleReaction(db, postId, userId, reactionKey) {
+export async function toggleReaction(db, teamId, postId, userId, reactionKey) {
   if (!REACTION_KEYS.has(reactionKey)) return { error: "Invalid reaction." };
   if (!userId) return { error: "Player account required to react." };
 
-  const post = await db.prepare("SELECT id FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1")
-    .bind(postId).first();
+  const post = await getTeamScopedPost(db, teamId, postId);
   if (!post) return { error: "Post not found." };
 
   const existing = await db
@@ -439,11 +481,10 @@ const VALID_QUESTION_STATES = new Set(["open", "answered", "resolved", "reopened
  * Set question state on a question post. Coaches can set any state;
  * question authors can set 'reopened' only.
  */
-export async function setQuestionState(db, postId, newState, session) {
+export async function setQuestionState(db, teamId, postId, newState, session) {
   if (!VALID_QUESTION_STATES.has(newState)) return { error: "Invalid state." };
 
-  const post = await db.prepare("SELECT * FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1")
-    .bind(postId).first();
+  const post = await getTeamScopedPost(db, teamId, postId);
   if (!post) return { error: "Post not found." };
   if (post.post_type !== "question") return { error: "Only questions have a state." };
 
@@ -521,12 +562,11 @@ export async function getPendingPosts(db, teamId, { limit = 50 } = {}) {
  *   "account_review" — flag author for manual account review (post stays pending)
  *   "lock_thread" — caller handles thread locking separately; here we just log the action
  */
-export async function moderatePostAction(db, postId, action, reason, moderatorId, opts = {}) {
+export async function moderatePostAction(db, teamId, postId, action, reason, moderatorId, opts = {}) {
   const validActions = new Set(["approve", "reject", "block", "warn", "edit_approve", "mute", "account_review", "lock_thread"]);
   if (!validActions.has(action)) return { error: "Invalid action." };
 
-  const post = await db.prepare("SELECT * FROM discussion_posts WHERE id = ? LIMIT 1")
-    .bind(postId).first();
+  const post = await getTeamScopedPost(db, teamId, postId, { includeDeleted: true });
   if (!post) return { error: "Post not found." };
 
   const now = Math.floor(Date.now() / 1000);
@@ -734,7 +774,7 @@ export async function getActiveCoachIds(db, teamId) {
  *
  * Returns { ok, official } or { error }.
  */
-export async function setOfficialAnswer(db, teamId, postId, official, session) {
+export async function setOfficialAnswer(db, teamId, playId, postId, official, session) {
   const isStaff = session?.role === "coach" || session?.role === "admin";
   if (!isStaff) return { error: "Coaches only." };
 
@@ -746,9 +786,9 @@ export async function setOfficialAnswer(db, teamId, postId, official, session) {
       `SELECT p.id, p.thread_id, p.root_post_id, p.parent_post_id, p.depth
        FROM discussion_posts p
        JOIN play_threads t ON t.id = p.thread_id
-       WHERE p.id = ? AND t.team_id = ? AND p.deleted_at IS NULL LIMIT 1`,
+       WHERE p.id = ? AND t.team_id = ? AND t.play_id = ? AND p.deleted_at IS NULL LIMIT 1`,
     )
-    .bind(postId, teamId)
+    .bind(postId, teamId, playId)
     .first();
   if (!post) return { error: "Post not found." };
   if (post.depth === 0) return { error: "Cannot mark a root post as the official answer." };
@@ -872,7 +912,8 @@ export async function createPostAttachment(db, { id, postId, type, r2Key, captio
 
 /**
  * Load attachments for a list of post IDs.
- * Returns { [postId]: [{ id, type, r2_key, caption, sourcePlayId }] }
+ * Returns only presentation metadata. R2 keys stay server-side; attachment
+ * downloads resolve by ID through the post/team authorization join.
  */
 export async function getAttachmentsForPosts(db, postIds) {
   if (!postIds || postIds.length === 0) return {};
@@ -892,7 +933,6 @@ export async function getAttachmentsForPosts(db, postIds) {
     map[row.post_id].push({
       id: row.id,
       type: row.type,
-      r2_key: row.r2_key,
       caption: row.caption,
       sourcePlayId: row.source_play_id,
       sizeBytes: row.size_bytes,
@@ -902,5 +942,3 @@ export async function getAttachmentsForPosts(db, postIds) {
   }
   return map;
 }
-
-

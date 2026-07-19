@@ -40,7 +40,7 @@ export async function notifyTeamPlayers(db, teamId, notification = {}, env = nul
   const rows = await db
     .prepare(
       `SELECT id FROM users
-       WHERE (team_id = ? OR team_id IS NULL)
+       WHERE team_id = ?
          AND role = 'player'
          AND status = 'active'
        LIMIT 500`,

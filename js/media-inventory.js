@@ -136,25 +136,59 @@
     return out;
   }
 
+  function _miNormalizeLegacyDiagramSourceKey(value) {
+    const key = String(value ?? "");
+    if (!key || key !== key.trim() || key.length > 1000 || /[\u0000-\u001F\u007F]/.test(key) || key.includes("\\")) return "";
+    const prefix = key.startsWith("images/") ? "images/"
+      : key.startsWith("media/plays/") ? "media/plays/"
+        : "";
+    if (!prefix) return "";
+    const suffix = key.slice(prefix.length);
+    if (!suffix || suffix.startsWith("/") || suffix.endsWith("/") || /(?:^|\/)%2e(?:%2e)?(?:\/|$)/i.test(suffix)) return "";
+    if (suffix.split("/").some((segment) => !segment || segment === "." || segment === "..")) return "";
+    return key;
+  }
+
   // Historic source-content keys are intentionally excluded here. They can
   // describe a script copy rather than the original play and have already
   // proven capable of pointing one play at another play's diagram. Legacy
-  // recovery may only use a stable source ID or a unique tag identity.
-  function _miSafeLegacyRecoveryKeys(play) {
+  // recovery may only use an exact archived R2 key derived from a stable
+  // source ID or unique tag identity.
+  function _miSafeLegacyRecoverySourceKeys(play) {
     const out = [];
     const push = (value) => {
-      const key = String(value || "").trim();
+      const key = _miNormalizeLegacyDiagramSourceKey(value);
       if (key && !out.includes(key)) out.push(key);
     };
+    [
+      play?.legacyDiagramSourceKey,
+      play?.legacyImageSourceKey,
+      play?.diagramSourceKey,
+    ].forEach(push);
     [
       play?.playbookId,
       play?.sourcePlayId,
       play?.originalPlayId,
       play?.id,
       _miMediaId(play),
-    ].forEach(push);
+    ].forEach((identity) => {
+      const value = String(identity || "").trim();
+      if (!value) return;
+      // If a migrated record already retains its full source key, preserve it
+      // rather than treating it as a fragment.
+      if (_miNormalizeLegacyDiagramSourceKey(value)) {
+        push(value);
+        return;
+      }
+      push(`images/${value}`);
+      push(`media/plays/${value}`);
+    });
     if (typeof getPlayIdentityKey === "function") {
-      push(getPlayIdentityKey(play, "tag"));
+      const identity = String(getPlayIdentityKey(play, "tag") || "").trim();
+      if (identity) {
+        push(`images/${identity}`);
+        push(`media/plays/${identity}`);
+      }
     }
     return out;
   }
@@ -229,17 +263,20 @@
     const canonicalMediaIds = new Set(
       cloudObjects.filter((entry) => entry?.kind === "canonical" && entry.mediaId).map((entry) => entry.mediaId),
     );
-    const legacyKeys = new Set(
-      cloudObjects
-        .filter((entry) => entry?.kind !== "canonical")
-        .map((entry) => String(entry?.key || "").replace(/^images\//, ""))
-        .filter(Boolean),
-    );
+    const legacyObjects = cloudObjects
+      .filter((entry) => entry?.kind !== "canonical")
+      .map((entry) => ({
+        ...entry,
+        sourceKey: _miNormalizeLegacyDiagramSourceKey(entry?.sourceKey || entry?.key),
+      }))
+      .filter((entry) => entry.sourceKey);
     const localKeys = new Set(_miArray(diagramInventory?.keys).map((key) => String(key || "")));
     const rows = [...expected.entries()].map(([mediaId, play]) => {
       const compatibleKeys = _miPlayImageSigs(play);
       const hasCanonical = canonicalMediaIds.has(mediaId);
-      const hasLegacy = compatibleKeys.some((key) => legacyKeys.has(key));
+      const recoverySourceKeys = new Set(_miSafeLegacyRecoverySourceKeys(play));
+      const legacyMatches = legacyObjects.filter((entry) => recoverySourceKeys.has(entry.sourceKey));
+      const hasLegacy = legacyMatches.length > 0;
       const hasLocal = compatibleKeys.some((key) => localKeys.has(key));
       const status = hasCanonical ? "canonical" : hasLegacy ? "legacy" : hasLocal ? "local-only" : "missing";
       const detail = status === "canonical"
@@ -249,7 +286,14 @@
           : status === "local-only"
             ? "Diagram exists only in this browser cache and can be recovered/uploaded."
             : "No cloud or local diagram was found for this player-visible play.";
-      return { mediaId, play, label: _miPlayLabel(play), status, detail };
+      return {
+        mediaId,
+        play,
+        label: _miPlayLabel(play),
+        status,
+        detail,
+        sourceKey: legacyMatches[0]?.sourceKey || "",
+      };
     });
     const counts = rows.reduce((result, row) => {
       result[row.status] += 1;
@@ -268,14 +312,17 @@
     );
     const legacyObjects = cloudObjects
       .filter((entry) => entry?.kind !== "canonical")
-      .map((entry) => ({ ...entry, sourceKey: String(entry?.key || "").replace(/^images\//, "") }))
+      .map((entry) => ({
+        ...entry,
+        sourceKey: _miNormalizeLegacyDiagramSourceKey(entry?.sourceKey || entry?.key),
+      }))
       .filter((entry) => entry.sourceKey);
     const sourceMatches = new Map();
     const playMatches = new Map();
     _miArray(knownPlays).forEach((play) => {
       const mediaId = _miMediaId(play);
       if (!mediaId) return;
-      const keys = new Set(_miSafeLegacyRecoveryKeys(play));
+      const keys = new Set(_miSafeLegacyRecoverySourceKeys(play));
       const matches = legacyObjects.filter((entry) => keys.has(entry.sourceKey));
       if (!matches.length) return;
       matches.forEach((entry) => {
@@ -492,7 +539,7 @@
     const html = _miArray(rows).slice(0, MEDIA_INVENTORY_SAMPLE_LIMIT).map((row) => {
       const play = row.play || row;
       const detail = row.detail || "";
-      const source = row.source || "";
+      const source = row.source || row.sourceKey || "";
       return `
         <div class="pb-publish-media-row">
           <div>
@@ -538,7 +585,7 @@
     const legacyRecovery = report.legacyRecovery || { automatic: [], ambiguous: [], unmatchedSourceCount: 0 };
     const exactRecoveryPayload = JSON.stringify(_miArray(legacyRecovery.automatic).map((row) => ({
       mediaId: row.mediaId,
-      legacyKeys: [row.sourceKey],
+      sourceKeys: [row.sourceKey],
     })));
     const migrationRows = _miArray(reconciliation.rows).filter((row) => row.status !== "canonical");
     const cloudSummary = cloud.available
@@ -590,7 +637,7 @@
             ${_miRenderCard(legacyRecovery.ambiguous.length, "Needs review")}
             ${_miRenderCard(legacyRecovery.unmatchedSourceCount, "Archived unmatched")}
           </div>
-          <div class="pb-health-guidance">Automatic recovery only promotes the newest Cloudflare diagram whose exact historic signature belongs to one current play. Shared and unmatched files stay preserved in the archive.</div>
+          <div class="pb-health-guidance">Automatic recovery only promotes the newest Cloudflare diagram whose exact archived R2 source key belongs to one current play. Shared and unmatched files stay preserved in the archive.</div>
           ${_miRenderPlayRows(legacyRecovery.automatic, "No additional exact legacy matches are waiting to be promoted.")}
           ${legacyRecovery.automatic.length > MEDIA_INVENTORY_SAMPLE_LIMIT ? `<div class="pb-health-more">Showing ${MEDIA_INVENTORY_SAMPLE_LIMIT} of ${legacyRecovery.automatic.length} exact recovery candidates.</div>` : ""}
           ${(typeof isAdminUser === "function" && isAdminUser() && legacyRecovery.automatic.length)
@@ -703,80 +750,21 @@
 
   window.migrateRecoverableCloudDiagrams = async function () {
     if (typeof isAdminUser === "function" && !isAdminUser()) return;
-    const recoverable = _miArray(latestMediaInventoryReport?.reconciliation?.rows)
-      .filter((row) => row.status === "legacy")
-      .map((row) => ({ mediaId: row.mediaId, legacyKeys: _miSafeLegacyRecoveryKeys(row.play) }))
-      .filter((row) => row.mediaId && row.legacyKeys.length);
-    if (!recoverable.length) {
-      if (typeof showToast === "function") showToast("No recoverable legacy diagrams are waiting to migrate.", { type: "info" });
-      return;
-    }
-    try {
-      const response = await fetch("/images/migrate-legacy", {
-        method: "POST", credentials: "same-origin", cache: "no-store",
-        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: recoverable }),
-      });
-      const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.ok) throw new Error(data?.error || "Legacy diagram migration could not be started.");
-      const migrated = Number(data?.counts?.migrated || 0);
-      const failed = Number(data?.counts?.failed || 0) + Number(data?.counts?.["legacy-not-found"] || 0);
-      if (typeof showToast === "function") {
-        showToast(
-          failed ? `${migrated} diagrams migrated; ${failed} need review.` : `${migrated} legacy diagrams migrated to Cloudflare.`,
-          { type: failed ? "warning" : "success" },
-        );
-      }
-      await window.openMediaInventoryReport();
-    } catch (err) {
-      if (typeof showToast === "function") showToast(err?.message || "Legacy diagram migration failed.", { type: "error" });
+    if (typeof showModal === "function") {
+      showModal(
+        "Automatic legacy promotion is paused. A migration now requires one exact archived key and a verified SHA-256 checksum before it can become a player diagram.",
+        { title: "Verification Required", icon: "🔒" },
+      );
     }
   };
 
   window.migrateExactLegacyCloudDiagrams = async function (serializedCandidates) {
     if (typeof isAdminUser === "function" && !isAdminUser()) return;
-    let candidates = [];
-    try {
-      const supplied = typeof serializedCandidates === "string" ? JSON.parse(serializedCandidates) : [];
-      candidates = _miArray(supplied)
-        .map((row) => ({ mediaId: String(row?.mediaId || "").trim(), legacyKeys: _miArray(row?.legacyKeys).map((key) => String(key || "").trim()).filter(Boolean).slice(0, 1) }))
-        .filter((row) => row.mediaId && row.legacyKeys.length);
-    } catch (_err) {
-      candidates = [];
-    }
-    if (!candidates.length) {
-      candidates = _miArray(latestMediaInventoryReport?.legacyRecovery?.automatic)
-        .map((row) => ({ mediaId: String(row?.mediaId || "").trim(), legacyKeys: [String(row?.sourceKey || "").trim()].filter(Boolean) }))
-        .filter((row) => row.mediaId && row.legacyKeys.length);
-    }
-    if (!candidates.length) {
-      if (typeof showToast === "function") showToast("No exact legacy diagram matches are waiting to be promoted.", { type: "info" });
-      return;
-    }
-    const counts = {};
-    try {
-      for (let start = 0; start < candidates.length; start += 50) {
-        const response = await fetch("/images/migrate-legacy", {
-          method: "POST", credentials: "same-origin", cache: "no-store",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items: candidates.slice(start, start + 50) }),
-        });
-        const data = await response.json().catch(() => null);
-        if (!response.ok || !data?.ok) throw new Error(data?.error || "Exact legacy diagram recovery could not be started.");
-        Object.entries(data.counts || {}).forEach(([status, value]) => {
-          counts[status] = (counts[status] || 0) + Number(value || 0);
-        });
-      }
-      const migrated = Number(counts.migrated || 0);
-      const failed = Number(counts.failed || 0) + Number(counts["legacy-not-found"] || 0);
-      if (typeof showToast === "function") {
-        showToast(
-          failed ? `${migrated} exact matches promoted; ${failed} need review.` : `${migrated} newest exact diagrams promoted to Cloudflare.`,
-          { type: failed ? "warning" : "success" },
-        );
-      }
-      await window.openMediaInventoryReport();
-    } catch (err) {
-      if (typeof showToast === "function") showToast(err?.message || "Exact legacy diagram recovery failed.", { type: "error" });
+    if (typeof showModal === "function") {
+      showModal(
+        "Exact promotion now requires a reconciliation checksum. Use the verified reconciliation/repair workflow; broad historical key matching is no longer allowed.",
+        { title: "Verification Required", icon: "🔒" },
+      );
     }
   };
 

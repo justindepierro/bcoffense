@@ -156,7 +156,10 @@ export async function onRequest(context) {
   }
 
   // Activate the user
-  await activateD1User(env.DB, tokenRecord.user_id, password);
+  const activated = await activateD1User(env.DB, tokenRecord.user_id, password);
+  if (!activated) {
+    return errorPage("This invitation has already been accepted. Sign in or ask your coach for help.");
+  }
 
   // Load user for session
   const user = await findUserById(env.DB, tokenRecord.user_id);

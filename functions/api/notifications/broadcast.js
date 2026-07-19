@@ -44,6 +44,7 @@ export async function onRequestPost(context) {
 
   try {
     const teamId = await getTeamId(env.DB, session);
+    if (!teamId) return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
     const result = await notifyTeamPlayers(env.DB, teamId, {
       type,
       title,

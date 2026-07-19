@@ -11,7 +11,7 @@
  */
 
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
-import { findUserById, createVerificationToken } from "../../_lib/d1-auth.js";
+import { findUserById, createVerificationToken, setD1SessionInvalidBefore } from "../../_lib/d1-auth.js";
 import { sendEmail, inviteEmailHtml, inviteEmailText } from "../../_lib/email.js";
 
 export async function onRequest(context) {
@@ -23,6 +23,7 @@ export async function onRequest(context) {
   }
 
   if (!env.DB) return authJson({ ok: false, error: "Database not configured." }, { status: 503 });
+  if (!session.teamId) return authJson({ ok: false, error: "Team access is not configured for this coach account." }, { status: 503 });
   if (request.method !== "POST") return authJson({ ok: false, error: "Method not allowed." }, { status: 405 });
 
   const userId = String(params.id || "").trim();
@@ -43,15 +44,21 @@ export async function onRequest(context) {
 
   const user = await findUserById(env.DB, userId);
   if (!user) return authJson({ ok: false, error: "User not found." }, { status: 404 });
+  if (String(user.team_id || "") !== String(session.teamId)) {
+    return authJson({ ok: false, error: "User not found." }, { status: 404 });
+  }
 
   const now = Math.floor(Date.now() / 1000);
 
   // ── disable ────────────────────────────────────────────────────────────────
   if (action === "disable") {
     await env.DB
-      .prepare("UPDATE users SET status = 'disabled', updated_at = ? WHERE id = ?")
-      .bind(now, userId)
+      .prepare("UPDATE users SET status = 'disabled', disabled_at = ?, updated_at = ? WHERE id = ?")
+      // The cookie validator uses a strict less-than comparison, so +1 makes
+      // a same-second existing cookie invalid while the account is disabled.
+      .bind(now, now, userId)
       .run();
+    await setD1SessionInvalidBefore(env.DB, userId, now + 1);
     return withSecurityHeaders(authJson({ ok: true, status: "disabled" }));
   }
 
@@ -62,9 +69,10 @@ export async function onRequest(context) {
       return authJson({ ok: false, error: "Player has not completed account setup yet." }, { status: 409 });
     }
     await env.DB
-      .prepare("UPDATE users SET status = 'active', updated_at = ? WHERE id = ?")
+      .prepare("UPDATE users SET status = 'active', disabled_at = NULL, updated_at = ? WHERE id = ?")
       .bind(now, userId)
       .run();
+    await setD1SessionInvalidBefore(env.DB, userId, now + 1);
     return withSecurityHeaders(authJson({ ok: true, status: "active" }));
   }
 

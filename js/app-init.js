@@ -34,7 +34,19 @@ async function initApp() {
   try {
     if (typeof appDiagnostics !== "undefined") appDiagnostics.mark("startup:init");
     if (typeof setStartupLoadingMessage === "function") {
-      setStartupLoadingMessage("Checking saved data...");
+      setStartupLoadingMessage("Checking secure session...");
+    }
+    // Resolve identity before hydrating IndexedDB. A player device may still
+    // contain an old pre-release coach workspace; it is never safe to render
+    // that data while we wait for the server-issued player release.
+    const authUser = await waitForAuthStartup();
+    if (authUser?.role === "player") {
+      storageManager?.preparePlayerDeviceForUser?.(authUser);
+    }
+    const needsPlayerRelease = authUser?.role === "player" &&
+      !(storageManager?.hasPlayerReleaseCacheForTeam?.(authUser.teamId));
+    if (typeof setStartupLoadingMessage === "function") {
+      setStartupLoadingMessage(needsPlayerRelease ? "Checking latest coach update..." : "Checking saved data...");
     }
     if (typeof appDiagnostics !== "undefined") {
       appDiagnostics.measure("startup:migrations", () => runMigrations());
@@ -42,8 +54,9 @@ async function initApp() {
       runMigrations();
     }
 
-    const storedPlaybook =
-      typeof appDiagnostics !== "undefined"
+    const storedPlaybook = needsPlayerRelease
+      ? null
+      : typeof appDiagnostics !== "undefined"
         ? await appDiagnostics.measure("startup:get-playbook", () => storageManager.getPlaybook())
         : await storageManager.getPlaybook();
     storageManager.compactLocalStorage({ removeExpiredDrafts: true });

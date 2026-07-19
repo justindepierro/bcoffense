@@ -6,16 +6,13 @@
 // seeking/scrubbing in the <video> element.
 
 import { authJson } from "../_lib/auth.js";
+import { getMediaAccess } from "../_lib/media-access.js";
+import { readTeamClipManifest } from "../_lib/team-workspace.js";
 
 const MAX_SIG_LENGTH = 400;
 
 function normalizeSig(value) {
   return String(value || "").trim();
-}
-
-async function readManifest(store, sig) {
-  const value = await store.get(`clips:${sig}`, { type: "json" });
-  return Array.isArray(value) ? value : [];
 }
 
 function parseRange(rangeHeader, size) {
@@ -56,8 +53,10 @@ export async function onRequestGet(context) {
   if (!sig || sig.length > MAX_SIG_LENGTH || !id) {
     return authJson({ ok: false, error: "A play signature and clip id are required." }, { status: 400 });
   }
+  const access = await getMediaAccess(context.request, context.env, "clip", sig);
+  if (!access.ok) return authJson({ ok: false, error: access.error }, { status: access.status });
 
-  const entries = await readManifest(store, sig);
+  const { entries } = await readTeamClipManifest(store, context.env, access.teamId, sig);
   const entry = entries.find((item) => item.id === id);
   if (!entry) {
     return authJson({ ok: false, error: "Clip not found." }, { status: 404 });
@@ -75,7 +74,11 @@ export async function onRequestGet(context) {
   const baseHeaders = {
     "Content-Type": contentType,
     "Accept-Ranges": "bytes",
-    "Cache-Control": "private, max-age=86400",
+    // Clip URLs are authorization-gated and not yet content-versioned in the
+    // browser. Do not let a shared device retain bytes across sign-out or a
+    // team switch; R2/edge still provides the durable performance layer.
+    "Cache-Control": "private, no-store",
+    "Vary": "Cookie",
   };
 
   if (rangeHeader) {

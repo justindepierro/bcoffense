@@ -7,6 +7,7 @@ import {
   verifyCredentials,
   withSecurityHeaders,
 } from "../_lib/auth.js";
+import { getPrimaryTeamId } from "../_lib/team-context.js";
 
 // ── Rate limit config ─────────────────────────────────────────────────────────
 const RATE_WINDOW_SECONDS = 15 * 60; // 15-minute window
@@ -127,8 +128,16 @@ export async function onRequestPost(context) {
 
   const cookie = await createSessionCookie(user, env);
   if (wantsJson(request)) {
+    // The client starts its player-release bootstrap immediately after this
+    // response. Return the same resolved team context it would receive from
+    // /auth/me, including for the legacy static `player` account.
+    const responseUser = {
+      ...user,
+      teamId: user.teamId || await getPrimaryTeamId(env),
+      d1UserId: user.d1UserId || user.d1_user_id || "",
+    };
     return withSecurityHeaders(
-      authJson({ ok: true, user }, { headers: { "Set-Cookie": cookie } })
+      authJson({ ok: true, user: responseUser }, { headers: { "Set-Cookie": cookie } })
     );
   }
 

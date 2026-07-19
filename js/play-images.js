@@ -25,7 +25,12 @@
 */
 
 (function () {
-  const DB_NAME = "bcoffense-images";
+  // Coach authoring diagrams and player download caches must never share an
+  // IndexedDB store. A shared browser can switch roles without letting a
+  // player render an old coach blob under a coincidentally matching media ID,
+  // and a player release refresh must never erase a coach's local work.
+  const COACH_DB_NAME = "bcoffense-images";
+  const PLAYER_DB_NAME = "bcoffense-player-images";
   const DB_VERSION = 1;
   const STORE = "playImages";
   const PREFETCH_CONCURRENCY = 4;
@@ -34,6 +39,8 @@
   const MAX_SOURCE_BYTES = 14 * 1024 * 1024;
   const DIAGRAM_UPLOAD_QUEUE_LIMIT = 100;
   const REMOTE_MEDIA_TIMEOUT_MS = 8000;
+  const REMOTE_MANIFEST_TTL_MS = 45 * 1000;
+  const REMOTE_MANIFEST_NEGATIVE_TTL_MS = 2500;
   const PLAY_IMAGE_SOURCE_FIELDS = [
     "type",
     "personnel",
@@ -78,13 +85,15 @@
     "opponent",
   ];
 
-  let _dbPromise = null;
+  const _dbPromises = new Map();
+  let _activeDatabaseName = "";
   const _urlCache = new Map(); // sig → object URL
   const _urlPromiseCache = new Map(); // sig → pending object URL Promise
   const _urlVersions = new Map(); // sig → invalidation counter
   const _knownKeys = new Set();
   const _remoteManifestCache = new Map();
   let _keysPromise = null;
+  let _keysPromiseDatabase = "";
   let _keysLoaded = false;
   let _hoverPreviewInstalled = false;
 
@@ -92,14 +101,53 @@
     return sig === null || sig === undefined ? "" : String(sig);
   }
 
+  function _databaseNameForCurrentRole() {
+    const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    return user?.role === "player" ? PLAYER_DB_NAME : COACH_DB_NAME;
+  }
+
+  function _ensureActiveDatabase() {
+    const nextDatabaseName = _databaseNameForCurrentRole();
+    if (_activeDatabaseName && _activeDatabaseName !== nextDatabaseName) {
+      // Object URLs and key caches belong to the previous role's database.
+      // Drop only runtime references; both persistent stores remain intact.
+      _revokeAll();
+      _knownKeys.clear();
+      _keysPromise = null;
+      _keysPromiseDatabase = "";
+      _keysLoaded = false;
+      _remoteManifestCache.clear();
+    }
+    _activeDatabaseName = nextDatabaseName;
+    return nextDatabaseName;
+  }
+
+  function _cacheRemoteManifest(identityKey, result) {
+    if (!identityKey || !result) return result;
+    const value = { ...result, checkedAt: Date.now() };
+    _remoteManifestCache.set(identityKey, value);
+    return value;
+  }
+
+  function _getCachedRemoteManifest(identityKey) {
+    const cached = _remoteManifestCache.get(identityKey);
+    if (!cached) return null;
+    const ttl = cached.published ? REMOTE_MANIFEST_TTL_MS : REMOTE_MANIFEST_NEGATIVE_TTL_MS;
+    if (Date.now() - Number(cached.checkedAt || 0) <= ttl) return cached;
+    _remoteManifestCache.delete(identityKey);
+    return null;
+  }
+
   function _openDB() {
-    if (_dbPromise) return _dbPromise;
-    _dbPromise = new Promise((resolve, reject) => {
+    const databaseName = _ensureActiveDatabase();
+    const existing = _dbPromises.get(databaseName);
+    if (existing) return existing;
+    const promise = new Promise((resolve, reject) => {
       if (typeof indexedDB === "undefined") {
         reject(new Error("IndexedDB is not available"));
         return;
       }
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      const req = indexedDB.open(databaseName, DB_VERSION);
       req.onupgradeneeded = (e) => {
         const db = e.target.result;
         if (!db.objectStoreNames.contains(STORE)) {
@@ -109,7 +157,8 @@
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error || new Error("IndexedDB open failed"));
     });
-    return _dbPromise;
+    _dbPromises.set(databaseName, promise);
+    return promise;
   }
 
   function _tx(mode) {
@@ -117,6 +166,7 @@
   }
 
   async function ready() {
+    _ensureActiveDatabase();
     await _openDB();
     return true;
   }
@@ -167,9 +217,12 @@
   }
 
   async function loadKeys() {
-    if (_keysPromise) return _keysPromise;
+    const databaseName = _ensureActiveDatabase();
+    if (_keysPromise && _keysPromiseDatabase === databaseName) return _keysPromise;
+    _keysPromiseDatabase = databaseName;
     _keysPromise = _keys()
       .then((allKeys) => {
+        if (databaseName !== _activeDatabaseName) return loadKeys();
         const normalized = allKeys.map(_normalizeSig).filter(Boolean);
         _knownKeys.clear();
         normalized.forEach((sig) => _knownKeys.add(sig));
@@ -185,6 +238,7 @@
       })
       .catch((err) => {
         _keysPromise = null;
+        _keysPromiseDatabase = "";
         _keysLoaded = false;
         throw err;
       });
@@ -244,6 +298,7 @@
   }
 
   async function set(sig, blob, options = {}) {
+    _ensureActiveDatabase();
     const key = _normalizeSig(sig);
     if (!key || !blob) return false;
     await _put(key, blob);
@@ -259,6 +314,7 @@
   }
 
   async function del(sig) {
+    _ensureActiveDatabase();
     const key = _normalizeSig(sig);
     if (!key) return false;
     await _del(key);
@@ -270,18 +326,21 @@
   }
 
   async function get(sig) {
+    _ensureActiveDatabase();
     const key = _normalizeSig(sig);
     if (!key) return null;
     return _get(key);
   }
 
   function urlFor(sig) {
+    _ensureActiveDatabase();
     const key = _normalizeSig(sig);
     if (!key) return null;
     return _urlCache.get(key) || null;
   }
 
   async function ensureUrl(sig) {
+    _ensureActiveDatabase();
     const key = _normalizeSig(sig);
     if (!key) return null;
     const existing = urlFor(key);
@@ -313,6 +372,7 @@
   }
 
   function has(sig) {
+    _ensureActiveDatabase();
     const key = _normalizeSig(sig);
     return !!key && (_urlCache.has(key) || _knownKeys.has(key));
   }
@@ -580,25 +640,38 @@
 
   async function _putRemoteImage(identityKey, blob) {
     const idempotencyKey = await _blobChecksum(blob);
+    const knownManifest = _getCachedRemoteManifest(identityKey);
+    const headers = {
+      Accept: "application/json",
+      "X-BC-Auth-Mode": "json",
+      "Content-Type": blob.type || "image/jpeg",
+      "X-BC-Idempotency-Key": idempotencyKey,
+    };
+    // When this device has already checked the manifest, make that observed
+    // version explicit. The server also performs a compare-and-swap for older
+    // clients that lack this header, but sending it avoids an unnecessary R2
+    // candidate upload when another coach has already replaced the diagram.
+    if (knownManifest) {
+      headers["X-BC-Expected-Version"] = knownManifest.published
+        ? String(knownManifest.version || "")
+        : "";
+    }
     const response = await fetch(
       `/images/file?sig=${encodeURIComponent(identityKey)}`,
       {
         method: "PUT",
         credentials: "same-origin",
-        headers: {
-          Accept: "application/json",
-          "X-BC-Auth-Mode": "json",
-          "Content-Type": blob.type || "image/jpeg",
-          "X-BC-Idempotency-Key": idempotencyKey,
-        },
+        headers,
         body: blob,
       },
     );
     if (!response.ok) {
+      const payload = await response.json().catch(() => null);
       return {
         ok: false,
         status: response.status,
-        error: await _remoteErrorMessage(response, "Play diagram upload failed."),
+        error: payload?.error || await _remoteErrorMessage(response, "Play diagram upload failed."),
+        current: payload?.current || null,
       };
     }
     const manifest = await response.json().catch(() => null);
@@ -623,7 +696,7 @@
 
   function _applyRemoteManifest(identityKey, manifest) {
     if (!identityKey || !manifest) return;
-    _remoteManifestCache.set(identityKey, _remoteManifestResult(identityKey, manifest));
+    _cacheRemoteManifest(identityKey, _remoteManifestResult(identityKey, manifest));
   }
 
   function _isRetryableUploadFailure(result) {
@@ -642,9 +715,15 @@
     storageManager.set(STORAGE_KEYS.DIAGRAM_UPLOAD_QUEUE, entries.slice(-DIAGRAM_UPLOAD_QUEUE_LIMIT));
   }
 
-  function _queueDiagramUpload(localSig, identityKey, error) {
+  function _queueDiagramUpload(localSig, identityKey, error, opts = {}) {
     const entries = _readDiagramUploadQueue().filter((entry) => entry.localSig !== localSig);
-    entries.push({ localSig, identityKey, queuedAt: new Date().toISOString(), lastError: String(error || "Network unavailable") });
+    entries.push({
+      localSig,
+      identityKey,
+      queuedAt: new Date().toISOString(),
+      lastError: String(error || "Network unavailable"),
+      blocked: opts.blocked === true,
+    });
     _writeDiagramUploadQueue(entries);
     if (typeof window.queueWorkspaceSyncJob === "function") {
       window.queueWorkspaceSyncJob("media", "diagram-auto-upload", {
@@ -667,6 +746,12 @@
     let pushed = 0;
     let terminalFailure = false;
     for (const entry of entries) {
+      if (entry?.blocked) {
+        // A conflict needs an explicit coach decision; automatic retries must
+        // never overwrite a newer diagram simply because connectivity returns.
+        terminalFailure = true;
+        continue;
+      }
       const blob = await get(entry.localSig);
       if (!blob) continue;
       try {
@@ -674,6 +759,22 @@
         const result = await _putRemoteImage(entry.identityKey, playerBlob);
         if (!result.ok) {
           if (_isRetryableUploadFailure(result)) throw new Error(result.error || "Cloud upload failed.");
+          if (Number(result.status) === 409) {
+            if (result.current) _applyRemoteManifest(entry.identityKey, result.current);
+            _queueDiagramUpload(
+              entry.localSig,
+              entry.identityKey,
+              result.error || "This diagram changed on another device.",
+              { blocked: true },
+            );
+            terminalFailure = true;
+            if (typeof window.failWorkspaceSyncJob === "function") {
+              window.failWorkspaceSyncJob("media:diagram-auto-upload", new Error(result.error || "Diagram conflict needs review"), {
+                label: "Diagram conflict needs review",
+              });
+            }
+            continue;
+          }
           _removeQueuedDiagramUpload(entry.localSig);
           terminalFailure = true;
           if (typeof window.failWorkspaceSyncJob === "function") {
@@ -729,7 +830,7 @@
     }
     let lastResult = null;
     for (const identityKey of identityKeys) {
-      const cached = _remoteManifestCache.get(identityKey);
+      const cached = _getCachedRemoteManifest(identityKey);
       if (cached) {
         if (cached.published) return cached;
         lastResult = cached;
@@ -749,7 +850,7 @@
             sig: identityKey,
             reason: `http-${response.status}`,
           };
-          _remoteManifestCache.set(identityKey, result);
+          _cacheRemoteManifest(identityKey, result);
           lastResult = result;
           if (status === "unpublished") continue;
           continue;
@@ -767,7 +868,7 @@
           checksum: data?.checksum || "",
           uploadedBy: data?.uploadedBy || "",
         };
-        _remoteManifestCache.set(identityKey, result);
+        _cacheRemoteManifest(identityKey, result);
         if (result.published) return result;
         lastResult = result;
       } catch (err) {
@@ -785,6 +886,7 @@
   }
 
   function _remoteManifestResult(identityKey, data) {
+    const receivedVersion = String(data?.version || "").trim();
     return {
       ok: Boolean(data?.ok),
       status: data?.published ? "published" : "unpublished",
@@ -793,6 +895,7 @@
       size: Number(data?.size || 0) || 0,
       contentType: data?.contentType || "",
       uploadedAt: data?.uploadedAt || "",
+      version: receivedVersion,
     };
   }
 
@@ -809,7 +912,7 @@
         .map(_normalizeSig)
         .filter(Boolean),
     )];
-    const missing = identityKeys.filter((identityKey) => !_remoteManifestCache.has(identityKey));
+    const missing = identityKeys.filter((identityKey) => !_getCachedRemoteManifest(identityKey));
     let method = missing.length ? "fallback" : "cache";
     if (missing.length > 1 && typeof fetch === "function") {
       try {
@@ -830,7 +933,7 @@
             : {};
           missing.forEach((identityKey) => {
             const item = manifests[identityKey] || { ok: true, sig: identityKey, published: false };
-            _remoteManifestCache.set(identityKey, _remoteManifestResult(identityKey, item));
+            _cacheRemoteManifest(identityKey, _remoteManifestResult(identityKey, item));
           });
           method = "batch";
         }
@@ -839,7 +942,7 @@
       }
     }
     await Promise.all(identityKeys.map(async (identityKey) => {
-      if (!_remoteManifestCache.has(identityKey)) {
+      if (!_getCachedRemoteManifest(identityKey)) {
         try {
         const response = await _remoteFetch(`/images/manifest?sig=${encodeURIComponent(identityKey)}`, {
             credentials: "same-origin",
@@ -847,9 +950,9 @@
           });
           if (response.ok) {
             const data = await response.json().catch(() => null);
-            _remoteManifestCache.set(identityKey, _remoteManifestResult(identityKey, data));
+            _cacheRemoteManifest(identityKey, _remoteManifestResult(identityKey, data));
           } else {
-            _remoteManifestCache.set(identityKey, {
+            _cacheRemoteManifest(identityKey, {
               ok: false,
               status: response.status === 404 ? "unpublished" : "error",
               published: false,
@@ -858,7 +961,7 @@
             });
           }
         } catch (_err) {
-          _remoteManifestCache.set(identityKey, {
+          _cacheRemoteManifest(identityKey, {
             ok: false,
             status: "offline",
             published: false,
@@ -867,7 +970,7 @@
           });
         }
       }
-      result[identityKey] = _remoteManifestCache.get(identityKey);
+      result[identityKey] = _getCachedRemoteManifest(identityKey);
     }));
     _recordPerf("media:image-batch-manifest", startedAt, {
       requested: identityKeys.length,
@@ -890,8 +993,14 @@
       return { ok: false, skipped: true, error: "This play does not have a stable cloud image key." };
     }
     try {
+      // This is an explicit coach action (attach/replace), so it supersedes a
+      // previously blocked offline conflict for the same local diagram.
+      _removeQueuedDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey);
       const playerBlob = await _playerPublishBlob(blob);
       const result = await _putRemoteImage(identityKey, playerBlob);
+      if (!result.ok && Number(result.status) === 409 && result.current) {
+        _applyRemoteManifest(identityKey, result.current);
+      }
       if (!result.ok && _isRetryableUploadFailure(result)) {
         _queueDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey, identityKey, result.error || "Network unavailable");
         return { ok: true, queued: true, error: result.error || "Saving when online" };
@@ -918,25 +1027,69 @@
   }
 
   async function deleteRemote(play) {
-    if (!_remoteAvailable() || !play) return;
+    if (!_remoteAvailable() || !play) {
+      return { ok: false, status: 0, error: "Cloud diagram removal is not available while this device is offline." };
+    }
     const identityKey = _remoteIdentityKey(play);
-    if (!identityKey) return;
+    if (!identityKey) {
+      return { ok: false, status: 400, error: "This play does not have a stable cloud image key." };
+    }
     try {
+      let current = _getCachedRemoteManifest(identityKey);
+      if (!current) current = await checkRemoteForPlay(play);
+      if (!current?.published) {
+        _cacheRemoteManifest(identityKey, {
+          ok: true,
+          status: "unpublished",
+          published: false,
+          sig: identityKey,
+          version: "",
+        });
+        return { ok: true, status: 200, manifest: null, idempotent: true };
+      }
+      if (!current.version) {
+        return { ok: false, status: 409, error: "This diagram needs a fresh cloud check before it can be removed." };
+      }
       const response = await fetch(`/images/file?sig=${encodeURIComponent(identityKey)}`, {
         method: "DELETE",
         credentials: "same-origin",
         headers: {
           Accept: "application/json",
           "X-BC-Auth-Mode": "json",
+          "X-BC-Expected-Version": String(current.version),
         },
       });
-      if (response.ok && typeof window.recordPlayerPublishStatus === "function") {
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        if (Number(response.status) === 409 && payload?.current) {
+          _applyRemoteManifest(identityKey, payload.current);
+        }
+        return {
+          ok: false,
+          status: response.status,
+          error: payload?.error || await _remoteErrorMessage(response, "Play diagram removal failed."),
+          current: payload?.current || null,
+        };
+      }
+      _cacheRemoteManifest(identityKey, {
+        ok: true,
+        status: "unpublished",
+        published: false,
+        sig: identityKey,
+        version: "",
+      });
+      if (typeof window.recordPlayerPublishStatus === "function") {
         window.recordPlayerPublishStatus("diagrams", {
           label: "Play diagram removed from player devices",
         });
       }
-    } catch (_e) {
-      // Fire and forget
+      return { ok: true, status: response.status, manifest: null, idempotent: Boolean(payload?.idempotent) };
+    } catch (err) {
+      return {
+        ok: false,
+        status: 0,
+        error: err?.message || "Network error while removing the play diagram.",
+      };
     }
   }
   // ────────────────────────────────────────────────────────────────────────
@@ -1468,6 +1621,48 @@
 
   async function keys() {
     return loadKeys();
+  }
+
+  async function retainOnly(allowedKeys = []) {
+    const allowed = new Set(
+      (Array.isArray(allowedKeys) ? allowedKeys : [])
+        .map(_normalizeSig)
+        .filter(Boolean),
+    );
+    const existing = await _keys();
+    const removed = [];
+    for (const rawKey of existing) {
+      const key = _normalizeSig(rawKey);
+      if (!key || allowed.has(key)) continue;
+      await _del(key);
+      _revoke(key);
+      _knownKeys.delete(key);
+      removed.push(key);
+    }
+    _keysPromise = null;
+    if (removed.length) _emitChange(null);
+    return { kept: allowed.size, removed: removed.length, keys: removed };
+  }
+
+  // Player downloads live in their own IndexedDB database. Purge only that
+  // database when a release changes so an old same-mediaId blob cannot win a
+  // render race, while a coach's authoring diagrams remain untouched.
+  async function clearPlayerReleaseCache() {
+    const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    if (user?.role !== "player") return { removed: 0, skipped: true };
+    _ensureActiveDatabase();
+    const existing = await _keys();
+    _revokeAll();
+    await _clear();
+    _knownKeys.clear();
+    _keysPromise = null;
+    _remoteManifestCache.clear();
+    if (existing.length) _emitChange(null);
+    return { removed: existing.length };
+  }
+
+  function clearRemoteManifestCache() {
+    _remoteManifestCache.clear();
   }
 
   async function prefetchAll() {
@@ -2072,6 +2267,9 @@
     delete: del,
     get,
     keys,
+    retainOnly,
+    clearPlayerReleaseCache,
+    clearRemoteManifestCache,
     has,
     urlFor,
     ensureUrl,
@@ -2121,9 +2319,18 @@
   window.hasPlayImage = function (play) {
     return hasDisplayForPlay(play);
   };
-  window.deletePlayImage = function (play) {
-    // Remove from R2 so all devices reflect the deletion
-    deleteRemote(play).catch(() => { });
+  window.deletePlayImage = async function (play) {
+    // A diagram pointer is shared team state. Do not let an offline or stale
+    // browser discard its local copy and then silently erase a newer coach's
+    // diagram when it reconnects. The server compares the exact version that
+    // this device observed before it accepts the delete.
+    const remote = await deleteRemote(play);
+    if (!remote?.ok) {
+      const error = new Error(remote?.error || "The cloud diagram could not be removed.");
+      error.status = Number(remote?.status || 0);
+      error.current = remote?.current || null;
+      throw error;
+    }
     return deleteForPlay(play);
   };
 

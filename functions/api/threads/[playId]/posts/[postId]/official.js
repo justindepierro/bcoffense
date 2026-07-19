@@ -7,7 +7,7 @@
  */
 
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../../../../_lib/auth.js";
-import { setOfficialAnswer, getPostContext } from "../../../../../_lib/d1-threads.js";
+import { setOfficialAnswer } from "../../../../../_lib/d1-threads.js";
 import { notifyOnOfficialAnswer } from "../../../../../_lib/d1-notifications.js";
 
 export async function onRequestPost(context) {
@@ -32,18 +32,14 @@ export async function onRequestPost(context) {
     return authJson({ ok: false, error: "Invalid request body." }, { status: 400 });
   }
 
-  // Resolve team ID for this session
-  const teamRow = await env.DB
-    .prepare(`SELECT team_id FROM users WHERE id = ? LIMIT 1`)
-    .bind(session.d1UserId || "")
-    .first()
-    .catch(() => null);
-  const teamId = teamRow?.team_id || session.teamId;
-  if (!teamId) return authJson({ ok: false, error: "Team not found." }, { status: 404 });
+  // auth.js has already revalidated this session against its D1 principal.
+  // Never perform an unscoped fallback lookup from the route parameter.
+  const teamId = String(session.teamId || "").trim();
+  if (!teamId) return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
 
   const official = body.official === true || body.official === "true" || body.official === 1;
 
-  const result = await setOfficialAnswer(env.DB, teamId, postId, official, session);
+  const result = await setOfficialAnswer(env.DB, teamId, playId, postId, official, session);
   if (result.error) return authJson({ ok: false, error: result.error }, { status: 403 });
 
   // Fire notifications when marking official (fire-and-forget)

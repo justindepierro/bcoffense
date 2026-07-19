@@ -1,146 +1,231 @@
-# Cloudflare Auth Setup
+# Cloudflare Authentication, Media, and Deployment Runbook
 
-BCOffense uses Cloudflare Pages Functions for real username/password login without email accounts.
+## Current release status
 
-## What Cloudflare Hosts
+This repository contains a Cloudflare canonical release. On July 19, 2026,
+production D1 was exported locally, migrations 0011–0017 were applied, and
+the remote ledger passed preflight. Pages deployment is the next release step.
 
-- Static app files are still served as a normal site.
-- `functions/_middleware.js` protects every route before static files load.
-- `functions/auth/login.js` verifies username/password on Cloudflare.
-- `functions/auth/me.js` returns the current session role to the app.
-- `functions/auth/logout.js` clears the session cookie.
-- `functions/sync/backup.js` stores and retrieves the shared app backup.
-- Cloud Sync uses the `SYNC_KV` Workers KV namespace, so browsers do not store a GitHub token.
+Until Pages is deployed and verified with clean sessions, do not assume the new
+player-release, team-scoped media, or backup protections are live.
 
-## Free Tier
+## What Cloudflare hosts after the containment release
 
-This setup should fit Cloudflare's free tier for normal team use. It uses Pages Functions, which are billed as Workers. Cloudflare currently includes limited Workers/Pages Functions usage on the free plan.
+- Static PWA assets and Cloudflare Pages Functions.
+- Session login, logout, and current-session endpoints.
+- D1 player accounts, team context, session invalidation state, and
+  team-scoped diagram manifest pointers.
+- R2 immutable diagram/video objects.
+- GET /player/release, a small player-only release projection. It is not a
+  coach workspace backup.
+- Admin-only raw workspace recovery endpoints and admin-only legacy diagram
+  migration/repair tooling.
+- Team/release-authorized image and clip endpoints.
 
-Cloud Sync currently uses Workers KV. KV is available on the Workers free plan with limited daily usage, and each stored backup value can be up to 25 MiB. If play-image backups grow beyond that, switch the sync binding from KV to R2 after R2 is enabled on the Cloudflare account.
+SYNC_KV remains a recovery/compatibility store for retained workspace snapshots
+and clip manifests. Daily workspace and player-release authority is already the
+immutable R2 plus D1 revision head; clips remain the outstanding KV transition.
 
-## Required Cloudflare Secrets
+## Required Cloudflare secrets
 
 Set these in the Cloudflare Pages project:
 
-```text
+~~~text
 AUTH_SESSION_SECRET
 AUTH_ADMIN_PASSWORD_SHA256
 AUTH_COACH_PASSWORD_SHA256
 AUTH_PLAYER_PASSWORD_SHA256
-```
+~~~
 
-`AUTH_SESSION_SECRET` should be a long random value:
+Generate a long random session secret:
 
-```bash
+~~~bash
 openssl rand -hex 32
-```
+~~~
 
-Player accounts are stored in D1 with PBKDF2 hashes. Before inviting the team,
-rotate the three static staff secrets to PBKDF2 as well. The secret names stay
-the same for compatibility, although the old `_SHA256` suffix is now legacy.
-Each value should be a PBKDF2 hash of:
+Player accounts are stored in D1 with PBKDF2 hashes. Rotate the static staff
+secrets to PBKDF2 as well; their historic SHA256 names remain only for
+configuration compatibility. Each value hashes:
 
-```text
+~~~text
 username:password
-```
+~~~
 
-Generate each PBKDF2 value locally (enter the password only in your terminal):
+Generate a value locally. Enter the password only in the terminal:
 
-```bash
+~~~bash
 read -s password
-node --input-type=module -e 'import { hashPassword } from "./functions/_lib/d1-auth.js"; console.log(await hashPassword(`${process.argv[1]}:${process.argv[2]}`));' admin "$password"
+node --input-type=module -e 'import { hashPassword } from "./functions/_lib/d1-auth.js"; const username = process.argv[1]; const password = process.argv[2]; console.log(await hashPassword(username + ":" + password));' admin "$password"
 unset password
-```
+~~~
 
-Run that command once per staff username (`admin`, `coach`, and any legacy
-`player` account), then save the printed value in the matching
-`AUTH_*_PASSWORD_SHA256` Cloudflare secret. The login code accepts the previous
-SHA-256 value temporarily so the rotation can be completed without a lockout;
-do not leave it that way for the season.
+Run that once for each static staff username, then save the output in the
+matching Cloudflare secret. Do not leave legacy SHA-256 credentials in service
+once the season rotation is complete.
 
-Session cookies use the `__Host-bc_auth` browser-enforced host-only prefix.
-The first deployment after this change signs existing browser sessions out once;
-that is expected.
+Session cookies use the host-only __Host-bc_auth prefix. An auth/session rollout
+can sign out existing browsers once; that is expected.
 
-## Cloudflare Pages Settings
+## Pages settings
 
-When creating the Pages project:
-
-- Framework preset: `None`
+- Framework preset: None
 - Build command: leave blank
-- Build output directory: `/`
-- Production branch: `main`
+- Build output directory: /
+- Production branch: main
 
-The committed `_routes.json` makes Pages Functions run on every route so static assets stay protected.
+The committed _routes.json routes every request through Pages Functions so
+static app assets remain behind the app session boundary.
 
-## Deploying
+## Migration-first deployment
 
-Use the safe deploy script:
+Use only the safe deploy script:
 
-```bash
+~~~bash
 ./scripts/deploy-cloudflare.sh
-```
+~~~
 
-Do not deploy the repo root with `wrangler pages deploy .`. The repo root includes local-only files that should never be uploaded as public static assets.
+It invokes a read-only D1 migration preflight before staging files. The script
+never applies migrations itself. It refuses a deployment when the remote ledger
+is behind, ahead of, or otherwise different from the local migration files.
 
-## Season Operations Runbook
+For this canonical release, the approved operator workflow is:
 
-### Publish a player-ready practice
+1. Back up and inspect production D1.
+2. Confirm the current one-team assumption and the intended assignment for all
+   currently unassigned users. Migration 0011 only backfills users when
+   exactly one team exists.
+3. Review migrations 0011–0017 and apply them intentionally:
 
-1. Save the coach workspace and open **Publish Status**.
-2. Resolve every player-visible diagram or clip marked missing, stale, or
-   unpublished; use **Publish Media** for the normal media path.
-3. Publish the team workspace and wait for the status dock to say **Ready for
-   players**.
-4. Open a player account on a phone and confirm the practice, diagrams, clips,
-   and quiz source are visible before announcing the assignment.
+   ~~~bash
+   wrangler d1 migrations apply bcoffense-db --remote
+   ~~~
 
-### Help a player who cannot get in
+4. Verify the remote ledger and new tables/indexes. In particular, confirm
+   app_settings.primary_team_id, user team_id values,
+   team_media_manifests, account_session_state, discussion integrity tables,
+   workspace revision tables/current head, and the team-scoped play_likes
+   uniqueness rule. Confirm the 0017 quarantine removed only unsafe D1
+   pointers and did not delete R2 objects.
+5. Run ./scripts/deploy-cloudflare.sh again. It must pass preflight before any
+   Pages deployment begins.
+6. Sign in as an admin and bootstrap the first canonical workspace/release head
+   from retained recovery data. GET /player/release is intentionally read-only
+   and will not publish a release during a player request.
+7. Test a clean player session and a second coach session before announcing a
+   practice or changing archived media.
 
-1. Confirm the player accepted their invitation and is using the invited email.
-2. Use the password-reset flow; do not share a staff account or staff password.
-3. Have the player use **Refresh team app** after login if a recently published
-   practice has not appeared.
-4. If the issue persists, check Cloudflare Pages deployment status and the D1,
-   KV, and media bindings before changing player data.
+Do not deploy the repo root directly with the generic Pages command below. The
+repository can contain local-only files that must never be uploaded as static
+assets.
 
-### Recover safely
+~~~bash
+wrangler pages deploy .
+~~~
 
-Use the admin-only Recovery Tools for exports/imports or a cloud recovery. They
-are not the normal daily publish workflow. Make a complete backup before
-replacing a local workspace, then verify the resulting playbook and active
-practice before republishing.
+## Daily media workflow after the containment release
 
-## Cloud Sync Storage
+### Diagrams
+
+1. A coach attaches or replaces a diagram.
+2. The app saves the local copy and starts the Cloudflare upload automatically.
+3. The status dock reports the meaningful state: saving, saving when online,
+   saved, conflict, or an actionable failure.
+4. The server stores an immutable team/versioned R2 object and conditionally
+   advances the team D1 manifest pointer.
+5. A released player resolves the same stable media ID from the cloud. There
+   is no normal Publish Media action.
+
+If a second coach changed the diagram first, the stale upload receives a
+conflict rather than silently replacing the newer diagram. The newer and older
+immutable bytes are retained for recovery until an explicit lifecycle policy
+exists.
+
+### Player releases and practices
+
+Players use Refresh team app to fetch their scoped release. They must never use
+a raw cloud-backup restore. The release includes only approved player scripts,
+player-safe play fields, signals, settings, and media IDs.
+
+During this transition, the retained workspace backup is still an admin-only
+recovery object and player releases are stored in namespaced KV. The final
+automatic workspace-revision system is not complete yet. If an initial or
+recovery player release is missing, an admin rebuilds it; a player request does
+not implicitly publish one.
+
+### Clips and videos
+
+Clip access is team/release-gated in the containment checkout, but clip
+metadata remains a KV transition and the legacy primary-team fallback still
+needs retirement. Treat the automatic, durable diagram workflow as the proven
+path; do not claim the same offline/retry guarantee for every video clip until
+the unified outbox and D1 clip-manifest phase is complete.
+
+## Recovery and support
+
+### A player cannot see a newly released practice or diagram
+
+1. Confirm the player is assigned to the intended team and can load a current
+   player release.
+2. Confirm the release contains the practice/media ID and the team D1 manifest
+   has a current diagram pointer.
+3. Check the workspace status dock for a pending upload, conflict, or auth
+   error; do not ask the player to restore a coach backup.
+4. Use the admin-only recovery/rebuild path only when a release is missing or
+   legacy data is being migrated.
+5. Test again in a clean player session. If a cached role switch is suspected,
+   sign out, close the app, and sign back in after the new service worker has
+   activated.
+
+### Archived legacy diagrams
+
+Legacy objects are retained as recovery evidence. An admin may audit, migrate,
+or repair one only with the stable media ID and verified current and archived
+checksums. Never select an old object based only on a play name, script
+position, tag, or broad inventory match.
+
+### Workspace recovery
+
+Raw cloud backup access is admin-only. It is for recovery, not daily player
+sync. Before an intentional restore, export local state, validate the source,
+and verify the playbook and active practice afterward. The final staged/atomic
+restore and rollback system remains roadmap work.
+
+## Storage bindings
 
 The app expects a KV binding named:
 
-```text
+~~~text
 SYNC_KV
-```
+~~~
 
-This repo includes `wrangler.toml` with the production namespace binding. To recreate it on another Cloudflare account:
+The repo wrangler.toml holds the production binding. To recreate it on a
+different account:
 
-```bash
+~~~bash
 npx wrangler kv namespace create bcoffense_sync
-```
+~~~
 
-Then place the returned namespace id in `wrangler.toml`:
+Place the returned namespace ID in wrangler.toml:
 
-```toml
+~~~toml
 [[kv_namespaces]]
 binding = "SYNC_KV"
 id = "YOUR_NAMESPACE_ID"
-```
+~~~
 
-Admins can push the complete backup. Coaches and players can pull the latest backup but cannot push.
+This document deliberately does not promise current Cloudflare free-tier quotas
+or rate limits. Check current Cloudflare documentation before sizing storage,
+uploads, or migration work.
 
-## Local Function Testing
+## Local Pages Function testing
 
-Create a local `.dev.vars` file from `.dev.vars.example` and fill in real secret values. Do not commit `.dev.vars`.
+Create a local .dev.vars from .dev.vars.example and fill in real test secrets.
+Do not commit it.
 
-Then run:
-
-```bash
+~~~bash
 npx wrangler pages dev . --kv=SYNC_KV
-```
+~~~
+
+Use a local D1/R2-compatible test setup for routes that depend on team context
+or media manifests. A local test is not proof that production migrations or
+production player authorization are complete.

@@ -357,6 +357,11 @@
       username: String(user.username || role),
       role,
       label: user.label || role.charAt(0).toUpperCase() + role.slice(1),
+      // The server derives both fields from the signed/validated principal.
+      // Keep them on the browser auth model so a cached player release can be
+      // tied to the exact team and player who is signed in.
+      teamId: String(user.teamId || "").trim(),
+      d1UserId: String(user.d1UserId || "").trim(),
       loginAt: user.loginAt || "",
       expiresAt: user.expiresAt || "",
     };

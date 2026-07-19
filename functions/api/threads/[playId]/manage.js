@@ -34,6 +34,7 @@ export async function onRequestPost(context) {
   }
 
   const teamId = await getTeamId(env.DB, session);
+  if (!teamId) return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
   const result = await setThreadLock(env.DB, teamId, playId, action === "lock", session);
   if (result.error) return authJson({ ok: false, error: result.error }, { status: 403 });
 

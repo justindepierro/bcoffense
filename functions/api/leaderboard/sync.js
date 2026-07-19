@@ -21,6 +21,7 @@ export async function onRequestPost(context) {
   try {
     const payload = await request.json().catch(() => ({}));
     const teamId = await getLeaderboardTeamId(env.DB, session);
+    if (!teamId) return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
     const synced = await syncLeaderboardPayload(env.DB, teamId, session, payload);
     const summary = await getLeaderboardSummary(env.DB, teamId, { weekKey: payload?.weekKey });
     return withSecurityHeaders(authJson({ ok: true, synced, summary }));

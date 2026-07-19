@@ -1424,12 +1424,40 @@ function ensurePlaybookPlayIds(list) {
   list.forEach((play) => {
     if (!play || typeof play !== "object") return;
     const sourceId = getStablePlaySourceId(play);
-    const expectedMediaId = sourceId ? `play:${sourceId}` : "";
+    const fallbackSourceId = String(play.id || sourceId || "").trim();
+    const expectedMediaId = fallbackSourceId ? `play:${fallbackSourceId}` : "";
     const currentMediaId = play.mediaId == null ? "" : String(play.mediaId).trim();
     if (!currentMediaId && expectedMediaId) {
       play.mediaId = expectedMediaId;
       changed += 1;
     }
+  });
+  // A media ID is a team-wide permanent pointer, not a display label. An old
+  // import could preserve the same mediaId on two distinct rows, which makes
+  // both plays resolve one cloud diagram. Keep the first established pointer
+  // for backwards recovery and deterministically repair every later duplicate
+  // to that row's guaranteed-unique local play ID.
+  const mediaOwners = new Set();
+  list.forEach((play) => {
+    if (!play || typeof play !== "object") return;
+    const currentMediaId = play.mediaId == null ? "" : String(play.mediaId).trim();
+    if (currentMediaId && !mediaOwners.has(currentMediaId)) {
+      mediaOwners.add(currentMediaId);
+      return;
+    }
+    const uniqueId = String(play.id || "").trim();
+    if (!uniqueId) return;
+    let replacement = `play:${uniqueId}`;
+    let suffix = 2;
+    while (mediaOwners.has(replacement)) {
+      replacement = `play:${uniqueId}:${suffix}`;
+      suffix += 1;
+    }
+    if (play.mediaId !== replacement) {
+      play.mediaId = replacement;
+      changed += 1;
+    }
+    mediaOwners.add(replacement);
   });
   return changed;
 }

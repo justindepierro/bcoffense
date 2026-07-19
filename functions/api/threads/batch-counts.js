@@ -27,6 +27,7 @@ export async function onRequestGet(context) {
   }
 
   const teamId = await getTeamId(env.DB, session);
+  if (!teamId) return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
   const placeholders = playIds.map(() => "?").join(",");
 
   const rows = await env.DB.prepare(

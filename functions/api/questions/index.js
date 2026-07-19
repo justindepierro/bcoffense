@@ -42,6 +42,7 @@ export async function onRequestGet(context) {
 
   try {
     const teamId = await getTeamId(db, session);
+    if (!teamId) return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
     const url = new URL(request.url);
     const type = url.searchParams.get("type") ?? "questions";
     const state = url.searchParams.get("state") ?? "open"; // "" = all

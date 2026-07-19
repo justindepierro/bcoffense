@@ -1,19 +1,28 @@
 // Admin-only, non-destructive legacy diagram migration. Copies a verified
-// `images/<legacyKey>` object into the canonical versioned path and writes a
-// manifest for its permanent media ID. Legacy objects stay in place.
+// exact `images/...` or `media/plays/...` object into the canonical versioned
+// path and writes a manifest for its permanent media ID. Source objects stay
+// in place as recoverable evidence.
 
 import { authJson, getSessionFromRequest } from "../_lib/auth.js";
-import { imageVersionedR2Key, readImageManifest, sha256Hex, writeImageManifest } from "../_lib/image-media.js";
+import {
+  detectImageContentType,
+  imageVersionedR2Key,
+  normalizeImageContentType,
+  readImageManifest,
+  sha256Hex,
+  writeImageManifest,
+} from "../_lib/image-media.js";
+import { normalizeLegacyDiagramSourceKey } from "../_lib/legacy-image-source.js";
+import { isPrimaryTeam, resolveSessionTeamId } from "../_lib/team-context.js";
 
 const MAX_ITEMS = 100;
 const MAX_MEDIA_ID_LENGTH = 512;
-const MAX_LEGACY_KEYS = 12;
 
 function clean(value, max) { return String(value || "").trim().slice(0, max); }
 
-function validLegacyKey(value) {
-  const key = clean(value, 1000);
-  return Boolean(key) && !key.startsWith("/") && !key.includes("..") && !key.includes("\u0000");
+function requestedSourceKey(item) {
+  const hasSourceKey = item && Object.prototype.hasOwnProperty.call(item, "sourceKey");
+  return normalizeLegacyDiagramSourceKey(hasSourceKey ? item.sourceKey : item?.legacyKey);
 }
 
 async function bodyJson(request) {
@@ -25,6 +34,11 @@ export async function onRequestPost(context) {
   if (!session || session.role !== "admin") {
     return authJson({ ok: false, error: "Only an admin may migrate legacy diagrams." }, { status: 403 });
   }
+  const teamId = await resolveSessionTeamId(session, context.env);
+  if (!teamId) return authJson({ ok: false, error: "Team access is not configured." }, { status: 503 });
+  if (!(await isPrimaryTeam(context.env, teamId))) {
+    return authJson({ ok: false, error: "Archived diagram recovery is available only to the configured primary team." }, { status: 403 });
+  }
   const bucket = context.env?.CLIPS;
   if (!bucket) return authJson({ ok: false, error: "Image storage is not configured." }, { status: 503 });
   const body = await bodyJson(context.request);
@@ -34,44 +48,50 @@ export async function onRequestPost(context) {
   const results = [];
   for (const item of requested) {
     const mediaId = clean(item?.mediaId, MAX_MEDIA_ID_LENGTH);
-    const legacyKeys = [...new Set((Array.isArray(item?.legacyKeys) ? item.legacyKeys : [])
-      .map((key) => clean(key, 1000)).filter(validLegacyKey))].slice(0, MAX_LEGACY_KEYS);
-    if (!mediaId || !legacyKeys.length) {
-      results.push({ mediaId, status: "invalid" });
+    const sourceKey = requestedSourceKey(item);
+    const expectedLegacyChecksum = clean(item?.expectedLegacyChecksum, 128).toLowerCase();
+    if (!mediaId || !sourceKey || !/^[a-f0-9]{64}$/.test(expectedLegacyChecksum)) {
+      results.push({ mediaId, sourceKey, status: "invalid" });
       continue;
     }
     try {
-      if (await readImageManifest(context.env, mediaId)) {
-        results.push({ mediaId, status: "already-canonical" });
+      if (await readImageManifest(context.env, teamId, mediaId)) {
+        results.push({ mediaId, sourceKey, status: "already-canonical" });
         continue;
       }
-      let source = null;
-      let sourceKey = "";
-      for (const legacyKey of legacyKeys) {
-        const object = await bucket.get(`images/${legacyKey}`);
-        if (object?.body) { source = object; sourceKey = legacyKey; break; }
-      }
-      if (!source) {
-        results.push({ mediaId, status: "legacy-not-found" });
+      const source = await bucket.get(sourceKey);
+      if (!source?.body) {
+        results.push({ mediaId, sourceKey, status: "legacy-not-found" });
         continue;
       }
       const bytes = await source.arrayBuffer();
       const checksum = await sha256Hex(bytes);
+      if (checksum !== expectedLegacyChecksum) {
+        results.push({ mediaId, sourceKey, status: "checksum-mismatch" });
+        continue;
+      }
+      const contentType = detectImageContentType(bytes);
+      const declaredContentType = normalizeImageContentType(source.httpMetadata?.contentType);
+      if (!contentType || (declaredContentType && declaredContentType !== contentType)) {
+        results.push({ mediaId, sourceKey, status: "unsupported-image" });
+        continue;
+      }
       const version = crypto.randomUUID();
-      const contentType = source.httpMetadata?.contentType || "image/jpeg";
-      const r2key = imageVersionedR2Key(mediaId, version);
+      const r2key = imageVersionedR2Key(teamId, mediaId, version);
       const uploadedAt = new Date().toISOString();
       const saved = await bucket.put(r2key, bytes, {
         httpMetadata: { contentType },
-        customMetadata: { mediaId, version, checksum, migratedFrom: `images/${sourceKey}` },
+        customMetadata: { teamId, mediaId, version, checksum, migratedFrom: sourceKey },
       });
-      await writeImageManifest(context.env, mediaId, {
+      const commit = await writeImageManifest(context.env, teamId, mediaId, {
         version, r2key, size: saved?.size || bytes.byteLength, contentType, checksum, uploadedAt,
         uploadedBy: `${session.username}:legacy-migration`,
-      });
-      results.push({ mediaId, status: "migrated", sourceKey });
+      }, { expectedVersion: "" });
+      results.push(commit.committed
+        ? { mediaId, status: "migrated", sourceKey }
+        : { mediaId, sourceKey, status: "conflict" });
     } catch (_err) {
-      results.push({ mediaId, status: "failed" });
+      results.push({ mediaId, sourceKey, status: "failed" });
     }
   }
   const counts = results.reduce((summary, result) => {

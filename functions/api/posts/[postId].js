@@ -4,7 +4,7 @@
  */
 
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
-import { editPost, deletePost, setQuestionState } from "../../_lib/d1-threads.js";
+import { editPost, deletePost, getTeamId, setQuestionState } from "../../_lib/d1-threads.js";
 import { notifyOnQuestionResolved } from "../../_lib/d1-notifications.js";
 
 export async function onRequest(context) {
@@ -16,10 +16,12 @@ export async function onRequest(context) {
 
   const postId = String(params.postId || "").trim();
   if (!postId) return authJson({ ok: false, error: "Post ID required." }, { status: 400 });
+  const teamId = await getTeamId(env.DB, session);
+  if (!teamId) return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
 
   // ── DELETE — soft delete ──────────────────────────────────────────────────
   if (request.method === "DELETE") {
-    const result = await deletePost(env.DB, postId, session);
+    const result = await deletePost(env.DB, teamId, postId, session);
     if (result.error) return authJson({ ok: false, error: result.error }, { status: 403 });
     return withSecurityHeaders(authJson({ ok: true }));
   }
@@ -37,7 +39,7 @@ export async function onRequest(context) {
     // Question state action (resolve / reopen)
     if (body.action === "resolve" || body.action === "reopen") {
       const newState = body.action === "resolve" ? "resolved" : "reopened";
-      const result = await setQuestionState(env.DB, postId, newState, session);
+      const result = await setQuestionState(env.DB, teamId, postId, newState, session);
       if (result.error) return authJson({ ok: false, error: result.error }, { status: 403 });
 
       // Notify question author when resolved (fire-and-forget)
@@ -48,9 +50,9 @@ export async function onRequest(context) {
           .prepare(
             `SELECT t.play_id FROM discussion_posts p
              JOIN play_threads t ON t.id = p.thread_id
-             WHERE p.id = ? LIMIT 1`,
+             WHERE p.id = ? AND t.team_id = ? LIMIT 1`,
           )
-          .bind(postId).first();
+          .bind(postId, teamId).first();
         if (threadRow?.play_id) {
           notifyOnQuestionResolved(env.DB, postId, resolverName, threadRow.play_id, env).catch(() => { });
         }
@@ -59,7 +61,7 @@ export async function onRequest(context) {
       return withSecurityHeaders(authJson({ ok: true, questionState: result.questionState }));
     }
 
-    const result = await editPost(env.DB, postId, body.body, session);
+    const result = await editPost(env.DB, teamId, postId, body.body, session);
     if (result?.error) return authJson({ ok: false, error: result.error }, { status: 403 });
     return withSecurityHeaders(
       authJson({

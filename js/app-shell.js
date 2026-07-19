@@ -2461,7 +2461,7 @@ async function runPlayerTeamBootstrap(opts = {}) {
     startup,
     stateOpts,
     title: "Saved data ready",
-    detail: "Local workspace loaded",
+    detail: "Saved player release loaded",
   });
 
   try {
@@ -2470,8 +2470,11 @@ async function runPlayerTeamBootstrap(opts = {}) {
       stateOpts,
       title: "Checking latest coach update...",
     });
-    if (typeof refreshPlayerCloudBackup === "function") {
-      result.data = await refreshPlayerCloudBackup({
+    if (typeof window.refreshPlayerRelease === "function" || typeof window.refreshPlayerCloudBackup === "function") {
+      const refresh = typeof window.refreshPlayerRelease === "function"
+        ? window.refreshPlayerRelease
+        : window.refreshPlayerCloudBackup;
+      result.data = await refresh({
         navigate: !quietStartup,
         skipIfCurrent: true,
       });

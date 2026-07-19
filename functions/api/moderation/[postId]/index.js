@@ -25,6 +25,8 @@ export async function onRequest(context) {
 
   const postId = String(params.postId || "").trim();
   if (!postId) return authJson({ ok: false, error: "Post ID required." }, { status: 400 });
+  const teamId = await getTeamId(env.DB, session);
+  if (!teamId) return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
 
   let body = {};
   try {
@@ -43,23 +45,24 @@ export async function onRequest(context) {
     return authJson({ ok: false, error: "editedBody is required for edit_approve." }, { status: 400 });
   }
 
-  const moderatorId = await resolveModeratorId(env.DB, session);
-  const result = await moderatePostAction(env.DB, postId, action, reason, moderatorId, { editedBody, muteDays });
+  const moderatorId = await resolveModeratorId(env.DB, session, teamId);
+  if (!moderatorId) return authJson({ ok: false, error: "Moderator account is not configured for this team." }, { status: 503 });
+  const result = await moderatePostAction(env.DB, teamId, postId, action, reason, moderatorId, { editedBody, muteDays });
 
   if (result.error) return authJson({ ok: false, error: result.error }, { status: 422 });
   return withSecurityHeaders(authJson({ ok: true, newStatus: result.newStatus }));
 }
 
-async function resolveModeratorId(db, session) {
+async function resolveModeratorId(db, session, teamId) {
   if (session.d1UserId) return session.d1UserId;
   const email = `${session.username}@bcoffense.internal`;
-  const existing = await db.prepare("SELECT id FROM users WHERE email = ? LIMIT 1").bind(email).first();
-  if (existing) return existing.id;
+  const existing = await db.prepare("SELECT id, team_id FROM users WHERE email = ? LIMIT 1").bind(email).first();
+  if (existing) return String(existing.team_id || "") === String(teamId) ? existing.id : null;
   const id = crypto.randomUUID();
   const now = Math.floor(Date.now() / 1000);
   await db.prepare(
-    `INSERT INTO users (id, email, display_name, role, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, 'active', ?, ?)`,
-  ).bind(id, email, session.label || session.username, session.role, now, now).run();
+    `INSERT INTO users (id, email, display_name, role, team_id, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 'active', ?, ?)`,
+  ).bind(id, email, session.label || session.username, session.role, teamId, now, now).run();
   return id;
 }

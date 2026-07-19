@@ -23,6 +23,9 @@ export async function onRequest(context) {
   if (!env.DB) {
     return authJson({ ok: false, error: "Database not configured." }, { status: 503 });
   }
+  if (!session.teamId) {
+    return authJson({ ok: false, error: "Team access is not configured for this coach account." }, { status: 503 });
+  }
 
   // ── GET — list players ─────────────────────────────────────────────────────
   if (request.method === "GET") {
@@ -31,10 +34,12 @@ export async function onRequest(context) {
         `SELECT id, email, display_name, first_name, last_name, role, status,
                 created_at, last_login_at, password_changed_at
          FROM users
-         WHERE role IN ('player','coach')
+         WHERE team_id = ?
+           AND role IN ('player','coach')
            AND status != 'archived'
          ORDER BY created_at DESC`,
       )
+      .bind(session.teamId)
       .all();
 
     // Attach pending invite info (has an unused, non-expired token?)
@@ -102,7 +107,14 @@ export async function onRequest(context) {
 
     let userId;
     try {
-      userId = await createD1User(env.DB, { email, displayName, firstName, lastName, role: "player" });
+      userId = await createD1User(env.DB, {
+        email,
+        displayName,
+        firstName,
+        lastName,
+        role: "player",
+        teamId: session.teamId,
+      });
     } catch (err) {
       console.error("[players] create error:", err);
       return authJson({ ok: false, error: "Failed to create account." }, { status: 500 });

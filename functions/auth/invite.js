@@ -32,6 +32,13 @@ export async function onRequest(context) {
     return authJson({ ok: false, error: "Database not configured." }, { status: 503 });
   }
 
+  // Invitations are a team-scoped write. Do not create an unassigned player
+  // account if this staff session cannot be resolved to a current team.
+  const teamId = String(session.teamId || "").trim();
+  if (!teamId) {
+    return authJson({ ok: false, error: "Team access is not configured for this coach account." }, { status: 503 });
+  }
+
   // Parse body
   let body = {};
   try {
@@ -71,6 +78,7 @@ export async function onRequest(context) {
       firstName,
       lastName,
       role: "player",
+      teamId,
     });
   } catch (err) {
     console.error("[invite] D1 createD1User error:", err);

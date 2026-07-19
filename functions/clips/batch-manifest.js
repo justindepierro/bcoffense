@@ -5,6 +5,9 @@
 // and readiness checks avoid one request per signal component.
 
 import { authJson } from "../_lib/auth.js";
+import { getMediaPrincipal } from "../_lib/media-access.js";
+import { releaseAllowsClip } from "../_lib/player-release.js";
+import { readTeamClipManifest } from "../_lib/team-workspace.js";
 
 const MAX_SIG_LENGTH = 400;
 const MAX_BATCH_SIGS = 100;
@@ -15,10 +18,6 @@ function normalizeSig(value) {
 
 function isValidSig(sig) {
   return Boolean(sig) && sig.length <= MAX_SIG_LENGTH;
-}
-
-function manifestKey(sig) {
-  return `clips:${sig}`;
 }
 
 function publicClip(entry) {
@@ -53,17 +52,21 @@ export async function onRequestPost(context) {
       .map(normalizeSig)
       .filter(isValidSig),
   )].slice(0, MAX_BATCH_SIGS);
+  const principal = await getMediaPrincipal(context.request, context.env);
+  if (!principal.ok) return authJson({ ok: false, error: principal.error }, { status: principal.status });
+  const allowedSigs = principal.session?.role === "player"
+    ? sigs.filter((sig) => releaseAllowsClip(principal.release, sig))
+    : sigs;
 
   const manifests = {};
-  await Promise.all(sigs.map(async (sig) => {
-    const value = await store.get(manifestKey(sig), { type: "json" });
-    const entries = Array.isArray(value) ? value : [];
+  await Promise.all(allowedSigs.map(async (sig) => {
+    const { entries } = await readTeamClipManifest(store, context.env, principal.teamId, sig);
     manifests[sig] = entries.map(publicClip);
   }));
 
   return authJson({
     ok: true,
-    count: sigs.length,
+    count: allowedSigs.length,
     manifests,
   });
 }

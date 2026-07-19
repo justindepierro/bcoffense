@@ -4,7 +4,7 @@
  */
 
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../../_lib/auth.js";
-import { toggleReaction } from "../../../_lib/d1-threads.js";
+import { getTeamId, toggleReaction } from "../../../_lib/d1-threads.js";
 
 export async function onRequestPost(context) {
   const { request, env, params } = context;
@@ -15,6 +15,8 @@ export async function onRequestPost(context) {
 
   const postId = String(params.postId || "").trim();
   if (!postId) return authJson({ ok: false, error: "Post ID required." }, { status: 400 });
+  const teamId = await getTeamId(env.DB, session);
+  if (!teamId) return authJson({ ok: false, error: "Team access is not configured for this account." }, { status: 503 });
 
   // D1 user ID is required to react (staff get synthetic IDs from thread creation)
   const userId = await resolveUserId(env.DB, session);
@@ -31,7 +33,7 @@ export async function onRequestPost(context) {
   const reactionKey = String(body.reaction_key || "").trim();
   if (!reactionKey) return authJson({ ok: false, error: "reaction_key required." }, { status: 422 });
 
-  const result = await toggleReaction(env.DB, postId, userId, reactionKey);
+  const result = await toggleReaction(env.DB, teamId, postId, userId, reactionKey);
   if (result.error) return authJson({ ok: false, error: result.error }, { status: 422 });
 
   return withSecurityHeaders(authJson({ ok: true, added: result.added, reactions: result.reactions }));

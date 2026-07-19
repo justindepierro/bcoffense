@@ -4,6 +4,8 @@
   const CLOUD_SYNC_AUTO_PULL_SESSION_KEY = "_bcCloudSyncAutoPullChecked";
   const CLOUD_SYNC_AUTO_PULL_APPLIED_KEY = "_bcCloudSyncAutoPullApplied";
   const CLOUD_SYNC_PULL_SUMMARY_KEY = "_bcCloudSyncLastPullSummary";
+  const PLAYER_RELEASE_ETAG_KEY = "_bcPlayerReleaseEtag";
+  const PLAYER_RELEASE_META_KEY = "_bcPlayerReleaseMeta";
   const MAX_KV_BACKUP_BYTES = 25 * 1024 * 1024;
   const CLOUD_AUTO_PUSH_DELAY_MS = 30000;
   const CLOUD_AUTO_PUSH_MAX_HOLD_MS = 2 * 60 * 1000;
@@ -11,12 +13,13 @@
   const CLOUD_AUTO_PUSH_MAX_RETRIES = 3;
 
   const DEFAULT_SETTINGS = {
-    provider: "cloudflare-kv",
+    provider: "cloudflare-d1-r2",
     lastPushAt: "",
     lastPullAt: "",
     lastRemoteExportDate: "",
     lastRemoteUpdatedAt: "",
     lastRemoteSize: 0,
+    lastWorkspaceRevision: "",
   };
 
   const CLOUD_AUTO_PUSH_KEYS = new Set([
@@ -59,6 +62,17 @@
     STORAGE_KEYS.GAME_PLAN_BOARDS,
     STORAGE_KEYS.GAME_PLAN_SNAPSHOTS,
     STORAGE_KEYS.GAME_PLAN_TEMPLATES,
+    // These values are inputs to the server-generated player release. Leaving
+    // any one of them out turns an automatic coach save into a stale player
+    // portal until someone remembers an unrelated recovery publish.
+    STORAGE_KEYS.MOTD,
+    STORAGE_KEYS.PLAYER_PORTAL_BRANDING,
+    STORAGE_KEYS.PLAYER_QUIZ_SETTINGS,
+    STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS,
+    STORAGE_KEYS.PLAYER_SIGNAL_GAME_SETTINGS,
+    STORAGE_KEYS.PLAYER_PUBLISH_STATUS,
+    STORAGE_KEYS.PLAYER_HELMET_STICKER_TYPES,
+    STORAGE_KEYS.SIGNALS,
   ]);
 
   let cloudAutoPushTimer = null;
@@ -109,6 +123,7 @@
       lastRemoteExportDate: source.lastRemoteExportDate || "",
       lastRemoteUpdatedAt: source.lastRemoteUpdatedAt || "",
       lastRemoteSize: Number(source.lastRemoteSize || 0) || 0,
+      lastWorkspaceRevision: String(source.lastWorkspaceRevision || ""),
     };
   }
 
@@ -116,7 +131,7 @@
     const safeSettings = {
       ...getCloudSyncSettings(),
       ...(settings || {}),
-      provider: "cloudflare-kv",
+      provider: "cloudflare-d1-r2",
     };
     safeSettings.lastRemoteSize = Number(safeSettings.lastRemoteSize || 0) || 0;
     storageManager.set(STORAGE_KEYS.CLOUD_SYNC_SETTINGS, safeSettings);
@@ -602,7 +617,10 @@
   }
 
   function userCanPushCloudBackup() {
-    return typeof isAdminUser !== "function" || isAdminUser();
+    const role = typeof getCurrentAuthUser === "function"
+      ? getCurrentAuthUser()?.role
+      : "";
+    return role === "admin" || role === "coach" || role === "assistant_coach";
   }
 
   function userCanOpenRecoveryTools() {
@@ -610,7 +628,7 @@
   }
 
   function canAutoPushCloudBackup() {
-    return typeof isAdminUser === "function" && isAdminUser();
+    return userCanPushCloudBackup();
   }
 
   async function hasSubstantiveLocalTeamData() {
@@ -764,7 +782,12 @@
     const interactive = opts.interactive !== false;
     const backup = await storageManager.getAllData();
 
-    if (window.playImages && typeof window.playImages.exportAll === "function") {
+    // Canonical workspace revisions contain only structured team data. Diagram
+    // bytes already live in their own immutable R2 objects and are saved by
+    // play-images.js; embedding browser data URLs here would reintroduce the
+    // stale/wrong-image source we are removing. Full image export remains an
+    // explicit admin recovery-only option.
+    if (opts.includeRecoveryImages === true && window.playImages && typeof window.playImages.exportAll === "function") {
       try {
         if (interactive) showToast("Preparing team workspace...", { duration: 1200 });
         backup.playImages = await window.playImages.exportAll({
@@ -812,7 +835,9 @@
     });
   }
 
-  async function cloudSyncRequest(method, bodyText = "") {
+  // Raw KV snapshots are admin-only recovery data. Keep their transport
+  // isolated so normal coach autosave can never accidentally fall back to it.
+  async function recoveryCloudSyncRequest(method, bodyText = "") {
     const headers = {
       Accept: "application/json",
       "X-BC-Auth-Mode": "json",
@@ -837,7 +862,7 @@
 
   async function fetchCloudBackup(opts = {}) {
     try {
-      const data = await cloudSyncRequest("GET");
+      const data = await recoveryCloudSyncRequest("GET");
       if (!data.backup || typeof data.backup !== "object") {
         throw new Error("Cloud workspace did not include restorable data.");
       }
@@ -855,6 +880,186 @@
       if (opts.allowMissing && err.status === 404) return null;
       throw err;
     }
+  }
+
+  async function workspaceRevisionRequest(method, bodyText = "", expectedRevision = "") {
+    const headers = {
+      Accept: "application/json",
+      "X-BC-Auth-Mode": "json",
+    };
+    if (bodyText) headers["Content-Type"] = "application/json";
+    if (method === "PUT" && expectedRevision !== undefined && expectedRevision !== null) {
+      headers["X-BC-Expected-Workspace-Revision"] = String(expectedRevision || "");
+    }
+    const response = await fetch("/workspace/revision", {
+      method,
+      credentials: "same-origin",
+      headers,
+      body: bodyText || undefined,
+      cache: "no-store",
+    });
+    const data = response.status === 304 ? { ok: true, notModified: true } : await response.json().catch(() => ({}));
+    if (!response.ok && response.status !== 304) {
+      const err = new Error(data.error || `Workspace request failed with ${response.status}`);
+      err.status = response.status;
+      err.data = data;
+      throw err;
+    }
+    return { ...data, etag: response.headers.get("ETag") || "" };
+  }
+
+  async function fetchCanonicalWorkspace(opts = {}) {
+    try {
+      const data = await workspaceRevisionRequest("GET");
+      if (!data.workspace || typeof data.workspace !== "object") {
+        throw new Error("Canonical workspace did not include restorable team data.");
+      }
+      const summary = getCloudBackupSummary(data.workspace);
+      if (!summary.valid) throw new Error(summary.errors.join(" "));
+      return {
+        backup: data.workspace,
+        summary,
+        revision: String(data.revision || ""),
+        playerReleaseRevision: String(data.playerReleaseRevision || ""),
+        updatedAt: data.updatedAt || "",
+        size: Number(data.size || 0) || 0,
+      };
+    } catch (err) {
+      if (opts.allowMissing && err.status === 404) return null;
+      throw err;
+    }
+  }
+
+  function getPlayerReleaseSessionMeta() {
+    return safeJSONParse(sessionStorage.getItem(PLAYER_RELEASE_META_KEY), {}) || {};
+  }
+
+  function savePlayerReleaseSessionMeta(meta = {}) {
+    const safe = {
+      etag: String(meta.etag || ""),
+      revision: String(meta.revision || ""),
+      updatedAt: String(meta.updatedAt || ""),
+      teamId: String(meta.teamId || ""),
+    };
+    sessionStorage.setItem(PLAYER_RELEASE_META_KEY, JSON.stringify(safe));
+    if (safe.etag) sessionStorage.setItem(PLAYER_RELEASE_ETAG_KEY, safe.etag);
+    else sessionStorage.removeItem(PLAYER_RELEASE_ETAG_KEY);
+    return safe;
+  }
+
+  function playerReleaseSummary(release) {
+    const scripts = Array.isArray(release?.scripts) ? release.scripts : [];
+    const playbook = Array.isArray(release?.playbook) ? release.playbook : [];
+    const diagrams = Array.isArray(release?.media?.diagramMediaIds)
+      ? release.media.diagramMediaIds
+      : [];
+    return {
+      itemCount: playbook.length + scripts.length,
+      scriptCount: scripts.length,
+      playCount: playbook.length,
+      imageCount: diagrams.length || Number(release?.release?.diagramCount || 0) || 0,
+      exportDate: String(release?.release?.updatedAt || ""),
+      updatedAt: String(release?.release?.updatedAt || ""),
+      revision: String(release?.release?.revision || ""),
+      teamId: String(release?.release?.teamId || ""),
+    };
+  }
+
+  function isValidPlayerRelease(release) {
+    return Boolean(
+      release &&
+      release.schema === "bcoffense.player-release/v1" &&
+      release.release &&
+      typeof release.release.teamId === "string" &&
+      typeof release.release.revision === "string" &&
+      Array.isArray(release.playbook) &&
+      Array.isArray(release.scripts) &&
+      Array.isArray(release.media?.diagramMediaIds) &&
+      Array.isArray(release.media?.diagrams) &&
+      Array.isArray(release.media?.clipSigs),
+    );
+  }
+
+  async function fetchPlayerRelease(opts = {}) {
+    const meta = getPlayerReleaseSessionMeta();
+    const authUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    const activeTeamId = String(authUser?.teamId || "").trim();
+    const state = storageManager?.get?.(STORAGE_KEYS.PLAYER_RELEASE_STATE, null);
+    const localReleaseReady = Boolean(
+      activeTeamId &&
+      state &&
+      state.schema === "bcoffense.player-release/v1" &&
+      state.teamId === activeTeamId &&
+      state.revision &&
+      Array.isArray(await storageManager.getPlaybook()),
+    );
+    const canRevalidate = localReleaseReady && meta.teamId === activeTeamId && Boolean(meta.etag);
+    if (!canRevalidate && meta.etag) {
+      savePlayerReleaseSessionMeta({});
+    }
+    const headers = {
+      Accept: "application/json",
+      "X-BC-Auth-Mode": "json",
+    };
+    if (!opts.force && canRevalidate) headers["If-None-Match"] = meta.etag;
+    const response = await fetch("/player/release", {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+      headers,
+    });
+    if (response.status === 304) {
+      return { notModified: true, meta };
+    }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const err = new Error(data.error || `Player release request failed with ${response.status}`);
+      err.status = response.status;
+      throw err;
+    }
+    if (!data?.ok || !isValidPlayerRelease(data.release)) {
+      throw new Error("Player release did not contain valid practice data.");
+    }
+    return {
+      notModified: false,
+      release: data.release,
+      etag: response.headers.get("ETag") || "",
+    };
+  }
+
+  async function applyPlayerRelease(release, opts = {}) {
+    if (!storageManager || typeof storageManager.replacePlayerReleaseData !== "function") {
+      throw new Error("This app version cannot safely apply the player release.");
+    }
+    const state = await storageManager.replacePlayerReleaseData(release);
+    if (window.playImages) {
+      if (typeof window.playImages.clearRemoteManifestCache === "function") {
+        window.playImages.clearRemoteManifestCache();
+      }
+      if (typeof window.playImages.clearPlayerReleaseCache === "function") {
+        await window.playImages.clearPlayerReleaseCache();
+      }
+    }
+    if (window.playClips && typeof window.playClips.resetReleaseCache === "function") {
+      window.playClips.resetReleaseCache();
+    }
+
+    // Never leave an already-open coach script in global memory after the
+    // storage scrub. The player can load only a released script again.
+    if (typeof script !== "undefined") script = [];
+    if (typeof scriptWristband !== "undefined") scriptWristband = null;
+    if (typeof activeScriptSaveId !== "undefined") activeScriptSaveId = null;
+    if (typeof activeScriptSaveTitle !== "undefined") activeScriptSaveTitle = "";
+    if (typeof activeScriptSavedAt !== "undefined") activeScriptSavedAt = "";
+    if (typeof collapsedPeriods !== "undefined") collapsedPeriods = new Set();
+    if (typeof playerScriptImageKeysLoaded !== "undefined") playerScriptImageKeysLoaded = false;
+
+    const targetTab = opts.navigate === false ? "" : "dashboard";
+    await reloadAppFromStorage(targetTab ? { targetTab } : {});
+    if (targetTab && typeof setWorkspaceSurface === "function") {
+      setWorkspaceSurface("app", { initModules: false });
+    }
+    return state;
   }
 
   function saveCloudSyncSettings(opts = {}) {
@@ -884,6 +1089,45 @@
     } catch (err) {
       updateCloudSyncModalStatus(err.message, "error");
       showToast(err.message, { type: "error", duration: 5000 });
+    } finally {
+      setCloudSyncBusy(false);
+    }
+  }
+
+  // One-time migration/recovery action. Normal coach saves rebuild the player
+  // release as part of the server workspace commit; this does not expose a
+  // daily publish button or let a player create a release by refreshing.
+  async function rebuildPlayerRelease() {
+    if (!userCanOpenRecoveryTools()) {
+      showToast("Player release recovery is admin-only.", { type: "warning", duration: 3500 });
+      return false;
+    }
+    try {
+      setCloudSyncBusy(true);
+      updateCloudSyncModalStatus("Rebuilding the player release from recovery data...", "info");
+      const response = await fetch("/admin/player-release", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+          "X-BC-Auth-Mode": "json",
+        },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error || `Player release rebuild failed (${response.status})`);
+      }
+      const release = data.release || {};
+      updateCloudSyncModalStatus(
+        `Player release rebuilt: ${Number(release.scriptCount || 0)} scripts and ${Number(release.diagramCount || 0)} diagram references are ready.`,
+        "ok",
+      );
+      showToast("Player release rebuilt", { type: "success", duration: 3500 });
+      return true;
+    } catch (err) {
+      updateCloudSyncModalStatus(err.message || "Player release rebuild failed.", "error");
+      showToast(err.message || "Player release rebuild failed.", { type: "error", duration: 5000 });
+      return false;
     } finally {
       setCloudSyncBusy(false);
     }
@@ -948,7 +1192,7 @@
     const silent = opts.silent === true;
     const skipActivityLog = opts.skipActivityLog === true;
     if (!userCanPushCloudBackup()) {
-      throw new Error("Only admin can publish the team workspace.");
+      throw new Error("Coach access is required to save the team workspace.");
     }
 
     try {
@@ -966,30 +1210,26 @@
       ));
 
       if (!silent) updateCloudSyncModalStatus("Publishing team workspace...", "info");
-      const data = await cloudSyncRequest("PUT", payloadText);
+      const knownRevision = getCloudSyncSettings().lastWorkspaceRevision || "";
+      const data = await workspaceRevisionRequest("PUT", payloadText, knownRevision);
       const summary = getCloudBackupSummary(backup);
       const nextSettings = saveCloudSyncSettingsObject({
         lastPushAt: new Date().toISOString(),
         lastRemoteExportDate: summary.exportDate,
         lastRemoteUpdatedAt: data.updatedAt || "",
         lastRemoteSize: payloadSize,
+        lastWorkspaceRevision: data.revision || knownRevision,
       });
       // Also push play images to R2 so players can access diagrams cross-device.
       if (window.playImages && typeof window.playImages.syncToRemote === "function") {
         const _playsRef = typeof plays !== "undefined" ? plays : [];
         if (!silent) {
           updateCloudSyncModalStatus("Workspace published. Publishing diagrams to player devices...", "info");
-          diagramSyncResult = await window.playImages.syncToRemote(_playsRef);
-        } else {
-          // Auto-push should never block the app; report issues to the console.
-          window.playImages.syncToRemote(_playsRef).then((result) => {
-            if (result && (result.failed || result.skipped)) {
-              console.warn("Cloud backup completed, but diagram sync had issues:", result);
-            }
-          }).catch((err) => {
-            console.warn("Cloud backup completed, but diagram sync failed:", err);
-          });
         }
+        // Do not mark the workspace ready while its player media is still a
+        // detached promise. The upload queue/dock remains responsive during
+        // this await, and any failure flows into the same retry path.
+        diagramSyncResult = await window.playImages.syncToRemote(_playsRef);
       }
       if (!silent) {
         const diagramLine = formatDiagramSyncSummary(diagramSyncResult);
@@ -1277,54 +1517,46 @@
     }
   }
 
-  async function refreshPlayerCloudBackup(opts = {}) {
-    const remote = await fetchCloudBackup({ allowMissing: true });
-    if (!remote) {
-      return {
-        ok: false,
-        status: "missing",
-        message: "Try Again",
-      };
-    }
-    if (opts.skipIfCurrent !== false && isCloudRemoteAlreadyKnown(remote)) {
-      saveCloudSyncSettingsObject({
-        lastRemoteExportDate: remote.summary?.exportDate || "",
-        lastRemoteUpdatedAt: remote.updatedAt || "",
-        lastRemoteSize: remote.size,
+  async function refreshPlayerRelease(opts = {}) {
+    try {
+      const fetched = await fetchPlayerRelease({ force: opts.skipIfCurrent === false || opts.force === true });
+      if (fetched.notModified) {
+        const state = storageManager.get(STORAGE_KEYS.PLAYER_RELEASE_STATE, {});
+        const summary = playerReleaseSummary({
+          release: {
+            teamId: state.teamId || fetched.meta.teamId,
+            revision: state.revision || fetched.meta.revision,
+            updatedAt: state.updatedAt || fetched.meta.updatedAt,
+            diagramCount: Number(state.diagramCount || 0),
+          },
+          scripts: storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []),
+          playbook: await storageManager.getPlaybook(),
+          media: { diagramMediaIds: [] },
+        });
+        return { ok: true, status: "current", ...summary, message: "Ready" };
+      }
+
+      await applyPlayerRelease(fetched.release, opts);
+      const summary = playerReleaseSummary(fetched.release);
+      savePlayerReleaseSessionMeta({
+        etag: fetched.etag,
+        revision: summary.revision,
+        updatedAt: summary.updatedAt,
+        teamId: summary.teamId,
       });
-      return {
-        ok: true,
-        status: "current",
-        exportDate: remote.summary?.exportDate || "",
-        updatedAt: remote.updatedAt || "",
-        itemCount: remote.summary?.itemCount || 0,
-        imageCount: remote.summary?.imageCount || 0,
-        message: "Ready",
-      };
+      return { ok: true, status: "refreshed", ...summary, message: "Ready" };
+    } catch (err) {
+      if (err?.status === 404) {
+        return { ok: false, status: "missing", message: "Try Again" };
+      }
+      throw err;
     }
-    const restored = await restoreCloudBackup(remote, {
-      confirm: false,
-      reload: false,
-      notify: false,
-      navigate: opts.navigate !== false,
-      targetTab: "dashboard",
-    });
-    if (!restored) {
-      return {
-        ok: false,
-        status: "restore-failed",
-        message: "Try Again",
-      };
-    }
-    return {
-      ok: true,
-      status: "refreshed",
-      exportDate: remote.summary?.exportDate || "",
-      updatedAt: remote.updatedAt || "",
-      itemCount: remote.summary?.itemCount || 0,
-      imageCount: remote.summary?.imageCount || 0,
-      message: "Ready",
-    };
+  }
+
+  // Compatibility name for the existing player bootstrap. It now performs a
+  // player-release refresh and never calls /sync/backup or restoreAllData().
+  async function refreshPlayerCloudBackup(opts = {}) {
+    return refreshPlayerRelease(opts);
   }
 
   function renderCloudSyncStatus() {
@@ -1514,8 +1746,23 @@
       typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
     if (!currentUser) return false;
 
+    // Players never fetch the raw recovery snapshot. Their bootstrap uses the
+    // narrow server release even when this generic auto-pull hook runs first.
+    if (currentUser.role === "player") {
+      try {
+        const result = await refreshPlayerRelease({ force: false, navigate: false });
+        return Boolean(result?.ok);
+      } catch (err) {
+        console.warn("Player release auto-refresh failed:", err);
+        return false;
+      }
+    }
+
     try {
-      const remote = await fetchCloudBackup({ allowMissing: true });
+      // Normal coach startup reads the revisioned D1/R2 workspace. The old
+      // KV backup is deliberately admin-only recovery data and must never win
+      // over the canonical team head during a routine device bootstrap.
+      const remote = await fetchCanonicalWorkspace({ allowMissing: true });
       if (!remote) return false;
 
       const settings = getCloudSyncSettings();
@@ -1533,37 +1780,63 @@
         // without restoring it. Do not let that marker strand an otherwise
         // empty coach device on the upload screen.
         if (!hasLocalWorkspace) {
-          return restoreCloudBackup(remote, {
+          const restored = await restoreCloudBackup(remote, {
             auto: true,
             confirm: false,
             notify: false,
           });
+          if (restored) {
+            saveCloudSyncSettingsObject({
+              lastWorkspaceRevision: remote.revision || "",
+              lastRemoteExportDate: remote.summary.exportDate,
+              lastRemoteUpdatedAt: remote.updatedAt,
+              lastRemoteSize: remote.size,
+            });
+          }
+          return restored;
         }
         saveCloudSyncSettingsObject({
           lastRemoteExportDate: remote.summary.exportDate,
           lastRemoteUpdatedAt: remote.updatedAt,
           lastRemoteSize: remote.size,
+          lastWorkspaceRevision: remote.revision || settings.lastWorkspaceRevision,
         });
         return false;
       }
 
-      if (
-        currentUser.role === "admin" &&
-        !Number.isFinite(knownTime) &&
-        hasLocalWorkspace
-      ) {
-        showToast("Team workspace update available. An admin can use Recovery Tools to update this coach device.", {
-          type: "info",
-          duration: 5000,
+      // A cloud snapshot is recovery data, not a live synchronization stream.
+      // Never let startup overwrite a coach's nonempty browser workspace — even
+      // if this device has not seen the remote timestamp before. The previous
+      // admin-only guard left coach accounts exposed to a destructive automatic
+      // restore. Store only the remote metadata so Recovery Tools can present a
+      // deliberate, validated restore flow later.
+      if (hasLocalWorkspace) {
+        saveCloudSyncSettingsObject({
+          lastRemoteExportDate: remote.summary.exportDate,
+          lastRemoteUpdatedAt: remote.updatedAt,
+          lastRemoteSize: remote.size,
         });
+        showToast(
+          "A newer team workspace is available. Review it before replacing this device's local work.",
+          { type: "info", duration: 6000 },
+        );
         return false;
       }
 
-      return restoreCloudBackup(remote, {
+      const restored = await restoreCloudBackup(remote, {
         auto: true,
         confirm: false,
         notify: false,
       });
+      if (restored) {
+        saveCloudSyncSettingsObject({
+          lastWorkspaceRevision: remote.revision || "",
+          lastRemoteExportDate: remote.summary.exportDate,
+          lastRemoteUpdatedAt: remote.updatedAt,
+          lastRemoteSize: remote.size,
+        });
+      }
+      return restored;
     } catch (err) {
       console.warn("Cloud auto-pull failed:", err);
       if (err.status !== 401 && err.status !== 404) {
@@ -1663,9 +1936,10 @@
             <span>Cloud size: ${escapeHtml(settings.lastRemoteSize ? storageManager.formatBytes(settings.lastRemoteSize) : "unknown")}</span>
           </div>
         </div>
-        <div class="custom-modal-actions cloud-sync-actions">
+          <div class="custom-modal-actions cloud-sync-actions">
           <button type="button" class="btn custom-modal-btn custom-modal-cancel" data-action="closeCloudSyncModal">Close</button>
           <button type="button" class="btn btn-secondary custom-modal-btn" data-action="testCloudSyncConnection" data-cloud-sync-action="test">Check Recovery Status</button>
+          ${canPush ? '<button type="button" class="btn btn-secondary custom-modal-btn" data-action="rebuildPlayerRelease" data-cloud-sync-action="rebuild-release">Rebuild Player Release</button>' : ""}
           <button type="button" class="btn btn-secondary custom-modal-btn" data-action="pullCloudBackup" data-cloud-sync-action="pull">Recover This Device</button>
           ${canPush ? '<button type="button" class="btn btn-primary custom-modal-btn" data-action="pushCloudBackup" data-cloud-sync-action="push" data-auth-admin-only="true">Republish Local Workspace</button>' : ""}
         </div>
@@ -1719,9 +1993,11 @@
   window.closeCloudSyncModal = closeCloudSyncModal;
   window.saveCloudSyncSettings = saveCloudSyncSettings;
   window.testCloudSyncConnection = testCloudSyncConnection;
+  window.rebuildPlayerRelease = rebuildPlayerRelease;
   window.publishTeamWorkspace = publishTeamWorkspace;
   window.pushCloudBackup = pushCloudBackup;
   window.pullCloudBackup = pullCloudBackup;
+  window.refreshPlayerRelease = refreshPlayerRelease;
   window.refreshPlayerCloudBackup = refreshPlayerCloudBackup;
   window.autoPullLatestCloudBackup = autoPullLatestCloudBackup;
   window.resetCloudSyncAutoPull = resetCloudSyncAutoPull;

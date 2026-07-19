@@ -141,12 +141,112 @@ const STORAGE_KEYS = {
   PLAYER_HELMET_STICKER_TYPES: "playerHelmetStickerTypes",
   PLAYER_HELMET_STICKERS: "playerHelmetStickers",
   PLAYER_LEADERBOARD_REMOTE: "playerLeaderboardRemote",
+  PLAYER_RELEASE_STATE: "playerReleaseState",
+  PLAYER_DEVICE_OWNER: "playerDeviceOwner",
   DIAGRAM_UPLOAD_QUEUE: "diagramUploadQueue",
   CLIP_UPLOAD_QUEUE: "clipUploadQueue",
   GAME_WEEK_ARCHIVE: "gameWeekArchive",
   TENDENCIES_REPORTS: "tendenciesReports",
   FIRST_USE_DISMISSED: "firstUseDismissed",
 };
+
+// A player release is a server-issued projection, not a browser backup. These
+// are the only shared values a player refresh may replace. Everything else is
+// either coach-only or player/device-private and is scrubbed or preserved by
+// replacePlayerReleaseData() below.
+const PLAYER_RELEASE_REMOTE_STORAGE_KEYS = new Set([
+  STORAGE_KEYS.SAVED_SCRIPTS,
+  STORAGE_KEYS.TEAM_NAME,
+  STORAGE_KEYS.MOTD,
+  STORAGE_KEYS.PLAYER_PORTAL_BRANDING,
+  STORAGE_KEYS.PLAYER_QUIZ_SETTINGS,
+  STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS,
+  STORAGE_KEYS.PLAYER_SIGNAL_GAME_SETTINGS,
+  STORAGE_KEYS.PLAYER_PUBLISH_STATUS,
+  STORAGE_KEYS.PLAYER_HELMET_STICKER_TYPES,
+  STORAGE_KEYS.SIGNALS,
+  STORAGE_KEYS.PLAYER_RELEASE_STATE,
+]);
+
+const PLAYER_DEVICE_PRIVATE_STORAGE_KEYS = new Set([
+  STORAGE_KEYS.PLAYER_READY,
+  STORAGE_KEYS.PLAYER_QUIZ_RESULTS,
+  STORAGE_KEYS.PLAYER_QUIZ_DRAFT,
+  STORAGE_KEYS.PLAYER_REWARD_EVENTS,
+  STORAGE_KEYS.PLAYER_HELMET_STICKERS,
+  STORAGE_KEYS.PLAYER_LEADERBOARD_REMOTE,
+]);
+
+// A player release is a distinct local data product. Keep its projected
+// values under a private browser prefix so signing in as a player on a shared
+// coach device cannot overwrite the editable coach workspace. The public
+// storageManager API routes only allow-listed release fields to this prefix
+// while the authenticated role is player.
+const PLAYER_RELEASE_STORAGE_PREFIX = "_bcPlayerRelease:";
+
+function _isPlayerStorageRuntime() {
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  return user?.role === "player";
+}
+
+function _isPlayerReleaseStorageActive(key) {
+  return Boolean(_isPlayerStorageRuntime() && PLAYER_RELEASE_REMOTE_STORAGE_KEYS.has(key));
+}
+
+function _localStorageKeyFor(key) {
+  return _isPlayerReleaseStorageActive(key)
+    ? `${PLAYER_RELEASE_STORAGE_PREFIX}${key}`
+    : key;
+}
+
+function _clearPlayerReleaseStorageValues() {
+  PLAYER_RELEASE_REMOTE_STORAGE_KEYS.forEach((key) => {
+    localStorage.removeItem(`${PLAYER_RELEASE_STORAGE_PREFIX}${key}`);
+  });
+}
+
+function _storageKeysForCurrentRole(includePlayerPrivate = false) {
+  if (!_isPlayerStorageRuntime()) return Object.values(STORAGE_KEYS);
+  const keys = [...PLAYER_RELEASE_REMOTE_STORAGE_KEYS];
+  if (includePlayerPrivate) keys.push(...PLAYER_DEVICE_PRIVATE_STORAGE_KEYS);
+  return [...new Set(keys)];
+}
+
+// Browser recovery snapshots must not copy credentials, drafts, queues, or a
+// specific player's progress to another device. The next architecture phase
+// replaces the whole snapshot with immutable team revisions; this list closes
+// the most harmful leakage in the transitional format immediately.
+const TEAM_BACKUP_EXCLUDED_KEYS = new Set([
+  STORAGE_KEYS.AUTH_SESSION,
+  STORAGE_KEYS.CLOUD_SYNC_SETTINGS,
+  STORAGE_KEYS.PUBLISH_ACTIVITY_LOG,
+  STORAGE_KEYS.PLAYER_RELEASE_STATE,
+  STORAGE_KEYS.PLAYER_DEVICE_OWNER,
+  STORAGE_KEYS.SCRIPT_DRAFT,
+  STORAGE_KEYS.WRISTBAND_DRAFT,
+  STORAGE_KEYS.CALLSHEET_DRAFT,
+  STORAGE_KEYS.TENDENCIES_DRAFT,
+  STORAGE_KEYS.DIAGRAM_UPLOAD_QUEUE,
+  STORAGE_KEYS.CLIP_UPLOAD_QUEUE,
+  STORAGE_KEYS.PLAYER_READY,
+  STORAGE_KEYS.PLAYER_QUIZ_RESULTS,
+  STORAGE_KEYS.PLAYER_QUIZ_DRAFT,
+  STORAGE_KEYS.PLAYER_REWARD_EVENTS,
+  STORAGE_KEYS.PLAYER_HELMET_STICKERS,
+  STORAGE_KEYS.PLAYER_LEADERBOARD_REMOTE,
+  STORAGE_KEYS.CALLSHEET_COLLAPSED,
+  STORAGE_KEYS.CALLSHEET_QUICK_ACTIONS_OPEN,
+  STORAGE_KEYS.PAGE_HELP_OPEN,
+  STORAGE_KEYS.MOBILE_COACH_LOCK,
+  STORAGE_KEYS.CS_SCOUTING_OVERLAY,
+  STORAGE_KEYS.PRESENTATION_IPAD_HELP_DISMISSED,
+  STORAGE_KEYS.FIRST_USE_DISMISSED,
+  STORAGE_KEYS.LAST_ACTIVE_TAB,
+  STORAGE_KEYS.THEME,
+  STORAGE_KEYS.VISION_MODE,
+  STORAGE_KEYS.COLOR_PRESET,
+  STORAGE_KEYS.A2HS_DISMISSED,
+]);
 
 const MIGRATIONS = {
   // Example: version 1 → 2 migration (no-op, initial schema)
@@ -523,6 +623,15 @@ const _PB_KEY = "current";
 let _pbDbPromise = null;
 let _pbEstimatedBytes = 0; // cached byte size for getStorageInfo()
 
+// Player releases use a separate IDB database from the editable coach
+// workspace. A player-facing active pointer is advanced only after its exact
+// server revision has been staged, so a shared device can never interpret the
+// coach database's `current` record as a player release.
+const _PLAYER_RELEASE_DB_NAME = "bcoffense-player-release";
+const _PLAYER_RELEASE_DB_VERSION = 1;
+const _PLAYER_RELEASE_STORE = "releases";
+let _playerReleaseDbPromise = null;
+
 function _openPlaybookDB() {
   if (_pbDbPromise) return _pbDbPromise;
   _pbDbPromise = new Promise((resolve, reject) => {
@@ -584,6 +693,69 @@ function _idbClearPlaybook() {
       }),
   );
 }
+
+function _openPlayerReleaseDB() {
+  if (_playerReleaseDbPromise) return _playerReleaseDbPromise;
+  _playerReleaseDbPromise = new Promise((resolve, reject) => {
+    if (typeof indexedDB === "undefined") {
+      reject(new Error("IndexedDB not available"));
+      return;
+    }
+    const req = indexedDB.open(_PLAYER_RELEASE_DB_NAME, _PLAYER_RELEASE_DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(_PLAYER_RELEASE_STORE)) {
+        db.createObjectStore(_PLAYER_RELEASE_STORE);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error || new Error("Player release IndexedDB open failed"));
+  });
+  return _playerReleaseDbPromise;
+}
+
+function _playerReleaseRecordKey(teamId, revision) {
+  return `${String(teamId || "").trim()}:${String(revision || "").trim()}`;
+}
+
+function _idbGetPlayerReleasePlaybook(recordKey) {
+  return _openPlayerReleaseDB().then(
+    (db) => new Promise((resolve, reject) => {
+      const req = db.transaction(_PLAYER_RELEASE_STORE, "readonly")
+        .objectStore(_PLAYER_RELEASE_STORE)
+        .get(recordKey);
+      req.onsuccess = () => {
+        const value = req.result;
+        resolve(Array.isArray(value?.playbook) ? value.playbook : null);
+      };
+      req.onerror = () => reject(req.error);
+    }),
+  );
+}
+
+function _idbSetPlayerReleasePlaybook(recordKey, release) {
+  return _openPlayerReleaseDB().then(
+    (db) => new Promise((resolve, reject) => {
+      const req = db.transaction(_PLAYER_RELEASE_STORE, "readwrite")
+        .objectStore(_PLAYER_RELEASE_STORE)
+        .put(release, recordKey);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    }),
+  );
+}
+
+function _idbClearPlayerReleasePlaybooks() {
+  return _openPlayerReleaseDB().then(
+    (db) => new Promise((resolve, reject) => {
+      const req = db.transaction(_PLAYER_RELEASE_STORE, "readwrite")
+        .objectStore(_PLAYER_RELEASE_STORE)
+        .clear();
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    }),
+  );
+}
 // ──────────────────────────────────────────────────────────────────────────
 
 const storageManager = {
@@ -592,7 +764,7 @@ const storageManager = {
 
   get(key, defaultValue = null) {
     try {
-      const raw = localStorage.getItem(key);
+      const raw = localStorage.getItem(_localStorageKeyFor(key));
       if (raw === null) return defaultValue;
       const value = _lzsDecompress(raw);
       return JSON.parse(value);
@@ -605,11 +777,14 @@ const storageManager = {
   set(key, value) {
     try {
       const serialized = _lzsCompress(JSON.stringify(value));
-      const previous = localStorage.getItem(key);
-      localStorage.setItem(key, serialized);
+      const storageKey = _localStorageKeyFor(key);
+      const playerReleaseValue = _isPlayerReleaseStorageActive(key);
+      const previous = localStorage.getItem(storageKey);
+      localStorage.setItem(storageKey, serialized);
       this.maybeWarnStoragePressure();
       if (
         previous !== serialized &&
+        !playerReleaseValue &&
         typeof window !== "undefined" &&
         typeof window.queueCloudAutoPush === "function"
       ) {
@@ -629,10 +804,13 @@ const storageManager = {
   },
 
   remove(key) {
-    const hadValue = localStorage.getItem(key) !== null;
-    localStorage.removeItem(key);
+    const storageKey = _localStorageKeyFor(key);
+    const playerReleaseValue = _isPlayerReleaseStorageActive(key);
+    const hadValue = localStorage.getItem(storageKey) !== null;
+    localStorage.removeItem(storageKey);
     if (
       hadValue &&
+      !playerReleaseValue &&
       typeof window !== "undefined" &&
       typeof window.queueCloudAutoPush === "function"
     ) {
@@ -644,6 +822,28 @@ const storageManager = {
   // Reads the stored playbook. On first call after v517→v518 upgrade, auto-
   // migrates data from localStorage to IDB and removes the localStorage copy.
   async getPlaybook() {
+    const authUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    if (authUser?.role === "player") {
+      const state = this.get(STORAGE_KEYS.PLAYER_RELEASE_STATE, null);
+      const teamId = String(authUser.teamId || "").trim();
+      if (
+        !teamId ||
+        !state ||
+        state.schema !== "bcoffense.player-release/v1" ||
+        state.teamId !== teamId ||
+        !state.revision ||
+        !state.releaseKey
+      ) {
+        // A player must never fall through to the editable coach database.
+        return null;
+      }
+      try {
+        return await _idbGetPlayerReleasePlaybook(String(state.releaseKey));
+      } catch (err) {
+        console.error("getPlaybook player release IDB error:", err);
+        return null;
+      }
+    }
     try {
       let data = await _idbGetPlaybook();
       if (data === null) {
@@ -674,7 +874,35 @@ const storageManager = {
 
   // Writes the playbook to IndexedDB asynchronously (fire-and-forget).
   // Falls back to localStorage if IDB fails.
-  setPlaybook(data) {
+  setPlaybook(data, opts = {}) {
+    const authUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    const playerState = this.get(STORAGE_KEYS.PLAYER_RELEASE_STATE, null);
+    const isCurrentPlayerRelease = Boolean(
+      authUser?.role === "player" &&
+      playerState?.schema === "bcoffense.player-release/v1" &&
+      playerState?.teamId === String(authUser.teamId || "").trim() &&
+      playerState?.releaseKey,
+    );
+    if (isCurrentPlayerRelease) {
+      if (opts.preservePlayerRelease !== true) {
+        console.warn("Blocked an attempted player write to the coach playbook store.");
+        return false;
+      }
+      _idbSetPlayerReleasePlaybook(String(playerState.releaseKey), {
+        playbook: Array.isArray(data) ? data : [],
+        teamId: playerState.teamId,
+        revision: playerState.revision,
+        stagedAt: new Date().toISOString(),
+      }).catch((err) => console.error("setPlaybook player release IDB error:", err));
+      return true;
+    }
+    // All normal editor/import/restore writes invalidate the player-release
+    // marker. The release applicator writes IDB directly, and the one
+    // normalization path below opts in explicitly after it has already proved
+    // its data came from the scoped server release.
+    if (opts.preservePlayerRelease !== true) {
+      localStorage.removeItem(STORAGE_KEYS.PLAYER_RELEASE_STATE);
+    }
     _pbEstimatedBytes = new Blob([JSON.stringify(data)]).size;
     _idbSetPlaybook(data)
       .then(() => {
@@ -691,6 +919,117 @@ const storageManager = {
         this.set(STORAGE_KEYS.PLAYBOOK, data);
       });
   },
+
+  hasPlayerReleaseCache() {
+    const state = this.get(STORAGE_KEYS.PLAYER_RELEASE_STATE, null);
+    return Boolean(
+      state &&
+      typeof state === "object" &&
+      state.schema === "bcoffense.player-release/v1" &&
+      state.teamId &&
+      state.revision &&
+      state.releaseKey,
+    );
+  },
+
+  hasPlayerReleaseCacheForTeam(teamId) {
+    const expectedTeamId = String(teamId || "").trim();
+    const state = this.get(STORAGE_KEYS.PLAYER_RELEASE_STATE, null);
+    return Boolean(
+      expectedTeamId &&
+      state &&
+      typeof state === "object" &&
+      state.schema === "bcoffense.player-release/v1" &&
+      state.teamId === expectedTeamId &&
+      state.revision &&
+      state.releaseKey,
+    );
+  },
+
+  // Player-specific quiz/reward data must never move between people when a
+  // shared phone or tablet signs in to another account. The released team
+  // workspace is safe to reuse for a same-team player; only the private
+  // progress/cache keys are cleared on an owner change.
+  preparePlayerDeviceForUser(user) {
+    if (!user || String(user.role || "") !== "player") return { changed: false };
+    const teamId = String(user.teamId || "").trim();
+    const subject = String(user.d1UserId || user.username || "").trim();
+    if (!teamId || !subject) return { changed: false, unresolved: true };
+    const owner = `${teamId}:${subject}`;
+    const previous = this.get(STORAGE_KEYS.PLAYER_DEVICE_OWNER, null);
+    const previousOwner = previous && typeof previous === "object" ? String(previous.owner || "") : "";
+    const changed = Boolean(previousOwner && previousOwner !== owner);
+    if (changed) {
+      PLAYER_DEVICE_PRIVATE_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+    }
+    localStorage.setItem(STORAGE_KEYS.PLAYER_DEVICE_OWNER, _storedJsonValue({
+      owner,
+      teamId,
+      updatedAt: new Date().toISOString(),
+    }));
+    return { changed, owner };
+  },
+
+  // Atomically enough for browser storage: write the new safe playbook and
+  // player-facing values first, then remove every coach-only key from this
+  // device. This intentionally bypasses regular storageManager.set(), because
+  // applying a server release must never queue a player-side cloud publish.
+  async replacePlayerReleaseData(release) {
+    const source = release && typeof release === "object" ? release : null;
+    const teamId = String(source?.release?.teamId || "").trim();
+    const revision = String(source?.release?.revision || "").trim();
+    const playbook = Array.isArray(source?.playbook) ? source.playbook : null;
+    if (!source || source.schema !== "bcoffense.player-release/v1" || !teamId || !revision || !playbook) {
+      throw new Error("Player release is incomplete or invalid.");
+    }
+
+    const authUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    this.preparePlayerDeviceForUser(authUser);
+
+    const team = source.team && typeof source.team === "object" ? source.team : {};
+    const settings = source.settings && typeof source.settings === "object" ? source.settings : {};
+    const releaseKey = _playerReleaseRecordKey(teamId, revision);
+    const releaseValues = {
+      [STORAGE_KEYS.SAVED_SCRIPTS]: Array.isArray(source.scripts) ? source.scripts : [],
+      [STORAGE_KEYS.TEAM_NAME]: String(team.name || ""),
+      [STORAGE_KEYS.MOTD]: String(team.motd || ""),
+      [STORAGE_KEYS.PLAYER_PORTAL_BRANDING]: team.branding && typeof team.branding === "object" ? team.branding : {},
+      [STORAGE_KEYS.PLAYER_QUIZ_SETTINGS]: settings.playerQuizSettings && typeof settings.playerQuizSettings === "object" ? settings.playerQuizSettings : {},
+      [STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS]: settings.playerQuizSourceSettings && typeof settings.playerQuizSourceSettings === "object" ? settings.playerQuizSourceSettings : {},
+      [STORAGE_KEYS.PLAYER_SIGNAL_GAME_SETTINGS]: settings.playerSignalGameSettings && typeof settings.playerSignalGameSettings === "object" ? settings.playerSignalGameSettings : {},
+      [STORAGE_KEYS.PLAYER_PUBLISH_STATUS]: settings.playerPublishStatus && typeof settings.playerPublishStatus === "object" ? settings.playerPublishStatus : {},
+      [STORAGE_KEYS.PLAYER_HELMET_STICKER_TYPES]: Array.isArray(settings.playerHelmetStickerTypes) ? settings.playerHelmetStickerTypes : [],
+      [STORAGE_KEYS.SIGNALS]: Array.isArray(source.signals) ? source.signals : [],
+      [STORAGE_KEYS.PLAYER_RELEASE_STATE]: {
+        schema: source.schema,
+        teamId,
+        revision,
+        releaseKey,
+        updatedAt: String(source.release?.updatedAt || ""),
+        diagramCount: Array.isArray(source.media?.diagramMediaIds) ? source.media.diagramMediaIds.length : 0,
+        appliedAt: new Date().toISOString(),
+      },
+    };
+
+    // Stage the entire immutable player revision before moving the active
+    // pointer in localStorage. A failed IDB write leaves the previous release
+    // active instead of showing a half-applied workspace.
+    await _idbSetPlayerReleasePlaybook(releaseKey, {
+      teamId,
+      revision,
+      playbook,
+      stagedAt: new Date().toISOString(),
+    });
+    Object.entries(releaseValues).forEach(([key, value]) => {
+      localStorage.setItem(_localStorageKeyFor(key), _storedJsonValue(value));
+    });
+
+    // Do not scrub generic localStorage here. It can belong to a coach who
+    // later signs back into this shared browser; player release values are
+    // isolated by the prefix above and the player playbook/diagram caches use
+    // their own IndexedDB databases.
+    return releaseValues[STORAGE_KEYS.PLAYER_RELEASE_STATE];
+  },
   // ──────────────────────────────────────────────────────────────────────────
 
   async getAllData() {
@@ -700,8 +1039,9 @@ const storageManager = {
       exportDate: new Date().toISOString(),
     };
 
-    Object.values(STORAGE_KEYS).forEach((key) => {
-      const raw = localStorage.getItem(key);
+    _storageKeysForCurrentRole(true).forEach((key) => {
+      if (TEAM_BACKUP_EXCLUDED_KEYS.has(key)) return;
+      const raw = localStorage.getItem(_localStorageKeyFor(key));
       if (raw !== null) {
         // Always store decompressed JSON strings in backups for portability.
         // This ensures backups are readable and restorable on older app versions.
@@ -709,9 +1049,10 @@ const storageManager = {
       }
     });
 
-    // Playbook lives in IndexedDB — include it in the backup payload.
+    // Resolve through the active role-aware store. A player export can never
+    // reach the separate editable coach database on a shared browser.
     try {
-      const pb = await _idbGetPlaybook();
+      const pb = await this.getPlaybook();
       if (Array.isArray(pb)) {
         data[STORAGE_KEYS.PLAYBOOK] = JSON.stringify(pb);
       }
@@ -749,6 +1090,17 @@ const storageManager = {
     }
 
     const restoreWarnings = [...validation.warnings];
+
+    // A coach recovery snapshot is deliberately broader than a player
+    // release. Never leave a release marker behind that could bless its
+    // restored IndexedDB playbook on a shared device.
+    localStorage.removeItem(STORAGE_KEYS.PLAYER_RELEASE_STATE);
+    _clearPlayerReleaseStorageValues();
+    try {
+      await _idbClearPlayerReleasePlaybooks();
+    } catch (err) {
+      console.warn("restoreAllData: player release cache clear failed:", err);
+    }
 
     Object.values(STORAGE_KEYS).forEach((key) => {
       if (key === STORAGE_KEYS.PLAYBOOK) return; // stored in IDB below
@@ -798,9 +1150,9 @@ const storageManager = {
     let totalSize = 0;
     const itemSizes = {};
 
-    Object.values(STORAGE_KEYS).forEach((key) => {
+    _storageKeysForCurrentRole(true).forEach((key) => {
       if (key === STORAGE_KEYS.PLAYBOOK) return; // stored in IDB, not localStorage
-      const value = localStorage.getItem(key);
+      const value = localStorage.getItem(_localStorageKeyFor(key));
       if (value) {
         const size = new Blob([value]).size;
         itemSizes[key] = size;
@@ -837,9 +1189,10 @@ const storageManager = {
     let removedDrafts = 0;
     let skippedCount = 0;
 
-    Object.values(STORAGE_KEYS).forEach((key) => {
+    _storageKeysForCurrentRole(true).forEach((key) => {
       if (key === STORAGE_KEYS.PLAYBOOK) return; // playbook belongs in IndexedDB
-      const raw = localStorage.getItem(key);
+      const storageKey = _localStorageKeyFor(key);
+      const raw = localStorage.getItem(storageKey);
       if (raw === null) return;
 
       beforeBytes += _storageByteSize(raw);
@@ -856,7 +1209,7 @@ const storageManager = {
         typeof isDraftExpired === "function" &&
         isDraftExpired(parsed)
       ) {
-        localStorage.removeItem(key);
+        localStorage.removeItem(storageKey);
         removedDrafts += 1;
         return;
       }
@@ -864,7 +1217,7 @@ const storageManager = {
       const next = _storedJsonValue(parsed);
       if (next !== raw) {
         try {
-          localStorage.setItem(key, next);
+          localStorage.setItem(storageKey, next);
           if (!_isLzsEncoded(raw) && _isLzsEncoded(next)) compressedCount += 1;
           afterBytes += _storageByteSize(next);
         } catch (err) {
@@ -940,9 +1293,15 @@ const storageManager = {
       }
     }
 
-    Object.values(STORAGE_KEYS).forEach((key) => {
-      localStorage.removeItem(key);
-    });
+    if (_isPlayerStorageRuntime()) {
+      _clearPlayerReleaseStorageValues();
+      PLAYER_DEVICE_PRIVATE_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+    } else {
+      Object.values(STORAGE_KEYS).forEach((key) => {
+        localStorage.removeItem(key);
+      });
+      _clearPlayerReleaseStorageValues();
+    }
 
     // Also clear the playbook from IndexedDB.
     try {
@@ -950,6 +1309,11 @@ const storageManager = {
       _pbEstimatedBytes = 0;
     } catch (err) {
       console.error("clearAll: IDB playbook clear failed:", err);
+    }
+    try {
+      await _idbClearPlayerReleasePlaybooks();
+    } catch (err) {
+      console.error("clearAll: player release IDB clear failed:", err);
     }
 
     return true;
@@ -1020,7 +1384,12 @@ async function _reloadAppFromStorageInternal(opts = {}) {
       plays = storedPlaybook;
       if (typeof ensurePlaybookPlayIds === "function") {
         const changed = ensurePlaybookPlayIds(plays);
-        if (changed > 0) await storageManager.setPlaybook(plays);
+        if (changed > 0) {
+          const preservePlayerRelease = typeof getCurrentAuthUser === "function" &&
+            getCurrentAuthUser()?.role === "player" &&
+            storageManager.hasPlayerReleaseCacheForTeam(getCurrentAuthUser()?.teamId);
+          await storageManager.setPlaybook(plays, { preservePlayerRelease });
+        }
       }
       if (typeof invalidatePlaybookRuntimeIndex === "function") invalidatePlaybookRuntimeIndex();
       filteredPlays = [...plays];

@@ -2,8 +2,14 @@ import {
   authJson,
   getSessionFromRequest,
 } from "../_lib/auth.js";
+import { buildPlayerRelease, serializePlayerRelease } from "../_lib/player-release.js";
+import { resolveSessionTeamId } from "../_lib/team-context.js";
+import { readTeamWorkspaceRecord, writeTeamWorkspace } from "../_lib/team-workspace.js";
+import {
+  commitWorkspaceAndPlayerRelease,
+  readCurrentWorkspacePointer,
+} from "../_lib/workspace-revisions.js";
 
-const SYNC_BACKUP_KEY = "team-backup";
 const MAX_BACKUP_BYTES = 25 * 1024 * 1024;
 
 function getSyncStore(env) {
@@ -69,11 +75,22 @@ function validateBackupForStorage(backup) {
 }
 
 async function readBackup(context) {
+  const session = await getSessionFromRequest(context.request, context.env);
+  if (!session || session.role !== "admin") {
+    return authJson(
+      { ok: false, error: "Only admin can access raw cloud backups." },
+      { status: 403 },
+    );
+  }
   const store = requireSyncStore(context.env);
-  const result = await store.getWithMetadata(SYNC_BACKUP_KEY, {
-    type: "json",
-    cacheTtl: 60,
-  });
+  const teamId = await resolveSessionTeamId(session, context.env);
+  if (!teamId) {
+    return authJson(
+      { ok: false, error: "Primary team access must be configured before recovering a workspace." },
+      { status: 503 },
+    );
+  }
+  const result = await readTeamWorkspaceRecord(store, context.env, teamId);
   if (!result || !result.value) {
     return authJson(
       { ok: false, error: "No cloud backup has been pushed yet." },
@@ -87,6 +104,7 @@ async function readBackup(context) {
     updatedAt: result.metadata?.updatedAt || "",
     size: result.metadata?.size || 0,
     summary: result.metadata?.summary || summarizeBackup(result.value),
+    legacyRecovery: Boolean(result.legacy),
   });
 }
 
@@ -96,6 +114,13 @@ async function writeBackup(context) {
     return authJson(
       { ok: false, error: "Only admin can push cloud backups." },
       { status: 403 },
+    );
+  }
+  const teamId = await resolveSessionTeamId(session, context.env);
+  if (!teamId) {
+    return authJson(
+      { ok: false, error: "Primary team access must be configured before publishing a workspace." },
+      { status: 503 },
     );
   }
 
@@ -134,24 +159,57 @@ async function writeBackup(context) {
     );
   }
 
-  const store = requireSyncStore(context.env);
   const updatedAt = new Date().toISOString();
   const summary = summarizeBackup(backup);
-  await store.put(SYNC_BACKUP_KEY, backupText, {
-    metadata: {
+  // Raw backups are retained only for admin recovery, but a recovery write
+  // must still use the same atomic D1/R2 head as normal coach saves. Build
+  // and validate the narrow player release before either authoritative pointer
+  // moves; KV is no longer a player-facing commit source.
+  try {
+    const current = await readCurrentWorkspacePointer(context.env, teamId);
+    const release = await buildPlayerRelease(backup, { teamId, updatedAt, env: context.env });
+    const releaseText = serializePlayerRelease(release).text;
+    const committed = await commitWorkspaceAndPlayerRelease(context.env, context.env.CLIPS, {
+      teamId,
+      expectedWorkspaceRevision: current?.workspaceRevision || "",
+      workspacePayload: backupText,
+      playerReleasePayload: releaseText,
+      actorId: session.d1UserId || null,
+      workspaceContentType: "application/json; charset=utf-8",
+      playerReleaseContentType: "application/json; charset=utf-8",
+    });
+    if (!committed.committed) {
+      return authJson({
+        ok: false,
+        error: "The workspace changed during recovery. Refresh the recovery status before retrying.",
+        current: committed.current || null,
+      }, { status: 409 });
+    }
+
+    // Keep the raw JSON only as a separately labeled recovery snapshot. A
+    // failure here cannot make the player release drift because the canonical
+    // D1/R2 commit above has already completed atomically.
+    const store = requireSyncStore(context.env);
+    await writeTeamWorkspace(store, teamId, backupText, {
       updatedAt,
       size: backupSize,
       pushedBy: session.username,
       summary,
-    },
-  });
-
-  return authJson({
-    ok: true,
-    updatedAt,
-    size: backupSize,
-    summary,
-  });
+    });
+    return authJson({
+      ok: true,
+      updatedAt,
+      size: backupSize,
+      summary,
+      revision: committed.current.workspaceRevision,
+      playerReleaseRevision: committed.current.playerReleaseRevision,
+    });
+  } catch (err) {
+    return authJson({
+      ok: false,
+      error: err?.message || "The recovery workspace could not be committed safely.",
+    }, { status: 502 });
+  }
 }
 
 export async function onRequestGet(context) {
