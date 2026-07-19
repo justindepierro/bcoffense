@@ -761,17 +761,19 @@ function getScriptFullCall(play, options = {}) {
     ? { ...displayPlay, personnel: "" }
     : displayPlay;
   const callOverrides = getScriptCallTextOverrides(play);
+  const leadMarkers = getScriptCallLeadMarkers(visiblePlay, options);
+  // Keep the source formatter from inserting its own emoji before the
+  // script-only prefix. The Script owns that order: personnel marker, prefix,
+  // source/custom call, then suffix.
+  const sourceCallOptions = { ...options, showEmoji: false, underEmoji: false };
   const oneWordCall = String(visiblePlay.oneWord || "").trim();
   if (callOverrides.call) {
-    const customCall = `<span class="script-custom-call-text">${escapeHtml(formatPlayCallText(callOverrides.call, options))}</span>`;
-    return wrapScriptCallTextOverrides(customCall, callOverrides, options);
+    const customCall = `<span class="script-custom-call-text">${escapeHtml(formatPlayCallText(callOverrides.call, sourceCallOptions))}</span>`;
+    return wrapScriptCallTextOverrides(customCall, callOverrides, { ...options, leadMarkers });
   }
   if (options.showOneWordOnly && oneWordCall) {
-    const text = formatPlayCallText(oneWordCall, options);
+    const text = formatPlayCallText(oneWordCall, sourceCallOptions);
     const oneWordParts = [];
-    if (options.showEmoji && visiblePlay.personnel) {
-      oneWordParts.push(getPersonnelEmoji(visiblePlay.personnel, options.useSquares));
-    }
     if (!options.showEmoji && visiblePlay.personnel) {
       oneWordParts.push(
         `<span class="script-one-word-personnel">${escapeHtml(visiblePlay.personnel)}</span>`,
@@ -779,16 +781,32 @@ function getScriptFullCall(play, options = {}) {
     }
     oneWordParts.push(`<span class="script-one-word-call">${escapeHtml(text)}</span>`);
     const referenceCall = getFullCall(visiblePlay, {
-      ...options,
-      showEmoji: false,
-      underEmoji: false,
+      ...sourceCallOptions,
     });
     if (referenceCall) {
       oneWordParts.push(`<span class="script-one-word-reference">(${referenceCall})</span>`);
     }
-    return wrapScriptCallTextOverrides(oneWordParts.join(" "), callOverrides, options);
+    return wrapScriptCallTextOverrides(oneWordParts.join(" "), callOverrides, { ...options, leadMarkers });
   }
-  return wrapScriptCallTextOverrides(getFullCall(visiblePlay, options), callOverrides, options);
+  return wrapScriptCallTextOverrides(
+    getFullCall(visiblePlay, sourceCallOptions),
+    callOverrides,
+    { ...options, leadMarkers },
+  );
+}
+
+function getScriptCallLeadMarkers(play, options = {}) {
+  const markers = [];
+  if (options.showEmoji && play?.personnel) {
+    markers.push(getPersonnelEmoji(play.personnel, options.useSquares));
+  }
+  const hasUnder = Boolean(
+    String(play?.under || "").trim() ||
+    String(play?.formTag1 || "").trim().toLowerCase() === "under" ||
+    String(play?.formTag2 || "").trim().toLowerCase() === "under",
+  );
+  if (options.underEmoji && hasUnder) markers.push("🍑");
+  return markers.filter(Boolean).join(" ");
 }
 
 function normalizeScriptCallText(value) {
@@ -818,13 +836,14 @@ function buildScriptCallTextLabel(play, sourceText) {
 }
 
 function wrapScriptCallTextOverrides(callHtml, overrides, options = {}) {
+  const leadMarkers = String(options.leadMarkers || "").trim();
   const prefix = overrides.prefix
     ? `<span class="script-call-prefix"${getScriptCallTextColorStyle(overrides.prefixColor)}>${escapeHtml(formatPlayCallText(overrides.prefix, options))}</span>`
     : "";
   const suffix = overrides.suffix
     ? `<span class="script-call-suffix"${getScriptCallTextColorStyle(overrides.suffixColor)}>${escapeHtml(formatPlayCallText(overrides.suffix, options))}</span>`
     : "";
-  return [prefix, callHtml, suffix].filter(Boolean).join(" ");
+  return [leadMarkers, prefix, callHtml, suffix].filter(Boolean).join(" ");
 }
 
 function normalizeScriptCallTextColor(value) {

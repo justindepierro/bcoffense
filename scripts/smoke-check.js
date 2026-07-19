@@ -1056,6 +1056,20 @@ function checkScriptPeriodColorContract() {
   console.log("script period color contract ok");
 }
 
+function checkScriptCallMarkerOrderContract() {
+  const shared = read("js/script-shared.js");
+
+  if (
+    !/function getScriptCallLeadMarkers\(play, options = \{\}\)/.test(shared) ||
+    !/const sourceCallOptions = \{ \.\.\.options, showEmoji: false, underEmoji: false \}/.test(shared) ||
+    !/return \[leadMarkers, prefix, callHtml, suffix\]\.filter\(Boolean\)\.join\(" "\)/.test(shared)
+  ) {
+    fail("script call overrides no longer keep personnel markers ahead of prefixes");
+  }
+
+  console.log("script call marker order contract ok");
+}
+
 function checkCoachControlDismissalContract() {
   const html = read("index.html");
   const appEvents = read("js/app-events.js");
@@ -5760,6 +5774,7 @@ checkPersonnelMarkerContracts();
 checkScriptPersonnelWorkspaceContract();
 checkScriptWorkspaceCommandSurface();
 checkScriptPeriodColorContract();
+checkScriptCallMarkerOrderContract();
 checkCoachControlDismissalContract();
 checkScriptCoachRowScanningContract();
 checkScriptGamePlanProvenanceContract();
