@@ -151,7 +151,7 @@ async function requireStaffContext(context) {
   return { session, teamId };
 }
 
-async function getWorkspace(context) {
+async function getWorkspace(context, opts = {}) {
   const principal = await requireStaffContext(context);
   if (principal.error) return principal.error;
   try {
@@ -168,6 +168,40 @@ async function getWorkspace(context) {
     const normalized = sanitizeTeamWorkspace(rawWorkspace);
     if (!normalized.ok) return workspaceError("The canonical workspace is invalid. Use admin recovery tools.", 502);
     const workspace = normalized.workspace;
+    // A revision created before the data-plane boundary can be structurally
+    // valid yet still carry known browser-only fields. Repair it once on an
+    // authenticated staff read, using the current pointer as the CAS base.
+    // This is deliberately narrower than a general GET mutation: only the
+    // explicit migration set accepted by sanitizeTeamWorkspace is removed;
+    // unknown fields still fail closed above.
+    if (normalized.omittedKeys.length && opts.allowLegacyRepair !== false) {
+      try {
+        const updatedAt = new Date().toISOString();
+        const release = await buildPlayerRelease(workspace, {
+          teamId: principal.teamId,
+          updatedAt,
+          env: context.env,
+        });
+        const committed = await commitWorkspaceAndPlayerRelease(context.env, context.env.CLIPS, {
+          teamId: principal.teamId,
+          expectedWorkspaceRevision: current.pointer.workspaceRevision,
+          workspacePayload: JSON.stringify(workspace),
+          playerReleasePayload: serializePlayerRelease(release).text,
+          actorId: principal.session.d1UserId || null,
+          workspaceContentType: "application/json; charset=utf-8",
+          playerReleaseContentType: "application/json; charset=utf-8",
+        });
+        // Whether this request won the CAS or another coach repaired it first,
+        // reread once so callers receive the authoritative clean head.
+        if (committed.committed || committed.current?.workspaceRevision !== current.pointer.workspaceRevision) {
+          return getWorkspace(context, { allowLegacyRepair: false });
+        }
+      } catch (_err) {
+        // Serving the already-sanitized projection is safer than turning a
+        // transient one-time repair failure back into a blocking 502. The
+        // next authenticated staff read retries the same idempotent repair.
+      }
+    }
     const etag = `"${current.pointer.workspaceRevision}"`;
     if (context.request.headers.get("If-None-Match") === etag) {
       return withSecurityHeaders(new Response(null, {

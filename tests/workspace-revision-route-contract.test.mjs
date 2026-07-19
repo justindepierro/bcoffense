@@ -10,8 +10,11 @@ assert.match(source, /X-BC-Expected-Workspace-Revision/, "daily workspace route 
 assert.match(source, /workspaceError\([^\n]+, 428/, "daily workspace route rejects a blind write over an existing head");
 assert.match(source, /buildPlayerRelease\(workspace/, "player release is built before the shared head moves");
 assert.match(source, /TEAM_WORKSPACE_KEYS/, "daily workspace route uses a strict team-data allowlist");
-assert.match(source, /non-team field/, "daily workspace route rejects browser-private or unknown fields");
+assert.match(source, /LEGACY_DEVICE_ONLY_KEYS/, "daily workspace route recognizes only an explicit legacy browser-field migration set");
+assert.match(source, /unclassified field/, "daily workspace route rejects unclassified future fields");
+assert.match(source, /opts\.allowLegacyRepair !== false/, "staff reads repair a recognized legacy workspace once");
+assert.match(source, /expectedWorkspaceRevision: current\.pointer\.workspaceRevision/, "legacy repair uses the current workspace head as its CAS base");
 assert.doesNotMatch(source, /sync\/backup/, "daily workspace route never delegates to raw recovery backup");
 assert.match(source, /readCurrentWorkspaceRevision/, "coach workspace reads use the immutable pointer");
 
-console.log("workspace revision route contract: 7 assertions passed");
+console.log("workspace revision route contract: 10 assertions passed");
