@@ -92,6 +92,10 @@ function buildScriptDerivedUiSignature(scriptItems) {
         item.type || "",
         item.tempo || "",
         item.personnel || "",
+        // Timeline personnel controls are script-only display state. Include
+        // them here so a whole-period toggle repaints its Pers On/Off/Mix
+        // button immediately instead of only marking the draft as unsaved.
+        item.scriptHidePersonnel ? "1" : "0",
         item.preferredSituation || "",
         item.preferredDown || "",
         item.preferredDistance || "",
