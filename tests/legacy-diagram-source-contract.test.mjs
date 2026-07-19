@@ -167,6 +167,8 @@ assert(!normalizeLegacyDiagramSourceKey("/images/historic-call"), "rejects an ab
 const inventoryClientSource = readFileSync(new URL("../js/media-inventory.js", import.meta.url), "utf8");
 assert(inventoryClientSource.includes("entry?.sourceKey || entry?.key"), "inventory reconciliation carries the full server source key forward");
 assert(!inventoryClientSource.includes('replace(/^images\\//, "")'), "inventory never strips an images/ prefix before recovery");
+assert(inventoryClientSource.includes("data-recovery-target-search"), "recovery play selector has a searchable narrowing control");
+assert(inventoryClientSource.includes("targetQueries"), "recovery selector keeps search state separate from the selected mapping");
 
 // Preview is admin-only recovery evidence: it reads one exact key, validates
 // image bytes, and exposes the checksum that the migration must verify again.

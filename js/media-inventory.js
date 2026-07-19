@@ -813,15 +813,20 @@
     return assets;
   }
 
-  function _miRecoveryPlayOptions(report, selectedMediaId) {
+  function _miRecoveryPlayOptions(report, selectedMediaId, query = "") {
     const canonicalIds = new Set(_miArray(report?.cloudDiagrams?.objects)
       .filter((item) => item?.kind === "canonical" && item.mediaId)
       .map((item) => String(item.mediaId)));
     const seen = new Set();
-    return _miArray(report?.knownPlays)
+    const normalizedQuery = String(query || "").trim().toLowerCase();
+    const candidates = _miArray(report?.knownPlays)
       .map((play) => ({ play, mediaId: _miMediaId(play), label: _miPlayLabel(play) }))
       .filter((item) => item.mediaId && !canonicalIds.has(item.mediaId) && !seen.has(item.mediaId) && seen.add(item.mediaId))
-      .sort((a, b) => a.label.localeCompare(b.label))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    const visible = normalizedQuery
+      ? candidates.filter((item) => `${item.label} ${item.mediaId}`.toLowerCase().includes(normalizedQuery) || item.mediaId === selectedMediaId)
+      : candidates;
+    return visible
       .map((item) => `<option value="${_miEscape(item.mediaId)}"${item.mediaId === selectedMediaId ? " selected" : ""}>${_miEscape(item.label)}</option>`)
       .join("");
   }
@@ -833,7 +838,7 @@
   function _miRenderLegacyRecoveryWizard() {
     const body = document.getElementById("legacyDiagramRecoveryBody");
     if (!body || !legacyRecoveryState) return;
-    const { report, assets, selected, targets } = legacyRecoveryState;
+    const { report, assets, selected, targets, targetQueries } = legacyRecoveryState;
     const totalPages = Math.max(1, Math.ceil(assets.length / LEGACY_RECOVERY_PAGE_SIZE));
     legacyRecoveryState.page = Math.max(0, Math.min(legacyRecoveryState.page, totalPages - 1));
     const start = legacyRecoveryState.page * LEGACY_RECOVERY_PAGE_SIZE;
@@ -855,17 +860,19 @@
         ${pageItems.map((asset) => {
           const target = targets.get(asset.sourceKey) || "";
           const isSelected = selected.has(asset.sourceKey) && Boolean(target);
+          const query = targetQueries.get(asset.sourceKey) || "";
           return `<article class="pb-recovery-card${asset.exact ? " is-exact" : ""}">
             <img class="pb-recovery-preview" src="${_miEscape(_miLegacyPreviewUrl(asset.sourceKey))}" alt="Archived diagram preview" loading="lazy">
             <div class="pb-recovery-card-body">
               <label class="pb-recovery-select"><input type="checkbox" data-recovery-select="${_miEscape(asset.sourceKey)}"${isSelected ? " checked" : ""}> Recover this diagram</label>
               <strong>${asset.exact ? "Exact archived match" : "Choose the correct play"}</strong>
               <code title="${_miEscape(asset.sourceKey)}">${_miEscape(asset.sourceKey)}</code>
+              <label class="pb-recovery-search"><span>Search plays</span><input type="search" data-recovery-target-search="${_miEscape(asset.sourceKey)}" value="${_miEscape(query)}" placeholder="Type a play name…" autocomplete="off"></label>
               <select data-recovery-target="${_miEscape(asset.sourceKey)}">
                 <option value="">Keep archived / do not map yet</option>
-                ${_miRecoveryPlayOptions(report, target)}
+                ${_miRecoveryPlayOptions(report, target, query)}
               </select>
-              <small>${asset.exact ? `Suggested: ${_miEscape(asset.proposedLabel)}` : "No safe automatic match was found."}</small>
+              <small>${asset.exact ? `Suggested: ${_miEscape(asset.proposedLabel)}` : "No safe automatic match was found."} ${query ? "Showing matching plays only." : ""}</small>
             </div>
           </article>`;
         }).join("") || `<div class="pb-health-empty">No unrecovered archived diagrams were found.</div>`}
@@ -882,6 +889,20 @@
   }
 
   function _miBindLegacyRecoveryWizard(overlay) {
+    overlay.addEventListener("input", (event) => {
+      const sourceKey = event.target?.dataset?.recoveryTargetSearch;
+      if (!sourceKey || !legacyRecoveryState) return;
+      legacyRecoveryState.targetQueries.set(sourceKey, event.target.value || "");
+      const cursor = event.target.selectionStart;
+      _miRenderLegacyRecoveryWizard();
+      const search = [...overlay.querySelectorAll("[data-recovery-target-search]")]
+        .find((input) => input.dataset.recoveryTargetSearch === sourceKey);
+      if (search) {
+        search.focus();
+        const position = Number.isInteger(cursor) ? cursor : search.value.length;
+        search.setSelectionRange(position, position);
+      }
+    });
     overlay.addEventListener("change", (event) => {
       const sourceKey = event.target?.dataset?.recoverySelect || event.target?.dataset?.recoveryTarget;
       if (!sourceKey || !legacyRecoveryState) return;
@@ -890,6 +911,7 @@
         else legacyRecoveryState.selected.delete(sourceKey);
       } else {
         legacyRecoveryState.targets.set(sourceKey, event.target.value || "");
+        legacyRecoveryState.targetQueries.delete(sourceKey);
         if (event.target.value) legacyRecoveryState.selected.add(sourceKey);
         else legacyRecoveryState.selected.delete(sourceKey);
       }
@@ -927,6 +949,7 @@
       report,
       assets,
       targets,
+      targetQueries: new Map(),
       selected: new Set(assets.filter((asset) => asset.proposedMediaId).map((asset) => asset.sourceKey)),
       page: 0,
     };
