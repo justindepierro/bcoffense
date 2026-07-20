@@ -251,6 +251,7 @@ const _NOTIF_ICONS = {
   visual_reply: "🖼️",
   script_published: "📋",
   new_quiz: "📝",
+  quiz_homework: "📚",
   media_update: "🎞️",
   team_announcement: "📣",
   moderation_alert: "⚠️",
@@ -335,6 +336,17 @@ async function openNotifDeepLink(arg) {
   if (deepLink === "quiz") {
     if (typeof openPlayerQuizHub === "function") openPlayerQuizHub();
     else if (typeof showTab === "function") showTab("dashboard");
+    return;
+  }
+
+  if (deepLink.startsWith("quiz-assignment:")) {
+    const assignmentId = deepLink.slice("quiz-assignment:".length);
+    if (typeof refreshQuizAssignments === "function") await refreshQuizAssignments({ quiet: true });
+    if (assignmentId && typeof startPlayerQuizAssignment === "function") {
+      startPlayerQuizAssignment(assignmentId);
+    } else if (typeof openPlayerQuizHub === "function") {
+      openPlayerQuizHub();
+    }
     return;
   }
 

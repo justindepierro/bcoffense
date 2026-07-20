@@ -209,6 +209,7 @@ function _getQuizTierName(key, settings = _getPlayerQuizSettings()) {
 function _getQuizSourceWeight(sourceType = _quizSourceType) {
   const settings = _getPlayerQuizSettings();
   if (sourceType === "gameplan") return settings.gameplanWeight;
+  if (sourceType === "assignment") return settings.scriptWeight;
   if (!sourceType || sourceType === "script") return settings.scriptWeight;
   return PLAYER_QUIZ_SOURCE_WEIGHTS[sourceType] || settings.scriptWeight;
 }
@@ -217,6 +218,7 @@ function _getQuizSourceLabel(sourceType = _quizSourceType, variant = "title") {
   const normalized = String(sourceType || "").trim();
   if (normalized === "gameplan") return variant === "sentence" ? "game plan" : "Game Plan";
   if (normalized === "signal") return variant === "sentence" ? "signal set" : "Signals";
+  if (normalized === "assignment") return variant === "sentence" ? "homework quiz" : "Homework";
   return variant === "sentence" ? "script" : "Script";
 }
 
@@ -749,6 +751,7 @@ function _savePlayerQuizDraft() {
     title: _quizTitle,
     sourceType: _quizSourceType,
     sourceId: _quizSourceId,
+    assignmentId: _quizAssignmentId,
     sourceWeight: _quizSourceWeight,
     signalCategories: _quizSignalCategories,
     signalCategoryMultiplier: _quizSignalMultiplier,
@@ -4013,6 +4016,7 @@ function renderCoachQuizSetupPage() {
         </div>
       </section>
       ${_renderCoachQuizSettingsPanel(quizSettings)}
+      ${typeof renderCoachQuizAssignmentsPanel === "function" ? renderCoachQuizAssignmentsPanel() : ""}
       ${_renderCoachQuizRosterHealthPanel(rosterHealthSummary)}
       <section class="coach-quiz-reward-panel">
         <article>
@@ -6223,7 +6227,7 @@ async function startScriptQuiz(options = {}) {
   const launchStartedAt = _quizPerfNow();
   const opts = options && typeof options === "object" ? options : {};
   const requestedSourceType = String(opts.sourceType || "").trim();
-  const sourceType = ["gameplan", "signal"].includes(requestedSourceType) ? requestedSourceType : "script";
+  const sourceType = ["gameplan", "signal", "assignment"].includes(requestedSourceType) ? requestedSourceType : "script";
   const items = Array.isArray(opts.items) ? opts.items : _buildQuizPlays(false);
   _quizMode = String(opts.mode || "full");
   const normalizedItems = opts.mode
@@ -6236,6 +6240,7 @@ async function startScriptQuiz(options = {}) {
   _quizShuffled = false;
   _quizSourceType = sourceType;
   _quizSourceId = String(opts.sourceId || "");
+  _quizAssignmentId = sourceType === "assignment" ? String(opts.assignmentId || opts.sourceId || "") : "";
   _quizSignalCategories = sourceType === "signal" ? _normalizeSignalGameCategories(opts.signalCategories) : [];
   _quizSignalMultiplier = sourceType === "signal"
     ? _getSignalCategoryMultiplier(_quizSignalCategories, _getSignalGameSettings().eligibleCategories)
@@ -6244,7 +6249,7 @@ async function startScriptQuiz(options = {}) {
     _quizSignalMultiplier = Number(opts.signalCategoryMultiplier);
   }
   _quizSourceWeight = _getQuizSourceWeight(sourceType) * _quizSignalMultiplier;
-  _quizTitle = opts.title || (sourceType === "gameplan" ? "Game Plan Quiz" : sourceType === "signal" ? "Signal Study" : "Practice Script Quiz");
+  _quizTitle = opts.title || (sourceType === "gameplan" ? "Game Plan Quiz" : sourceType === "signal" ? "Signal Study" : sourceType === "assignment" ? "Homework Quiz" : "Practice Script Quiz");
   if (opts.positionMode) {
     _quizPositionMode = _normalizeQuizPositionMode(opts.positionMode);
   }
@@ -6835,6 +6840,9 @@ function _saveQuizAttempt(summary) {
   attempts.push(summary);
   _savePlayerQuizAttempts(attempts);
   _quizSavedAttemptId = summary.id;
+  if (_quizAssignmentId && typeof recordQuizAssignmentAttempt === "function") {
+    Promise.resolve(recordQuizAssignmentAttempt(_quizAssignmentId, summary)).catch(() => { });
+  }
   return summary;
 }
 
@@ -6948,14 +6956,15 @@ function resumePlayerQuizDraft() {
   _quizPlays = playsFromDraft;
   _quizIndex = Math.max(0, Math.min(Number(draft.index || 0), _quizPlays.length - 1));
   _quizShuffled = Boolean(draft.shuffled);
-  _quizSourceType = ["gameplan", "signal"].includes(draft.sourceType) ? draft.sourceType : "script";
+  _quizSourceType = ["gameplan", "signal", "assignment"].includes(draft.sourceType) ? draft.sourceType : "script";
   _quizSourceId = String(draft.sourceId || "");
+  _quizAssignmentId = _quizSourceType === "assignment" ? String(draft.assignmentId || draft.sourceId || "") : "";
   _quizSourceWeight = Number(draft.sourceWeight || 0) || _getQuizSourceWeight(_quizSourceType);
   _quizSignalCategories = _quizSourceType === "signal" ? _normalizeSignalGameCategories(draft.signalCategories) : [];
   _quizSignalMultiplier = _quizSourceType === "signal"
     ? Number(draft.signalCategoryMultiplier || 0) || _getSignalCategoryMultiplier(_quizSignalCategories, _getSignalGameSettings().eligibleCategories)
     : 1;
-  _quizTitle = draft.title || (_quizSourceType === "gameplan" ? "Game Plan Quiz" : _quizSourceType === "signal" ? "Signal Study" : "Practice Script Quiz");
+  _quizTitle = draft.title || (_quizSourceType === "gameplan" ? "Game Plan Quiz" : _quizSourceType === "signal" ? "Signal Study" : _quizSourceType === "assignment" ? "Homework Quiz" : "Practice Script Quiz");
   _quizMode = String(draft.quizMode || "full");
   _quizPositionMode = _normalizeQuizPositionMode(draft.positionMode || "manual");
   if (draft.positionKey && _getQuizPositions().some((position) => position.key === draft.positionKey)) {

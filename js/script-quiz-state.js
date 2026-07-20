@@ -17,6 +17,10 @@ let _quizSourceType = "script";
 let _quizSourceId = "";
 let _quizSourceWeight = 1;
 let _quizTitle = "Play Quiz";
+// A private D1 homework assignment may use the same quiz engine as a script.
+// Keep the assignment identity separate from sourceId so result recording stays
+// explicit and cannot accidentally mark a normal script quiz as homework.
+let _quizAssignmentId = "";
 let _quizMode = "quick";
 let _quizSignalCategories = [];
 let _quizSignalMultiplier = 1;

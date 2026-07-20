@@ -1596,6 +1596,9 @@ function renderPlayerDashboardHome() {
   const practiceStatus = getPlayerHomePracticeStatus(featuredScript, loadedScript, todayValue);
   const freshnessMarkup = _dashRenderPlayerFreshnessStrip(featuredScript, publishedScripts);
   const refreshMarkup = _dashRenderPlayerRefreshAction();
+  const homeworkMarkup = typeof renderPlayerQuizHomeworkDashboard === "function"
+    ? renderPlayerQuizHomeworkDashboard()
+    : "";
   const recentScriptsMarkup = publishedScripts.length
     ? publishedScripts
       .slice(0, 4)
@@ -1659,6 +1662,7 @@ function renderPlayerDashboardHome() {
     </section>
     ${freshnessMarkup}
     ${refreshMarkup}
+    ${homeworkMarkup}
     <section class="player-home-quick-actions" aria-label="Player quick actions">
       <button type="button" class="player-home-quick-action player-home-quick-action--primary"
         ${practiceAction}>
