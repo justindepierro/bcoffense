@@ -192,6 +192,84 @@ function projectScript(record, index, resolveMediaId) {
   };
 }
 
+function activeGamePlanKey(source) {
+  const gameWeek = asObject(readBackupValue(source, "gameWeek", {}), {});
+  return cleanString(gameWeek.opponentName, 512) || "__unassigned__";
+}
+
+function isHoldingGamePlanBox(boxId) {
+  const id = cleanString(boxId, 160);
+  // "holding" was used briefly before the stable __holding ID. Neither is a
+  // player assignment, so neither belongs in a player-facing quiz source.
+  return id === "__holding" || id === "holding";
+}
+
+// Game Plan boards carry a lot of staff-only planning data (targets, notes,
+// hidden boxes, sorting, etc.). A player only needs the active board's calls
+// and their public bucket labels to take a Game Plan quiz.
+function projectActiveGamePlanQuiz(source, resolveMediaId) {
+  const boards = asObject(readBackupValue(source, "gamePlanBoards", {}), {});
+  const id = activeGamePlanKey(source);
+  const board = asObject(boards[id], null);
+  if (!board) return null;
+
+  const assignments = asObject(board.assignments, {});
+  const labels = asObject(board.boxLabels, {});
+  const seen = new Set();
+  const items = [];
+  let bucketCount = 0;
+  Object.entries(assignments).forEach(([boxId, list]) => {
+    if (isHoldingGamePlanBox(boxId)) return;
+    const plays = asArray(list).filter((play) => play && !play.isSeparator);
+    if (plays.length) bucketCount += 1;
+    plays.forEach((play, index) => {
+      const projected = projectPlayerPlay(play, {
+        mediaId: typeof resolveMediaId === "function" ? resolveMediaId(play) : "",
+      });
+      if (!projected || projected.isSeparator) return;
+      const signature = projected.mediaId || stablePlaySourceId(projected) || `${boxId}:${index}`;
+      if (seen.has(signature)) return;
+      seen.add(signature);
+      items.push({
+        play: projected,
+        period: cleanString(labels[boxId] || boxId, 240),
+        sourceBox: cleanString(boxId, 160),
+        scriptIndex: items.length,
+      });
+    });
+  });
+  if (!items.length) return null;
+  return {
+    id,
+    title: cleanString(board.sheetTitle || id || "Game Plan", 240),
+    subtitle: id === "__unassigned__" ? "Current game plan" : id,
+    bucketCount,
+    items,
+  };
+}
+
+function projectQuizSourceSettings(value, scripts, gamePlanQuiz) {
+  const raw = asObject(value, {});
+  const allowed = new Set(
+    asArray(scripts)
+      .map((script) => `script:${cleanString(script?.id, 512)}`)
+      .filter((key) => key !== "script:"),
+  );
+  if (gamePlanQuiz?.id) allowed.add(`gameplan:${cleanString(gamePlanQuiz.id, 512)}`);
+  const out = {};
+  Object.entries(raw).forEach(([key, entry]) => {
+    const sourceKey = cleanString(key, 1100);
+    if (!allowed.has(sourceKey)) return;
+    const state = cleanString(entry?.state || entry, 32).toLowerCase();
+    if (!['available', 'locked', 'coach'].includes(state)) return;
+    out[sourceKey] = {
+      state,
+      updatedAt: cleanString(entry?.updatedAt, 64),
+    };
+  });
+  return out;
+}
+
 function projectSignal(record) {
   const source = asObject(record, null);
   if (!source || cleanString(source.visibility || "published", 32) === "draft") return null;
@@ -367,7 +445,9 @@ export async function buildPlayerRelease(backup, opts = {}) {
     .filter(Boolean)
     .slice(0, MAX_SCRIPTS);
   const scriptPlays = scripts.flatMap((script) => script.plays || []);
-  const playbook = dedupePlays([...releasedPlaybook, ...scriptPlays]);
+  const gamePlanQuiz = projectActiveGamePlanQuiz(source, resolveCanonicalMediaId);
+  const gamePlanQuizPlays = asArray(gamePlanQuiz?.items).map((item) => item?.play).filter(Boolean);
+  const playbook = dedupePlays([...releasedPlaybook, ...scriptPlays, ...gamePlanQuizPlays]);
 
   const signals = asArray(readBackupValue(source, "signals", []))
     .map(projectSignal)
@@ -420,11 +500,16 @@ export async function buildPlayerRelease(backup, opts = {}) {
       branding: asObject(values.playerPortalBranding, {}),
     },
     scripts,
+    // This is intentionally a narrow snapshot of the active board, not the
+    // editable Game Plan workspace. It gives player quiz clients one stable
+    // source without exposing coach planning data or asking the player device
+    // to reconstruct a board from its local cache.
+    gamePlanQuiz,
     playbook,
     signals,
     settings: {
       playerQuizSettings: asObject(values.playerQuizSettings, {}),
-      playerQuizSourceSettings: asObject(values.playerQuizSourceSettings, {}),
+      playerQuizSourceSettings: projectQuizSourceSettings(values.playerQuizSourceSettings, scripts, gamePlanQuiz),
       playerSignalGameSettings: asObject(values.playerSignalGameSettings, {}),
       playerPublishStatus: asObject(values.playerPublishStatus, {}),
       playerHelmetStickerTypes: asArray(values.playerHelmetStickerTypes),

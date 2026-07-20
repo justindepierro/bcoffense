@@ -102,7 +102,23 @@ const backup = {
   motd: JSON.stringify("Bring energy."),
   playerPortalBranding: JSON.stringify({ accent: "#123456" }),
   playerQuizSettings: JSON.stringify({ weeklyGoal: 500 }),
-  playerQuizSourceSettings: JSON.stringify({ script: { state: "available" } }),
+  playerQuizSourceSettings: JSON.stringify({
+    "script:script-visible": { state: "available", updatedAt: "2026-07-18T12:00:00.000Z" },
+    "gameplan:Opponent A": { state: "locked", updatedAt: "2026-07-18T12:00:00.000Z" },
+    "gameplan:Old Opponent": { state: "coach" },
+  }),
+  gameWeek: JSON.stringify({ opponentName: "Opponent A" }),
+  gamePlanBoards: JSON.stringify({
+    "Opponent A": {
+      sheetTitle: "Opponent A Plan",
+      assignments: {
+        "__holding": [hiddenSibling],
+        opener: [visiblePlay, scriptOnlyPlay],
+      },
+      boxLabels: { opener: "Openers" },
+      notes: { opener: "coach-only game plan note" },
+    },
+  }),
   playerSignalGameSettings: JSON.stringify({ enabled: true }),
   playerPublishStatus: JSON.stringify({ diagrams: { updatedAt: "2026-07-18T12:00:00.000Z" } }),
   playerHelmetStickerTypes: JSON.stringify([{ key: "effort", label: "Effort" }]),
@@ -127,6 +143,12 @@ assert(release.release.revision === repeat.release.revision, "same source produc
 assert(release.scripts.length === 1, "excludes unpublished scripts");
 assert(release.scripts[0].workspace === undefined, "does not carry script workspace state");
 assert(release.scripts[0].plays.length === 3, "keeps separator plus only player-eligible plays");
+assert(release.gamePlanQuiz?.id === "Opponent A", "projects the active game plan as a stable quiz source");
+assert(release.gamePlanQuiz?.items?.length === 2, "keeps active non-holding game plan calls only");
+assert(release.gamePlanQuiz?.items?.[0]?.period === "Openers", "keeps safe game plan bucket labels for quiz context");
+assert(release.gamePlanQuiz?.notes === undefined, "does not expose editable game plan workspace notes");
+assert(release.settings.playerQuizSourceSettings?.["gameplan:Opponent A"]?.state === "locked", "keeps the active game plan quiz availability state");
+assert(!release.settings.playerQuizSourceSettings?.["gameplan:Old Opponent"], "drops stale player quiz source mappings from the release");
 assert(release.playbook.length === 2, "keeps visible playbook and released script-only play");
 assert(!release.playbook.some((entry) => entry.mediaId === "play:hidden"), "removes hidden plays from player release");
 assert(!JSON.stringify(release).includes("coach-only"), "does not leak coach-only backup fields");
@@ -145,4 +167,3 @@ if (failed) {
 } else {
   console.log(`\n${passed} player-release contract assertions passed.`);
 }
-

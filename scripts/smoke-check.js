@@ -4709,6 +4709,8 @@ function checkPlayerQuizSettingsContracts() {
     "function openCoachQuizRepairPlayEditor",
     "function _findCoachQuizPlaybookTarget",
     "function _getPlayerQuizModes",
+    "function _getReleasedGamePlanQuizSource",
+    "function _isPlayerQuizReleaseRuntime",
     "function setPlayerQuizMode",
     "function _prepareQuizItemsForMode",
     "function _getCoachQuizModeRecommendation",
@@ -4802,6 +4804,14 @@ function checkPlayerQuizSettingsContracts() {
     !/Edits save to Playbook/.test(scriptQuiz)
   ) {
     fail("coach quiz source repair list is not wired to playbook editing");
+  }
+
+  if (
+    !/sourceType: "gameplan",[\s\S]*?sourceId: status\.id/.test(scriptQuiz) ||
+    !/if \(_isPlayerQuizReleaseRuntime\(\)\) \{[\s\S]*?_normalizeQuizItems\(released\?\.items \|\| \[\]\)/.test(scriptQuiz) ||
+    !/boxId === "__holding" \|\| boxId === "holding"/.test(scriptQuiz)
+  ) {
+    fail("game plan quiz source is not release-backed, source-keyed, and holding-safe");
   }
 
   console.log("player quiz settings contracts ok");

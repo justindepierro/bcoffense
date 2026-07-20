@@ -108,6 +108,25 @@ function _getPlayerQuizSourceSettingsStorageKey() {
     : "playerQuizSourceSettings";
 }
 
+function _getPlayerGamePlanQuizStorageKey() {
+  return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_GAME_PLAN_QUIZ
+    ? STORAGE_KEYS.PLAYER_GAME_PLAN_QUIZ
+    : "playerGamePlanQuiz";
+}
+
+function _isPlayerQuizReleaseRuntime() {
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  return user?.role === "player";
+}
+
+function _getReleasedGamePlanQuizSource() {
+  if (!_isPlayerQuizReleaseRuntime() || typeof storageManager === "undefined") return null;
+  const source = storageManager.get(_getPlayerGamePlanQuizStorageKey(), null);
+  if (!source || typeof source !== "object" || Array.isArray(source)) return null;
+  if (!String(source.id || "").trim() || !Array.isArray(source.items)) return null;
+  return source;
+}
+
 function _getPlayerSignalGameSettingsStorageKey() {
   return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_SIGNAL_GAME_SETTINGS
     ? STORAGE_KEYS.PLAYER_SIGNAL_GAME_SETTINGS
@@ -2360,7 +2379,7 @@ function _getCoachQuizGamePlanSources() {
       const playsForBoard = [];
       let bucketCount = 0;
       Object.entries(assignments).forEach(([boxId, list]) => {
-        if (boxId === "holding") return;
+        if (boxId === "__holding" || boxId === "holding") return;
         const clean = Array.isArray(list) ? list.filter((play) => play && !play.isSeparator) : [];
         if (clean.length) bucketCount += 1;
         clean.forEach((play) => playsForBoard.push(play));
@@ -4989,6 +5008,8 @@ async function startPlayerQuizHubSignals() {
 }
 
 function _getActiveGamePlanQuizSourceId() {
+  const released = _getReleasedGamePlanQuizSource();
+  if (_isPlayerQuizReleaseRuntime()) return String(released?.id || "__player-release-pending__");
   if (typeof _gpActiveOpponentKey === "function") return _gpActiveOpponentKey();
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   return gw?.opponentName || "__unassigned__";
@@ -5027,9 +5048,20 @@ function _getSignalQuizStatus() {
 
 function _getActiveGamePlanQuizStatus() {
   const id = _getActiveGamePlanQuizSourceId();
+  const released = _getReleasedGamePlanQuizSource();
   const state = _getQuizSourceState("gameplan", { id });
   const items = _buildGamePlanQuizItems();
   const stats = _quizCompletenessStats(items.map((item) => item.play));
+  if (_isPlayerQuizReleaseRuntime() && !released) {
+    return {
+      id,
+      state: "coach",
+      available: false,
+      label: "Game Plan Updating",
+      detail: "Coach's active Game Plan quiz will appear after the next automatic team save.",
+      stats,
+    };
+  }
   if (state === "coach") {
     return {
       id,
@@ -5072,11 +5104,16 @@ function _getActiveGamePlanQuizStatus() {
 }
 
 function _buildGamePlanQuizItems() {
+  const released = _getReleasedGamePlanQuizSource();
+  if (_isPlayerQuizReleaseRuntime()) {
+    return _normalizeQuizItems(released?.items || []);
+  }
   if (typeof _gpEnsureBoard !== "function") return [];
   const board = _gpEnsureBoard();
   const seen = new Set();
   const items = [];
   Object.entries(board.assignments || {}).forEach(([boxId, list]) => {
+    if (boxId === "__holding" || boxId === "holding") return;
     (Array.isArray(list) ? list : []).forEach((play, rawIdx) => {
       if (!play) return;
       const sig = typeof _gpPlaySignature === "function"
@@ -5111,6 +5148,7 @@ function startPlayerQuizHubGamePlan() {
   startScriptQuiz({
     items: _prepareQuizItemsForMode(items, _quizMode),
     sourceType: "gameplan",
+    sourceId: status.id,
     title: _quizModeTitle("Game Plan Quiz", _quizMode),
     positionKey: _quizPositionKey,
     positionMode: _quizPositionMode,
