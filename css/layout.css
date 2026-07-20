@@ -1973,6 +1973,9 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
 .pa-stat--links {
   color: var(--color-primary);
 }
+.pa-auto-link {
+  min-height: 31px;
+}
 .pa-linking-intro {
   margin: 0;
   padding: var(--space-sm) var(--space-md);

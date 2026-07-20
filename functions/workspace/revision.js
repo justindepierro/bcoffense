@@ -36,7 +36,7 @@ const TEAM_WORKSPACE_KEYS = new Set([
   "wristbandLogoCard", "teamRoster", "teamName", "teamPersonnelPackages",
   "teamSwapGroups", "teamAssignmentLabels", "teamSettingsCollapsed", "gamePlanBoards",
   "gamePlanSnapshots", "gamePlanTemplates", "callSheetPrintOptions", "motd",
-  "playerPortalBranding", "playerQuizSettings", "playerQuizSourceSettings",
+  "playerPortalBranding", "playerQuizSettings", "playerQuizSourceSettings", "quizAssignmentTemplates",
   "playerSignalGameSettings", "playerPublishStatus", "signals",
   "playerHelmetStickerTypes", "gameWeekArchive", "tendenciesReports",
 ]);

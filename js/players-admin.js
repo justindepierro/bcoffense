@@ -14,6 +14,10 @@ function normalizePlayerAccountEmail(value = "") {
   return String(value || "").trim().toLowerCase();
 }
 
+function normalizePlayerAccountIdentity(value = "") {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 function getPlayerAccountRosterLinkContext() {
   const roster = typeof getTeamRoster === "function" ? getTeamRoster() : [];
   const byAccount = new Map();
@@ -29,6 +33,27 @@ function formatPlayerAccountRosterLabel(player) {
   const name = String(player?.name || "Unnamed player").trim();
   const position = String(player?.primaryPosition || player?.position || "").trim();
   return [number ? `#${number}` : "", name, position].filter(Boolean).join(" · ");
+}
+
+function getExactPlayerAccountRosterMatches(players = _paPlayers, roster = getTeamRoster()) {
+  const availableRosterByName = new Map();
+  roster.filter((player) => !normalizePlayerAccountEmail(player.accountUsername)).forEach((player) => {
+    const key = normalizePlayerAccountIdentity(player.name);
+    if (!key) return;
+    const list = availableRosterByName.get(key) || [];
+    list.push(player);
+    availableRosterByName.set(key, list);
+  });
+  const accountNameCounts = new Map();
+  players.filter((player) => player.role === "player" && player.status === "active" && player.email).forEach((player) => {
+    const key = normalizePlayerAccountIdentity(player.displayName);
+    if (key) accountNameCounts.set(key, (accountNameCounts.get(key) || 0) + 1);
+  });
+  return players.filter((player) => {
+    const key = normalizePlayerAccountIdentity(player.displayName);
+    return player.role === "player" && player.status === "active" && player.email
+      && accountNameCounts.get(key) === 1 && availableRosterByName.get(key)?.length === 1;
+  }).map((player) => ({ player, rosterPlayer: availableRosterByName.get(normalizePlayerAccountIdentity(player.displayName))[0] }));
 }
 
 function renderPlayerAccountRosterLink(p, context) {
@@ -105,6 +130,7 @@ function renderPlayersAdminList(players, container) {
   const playerAccounts = players.filter((p) => p.role === "player");
   const linkContext = getPlayerAccountRosterLinkContext();
   const linkedAccounts = playerAccounts.filter((p) => linkContext.byAccount.has(normalizePlayerAccountEmail(p.email))).length;
+  const exactMatches = getExactPlayerAccountRosterMatches(players, linkContext.roster);
 
   const statsHtml = `
     <div class="pa-stats">
@@ -112,6 +138,7 @@ function renderPlayersAdminList(players, container) {
       <span class="pa-stat pa-stat--invited">📨 ${invited} Pending</span>
       ${disabled ? `<span class="pa-stat pa-stat--disabled">🚫 ${disabled} Disabled</span>` : ""}
       <span class="pa-stat pa-stat--links">🔗 ${linkedAccounts}/${linkContext.roster.length} roster links</span>
+      ${exactMatches.length ? `<button type="button" class="btn btn-sm btn-outline pa-auto-link" data-action="autoLinkExactPlayerAccounts">Auto-link ${exactMatches.length} exact name${exactMatches.length === 1 ? "" : "s"}</button>` : ""}
     </div>`;
 
   const listHtml = players.length
@@ -208,6 +235,26 @@ function linkPlayerAccountToRoster(event) {
     type: "success",
     duration: 2600,
   });
+}
+
+async function autoLinkExactPlayerAccounts() {
+  const roster = getTeamRoster();
+  const matches = getExactPlayerAccountRosterMatches(_paPlayers, roster);
+  if (!matches.length) {
+    showToast("There are no unambiguous exact-name roster matches to link.", { type: "info" });
+    return;
+  }
+  const preview = matches.slice(0, 6).map(({ player, rosterPlayer }) => `• ${rosterPlayer.name} → ${player.email}`).join("\n");
+  const more = matches.length > 6 ? `\n• ${matches.length - 6} more` : "";
+  const confirmed = typeof showConfirm === "function"
+    ? await showConfirm(`Link only exact, unique active-player name matches?\n\n${preview}${more}\n\nNo existing links will be overwritten.`, { title: "Auto-link exact roster matches", icon: "🔗", confirmText: "Link matches" })
+    : true;
+  if (!confirmed) return;
+  matches.forEach(({ player, rosterPlayer }) => { rosterPlayer.accountUsername = normalizePlayerAccountEmail(player.email); });
+  saveTeamRoster(roster);
+  if (document.getElementById("teamRosterList") && typeof renderTeamSettings === "function") renderTeamSettings();
+  renderPlayersAdminList(_paPlayers, document.getElementById("playersAdminBody"));
+  showToast(`Linked ${matches.length} roster account${matches.length === 1 ? "" : "s"} from exact names.`, { type: "success" });
 }
 
 function renderInviteForm() {

@@ -12,7 +12,7 @@ async function source(relativePath) {
 }
 
 console.log("\n▸ Private quiz homework contract");
-const [migration, migrationQuestionConfig, migrationLifecycle, helper, route, client, quiz, notifications, index, sw] = await Promise.all([
+const [migration, migrationQuestionConfig, migrationLifecycle, helper, route, client, quiz, notifications, playersAdmin, storage, workspaceRoute, index, sw] = await Promise.all([
   source("../migrations/0020_quiz_assignments.sql"),
   source("../migrations/0021_quiz_assignment_question_config.sql"),
   source("../migrations/0022_quiz_assignment_delivery_lifecycle.sql"),
@@ -21,6 +21,9 @@ const [migration, migrationQuestionConfig, migrationLifecycle, helper, route, cl
   source("../js/script-quiz-assignments.js"),
   source("../js/script-quiz.js"),
   source("../js/app-notifications.js"),
+  source("../js/players-admin.js"),
+  source("../js/storage.js"),
+  source("../functions/workspace/revision.js"),
   source("../index.html"),
   source("../sw.js"),
 ]);
@@ -58,8 +61,16 @@ assert(
   client.includes("startPlayerQuizAssignment") && client.includes("recordQuizAssignmentAttempt")
     && client.includes("renderPlayerQuizHomeworkDashboard") && client.includes("openQuizAssignmentManager")
     && client.includes("openQuizAssignmentDetails") && client.includes("followUpQuizAssignment")
+    && client.includes("openQuizAssignmentForSource") && client.includes("saveQuizAssignmentTemplate")
     && client.includes("Saved practice script") && client.includes("Game Plan") && client.includes("Custom question"),
-  "client includes coach creation, player delivery, custom questions, and assignment management",
+  "client includes coach creation, direct source assignment, reusable templates, and assignment management",
+);
+assert(
+  playersAdmin.includes("autoLinkExactPlayerAccounts")
+    && playersAdmin.includes("getExactPlayerAccountRosterMatches")
+    && storage.includes("QUIZ_ASSIGNMENT_TEMPLATES")
+    && workspaceRoute.includes("quizAssignmentTemplates"),
+  "roster linking has a conservative exact-name helper and templates sync as team workspace data",
 );
 assert(
   quiz.includes('"assignment"') && quiz.includes("_quizAssignmentId")
@@ -72,7 +83,7 @@ assert(
   "homework notification opens exactly the assigned quiz",
 );
 assert(
-  index.includes("script-quiz-assignments.js?v=1276") && sw.includes("./js/script-quiz-assignments.js"),
+  index.includes("script-quiz-assignments.js?v=1277") && sw.includes("./js/script-quiz-assignments.js"),
   "assignment client is loaded and cached with the app shell",
 );
 

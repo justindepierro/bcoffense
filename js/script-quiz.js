@@ -1101,8 +1101,8 @@ function _renderCoachQuizRosterHealthPanel(summary = _buildCoachQuizRosterHealth
   return `
     <section class="coach-quiz-setup-section coach-quiz-roster-health-panel">
       <div class="coach-quiz-section-head">
-        <h3>Roster link health</h3>
-        <span>${summary.linked.length}/${summary.roster.length || 0} linked · ${escapeHtml(statusText)}</span>
+        <div><h3>Roster link health</h3><span>${summary.linked.length}/${summary.roster.length || 0} linked · ${escapeHtml(statusText)}</span></div>
+        <button type="button" class="btn btn-sm btn-outline" data-action="openPlayersAdmin">Resolve links</button>
       </div>
       <div class="coach-quiz-roster-health-summary">
         <span class="${summary.linked.length ? "is-good" : ""}"><strong>${summary.linked.length}</strong><small>Linked accounts</small></span>
@@ -2973,7 +2973,10 @@ function _renderCoachQuizSourceCard(source, kind) {
         ${actions.length
       ? `<ul>${actions.map((action) => `<li>${escapeHtml(action)}</li>`).join("")}</ul>`
       : `<p>This source is ready for player quizzes.</p>`}
-        ${canRepair ? `<button type="button" class="btn btn-sm btn-outline" data-action="openCoachQuizSourceRepair" data-arg="${escapeAttr(`${kind}:${source.id}`)}">Review plays</button>` : ""}
+        <div class="coach-quiz-next-action-buttons">
+          ${canRepair ? `<button type="button" class="btn btn-sm btn-outline" data-action="openCoachQuizSourceRepair" data-arg="${escapeAttr(`${kind}:${source.id}`)}">Review plays</button>` : ""}
+          <button type="button" class="btn btn-sm btn-primary" data-action="openQuizAssignmentForSource" data-arg="${escapeAttr(`${kind}|${encodeURIComponent(source.id)}`)}">Assign homework</button>
+        </div>
       </div>
     </article>
   `;
