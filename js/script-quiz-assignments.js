@@ -67,6 +67,170 @@ function _normalizeQuizAssignmentIdentity(value = "") { return String(value || "
 function _quizAssignmentRosterLinks() { const roster = typeof getTeamRoster === "function" ? getTeamRoster() : []; const remote = _quizAssignmentState.players || []; return remote.map((user) => { const email = String(user.email || "").toLowerCase(); const emailName = email.split("@")[0]; const rosterPlayerId = String(user.rosterPlayerId || "").trim(); const local = (rosterPlayerId ? roster.find((entry) => String(entry.id || "").trim() === rosterPlayerId) : null) || roster.find((entry) => { const account = String(entry.accountUsername || "").toLowerCase(); return (account && (account === email || account === emailName)) || _normalizeQuizAssignmentIdentity(entry.name) === _normalizeQuizAssignmentIdentity(user.name); }); return { ...user, position: String(user.position || local?.primaryPosition || local?.position || "").trim(), tags: Array.isArray(local?.tags) ? local.tags : [], roster: local || null }; }); }
 function _quizAssignmentGroups() { const linked = _quizAssignmentRosterLinks(); const groups = new Map(); linked.forEach((player) => { const position = String(player.position || "").trim(); if (position) groups.set(`position:${position}`, { key: `position:${position}`, label: position, ids: [...(groups.get(`position:${position}`)?.ids || []), player.id] }); (player.tags || []).forEach((tag) => { const clean = String(tag || "").trim(); if (!clean) return; const key = `tag:${clean.toLowerCase()}`; groups.set(key, { key, label: `#${clean.replace(/^#/, "")}`, ids: [...(groups.get(key)?.ids || []), player.id] }); }); }); return [...groups.values()].sort((a, b) => a.label.localeCompare(b.label)); }
 
+function _quizAssignmentUniquePlays(items = []) {
+  const seen = new Set();
+  return (Array.isArray(items) ? items : []).map((item) => item?.play || item).filter((play, index) => {
+    if (!play) return false;
+    const key = _quizAssignmentPlayKey(play, index).toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function _quizAssignmentFocus(draft) {
+  const positions = typeof _getQuizPositions === "function" ? _getQuizPositions() : [];
+  const selected = positions.find((position) => position.key === draft?.positionKey);
+  const defaultPosition = typeof _getQuizPosition === "function" ? _getQuizPosition() : null;
+  return selected || defaultPosition || { key: "", label: "Player default" };
+}
+
+function _quizAssignmentHasDiagram(play) {
+  return Boolean(window.playImages && typeof window.playImages.hasForPlay === "function" && window.playImages.hasForPlay(play));
+}
+
+function _quizAssignmentSignalLabels(play) {
+  if (typeof _quizSignalRecordsForPlay !== "function") return [];
+  return _quizSignalRecordsForPlay(play).map((record) => {
+    if (typeof _quizSignalAnswerLabel === "function") return _quizSignalAnswerLabel(record);
+    return record?.label || record?.value || "";
+  }).map((label) => String(label || "").trim()).filter(Boolean);
+}
+
+function _quizAssignmentCustomQuestionHealth(questions = []) {
+  const total = Array.isArray(questions) ? questions.length : 0;
+  const valid = (Array.isArray(questions) ? questions : []).filter((question) => {
+    const options = (question?.options || []).map((option) => String(option || "").trim()).filter(Boolean);
+    const correct = Number(question?.correctIndex || 0);
+    return Boolean(String(question?.prompt || "").trim()) && options.length >= 2 && Boolean(options[correct]);
+  }).length;
+  return { total, valid, invalid: total - valid };
+}
+
+// This is deliberately conservative. The player quiz can still show study cards,
+// but homework only sends selected question types that have enough distinct source
+// material for a fair choice-based question.
+function getQuizAssignmentSourceHealth(draft = _quizAssignmentState.draft) {
+  const playsForHealth = _quizAssignmentUniquePlays(_quizAssignmentSourceItems(draft));
+  const focus = _quizAssignmentFocus(draft);
+  const calls = new Set();
+  const rules = new Set();
+  const signals = new Set();
+  let playsWithRule = 0;
+  let playsWithDiagram = 0;
+  let playsWithSignal = 0;
+
+  playsForHealth.forEach((play) => {
+    const call = _quizAssignmentCall(play).trim();
+    if (call) calls.add(call.toLowerCase());
+    const rule = String(focus.key ? play?.[focus.key] || "" : "").trim();
+    if (rule) {
+      playsWithRule += 1;
+      rules.add(rule.toLowerCase());
+    }
+    if (_quizAssignmentHasDiagram(play)) playsWithDiagram += 1;
+    const labels = _quizAssignmentSignalLabels(play);
+    if (labels.length) playsWithSignal += 1;
+    labels.forEach((label) => signals.add(label.toLowerCase()));
+  });
+
+  const typeHealth = {
+    responsibility: {
+      eligible: playsWithRule,
+      ready: rules.size >= 4,
+      detail: rules.size >= 4
+        ? `${playsWithRule} plays · ${rules.size} distinct ${focus.label || "player"} rules`
+        : `Needs 4 distinct ${focus.label || "player"} rules; found ${rules.size}`,
+    },
+    diagram: {
+      eligible: playsWithDiagram,
+      ready: playsWithDiagram > 0 && calls.size >= 2,
+      detail: playsWithDiagram
+        ? `${playsWithDiagram} diagrams · ${calls.size} distinct call choices`
+        : "No attached diagrams in this source",
+    },
+    signal: {
+      eligible: playsWithSignal,
+      ready: signals.size >= 2,
+      detail: signals.size >= 2
+        ? `${playsWithSignal} plays · ${signals.size} distinct published signals`
+        : `Needs 2 distinct published signals; found ${signals.size}`,
+    },
+    call: {
+      eligible: playsForHealth.length,
+      ready: calls.size >= 2,
+      detail: calls.size >= 2 ? `${calls.size} distinct calls` : "Needs 2 distinct calls",
+    },
+    play_from_rule: {
+      eligible: playsWithRule,
+      ready: playsWithRule > 0 && calls.size >= 2,
+      detail: playsWithRule && calls.size >= 2
+        ? `${playsWithRule} rules across ${calls.size} calls`
+        : "Needs a player rule and 2 distinct calls",
+    },
+  };
+  const selectedTypes = [...(draft?.questionTypes || [])].filter((type) => typeHealth[type]);
+  const invalidTypes = selectedTypes.filter((type) => !typeHealth[type].ready);
+  const readyTypes = selectedTypes.filter((type) => typeHealth[type].ready);
+  const custom = _quizAssignmentCustomQuestionHealth(draft?.customQuestions);
+  const issues = [];
+  if (!playsForHealth.length && !custom.valid) issues.push("Choose a source play or add a complete custom question.");
+  if (!selectedTypes.length && !custom.valid) issues.push("Choose at least one question type or add a complete custom question.");
+  if (invalidTypes.length) issues.push(`Fix or turn off: ${invalidTypes.map((type) => QUIZ_ASSIGNMENT_QUESTION_TYPES.find((entry) => entry[0] === type)?.[1] || type).join(", ")}.`);
+  if (custom.invalid) issues.push(`Finish or remove ${custom.invalid} incomplete custom question${custom.invalid === 1 ? "" : "s"}.`);
+  return {
+    plays: playsForHealth.length,
+    calls: calls.size,
+    focus,
+    typeHealth,
+    selectedTypes,
+    readyTypes,
+    invalidTypes,
+    custom,
+    issues,
+    ready: !issues.length,
+  };
+}
+
+function _renderQuizAssignmentSourceHealth(health) {
+  const labels = new Map(QUIZ_ASSIGNMENT_QUESTION_TYPES);
+  const selected = health.selectedTypes.length
+    ? health.selectedTypes.map((type) => {
+      const item = health.typeHealth[type];
+      return `<article class="quiz-assignment-health__item${item.ready ? " is-ready" : " is-needs"}"><div><strong>${escapeHtml(labels.get(type) || type)}</strong><span>${item.ready ? "Ready" : "Needs attention"}</span></div><small>${escapeHtml(item.detail)}</small></article>`;
+    }).join("")
+    : `<div class="quiz-assignment-health__empty">Choose a question type to see whether this source can support it.</div>`;
+  return `<aside id="quizAssignmentHealth" class="quiz-assignment-health${health.ready ? " is-ready" : " is-needs"}" aria-live="polite"><div class="quiz-assignment-health__head"><div><span>Question health</span><strong>${health.ready ? "Ready to send" : "Needs a quick fix"}</strong></div><small>${health.plays} plays · ${health.calls} distinct calls · ${escapeHtml(health.focus.label || "Player default")} focus</small></div><div class="quiz-assignment-health__grid">${selected}</div>${health.issues.length ? `<div class="quiz-assignment-health__issues">${health.issues.map((issue) => `<span>• ${escapeHtml(issue)}</span>`).join("")}${health.readyTypes.length ? `<button type="button" class="btn btn-sm btn-outline" data-action="useQuizAssignmentReadyQuestionTypes">Use only ready question types</button>` : ""}</div>` : `<p class="quiz-assignment-health__hint">Every selected question type has enough source material for player-facing multiple-choice questions.</p>`}</aside>`;
+}
+
+function _quizAssignmentCanSubmit(draft, health = getQuizAssignmentSourceHealth(draft)) {
+  return Boolean(health.ready && draft?.recipientIds?.size && String(draft?.title || "").trim());
+}
+
+function _syncQuizAssignmentSubmitState(health = getQuizAssignmentSourceHealth()) {
+  const draft = _quizAssignmentState.draft;
+  if (!draft) return;
+  const canSubmit = _quizAssignmentCanSubmit(draft, health);
+  const button = document.querySelector('[data-action="createQuizAssignment"]');
+  if (button) {
+    button.disabled = !canSubmit;
+    button.title = health.ready
+      ? (draft.recipientIds.size ? (String(draft.title || "").trim() ? "" : "Add a homework title first.") : "Choose at least one recipient.")
+      : health.issues.join(" ");
+  }
+  const count = document.getElementById("quizAssignmentReadyCount");
+  if (count) count.textContent = `${draft.recipientIds.size} players · ${_quizAssignmentSourceItems(draft).length + health.custom.valid} ready questions`;
+}
+
+function refreshQuizAssignmentSourceHealth() {
+  const draft = _quizAssignmentState.draft;
+  const healthNode = document.getElementById("quizAssignmentHealth");
+  if (!draft) return;
+  const health = getQuizAssignmentSourceHealth(draft);
+  if (healthNode) healthNode.outerHTML = _renderQuizAssignmentSourceHealth(health);
+  _syncQuizAssignmentSubmitState(health);
+}
+
 function _renderQuizAssignmentModal() {
   const overlay = document.getElementById("quizAssignmentOverlay"); const draft = _quizAssignmentState.draft; if (!overlay || !draft) return;
   const positions = typeof _getQuizPositions === "function" ? _getQuizPositions() : []; const source = _quizAssignmentSource(draft); const sourceItems = _quizAssignmentSourceItems(draft); const rosterPlayers = _quizAssignmentRosterLinks(); const groups = _quizAssignmentGroups(); const templates = _getQuizAssignmentTemplates();
@@ -82,22 +246,23 @@ function _renderQuizAssignmentModal() {
     sourcePicker = `<label class="quiz-assignment-source-select">${draft.sourceKind === "script" ? "Saved script" : "Game Plan"}<select data-onchange="setQuizAssignmentSourceId" data-pass="value"><option value="">Choose a source</option>${sourceOptions}</select></label>`;
     if (source) sourcePicker += `<div class="quiz-assignment-source-summary"><strong>${escapeHtml(source.title)}</strong><span>${escapeHtml(`${source.plays?.length || 0} plays${source.periodCount ? ` · ${source.periodCount} periods` : ""}`)}</span></div>`;
   }
+  const sourceHealth = getQuizAssignmentSourceHealth(draft);
   const sourceSection = Array.isArray(draft.frozenItems)
     ? `<div class="quiz-assignment-source-summary"><strong>${escapeHtml(draft.frozenSourceLabel || "Previous assignment snapshot")}</strong><span>${sourceItems.length} copied plays · source stays unchanged</span><button type="button" class="btn btn-sm btn-outline" data-action="clearQuizAssignmentFrozenSource">Change source</button></div>`
     : `${sourceTabs}${sourcePicker}`;
   overlay.dataset.action = "closeQuizAssignmentManagerOverlay";
   overlay.innerHTML = `<div class="quiz-assignment-modal" role="dialog" aria-modal="true" aria-label="Assign quiz homework"><header><div><span>Private homework</span><h2>Build a player assignment</h2><p>Pick a source, choose exactly who receives it, and add coach-written multiple choice when you need it.</p></div><button class="modal-close" type="button" data-action="closeQuizAssignmentManager" aria-label="Close">×</button></header><div class="quiz-assignment-form">
-    <section class="quiz-assignment-step"><div class="quiz-assignment-section-head"><div><span>1 · Source</span><h3>What should they study?</h3></div><strong>${sourceItems.length} plays</strong></div>${sourceSection}</section>
+    <section class="quiz-assignment-step"><div class="quiz-assignment-section-head"><div><span>1 · Source</span><h3>What should they study?</h3></div><strong>${sourceItems.length} plays</strong></div>${sourceSection}${_renderQuizAssignmentSourceHealth(sourceHealth)}</section>
     <section class="quiz-assignment-step"><div class="quiz-assignment-section-head"><div><span>2 · Recipients</span><h3>Who gets this homework?</h3></div>${rosterPlayers.length ? `<button type="button" class="btn btn-sm btn-outline" data-action="toggleAllQuizAssignmentPlayers">${draft.recipientIds.size === rosterPlayers.length ? "Clear all" : "Select all"}</button>` : ""}</div>${rosterPlayers.length ? `${groups.length ? `<div class="quiz-assignment-group-chips"><span>Quick groups</span>${groups.map((group) => `<button type="button" class="quiz-assignment-group-chip${group.ids.every((id) => draft.recipientIds.has(id)) ? " is-selected" : ""}" data-action="toggleQuizAssignmentRecipientGroup" data-arg="${escapeAttr(group.key)}">${escapeHtml(group.label)} <small>${group.ids.length}</small></button>`).join("")}</div>` : `<p class="quiz-assignment-hint">Add roster <b>#tags</b> in Team Settings to make reusable custom homework groups.</p>`}<div class="quiz-assignment-player-grid">${rosterPlayers.map((player) => `<button type="button" class="quiz-assignment-choice${draft.recipientIds.has(player.id) ? " is-selected" : ""}" data-action="toggleQuizAssignmentRecipient" data-arg="${escapeAttr(player.id)}"><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(player.position || "Player")}${player.tags?.length ? ` · ${escapeHtml(player.tags.map((tag) => `#${String(tag).replace(/^#/, "")}`).join(" "))}` : ""}${player.roster ? "" : " · roster link needed"}</small></button>`).join("")}</div>` : `<div class="coach-quiz-empty"><strong>Player accounts could not be loaded.</strong><span>Homework can only be sent to active player portal accounts. Refresh the list or open Player Accounts &amp; Roster Links to resolve access.</span><div><button type="button" class="btn btn-sm btn-outline" data-action="refreshQuizAssignments">Refresh accounts</button><button type="button" class="btn btn-sm btn-outline" data-action="openPlayersAdmin">Open player accounts</button></div></div>`}</section>
     <section class="quiz-assignment-step"><div class="quiz-assignment-section-head"><div><span>3 · Questions</span><h3>Choose what to ask</h3></div><strong>${draft.customQuestions.length} custom</strong></div><div class="quiz-assignment-question-types">${QUIZ_ASSIGNMENT_QUESTION_TYPES.map(([type, label]) => `<button type="button" class="quiz-assignment-question-type${draft.questionTypes.has(type) ? " is-selected" : ""}" data-action="toggleQuizAssignmentQuestionType" data-arg="${type}">${escapeHtml(label)}</button>`).join("")}</div><div class="quiz-assignment-custom-head"><div><strong>Coach-written multiple choice</strong><small>Add questions with your own wording and answers.</small></div><button type="button" class="btn btn-sm btn-outline" data-action="addQuizAssignmentCustomQuestion">+ Custom question</button></div>${draft.customQuestions.map((question, index) => `<article class="quiz-assignment-custom-question"><div><strong>Custom ${index + 1}</strong><button type="button" class="btn btn-link btn-sm" data-action="removeQuizAssignmentCustomQuestion" data-arg="${escapeAttr(question.id)}">Remove</button></div><input value="${escapeAttr(question.prompt)}" placeholder="Question" data-oninput="setQuizAssignmentCustomQuestionField" data-arg="${escapeAttr(`${question.id}:prompt`)}" data-pass="value" />${[0, 1, 2, 3].map((choiceIndex) => `<label><input value="${escapeAttr(question.options[choiceIndex] || "")}" placeholder="Answer option ${choiceIndex + 1}" data-oninput="setQuizAssignmentCustomQuestionField" data-arg="${escapeAttr(`${question.id}:option:${choiceIndex}`)}" data-pass="value" /><input type="radio" name="quiz-custom-${escapeAttr(question.id)}"${Number(question.correctIndex) === choiceIndex ? " checked" : ""} data-onchange="setQuizAssignmentCustomQuestionField" data-arg="${escapeAttr(`${question.id}:correct`)}" data-pass="value" value="${choiceIndex}" aria-label="Correct answer" /></label>`).join("")}</article>`).join("")}</section>
     <section class="quiz-assignment-step"><div class="quiz-assignment-section-head"><div><span>4 · Details</span><h3>Set the expectation</h3></div><button type="button" class="btn btn-sm btn-outline" data-action="saveQuizAssignmentTemplate">Save as template</button></div>${templates.length ? `<div class="quiz-assignment-template-row"><span>Reusable templates</span>${templates.map((template) => `<button type="button" class="quiz-assignment-template" data-action="applyQuizAssignmentTemplate" data-arg="${escapeAttr(template.id)}">${escapeHtml(template.name)}</button>`).join("")}</div>` : `<p class="quiz-assignment-hint">Save a template for your standard homework instructions, question mix, and score target.</p>`}<label>Title<input value="${escapeAttr(draft.title)}" placeholder="e.g. Red zone homework" data-oninput="setQuizAssignmentField" data-arg="title" data-pass="value" /></label><label>Instructions<textarea placeholder="What should they focus on?" data-oninput="setQuizAssignmentField" data-arg="instructions" data-pass="value">${escapeHtml(draft.instructions)}</textarea></label><div class="quiz-assignment-form__row"><label>Due date<input type="datetime-local" value="${escapeAttr(draft.dueAt)}" data-onchange="setQuizAssignmentField" data-arg="dueAt" data-pass="value" /></label><label>Required score<select data-onchange="setQuizAssignmentField" data-arg="requiredScore" data-pass="value">${[0, 70, 80, 90, 100].map((value) => `<option value="${value}"${Number(draft.requiredScore) === value ? " selected" : ""}>${value ? `${value}%` : "No minimum"}</option>`).join("")}</select></label><label>Focus<select data-onchange="setQuizAssignmentField" data-arg="positionKey" data-pass="value"><option value="">Player default</option>${positions.map((position) => `<option value="${escapeAttr(position.key)}"${draft.positionKey === position.key ? " selected" : ""}>${escapeHtml(position.label)}</option>`).join("")}</select></label></div></section>
-  </div><footer><span>${draft.recipientIds.size} players · ${sourceItems.length + draft.customQuestions.length} questions</span><div><button type="button" class="btn btn-outline" data-action="closeQuizAssignmentManager">Cancel</button><button type="button" class="btn btn-primary" data-action="createQuizAssignment">Assign homework</button></div></footer></div>`;
+  </div><footer><span id="quizAssignmentReadyCount">${draft.recipientIds.size} players · ${sourceItems.length + sourceHealth.custom.valid} ready questions</span><div><button type="button" class="btn btn-outline" data-action="closeQuizAssignmentManager">Cancel</button><button type="button" class="btn btn-primary" data-action="createQuizAssignment"${_quizAssignmentCanSubmit(draft, sourceHealth) ? "" : " disabled"} title="${escapeAttr(sourceHealth.ready ? (draft.recipientIds.size ? (String(draft.title || "").trim() ? "" : "Add a homework title first.") : "Choose at least one recipient.") : sourceHealth.issues.join(" "))}">Assign homework</button></div></footer></div>`;
 }
 
 async function openQuizAssignmentManager(seed = null) { if (!_isQuizAssignmentStaffClient()) return; const refreshed = await refreshQuizAssignments({ quiet: false }); if (!refreshed && !_quizAssignmentState.loaded) return; _quizAssignmentState.draft = seed || _newQuizAssignmentDraft(); let overlay = document.getElementById("quizAssignmentOverlay"); if (!overlay) { overlay = document.createElement("div"); overlay.id = "quizAssignmentOverlay"; overlay.className = "overlay quiz-assignment-overlay hidden"; document.body.appendChild(overlay); } overlay.classList.remove("hidden"); _renderQuizAssignmentModal(); if (typeof openLayer === "function") openLayer(overlay, { id: "quizAssignmentOverlay", scrollElement: "quizAssignmentOverlay", blocking: true }); }
 function openQuizAssignmentForSource(arg) { const [kind, rawId] = String(arg || "").split("|"); const sourceKind = ["script", "gameplan"].includes(kind) ? kind : "playbook"; const sourceId = rawId ? decodeURIComponent(rawId) : ""; const source = _quizAssignmentSources(sourceKind).find((entry) => String(entry.id) === sourceId); const draft = _newQuizAssignmentDraft(); draft.sourceKind = sourceKind; draft.sourceId = sourceId; draft.title = source?.title ? `${source.title} homework` : ""; openQuizAssignmentManager(draft); }
 function closeQuizAssignmentManager() { const overlay = document.getElementById("quizAssignmentOverlay"); if (overlay) { if (typeof closeLayer === "function") closeLayer(overlay); overlay.classList.add("hidden"); } _quizAssignmentState.draft = null; }
-function setQuizAssignmentField(field, value) { if (_quizAssignmentState.draft) _quizAssignmentState.draft[field] = value; }
+function setQuizAssignmentField(field, value) { const draft = _quizAssignmentState.draft; if (!draft) return; draft[field] = value; if (field === "positionKey") _renderQuizAssignmentModal(); else refreshQuizAssignmentSourceHealth(); }
 function setQuizAssignmentSearch(value) { if (_quizAssignmentState.draft) { _quizAssignmentState.draft.search = value; _renderQuizAssignmentModal(); } }
 function setQuizAssignmentSource(kind) { const draft = _quizAssignmentState.draft; if (!draft) return; draft.frozenItems = null; draft.frozenSourceLabel = ""; draft.sourceKind = ["playbook", "script", "gameplan"].includes(kind) ? kind : "playbook"; draft.sourceId = ""; _renderQuizAssignmentModal(); }
 function clearQuizAssignmentFrozenSource() { const draft = _quizAssignmentState.draft; if (!draft) return; draft.frozenItems = null; draft.frozenSourceLabel = ""; draft.sourceKind = "playbook"; _renderQuizAssignmentModal(); }
@@ -107,9 +272,10 @@ function toggleAllQuizAssignmentPlayers() { const draft = _quizAssignmentState.d
 function toggleQuizAssignmentRecipientGroup(key) { const draft = _quizAssignmentState.draft; const group = _quizAssignmentGroups().find((entry) => entry.key === key); if (!draft || !group) return; const selected = group.ids.every((id) => draft.recipientIds.has(id)); group.ids.forEach((id) => selected ? draft.recipientIds.delete(id) : draft.recipientIds.add(id)); _renderQuizAssignmentModal(); }
 function toggleQuizAssignmentPlay(key) { const set = _quizAssignmentState.draft?.playKeys; if (!set) return; set.has(key) ? set.delete(key) : set.add(key); _renderQuizAssignmentModal(); }
 function toggleQuizAssignmentQuestionType(type) { const types = _quizAssignmentState.draft?.questionTypes; if (!types) return; types.has(type) ? types.delete(type) : types.add(type); _renderQuizAssignmentModal(); }
+function useQuizAssignmentReadyQuestionTypes() { const draft = _quizAssignmentState.draft; if (!draft) return; const health = getQuizAssignmentSourceHealth(draft); draft.questionTypes = new Set(health.readyTypes); _renderQuizAssignmentModal(); }
 function addQuizAssignmentCustomQuestion() { const draft = _quizAssignmentState.draft; if (!draft) return; draft.customQuestions.push({ id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, prompt: "", options: ["", "", "", ""], correctIndex: 0 }); _renderQuizAssignmentModal(); }
 function removeQuizAssignmentCustomQuestion(id) { const draft = _quizAssignmentState.draft; if (!draft) return; draft.customQuestions = draft.customQuestions.filter((question) => question.id !== id); _renderQuizAssignmentModal(); }
-function setQuizAssignmentCustomQuestionField(arg, value) { const [id, field, index] = String(arg || "").split(":"); const question = _quizAssignmentState.draft?.customQuestions.find((entry) => entry.id === id); if (!question) return; if (field === "prompt") question.prompt = value; else if (field === "option") question.options[Number(index)] = value; else if (field === "correct") question.correctIndex = Number(value); }
+function setQuizAssignmentCustomQuestionField(arg, value) { const [id, field, index] = String(arg || "").split(":"); const question = _quizAssignmentState.draft?.customQuestions.find((entry) => entry.id === id); if (!question) return; if (field === "prompt") question.prompt = value; else if (field === "option") question.options[Number(index)] = value; else if (field === "correct") question.correctIndex = Number(value); refreshQuizAssignmentSourceHealth(); }
 async function saveQuizAssignmentTemplate() { const draft = _quizAssignmentState.draft; if (!draft) return; const name = typeof showPrompt === "function" ? await showPrompt("Name this reusable homework template.", draft.title || "Homework template", { title: "Save Quiz Template", icon: "📚", placeholder: "e.g. Friday film check", confirmText: "Save template" }) : ""; if (!name?.trim()) return; const template = _quizAssignmentTemplatePayload(draft); template.name = String(name).trim().slice(0, 80); const existing = _getQuizAssignmentTemplates().filter((entry) => entry.name.toLowerCase() !== template.name.toLowerCase()); existing.unshift(template); storageManager.set(STORAGE_KEYS.QUIZ_ASSIGNMENT_TEMPLATES, existing.slice(0, 30)); _renderQuizAssignmentModal(); showToast(`Saved “${template.name}” as a homework template.`, { type: "success" }); }
 function applyQuizAssignmentTemplate(id) { const draft = _quizAssignmentState.draft; const template = _getQuizAssignmentTemplates().find((entry) => String(entry.id) === String(id)); if (!draft || !template) return; _applyQuizAssignmentTemplate(draft, template); _renderQuizAssignmentModal(); }
 
@@ -146,7 +312,7 @@ async function resendQuizAssignment(id) { const assignment = _quizAssignmentById
 async function archiveQuizAssignment(id) { const assignment = _quizAssignmentById(id); if (!assignment) return; const confirmed = typeof showConfirm === "function" ? await showConfirm(`Archive “${assignment.title}”? Players will no longer be able to open it, but their result history is retained.`, { title: "Archive homework", confirmText: "Archive", danger: true }) : true; if (!confirmed) return; try { await _quizAssignmentRequest("/api/quiz-assignments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "archive", assignmentId: id }) }); await refreshQuizAssignments({ quiet: true }); closeQuizAssignmentDetails(); showToast("Homework archived. Player history was preserved.", { type: "success" }); } catch (err) { showToast(err?.message || "Homework could not be archived.", { type: "warning" }); } }
 
 async function createQuizAssignment() {
-  const draft = _quizAssignmentState.draft; if (!draft) return; const items = _quizAssignmentSourceItems(draft); const customQuestions = draft.customQuestions.map((question) => ({ prompt: question.prompt, options: question.options, correctIndex: question.correctIndex }));
+  const draft = _quizAssignmentState.draft; if (!draft) return; const health = getQuizAssignmentSourceHealth(draft); if (!String(draft.title || "").trim()) { showToast("Give the homework a title before sending it.", { type: "warning" }); return; } if (!draft.recipientIds.size) { showToast("Choose at least one player before sending homework.", { type: "warning" }); return; } if (!health.ready) { showToast(health.issues[0] || "Fix the question health before sending homework.", { type: "warning" }); return; } const items = _quizAssignmentSourceItems(draft); const customQuestions = draft.customQuestions.map((question) => ({ prompt: question.prompt, options: question.options, correctIndex: question.correctIndex }));
   const payload = { title: draft.title, instructions: draft.instructions, requiredScore: draft.requiredScore, dueAt: draft.dueAt, quizMode: draft.quizMode, positionKey: draft.positionKey, recipientIds: [...draft.recipientIds], items, questionTypes: [...draft.questionTypes], customQuestions, sourceKind: draft.sourceKind, sourceId: draft.sourceId };
   try { const data = await _quizAssignmentRequest("/api/quiz-assignments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); closeQuizAssignmentManager(); await refreshQuizAssignments({ quiet: true }); showToast(`Homework sent to ${data.recipients} player${data.recipients === 1 ? "" : "s"}.`, { type: "success" }); }
   catch (err) { showToast(err?.message || "Homework could not be sent.", { type: "warning" }); }

@@ -71,6 +71,23 @@
 .quiz-assignment-source-select { display:grid; gap:6px; max-width:560px; font-weight:800; }
 .quiz-assignment-source-summary { display:flex; gap:10px; align-items:center; color:var(--color-text-secondary); }
 .quiz-assignment-source-summary span, .quiz-assignment-hint, .quiz-assignment-custom-head small { color:var(--color-text-muted); font-size:var(--font-size-xs); }
+.quiz-assignment-health { display:grid; gap:10px; padding:12px; border:1px solid var(--color-border-light); border-radius:var(--radius-sm); background:var(--color-surface-soft); }
+.quiz-assignment-health.is-ready { border-color:color-mix(in srgb, var(--color-success) 45%, var(--color-border-light)); }
+.quiz-assignment-health.is-needs { border-color:color-mix(in srgb, var(--color-warning) 55%, var(--color-border-light)); }
+.quiz-assignment-health__head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
+.quiz-assignment-health__head > div { display:grid; gap:2px; }
+.quiz-assignment-health__head span { color:var(--color-text-muted); font-size:var(--font-size-2xs); font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+.quiz-assignment-health__head strong { color:var(--color-primary-dark); }
+.quiz-assignment-health__head small, .quiz-assignment-health__item small, .quiz-assignment-health__hint, .quiz-assignment-health__empty { color:var(--color-text-muted); font-size:var(--font-size-xs); }
+.quiz-assignment-health__grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(175px,1fr)); gap:7px; }
+.quiz-assignment-health__item { display:grid; gap:4px; padding:9px; border:1px solid var(--color-border-light); border-radius:var(--radius-sm); background:var(--color-surface); }
+.quiz-assignment-health__item > div { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.quiz-assignment-health__item span { padding:2px 6px; border-radius:999px; font-size:var(--font-size-2xs); font-weight:800; }
+.quiz-assignment-health__item.is-ready span { color:var(--color-success-dark, #176b36); background:color-mix(in srgb, var(--color-success) 15%, var(--color-surface)); }
+.quiz-assignment-health__item.is-needs span { color:var(--color-warning-dark, #875300); background:color-mix(in srgb, var(--color-warning) 17%, var(--color-surface)); }
+.quiz-assignment-health__issues { display:flex; flex-wrap:wrap; align-items:center; gap:7px 12px; color:var(--color-text-secondary); font-size:var(--font-size-xs); }
+.quiz-assignment-health__issues > span { flex:1 1 260px; }
+.quiz-assignment-health__hint { margin:0; }
 .quiz-assignment-group-chips > span { align-self:center; color:var(--color-text-muted); font-size:var(--font-size-xs); font-weight:800; }
 .quiz-assignment-group-chip small { opacity:.7; }
 .quiz-assignment-custom-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:4px; }

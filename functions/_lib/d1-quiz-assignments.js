@@ -248,6 +248,7 @@ export async function createQuizAssignment(db, teamId, session, input = {}) {
     .map((id) => cleanText(id, 128)).filter(Boolean))].slice(0, 300);
   if (!title) throw new Error("Give the homework a title.");
   if (!items.length && !customQuestions.length) throw new Error("Add a play or a complete custom question.");
+  if (!questionTypes.length && !customQuestions.length) throw new Error("Choose a question type or add a complete custom question.");
   if (!recipientIds.length) throw new Error("Choose at least one player.");
   const allowed = await db.prepare(
     `SELECT id FROM users WHERE team_id = ? AND role = 'player' AND status = 'active'`,

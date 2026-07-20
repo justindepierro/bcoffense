@@ -71,6 +71,12 @@ assert(
   "client includes coach creation, direct source assignment, reusable templates, and assignment management",
 );
 assert(
+  client.includes("getQuizAssignmentSourceHealth")
+    && client.includes("Question health") && client.includes("Use only ready question types")
+    && helper.includes("Choose a question type or add a complete custom question."),
+  "homework creation preflights each selected question type and rejects an empty question mix server-side",
+);
+assert(
   playersAdmin.includes("autoLinkExactPlayerAccounts")
     && playersAdmin.includes("getExactPlayerAccountRosterMatches")
     && storage.includes("QUIZ_ASSIGNMENT_TEMPLATES")
@@ -88,7 +94,7 @@ assert(
   "homework notification opens exactly the assigned quiz",
 );
 assert(
-  index.includes("script-quiz-assignments.js?v=1279") && sw.includes("./js/script-quiz-assignments.js"),
+  index.includes("script-quiz-assignments.js?v=1280") && sw.includes("./js/script-quiz-assignments.js"),
   "assignment client is loaded and cached with the app shell",
 );
 
