@@ -5183,6 +5183,24 @@ function checkScriptEditorNavigationContract() {
   console.log("script editor navigation contract ok");
 }
 
+function checkPlayRuleInheritanceContract() {
+  const editor = read("js/playbook-editor.js");
+
+  if (
+    !/const PLAY_RULE_INHERIT_FIELDS = \[[\s\S]*?RESP_POSITIONS\.map\(\(pos\) => pos\.key\)[\s\S]*?"respNotes"[\s\S]*?"playerNotes"/.test(editor) ||
+    !/data-action="openPlayRuleInheritance"/.test(editor) ||
+    !/function openPlayRuleInheritance\(\)/.test(editor) ||
+    !/function inheritRulesFromPlay\(masterIndex\)/.test(editor) ||
+    !/PLAY_RULE_INHERIT_FIELDS\.forEach\(\(key\) => \{[\s\S]*?field\.value = source\[key\] \|\| ""/.test(editor) ||
+    !/source play, roster assignments, call, media, or other metadata/.test(editor) ||
+    !/playRuleInheritanceSearch/.test(editor)
+  ) {
+    fail("play editor rule inheritance is not isolated to editable responsibility fields");
+  }
+
+  console.log("play rule inheritance contract ok");
+}
+
 function checkScriptSelectionRenderContracts() {
   const selection = read("js/script-selection.js");
   const updateBulkSelectUi = extractFunctionSource(selection, "updateBulkSelectUI");
@@ -5884,6 +5902,7 @@ checkWristbandConstantUsage();
 checkScriptPacketPrintContracts();
 checkScriptPrintIsolationContract();
 checkScriptEditorNavigationContract();
+checkPlayRuleInheritanceContract();
 checkScriptSelectionRenderContracts();
 checkGuideContracts();
 checkPlayerPlaybookVisibilityContracts();

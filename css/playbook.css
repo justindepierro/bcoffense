@@ -6110,6 +6110,30 @@ body.shell-tablet #playbook .pb-card-actions {
   display: none;
 }
 
+.pb-resp-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: 2px;
+}
+
+.pb-resp-tools .pb-editor-lineup-hint {
+  margin: 0;
+}
+
+.pb-inherit-rules-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.pb-inherit-rules-hint {
+  margin: 0 0 var(--space-sm);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.35;
+}
+
 .pb-resp-toggle {
   cursor: pointer;
   user-select: none;
@@ -6144,6 +6168,146 @@ body.shell-tablet #playbook .pb-card-actions {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: var(--shadow-focus);
+}
+
+/* ── Play Editor — Rule inheritance picker ─────────────────────────────── */
+.pb-rule-inherit-overlay {
+  z-index: calc(var(--z-modal-top) + 2);
+}
+
+.pb-rule-inherit-modal {
+  max-width: 720px;
+}
+
+.pb-rule-inherit-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.pb-rule-inherit-intro {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+
+.pb-rule-inherit-search-label {
+  margin-top: var(--space-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pb-rule-inherit-search {
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 8px 11px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+}
+
+.pb-rule-inherit-search:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
+
+.pb-rule-inherit-count {
+  min-height: 18px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.pb-rule-inherit-results {
+  display: grid;
+  gap: 6px;
+  max-height: min(48vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+
+.pb-rule-inherit-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px var(--space-sm);
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+}
+
+.pb-rule-inherit-result:hover,
+.pb-rule-inherit-result:focus-visible {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  outline: none;
+}
+
+.pb-rule-inherit-result:active {
+  transform: translateY(1px);
+}
+
+.pb-rule-inherit-result-main {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.pb-rule-inherit-result-meta {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pb-rule-inherit-result-detail {
+  grid-column: 1 / -1;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.pb-rule-inherit-empty {
+  padding: var(--space-lg) var(--space-md);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .pb-resp-tools {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .pb-rule-inherit-result {
+    grid-template-columns: 1fr;
+  }
+
+  .pb-rule-inherit-result-meta {
+    text-align: left;
+  }
 }
 
 /* ── #115: Workflow Side Panel ────────────────────────────────────────────── */

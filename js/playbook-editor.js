@@ -17,6 +17,14 @@ const RESP_POSITIONS = [
   { key: "respRG", label: "RG" },
   { key: "respRT", label: "RT" },
 ];
+// A rule template deliberately excludes the play call, media, and lineup
+// assignments.  A coach can borrow the teaching from a similar play without
+// accidentally changing either play's identity or the source play itself.
+const PLAY_RULE_INHERIT_FIELDS = [
+  ...RESP_POSITIONS.map((pos) => pos.key),
+  "respNotes",
+  "playerNotes",
+];
 /** Index into `filteredPlays` of the play being edited, for prev/next nav */
 let _editingFilteredIdx = -1;
 
@@ -295,7 +303,13 @@ function _buildPlayEditorResponsibilitiesSection(play) {
         Player Responsibilities <span class="toggle-icon">${startOpen ? "▼" : "▶"}</span>
       </div>
       <div class="pb-resp-body${startOpen ? "" : " collapsed"}">
-        <p class="pb-editor-lineup-hint">Fill in each player's assignment — used when printing Player Wristbands.</p>
+        <div class="pb-resp-tools">
+          <p class="pb-editor-lineup-hint">Fill in each player's assignment — used when printing Player Wristbands.</p>
+          <button type="button" class="btn btn-sm btn-secondary pb-inherit-rules-btn" data-action="openPlayRuleInheritance">
+            ↳ Inherit rules
+          </button>
+        </div>
+        <p class="pb-inherit-rules-hint">Copy responsibilities from a similar play, then adjust the details here. The source play is never changed.</p>
         <div class="pb-resp-grid">${posHtml}</div>
         <div class="pb-editor-field pb-editor-field-wide pb-resp-notes">
           <label for="pe-respNotes">Resp. Notes</label>
@@ -308,6 +322,176 @@ function _buildPlayEditorResponsibilitiesSection(play) {
         </div>
       </div>
     </div>`;
+}
+
+function _countInheritedRuleFields(play) {
+  return PLAY_RULE_INHERIT_FIELDS.reduce(
+    (count, key) => count + (String(play?.[key] || "").trim() ? 1 : 0),
+    0,
+  );
+}
+
+function _normalizeRuleInheritanceSearch(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function _ruleInheritanceSearchText(play) {
+  return _normalizeRuleInheritanceSearch([
+    play?.play,
+    play?.basePlay,
+    play?.oneWord,
+    play?.type,
+    play?.personnel,
+    play?.formation,
+    play?.formTag1,
+    play?.formTag2,
+    play?.lineCall,
+    play?.shift,
+    play?.motion,
+    play?.protection,
+    play?.playTag1,
+    play?.playTag2,
+  ].join(" "));
+}
+
+function _scoreRuleInheritanceCandidate(play, search) {
+  const query = _normalizeRuleInheritanceSearch(search);
+  const ruleCount = _countInheritedRuleFields(play);
+  if (!ruleCount) return -1;
+  if (!query) return ruleCount;
+
+  const haystack = _ruleInheritanceSearchText(play);
+  const call = _normalizeRuleInheritanceSearch(play?.play);
+  const oneWord = _normalizeRuleInheritanceSearch(play?.oneWord);
+  const formation = _normalizeRuleInheritanceSearch(play?.formation);
+  let score = ruleCount;
+
+  for (const token of query.split(/\s+/).filter(Boolean)) {
+    if (!haystack.includes(token)) return -1;
+    if (call === token || oneWord === token) score += 80;
+    else if (call.startsWith(token) || oneWord.startsWith(token)) score += 50;
+    else if (formation.startsWith(token)) score += 32;
+    else score += 14;
+  }
+  if (call.includes(query) || oneWord.includes(query)) score += 45;
+  return score;
+}
+
+function _getRuleInheritanceCandidates(search = "") {
+  if (!Array.isArray(plays)) return [];
+  return plays
+    .map((play, masterIndex) => ({
+      play,
+      masterIndex,
+      rules: _countInheritedRuleFields(play),
+      score: _scoreRuleInheritanceCandidate(play, search),
+    }))
+    .filter((candidate) => candidate.masterIndex !== _editingMasterIdx && candidate.score >= 0)
+    .sort((a, b) => b.score - a.score || b.rules - a.rules || String(a.play.play || "").localeCompare(String(b.play.play || "")));
+}
+
+function _renderRuleInheritanceResults() {
+  const results = document.getElementById("playRuleInheritanceResults");
+  const searchInput = document.getElementById("playRuleInheritanceSearch");
+  const count = document.getElementById("playRuleInheritanceCount");
+  if (!results || !searchInput) return;
+
+  const candidates = _getRuleInheritanceCandidates(searchInput.value);
+  const visibleCandidates = candidates.slice(0, 60);
+  if (count) {
+    count.textContent = candidates.length
+      ? `${candidates.length} matching ${candidates.length === 1 ? "play" : "plays"}${candidates.length > visibleCandidates.length ? ` · showing first ${visibleCandidates.length}` : ""}`
+      : "No rule-bearing plays match this search";
+  }
+  if (!visibleCandidates.length) {
+    results.innerHTML = `<div class="pb-rule-inherit-empty">Try a play call, one word, formation, personnel, or tag. Only plays with saved rules are listed.</div>`;
+    return;
+  }
+
+  results.innerHTML = visibleCandidates.map(({ play, masterIndex, rules }) => {
+    const meta = [play.type, play.personnel, play.formation].filter(Boolean).join(" · ");
+    const details = [
+      `${rules} ${rules === 1 ? "saved rule" : "saved rules"}`,
+      play.respNotes ? "coach notes" : "",
+      play.playerNotes ? "player notes" : "",
+    ].filter(Boolean).join(" · ");
+    return `<button type="button" class="pb-rule-inherit-result" data-action="inheritRulesFromPlay" data-arg="${masterIndex}">
+      <span class="pb-rule-inherit-result-main">${escapeHtml(play.play || play.oneWord || "Untitled play")}</span>
+      <span class="pb-rule-inherit-result-meta">${escapeHtml(meta || "Playbook rule template")}</span>
+      <span class="pb-rule-inherit-result-detail">${escapeHtml(details)}</span>
+    </button>`;
+  }).join("");
+}
+
+function openPlayRuleInheritance() {
+  document.getElementById("playRuleInheritanceOverlay")?.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "playRuleInheritanceOverlay";
+  overlay.className = "custom-modal-overlay visible pb-rule-inherit-overlay";
+  overlay.dataset.action = "closePlayRuleInheritanceOverlay";
+  overlay.innerHTML = `
+    <div class="custom-modal pb-rule-inherit-modal" role="dialog" aria-modal="true" aria-labelledby="playRuleInheritanceTitle">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">↳</span>
+        <h3 class="custom-modal-title" id="playRuleInheritanceTitle">Inherit rules & responsibilities</h3>
+        <button class="modal-close" aria-label="Close" data-action="closePlayRuleInheritance">×</button>
+      </div>
+      <div class="custom-modal-body pb-rule-inherit-body">
+        <p class="pb-rule-inherit-intro">Find a similar play and copy its player responsibilities into this editor. This never changes the source play, roster assignments, call, media, or other metadata.</p>
+        <label class="pb-rule-inherit-search-label" for="playRuleInheritanceSearch">Search rule templates</label>
+        <input id="playRuleInheritanceSearch" class="pb-rule-inherit-search" type="search" autocomplete="off"
+          placeholder="Play, one word, formation, personnel, or tag…" data-oninput="filterPlayRuleInheritance" />
+        <div class="pb-rule-inherit-count" id="playRuleInheritanceCount"></div>
+        <div class="pb-rule-inherit-results" id="playRuleInheritanceResults" aria-live="polite"></div>
+      </div>
+      <div class="custom-modal-actions">
+        <button type="button" class="btn btn-sm" data-action="closePlayRuleInheritance">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  _renderRuleInheritanceResults();
+  const searchInput = document.getElementById("playRuleInheritanceSearch");
+  if (searchInput) setTimeout(() => searchInput.focus(), 0);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+}
+
+function filterPlayRuleInheritance() {
+  _renderRuleInheritanceResults();
+}
+
+function closePlayRuleInheritance() {
+  const overlay = document.getElementById("playRuleInheritanceOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.remove(), 180);
+}
+
+function inheritRulesFromPlay(masterIndex) {
+  const sourceIndex = Number.parseInt(masterIndex, 10);
+  const source = Number.isInteger(sourceIndex) ? plays?.[sourceIndex] : null;
+  const body = document.getElementById("playEditorBody");
+  if (!source || !body) return;
+
+  PLAY_RULE_INHERIT_FIELDS.forEach((key) => {
+    const field = body.querySelector(`[data-field="${key}"]`);
+    if (field) field.value = source[key] || "";
+  });
+  const respBody = body.querySelector(".pb-resp-body");
+  const respToggle = body.querySelector(".pb-resp-toggle");
+  if (respBody) respBody.classList.remove("collapsed");
+  if (respToggle) {
+    respToggle.setAttribute("aria-expanded", "true");
+    const icon = respToggle.querySelector(".toggle-icon");
+    if (icon) icon.textContent = "▼";
+  }
+  closePlayRuleInheritance();
+  showToast(`↳ Rules inherited from ${source.play || source.oneWord || "selected play"}`, {
+    duration: 2400,
+    type: "success",
+  });
 }
 
 function _buildPlayEditorLineupSection(play) {
@@ -711,6 +895,7 @@ async function deletePlayFromEditor() {
 }
 
 function closePlayEditor() {
+  closePlayRuleInheritance();
   const overlay = document.getElementById("playEditorOverlay");
   if (overlay) {
     overlay.classList.remove("visible");
