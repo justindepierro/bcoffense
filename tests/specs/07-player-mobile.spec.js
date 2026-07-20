@@ -1355,7 +1355,7 @@ test.describe("Player mobile experience", () => {
     await assertNoHorizontalOverflow(page);
   });
 
-  test("starts a Game Plan quiz from populated board assignments", async ({ page }) => {
+  test("starts a Game Plan quiz from the released player-safe source", async ({ page }) => {
     await login(page, { role: "player", username: "player" });
     await dismissFirstUse(page);
     await seedPlayerPractice(page);
@@ -1376,31 +1376,21 @@ test.describe("Player mobile experience", () => {
           respQ: "Hold the safety and win the hash.",
         },
       ];
-      storageManager.set(STORAGE_KEYS.GAME_WEEK, {
-        opponentName: "Monticello",
-        opponentIndex: 0,
-        weekLabel: "Camp",
+      // Players must never reconstruct a quiz from a mutable coach board.
+      // This exactly mirrors the narrow gamePlanQuiz projection delivered by
+      // /player/release after a coach's normal automatic team save.
+      storageManager.set(STORAGE_KEYS.PLAYER_GAME_PLAN_QUIZ, {
+        id: "Monticello",
+        title: "Monticello Camp",
+        subtitle: "Monticello",
+        bucketCount: 2,
+        items: [
+          { play: gamePlanPlays[0], period: "Run", sourceBox: "Run", scriptIndex: 0 },
+          { play: gamePlanPlays[1], period: "Pass", sourceBox: "Pass", scriptIndex: 1 },
+        ],
       });
-      storageManager.set(STORAGE_KEYS.GAME_PLAN_BOARDS, {
-        Monticello: {
-          assignments: {
-            Run: [gamePlanPlays[0]],
-            Pass: [gamePlanPlays[1]],
-          },
-          customBoxes: [],
-          targets: {},
-          collapsed: [],
-          notes: {},
-          sort: {},
-          hiddenBoxes: [],
-          boxOrder: [],
-          boxLabels: {},
-          boxMeta: {},
-          allowedPlayTypes: [],
-          sheetTitle: "Monticello Camp",
-          printPreset: "",
-          wristbandAutoBoxId: "",
-        },
+      storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS, {
+        "gameplan:Monticello": { state: "available" },
       });
     });
 
@@ -1434,6 +1424,7 @@ test.describe("Player mobile experience", () => {
       const latest = attempts.at(-1);
       return {
         sourceType: latest?.sourceType,
+        sourceId: latest?.sourceId,
         title: latest?.title,
         quizMode: latest?.quizMode,
         quizModeLabel: latest?.quizModeLabel,
@@ -1442,6 +1433,7 @@ test.describe("Player mobile experience", () => {
       };
     })).toEqual({
       sourceType: "gameplan",
+      sourceId: "Monticello",
       title: "Game Plan Check: Game Plan Quiz",
       quizMode: "gameplan",
       quizModeLabel: "Game Plan Check",
