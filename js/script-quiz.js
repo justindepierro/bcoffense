@@ -752,6 +752,7 @@ function _savePlayerQuizDraft() {
     sourceType: _quizSourceType,
     sourceId: _quizSourceId,
     assignmentId: _quizAssignmentId,
+    allowedQuestionTypes: _quizAllowedQuestionTypes,
     sourceWeight: _quizSourceWeight,
     signalCategories: _quizSignalCategories,
     signalCategoryMultiplier: _quizSignalMultiplier,
@@ -4119,6 +4120,7 @@ function _normalizeQuizItems(items) {
           sourceBox: item.sourceBox || "",
           positionKey: item.positionKey || "",
           signalRecord: item.signalRecord || null,
+          customQuestion: item.customQuestion || null,
         };
       }
       return {
@@ -4283,6 +4285,7 @@ function _prepareQuizItemsForPositionMode(items, mode = _quizPositionMode) {
   const keys = candidates.length ? candidates : [fallback];
   const randomMode = normalizedMode === "random-skill" || normalizedMode === "random-line";
   const prepared = _normalizeQuizItems(items).map((item, index) => {
+    if (item.customQuestion) return { ...item, positionKey: "" };
     const keysWithRules = keys.filter((key) => _quizCleanText(item.play?.[key] || ""));
     const pool = keysWithRules.length ? keysWithRules : keys;
     const positionKey = randomMode
@@ -4583,7 +4586,10 @@ function _prepareQuizItemsForMode(items, modeKey = _quizMode) {
     const missed = _getRecentMissedQuizItems(5);
     return missed.length ? missed : normalized.slice(0, 5);
   }
-  if (mode === "quick") return normalized.slice(0, 5);
+  if (mode === "quick") {
+    const coachWritten = normalized.filter((item) => item.customQuestion);
+    return [...normalized.filter((item) => !item.customQuestion).slice(0, 5), ...coachWritten];
+  }
   return normalized;
 }
 
@@ -5183,6 +5189,7 @@ function _resetQuizGameState() {
 
 function _quizItemKey(item) {
   if (!item || !item.play) return "";
+  if (item.customQuestion?.prompt) return `custom::${item.scriptIndex ?? _quizIndex}::${item.customQuestion.prompt}`;
   if (item.signalRecord?.id) {
     return `signal::${item.scriptIndex ?? _quizIndex}::${item.signalRecord.id}::${item.signalRecord.clipId || item.signalRecord.clipSig || ""}`;
   }
@@ -5261,6 +5268,8 @@ function _quizQuestionChoiceLabel(item, question) {
   const play = item?.play || item;
   if (!play) return "";
   switch (question?.type) {
+    case "custom_multiple_choice":
+      return _quizCleanText(question.custom?.options?.[Number(question.custom?.correctIndex)] || "");
     case "responsibility":
       return _quizCleanText(question.position?.key ? play[question.position.key] : "");
     case "diagram_formation":
@@ -5646,8 +5655,20 @@ function _selectQuizQuestion(candidates, item) {
 }
 
 function _buildQuizQuestion(item) {
+  if (item?.customQuestion?.prompt) {
+    return {
+      type: "custom_multiple_choice",
+      prompt: _quizCleanText(item.customQuestion.prompt),
+      detailLabel: "Coach question",
+      detailValue: "",
+      position: null,
+      custom: item.customQuestion,
+    };
+  }
   const position = _getQuizPositionForItem(item);
-  const enabledTypes = new Set(_getPlayerQuizSettings().enabledQuestionTypes || PLAYER_QUIZ_DEFAULT_SETTINGS.enabledQuestionTypes);
+  const enabledTypes = new Set(_quizAllowedQuestionTypes.length
+    ? _quizAllowedQuestionTypes
+    : (_getPlayerQuizSettings().enabledQuestionTypes || PLAYER_QUIZ_DEFAULT_SETTINGS.enabledQuestionTypes));
   const positionRule = _quizCleanText(position?.key ? item.play[position.key] : "");
   const positionLabel = position?.label || "your";
   const diagramUrl = _quizDiagramUrl(item.play);
@@ -5787,6 +5808,18 @@ function _buildQuizChoices(item) {
   }
 
   const question = _buildQuizQuestion(item);
+  if (question.type === "custom_multiple_choice") {
+    const choices = (question.custom?.options || []).map((label, index) => ({
+      key: `${_quizChoiceKey(item)}::custom::${index}`,
+      play: item.play,
+      label: _quizCleanText(label),
+      correct: Number(question.custom?.correctIndex) === index,
+      questionType: question.type,
+      color: SCRIPT_QUIZ_CHOICE_COLORS[index % SCRIPT_QUIZ_CHOICE_COLORS.length],
+    })).filter((choice) => choice.label);
+    _quizChoiceCache.set(questionKey, { question, choices });
+    return choices;
+  }
   const correctLabel = _quizQuestionChoiceLabel(item, question);
   if (question.type === "study_card") {
     _quizChoiceCache.set(questionKey, { question, choices: [] });
@@ -5865,6 +5898,7 @@ function _quizQuestionTypeLabel(type) {
     play_type: "Play Type",
     study_card: "Study Card",
     call: "Call ID",
+    custom_multiple_choice: "Coach Question",
   };
   return labels[type] || "Quiz";
 }
@@ -6241,6 +6275,9 @@ async function startScriptQuiz(options = {}) {
   _quizSourceType = sourceType;
   _quizSourceId = String(opts.sourceId || "");
   _quizAssignmentId = sourceType === "assignment" ? String(opts.assignmentId || opts.sourceId || "") : "";
+  _quizAllowedQuestionTypes = Array.isArray(opts.questionTypes)
+    ? opts.questionTypes.filter((type) => ["responsibility", "diagram", "signal", "call", "play_from_rule"].includes(String(type)))
+    : [];
   _quizSignalCategories = sourceType === "signal" ? _normalizeSignalGameCategories(opts.signalCategories) : [];
   _quizSignalMultiplier = sourceType === "signal"
     ? _getSignalCategoryMultiplier(_quizSignalCategories, _getSignalGameSettings().eligibleCategories)
@@ -6959,6 +6996,7 @@ function resumePlayerQuizDraft() {
   _quizSourceType = ["gameplan", "signal", "assignment"].includes(draft.sourceType) ? draft.sourceType : "script";
   _quizSourceId = String(draft.sourceId || "");
   _quizAssignmentId = _quizSourceType === "assignment" ? String(draft.assignmentId || draft.sourceId || "") : "";
+  _quizAllowedQuestionTypes = Array.isArray(draft.allowedQuestionTypes) ? draft.allowedQuestionTypes : [];
   _quizSourceWeight = Number(draft.sourceWeight || 0) || _getQuizSourceWeight(_quizSourceType);
   _quizSignalCategories = _quizSourceType === "signal" ? _normalizeSignalGameCategories(draft.signalCategories) : [];
   _quizSignalMultiplier = _quizSourceType === "signal"

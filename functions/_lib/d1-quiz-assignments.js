@@ -57,8 +57,28 @@ function safeItems(items) {
   }).filter(Boolean);
 }
 
+const QUESTION_TYPES = new Set(["responsibility", "diagram", "signal", "call", "play_from_rule"]);
+
+function safeQuestionTypes(value) {
+  return [...new Set((Array.isArray(value) ? value : []).map((type) => cleanText(type, 40)).filter((type) => QUESTION_TYPES.has(type)))];
+}
+
+function safeCustomQuestions(value) {
+  return (Array.isArray(value) ? value : []).slice(0, 20).map((question) => {
+    const prompt = cleanText(question?.prompt, 320);
+    const options = (Array.isArray(question?.options) ? question.options : []).map((option) => cleanText(option, 180)).filter(Boolean).slice(0, 4);
+    const correctIndex = cleanInt(question?.correctIndex, 0, Math.max(0, options.length - 1));
+    if (!prompt || options.length < 2 || !options[correctIndex]) return null;
+    return { prompt, options, correctIndex };
+  }).filter(Boolean);
+}
+
 function parseItems(value) {
   try { return safeItems(JSON.parse(value || "[]")); } catch (_) { return []; }
+}
+
+function parseJsonList(value, fallback = []) {
+  try { const parsed = JSON.parse(value || "[]"); return Array.isArray(parsed) ? parsed : fallback; } catch (_) { return fallback; }
 }
 
 function mapAssignment(row, recipient = {}) {
@@ -68,6 +88,8 @@ function mapAssignment(row, recipient = {}) {
     title: row.title,
     instructions: row.instructions || "",
     items: parseItems(row.items_json),
+    questionTypes: safeQuestionTypes(parseJsonList(row.question_types_json)),
+    customQuestions: safeCustomQuestions(parseJsonList(row.custom_questions_json)),
     quizMode: row.quiz_mode || "quick",
     positionKey: row.position_key || "",
     requiredScore: Number(row.required_score || 0),
@@ -92,7 +114,7 @@ export function isQuizAssignmentStaff(session) {
 
 export async function getAssignmentPlayers(db, teamId) {
   const result = await db.prepare(
-    `SELECT id, display_name, first_name, last_name, primary_position
+    `SELECT id, display_name, first_name, last_name, primary_position, email, roster_player_id
      FROM users WHERE team_id = ? AND role = 'player' AND status = 'active'
      ORDER BY display_name COLLATE NOCASE LIMIT 300`,
   ).bind(teamId).all();
@@ -100,6 +122,8 @@ export async function getAssignmentPlayers(db, teamId) {
     id: row.id,
     name: row.display_name || `${row.first_name || ""} ${row.last_name || ""}`.trim() || "Player",
     position: row.primary_position || "",
+    email: row.email || "",
+    rosterPlayerId: row.roster_player_id || "",
   }));
 }
 
@@ -140,10 +164,12 @@ export async function getPlayerQuizAssignments(db, teamId, userId) {
 export async function createQuizAssignment(db, teamId, session, input = {}) {
   const title = cleanText(input.title, 120);
   const items = safeItems(input.items);
+  const questionTypes = safeQuestionTypes(input.questionTypes);
+  const customQuestions = safeCustomQuestions(input.customQuestions);
   const recipientIds = [...new Set((Array.isArray(input.recipientIds) ? input.recipientIds : [])
     .map((id) => cleanText(id, 128)).filter(Boolean))].slice(0, 300);
   if (!title) throw new Error("Give the homework a title.");
-  if (!items.length) throw new Error("Add at least one player-visible play.");
+  if (!items.length && !customQuestions.length) throw new Error("Add a play or a complete custom question.");
   if (!recipientIds.length) throw new Error("Choose at least one player.");
   const allowed = await db.prepare(
     `SELECT id FROM users WHERE team_id = ? AND role = 'player' AND status = 'active'`,
@@ -157,14 +183,16 @@ export async function createQuizAssignment(db, teamId, session, input = {}) {
   const dueAt = cleanUnix(input.dueAt);
   const assignment = {
     id, teamId, title, instructions: cleanText(input.instructions, 800), items,
+    questionTypes, customQuestions,
     quizMode: mode, positionKey: cleanText(input.positionKey, 40),
     requiredScore: cleanInt(input.requiredScore, 0, 100), dueAt,
     createdBy: session?.d1UserId || null, now,
   };
   const statements = [db.prepare(
-    `INSERT INTO quiz_assignments (id, team_id, title, instructions, items_json, quiz_mode, position_key, required_score, due_at, status, created_by, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, ?)`,
-  ).bind(id, teamId, title, assignment.instructions || null, JSON.stringify(items), mode,
+    `INSERT INTO quiz_assignments (id, team_id, title, instructions, items_json, question_types_json, custom_questions_json, source_kind, source_id, quiz_mode, position_key, required_score, due_at, status, created_by, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, ?)`,
+  ).bind(id, teamId, title, assignment.instructions || null, JSON.stringify(items), JSON.stringify(questionTypes), JSON.stringify(customQuestions),
+    ["playbook", "script", "gameplan"].includes(cleanText(input.sourceKind, 20)) ? cleanText(input.sourceKind, 20) : "playbook", cleanText(input.sourceId, 180) || null, mode,
     assignment.positionKey || null, assignment.requiredScore, dueAt, assignment.createdBy, now, now)];
   for (const userId of recipients) {
     statements.push(db.prepare(

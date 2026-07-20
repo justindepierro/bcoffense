@@ -12,8 +12,9 @@ async function source(relativePath) {
 }
 
 console.log("\n▸ Private quiz homework contract");
-const [migration, helper, route, client, quiz, notifications, index, sw] = await Promise.all([
+const [migration, migrationQuestionConfig, helper, route, client, quiz, notifications, index, sw] = await Promise.all([
   source("../migrations/0020_quiz_assignments.sql"),
+  source("../migrations/0021_quiz_assignment_question_config.sql"),
   source("../functions/_lib/d1-quiz-assignments.js"),
   source("../functions/api/quiz-assignments/index.js"),
   source("../js/script-quiz-assignments.js"),
@@ -34,18 +35,24 @@ assert(
   "assignment reads and writes are team-scoped, recipient-scoped, and atomic",
 );
 assert(
+  migrationQuestionConfig.includes("question_types_json") && migrationQuestionConfig.includes("custom_questions_json")
+    && helper.includes("safeCustomQuestions") && helper.includes("safeQuestionTypes"),
+  "assignment schema safely preserves coach-selected question types and authored multiple choice",
+);
+assert(
   route.includes("isQuizAssignmentStaff") && route.includes("record-attempt")
     && route.includes("createNotification") && route.includes("sendPushToUser"),
   "coach delivery is role-gated and sends a private in-app/push notification",
 );
 assert(
   client.includes("startPlayerQuizAssignment") && client.includes("recordQuizAssignmentAttempt")
-    && client.includes("renderPlayerQuizHomeworkDashboard") && client.includes("openQuizAssignmentManager"),
+    && client.includes("renderPlayerQuizHomeworkDashboard") && client.includes("openQuizAssignmentManager")
+    && client.includes("Saved practice script") && client.includes("Game Plan") && client.includes("Custom question"),
   "client includes coach creation, player dashboard delivery, and completion reporting",
 );
 assert(
   quiz.includes('"assignment"') && quiz.includes("_quizAssignmentId")
-    && quiz.includes("recordQuizAssignmentAttempt"),
+    && quiz.includes("recordQuizAssignmentAttempt") && quiz.includes("custom_multiple_choice"),
   "existing quiz engine preserves the assignment identity through result save",
 );
 assert(
@@ -54,7 +61,7 @@ assert(
   "homework notification opens exactly the assigned quiz",
 );
 assert(
-  index.includes("script-quiz-assignments.js?v=1274") && sw.includes("./js/script-quiz-assignments.js"),
+  index.includes("script-quiz-assignments.js?v=1275") && sw.includes("./js/script-quiz-assignments.js"),
   "assignment client is loaded and cached with the app shell",
 );
 

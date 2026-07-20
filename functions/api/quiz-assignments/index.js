@@ -51,7 +51,8 @@ export async function onRequestPost(context) {
     }
     if (!isQuizAssignmentStaff(ctx.session)) return authJson({ ok: false, error: "Coach access required." }, { status: 403 });
     const created = await createQuizAssignment(context.env.DB, ctx.teamId, ctx.session, body);
-    const bodyCopy = `${created.assignment.items.length} play${created.assignment.items.length === 1 ? "" : "s"}${created.assignment.dueAt ? " · check the due date" : ""}`;
+    const questionCount = created.assignment.items.length + (created.assignment.customQuestions?.length || 0);
+    const bodyCopy = `${questionCount} question${questionCount === 1 ? "" : "s"}${created.assignment.dueAt ? " · check the due date" : ""}`;
     await Promise.allSettled(created.recipientIds.map(async (userId) => {
       await createNotification(context.env.DB, {
         userId, type: "quiz_homework", title: `Homework: ${created.assignment.title}`,
@@ -65,7 +66,7 @@ export async function onRequestPost(context) {
     return withSecurityHeaders(authJson({ ok: true, assignment: created.assignment, recipients: created.recipientIds.length }));
   } catch (err) {
     const message = String(err?.message || "Could not save homework assignment.");
-    const status = /Give the homework|Add at least|Choose at least|selected players|unavailable|missing/.test(message) ? 422 : 500;
+    const status = /Give the homework|Add a play|Choose at least|selected players|unavailable|missing/.test(message) ? 422 : 500;
     if (status === 500) console.error("[POST /api/quiz-assignments]", err);
     return authJson({ ok: false, error: message }, { status });
   }

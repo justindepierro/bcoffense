@@ -1,34 +1,21 @@
-// Private quiz homework: coach selects safe player-visible plays and named
-// recipients; D1 is the source of truth for delivery and completion status.
+// Private quiz homework. D1 is the delivery source of truth; the coach builds
+// one focused assignment from an immutable snapshot of a script, game plan, or
+// selected Playbook plays.
 
-const _quizAssignmentState = {
-  assignments: [],
-  players: [],
-  loading: false,
-  loaded: false,
-  draft: null,
-};
+const _quizAssignmentState = { assignments: [], players: [], loading: false, loaded: false, draft: null };
+const QUIZ_ASSIGNMENT_QUESTION_TYPES = [
+  ["responsibility", "My responsibility"],
+  ["diagram", "What play is this diagram?"],
+  ["signal", "What signal belongs to this?"],
+  ["call", "What is the call?"],
+  ["play_from_rule", "Which play owns this rule?"],
+];
 
 function _quizAssignmentRequest(path, options = {}) {
-  return fetch(path, {
-    credentials: "same-origin",
-    ...options,
-    headers: {
-      Accept: "application/json",
-      "X-BC-Auth-Mode": "json",
-      ...(options.headers || {}),
-    },
-  }).then(async (response) => {
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data?.ok === false) throw new Error(data?.error || `Homework request failed (${response.status})`);
-    return data;
-  });
+  return fetch(path, { credentials: "same-origin", ...options, headers: { Accept: "application/json", "X-BC-Auth-Mode": "json", ...(options.headers || {}) } })
+    .then(async (response) => { const data = await response.json().catch(() => ({})); if (!response.ok || data?.ok === false) throw new Error(data?.error || `Homework request failed (${response.status})`); return data; });
 }
-
-function _isQuizAssignmentStaffClient() {
-  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
-  return ["admin", "coach", "assistant", "assistant_coach"].includes(String(user?.role || ""));
-}
+function _isQuizAssignmentStaffClient() { const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null; return ["admin", "coach", "assistant", "assistant_coach"].includes(String(user?.role || "")); }
 
 async function refreshQuizAssignments(options = {}) {
   if (_quizAssignmentState.loading) return null;
@@ -42,173 +29,72 @@ async function refreshQuizAssignments(options = {}) {
     if (typeof _renderPlayerQuizHub === "function" && document.getElementById("playerQuizHubOverlay")?.classList.contains("hidden") === false) _renderPlayerQuizHub();
     if (_isQuizAssignmentStaffClient() && document.getElementById("coachQuizSetupPage")?.offsetParent !== null && typeof renderCoachQuizSetupPage === "function") renderCoachQuizSetupPage();
     return data;
-  } catch (err) {
-    if (!options.quiet) showToast(err?.message || "Homework could not be refreshed.", { type: "warning" });
-    return null;
-  } finally {
-    _quizAssignmentState.loading = false;
-  }
+  } catch (err) { if (!options.quiet) showToast(err?.message || "Homework could not be refreshed.", { type: "warning" }); return null; }
+  finally { _quizAssignmentState.loading = false; }
 }
 
-function _quizAssignmentDueLabel(dueAt) {
-  if (!dueAt) return "No due date";
-  const date = new Date(Number(dueAt) * 1000);
-  if (!Number.isFinite(date.getTime())) return "No due date";
-  return `Due ${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(date)}`;
-}
-
-function _quizAssignmentPlayerStatus(assignment) {
-  const recipient = assignment?.recipient || {};
-  if (recipient.completedAt) return { label: `${recipient.bestPercent}% complete`, tone: "done" };
-  if (assignment?.dueAt && Number(assignment.dueAt) * 1000 < Date.now()) return { label: "Past due", tone: "late" };
-  if (recipient.startedAt) return { label: `In progress · best ${recipient.bestPercent}%`, tone: "progress" };
-  return { label: _quizAssignmentDueLabel(assignment?.dueAt), tone: "new" };
-}
+function _quizAssignmentDueLabel(dueAt) { if (!dueAt) return "No due date"; const date = new Date(Number(dueAt) * 1000); return Number.isFinite(date.getTime()) ? `Due ${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(date)}` : "No due date"; }
+function _quizAssignmentPlayerStatus(assignment) { const recipient = assignment?.recipient || {}; if (recipient.completedAt) return { label: `${recipient.bestPercent}% complete`, tone: "done" }; if (assignment?.dueAt && Number(assignment.dueAt) * 1000 < Date.now()) return { label: "Past due", tone: "late" }; if (recipient.startedAt) return { label: `In progress · best ${recipient.bestPercent}%`, tone: "progress" }; return { label: _quizAssignmentDueLabel(assignment?.dueAt), tone: "new" }; }
 
 function renderPlayerQuizHomeworkDashboard() {
-  const assignments = _quizAssignmentState.assignments || [];
-  if (!assignments.length) return "";
-  const open = assignments.filter((assignment) => !assignment?.recipient?.completedAt);
-  const visible = (open.length ? open : assignments).slice(0, 4);
-  return `
-    <section class="player-homework" aria-label="Homework quizzes">
-      <div class="player-homework__head">
-        <div><span>Coach homework</span><h3>${open.length ? `${open.length} quiz${open.length === 1 ? "" : "zes"} to finish` : "Homework complete"}</h3></div>
-        <button type="button" class="btn btn-sm btn-outline" data-action="openPlayerQuizHub">Open quiz center</button>
-      </div>
-      <div class="player-homework__list">
-        ${visible.map((assignment) => {
-          const status = _quizAssignmentPlayerStatus(assignment);
-          const id = escapeAttr(String(assignment.id));
-          return `<article class="player-homework__item player-homework__item--${status.tone}">
-            <div><strong>${escapeHtml(assignment.title || "Homework quiz")}</strong>
-              <small>${escapeHtml(`${Number(assignment.items?.length || 0)} plays · ${status.label}${assignment.requiredScore ? ` · ${assignment.requiredScore}% required` : ""}`)}</small></div>
-            ${assignment.recipient?.completedAt
-              ? `<span class="player-homework__complete">Done</span>`
-              : `<button type="button" class="btn btn-primary btn-sm" data-action="startPlayerQuizAssignment" data-arg="${id}">Start</button>`}
-          </article>`;
-        }).join("")}
-      </div>
-    </section>`;
+  const assignments = _quizAssignmentState.assignments || []; if (!assignments.length) return "";
+  const open = assignments.filter((assignment) => !assignment?.recipient?.completedAt); const visible = (open.length ? open : assignments).slice(0, 4);
+  return `<section class="player-homework" aria-label="Homework quizzes"><div class="player-homework__head"><div><span>Coach homework</span><h3>${open.length ? `${open.length} quiz${open.length === 1 ? "" : "zes"} to finish` : "Homework complete"}</h3></div><button type="button" class="btn btn-sm btn-outline" data-action="openPlayerQuizHub">Open quiz center</button></div><div class="player-homework__list">${visible.map((assignment) => { const status = _quizAssignmentPlayerStatus(assignment); const id = escapeAttr(String(assignment.id)); return `<article class="player-homework__item player-homework__item--${status.tone}"><div><strong>${escapeHtml(assignment.title || "Homework quiz")}</strong><small>${escapeHtml(`${Number(assignment.items?.length || 0) + Number(assignment.customQuestions?.length || 0)} questions · ${status.label}${assignment.requiredScore ? ` · ${assignment.requiredScore}% required` : ""}`)}</small></div>${assignment.recipient?.completedAt ? `<span class="player-homework__complete">Done</span>` : `<button type="button" class="btn btn-primary btn-sm" data-action="startPlayerQuizAssignment" data-arg="${id}">Start</button>`}</article>`; }).join("")}</div></section>`;
 }
 
 function renderCoachQuizAssignmentsPanel() {
   const assignments = _quizAssignmentState.assignments || [];
-  const completed = assignments.reduce((sum, assignment) => sum + (assignment.recipients || []).filter((recipient) => recipient.completedAt).length, 0);
-  const assigned = assignments.reduce((sum, assignment) => sum + (assignment.recipients || []).length, 0);
-  return `
-    <section class="coach-quiz-setup-section coach-quiz-homework">
-      <div class="coach-quiz-section-head">
-        <div><h3>Private homework</h3><span>${assigned ? `${completed}/${assigned} player assignments complete` : "Send a quiz to one player, a position group, or the full team."}</span></div>
-        <div class="coach-quiz-homework__actions"><button type="button" class="btn btn-outline btn-sm" data-action="refreshQuizAssignments">Refresh</button><button type="button" class="btn btn-primary" data-action="openQuizAssignmentManager">+ Assign homework</button></div>
-      </div>
-      <div class="coach-quiz-homework__grid">
-        ${assignments.length ? assignments.slice(0, 8).map((assignment) => {
-          const recipients = assignment.recipients || [];
-          const done = recipients.filter((recipient) => recipient.completedAt).length;
-          return `<article class="coach-quiz-homework-card"><strong>${escapeHtml(assignment.title)}</strong>
-            <small>${escapeHtml(`${assignment.items?.length || 0} plays · ${done}/${recipients.length} complete · ${_quizAssignmentDueLabel(assignment.dueAt)}`)}</small>
-            <div>${recipients.slice(0, 5).map((recipient) => `<span class="coach-quiz-homework-card__player${recipient.completedAt ? " is-done" : ""}">${escapeHtml(recipient.name)}${recipient.completedAt ? " ✓" : ""}</span>`).join("")}${recipients.length > 5 ? `<span class="coach-quiz-homework-card__player">+${recipients.length - 5}</span>` : ""}</div>
-          </article>`;
-        }).join("") : `<div class="coach-quiz-empty">No private homework is out. Assign a focused quiz to a player without changing the team quiz source.</div>`}
-      </div>
-    </section>`;
+  const completed = assignments.reduce((sum, assignment) => sum + (assignment.recipients || []).filter((recipient) => recipient.completedAt).length, 0); const assigned = assignments.reduce((sum, assignment) => sum + (assignment.recipients || []).length, 0);
+  return `<section class="coach-quiz-setup-section coach-quiz-homework"><div class="coach-quiz-section-head"><div><h3>Private homework</h3><span>${assigned ? `${completed}/${assigned} player assignments complete` : "Send a quiz to a player, position, roster tag, or the full team."}</span></div><div class="coach-quiz-homework__actions"><button type="button" class="btn btn-outline btn-sm" data-action="refreshQuizAssignments">Refresh</button><button type="button" class="btn btn-primary" data-action="openQuizAssignmentManager">+ Assign homework</button></div></div><div class="coach-quiz-homework__grid">${assignments.length ? assignments.slice(0, 8).map((assignment) => { const recipients = assignment.recipients || []; const done = recipients.filter((recipient) => recipient.completedAt).length; const count = Number(assignment.items?.length || 0) + Number(assignment.customQuestions?.length || 0); return `<article class="coach-quiz-homework-card"><strong>${escapeHtml(assignment.title)}</strong><small>${escapeHtml(`${count} questions · ${done}/${recipients.length} complete · ${_quizAssignmentDueLabel(assignment.dueAt)}`)}</small><div>${recipients.slice(0, 5).map((recipient) => `<span class="coach-quiz-homework-card__player${recipient.completedAt ? " is-done" : ""}">${escapeHtml(recipient.name)}${recipient.completedAt ? " ✓" : ""}</span>`).join("")}${recipients.length > 5 ? `<span class="coach-quiz-homework-card__player">+${recipients.length - 5}</span>` : ""}</div></article>`; }).join("") : `<div class="coach-quiz-empty">No private homework is out. Assign a focused quiz without changing the team quiz source.</div>`}</div></section>`;
 }
 
-function _quizAssignmentPlayKey(play, index = 0) {
-  const signature = typeof playSignature === "function" ? playSignature(play) : "";
-  return String(play?._id || play?.id || signature || `${play?.personnel || ""}|${play?.formation || ""}|${play?.play || ""}|${index}`);
-}
-
-function _quizAssignmentCall(play) {
-  if (typeof _quizPlainCall === "function") return _quizPlainCall(play);
-  return [play?.personnel, play?.formation, play?.play].filter(Boolean).join(" ") || "Unnamed play";
-}
-
-function _newQuizAssignmentDraft() {
-  return {
-    title: "", instructions: "", requiredScore: 0, dueAt: "", quizMode: "quick", positionKey: "",
-    recipientIds: new Set(), playKeys: new Set(), search: "",
-  };
-}
-
-function _assignmentCandidatePlays() {
-  return (Array.isArray(plays) ? plays : []).filter((play) => play && !play.isSeparator && !play.playerHidden);
-}
+function _quizAssignmentPlayKey(play, index = 0) { const signature = typeof playSignature === "function" ? playSignature(play) : ""; return String(play?._id || play?.id || signature || `${play?.personnel || ""}|${play?.formation || ""}|${play?.play || ""}|${index}`); }
+function _quizAssignmentCall(play) { return typeof _quizPlainCall === "function" ? _quizPlainCall(play) : [play?.personnel, play?.formation, play?.play].filter(Boolean).join(" ") || "Unnamed play"; }
+function _assignmentCandidatePlays() { return (Array.isArray(plays) ? plays : []).filter((play) => play && !play.isSeparator && !play.playerHidden); }
+function _newQuizAssignmentDraft() { return { title: "", instructions: "", requiredScore: 0, dueAt: "", quizMode: "quick", positionKey: "", recipientIds: new Set(), playKeys: new Set(), search: "", sourceKind: "playbook", sourceId: "", questionTypes: new Set(["responsibility", "diagram", "signal", "call"]), customQuestions: [], selectedGroup: "" }; }
+function _quizAssignmentSources(kind) { if (kind === "script") return typeof _getCoachQuizScriptSources === "function" ? _getCoachQuizScriptSources() : []; if (kind === "gameplan") return typeof _getCoachQuizGamePlanSources === "function" ? _getCoachQuizGamePlanSources() : []; return []; }
+function _quizAssignmentSource(draft) { return _quizAssignmentSources(draft.sourceKind).find((source) => String(source.id) === String(draft.sourceId)) || null; }
+function _quizAssignmentSourceItems(draft) { if (draft.sourceKind === "playbook") { const all = _assignmentCandidatePlays(); return all.filter((play, index) => draft.playKeys.has(_quizAssignmentPlayKey(play, index))).map((play, index) => ({ play, scriptIndex: index })); } const source = _quizAssignmentSource(draft); return (source?.plays || []).filter((play) => play && !play.isSeparator && !play.playerHidden).map((play, index) => ({ play, period: play.period || "", scriptIndex: index, sourceBox: source?.title || "" })); }
+function _normalizeQuizAssignmentIdentity(value = "") { return String(value || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
+function _quizAssignmentRosterLinks() { const roster = typeof getTeamRoster === "function" ? getTeamRoster() : []; const remote = _quizAssignmentState.players || []; return remote.map((user) => { const email = String(user.email || "").toLowerCase(); const emailName = email.split("@")[0]; const local = roster.find((entry) => { const account = String(entry.accountUsername || "").toLowerCase(); return (account && (account === email || account === emailName)) || _normalizeQuizAssignmentIdentity(entry.name) === _normalizeQuizAssignmentIdentity(user.name); }); return { ...user, tags: Array.isArray(local?.tags) ? local.tags : [], roster: local || null }; }); }
+function _quizAssignmentGroups() { const linked = _quizAssignmentRosterLinks(); const groups = new Map(); linked.forEach((player) => { const position = String(player.position || "").trim(); if (position) groups.set(`position:${position}`, { key: `position:${position}`, label: position, ids: [...(groups.get(`position:${position}`)?.ids || []), player.id] }); (player.tags || []).forEach((tag) => { const clean = String(tag || "").trim(); if (!clean) return; const key = `tag:${clean.toLowerCase()}`; groups.set(key, { key, label: `#${clean.replace(/^#/, "")}`, ids: [...(groups.get(key)?.ids || []), player.id] }); }); }); return [...groups.values()].sort((a, b) => a.label.localeCompare(b.label)); }
 
 function _renderQuizAssignmentModal() {
-  const overlay = document.getElementById("quizAssignmentOverlay");
-  const draft = _quizAssignmentState.draft;
-  if (!overlay || !draft) return;
+  const overlay = document.getElementById("quizAssignmentOverlay"); const draft = _quizAssignmentState.draft; if (!overlay || !draft) return;
+  const positions = typeof _getQuizPositions === "function" ? _getQuizPositions() : []; const source = _quizAssignmentSource(draft); const sourceItems = _quizAssignmentSourceItems(draft); const rosterPlayers = _quizAssignmentRosterLinks(); const groups = _quizAssignmentGroups();
   const searchTokens = String(draft.search || "").toLowerCase().trim().split(/\s+/).filter(Boolean);
-  const candidates = _assignmentCandidatePlays().filter((play) => {
-    const haystack = `${_quizAssignmentCall(play)} ${play.type || ""} ${play.oneWord || ""} ${play.basePlay || ""}`.toLowerCase();
-    return !searchTokens.length || searchTokens.every((token) => haystack.includes(token));
-  }).slice(0, 30);
-  const positions = typeof _getQuizPositions === "function" ? _getQuizPositions() : [];
-  overlay.innerHTML = `<div class="quiz-assignment-modal" role="dialog" aria-modal="true" aria-label="Assign quiz homework">
-    <header><div><span>Private homework</span><h2>Send a quiz to players</h2><p>Only selected players receive this work. The original plays and team quiz source stay unchanged.</p></div><button class="modal-close" type="button" data-action="closeQuizAssignmentManager" aria-label="Close">×</button></header>
-    <div class="quiz-assignment-form">
-      <label>Title<input id="quizAssignmentTitle" value="${escapeAttr(draft.title)}" placeholder="e.g. Lucas — Red Zone Checks" data-oninput="setQuizAssignmentField" data-arg="title" data-pass="value" /></label>
-      <label>Instructions<textarea id="quizAssignmentInstructions" placeholder="What should they focus on?" data-oninput="setQuizAssignmentField" data-arg="instructions" data-pass="value">${escapeHtml(draft.instructions)}</textarea></label>
-      <div class="quiz-assignment-form__row"><label>Due date<input type="datetime-local" value="${escapeAttr(draft.dueAt)}" data-onchange="setQuizAssignmentField" data-arg="dueAt" data-pass="value" /></label><label>Required score<select data-onchange="setQuizAssignmentField" data-arg="requiredScore" data-pass="value">${[0, 70, 80, 90, 100].map((value) => `<option value="${value}"${Number(draft.requiredScore) === value ? " selected" : ""}>${value ? `${value}%` : "No minimum"}</option>`).join("")}</select></label><label>Focus<select data-onchange="setQuizAssignmentField" data-arg="positionKey" data-pass="value"><option value="">Player default</option>${positions.map((position) => `<option value="${escapeAttr(position.key)}"${draft.positionKey === position.key ? " selected" : ""}>${escapeHtml(position.label)}</option>`).join("")}</select></label></div>
-      <section><div class="quiz-assignment-section-head"><h3>Players</h3><button type="button" class="btn btn-sm btn-outline" data-action="toggleAllQuizAssignmentPlayers">${draft.recipientIds.size === _quizAssignmentState.players.length && _quizAssignmentState.players.length ? "Clear all" : "Select all"}</button></div><div class="quiz-assignment-player-grid">${_quizAssignmentState.players.map((player) => `<button type="button" class="quiz-assignment-choice${draft.recipientIds.has(player.id) ? " is-selected" : ""}" data-action="toggleQuizAssignmentRecipient" data-arg="${escapeAttr(player.id)}"><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(player.position || "Player")}</small></button>`).join("") || "<span>No active player accounts found.</span>"}</div></section>
-      <section><div class="quiz-assignment-section-head"><h3>Plays <small>${draft.playKeys.size} selected</small></h3><input value="${escapeAttr(draft.search)}" placeholder="Find plays by call, tag, or family" data-oninput="setQuizAssignmentSearch" data-pass="value" /></div><div class="quiz-assignment-play-list">${candidates.map((play, index) => { const key = _quizAssignmentPlayKey(play, index); return `<button type="button" class="quiz-assignment-play${draft.playKeys.has(key) ? " is-selected" : ""}" data-action="toggleQuizAssignmentPlay" data-arg="${escapeAttr(key)}"><span>${draft.playKeys.has(key) ? "✓" : "+"}</span><strong>${escapeHtml(_quizAssignmentCall(play))}</strong><small>${escapeHtml([play.type, play.oneWord].filter(Boolean).join(" · "))}</small></button>`; }).join("") || "<span class=\"coach-quiz-empty\">No player-visible plays match that search.</span>"}</div></section>
-    </div>
-    <footer><span>${draft.recipientIds.size} players · ${draft.playKeys.size} plays</span><div><button type="button" class="btn btn-outline" data-action="closeQuizAssignmentManager">Cancel</button><button type="button" class="btn btn-primary" data-action="createQuizAssignment">Assign homework</button></div></footer>
-  </div>`;
+  const candidates = _assignmentCandidatePlays().filter((play) => { const haystack = `${_quizAssignmentCall(play)} ${play.type || ""} ${play.oneWord || ""} ${play.basePlay || ""}`.toLowerCase(); return !searchTokens.length || searchTokens.every((token) => haystack.includes(token)); }).slice(0, 80);
+  const sourceOptions = draft.sourceKind === "playbook" ? "" : _quizAssignmentSources(draft.sourceKind).map((entry) => `<option value="${escapeAttr(entry.id)}"${String(draft.sourceId) === String(entry.id) ? " selected" : ""}>${escapeHtml(entry.title)} · ${entry.plays?.length || 0} plays</option>`).join("");
+  overlay.dataset.action = "closeQuizAssignmentManagerOverlay";
+  overlay.innerHTML = `<div class="quiz-assignment-modal" role="dialog" aria-modal="true" aria-label="Assign quiz homework"><header><div><span>Private homework</span><h2>Build a player assignment</h2><p>Pick a source, choose exactly who receives it, and add coach-written multiple choice when you need it.</p></div><button class="modal-close" type="button" data-action="closeQuizAssignmentManager" aria-label="Close">×</button></header><div class="quiz-assignment-form">
+    <section class="quiz-assignment-step"><div class="quiz-assignment-section-head"><div><span>1 · Source</span><h3>What should they study?</h3></div><strong>${sourceItems.length} plays</strong></div><div class="quiz-assignment-source-tabs">${[["playbook", "Selected Playbook plays"], ["script", "Saved practice script"], ["gameplan", "Game Plan"]].map(([kind, label]) => `<button type="button" class="quiz-assignment-source-tab${draft.sourceKind === kind ? " is-selected" : ""}" data-action="setQuizAssignmentSource" data-arg="${kind}">${label}</button>`).join("")}</div>${draft.sourceKind === "playbook" ? `<div class="quiz-assignment-section-head quiz-assignment-section-head--compact"><span>Select the exact Plays below. Your selection is frozen into this assignment.</span><input value="${escapeAttr(draft.search)}" placeholder="Find plays" data-oninput="setQuizAssignmentSearch" data-pass="value" /></div><div class="quiz-assignment-play-list">${candidates.map((play, index) => { const key = _quizAssignmentPlayKey(play, index); return `<button type="button" class="quiz-assignment-play${draft.playKeys.has(key) ? " is-selected" : ""}" data-action="toggleQuizAssignmentPlay" data-arg="${escapeAttr(key)}"><span>${draft.playKeys.has(key) ? "✓" : "+"}</span><strong>${escapeHtml(_quizAssignmentCall(play))}</strong><small>${escapeHtml([play.type, play.oneWord].filter(Boolean).join(" · "))}</small></button>`; }).join("") || `<span class="coach-quiz-empty">No player-visible plays match that search.</span>`}</div>` : `<label class="quiz-assignment-source-select">${draft.sourceKind === "script" ? "Saved script" : "Game Plan"}<select data-onchange="setQuizAssignmentSourceId" data-pass="value"><option value="">Choose a source</option>${sourceOptions}</select></label>${source ? `<div class="quiz-assignment-source-summary"><strong>${escapeHtml(source.title)}</strong><span>${escapeHtml(`${source.plays?.length || 0} plays${source.periodCount ? ` · ${source.periodCount} periods` : ""}`)}</span></div>` : ""}`}</section>
+    <section class="quiz-assignment-step"><div class="quiz-assignment-section-head"><div><span>2 · Recipients</span><h3>Who gets this homework?</h3></div><button type="button" class="btn btn-sm btn-outline" data-action="toggleAllQuizAssignmentPlayers">${draft.recipientIds.size === rosterPlayers.length && rosterPlayers.length ? "Clear all" : "Select all"}</button></div>${groups.length ? `<div class="quiz-assignment-group-chips"><span>Quick groups</span>${groups.map((group) => `<button type="button" class="quiz-assignment-group-chip${group.ids.every((id) => draft.recipientIds.has(id)) ? " is-selected" : ""}" data-action="toggleQuizAssignmentRecipientGroup" data-arg="${escapeAttr(group.key)}">${escapeHtml(group.label)} <small>${group.ids.length}</small></button>`).join("")}</div>` : `<p class="quiz-assignment-hint">Add roster <b>#tags</b> in Team Settings to make reusable custom homework groups.</p>`}<div class="quiz-assignment-player-grid">${rosterPlayers.map((player) => `<button type="button" class="quiz-assignment-choice${draft.recipientIds.has(player.id) ? " is-selected" : ""}" data-action="toggleQuizAssignmentRecipient" data-arg="${escapeAttr(player.id)}"><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(player.position || "Player")}${player.tags?.length ? ` · ${escapeHtml(player.tags.map((tag) => `#${String(tag).replace(/^#/, "")}`).join(" "))}` : ""}</small></button>`).join("") || "<span>No active player accounts found.</span>"}</div></section>
+    <section class="quiz-assignment-step"><div class="quiz-assignment-section-head"><div><span>3 · Questions</span><h3>Choose what to ask</h3></div><strong>${draft.customQuestions.length} custom</strong></div><div class="quiz-assignment-question-types">${QUIZ_ASSIGNMENT_QUESTION_TYPES.map(([type, label]) => `<button type="button" class="quiz-assignment-question-type${draft.questionTypes.has(type) ? " is-selected" : ""}" data-action="toggleQuizAssignmentQuestionType" data-arg="${type}">${escapeHtml(label)}</button>`).join("")}</div><div class="quiz-assignment-custom-head"><div><strong>Coach-written multiple choice</strong><small>Add questions with your own wording and answers.</small></div><button type="button" class="btn btn-sm btn-outline" data-action="addQuizAssignmentCustomQuestion">+ Custom question</button></div>${draft.customQuestions.map((question, index) => `<article class="quiz-assignment-custom-question"><div><strong>Custom ${index + 1}</strong><button type="button" class="btn btn-link btn-sm" data-action="removeQuizAssignmentCustomQuestion" data-arg="${escapeAttr(question.id)}">Remove</button></div><input value="${escapeAttr(question.prompt)}" placeholder="Question" data-oninput="setQuizAssignmentCustomQuestionField" data-arg="${escapeAttr(`${question.id}:prompt`)}" data-pass="value" />${[0, 1, 2, 3].map((choiceIndex) => `<label><input value="${escapeAttr(question.options[choiceIndex] || "")}" placeholder="Answer option ${choiceIndex + 1}" data-oninput="setQuizAssignmentCustomQuestionField" data-arg="${escapeAttr(`${question.id}:option:${choiceIndex}`)}" data-pass="value" /><input type="radio" name="quiz-custom-${escapeAttr(question.id)}"${Number(question.correctIndex) === choiceIndex ? " checked" : ""} data-onchange="setQuizAssignmentCustomQuestionField" data-arg="${escapeAttr(`${question.id}:correct`)}" data-pass="value" value="${choiceIndex}" aria-label="Correct answer" /></label>`).join("")}</article>`).join("")}</section>
+    <section class="quiz-assignment-step"><div class="quiz-assignment-section-head"><div><span>4 · Details</span><h3>Set the expectation</h3></div></div><label>Title<input value="${escapeAttr(draft.title)}" placeholder="e.g. Red zone homework" data-oninput="setQuizAssignmentField" data-arg="title" data-pass="value" /></label><label>Instructions<textarea placeholder="What should they focus on?" data-oninput="setQuizAssignmentField" data-arg="instructions" data-pass="value">${escapeHtml(draft.instructions)}</textarea></label><div class="quiz-assignment-form__row"><label>Due date<input type="datetime-local" value="${escapeAttr(draft.dueAt)}" data-onchange="setQuizAssignmentField" data-arg="dueAt" data-pass="value" /></label><label>Required score<select data-onchange="setQuizAssignmentField" data-arg="requiredScore" data-pass="value">${[0, 70, 80, 90, 100].map((value) => `<option value="${value}"${Number(draft.requiredScore) === value ? " selected" : ""}>${value ? `${value}%` : "No minimum"}</option>`).join("")}</select></label><label>Focus<select data-onchange="setQuizAssignmentField" data-arg="positionKey" data-pass="value"><option value="">Player default</option>${positions.map((position) => `<option value="${escapeAttr(position.key)}"${draft.positionKey === position.key ? " selected" : ""}>${escapeHtml(position.label)}</option>`).join("")}</select></label></div></section>
+  </div><footer><span>${draft.recipientIds.size} players · ${sourceItems.length + draft.customQuestions.length} questions</span><div><button type="button" class="btn btn-outline" data-action="closeQuizAssignmentManager">Cancel</button><button type="button" class="btn btn-primary" data-action="createQuizAssignment">Assign homework</button></div></footer></div>`;
 }
 
-async function openQuizAssignmentManager() {
-  if (!_isQuizAssignmentStaffClient()) return;
-  if (!_quizAssignmentState.loaded) await refreshQuizAssignments({ quiet: false });
-  _quizAssignmentState.draft = _newQuizAssignmentDraft();
-  let overlay = document.getElementById("quizAssignmentOverlay");
-  if (!overlay) { overlay = document.createElement("div"); overlay.id = "quizAssignmentOverlay"; overlay.className = "overlay quiz-assignment-overlay"; document.body.appendChild(overlay); }
-  overlay.classList.remove("hidden");
-  _renderQuizAssignmentModal();
-  if (typeof openLayer === "function") openLayer(overlay, { id: "quizAssignmentOverlay", scrollElement: "quizAssignmentOverlay", blocking: true });
-}
-
-function closeQuizAssignmentManager() {
-  const overlay = document.getElementById("quizAssignmentOverlay");
-  if (overlay) { if (typeof closeLayer === "function") closeLayer(overlay); overlay.classList.add("hidden"); }
-  _quizAssignmentState.draft = null;
-}
-
-function setQuizAssignmentField(field, value) { if (_quizAssignmentState.draft) { _quizAssignmentState.draft[field] = value; } }
+async function openQuizAssignmentManager() { if (!_isQuizAssignmentStaffClient()) return; if (!_quizAssignmentState.loaded) await refreshQuizAssignments({ quiet: false }); _quizAssignmentState.draft = _newQuizAssignmentDraft(); let overlay = document.getElementById("quizAssignmentOverlay"); if (!overlay) { overlay = document.createElement("div"); overlay.id = "quizAssignmentOverlay"; overlay.className = "overlay quiz-assignment-overlay hidden"; document.body.appendChild(overlay); } overlay.classList.remove("hidden"); _renderQuizAssignmentModal(); if (typeof openLayer === "function") openLayer(overlay, { id: "quizAssignmentOverlay", scrollElement: "quizAssignmentOverlay", blocking: true }); }
+function closeQuizAssignmentManager() { const overlay = document.getElementById("quizAssignmentOverlay"); if (overlay) { if (typeof closeLayer === "function") closeLayer(overlay); overlay.classList.add("hidden"); } _quizAssignmentState.draft = null; }
+function setQuizAssignmentField(field, value) { if (_quizAssignmentState.draft) _quizAssignmentState.draft[field] = value; }
 function setQuizAssignmentSearch(value) { if (_quizAssignmentState.draft) { _quizAssignmentState.draft.search = value; _renderQuizAssignmentModal(); } }
+function setQuizAssignmentSource(kind) { const draft = _quizAssignmentState.draft; if (!draft) return; draft.sourceKind = ["playbook", "script", "gameplan"].includes(kind) ? kind : "playbook"; draft.sourceId = ""; _renderQuizAssignmentModal(); }
+function setQuizAssignmentSourceId(value) { if (_quizAssignmentState.draft) { _quizAssignmentState.draft.sourceId = value; _renderQuizAssignmentModal(); } }
 function toggleQuizAssignmentRecipient(id) { const set = _quizAssignmentState.draft?.recipientIds; if (!set) return; set.has(id) ? set.delete(id) : set.add(id); _renderQuizAssignmentModal(); }
-function toggleAllQuizAssignmentPlayers() { const draft = _quizAssignmentState.draft; if (!draft) return; if (draft.recipientIds.size === _quizAssignmentState.players.length) draft.recipientIds.clear(); else _quizAssignmentState.players.forEach((player) => draft.recipientIds.add(player.id)); _renderQuizAssignmentModal(); }
+function toggleAllQuizAssignmentPlayers() { const draft = _quizAssignmentState.draft; if (!draft) return; const ids = _quizAssignmentState.players.map((player) => player.id); if (draft.recipientIds.size === ids.length) draft.recipientIds.clear(); else ids.forEach((id) => draft.recipientIds.add(id)); _renderQuizAssignmentModal(); }
+function toggleQuizAssignmentRecipientGroup(key) { const draft = _quizAssignmentState.draft; const group = _quizAssignmentGroups().find((entry) => entry.key === key); if (!draft || !group) return; const selected = group.ids.every((id) => draft.recipientIds.has(id)); group.ids.forEach((id) => selected ? draft.recipientIds.delete(id) : draft.recipientIds.add(id)); _renderQuizAssignmentModal(); }
 function toggleQuizAssignmentPlay(key) { const set = _quizAssignmentState.draft?.playKeys; if (!set) return; set.has(key) ? set.delete(key) : set.add(key); _renderQuizAssignmentModal(); }
+function toggleQuizAssignmentQuestionType(type) { const types = _quizAssignmentState.draft?.questionTypes; if (!types) return; types.has(type) ? types.delete(type) : types.add(type); _renderQuizAssignmentModal(); }
+function addQuizAssignmentCustomQuestion() { const draft = _quizAssignmentState.draft; if (!draft) return; draft.customQuestions.push({ id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, prompt: "", options: ["", "", "", ""], correctIndex: 0 }); _renderQuizAssignmentModal(); }
+function removeQuizAssignmentCustomQuestion(id) { const draft = _quizAssignmentState.draft; if (!draft) return; draft.customQuestions = draft.customQuestions.filter((question) => question.id !== id); _renderQuizAssignmentModal(); }
+function setQuizAssignmentCustomQuestionField(arg, value) { const [id, field, index] = String(arg || "").split(":"); const question = _quizAssignmentState.draft?.customQuestions.find((entry) => entry.id === id); if (!question) return; if (field === "prompt") question.prompt = value; else if (field === "option") question.options[Number(index)] = value; else if (field === "correct") question.correctIndex = Number(value); }
 
 async function createQuizAssignment() {
-  const draft = _quizAssignmentState.draft;
-  if (!draft) return;
-  const allPlays = _assignmentCandidatePlays();
-  const items = allPlays.filter((play, index) => draft.playKeys.has(_quizAssignmentPlayKey(play, index))).map((play, index) => ({ play, scriptIndex: index }));
-  const payload = { title: draft.title, instructions: draft.instructions, requiredScore: draft.requiredScore, dueAt: draft.dueAt, quizMode: draft.quizMode, positionKey: draft.positionKey, recipientIds: [...draft.recipientIds], items };
-  try {
-    const data = await _quizAssignmentRequest("/api/quiz-assignments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    closeQuizAssignmentManager();
-    await refreshQuizAssignments({ quiet: true });
-    showToast(`Homework sent to ${data.recipients} player${data.recipients === 1 ? "" : "s"}.`, { type: "success" });
-  } catch (err) { showToast(err?.message || "Homework could not be sent.", { type: "warning" }); }
+  const draft = _quizAssignmentState.draft; if (!draft) return; const items = _quizAssignmentSourceItems(draft); const customQuestions = draft.customQuestions.map((question) => ({ prompt: question.prompt, options: question.options, correctIndex: question.correctIndex }));
+  const payload = { title: draft.title, instructions: draft.instructions, requiredScore: draft.requiredScore, dueAt: draft.dueAt, quizMode: draft.quizMode, positionKey: draft.positionKey, recipientIds: [...draft.recipientIds], items, questionTypes: [...draft.questionTypes], customQuestions, sourceKind: draft.sourceKind, sourceId: draft.sourceId };
+  try { const data = await _quizAssignmentRequest("/api/quiz-assignments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); closeQuizAssignmentManager(); await refreshQuizAssignments({ quiet: true }); showToast(`Homework sent to ${data.recipients} player${data.recipients === 1 ? "" : "s"}.`, { type: "success" }); }
+  catch (err) { showToast(err?.message || "Homework could not be sent.", { type: "warning" }); }
 }
-
-async function startPlayerQuizAssignment(id) {
-  if (!_quizAssignmentState.loaded) await refreshQuizAssignments({ quiet: true });
-  const assignment = (_quizAssignmentState.assignments || []).find((entry) => String(entry.id) === String(id));
-  if (!assignment?.items?.length) { showToast("That homework assignment is not available right now.", { type: "warning" }); return; }
-  closePlayerQuizHub();
-  startScriptQuiz({ items: assignment.items, sourceType: "assignment", sourceId: assignment.id, assignmentId: assignment.id, title: assignment.title, positionKey: assignment.positionKey || "", positionMode: assignment.positionKey ? "manual" : "primary", mode: assignment.quizMode || "quick" });
-}
-
-async function recordQuizAssignmentAttempt(assignmentId, summary) {
-  const data = await _quizAssignmentRequest("/api/quiz-assignments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "record-attempt", assignmentId, attemptId: summary?.id, percent: summary?.percent }) });
-  await refreshQuizAssignments({ quiet: true });
-  return data?.result || null;
-}
-
-// Initial background fetch: homework should appear without a manual refresh.
+async function startPlayerQuizAssignment(id) { if (!_quizAssignmentState.loaded) await refreshQuizAssignments({ quiet: true }); const assignment = (_quizAssignmentState.assignments || []).find((entry) => String(entry.id) === String(id)); const items = Array.isArray(assignment?.items) ? assignment.items.slice() : []; const customItems = (assignment?.customQuestions || []).map((customQuestion, index) => ({ play: { _id: `assignment-custom-${assignment.id}-${index}`, play: "Coach question" }, scriptIndex: items.length + index, customQuestion })); if (!items.length && !customItems.length) { showToast("That homework assignment is not available right now.", { type: "warning" }); return; } closePlayerQuizHub(); startScriptQuiz({ items: [...items, ...customItems], sourceType: "assignment", sourceId: assignment.id, assignmentId: assignment.id, title: assignment.title, positionKey: assignment.positionKey || "", positionMode: assignment.positionKey ? "manual" : "primary", mode: assignment.quizMode || "quick", questionTypes: assignment.questionTypes || [] }); }
+async function recordQuizAssignmentAttempt(assignmentId, summary) { const data = await _quizAssignmentRequest("/api/quiz-assignments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "record-attempt", assignmentId, attemptId: summary?.id, percent: summary?.percent }) }); await refreshQuizAssignments({ quiet: true }); return data?.result || null; }
 document.addEventListener("DOMContentLoaded", () => { setTimeout(() => refreshQuizAssignments({ quiet: true }), 600); });

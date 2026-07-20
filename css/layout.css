@@ -1361,7 +1361,7 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
 
 .team-roster-row {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr) 116px 116px minmax(120px, 0.5fr) 122px auto;
+  grid-template-columns: 72px minmax(0, 1fr) 116px 116px minmax(120px, 0.5fr) 122px minmax(145px, 0.55fr) auto;
   gap: var(--space-sm);
   align-items: center;
   padding: var(--space-sm);
@@ -2256,7 +2256,7 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
   body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-roster-grid-head,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-roster-row {
     display: grid;
-    grid-template-columns: 56px minmax(150px, 1fr) 92px 92px minmax(104px, 0.6fr) 90px 30px;
+    grid-template-columns: 56px minmax(150px, 1fr) 92px 92px minmax(104px, 0.6fr) 90px minmax(125px, 0.45fr) 30px;
     gap: var(--team-grid-gap);
     align-items: center;
   }

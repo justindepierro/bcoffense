@@ -21,6 +21,9 @@ let _quizTitle = "Play Quiz";
 // Keep the assignment identity separate from sourceId so result recording stays
 // explicit and cannot accidentally mark a normal script quiz as homework.
 let _quizAssignmentId = "";
+// Assignment authors can narrow a quiz without changing a player's normal
+// personal quiz preferences.
+let _quizAllowedQuestionTypes = [];
 let _quizMode = "quick";
 let _quizSignalCategories = [];
 let _quizSignalMultiplier = 1;

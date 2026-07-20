@@ -456,6 +456,7 @@ function renderTeamSettings() {
         <span>Secondary</span>
         <span>Portal account</span>
         <span>Group</span>
+        <span>Tags</span>
         <span>Remove</span>
       </div>${roster.map((player) => `
         <div class="team-roster-row" data-player-id="${escapeAttr(player.id)}">
@@ -476,6 +477,7 @@ function renderTeamSettings() {
             <option value="skill" ${player.positionGroup === "skill" ? "selected" : ""}>Skill</option>
             <option value="linemen" ${player.positionGroup === "linemen" ? "selected" : ""}>Linemen</option>
           </select>
+          <input type="text" class="team-roster-cell team-roster-cell--tags" value="${escapeAttr((player.tags || []).map((tag) => `#${String(tag).replace(/^#/, "")}`).join(" "))}" data-field="teamPlayerTags" data-player-id="${escapeAttr(player.id)}" placeholder="#redzone #varsity" aria-label="Custom homework tags for ${escapeHtml(player.name)}" />
           <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamPlayer" data-player-id="${escapeAttr(player.id)}" aria-label="Remove ${escapeHtml(player.name)}">✕</button>
         </div>
       `).join("")}`
@@ -985,6 +987,9 @@ function initTeamSettings() {
     }
     if (field === "teamPlayerAccount") player.accountUsername = input.value.trim();
     if (field === "teamPlayerPositionGroup") player.positionGroup = input.value;
+    if (field === "teamPlayerTags") {
+      player.tags = [...new Set(String(input.value || "").split(/[#,\s]+/).map((tag) => tag.trim()).filter(Boolean))].slice(0, 12);
+    }
 
     saveTeamRoster(roster);
     refreshTeamSettingsSelectionUI();
@@ -1247,6 +1252,9 @@ function normalizeTeamPlayer(player = {}) {
   const personnel = Array.isArray(player.personnel)
     ? player.personnel.map((value) => String(value || "").trim()).filter(Boolean)
     : [];
+  const tags = [...new Set((Array.isArray(player.tags) ? player.tags : String(player.tags || "").split(/[#,\s]+/))
+    .map((tag) => String(tag || "").replace(/^#/, "").trim())
+    .filter(Boolean))].slice(0, 12);
 
   return {
     id,
@@ -1258,6 +1266,7 @@ function normalizeTeamPlayer(player = {}) {
     accountUsername,
     positionGroup,
     personnel,
+    tags,
   };
 }
 
