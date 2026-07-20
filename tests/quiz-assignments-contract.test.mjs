@@ -39,6 +39,11 @@ assert(
   "assignment reads and writes are team-scoped, recipient-scoped, and atomic",
 );
 assert(
+  helper.includes("SELECT id, display_name, first_name, last_name, email, roster_player_id")
+    && !helper.includes("last_name, primary_position, email"),
+  "recipient lookup uses the deployed users schema while roster position stays workspace-owned",
+);
+assert(
   migrationQuestionConfig.includes("question_types_json") && migrationQuestionConfig.includes("custom_questions_json")
     && helper.includes("safeCustomQuestions") && helper.includes("safeQuestionTypes"),
   "assignment schema safely preserves coach-selected question types and authored multiple choice",
@@ -83,7 +88,7 @@ assert(
   "homework notification opens exactly the assigned quiz",
 );
 assert(
-  index.includes("script-quiz-assignments.js?v=1277") && sw.includes("./js/script-quiz-assignments.js"),
+  index.includes("script-quiz-assignments.js?v=1278") && sw.includes("./js/script-quiz-assignments.js"),
   "assignment client is loaded and cached with the app shell",
 );
 

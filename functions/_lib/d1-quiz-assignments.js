@@ -116,14 +116,17 @@ export function isQuizAssignmentStaff(session) {
 
 export async function getAssignmentPlayers(db, teamId) {
   const result = await db.prepare(
-    `SELECT id, display_name, first_name, last_name, primary_position, email, roster_player_id
+    `SELECT id, display_name, first_name, last_name, email, roster_player_id
      FROM users WHERE team_id = ? AND role = 'player' AND status = 'active'
      ORDER BY display_name COLLATE NOCASE LIMIT 300`,
   ).bind(teamId).all();
   return (result.results || []).map((row) => ({
     id: row.id,
     name: row.display_name || `${row.first_name || ""} ${row.last_name || ""}`.trim() || "Player",
-    position: row.primary_position || "",
+    // Player position lives in the canonical team roster/workspace record.
+    // Do not select a non-existent users.primary_position column here: older and
+    // current production databases intentionally do not carry that duplicate.
+    position: "",
     email: row.email || "",
     rosterPlayerId: row.roster_player_id || "",
   }));
