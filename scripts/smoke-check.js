@@ -5142,6 +5142,8 @@ function checkScriptPacketPrintContracts() {
 
 function checkScriptPrintIsolationContract() {
   const printCss = read("css/print.css");
+  const utils = read("js/utils.js");
+  const scriptExport = read("js/script-export.js");
 
   if (
     !/body\.print-script \.workspace-sync-dock[\s\S]*display:\s*none\s*!important/.test(
@@ -5152,9 +5154,13 @@ function checkScriptPrintIsolationContract() {
     ) ||
     !/body\.print-script #mainApp\s*\{[\s\S]*?display:\s*block\s*!important/.test(
       printCss,
-    )
+    ) ||
+    !/function printIsolatedArtifact\(contentEl, options = \{\}\)/.test(utils) ||
+    !/body class="print-script print-isolated-artifact"/.test(utils) ||
+    !/frameWindow\.print\(\)/.test(utils) ||
+    !/printIsolatedArtifact\(previewEl, \{/.test(scriptExport)
   ) {
-    fail("script print is not isolated from workspace chrome and scroll gutters");
+    fail("script print is not isolated from workspace chrome, scroll gutters, and the live app shell");
   }
 
   console.log("script print isolation contract ok");

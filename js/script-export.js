@@ -711,12 +711,21 @@ function printPeriod(separatorIndex) {
         document.body.classList.remove("print-script");
       };
       const printNow = () => {
-        try {
-          const restoreTitle = setPrintTitle("Practice Script", `${name} ${periodLabel}`);
-          window.print();
+        const restoreTitle = setPrintTitle("Practice Script", `${name} ${periodLabel}`);
+        const finishPrint = () => {
           restoreTitle();
-        } finally {
           cleanupScript();
+        };
+        if (typeof printIsolatedArtifact === "function" && printIsolatedArtifact(previewEl, {
+          title: document.title,
+          onAfterPrint: finishPrint,
+        })) {
+          return;
+        }
+        try {
+          window.print();
+        } finally {
+          finishPrint();
         }
       };
       if (typeof showPrintPreview === "function") {
@@ -799,23 +808,41 @@ function generatePDF() {
         showPrintPreview(
           previewEl,
           () => {
-            try {
-              const restoreTitle = setPrintTitle("Practice Script", name || "");
-              window.print();
+            const restoreTitle = setPrintTitle("Practice Script", name || "");
+            const finishPrint = () => {
               restoreTitle();
-            } finally {
               cleanupScript();
+            };
+            if (typeof printIsolatedArtifact === "function" && printIsolatedArtifact(previewEl, {
+              title: document.title,
+              onAfterPrint: finishPrint,
+            })) {
+              return;
+            }
+            try {
+              window.print();
+            } finally {
+              finishPrint();
             }
           },
           cleanupScript,
         );
       } else {
-        try {
-          const restoreTitle = setPrintTitle("Practice Script", name || "");
-          window.print();
+        const restoreTitle = setPrintTitle("Practice Script", name || "");
+        const finishPrint = () => {
           restoreTitle();
-        } finally {
           cleanupScript();
+        };
+        if (typeof printIsolatedArtifact === "function" && printIsolatedArtifact(previewEl, {
+          title: document.title,
+          onAfterPrint: finishPrint,
+        })) {
+          return;
+        }
+        try {
+          window.print();
+        } finally {
+          finishPrint();
         }
       }
     }, 100);

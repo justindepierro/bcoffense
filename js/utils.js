@@ -145,6 +145,134 @@ function showPrintPreview(contentEl, onPrint, onCancel) {
 }
 
 /**
+ * Print a self-contained copy of an artifact instead of the live application
+ * shell. Desktop workspace panels intentionally use fixed heights, scroll
+ * owners, and reserved scrollbar gutters; asking Chrome to print that shell
+ * can paint one of those gutters over the right edge of a paper artifact.
+ *
+ * The frame inherits the app's stylesheets but contains only the requested
+ * printable element. This keeps the native print dialog's output identical to
+ * the preview without allowing unrelated app chrome to participate in layout.
+ *
+ * @param {HTMLElement} contentEl - Printable artifact to clone.
+ * @param {object} [options]
+ * @param {string} [options.title] - Filename/title for the native print dialog.
+ * @param {Function} [options.onAfterPrint] - Called once printing is finished.
+ * @returns {boolean} True when an isolated print job was started.
+ */
+function printIsolatedArtifact(contentEl, options = {}) {
+  if (!(contentEl instanceof HTMLElement)) return false;
+
+  const clone = contentEl.cloneNode(true);
+  clone.removeAttribute("id");
+  clone.classList.remove("hidden");
+  clone.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
+
+  const stylesheetLinks = [...document.querySelectorAll('link[rel="stylesheet"][href]')]
+    .map((link) => `<link rel="stylesheet" href="${escapeAttr(link.href)}">`)
+    .join("");
+  const dynamicPrintCss = document.getElementById("appPrintStyle")?.textContent || "";
+  const title = String(options.title || document.title || "Print");
+  const frame = document.createElement("iframe");
+  const frameId = `isolatedPrintFrame-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  let finished = false;
+  let cleanupTimer = null;
+
+  frame.id = frameId;
+  frame.className = "isolated-print-frame";
+  frame.setAttribute("aria-hidden", "true");
+  frame.tabIndex = -1;
+  frame.style.cssText = [
+    "position:fixed",
+    "width:8.5in",
+    "height:11in",
+    "left:-20000px",
+    "top:0",
+    "border:0",
+    "opacity:0",
+    "pointer-events:none",
+  ].join(";");
+
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    if (cleanupTimer) window.clearTimeout(cleanupTimer);
+    frame.remove();
+    if (typeof options.onAfterPrint === "function") options.onAfterPrint();
+  };
+
+  frame.addEventListener(
+    "load",
+    () => {
+      const frameWindow = frame.contentWindow;
+      if (!frameWindow) {
+        finish();
+        return;
+      }
+
+      // Let linked app styles settle before opening the native dialog. Two
+      // frames are enough to apply print CSS without a visible wait for coaches.
+      frameWindow.requestAnimationFrame(() => {
+        frameWindow.requestAnimationFrame(() => {
+          frameWindow.addEventListener("afterprint", finish, { once: true });
+          try {
+            frameWindow.focus();
+            frameWindow.print();
+          } catch (error) {
+            console.error("isolated print failed", error);
+            finish();
+          }
+        });
+      });
+    },
+    { once: true },
+  );
+
+  // Browsers normally emit afterprint for both Save and Cancel. Keep a quiet
+  // cleanup guard for browser extensions or native dialog failures that do not.
+  cleanupTimer = window.setTimeout(finish, 60000);
+  frame.srcdoc = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <base href="${escapeAttr(location.href)}">
+    <title>${escapeHtml(title)}</title>
+    ${stylesheetLinks}
+    <style>
+      ${dynamicPrintCss}
+      @media print {
+        @page { size: letter; margin: 0.25in; }
+        html, body {
+          width: auto !important;
+          min-width: 0 !important;
+          height: auto !important;
+          min-height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: visible !important;
+          background: #fff !important;
+        }
+        body.print-isolated-artifact {
+          display: block !important;
+          scrollbar-gutter: auto !important;
+        }
+        body.print-isolated-artifact .script-preview {
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+          overflow: visible !important;
+          scrollbar-gutter: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="print-script print-isolated-artifact">${clone.outerHTML}</body>
+</html>`;
+  document.body.appendChild(frame);
+  return true;
+}
+
+/**
  * Show a styled alert modal (replaces alert())
  * @param {string} message - The message to display
  * @param {object} opts - Options: { title, icon }
