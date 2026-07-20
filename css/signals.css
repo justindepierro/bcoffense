@@ -41,7 +41,7 @@
 
 .signals-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(86px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
   gap: var(--space-sm);
 }
 
@@ -66,6 +66,15 @@
   color: var(--color-primary);
   font-size: var(--font-size-xl);
   line-height: 1;
+}
+
+.signals-stat.signals-stat-warning {
+  border-color: var(--color-warning);
+  background: var(--color-warning-light);
+}
+
+.signals-stat.signals-stat-warning strong {
+  color: var(--color-warning-dark, #8a5600);
 }
 
 .signals-stat span {
@@ -432,7 +441,7 @@
 
 .signals-chip {
   display: inline-grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--space-xs);
   min-height: 44px;
@@ -481,6 +490,22 @@
 .signals-chip.has-clip small {
   background: var(--color-success);
   color: var(--color-white);
+}
+
+.signals-chip.needs-gameplan-signal {
+  border-color: var(--color-warning);
+  background: var(--color-warning-light);
+}
+
+.signals-gameplan-warning {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  color: var(--color-warning-dark, #8a5600);
+  font-size: 14px;
+  font-style: normal;
+  line-height: 1;
 }
 
 .signals-empty-line,

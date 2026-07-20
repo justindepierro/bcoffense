@@ -252,6 +252,76 @@ function _sigHasPublishedClip(summary) {
   return Boolean(record && record.visibility === "published" && Number(record.clipCount || 0) > 0);
 }
 
+function _sigGamePlanPlayIdentity(play) {
+  if (!play) return "";
+  if (play.id) return `id:${play.id}`;
+  if (typeof getPlayIdentityKey === "function") {
+    return `key:${getPlayIdentityKey(play, "gameplan", { trim: false })}`;
+  }
+  return `fields:${[play.personnel, play.formation, play.play, play.oneWord].join("|")}`;
+}
+
+function _sigActiveGamePlanPlays() {
+  const active = [];
+  const seen = new Set();
+  const add = (play) => {
+    const identity = _sigGamePlanPlayIdentity(play);
+    if (!identity || seen.has(identity)) return;
+    seen.add(identity);
+    active.push(play);
+  };
+
+  // Read the active board without creating a blank board just because a coach
+  // opened Signals. A board play is the most direct definition of "on the
+  // Game Plan"; tagged playbook calls are included too while they await routing.
+  if (typeof _gpLoadBoards === "function" && typeof _gpActiveOpponentKey === "function") {
+    const boards = _gpLoadBoards();
+    const board = boards?.[_gpActiveOpponentKey()];
+    Object.values(board?.assignments || {}).forEach((assigned) => {
+      (Array.isArray(assigned) ? assigned : []).forEach(add);
+    });
+  }
+
+  const opponent = typeof getGameWeek === "function" ? getGameWeek()?.opponentName : "";
+  if (opponent && typeof plays !== "undefined" && Array.isArray(plays)) {
+    if (typeof getGamePlanTags === "function" && typeof playSignature === "function") {
+      const tagged = new Set(getGamePlanTags()?.[opponent] || []);
+      plays.filter((play) => tagged.has(playSignature(play))).forEach(add);
+    } else if (typeof isPlayTaggedForOpponent === "function") {
+      plays.filter((play) => isPlayTaggedForOpponent(play, opponent)).forEach(add);
+    }
+  }
+  return active;
+}
+
+function _sigGamePlanMissingSignalMap() {
+  const missing = new Map();
+  const records = _sigRecordsMap();
+  const gamePlanPlays = _sigActiveGamePlanPlays();
+
+  gamePlanPlays.forEach((play) => {
+    const seenForPlay = new Set();
+    SIGNAL_COMPONENTS.forEach((component) => {
+      if (component.requiresVideo === false) return;
+      component.fields.forEach((field) => {
+        const value = String(play?.[field] == null ? "" : play[field]).trim();
+        const compareKey = _sigCompareValue(value);
+        if (!value || !compareKey) return;
+        const id = _sigRecordId(component.componentType, compareKey);
+        if (seenForPlay.has(id)) return;
+        seenForPlay.add(id);
+        const record = records.get(id);
+        if (record && record.visibility === "published" && Number(record.clipCount || 0) > 0) return;
+        const current = missing.get(id) || { playCount: 0, componentType: component.componentType, compareKey };
+        current.playCount += 1;
+        missing.set(id, current);
+      });
+    });
+  });
+
+  return { gamePlanPlayCount: gamePlanPlays.length, missing };
+}
+
 function _sigCanOpenSummaryClip(summary) {
   const record = summary?.record;
   if (!record || !_sigSummaryRequiresVideo(summary) || Number(record.clipCount || 0) <= 0) return false;
@@ -370,18 +440,20 @@ function _sigRenderCoverageReport(summariesByComponent) {
     </section>`;
 }
 
-function _sigRenderStats(visibleSummaries) {
+function _sigRenderStats(visibleSummaries, gamePlanSignalStatus = { missing: new Map() }) {
   const records = _sigLoadRecords();
   const published = records.filter((record) => record.visibility === "published" && record.clipCount > 0).length;
   const motions = visibleSummaries.filter((item) => item.category === "MOTIONS").length;
+  const gamePlanGaps = gamePlanSignalStatus?.missing?.size || 0;
   return `
     <div class="signals-stat"><strong>${visibleSummaries.length}</strong><span>Components</span></div>
     <div class="signals-stat"><strong>${published}</strong><span>Published</span></div>
     <div class="signals-stat"><strong>${motions}</strong><span>Motions</span></div>
+    ${gamePlanGaps ? `<div class="signals-stat signals-stat-warning"><strong>⚠ ${gamePlanGaps}</strong><span>Game Plan gaps</span></div>` : ""}
   `;
 }
 
-function _sigRenderCategory(category, summariesByComponent) {
+function _sigRenderCategory(category, summariesByComponent, gamePlanSignalStatus = { missing: new Map() }) {
   const components = SIGNAL_COMPONENTS.filter((component) => component.category === category.id);
   const body = components
     .map((component) => {
@@ -392,15 +464,22 @@ function _sigRenderCategory(category, summariesByComponent) {
           _sigSelected.componentType === summary.componentType &&
           _sigSelected.compareKey === summary.compareKey;
         const hasClip = summary.record && summary.record.clipCount > 0;
+        const gamePlanGap = gamePlanSignalStatus.missing.get(
+          _sigRecordId(summary.componentType, summary.compareKey),
+        );
         const variantTitle =
           summary.variantCount > 1 ? `${summary.variantCount} spelling variants grouped` : "Canonical match";
+        const gamePlanTitle = gamePlanGap
+          ? ` ⚠ On the active Game Plan in ${gamePlanGap.playCount} play${gamePlanGap.playCount === 1 ? "" : "s"}; no published signal video.`
+          : "";
         return `
-          <button type="button" class="signals-chip${selected ? " is-selected" : ""}${hasClip ? " has-clip" : ""}"
+          <button type="button" class="signals-chip${selected ? " is-selected" : ""}${hasClip ? " has-clip" : ""}${gamePlanGap ? " needs-gameplan-signal" : ""}"
             data-action="openSignalComponent"
             data-arg="${escapeAttr(`${summary.componentType}|${summary.compareKey}`)}"
-            title="${escapeAttr(variantTitle)}">
+            title="${escapeAttr(variantTitle + gamePlanTitle)}">
             <span>${escapeHtml(summary.displayValue)}</span>
             <small>${summary.count}</small>
+            ${gamePlanGap ? `<em class="signals-gameplan-warning" aria-label="On the active Game Plan with no published signal video" title="On Game Plan: ${gamePlanGap.playCount} play${gamePlanGap.playCount === 1 ? "" : "s"}, no published video">⚠️</em>` : ""}
           </button>
         `;
       }).join("");
@@ -885,6 +964,7 @@ function renderSignals() {
   if (!root) return;
   const summariesByComponent = _sigSummaries();
   const visibleSummaries = _sigAllVisibleSummaries();
+  const gamePlanSignalStatus = _sigGamePlanMissingSignalMap();
   if (_sigSelected && !_sigFindSummary(_sigSelected.componentType, _sigSelected.compareKey)) {
     _sigSelected = null;
   }
@@ -907,7 +987,7 @@ function renderSignals() {
           <p class="signals-eyebrow">Signal Collection</p>
           <h1>Signals</h1>
         </div>
-        <div class="signals-stats">${_sigRenderStats(visibleSummaries)}</div>
+        <div class="signals-stats">${_sigRenderStats(visibleSummaries, gamePlanSignalStatus)}</div>
         ${_sigCanManage() ? `
         <div class="signals-header-actions">
           <button type="button" class="btn btn-sm btn-outline" id="sigRecompressBtn" data-action="recompressSignalClips" title="Re-encode older clips to a smaller, faster size for player phones">Optimize Clips</button>
@@ -916,7 +996,7 @@ function renderSignals() {
       ${_sigRenderCoverageReport(summariesByComponent)}
       <div class="signals-layout">
         <main class="signals-category-grid" aria-label="Signal component categories">
-          ${SIGNAL_CATEGORIES.map((category) => _sigRenderCategory(category, summariesByComponent)).join("")}
+          ${SIGNAL_CATEGORIES.map((category) => _sigRenderCategory(category, summariesByComponent, gamePlanSignalStatus)).join("")}
         </main>
         <aside class="signals-detail" aria-label="Signal detail">
           ${_sigRenderDetailSkeleton(selectedSummary, selectedRecord)}

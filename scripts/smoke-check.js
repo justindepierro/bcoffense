@@ -5322,6 +5322,11 @@ function checkSignalPlayIntegrationContracts() {
     !/function openSignalClip\(recordId\)/.test(signals) ||
     !/function closeSignalSelector\(\)/.test(signals) ||
     !/function _sigNormalizeClipList\(data\)/.test(signals) ||
+    !/function _sigActiveGamePlanPlays\(\)/.test(signals) ||
+    !/function _sigGamePlanMissingSignalMap\(\)/.test(signals) ||
+    !/active Game Plan in \$\{gamePlanGap\.playCount\}/.test(signals) ||
+    !/needs-gameplan-signal/.test(signals) ||
+    !/signals-gameplan-warning/.test(signalsCss) ||
     !/componentType: "personnel"[\s\S]*requiresVideo: false[\s\S]*cueLabel: "Verbal \/ board cue"/.test(signals) ||
     /componentType: "formation"[\s\S]*requiresVideo: false/.test(signals) ||
     !/function _sigComponentRequiresVideo\(componentType\)/.test(signals) ||
