@@ -5252,6 +5252,10 @@ function checkGamePlanMediaReadinessContracts() {
   if (
     !/function _gpRenderMediaCompletionScore\(board, draftedPlays\)/.test(gameplanRender) ||
     !/function _gpUniqueDraftedPlays\(drafted\)/.test(gameplanRender) ||
+    !/function _gpWarmMediaCompletionRemote\(draftedPlays\)/.test(gameplanRender) ||
+    !/checkRemoteForPlays\(unknownRemotePlays\)/.test(gameplanRender) ||
+    !/getCachedRemoteManifestForPlay\(play\)/.test(gameplanRender) ||
+    !/verified Cloudflare-published diagram/.test(gameplanRender) ||
     !/diagramPct \* 85/.test(gameplanRender) ||
     !/videoPct \* 15/.test(gameplanRender) ||
     !/gp-media-scoreboard/.test(gameplanRender)

@@ -3,6 +3,16 @@
    Split out of gameplan.js — see AGENTS.md for ownership map.
    ========================================================================= */
 
+// The Game Plan board renders densely, so it must never probe Cloudflare once
+// per row.  Warm every unknown diagram identity in one batch after the board
+// has rendered, then let the normal render path read the short-lived manifest
+// cache synchronously. This keeps the completion score accurate on a new
+// coach device without downloading every diagram blob into IndexedDB.
+let _gpMediaManifestWarmScope = "";
+let _gpMediaManifestWarmAt = 0;
+let _gpMediaManifestWarmPending = false;
+const GP_MEDIA_MANIFEST_RETRY_MS = 30000;
+
 function _gpUniqueFilterValues(fields) {
   const sourceFields = Array.isArray(fields) ? fields : [fields];
   const values = new Set();
@@ -344,6 +354,7 @@ function renderGamePlan() {
   _gpAttachLibraryHandlers();
   _gpAttachBoxHandlers();
   _gpAttachTrashZoneHandlers();
+  _gpWarmMediaCompletionRemote(draftedPlays);
   if (typeof loadGamePlanDiscussionCounts === "function") {
     setTimeout(loadGamePlanDiscussionCounts, 150);
   }
@@ -1141,13 +1152,21 @@ function _gpRenderScoreboard(board, draftedPlays) {
 }
 
 function _gpMediaStatusForPlay(play) {
+  const hasLocalDiagram = Boolean(
+    play &&
+    window.playImages &&
+    typeof window.playImages.hasForPlay === "function" &&
+    window.playImages.hasForPlay(play)
+  );
+  const remoteDiagram = !hasLocalDiagram &&
+    window.playImages &&
+    typeof window.playImages.getCachedRemoteManifestForPlay === "function"
+    ? window.playImages.getCachedRemoteManifestForPlay(play)
+    : null;
   return {
-    hasDiagram: Boolean(
-      play &&
-      window.playImages &&
-      typeof window.playImages.hasForPlay === "function" &&
-      window.playImages.hasForPlay(play)
-    ),
+    // A canonical R2 pointer is just as player-ready as a local IndexedDB
+    // cache.  The player will fetch the published blob on demand.
+    hasDiagram: hasLocalDiagram || Boolean(remoteDiagram?.published),
     hasVideo: Boolean(
       play &&
       window.playClips &&
@@ -1155,6 +1174,56 @@ function _gpMediaStatusForPlay(play) {
       window.playClips.hasForPlay(play)
     ),
   };
+}
+
+function _gpMediaManifestScopeKey(playsToCheck) {
+  return (playsToCheck || [])
+    .map((play) => {
+      if (typeof getPlayMediaId === "function") return getPlayMediaId(play);
+      return _gpPlaySignature(play);
+    })
+    .filter(Boolean)
+    .sort()
+    .join("|");
+}
+
+function _gpWarmMediaCompletionRemote(draftedPlays) {
+  const playImages = window.playImages;
+  if (
+    !playImages ||
+    typeof playImages.checkRemoteForPlays !== "function" ||
+    typeof playImages.getCachedRemoteManifestForPlay !== "function"
+  ) return;
+
+  const unknownRemotePlays = _gpUniqueDraftedPlays(draftedPlays).filter((play) => {
+    const local = typeof playImages.hasForPlay === "function" && playImages.hasForPlay(play);
+    return !local && !playImages.getCachedRemoteManifestForPlay(play);
+  });
+  if (unknownRemotePlays.length === 0) return;
+
+  const scope = _gpMediaManifestScopeKey(unknownRemotePlays);
+  const now = Date.now();
+  if (
+    _gpMediaManifestWarmPending ||
+    (scope === _gpMediaManifestWarmScope && now - _gpMediaManifestWarmAt < GP_MEDIA_MANIFEST_RETRY_MS)
+  ) return;
+
+  _gpMediaManifestWarmPending = true;
+  _gpMediaManifestWarmScope = scope;
+  _gpMediaManifestWarmAt = now;
+  playImages.checkRemoteForPlays(unknownRemotePlays)
+    .then(() => {
+      // The batch result is cached by play-images.js. Re-render once so the
+      // score uses those verified pointers; no image blobs are fetched here.
+      if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
+    })
+    .catch(() => {
+      // The existing local score remains useful offline. The cache/retry
+      // policy above prevents a failed network from causing a render loop.
+    })
+    .finally(() => {
+      _gpMediaManifestWarmPending = false;
+    });
 }
 
 function _gpUniqueDraftedPlays(drafted) {
@@ -1200,7 +1269,7 @@ function _gpRenderMediaCompletionScore(board, draftedPlays) {
     : "🖼️ Diagrams";
   return `
     <details class="gp-scoreboard gp-media-scoreboard"${scoreboardOpen}
-      title="Play diagram completion uses unique drafted plays; videos add bonus credit.">
+      title="Completion uses unique drafted plays and verified Cloudflare-published diagrams; videos add bonus credit.">
       <summary>${summaryText}</summary>
       <div class="gp-score-grid gp-media-score-grid">
         <div class="gp-score-tile gp-score-${status} gp-score-media-total"
@@ -1209,7 +1278,7 @@ function _gpRenderMediaCompletionScore(board, draftedPlays) {
           <span class="gp-score-count">${score}</span>
         </div>
         <div class="gp-score-tile ${media.diagrams === total && total ? "gp-score-ok" : media.diagrams ? "gp-score-warn" : "gp-score-empty"}"
-          title="${media.diagrams} of ${total} unique drafted plays have diagrams.">
+          title="${media.diagrams} of ${total} unique drafted plays have a local or verified Cloudflare-published diagram.">
           <span class="gp-score-label">Diagrams</span>
           <span class="gp-score-count">${media.diagrams}/${total}</span>
         </div>
