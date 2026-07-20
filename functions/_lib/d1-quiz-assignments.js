@@ -73,6 +73,17 @@ function safeCustomQuestions(value) {
   }).filter(Boolean);
 }
 
+// Drafts deliberately keep incomplete coach-written questions so a coach can
+// leave the builder and finish their wording later. Published homework still
+// goes through safeCustomQuestions above.
+function safeDraftCustomQuestions(value) {
+  return (Array.isArray(value) ? value : []).slice(0, 20).map((question) => ({
+    prompt: cleanText(question?.prompt, 320),
+    options: [0, 1, 2, 3].map((index) => cleanText(question?.options?.[index], 180)),
+    correctIndex: cleanInt(question?.correctIndex, 0, 3),
+  }));
+}
+
 function parseItems(value) {
   try { return safeItems(JSON.parse(value || "[]")); } catch (_) { return []; }
 }
@@ -89,7 +100,9 @@ function mapAssignment(row, recipient = {}) {
     instructions: row.instructions || "",
     items: parseItems(row.items_json),
     questionTypes: safeQuestionTypes(parseJsonList(row.question_types_json)),
-    customQuestions: safeCustomQuestions(parseJsonList(row.custom_questions_json)),
+    customQuestions: row.status === "draft"
+      ? safeDraftCustomQuestions(parseJsonList(row.custom_questions_json))
+      : safeCustomQuestions(parseJsonList(row.custom_questions_json)),
     quizMode: row.quiz_mode || "quick",
     positionKey: row.position_key || "",
     requiredScore: Number(row.required_score || 0),
@@ -281,6 +294,106 @@ export async function createQuizAssignment(db, teamId, session, input = {}) {
   }
   await db.batch(statements);
   return { assignment, recipientIds: recipients };
+}
+
+async function validRecipientIds(db, teamId, value) {
+  const requested = [...new Set((Array.isArray(value) ? value : [])
+    .map((id) => cleanText(id, 128)).filter(Boolean))].slice(0, 300);
+  if (!requested.length) return [];
+  const allowed = await db.prepare(
+    `SELECT id FROM users WHERE team_id = ? AND role = 'player' AND status = 'active'`,
+  ).bind(teamId).all();
+  const allowedIds = new Set((allowed.results || []).map((row) => row.id));
+  return requested.filter((id) => allowedIds.has(id));
+}
+
+function draftAssignmentInput(teamId, session, input, id, now) {
+  return {
+    id, teamId,
+    title: cleanText(input.title, 120) || "Untitled homework",
+    instructions: cleanText(input.instructions, 800),
+    items: safeItems(input.items),
+    questionTypes: safeQuestionTypes(input.questionTypes),
+    customQuestions: safeDraftCustomQuestions(input.customQuestions),
+    sourceKind: ["playbook", "script", "gameplan"].includes(cleanText(input.sourceKind, 20)) ? cleanText(input.sourceKind, 20) : "playbook",
+    sourceId: cleanText(input.sourceId, 180) || null,
+    quizMode: ["quick", "full", "job", "diagram"].includes(input.quizMode) ? input.quizMode : "quick",
+    positionKey: cleanText(input.positionKey, 40),
+    requiredScore: cleanInt(input.requiredScore, 0, 100),
+    dueAt: cleanUnix(input.dueAt),
+    createdBy: session?.d1UserId || null,
+    now,
+  };
+}
+
+export async function saveQuizAssignmentDraft(db, teamId, session, input = {}) {
+  const requestedId = cleanText(input.assignmentId, 128);
+  const id = requestedId || crypto.randomUUID();
+  const now = nowUnix();
+  if (requestedId) {
+    const current = await db.prepare(
+      `SELECT id, status FROM quiz_assignments WHERE id = ? AND team_id = ? LIMIT 1`,
+    ).bind(id, teamId).first();
+    if (!current || current.status !== "draft") throw new Error("Only an unsent draft can be updated here.");
+  }
+  const assignment = draftAssignmentInput(teamId, session, input, id, now);
+  const recipients = await validRecipientIds(db, teamId, input.recipientIds);
+  const statements = [db.prepare(
+    `INSERT INTO quiz_assignments (id, team_id, title, instructions, items_json, question_types_json, custom_questions_json, source_kind, source_id, quiz_mode, position_key, required_score, due_at, status, created_by, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       title = excluded.title, instructions = excluded.instructions, items_json = excluded.items_json,
+       question_types_json = excluded.question_types_json, custom_questions_json = excluded.custom_questions_json,
+       source_kind = excluded.source_kind, source_id = excluded.source_id, quiz_mode = excluded.quiz_mode,
+       position_key = excluded.position_key, required_score = excluded.required_score, due_at = excluded.due_at,
+       updated_at = excluded.updated_at`,
+  ).bind(id, teamId, assignment.title, assignment.instructions || null, JSON.stringify(assignment.items), JSON.stringify(assignment.questionTypes), JSON.stringify(assignment.customQuestions), assignment.sourceKind, assignment.sourceId, assignment.quizMode, assignment.positionKey || null, assignment.requiredScore, assignment.dueAt, assignment.createdBy, now, now),
+  db.prepare(`DELETE FROM quiz_assignment_recipients WHERE assignment_id = ?`).bind(id)];
+  recipients.forEach((userId) => statements.push(db.prepare(
+    `INSERT INTO quiz_assignment_recipients (assignment_id, user_id, assigned_by, assigned_at) VALUES (?, ?, ?, ?)`,
+  ).bind(id, userId, assignment.createdBy, now)));
+  await db.batch(statements);
+  return { assignment: { ...assignment, status: "draft", customQuestions: assignment.customQuestions }, recipientIds: recipients };
+}
+
+export async function publishQuizAssignment(db, teamId, session, input = {}) {
+  const draftId = cleanText(input.assignmentId, 128);
+  if (!draftId) return createQuizAssignment(db, teamId, session, input);
+  const existing = await db.prepare(
+    `SELECT id, status FROM quiz_assignments WHERE id = ? AND team_id = ? LIMIT 1`,
+  ).bind(draftId, teamId).first();
+  if (!existing || existing.status !== "draft") throw new Error("Homework draft is unavailable.");
+
+  const title = cleanText(input.title, 120);
+  const items = safeItems(input.items);
+  const questionTypes = safeQuestionTypes(input.questionTypes);
+  const customQuestions = safeCustomQuestions(input.customQuestions);
+  const recipients = await validRecipientIds(db, teamId, input.recipientIds);
+  if (!title) throw new Error("Give the homework a title.");
+  if (!items.length && !customQuestions.length) throw new Error("Add a play or a complete custom question.");
+  if (!questionTypes.length && !customQuestions.length) throw new Error("Choose a question type or add a complete custom question.");
+  if (!recipients.length) throw new Error("Choose at least one player.");
+  const now = nowUnix();
+  const mode = ["quick", "full", "job", "diagram"].includes(input.quizMode) ? input.quizMode : "quick";
+  const dueAt = cleanUnix(input.dueAt);
+  const assignment = {
+    id: draftId, teamId, title, instructions: cleanText(input.instructions, 800), items, questionTypes, customQuestions,
+    quizMode: mode, positionKey: cleanText(input.positionKey, 40), requiredScore: cleanInt(input.requiredScore, 0, 100),
+    dueAt, createdBy: session?.d1UserId || null, now,
+  };
+  const statements = [db.prepare(
+    `UPDATE quiz_assignments SET title = ?, instructions = ?, items_json = ?, question_types_json = ?, custom_questions_json = ?,
+      source_kind = ?, source_id = ?, quiz_mode = ?, position_key = ?, required_score = ?, due_at = ?, status = 'published', updated_at = ?
+     WHERE id = ? AND team_id = ? AND status = 'draft'`,
+  ).bind(title, assignment.instructions || null, JSON.stringify(items), JSON.stringify(questionTypes), JSON.stringify(customQuestions),
+    ["playbook", "script", "gameplan"].includes(cleanText(input.sourceKind, 20)) ? cleanText(input.sourceKind, 20) : "playbook", cleanText(input.sourceId, 180) || null,
+    mode, assignment.positionKey || null, assignment.requiredScore, dueAt, now, draftId, teamId),
+  db.prepare(`DELETE FROM quiz_assignment_recipients WHERE assignment_id = ?`).bind(draftId)];
+  recipients.forEach((userId) => statements.push(db.prepare(
+    `INSERT INTO quiz_assignment_recipients (assignment_id, user_id, assigned_by, assigned_at) VALUES (?, ?, ?, ?)`,
+  ).bind(draftId, userId, assignment.createdBy, now)));
+  await db.batch(statements);
+  return { assignment: { ...assignment, status: "published" }, recipientIds: recipients };
 }
 
 export async function recordQuizAssignmentAttempt(db, teamId, userId, input = {}) {

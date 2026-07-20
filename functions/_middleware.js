@@ -18,6 +18,7 @@ function canManagedCoachUseWriteRoute(session, pathname) {
 
   // Collaboration is deliberately available in the default coach profile.
   if (pathname.startsWith("/api/questions")) return hasCoachPermission(session, "feature:questions");
+  if (pathname.startsWith("/api/quiz-assignments")) return hasCoachPermission(session, "feature:quiz_assignments");
   if (pathname.startsWith("/api/plays/") && pathname.endsWith("/like")) return hasCoachPermission(session, "feature:comments");
   if (pathname.startsWith("/api/threads/") && !pathname.includes("/manage") && !pathname.includes("/official")) {
     return hasCoachPermission(session, "feature:comments");

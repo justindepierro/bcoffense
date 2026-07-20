@@ -56,19 +56,22 @@ assert(
   "assignment lifecycle records initial delivery, opens, attempts, completions, and reminders",
 );
 assert(
-  route.includes("isQuizAssignmentStaff") && route.includes("record-attempt")
+  route.includes("canManageQuizAssignments") && route.includes("record-attempt")
     && route.includes("record-open") && route.includes("body.action === \"resend\"")
     && route.includes("body.action === \"archive\"")
+    && route.includes("body.action === \"save-draft\"") && route.includes("publishQuizAssignment")
     && route.includes("createNotification") && route.includes("sendPushToUser"),
-  "coach delivery is role-gated, auditable, and supports resend plus archive",
+  "coach delivery is permission-gated, auditable, and supports drafts, resend, plus archive",
 );
 assert(
   client.includes("startPlayerQuizAssignment") && client.includes("recordQuizAssignmentAttempt")
     && client.includes("renderPlayerQuizHomeworkDashboard") && client.includes("openQuizAssignmentManager")
     && client.includes("openQuizAssignmentDetails") && client.includes("followUpQuizAssignment")
     && client.includes("openQuizAssignmentForSource") && client.includes("saveQuizAssignmentTemplate")
+    && client.includes("saveQuizAssignmentDraft") && client.includes("editQuizAssignmentDraft")
+    && client.includes("_restoreQuizAssignmentModalScrollTop")
     && client.includes("Saved practice script") && client.includes("Game Plan") && client.includes("Custom question"),
-  "client includes coach creation, direct source assignment, reusable templates, and assignment management",
+  "client includes coach creation, saveable drafts, scroll-stable editing, templates, and assignment management",
 );
 assert(
   client.includes("getQuizAssignmentSourceHealth")
@@ -94,7 +97,7 @@ assert(
   "homework notification opens exactly the assigned quiz",
 );
 assert(
-  index.includes("script-quiz-assignments.js?v=1281") && sw.includes("./js/script-quiz-assignments.js"),
+  index.includes("script-quiz-assignments.js?v=1282") && sw.includes("./js/script-quiz-assignments.js"),
   "assignment client is loaded and cached with the app shell",
 );
 

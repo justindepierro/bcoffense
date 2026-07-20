@@ -4,11 +4,16 @@ import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib
 import { getTeamId } from "../../_lib/d1-threads.js";
 import { createNotification } from "../../_lib/d1-notifications.js";
 import { sendPushToUser } from "../../_lib/d1-push.js";
+import { hasCoachPermission } from "../../_lib/staff-access.js";
 import {
   archiveQuizAssignment, createQuizAssignment, getAssignmentPlayers, getCoachQuizAssignments,
   getPlayerQuizAssignments, getQuizAssignmentForStaff, isQuizAssignmentStaff, recordQuizAssignmentAttempt,
-  markQuizAssignmentOpened, recordQuizAssignmentDelivery,
+  markQuizAssignmentOpened, publishQuizAssignment, recordQuizAssignmentDelivery, saveQuizAssignmentDraft,
 } from "../../_lib/d1-quiz-assignments.js";
+
+function canManageQuizAssignments(session) {
+  return isQuizAssignmentStaff(session) && hasCoachPermission(session, "feature:quiz_assignments");
+}
 
 async function sessionContext(request, env) {
   const session = await getSessionFromRequest(request, env);
@@ -23,7 +28,7 @@ export async function onRequestGet(context) {
   const ctx = await sessionContext(context.request, context.env);
   if (ctx.error) return ctx.error;
   try {
-    if (isQuizAssignmentStaff(ctx.session)) {
+    if (canManageQuizAssignments(ctx.session)) {
       const [assignments, players] = await Promise.all([
         getCoachQuizAssignments(context.env.DB, ctx.teamId),
         getAssignmentPlayers(context.env.DB, ctx.teamId),
@@ -55,7 +60,7 @@ export async function onRequestPost(context) {
       const result = await markQuizAssignmentOpened(context.env.DB, ctx.teamId, ctx.session.d1UserId, body.assignmentId);
       return withSecurityHeaders(authJson({ ok: true, result }));
     }
-    if (!isQuizAssignmentStaff(ctx.session)) return authJson({ ok: false, error: "Coach access required." }, { status: 403 });
+    if (!canManageQuizAssignments(ctx.session)) return authJson({ ok: false, error: "Coach quiz access required." }, { status: 403 });
     if (body.action === "archive") {
       const result = await archiveQuizAssignment(context.env.DB, ctx.teamId, body.assignmentId);
       return withSecurityHeaders(authJson({ ok: true, result }));
@@ -73,7 +78,13 @@ export async function onRequestPost(context) {
       await recordQuizAssignmentDelivery(context.env.DB, assignment.id, recipients, "reminded");
       return withSecurityHeaders(authJson({ ok: true, recipients: recipients.length }));
     }
-    const created = await createQuizAssignment(context.env.DB, ctx.teamId, ctx.session, body);
+    if (body.action === "save-draft") {
+      const saved = await saveQuizAssignmentDraft(context.env.DB, ctx.teamId, ctx.session, body);
+      return withSecurityHeaders(authJson({ ok: true, assignment: saved.assignment, recipients: saved.recipientIds.length }));
+    }
+    const created = body.action === "publish"
+      ? await publishQuizAssignment(context.env.DB, ctx.teamId, ctx.session, body)
+      : await createQuizAssignment(context.env.DB, ctx.teamId, ctx.session, body);
     const questionCount = created.assignment.items.length + (created.assignment.customQuestions?.length || 0);
     const bodyCopy = `${questionCount} question${questionCount === 1 ? "" : "s"}${created.assignment.dueAt ? " · check the due date" : ""}`;
     await Promise.allSettled(created.recipientIds.map(async (userId) => {
