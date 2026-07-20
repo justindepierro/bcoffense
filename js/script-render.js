@@ -403,7 +403,8 @@ function renderPeriodActionsToolbar(index, periodLabel) {
 function isPlayerScriptRole() {
   const currentUser =
     typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
-  return currentUser?.role === "player";
+  return currentUser?.role === "player" ||
+    (currentUser?.role === "coach" && currentUser?.managedCoach === true);
 }
 
 function getPlayerScriptMetaItems(play, reps) {

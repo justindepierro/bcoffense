@@ -4,6 +4,13 @@
 let playerScriptImageStatusRefreshPending = false;
 let playerScriptImageKeysLoaded = false;
 
+function _isScriptStudyPortalUser() {
+  const currentUser =
+    typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  return currentUser?.role === "player" ||
+    (currentUser?.role === "coach" && currentUser?.managedCoach === true);
+}
+
 const PLAYER_SCRIPT_RESP_KEYS = [
   "respQ",
   "respT",
@@ -479,8 +486,8 @@ function renderPlayerScriptLauncher() {
 
   const currentUser =
     typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
-  const isPlayer = currentUser?.role === "player";
-  if (!isPlayer) {
+  const isStudyPortal = _isScriptStudyPortalUser();
+  if (!isStudyPortal) {
     section.hidden = true;
     list.innerHTML = "";
     return;
@@ -496,15 +503,17 @@ function renderPlayerScriptLauncher() {
   const headerTitle = section.querySelector(".player-script-launcher-header h4");
   if (headerTitle) {
     headerTitle.textContent = hasLoadedPlayerScript
-      ? "Other Practice Scripts"
-      : "Player Practice Scripts";
+      ? "Other Team Practice Scripts"
+      : currentUser?.managedCoach
+        ? "Team Practice Scripts"
+        : "Player Practice Scripts";
   }
 
   if (publishedScripts.length === 0) {
     section.hidden = false;
     list.innerHTML = `
       <div class="player-script-empty">
-        No practice script has been published for player logins yet.
+        No team practice script has been published yet.
       </div>
     `;
     return;
@@ -606,7 +615,7 @@ function renderPlayerLoadedScriptBar() {
 
   const currentUser =
     typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
-  const isPlayer = currentUser?.role === "player";
+  const isPlayer = _isScriptStudyPortalUser();
   const playsForDay = Array.isArray(script) ? script.filter((item) => !item?.isSeparator) : [];
   if (!isPlayer || playsForDay.length === 0) {
     section.hidden = true;
@@ -633,7 +642,7 @@ function renderPlayerLoadedScriptBar() {
     .map((value) => `<span>${escapeHtml(value)}</span>`)
     .join("");
   hint.innerHTML = `
-    <span>Start in Swipe View, lock your position, then quiz yourself or ask a question.</span>
+    <span>Open Swipe View to study the full call, diagram, rules, and questions.</span>
   `;
   queuePlayerScriptImageStatusRefresh();
 }
@@ -712,7 +721,7 @@ function loadSavedScriptsList() {
     loadFullDayScriptList();
     renderPlayerScriptLauncher();
     renderPlayerLoadedScriptBar();
-    if (typeof getCurrentAuthUser === "function" && getCurrentAuthUser()?.role === "player" &&
+    if (_isScriptStudyPortalUser() &&
       window.playImages && typeof window.playImages.prefetchForPlays === "function") {
       setTimeout(() => window.playImages.prefetchForPlays(script).catch(() => {}), 250);
     }
@@ -824,7 +833,7 @@ function loadSavedScriptRecord(scriptData, opts = {}) {
     }
 
     restoreSavedScriptWorkspace(scriptData.workspace);
-    if (typeof getCurrentAuthUser === "function" && getCurrentAuthUser()?.role === "player") {
+    if (_isScriptStudyPortalUser()) {
       collapsedPeriods = new Set();
     }
     endScriptEditHistoryWindow();

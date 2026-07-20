@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
 
-const [migration, policy, auth, middleware, accounts, accountAction, client, index, sw] = await Promise.all([
+const [migration, policy, auth, middleware, accounts, accountAction, client, authClient, shell, scriptPlayer, scriptRender, playbookRender, components, index, sw] = await Promise.all([
   source("migrations/0023_staff_access.sql"),
   source("functions/_lib/staff-access.js"),
   source("functions/_lib/auth.js"),
@@ -13,6 +13,12 @@ const [migration, policy, auth, middleware, accounts, accountAction, client, ind
   source("functions/auth/players.js"),
   source("functions/auth/players/[id].js"),
   source("js/coach-access.js"),
+  source("js/auth.js"),
+  source("js/app-shell.js"),
+  source("js/script-player.js"),
+  source("js/script-render.js"),
+  source("js/playbook-render.js"),
+  source("css/components.css"),
   source("index.html"),
   source("sw.js"),
 ]);
@@ -35,7 +41,16 @@ assert.match(client, /Read-only workspace/, "access UI distinguishes study acces
 const cloudSync = await source("js/cloud-sync.js");
 assert.match(cloudSync, /currentUser\.managedCoach === true/, "managed coaches hydrate from the canonical team workspace at sign-in");
 assert.match(index, /id="coachAccessOverlay"/, "coach access modal is included in the app shell");
-assert.match(index, /js\/coach-access\.js\?v=1284/, "coach access client is loaded");
+assert.match(index, /js\/coach-access\.js\?v=1285/, "coach access client is loaded");
 assert.match(sw, /\.\/js\/coach-access\.js/, "coach access client is cached for offline shell use");
+assert.match(authClient, /authStudyPortal/, "managed coaches are explicitly marked for the study-first portal");
+assert.match(authClient, /STUDY_PORTAL_TABS/, "managed coaches are limited to the same core study tabs as players");
+assert.match(shell, /isStudyPortal/, "managed coaches use the player-style mobile shell instead of the live coach shell");
+assert.match(scriptPlayer, /_isScriptStudyPortalUser/, "published script launcher supports managed coach study access");
+assert.match(scriptRender, /currentUser\?\.managedCoach === true/, "script rows use player study rendering for managed coaches");
+assert.match(playbookRender, /currentUser\?\.managedCoach === true/, "playbook cards use player study rendering for managed coaches");
+assert.match(components, /auth-study-portal/, "legacy mobile coach controls are hidden in the study portal");
+assert.match(index, /id="mobileScriptCoachNow"[^>]*data-auth-admin-only="true"/, "unfinished live coach mode is reserved for admin");
+assert.match(index, /id="mobileCoachDock"[^>]*data-auth-admin-only="true"/, "mobile coach dock is reserved for admin");
 
-console.log("coach access contract: 19 assertions passed");
+console.log("coach access contract: 28 assertions passed");

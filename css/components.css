@@ -1351,6 +1351,14 @@ body.is-short-screen .auth-login-overlay--mobile .auth-login-player-shortcut,
     display: none;
   }
 
+  /* Managed coaches are study-first until the live coach workflow is ready.
+     They use the player-style navigation instead of the unfinished coach dock. */
+  body.is-mobile-screen[data-auth-study-portal="true"]
+    #mainApp:not(.hidden)
+    + .mobile-coach-dock {
+    display: none;
+  }
+
   body.auth-locked .mobile-coach-dock {
     display: none !important;
   }
@@ -1425,6 +1433,12 @@ body.is-short-screen .auth-login-overlay--mobile .auth-login-player-shortcut,
 
   body.shell-tablet #script.active .mobile-script-coach-now,
   body.is-mobile-screen[data-auth-role="player"]
+    #script.active
+    .mobile-script-coach-now {
+    display: none;
+  }
+
+  body.is-mobile-screen[data-auth-study-portal="true"]
     #script.active
     .mobile-script-coach-now {
     display: none;

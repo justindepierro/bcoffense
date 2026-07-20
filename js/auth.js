@@ -40,6 +40,11 @@
     player: "dashboard",
   };
 
+  // Managed coaches temporarily use the same focused material browser as
+  // players. Additional coach-workspace tabs remain deliberately unavailable
+  // until that authoring experience is ready to ship.
+  const STUDY_PORTAL_TABS = [...AUTH_CORE_PLAYER_TABS.player, "leaderboard"];
+
   // D1-backed coaches can study every coaching surface by default. Workspace
   // editing and staff-management capabilities remain explicit grants.
   const MANAGED_COACH_DEFAULT_PERMISSIONS = [
@@ -531,7 +536,10 @@
 
   function canAccessTab(tabName) {
     if (!currentAuthUser) return false;
-    if (isManagedCoachUser()) return hasManagedCoachPermission(`tab:${tabName}`);
+    if (isManagedCoachUser()) {
+      return STUDY_PORTAL_TABS.includes(tabName) &&
+        hasManagedCoachPermission(`tab:${tabName}`);
+    }
     return (AUTH_ROLE_TABS[currentAuthUser.role] || []).includes(tabName);
   }
 
@@ -549,14 +557,19 @@
 
   function syncPlayerPortalChrome() {
     const isPlayer = currentAuthUser?.role === "player";
-    document.body?.classList.toggle("player-portal", isPlayer);
+    // Managed coaches are study-first for now. They use the same calm,
+    // load-and-study surfaces as players; admin retains the unfinished live
+    // coach-mode/editor workflow on phones and tablets.
+    const isStudyPortal = isPlayer || isManagedCoachUser();
+    document.body?.classList.toggle("player-portal", isStudyPortal);
+    document.body?.classList.toggle("coach-study-portal", isManagedCoachUser());
     const dashboardTab = document.getElementById("tab-dashboard");
     const playbookTab = document.getElementById("tab-playbook");
     const tabStrip = playbookTab?.parentElement;
     const utilitiesWrap = document.querySelector(".tabs-utilities");
     const utilitiesMenu = utilitiesWrap?.querySelector(".tabs-utilities-menu");
     if (dashboardTab && tabStrip && utilitiesMenu) {
-      if (isPlayer) {
+      if (isStudyPortal) {
         dashboardTab.classList.add("tab");
         dashboardTab.setAttribute("role", "tab");
         dashboardTab.setAttribute("aria-controls", "dashboard");
@@ -570,10 +583,10 @@
         utilitiesMenu.insertBefore(dashboardTab, utilitiesMenu.firstElementChild);
       }
     }
-    if (utilitiesWrap) utilitiesWrap.hidden = isPlayer;
-    // Show My Questions button only for player accounts
+    if (utilitiesWrap) utilitiesWrap.hidden = isStudyPortal;
+    // Study-first coaches can use the same personal questions inbox as players.
     const portalBtn = document.getElementById("playerPortalBtn");
-    if (portalBtn) portalBtn.hidden = !isPlayer;
+    if (portalBtn) portalBtn.hidden = !isStudyPortal;
     [
       ["tab-playbook", "Playbook", "Playbook"],
       ["tab-signals", "Signals", "Signals"],
@@ -585,7 +598,7 @@
       if (!tab) return;
       tab.dataset.defaultLabel = tab.dataset.defaultLabel || defaultLabel;
       tab.dataset.playerLabel = tab.dataset.playerLabel || playerLabel;
-      const nextLabel = isPlayer ? tab.dataset.playerLabel : tab.dataset.defaultLabel;
+      const nextLabel = isStudyPortal ? tab.dataset.playerLabel : tab.dataset.defaultLabel;
       if (tab.textContent.trim() !== nextLabel) tab.textContent = nextLabel;
     });
   }
@@ -712,7 +725,7 @@
       if (target?.matches("input[type='file']") && !canEditUser()) return true;
     }
 
-    if (currentAuthUser.role === "player") {
+    if (currentAuthUser.role === "player" || isManagedCoachUser()) {
       if (el.dataset.authPlayerHide === "true") return true;
       if (el.closest("#pbPrintPanel, .cr-panel")) return true;
     }
@@ -755,6 +768,8 @@
     document.body.dataset.authCanEdit = canEditUser() ? "true" : "false";
     document.body.dataset.authReadonly = isReadOnlyRole() ? "true" : "false";
     document.body.dataset.authManagedCoach = isManagedCoachUser() ? "true" : "false";
+    document.body.dataset.authStudyPortal =
+      currentAuthUser?.role === "player" || isManagedCoachUser() ? "true" : "false";
     syncPlayerPortalChrome();
 
     // Item 50: apply (or clear) player portal accent color

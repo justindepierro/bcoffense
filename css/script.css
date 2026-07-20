@@ -3840,6 +3840,51 @@ body[data-auth-role="player"]
   }
 }
 
+/* Managed-coach study portal — deliberately reuse the player script surface.
+   The account remains a coach for permissions and collaboration, but its
+   phone/tablet workflow is simply choose a published practice, open it, and
+   study it. Admin keeps the live coach controls. */
+body[data-auth-study-portal="true"] #script .script-builder {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+body[data-auth-study-portal="true"] #script .script-header-panel,
+body[data-auth-study-portal="true"] #script .period-buttons,
+body[data-auth-study-portal="true"] #script .script-library-toggle-btn,
+body[data-auth-study-portal="true"] #script .script-toolbar,
+body[data-auth-study-portal="true"] #script .script-tools-drawer,
+body[data-auth-study-portal="true"] #script .play-list {
+  display: none !important;
+}
+
+body[data-auth-study-portal="true"]
+  #script.script-player-awaiting-load
+  .script-section-head,
+body[data-auth-study-portal="true"]
+  #script.script-player-awaiting-load
+  .script-stats-bar,
+body[data-auth-study-portal="true"]
+  #script.script-player-awaiting-load
+  #scriptTimeline,
+body[data-auth-study-portal="true"]
+  #script.script-player-awaiting-load
+  #scriptPlays {
+  display: none !important;
+}
+
+@media (max-width: 1024px) {
+  body.is-mobile-screen[data-auth-study-portal="true"] #script.panel {
+    overflow: visible;
+  }
+}
+
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen)[data-auth-study-portal="true"] #script .script-list {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
 /* ── Laptop density tier ──────────────────────────────────────────────
    Pack far more onto smaller desktops (e.g. 13" MacBook Air) without
    touching large monitors, which stay above the 1600px cutoff. Tightens

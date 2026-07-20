@@ -119,6 +119,8 @@ function renderPlaybook() {
       document.getElementById("searchPlay")?.value?.trim().toLowerCase() || "";
     const currentUser =
       typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    const isStudyPortal = currentUser?.role === "player" ||
+      (currentUser?.role === "coach" && currentUser?.managedCoach === true);
     const isReadOnlyViewer = Boolean(
       currentUser &&
       !(typeof isAdminUser === "function" ? isAdminUser() : false),
@@ -187,6 +189,7 @@ function renderPlaybook() {
         : ((typeof _gpPlaySignature === "function") ? _gpPlaySignature(play) : "");
       const onWristband = isPlayOnHighlightedWristband(play);
       const readinessSummary =
+        !isStudyPortal &&
         typeof getPlayReadinessSummary === "function" &&
           typeof isPlayReadinessCoachRole === "function" &&
           isPlayReadinessCoachRole()
@@ -378,7 +381,7 @@ function renderPlaybook() {
           : "";
         const hasCoachNotes = String(play.playerNotes || "").trim();
         const studyBadges = [
-          item.playerHidden && currentUser?.role !== "player"
+          item.playerHidden && !isStudyPortal
             ? '<span class="pb-card-study-badge pb-card-study-badge--hidden">Hidden from players</span>'
             : "",
           imageSig
@@ -388,7 +391,7 @@ function renderPlaybook() {
           item.signalCount ? '<span class="pb-card-study-badge pb-card-study-badge--signals">Signals</span>' : "",
           hasCoachNotes ? '<span class="pb-card-study-badge pb-card-study-badge--notes">Coach note</span>' : "",
         ].filter(Boolean).join("");
-        const gpCardToggle = activeOpponent
+        const gpCardToggle = activeOpponent && !isStudyPortal
           ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" data-arg="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`
           : "";
         const cardEditButton = isReadOnlyViewer
@@ -400,7 +403,7 @@ function renderPlaybook() {
         const cardPlayerVisibilityButton = canTogglePlayerVisibility
           ? `<button type="button" class="pb-card-action pb-card-action--visibility${item.playerHidden ? " is-hidden" : ""}" data-action="togglePlayPlayerVisibility" data-idx="${idx}" data-arg="${idx}" title="${item.playerHidden ? "Show this play to players" : "Hide this play from players"}" aria-label="${item.playerHidden ? "Show" : "Hide"} ${escapeHtml(play.play || "this play")} ${item.playerHidden ? "in" : "from"} the player playbook">${item.playerHidden ? "🙈 Hidden" : "👁️ Players"}</button>`
           : "";
-        const staffCardActions = currentUser?.role === "player"
+        const staffCardActions = isStudyPortal
           ? ""
           : `<div class="pb-card-actions pb-card-actions--staff" aria-label="Coach play actions">
               <button type="button" class="pb-card-action pb-card-action--study" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">Present</button>
@@ -415,9 +418,9 @@ function renderPlaybook() {
           .map((value) => `<span class="pb-card-pill">${escapeHtml(value)}</span>`)
           .join("");
         const playerCardMedia =
-          currentUser?.role === "player" ? _renderPlayerPlaybookCardMedia(item) : "";
+          isStudyPortal ? _renderPlayerPlaybookCardMedia(item) : "";
         const playerCardNote =
-          currentUser?.role === "player" ? _renderPlayerPlaybookCardNote(play) : "";
+          isStudyPortal ? _renderPlayerPlaybookCardNote(play) : "";
         return `
           <div class="pb-card${wbClass}${gpClass}${hiddenClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-arg="${idx}" data-preview="${idx}"
                tabindex="0" role="button"
@@ -428,7 +431,7 @@ function renderPlaybook() {
             <div class="pb-card-study-row">${studyBadges}</div>
             ${playerCardNote}
             ${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}
-            ${item.readinessCardBadge}
+            ${!isStudyPortal ? item.readinessCardBadge : ""}
             <div class="pb-card-pills">${pills}</div>
             ${staffCardActions}
             ${_renderPlayerPlaybookCardActions(item)}
@@ -436,7 +439,7 @@ function renderPlaybook() {
         `;
       })
       .join("");
-    if (currentUser?.role === "player") {
+    if (isStudyPortal) {
       hydratePlayerPlaybookThumbnails(cardsEl);
     }
 
@@ -555,7 +558,9 @@ function _renderWorkflowChips(play, idx, scriptLookup, scoutLookup) {
 function _renderPlayerPlaybookCardActions(item) {
   const currentUser =
     typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
-  if (currentUser?.role !== "player" || !item) return "";
+  const isStudyPortal = currentUser?.role === "player" ||
+    (currentUser?.role === "coach" && currentUser?.managedCoach === true);
+  if (!isStudyPortal || !item) return "";
   const playLabel =
     typeof getPlayPresentationPlayLabel === "function"
       ? getPlayPresentationPlayLabel(item.play)
@@ -830,8 +835,9 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
   const section = document.getElementById("playerPlaybookSummary");
   if (!section) return;
 
-  const isPlayer = currentUser?.role === "player";
-  if (!isPlayer) {
+  const isStudyPortal = currentUser?.role === "player" ||
+    (currentUser?.role === "coach" && currentUser?.managedCoach === true);
+  if (!isStudyPortal) {
     section.hidden = true;
     section.innerHTML = "";
     return;
@@ -887,7 +893,7 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
     ? '<button type="button" class="btn btn-primary" data-action="showTab" data-arg="script">Open Practice</button>'
     : featuredScript
       ? `<button type="button" class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScriptId}">Load Latest Practice</button>`
-      : '<button type="button" class="btn btn-secondary" data-action="showTab" data-arg="dashboard">Player Home</button>';
+      : '<button type="button" class="btn btn-secondary" data-action="showTab" data-arg="dashboard">Team Home</button>';
   const playbookFilterAction =
     '<button type="button" class="btn btn-primary" data-action="openPlayerPlaybookFilters">Filters</button>';
   const playbookPresentAction =
@@ -900,7 +906,7 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
   section.innerHTML = `
     <div class="pb-player-summary__main">
       <div class="pb-player-summary__copy">
-        <span class="pb-player-summary__eyebrow">Player Playbook</span>
+        <span class="pb-player-summary__eyebrow">${currentUser?.managedCoach ? "Team Playbook" : "Player Playbook"}</span>
         <h2>Find the play, study the picture, ask the question.</h2>
         <p>Use quick filters for diagrams, coach notes, game plan calls, personnel, and formations. Open Study when you need the full-screen swipe view.</p>
       </div>

@@ -580,6 +580,8 @@ function syncMobileShellState() {
         ? "tablet"
         : "desktop";
   const authRole = body.dataset.authRole || "";
+  const isStudyPortal =
+    authRole === "player" || body.dataset.authStudyPortal === "true";
   const displayMode = getAppDisplayMode();
   const fullscreenApiActive = Boolean(document.fullscreenElement);
   const isStandaloneDisplay =
@@ -612,6 +614,7 @@ function syncMobileShellState() {
     coachDockHeight,
     isTouch ? "touch" : "pointer",
     authRole,
+    isStudyPortal ? "study" : "workspace",
     activeTab,
     isMobile ? "mobile" : "desktop",
     shellSize,
@@ -630,7 +633,7 @@ function syncMobileShellState() {
   setMobileShellCssVar(root, "--app-vh", `${Math.max(height * 0.01, 1)}px`);
   setMobileShellCssVar(root, "--app-vw", `${Math.max(width * 0.01, 1)}px`);
 
-  const playerBottomNavActive = authRole === "player" && isMobile;
+  const playerBottomNavActive = isStudyPortal && isMobile;
   if (header) setMobileShellCssVar(root, "--app-header-height", `${headerHeight}px`);
   if (tabs) {
     setMobileShellCssVar(root, "--app-tabs-height", `${playerBottomNavActive ? 0 : tabsHeight}px`);
@@ -669,10 +672,10 @@ function syncMobileShellState() {
     el.classList.toggle("display-mode-installed", isStandaloneDisplay);
     el.classList.toggle("app-presentation-active", presentationActive);
   });
-  body.classList.toggle("is-player-mobile-shell", isMobile && authRole === "player");
+  body.classList.toggle("is-player-mobile-shell", isMobile && isStudyPortal);
   body.classList.toggle(
     "is-staff-mobile-shell",
-    isMobile && Boolean(authRole) && authRole !== "player" && authRole !== "locked",
+    isMobile && Boolean(authRole) && !isStudyPortal && authRole !== "locked",
   );
   if (coachDockHeight > 0) {
     setMobileShellCssVar(root, "--coach-dock-height", `${coachDockHeight + 12}px`);
@@ -709,7 +712,7 @@ function syncMobileShellState() {
     isMobile &&
     activeTab === "script" &&
     Boolean(authRole) &&
-    authRole !== "player" &&
+    !isStudyPortal &&
     authRole !== "locked";
   if (!isStaffPhoneScript) {
     body.classList.remove("mobile-script-editing");
