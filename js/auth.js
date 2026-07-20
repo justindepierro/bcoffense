@@ -14,6 +14,7 @@
       "offensebuilder",
       "quizsetup",
       "dashboard",
+      "leaderboard",
     ],
     coach: [
       "playbook",
@@ -28,6 +29,7 @@
       "offensebuilder",
       "quizsetup",
       "dashboard",
+      "leaderboard",
     ],
     player: [...AUTH_CORE_PLAYER_TABS.player, "leaderboard"],
   };
@@ -36,6 +38,30 @@
     admin: "playbook",
     coach: "playbook",
     player: "dashboard",
+  };
+
+  // D1-backed coach accounts are intentionally default-deny. The legacy
+  // environment-variable coach account keeps its established full access.
+  const MANAGED_COACH_DEFAULT_PERMISSIONS = [
+    "tab:dashboard", "tab:playbook", "tab:signals", "tab:script", "tab:leaderboard",
+    "feature:comments", "feature:questions",
+  ];
+  const MANAGED_COACH_ACTION_PERMISSIONS = {
+    openPlayersAdmin: "feature:manage_players",
+    submitPlayerInvite: "feature:manage_players",
+    playerAdminResend: "feature:manage_players",
+    playerAdminCopyLink: "feature:manage_players",
+    playerAdminDisable: "feature:manage_players",
+    playerAdminEnable: "feature:manage_players",
+    autoLinkExactPlayerAccounts: "feature:manage_players",
+    openQuizAssignmentManager: "feature:quiz_assignments",
+    openQuizAssignmentForSource: "feature:quiz_assignments",
+    assignQuizHomework: "feature:quiz_assignments",
+    openSignalUploadModal: "feature:media_upload",
+    openPlayDiagramHealthEdit: "feature:media_upload",
+    openPublishMediaModal: "feature:media_upload",
+    publishPlayerMedia: "feature:publish_team",
+    publishTeamWorkspace: "feature:publish_team",
   };
 
   const AUTH_LOGIN_ROLE_DETAILS = {
@@ -364,6 +390,11 @@
       d1UserId: String(user.d1UserId || "").trim(),
       loginAt: user.loginAt || "",
       expiresAt: user.expiresAt || "",
+      managedCoach: role === "coach" && user.managedCoach === true,
+      permissions: role === "coach" && user.managedCoach === true
+        ? [...new Set((Array.isArray(user.permissions) ? user.permissions : MANAGED_COACH_DEFAULT_PERMISSIONS)
+          .map((key) => String(key || "").trim()).filter(Boolean))]
+        : [],
     };
   }
 
@@ -477,17 +508,31 @@
     return currentAuthUser?.role === "admin";
   }
 
+  function isManagedCoachUser() {
+    return currentAuthUser?.role === "coach" && currentAuthUser?.managedCoach === true;
+  }
+
+  function hasManagedCoachPermission(permission) {
+    if (!isManagedCoachUser()) return currentAuthUser?.role === "coach" || isAdminUser();
+    return currentAuthUser.permissions.includes(permission);
+  }
+
   function canEditUser() {
-    return currentAuthUser?.role === "admin" || currentAuthUser?.role === "coach";
+    return currentAuthUser?.role === "admin" ||
+      (currentAuthUser?.role === "coach" && (!isManagedCoachUser() || hasManagedCoachPermission("feature:edit_workspace")));
   }
 
   function canAccessTab(tabName) {
     if (!currentAuthUser) return false;
+    if (isManagedCoachUser()) return hasManagedCoachPermission(`tab:${tabName}`);
     return (AUTH_ROLE_TABS[currentAuthUser.role] || []).includes(tabName);
   }
 
   function getDefaultAuthTab() {
     if (!currentAuthUser) return "playbook";
+    if (isManagedCoachUser()) {
+      return (AUTH_ROLE_TABS.coach || []).find((tab) => canAccessTab(tab)) || "playbook";
+    }
     return AUTH_ROLE_DEFAULT_TAB[currentAuthUser.role] || "playbook";
   }
 
@@ -547,7 +592,10 @@
     if (now - lastBlockedAt < 1200) return;
     lastBlockedAt = now;
     const label = currentAuthUser?.label || "This role";
-    showToast(`${label} access is view-only. Log in as coach or admin to make changes.`, {
+    const copy = isManagedCoachUser()
+      ? "Your coach access is view-only. Ask an administrator to grant that tool."
+      : `${label} access is view-only. Log in as coach or admin to make changes.`;
+    showToast(copy, {
       type: "warning",
       duration: 3000,
     });
@@ -596,6 +644,16 @@
   function isActionAllowedForRole(action) {
     if (!currentAuthUser) return false;
     if (ADMIN_ONLY_ACTIONS.has(action)) return isAdminUser();
+    if (isManagedCoachUser()) {
+      const requiredPermission = MANAGED_COACH_ACTION_PERMISSIONS[action];
+      if (requiredPermission) return hasManagedCoachPermission(requiredPermission);
+      if (action === "submitDiscPost" || action === "submitDiscReply" || action === "deleteDiscPost" || action === "loadMoreDiscussion" || action === "loadMoreDiscReplies") {
+        return hasManagedCoachPermission("feature:comments");
+      }
+      if (/question|ask/i.test(action)) return hasManagedCoachPermission("feature:questions");
+      if (canEditUser()) return true;
+      return !actionLooksMutating(action);
+    }
     if (canEditUser()) return true;
     return !actionLooksMutating(action);
   }
@@ -689,6 +747,7 @@
     document.body.dataset.authRole = currentAuthUser?.role || "locked";
     document.body.dataset.authCanEdit = canEditUser() ? "true" : "false";
     document.body.dataset.authReadonly = isReadOnlyRole() ? "true" : "false";
+    document.body.dataset.authManagedCoach = isManagedCoachUser() ? "true" : "false";
     syncPlayerPortalChrome();
 
     // Item 50: apply (or clear) player portal accent color

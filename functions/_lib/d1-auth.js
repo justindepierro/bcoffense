@@ -5,6 +5,8 @@
  * Token hashing: SHA-256 — raw token sent by email only, hash stored in D1.
  */
 
+import { parseCoachPermissions } from "./staff-access.js";
+
 const PBKDF2_ITERATIONS = 100_000;
 // Used only to give nonexistent and inactive accounts the same PBKDF2 work as
 // a normal password check. It is not a credential and never authenticates.
@@ -138,6 +140,15 @@ export async function verifyD1Credentials(email, password, db) {
     .bind(now, now, user.id)
     .run();
 
+  let permissions = [];
+  if (user.role === "coach") {
+    const access = await db
+      .prepare("SELECT permissions_json FROM staff_access WHERE user_id = ? AND team_id = ? LIMIT 1")
+      .bind(user.id, user.team_id)
+      .first();
+    permissions = parseCoachPermissions(access?.permissions_json);
+  }
+
   return {
     d1_user_id: user.id,
     // The login JSON response is used immediately by the player bootstrap.
@@ -150,6 +161,8 @@ export async function verifyD1Credentials(email, password, db) {
     role: user.role,
     label: user.display_name,
     d1: true,
+    managedCoach: user.role === "coach",
+    permissions,
     iat: now,
   };
 }

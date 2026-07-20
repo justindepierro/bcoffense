@@ -6,10 +6,11 @@
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../_lib/auth.js";
 import { createD1User, findUserByEmail, createVerificationToken, validateEmail } from "../_lib/d1-auth.js";
 import { sendEmail, inviteEmailHtml, inviteEmailText } from "../_lib/email.js";
+import { DEFAULT_MANAGED_COACH_PERMISSIONS, hasCoachPermission, parseCoachPermissions } from "../_lib/staff-access.js";
 
 function requireCoach(session) {
   if (!session || (session.role !== "coach" && session.role !== "admin")) return false;
-  return true;
+  return session.role === "admin" || hasCoachPermission(session, "feature:manage_players");
 }
 
 export async function onRequest(context) {
@@ -31,12 +32,14 @@ export async function onRequest(context) {
   if (request.method === "GET") {
     const rows = await env.DB
       .prepare(
-        `SELECT id, email, display_name, first_name, last_name, role, status,
+        `SELECT users.id, users.email, users.display_name, users.first_name, users.last_name, users.role, users.status,
                 created_at, last_login_at, password_changed_at
+                , staff_access.permissions_json
          FROM users
-         WHERE team_id = ?
-           AND role IN ('player','coach')
-           AND status != 'archived'
+         LEFT JOIN staff_access ON staff_access.user_id = users.id AND staff_access.team_id = users.team_id
+         WHERE users.team_id = ?
+           AND users.role IN ('player','coach')
+           AND users.status != 'archived'
          ORDER BY created_at DESC`,
       )
       .bind(session.teamId)
@@ -73,6 +76,7 @@ export async function onRequest(context) {
       lastName: u.last_name,
       role: u.role,
       status: u.status,
+      permissions: u.role === "coach" ? parseCoachPermissions(u.permissions_json) : [],
       hasPendingInvite: !!pendingMap[u.id],
       lastLoginAt: u.last_login_at,
       createdAt: u.created_at,
@@ -95,6 +99,10 @@ export async function onRequest(context) {
     const displayName = String(body.displayName || body.display_name || "").trim();
     const firstName = String(body.firstName || "").trim();
     const lastName = String(body.lastName || "").trim();
+    const requestedRole = String(body.role || "player").trim().toLowerCase() === "coach" ? "coach" : "player";
+    if (requestedRole === "coach" && session.role !== "admin") {
+      return authJson({ ok: false, error: "Only an administrator can invite coaches." }, { status: 403 });
+    }
 
     const emailErr = validateEmail(email);
     if (emailErr) return authJson({ ok: false, error: emailErr }, { status: 422 });
@@ -112,12 +120,26 @@ export async function onRequest(context) {
         displayName,
         firstName,
         lastName,
-        role: "player",
+        role: requestedRole,
         teamId: session.teamId,
       });
     } catch (err) {
       console.error("[players] create error:", err);
       return authJson({ ok: false, error: "Failed to create account." }, { status: 500 });
+    }
+
+    if (requestedRole === "coach") {
+      const now = Math.floor(Date.now() / 1000);
+      await env.DB
+        .prepare(`INSERT INTO staff_access (user_id, team_id, permissions_json, updated_by, updated_at)
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(user_id) DO UPDATE SET
+            team_id = excluded.team_id,
+            permissions_json = excluded.permissions_json,
+            updated_by = excluded.updated_by,
+            updated_at = excluded.updated_at`)
+        .bind(userId, session.teamId, JSON.stringify(DEFAULT_MANAGED_COACH_PERMISSIONS), session.d1UserId || null, now)
+        .run();
     }
 
     const rawToken = await createVerificationToken(env.DB, userId, "invitation", 172_800);
@@ -126,7 +148,7 @@ export async function onRequest(context) {
 
     const emailResult = await sendEmail(env, {
       to: email,
-      subject: "You're invited to BCOffense 🏈",
+      subject: requestedRole === "coach" ? "You're invited to the BCOffense coaching staff 🏈" : "You're invited to BCOffense 🏈",
       html: inviteEmailHtml(displayName, inviteUrl),
       text: inviteEmailText(displayName, inviteUrl),
     });
@@ -135,6 +157,7 @@ export async function onRequest(context) {
       authJson({
         ok: true,
         userId,
+        role: requestedRole,
         inviteSent: emailResult.ok,
         inviteUrl: emailResult.skipped ? inviteUrl : undefined,
       }),

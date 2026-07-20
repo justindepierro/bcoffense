@@ -53,6 +53,7 @@ function dismissOpenCoachControlSurface() {
     ["pbCollectionsPanel", "open", "toggleCollectionsPanel"],
     ["scriptToolsDrawer", "open", "closeScriptToolsDrawer"],
     ["playersAdminOverlay", "visible", "closePlayersAdmin"],
+    ["coachAccessOverlay", "visible", "closeCoachAccessManager"],
   ];
   for (const [id, openClass, closeAction] of dismissiblePanels) {
     const panel = document.getElementById(id);

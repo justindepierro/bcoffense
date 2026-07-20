@@ -171,8 +171,9 @@ All scripts use `defer` and load in this exact order from index.html:
 17.   js/vision.js
 18.   js/team-settings.js
 19.   js/players-admin.js
-20.   js/play-discussion.js
-21.   js/playbook.js
+20.   js/coach-access.js
+21.   js/play-discussion.js
+22.   js/playbook.js
 22.   js/playbook-collections.js
 23.   js/playbook-print.js
 24.   js/playbook-editor.js

@@ -1,5 +1,6 @@
 import { verifyD1Credentials, verifyPassword } from "./d1-auth.js";
 import { getPrimaryTeamId } from "./team-context.js";
+import { parseCoachPermissions } from "./staff-access.js";
 
 // The __Host- prefix is enforced by browsers: Secure, Path=/, and no Domain
 // attribute are mandatory. That prevents a subdomain from setting a competing
@@ -231,11 +232,12 @@ export async function verifyCredentials(username, password, env) {
 
 export async function createSessionCookie(user, env) {
   const now = Math.floor(Date.now() / 1000);
-  // D1 player sessions carry d1:true + d1_user_id so the middleware can
-  // validate them without consulting the USERS map.
-  const isPlayer = !!user.d1;
+  // All D1 users carry an immutable account pointer. Only actual players get
+  // the longer player session; managed coaches remain staff-session length.
+  const isD1User = !!user.d1;
+  const isPlayer = isD1User && user.role === "player";
   const ttl = isPlayer ? PLAYER_SESSION_TTL_SECONDS : SESSION_TTL_SECONDS;
-  const extra = isPlayer ? { d1: true, d1_user_id: user.d1_user_id } : {};
+  const extra = isD1User ? { d1: true, d1_user_id: user.d1_user_id } : {};
   const payload = base64UrlEncodeJson({
     username: user.username,
     role: user.role,
@@ -279,6 +281,8 @@ export async function getSessionFromRequest(request, env) {
     if (!isD1Session && !isStaticSession) return null;
 
     let teamId = "";
+    let managedCoach = false;
+    let permissions = [];
     // D1 sessions are checked against the current principal, not merely the
     // signed cookie. A disable, role change, or team reassignment therefore
     // takes effect at every protected endpoint. Fail closed if D1 is down.
@@ -287,9 +291,11 @@ export async function getSessionFromRequest(request, env) {
       try {
         const row = await env.DB
           .prepare(`SELECT users.role, users.status, users.team_id,
+              staff_access.permissions_json,
               COALESCE(account_session_state.invalid_before, 0) AS sessions_invalid_before
             FROM users
             LEFT JOIN account_session_state ON account_session_state.user_id = users.id
+            LEFT JOIN staff_access ON staff_access.user_id = users.id AND staff_access.team_id = users.team_id
             WHERE users.id = ?
             LIMIT 1`)
           .bind(session.d1_user_id)
@@ -297,6 +303,8 @@ export async function getSessionFromRequest(request, env) {
         if (!row || row.status !== "active" || row.role !== session.role) return null;
         teamId = String(row.team_id || "").trim();
         if (!teamId) return null;
+        managedCoach = row.role === "coach";
+        permissions = managedCoach ? parseCoachPermissions(row.permissions_json) : [];
         if (row.sessions_invalid_before && session.iat < row.sessions_invalid_before) {
           return null; // session was invalidated by logout-all
         }
@@ -315,6 +323,8 @@ export async function getSessionFromRequest(request, env) {
       label: session.label || (isStaticSession ? USERS[session.username].label : ""),
       d1UserId: session.d1_user_id || null,
       teamId,
+      managedCoach,
+      permissions,
       loginAt: session.iat ? new Date(session.iat * 1000).toISOString() : "",
       expiresAt: new Date(session.exp * 1000).toISOString(),
     };

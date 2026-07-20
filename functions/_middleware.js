@@ -5,6 +5,28 @@ import {
   renderLoginPage,
   withSecurityHeaders,
 } from "./_lib/auth.js";
+import { canManagedCoachWrite, hasCoachPermission, isManagedCoachSession } from "./_lib/staff-access.js";
+
+function isUnsafeMethod(method) {
+  return !["GET", "HEAD", "OPTIONS"].includes(method);
+}
+
+function canManagedCoachUseWriteRoute(session, pathname) {
+  // Account/session and device subscription work are personal, not workspace
+  // editing. Keep them usable for every managed coach.
+  if (pathname === "/auth/logout" || pathname.startsWith("/api/account/") || pathname.startsWith("/api/push/")) return true;
+
+  // Collaboration is deliberately available in the default coach profile.
+  if (pathname.startsWith("/api/questions")) return hasCoachPermission(session, "feature:questions");
+  if (pathname.startsWith("/api/plays/") && pathname.endsWith("/like")) return hasCoachPermission(session, "feature:comments");
+  if (pathname.startsWith("/api/threads/") && !pathname.includes("/manage") && !pathname.includes("/official")) {
+    return hasCoachPermission(session, "feature:comments");
+  }
+  if (pathname.startsWith("/api/posts/") && !pathname.includes("/official")) return hasCoachPermission(session, "feature:comments");
+  if (pathname.startsWith("/api/notifications/") && !pathname.includes("/broadcast")) return true;
+
+  return canManagedCoachWrite(session);
+}
 
 export async function onRequest(context) {
   const url = new URL(context.request.url);
@@ -31,6 +53,12 @@ export async function onRequest(context) {
 
   const session = await getSessionFromRequest(context.request, context.env);
   if (session) {
+    if (isManagedCoachSession(session) && isUnsafeMethod(method) && !canManagedCoachUseWriteRoute(session, url.pathname)) {
+      return authJson(
+        { ok: false, error: "This coach account is view-only for that action. Ask an administrator to grant access." },
+        { status: 403 },
+      );
+    }
     return withSecurityHeaders(await context.next());
   }
 

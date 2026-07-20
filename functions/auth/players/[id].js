@@ -13,12 +13,13 @@
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
 import { findUserById, createVerificationToken, setD1SessionInvalidBefore } from "../../_lib/d1-auth.js";
 import { sendEmail, inviteEmailHtml, inviteEmailText } from "../../_lib/email.js";
+import { hasCoachPermission, parseCoachPermissions } from "../../_lib/staff-access.js";
 
 export async function onRequest(context) {
   const { request, env, params } = context;
   const session = await getSessionFromRequest(request, env);
 
-  if (!session || (session.role !== "coach" && session.role !== "admin")) {
+  if (!session || (session.role !== "coach" && session.role !== "admin") || (session.role === "coach" && !hasCoachPermission(session, "feature:manage_players"))) {
     return authJson({ ok: false, error: "Coaches only." }, { status: 403 });
   }
 
@@ -38,7 +39,7 @@ export async function onRequest(context) {
   }
 
   const action = String(body.action || "").trim();
-  if (!["resend", "copy-link", "disable", "enable"].includes(action)) {
+  if (!["resend", "copy-link", "disable", "enable", "set-coach-access"].includes(action)) {
     return authJson({ ok: false, error: "Unknown action." }, { status: 400 });
   }
 
@@ -46,6 +47,29 @@ export async function onRequest(context) {
   if (!user) return authJson({ ok: false, error: "User not found." }, { status: 404 });
   if (String(user.team_id || "") !== String(session.teamId)) {
     return authJson({ ok: false, error: "User not found." }, { status: 404 });
+  }
+
+  if (action === "set-coach-access") {
+    if (session.role !== "admin") {
+      return authJson({ ok: false, error: "Only an administrator can change coach access." }, { status: 403 });
+    }
+    if (user.role !== "coach") {
+      return authJson({ ok: false, error: "Coach access can only be set for a coach account." }, { status: 409 });
+    }
+    const permissions = parseCoachPermissions(body.permissions, []);
+    const now = Math.floor(Date.now() / 1000);
+    await env.DB
+      .prepare(`INSERT INTO staff_access (user_id, team_id, permissions_json, updated_by, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+          team_id = excluded.team_id,
+          permissions_json = excluded.permissions_json,
+          updated_by = excluded.updated_by,
+          updated_at = excluded.updated_at`)
+      .bind(userId, session.teamId, JSON.stringify(permissions), session.d1UserId || null, now)
+      .run();
+    await setD1SessionInvalidBefore(env.DB, userId, now + 1);
+    return withSecurityHeaders(authJson({ ok: true, permissions }));
   }
 
   const now = Math.floor(Date.now() / 1000);
