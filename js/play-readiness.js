@@ -1307,9 +1307,10 @@ function closeAllScriptReadinessPanels() {
 }
 
 function openPlayEditorFromScript(scriptIdx) {
-  const play = script[parseInt(scriptIdx, 10)];
+  const parsedScriptIdx = parseInt(scriptIdx, 10);
+  const play = script[parsedScriptIdx];
   if (!play || play.isSeparator) return;
   if (typeof openPlayEditorForPlay === "function") {
-    openPlayEditorForPlay(play);
+    openPlayEditorForPlay(play, { scriptIndex: parsedScriptIdx });
   }
 }

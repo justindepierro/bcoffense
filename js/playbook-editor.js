@@ -20,6 +20,31 @@ const RESP_POSITIONS = [
 /** Index into `filteredPlays` of the play being edited, for prev/next nav */
 let _editingFilteredIdx = -1;
 
+// When the editor opens from a practice script, left/right follows the script
+// order instead of the entire filtered playbook. Store script indexes (rather
+// than copied play objects) so a save can refresh the script row in place.
+let _editingScriptNavIndexes = [];
+let _editingScriptNavPosition = -1;
+
+function _resetPlayEditorNavigation() {
+  _editingScriptNavIndexes = [];
+  _editingScriptNavPosition = -1;
+}
+
+function _hasScriptEditorNavigation() {
+  return _editingScriptNavPosition >= 0 &&
+    _editingScriptNavIndexes.length > 0 &&
+    _editingScriptNavPosition < _editingScriptNavIndexes.length;
+}
+
+function _getScriptEditorNavigationIndexes() {
+  if (!Array.isArray(script)) return [];
+  return script.reduce((indexes, item, index) => {
+    if (item && !item.isSeparator) indexes.push(index);
+    return indexes;
+  }, []);
+}
+
 function _resetPendingPlayEditorMedia() {
   if (_pendingPlayEditorImage?.url) {
     try { URL.revokeObjectURL(_pendingPlayEditorImage.url); } catch (_err) { /* ignore */ }
@@ -320,6 +345,7 @@ function openPlayEditor(filteredIdx) {
   _resetPendingPlayEditorMedia();
   const play = filteredPlays[filteredIdx];
   if (!play) return;
+  _resetPlayEditorNavigation();
   _editingFilteredIdx = filteredIdx;
   _editingMasterIdx = plays.indexOf(play);
   if (_editingMasterIdx < 0) {
@@ -336,6 +362,7 @@ function addNewPlay() {
   _resetPendingPlayEditorMedia();
   _editingMasterIdx = -1;
   _editingFilteredIdx = -1;
+  _resetPlayEditorNavigation();
   const blank = {};
   _EDITOR_SECTIONS.forEach((section) =>
     section.fields.forEach((field) => {
@@ -372,21 +399,30 @@ function _populateEditorForm(play, isNew) {
   const posEl = document.getElementById("playEditorPos");
   const prevBtn = document.getElementById("playEditorPrev");
   const nextBtn = document.getElementById("playEditorNext");
-  if (isNew || _editingFilteredIdx < 0) {
+  const scriptNavigation = _hasScriptEditorNavigation();
+  const navigationIndex = scriptNavigation ? _editingScriptNavPosition : _editingFilteredIdx;
+  const navigationLength = scriptNavigation ? _editingScriptNavIndexes.length : filteredPlays.length;
+  if (isNew || navigationIndex < 0) {
     if (posEl) posEl.textContent = "";
     if (prevBtn) prevBtn.style.display = "none";
     if (nextBtn) nextBtn.style.display = "none";
   } else {
     if (posEl) {
-      posEl.textContent = `${_editingFilteredIdx + 1} / ${filteredPlays.length}`;
+      posEl.textContent = scriptNavigation
+        ? `Script ${navigationIndex + 1} / ${navigationLength}`
+        : `${navigationIndex + 1} / ${navigationLength}`;
     }
     if (prevBtn) {
       prevBtn.style.display = "";
-      prevBtn.disabled = _editingFilteredIdx <= 0;
+      prevBtn.disabled = navigationIndex <= 0;
+      prevBtn.title = scriptNavigation ? "Previous practice-script play" : "Previous play";
+      prevBtn.setAttribute("aria-label", prevBtn.title);
     }
     if (nextBtn) {
       nextBtn.style.display = "";
-      nextBtn.disabled = _editingFilteredIdx >= filteredPlays.length - 1;
+      nextBtn.disabled = navigationIndex >= navigationLength - 1;
+      nextBtn.title = scriptNavigation ? "Next practice-script play" : "Next play";
+      nextBtn.setAttribute("aria-label", nextBtn.title);
     }
   }
 
@@ -683,13 +719,24 @@ function closePlayEditor() {
   }
   _editingMasterIdx = -1;
   _editingFilteredIdx = -1;
+  _resetPlayEditorNavigation();
   _resetPendingPlayEditorMedia();
 }
 
 // Open editor directly from a play object (e.g. from script row)
-function openPlayEditorForPlay(play) {
+function openPlayEditorForPlay(play, options = {}) {
   if (!play) return;
   _resetPendingPlayEditorMedia();
+  const scriptIndex = Number.parseInt(options.scriptIndex, 10);
+  if (Number.isInteger(scriptIndex) && script?.[scriptIndex] && !script[scriptIndex].isSeparator) {
+    _editingScriptNavIndexes = Array.isArray(options.scriptIndexes)
+      ? options.scriptIndexes.filter((index) => Number.isInteger(index) && script[index] && !script[index].isSeparator)
+      : _getScriptEditorNavigationIndexes();
+    _editingScriptNavPosition = _editingScriptNavIndexes.indexOf(scriptIndex);
+    if (_editingScriptNavPosition < 0) _resetPlayEditorNavigation();
+  } else {
+    _resetPlayEditorNavigation();
+  }
   const filteredIdx = filteredPlays.findIndex((p) => p === play || playsMatch(p, play));
   _editingFilteredIdx = filteredIdx;
   _editingMasterIdx = filteredIdx >= 0
@@ -1208,12 +1255,38 @@ function _flushPendingPlayEditorMedia(play) {
 }
 
 function playEditorPrev() {
+  if (_hasScriptEditorNavigation()) {
+    if (_editingScriptNavPosition <= 0) return;
+    _autoSaveCurrentEditorFields();
+    const nextPosition = _editingScriptNavPosition - 1;
+    const scriptIndex = _editingScriptNavIndexes[nextPosition];
+    const scriptPlay = script?.[scriptIndex];
+    if (!scriptPlay || scriptPlay.isSeparator) return;
+    openPlayEditorForPlay(scriptPlay, {
+      scriptIndex,
+      scriptIndexes: _editingScriptNavIndexes,
+    });
+    return;
+  }
   if (_editingFilteredIdx <= 0) return;
   _autoSaveCurrentEditorFields();
   openPlayEditor(_editingFilteredIdx - 1);
 }
 
 function playEditorNext() {
+  if (_hasScriptEditorNavigation()) {
+    if (_editingScriptNavPosition >= _editingScriptNavIndexes.length - 1) return;
+    _autoSaveCurrentEditorFields();
+    const nextPosition = _editingScriptNavPosition + 1;
+    const scriptIndex = _editingScriptNavIndexes[nextPosition];
+    const scriptPlay = script?.[scriptIndex];
+    if (!scriptPlay || scriptPlay.isSeparator) return;
+    openPlayEditorForPlay(scriptPlay, {
+      scriptIndex,
+      scriptIndexes: _editingScriptNavIndexes,
+    });
+    return;
+  }
   if (_editingFilteredIdx >= filteredPlays.length - 1) return;
   _autoSaveCurrentEditorFields();
   openPlayEditor(_editingFilteredIdx + 1);

@@ -5166,6 +5166,23 @@ function checkScriptPrintIsolationContract() {
   console.log("script print isolation contract ok");
 }
 
+function checkScriptEditorNavigationContract() {
+  const editor = read("js/playbook-editor.js");
+  const readiness = read("js/play-readiness.js");
+
+  if (
+    !/let _editingScriptNavIndexes = \[\]/.test(editor) ||
+    !/function _getScriptEditorNavigationIndexes\(\)/.test(editor) ||
+    !/Script \$\{navigationIndex \+ 1\} \/ \$\{navigationLength\}/.test(editor) ||
+    !/openPlayEditorForPlay\(scriptPlay, \{[\s\S]*?scriptIndex,[\s\S]*?scriptIndexes: _editingScriptNavIndexes/.test(editor) ||
+    !/openPlayEditorForPlay\(play, \{ scriptIndex: parsedScriptIdx \}\)/.test(readiness)
+  ) {
+    fail("script-origin play editing does not preserve practice-script navigation");
+  }
+
+  console.log("script editor navigation contract ok");
+}
+
 function checkScriptSelectionRenderContracts() {
   const selection = read("js/script-selection.js");
   const updateBulkSelectUi = extractFunctionSource(selection, "updateBulkSelectUI");
@@ -5866,6 +5883,7 @@ checkModulePrefixManifest();
 checkWristbandConstantUsage();
 checkScriptPacketPrintContracts();
 checkScriptPrintIsolationContract();
+checkScriptEditorNavigationContract();
 checkScriptSelectionRenderContracts();
 checkGuideContracts();
 checkPlayerPlaybookVisibilityContracts();
