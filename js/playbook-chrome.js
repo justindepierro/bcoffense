@@ -151,7 +151,16 @@ function _applyPbFilterDrawerState() {
   if (!panel || !drawer) return;
   panel.classList.toggle("pb-filter-open", _pbFilterDrawerOpen);
   drawer.toggleAttribute("inert", !_pbFilterDrawerOpen);
-  if (btn) btn.setAttribute("aria-pressed", _pbFilterDrawerOpen ? "true" : "false");
+  drawer.setAttribute("aria-hidden", _pbFilterDrawerOpen ? "false" : "true");
+  if (btn) {
+    btn.setAttribute("aria-pressed", _pbFilterDrawerOpen ? "true" : "false");
+    btn.setAttribute("aria-expanded", _pbFilterDrawerOpen ? "true" : "false");
+  }
+  if (_pbFilterDrawerOpen) {
+    requestAnimationFrame(() => drawer.querySelector(".pb-filter-drawer-close")?.focus());
+  } else if (document.activeElement && drawer.contains(document.activeElement)) {
+    btn?.focus();
+  }
 }
 
 // ── Playbook phone action sheet ──

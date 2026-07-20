@@ -995,6 +995,8 @@ function _playbookDocKeydown(e) {
   }
 
   if (e.key === "Escape") {
+    if (typeof closePbFilterDrawer === "function") closePbFilterDrawer();
+    if (typeof closePlayerPlaybookFilters === "function") closePlayerPlaybookFilters();
     hideKeyboardShortcuts();
     hideColumnMenu();
   }
