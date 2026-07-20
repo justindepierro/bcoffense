@@ -111,6 +111,7 @@ const PAGE_ACTIONS_CONFIG = {
     ],
     extras: [
       { icon: "📂", label: "Load Snapshot", run: () => _paCall("openGamePlanSnapshotsMenu") },
+      { icon: "💾", label: "Save as New", run: () => _paCall("saveGamePlanSnapshotAsNew") },
       { icon: "🖨️", label: "Print", run: () => _paCall("openGamePlanPrintModal") },
       { icon: "🧠", label: "Build Plan", run: () => _paCall("openSmartGamePlanBuilder") },
       { icon: "🚫", label: "Unload Wristband", run: () => _paCall("clearGamePlanWristband") },

@@ -21,7 +21,29 @@ function _gpSnapshotsForOpponent() {
   return Array.isArray(all[key]) ? all[key] : [];
 }
 
-async function saveGamePlanSnapshot() {
+function _gpBoardWithActiveSnapshot(board, snapshot) {
+  const copy = safeDeepClone(board);
+  copy.activeSnapshotId = String(snapshot?.id || "");
+  copy.activeSnapshotName = String(snapshot?.name || "");
+  return copy;
+}
+
+function _gpSetActiveSnapshot(snapshot) {
+  const boards = _gpLoadBoards();
+  const key = _gpActiveOpponentKey();
+  if (!boards[key]) boards[key] = _gpCreateEmptyBoard();
+  boards[key].activeSnapshotId = String(snapshot?.id || "");
+  boards[key].activeSnapshotName = String(snapshot?.name || "");
+  _gpSaveBoards(boards);
+}
+
+function _gpActiveSnapshotForBoard(board, snapshots) {
+  const id = String(board?.activeSnapshotId || "");
+  if (!id || !Array.isArray(snapshots)) return null;
+  return snapshots.find((snapshot) => String(snapshot?.id) === id) || null;
+}
+
+async function saveGamePlanSnapshot(options = {}) {
   const board = _gpEnsureBoard();
   const total = _gpAllAssignedSigs(board).size;
   if (total === 0) {
@@ -29,24 +51,48 @@ async function saveGamePlanSnapshot() {
       { title: "Save Plan", icon: "💾" });
     if (!ok) return;
   }
-  const defaultName = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  const all = _gpLoadAllSnapshots();
+  const key = _gpActiveOpponentKey();
+  if (!Array.isArray(all[key])) all[key] = [];
+  const activeSnapshot = options.asNew ? null : _gpActiveSnapshotForBoard(board, all[key]);
+
+  if (activeSnapshot) {
+    const savedAt = new Date().toISOString();
+    activeSnapshot.savedAt = savedAt;
+    activeSnapshot.board = _gpBoardWithActiveSnapshot(board, activeSnapshot);
+    _gpSaveAllSnapshots(all);
+    _gpSetActiveSnapshot(activeSnapshot);
+    if (typeof recordArtifactModified === "function") recordArtifactModified("gameplan");
+    showToast(`✅ “${activeSnapshot.name}” updated`, { type: "success" });
+    return true;
+  }
+
+  const defaultName = options.asNew && board.activeSnapshotName
+    ? `${board.activeSnapshotName} copy`
+    : new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   const name = await showPrompt("Name this plan:", defaultName, {
-    title: "Save Plan",
+    title: options.asNew ? "Save Game Plan as New" : "Save Game Plan",
     icon: "💾",
     placeholder: "e.g. v1 base, blitz-heavy, etc.",
   });
   if (!name || !name.trim()) return;
-  const all = _gpLoadAllSnapshots();
-  const key = _gpActiveOpponentKey();
-  if (!Array.isArray(all[key])) all[key] = [];
-  all[key].push({
+  const snapshot = {
     id: `snap-${Date.now()}`,
     name: name.trim(),
     savedAt: new Date().toISOString(),
-    board: safeDeepClone(board),
-  });
+    board: null,
+  };
+  snapshot.board = _gpBoardWithActiveSnapshot(board, snapshot);
+  all[key].push(snapshot);
   _gpSaveAllSnapshots(all);
-  showToast(`Saved plan “${name.trim()}”`, { type: "success" });
+  _gpSetActiveSnapshot(snapshot);
+  if (typeof recordArtifactModified === "function") recordArtifactModified("gameplan");
+  showToast(`✅ Saved “${snapshot.name}” — future Save updates this plan`, { type: "success" });
+  return true;
+}
+
+function saveGamePlanSnapshotAsNew() {
+  return saveGamePlanSnapshot({ asNew: true });
 }
 
 async function openGamePlanSnapshotsMenu() {
@@ -91,10 +137,10 @@ async function _gpLoadSnapshot(snapId) {
   );
   if (!ok) return;
   const boards = _gpLoadBoards();
-  boards[key] = safeDeepClone(snap.board);
+  boards[key] = _gpBoardWithActiveSnapshot(snap.board, snap);
   _gpSaveBoards(boards);
   renderGamePlan();
-  showToast(`Loaded “${snap.name}”`, { type: "success" });
+  showToast(`Loaded “${snap.name}” · Save updates this plan`, { type: "success" });
 }
 
 async function _gpDeleteSnapshot(snapId) {
@@ -109,6 +155,10 @@ async function _gpDeleteSnapshot(snapId) {
   if (!ok) return;
   all[key] = (all[key] || []).filter((s) => s.id !== snapId);
   _gpSaveAllSnapshots(all);
+  const board = _gpEnsureBoard();
+  if (String(board.activeSnapshotId || "") === String(snapId)) {
+    _gpSetActiveSnapshot(null);
+  }
   showToast("Plan deleted", { type: "success" });
 }
 

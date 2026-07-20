@@ -627,6 +627,10 @@ function _gpCreateEmptyBoard() {
     sheetTitle: "",
     printPreset: "",
     wristbandAutoBoxId: "",
+    // The named snapshot currently open in this opponent's workspace. This
+    // lets Save update that plan deterministically, like an open script.
+    activeSnapshotId: "",
+    activeSnapshotName: "",
   };
 }
 
@@ -702,6 +706,14 @@ function _gpEnsureBoard() {
     }
     if (typeof all[key].wristbandAutoBoxId !== "string") {
       all[key].wristbandAutoBoxId = "";
+      changed = true;
+    }
+    if (typeof all[key].activeSnapshotId !== "string") {
+      all[key].activeSnapshotId = "";
+      changed = true;
+    }
+    if (typeof all[key].activeSnapshotName !== "string") {
+      all[key].activeSnapshotName = "";
       changed = true;
     }
     all[key].customBoxes.forEach((cb) => {

@@ -1278,6 +1278,26 @@ function checkCoachGridGamePlanWorkbenchContract() {
   console.log("coach grid Game Plan workbench contract ok");
 }
 
+function checkGamePlanActiveSnapshotSaveContract() {
+  const gamePlan = read("js/gameplan.js");
+  const snapshots = read("js/gameplan-snapshots.js");
+  const actions = read("js/page-actions.js");
+
+  if (
+    !/activeSnapshotId:\s*""/.test(gamePlan) ||
+    !/activeSnapshotName:\s*""/.test(gamePlan) ||
+    !/function _gpActiveSnapshotForBoard\(board, snapshots\)/.test(snapshots) ||
+    !/if \(activeSnapshot\) \{[\s\S]*?activeSnapshot\.board = _gpBoardWithActiveSnapshot\(board, activeSnapshot\)/.test(snapshots) ||
+    !/boards\[key\] = _gpBoardWithActiveSnapshot\(snap\.board, snap\)/.test(snapshots) ||
+    !/function saveGamePlanSnapshotAsNew\(\)/.test(snapshots) ||
+    !/_paCall\("saveGamePlanSnapshotAsNew"\)/.test(actions)
+  ) {
+    fail("game plan Save does not keep a deterministic active snapshot with an explicit Save as New path");
+  }
+
+  console.log("game plan active snapshot save contract ok");
+}
+
 function checkCoachGridWristbandWorkbenchContract() {
   const css = read("css/wristband.css");
   const html = read("index.html");
@@ -5853,6 +5873,7 @@ checkCoachGridLibrarySystemContract();
 checkCoachGridPlaybookWorkbenchContract();
 checkCoachGridCallSheetWorkbenchContract();
 checkCoachGridGamePlanWorkbenchContract();
+checkGamePlanActiveSnapshotSaveContract();
 checkCoachGridWristbandWorkbenchContract();
 checkCoachGridTeamWorkspaceContract();
 checkCoachGridOpponentScoutContract();
