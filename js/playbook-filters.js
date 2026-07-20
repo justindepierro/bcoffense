@@ -233,7 +233,14 @@ function filterPlays() {
   const hasDiagramOnly = playbookMediaFilters.has("hasDiagram");
   const noDiagramOnly = playbookMediaFilters.has("noDiagram");
   const hasClipsOnly = playbookMediaFilters.has("hasClips");
-  const checkingDiagramFilter = (hasDiagramOnly || noDiagramOnly)
+  const playerHasDiagramOnly = playerPlaybookStudyFilters.has("diagram");
+  const playerNeedsDiagramOnly = playerPlaybookStudyFilters.has("missingDiagram");
+  const checkingDiagramFilter = (
+    hasDiagramOnly ||
+    noDiagramOnly ||
+    playerHasDiagramOnly ||
+    playerNeedsDiagramOnly
+  )
     && _warmPlaybookMediaFilterManifests(plays);
   const gameWeek = getGameWeek();
   const taggedForOpponent = gamePlanOnly && gameWeek.opponentName && typeof getGamePlanTags === "function"
@@ -279,8 +286,13 @@ function filterPlays() {
     }
     if (hasClipsOnly && !_playbookHasClip(play)) return false;
     if (playerPlaybookStudyFilters.size > 0) {
-      if (playerPlaybookStudyFilters.has("diagram") && !_playbookHasStoredDiagram(play)) return false;
-      if (playerPlaybookStudyFilters.has("missingDiagram") && _playbookHasStoredDiagram(play)) return false;
+      // Study filters use the published cloud manifest, not just the diagrams
+      // already downloaded to this device. Otherwise a fresh phone only shows
+      // the one diagram the user happened to open first.
+      if (!checkingDiagramFilter) {
+        if (playerHasDiagramOnly && !_playbookHasDiagram(play)) return false;
+        if (playerNeedsDiagramOnly && _playbookHasDiagram(play)) return false;
+      }
       if (playerPlaybookStudyFilters.has("video") && !_playbookHasClip(play)) return false;
       if (playerPlaybookStudyFilters.has("notes") && !_playbookHasPlayerNotes(play)) return false;
     }
