@@ -201,7 +201,8 @@ function _playbookHasPlayerNotes(play) {
 function _isPlayerPlaybookViewer() {
   const currentUser =
     typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
-  return currentUser?.role === "player";
+  return currentUser?.role === "player" ||
+    (currentUser?.role === "coach" && currentUser?.managedCoach === true);
 }
 
 function filterPlays() {
@@ -421,14 +422,35 @@ function _getPlayerPlaybookFilterGroups() {
         acc[group.cacheKey] = [];
         return acc;
       }, {});
-  return PLAYER_PLAYBOOK_FILTER_GROUPS.map((group) => ({
-    ...group,
-    values: Array.isArray(group.options)
-      ? group.options
-      : Array.isArray(cache[group.cacheKey])
-        ? cache[group.cacheKey]
-        : [],
-  }));
+  const fieldByCacheKey = {
+    types: "type",
+    personnels: "personnel",
+    formations: "formation",
+    basePlays: "basePlay",
+    motions: "motion",
+    protections: "protection",
+    tempos: "tempo",
+  };
+  const sourcePlays = typeof plays !== "undefined" && Array.isArray(plays)
+    ? plays.filter((play) => play && !play.isSeparator)
+    : [];
+
+  return PLAYER_PLAYBOOK_FILTER_GROUPS.map((group) => {
+    if (Array.isArray(group.options)) return { ...group, values: group.options };
+    const field = fieldByCacheKey[group.cacheKey];
+    // Do not trust the desktop filter cache alone here. On player and managed
+    // coach devices it can be created before the canonical team workspace
+    // finishes hydrating, leaving every dynamic group falsely empty.
+    const directValues = field
+      ? [...new Set(sourcePlays
+        .map((play) => String(play[field] || "").trim())
+        .filter(Boolean))].sort((a, b) => a.localeCompare(b))
+      : [];
+    const cachedValues = Array.isArray(cache[group.cacheKey])
+      ? cache[group.cacheKey]
+      : [];
+    return { ...group, values: directValues.length ? directValues : cachedValues };
+  });
 }
 
 function _playerPlaybookFilterArg(key, value) {

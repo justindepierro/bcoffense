@@ -2224,6 +2224,20 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     -webkit-overflow-scrolling: touch;
   }
+
+  /* Mobile should communicate loading without a wall of moving shimmer. */
+  body.is-mobile-screen #playbook .skeleton-row,
+  body.is-mobile-screen #playbook .pb-card-media:not(.is-loaded)::after {
+    animation: none;
+  }
+
+  body.is-mobile-screen #playbook .skeleton-row {
+    background: var(--color-bg-light);
+  }
+
+  body.is-mobile-screen #playbook .pb-card-media:not(.is-loaded)::after {
+    background: rgb(15 31 69 / 0.05);
+  }
 }
 
 /* Open-Filters toggle button in the top controls bar */
