@@ -1290,9 +1290,14 @@ function checkGamePlanActiveSnapshotSaveContract() {
     !/if \(activeSnapshot\) \{[\s\S]*?activeSnapshot\.board = _gpBoardWithActiveSnapshot\(board, activeSnapshot\)/.test(snapshots) ||
     !/boards\[key\] = _gpBoardWithActiveSnapshot\(snap\.board, snap\)/.test(snapshots) ||
     !/function saveGamePlanSnapshotAsNew\(\)/.test(snapshots) ||
-    !/_paCall\("saveGamePlanSnapshotAsNew"\)/.test(actions)
+    !/function openGamePlanPlanCenter\(\)/.test(actions) ||
+    !/function saveGamePlanAsNewFromActions\(\)/.test(actions) ||
+    !/function loadGamePlanSnapshotFromActions\(snapshotId\)/.test(actions) ||
+    !/function renameGamePlanSnapshotFromActions\(snapshotId\)/.test(actions) ||
+    !/data-action="saveGamePlanFromActions"/.test(actions) ||
+    !/data-action="loadGamePlanSnapshotFromActions"/.test(actions)
   ) {
-    fail("game plan Save does not keep a deterministic active snapshot with an explicit Save as New path");
+    fail("game plan Save does not keep a deterministic active snapshot with a clear Actions save/load workspace");
   }
 
   console.log("game plan active snapshot save contract ok");

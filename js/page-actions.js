@@ -12,6 +12,7 @@
 //   pageActionsBack()            return to the root verb grid
 //   loadScriptFromActions(id)    load a saved script + close
 //   openScriptDayTemplatesFromActions()
+//   openGamePlanPlanCenter()        dedicated save / load / manage workspace
 //
 // Loaded after app-command.js. Reads currentActiveTab / body.dataset.
 // ============================================================
@@ -102,36 +103,49 @@ const PAGE_ACTIONS_CONFIG = {
   gameplan: {
     title: "Game Plan",
     verbs: [
-      { icon: "📚", label: "Library", run: () => _paCall("openPlayLibrary") },
-      { icon: "📋", label: "Load Wristband", run: () => _paCall("loadGamePlanWristband") },
-      { icon: "▼", label: "Expand All", run: () => _paCall("expandAllGamePlanBoxes") },
-      { icon: "▶", label: "Collapse All", run: () => _paCall("collapseAllGamePlanBoxes") },
-      { icon: "⚙️", label: "Density", run: () => _paCall("cycleGamePlanDensity") },
-      { icon: "💾", label: "Save", run: () => _paCall("saveGamePlanSnapshot") },
+      { icon: "📂", label: "Plans", sublabel: _paGamePlanPlansStatus, keepOpen: true, run: openGamePlanPlanCenter },
+      { icon: "💾", label: "Save Plan", sublabel: _paGamePlanSaveStatus, run: () => _paCall("saveGamePlanSnapshot") },
+      { icon: "🧠", label: "Build Plan", sublabel: "Starter draft", run: () => _paCall("openSmartGamePlanBuilder") },
+      { icon: "🖨️", label: "Print", sublabel: "Board only", run: () => _paCall("openGamePlanPrintModal") },
     ],
-    extras: [
-      { icon: "📂", label: "Load Snapshot", run: () => _paCall("openGamePlanSnapshotsMenu") },
-      { icon: "💾", label: "Save as New", run: () => _paCall("saveGamePlanSnapshotAsNew") },
-      { icon: "🖨️", label: "Print", run: () => _paCall("openGamePlanPrintModal") },
-      { icon: "🧠", label: "Build Plan", run: () => _paCall("openSmartGamePlanBuilder") },
-      { icon: "🚫", label: "Unload Wristband", run: () => _paCall("clearGamePlanWristband") },
-      { icon: "➡️", label: "Send to Call Sheet", run: () => _paCall("pushGamePlanToCallSheet") },
-      { icon: "📋", label: "Send to Script", run: () => _paCall("pushGamePlanToScript") },
-      { icon: "🃏", label: "Send to Wristband", run: () => _paCall("pushGamePlanToWristband") },
-      { icon: "📋", label: "Create Script", run: () => _paCall("createScriptFromGamePlan") },
-      { icon: "🛡️", label: "Constraints", run: () => _paCall("runConstraintCheck") },
-      { icon: "💾", label: "Save Template", run: () => _paCall("saveGamePlanTemplate") },
-      { icon: "📂", label: "Templates", run: () => _paCall("openGamePlanTemplatesMenu") },
-      { icon: "🔁", label: "Compare Plans", run: () => _paCall("openGamePlanCompare") },
-      { icon: "📊", label: "Variety", run: () => _paCall("openGamePlanStats") },
-      { icon: "🗺️", label: "Coverage", run: () => _paCall("openGamePlanCoverageMatrix") },
-      { icon: "🎯", label: "vs Defense", run: () => _paCall("openGamePlanTendencyMirror") },
-      { icon: "➕", label: "Add Bucket", run: () => _paCall("openGamePlanAddBucket") },
-      { icon: "🔀", label: "Reorder Boxes", run: () => _paCall("openGamePlanReorderBoxes") },
-      { icon: "👁️", label: "Manage Boxes", run: () => _paCall("openGamePlanManageBoxes") },
-      { icon: "🃏", label: "Build WB Card", run: () => _paCall("sendGamePlanToWristbandCard") },
-      { icon: "⌨️", label: "Shortcuts", run: () => _paCall("openGamePlanShortcutsHelp") },
-      { icon: "🗑️", label: "Clear Board", run: () => _paCall("clearGamePlanBoard") },
+    sections: [
+      {
+        label: "Build & organize",
+        items: [
+          { icon: "📚", label: "Library", run: () => _paCall("openPlayLibrary") },
+          { icon: "📋", label: "Load Wristband", run: () => _paCall("loadGamePlanWristband") },
+          { icon: "➕", label: "Add Bucket", run: () => _paCall("openGamePlanAddBucket") },
+          { icon: "👁️", label: "Manage Buckets", run: () => _paCall("openGamePlanManageBoxes") },
+          { icon: "🔀", label: "Reorder Buckets", run: () => _paCall("openGamePlanReorderBoxes") },
+          { icon: "⚙️", label: "Density", run: () => _paCall("cycleGamePlanDensity") },
+          { icon: "▼", label: "Expand All", run: () => _paCall("expandAllGamePlanBoxes") },
+          { icon: "▶", label: "Collapse All", run: () => _paCall("collapseAllGamePlanBoxes") },
+          { icon: "🚫", label: "Unload Wristband", run: () => _paCall("clearGamePlanWristband") },
+        ],
+      },
+      {
+        label: "Send & review",
+        items: [
+          { icon: "📋", label: "Create Script", run: () => _paCall("createScriptFromGamePlan") },
+          { icon: "➡️", label: "Send to Call Sheet", run: () => _paCall("pushGamePlanToCallSheet") },
+          { icon: "🃏", label: "Send to Wristband", run: () => _paCall("pushGamePlanToWristband") },
+          { icon: "🃏", label: "Build WB Card", run: () => _paCall("sendGamePlanToWristbandCard") },
+          { icon: "🛡️", label: "Constraints", run: () => _paCall("runConstraintCheck") },
+          { icon: "📊", label: "Variety", run: () => _paCall("openGamePlanStats") },
+          { icon: "🗺️", label: "Coverage", run: () => _paCall("openGamePlanCoverageMatrix") },
+          { icon: "🎯", label: "vs Defense", run: () => _paCall("openGamePlanTendencyMirror") },
+        ],
+      },
+      {
+        label: "Templates & advanced",
+        items: [
+          { icon: "📂", label: "Templates", run: () => _paCall("openGamePlanTemplatesMenu") },
+          { icon: "💾", label: "Save Template", run: () => _paCall("saveGamePlanTemplate") },
+          { icon: "🔁", label: "Compare Plans", run: () => _paCall("openGamePlanCompare") },
+          { icon: "⌨️", label: "Shortcuts", run: () => _paCall("openGamePlanShortcutsHelp") },
+          { icon: "🗑️", label: "Clear Board", run: () => _paCall("clearGamePlanBoard") },
+        ],
+      },
     ],
   },
 };
@@ -139,6 +153,26 @@ const PAGE_ACTIONS_CONFIG = {
 function _paCall(name, ...args) {
   if (typeof window[name] === "function") return window[name](...args);
   return undefined;
+}
+
+function _paGamePlanSnapshotCount() {
+  return typeof _gpSnapshotsForOpponent === "function"
+    ? _gpSnapshotsForOpponent().length
+    : 0;
+}
+
+function _paGamePlanPlansStatus() {
+  const board = typeof _gpEnsureBoard === "function" ? _gpEnsureBoard() : null;
+  const active = String(board?.activeSnapshotName || "").trim();
+  const count = _paGamePlanSnapshotCount();
+  if (active) return `Current: ${active}`;
+  return count ? `${count} saved · select one` : "Save or load a plan";
+}
+
+function _paGamePlanSaveStatus() {
+  const board = typeof _gpEnsureBoard === "function" ? _gpEnsureBoard() : null;
+  const active = String(board?.activeSnapshotName || "").trim();
+  return active ? `Updates ${active}` : "Name this plan";
 }
 
 function getActivePageActionsKey() {
@@ -201,15 +235,25 @@ function renderPageActionsRoot(config) {
   });
   html += "</div>";
 
-  if ((config.extras || []).length) {
-    html += '<div class="page-actions-extra-label">More</div>';
-    html += '<div class="page-actions-extra">';
-    config.extras.forEach((verb, index) => {
-      html += `<button type="button" class="page-actions-extra__item" data-action="runPageAction" data-arg="extra:${index}">
-        <span aria-hidden="true">${verb.icon || ""}</span> ${escapeHtml(verb.label)}
-      </button>`;
+  const sections = Array.isArray(config.sections) && config.sections.length
+    ? config.sections
+    : (config.extras || []).length
+      ? [{ label: "More", items: config.extras }]
+      : [];
+  if (sections.length) {
+    sections.forEach((section, sectionIndex) => {
+      const items = Array.isArray(section.items) ? section.items : [];
+      if (!items.length) return;
+      html += `<div class="page-actions-extra-label">${escapeHtml(section.label || "More")}</div>`;
+      html += '<div class="page-actions-extra">';
+      items.forEach((verb, itemIndex) => {
+        const index = config.sections ? `${sectionIndex}.${itemIndex}` : itemIndex;
+        html += `<button type="button" class="page-actions-extra__item" data-action="runPageAction" data-arg="extra:${index}">
+          <span aria-hidden="true">${verb.icon || ""}</span> ${escapeHtml(verb.label)}
+        </button>`;
+      });
+      html += "</div>";
     });
-    html += "</div>";
   }
 
   // Direct innerHTML: content contains <button> which sanitizeHTML would strip.
@@ -221,9 +265,15 @@ function runPageAction(arg) {
   const config = PAGE_ACTIONS_CONFIG[getActivePageActionsKey()];
   if (!config || !arg) return;
   const [kind, idxStr] = String(arg).split(":");
-  const index = parseInt(idxStr, 10);
-  const list = kind === "extra" ? config.extras : config.verbs;
-  const verb = list && list[index];
+  let verb = null;
+  if (kind === "extra" && Array.isArray(config.sections)) {
+    const [sectionIndex, itemIndex] = String(idxStr || "").split(".").map((part) => parseInt(part, 10));
+    verb = config.sections[sectionIndex]?.items?.[itemIndex] || null;
+  } else {
+    const index = parseInt(idxStr, 10);
+    const list = kind === "extra" ? config.extras : config.verbs;
+    verb = list && list[index];
+  }
   if (!verb || typeof verb.run !== "function") return;
 
   if (verb.keepOpen) {
@@ -238,6 +288,151 @@ function runPageAction(arg) {
 function pageActionsBack() {
   const config = PAGE_ACTIONS_CONFIG[getActivePageActionsKey()];
   if (config) renderPageActionsRoot(config);
+}
+
+/* ── Game Plan plan workspace ─────────────────────────────────────────────
+   The working board is already persisted per opponent. Named plans are the
+   coach-controlled milestones: Save updates the current named plan, Save as
+   New forks it, and Load replaces only the working board after confirmation.
+   Keeping that distinction visible prevents accidental plan loss.
+   ─────────────────────────────────────────────────────────────────────── */
+
+function _paGamePlanPlayCount(board) {
+  if (typeof _gpAllDraftedPlays === "function") return _gpAllDraftedPlays(board).length;
+  return Object.entries(board?.assignments || {}).reduce((total, [boxId, list]) => (
+    boxId === "__holding" ? total : total + (Array.isArray(list) ? list.length : 0)
+  ), 0);
+}
+
+function _paGamePlanSnapshotMeta(snapshot) {
+  const when = snapshot?.savedAt
+    ? new Date(snapshot.savedAt).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    })
+    : "Not saved yet";
+  return `${_paGamePlanPlayCount(snapshot?.board)} plays · ${when}`;
+}
+
+function openGamePlanPlanCenter() {
+  const titleEl = document.getElementById("pageActionsTitle");
+  if (titleEl) titleEl.textContent = "Game Plans";
+  _paRenderGamePlanPlanCenter();
+}
+
+function _paRenderGamePlanPlanCenter() {
+  const bodyEl = document.getElementById("pageActionsBody");
+  if (!bodyEl) return;
+  const board = typeof _gpEnsureBoard === "function" ? _gpEnsureBoard() : null;
+  const key = typeof _gpActiveOpponentKey === "function" ? _gpActiveOpponentKey() : "__unassigned__";
+  const opponentLabel = key === "__unassigned__" ? "Current workspace" : `vs ${key}`;
+  const activeId = String(board?.activeSnapshotId || "");
+  const activeName = String(board?.activeSnapshotName || "").trim();
+  const snapshots = typeof _gpSnapshotsForOpponent === "function" ? _gpSnapshotsForOpponent() : [];
+  const ordered = snapshots.slice().sort((left, right) => {
+    const leftActive = String(left?.id || "") === activeId;
+    const rightActive = String(right?.id || "") === activeId;
+    if (leftActive !== rightActive) return leftActive ? -1 : 1;
+    return String(right?.savedAt || "").localeCompare(String(left?.savedAt || ""));
+  });
+  const workingCount = _paGamePlanPlayCount(board);
+
+  let html = `
+    <button type="button" class="page-actions-back" data-action="pageActionsBack">← Back to actions</button>
+    <section class="gp-plan-center-status">
+      <div class="gp-plan-center-kicker">${escapeHtml(opponentLabel)}</div>
+      <div class="gp-plan-center-title-row">
+        <strong>${escapeHtml(activeName || "Working board")}</strong>
+        <span class="gp-plan-center-badge">${activeName ? "Current saved plan" : "Autosaved draft"}</span>
+      </div>
+      <div class="gp-plan-center-meta">${workingCount} plays · ${snapshots.length} saved plan${snapshots.length === 1 ? "" : "s"}</div>
+      <p>Your board autosaves here. <strong>Save Plan</strong> creates or updates a named version; loading one replaces this working board only after you confirm.</p>
+      <div class="gp-plan-center-primary">
+        <button type="button" class="btn btn-primary" data-action="saveGamePlanFromActions">💾 ${activeName ? "Update current plan" : "Save current plan"}</button>
+        <button type="button" class="btn btn-secondary" data-action="saveGamePlanAsNewFromActions">＋ Save as new</button>
+      </div>
+    </section>`;
+
+  html += '<div class="page-actions-list-label">Saved plans</div>';
+  if (!ordered.length) {
+    html += '<div class="page-actions-empty">No named plans yet. Your current board is still autosaved; use Save current plan when you want a reusable version.</div>';
+  } else {
+    html += '<div class="gp-plan-center-list">';
+    ordered.forEach((snapshot) => {
+      const id = String(snapshot?.id || "");
+      if (!id) return;
+      const isActive = id === activeId;
+      html += `
+        <article class="gp-plan-center-item${isActive ? " is-active" : ""}">
+          <div class="gp-plan-center-item-copy">
+            <div class="gp-plan-center-item-title">
+              <strong>${escapeHtml(snapshot.name || "Untitled plan")}</strong>
+              ${isActive ? '<span class="gp-plan-center-badge">Open</span>' : ""}
+            </div>
+            <div class="gp-plan-center-item-meta">${escapeHtml(_paGamePlanSnapshotMeta(snapshot))}</div>
+          </div>
+          <div class="gp-plan-center-item-actions">
+            <button type="button" class="btn btn-sm btn-primary" data-action="loadGamePlanSnapshotFromActions" data-arg="${escapeHtml(id)}">${isActive ? "Reload" : "Load"}</button>
+            <button type="button" class="btn btn-sm" data-action="renameGamePlanSnapshotFromActions" data-arg="${escapeHtml(id)}" aria-label="Rename ${escapeHtml(snapshot.name || "plan")}" title="Rename">✎</button>
+            <button type="button" class="btn btn-sm btn-danger" data-action="deleteGamePlanSnapshotFromActions" data-arg="${escapeHtml(id)}" aria-label="Delete ${escapeHtml(snapshot.name || "plan")}" title="Delete">×</button>
+          </div>
+        </article>`;
+    });
+    html += "</div>";
+  }
+  bodyEl.innerHTML = html;
+}
+
+async function saveGamePlanFromActions() {
+  if (typeof saveGamePlanSnapshot !== "function") return;
+  await saveGamePlanSnapshot();
+  _paRenderGamePlanPlanCenter();
+}
+
+async function saveGamePlanAsNewFromActions() {
+  if (typeof saveGamePlanSnapshotAsNew !== "function") return;
+  await saveGamePlanSnapshotAsNew();
+  _paRenderGamePlanPlanCenter();
+}
+
+async function loadGamePlanSnapshotFromActions(snapshotId) {
+  if (typeof _gpLoadSnapshot !== "function") return;
+  await _gpLoadSnapshot(snapshotId);
+  _paRenderGamePlanPlanCenter();
+}
+
+async function renameGamePlanSnapshotFromActions(snapshotId) {
+  if (typeof _gpLoadAllSnapshots !== "function" || typeof _gpSaveAllSnapshots !== "function") return;
+  const all = _gpLoadAllSnapshots();
+  const key = typeof _gpActiveOpponentKey === "function" ? _gpActiveOpponentKey() : "__unassigned__";
+  const snapshot = (all[key] || []).find((item) => String(item?.id || "") === String(snapshotId));
+  if (!snapshot) return;
+  const nextName = await showPrompt("Name this plan:", snapshot.name || "", {
+    title: "Rename Game Plan",
+    icon: "✎",
+    placeholder: "e.g. Base plan, blitz answers",
+  });
+  if (!nextName || !nextName.trim()) return;
+  snapshot.name = nextName.trim();
+  if (typeof _gpBoardWithActiveSnapshot === "function") {
+    snapshot.board = _gpBoardWithActiveSnapshot(snapshot.board, snapshot);
+  }
+  _gpSaveAllSnapshots(all);
+  const board = typeof _gpEnsureBoard === "function" ? _gpEnsureBoard() : null;
+  if (String(board?.activeSnapshotId || "") === String(snapshot.id) && typeof _gpSetActiveSnapshot === "function") {
+    _gpSetActiveSnapshot(snapshot);
+  }
+  if (typeof recordArtifactModified === "function") recordArtifactModified("gameplan");
+  showToast(`Renamed plan to “${snapshot.name}”`, { type: "success" });
+  _paRenderGamePlanPlanCenter();
+}
+
+async function deleteGamePlanSnapshotFromActions(snapshotId) {
+  if (typeof _gpDeleteSnapshot !== "function") return;
+  await _gpDeleteSnapshot(snapshotId);
+  _paRenderGamePlanPlanCenter();
 }
 
 // ── Script "Load" submenu ─────────────────────────────────────────────────

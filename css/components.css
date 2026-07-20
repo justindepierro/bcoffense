@@ -3854,6 +3854,123 @@ kbd {
   text-align: center;
 }
 
+/* Game Plan's Actions entry uses this compact plan workspace instead of
+   mixing the working draft, named saves, and templates into one flat list. */
+.gp-plan-center-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-light);
+}
+.gp-plan-center-kicker {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.gp-plan-center-title-row,
+.gp-plan-center-item-title,
+.gp-plan-center-item-actions,
+.gp-plan-center-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gp-plan-center-title-row {
+  justify-content: space-between;
+}
+.gp-plan-center-title-row strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--font-size-md);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gp-plan-center-badge {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-primary-dark);
+  font-size: var(--font-size-3xs);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.gp-plan-center-meta,
+.gp-plan-center-item-meta {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+}
+.gp-plan-center-status p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+.gp-plan-center-primary {
+  flex-wrap: wrap;
+}
+.gp-plan-center-primary .btn {
+  flex: 1 1 150px;
+  min-height: 38px;
+}
+.gp-plan-center-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gp-plan-center-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.gp-plan-center-item.is-active {
+  border-color: var(--color-primary);
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+.gp-plan-center-item-copy {
+  min-width: 0;
+}
+.gp-plan-center-item-title strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gp-plan-center-item-actions {
+  flex: 0 0 auto;
+}
+.gp-plan-center-item-actions .btn {
+  min-width: 32px;
+  min-height: 32px;
+  padding-inline: 8px;
+}
+@media (max-width: 440px) {
+  .gp-plan-center-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .gp-plan-center-item-actions {
+    align-self: stretch;
+  }
+  .gp-plan-center-item-actions .btn:first-child {
+    flex: 1;
+  }
+}
+
 /* Mobile pill cluster (FAB) — thumb-reachable Library + Actions */
 .page-fab-cluster {
   display: none;
