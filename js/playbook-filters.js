@@ -3,6 +3,7 @@ let highlightedWristbandPlayKeys = new Set();
 const playbookMediaFilters = new Set();
 const _playbookMediaFilterChecks = new Set();
 let _playbookMediaFilterRefreshPending = false;
+let _playbookMediaFilterRetryTimer = null;
 
 const PB_PICTURE_FILTER_LABELS = {
   wideZone: "Wide Zone",
@@ -159,14 +160,36 @@ function _warmPlaybookMediaFilterManifests(playList) {
   if (!pending.length) return false;
   _playbookMediaFilterRefreshPending = true;
   window.playImages.checkRemoteForPlays(pending)
-    .then(() => {
+    .then((manifests) => {
       pending.forEach((play) => {
         const mediaId = String(getPlayMediaId(play) || "").trim();
-        if (mediaId) _playbookMediaFilterChecks.add(mediaId);
+        const manifest = mediaId
+          ? manifests?.[mediaId] || window.playImages.getCachedRemoteManifestForPlay?.(play)
+          : null;
+        // Only remember a definitive answer. A timeout/offline/error result
+        // must be retried later; otherwise the study filter silently excludes
+        // every diagram that was still checking on a fresh device.
+        if (mediaId && manifest && ["published", "unpublished"].includes(manifest.status)) {
+          _playbookMediaFilterChecks.add(mediaId);
+        }
       });
-      filterPlays();
     })
-    .finally(() => { _playbookMediaFilterRefreshPending = false; });
+    .finally(() => {
+      _playbookMediaFilterRefreshPending = false;
+      const hasUnresolved = pending.some((play) => {
+        const manifest = window.playImages.getCachedRemoteManifestForPlay?.(play);
+        return !manifest || !["published", "unpublished"].includes(manifest.status);
+      });
+      if (hasUnresolved) {
+        // Keep the unfiltered list visible while Cloudflare is unavailable.
+        // A later, bounded retry is safer than mislabeling every unresolved
+        // diagram as missing or rapidly re-running the filter in a loop.
+        clearTimeout(_playbookMediaFilterRetryTimer);
+        _playbookMediaFilterRetryTimer = setTimeout(() => filterPlays(), 3000);
+        return;
+      }
+      filterPlays();
+    });
   return true;
 }
 

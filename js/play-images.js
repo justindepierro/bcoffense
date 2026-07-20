@@ -41,6 +41,11 @@
   const REMOTE_MEDIA_TIMEOUT_MS = 8000;
   const REMOTE_MANIFEST_TTL_MS = 45 * 1000;
   const REMOTE_MANIFEST_NEGATIVE_TTL_MS = 2500;
+  // A full playbook can contain several hundred plays. Keep manifest warming
+  // deliberately bounded so a partially unavailable batch endpoint never
+  // turns into hundreds of simultaneous per-play requests.
+  const REMOTE_MANIFEST_BATCH_CONCURRENCY = 3;
+  const REMOTE_MANIFEST_FALLBACK_CONCURRENCY = 4;
   const PLAY_IMAGE_SOURCE_FIELDS = [
     "type",
     "personnel",
@@ -977,19 +982,27 @@
         for (let index = 0; index < missing.length; index += 100) {
           batches.push(missing.slice(index, index + 100));
         }
-        const responses = await Promise.all(batches.map(async (batch) => {
-          const response = await fetch("/images/batch-manifest", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-              "X-BC-Auth-Mode": "json",
-            },
-            body: JSON.stringify({ sigs: batch }),
-          });
-          return { batch, data: response.ok ? await response.json().catch(() => null) : null };
-        }));
+        const responses = [];
+        await _withConcurrency(batches, REMOTE_MANIFEST_BATCH_CONCURRENCY, async (batch) => {
+          try {
+            const response = await _remoteFetch("/images/batch-manifest", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "X-BC-Auth-Mode": "json",
+              },
+              body: JSON.stringify({ sigs: batch }),
+            });
+            responses.push({ batch, data: response.ok ? await response.json().catch(() => null) : null });
+          } catch (_err) {
+            // Leave this batch uncached. The bounded fallback below can make a
+            // careful attempt, and later calls can retry rather than treating
+            // a transient network issue as "no diagram".
+            responses.push({ batch, data: null });
+          }
+        });
         responses.forEach(({ batch, data }) => {
           if (!data?.manifests || typeof data.manifests !== "object") return;
           batch.forEach((identityKey) => {
@@ -1002,7 +1015,8 @@
         // Fall back to existing one-at-a-time checks below.
       }
     }
-    await Promise.all(identityKeys.map(async (identityKey) => {
+    const unresolvedIdentityKeys = identityKeys.filter((identityKey) => !_getCachedRemoteManifest(identityKey));
+    await _withConcurrency(unresolvedIdentityKeys, REMOTE_MANIFEST_FALLBACK_CONCURRENCY, async (identityKey) => {
       if (!_getCachedRemoteManifest(identityKey)) {
         try {
         const response = await _remoteFetch(`/images/manifest?sig=${encodeURIComponent(identityKey)}`, {
@@ -1032,7 +1046,10 @@
         }
       }
       result[identityKey] = _getCachedRemoteManifest(identityKey);
-    }));
+    });
+    identityKeys.forEach((identityKey) => {
+      result[identityKey] = _getCachedRemoteManifest(identityKey);
+    });
     _recordPerf("media:image-batch-manifest", startedAt, {
       requested: identityKeys.length,
       missing: missing.length,
