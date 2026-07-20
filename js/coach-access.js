@@ -1,11 +1,11 @@
 /**
  * Admin-only access manager for D1 coach accounts.
- * Managed coaches are deliberately view-only until this panel grants a
- * capability. The server validates the same capability list on every request.
+ * Managed coaches receive read-only team study surfaces by default. This panel
+ * grants the separate capabilities that can change team data or accounts.
  */
 
 const COACH_ACCESS_GROUPS = [
-  ["Player-style access", [
+  ["Read-only workspace", [
     ["tab:dashboard", "Home dashboard", "Published team overview and current releases."],
     ["tab:playbook", "Playbook", "Read the published playbook and diagrams."],
     ["tab:signals", "Signals", "Watch signal clips and study components."],
@@ -35,7 +35,9 @@ const COACH_ACCESS_GROUPS = [
 ];
 
 const COACH_ACCESS_DEFAULTS = [
-  "tab:dashboard", "tab:playbook", "tab:signals", "tab:script", "tab:leaderboard",
+  "tab:dashboard", "tab:playbook", "tab:signals", "tab:script", "tab:wristband",
+  "tab:tendencies", "tab:gameplan", "tab:callsheet", "tab:installation", "tab:identity",
+  "tab:offensebuilder", "tab:quizsetup", "tab:leaderboard",
   "feature:comments", "feature:questions",
 ];
 
@@ -121,12 +123,12 @@ function renderCoachAccessManager() {
     : '<div class="pa-empty">No managed coach accounts yet. Invite your first coach below.</div>';
 
   const detail = selected ? renderCoachAccessDetail(selected) : `
-    <div class="coach-access-empty"><strong>Add a coach when you are ready.</strong><span>They will see player-style surfaces only until you grant more.</span></div>`;
+    <div class="coach-access-empty"><strong>Add a coach when you are ready.</strong><span>They will see the current team workspace without being able to change it.</span></div>`;
 
   body.innerHTML = `
     <div class="coach-access-intro">
-      <strong>Safe by default</strong>
-      <span>Access is checked in the app and on the server. Unchecked tools stay unavailable even if someone tries a direct link.</span>
+      <strong>Read-only by default</strong>
+      <span>Coaches can study the published team workspace. Editing, publishing, media, player administration, and printing still require an explicit grant.</span>
     </div>
     <div class="coach-access-layout">
       <section class="coach-access-list"><div class="coach-access-list-head"><span>Managed coaches</span><button class="btn btn-sm btn-outline" data-action="refreshCoachAccessManager">Refresh</button></div>${list}</section>
@@ -151,7 +153,7 @@ function renderCoachAccessDetail(coach) {
 function renderCoachInviteForm() {
   return `<section class="pa-invite-section coach-invite-section">
     <h4 class="pa-invite-heading">Invite a Coach</h4>
-    <p>Coaches begin with the safe view-only access shown above. You can configure their access after inviting them.</p>
+    <p>Coaches begin with read-only access to the published team workspace. You can grant specific coach tools after inviting them.</p>
     <div class="pa-invite-form">
       <input type="email" id="coachInviteEmail" class="pa-input" placeholder="Coach email address" autocomplete="off">
       <input type="text" id="coachInviteName" class="pa-input" placeholder="Coach display name" autocomplete="off">

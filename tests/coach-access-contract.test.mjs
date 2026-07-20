@@ -21,6 +21,7 @@ assert.match(migration, /CREATE TABLE IF NOT EXISTS staff_access/, "coach access
 assert.match(migration, /permissions_json TEXT NOT NULL/, "permissions are stored as explicit server records");
 assert.match(policy, /DEFAULT_MANAGED_COACH_PERMISSIONS/, "managed coaches have a safe default profile");
 assert.match(policy, /feature:edit_workspace/, "editing is an explicit capability rather than the default");
+assert.match(policy, /"tab:gameplan"/, "managed coaches receive read-only game-plan access by default");
 assert.match(auth, /staff_access\.permissions_json/, "sessions resolve the current server-side coach permissions");
 assert.match(middleware, /canManagedCoachUseWriteRoute/, "middleware enforces managed coach write policy");
 assert.match(middleware, /api\/questions/, "questions remain allowed in the default collaboration profile");
@@ -30,8 +31,11 @@ assert.match(accountAction, /set-coach-access/, "admin can persist individual co
 assert.match(accountAction, /session\.role !== "admin"/, "only admin can change another coach's access");
 assert.match(client, /Invite a Coach/, "admin UI can invite a managed coach");
 assert.match(client, /Save access/, "admin UI exposes per-feature access checkboxes");
+assert.match(client, /Read-only workspace/, "access UI distinguishes study access from write grants");
+const cloudSync = await source("js/cloud-sync.js");
+assert.match(cloudSync, /currentUser\.managedCoach === true/, "managed coaches hydrate from the canonical team workspace at sign-in");
 assert.match(index, /id="coachAccessOverlay"/, "coach access modal is included in the app shell");
-assert.match(index, /js\/coach-access\.js\?v=1281/, "coach access client is loaded");
+assert.match(index, /js\/coach-access\.js\?v=1283/, "coach access client is loaded");
 assert.match(sw, /\.\/js\/coach-access\.js/, "coach access client is cached for offline shell use");
 
-console.log("coach access contract: 16 assertions passed");
+console.log("coach access contract: 19 assertions passed");

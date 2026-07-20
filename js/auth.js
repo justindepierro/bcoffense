@@ -40,10 +40,12 @@
     player: "dashboard",
   };
 
-  // D1-backed coach accounts are intentionally default-deny. The legacy
-  // environment-variable coach account keeps its established full access.
+  // D1-backed coaches can study every coaching surface by default. Workspace
+  // editing and staff-management capabilities remain explicit grants.
   const MANAGED_COACH_DEFAULT_PERMISSIONS = [
-    "tab:dashboard", "tab:playbook", "tab:signals", "tab:script", "tab:leaderboard",
+    "tab:dashboard", "tab:playbook", "tab:signals", "tab:script", "tab:wristband",
+    "tab:tendencies", "tab:gameplan", "tab:callsheet", "tab:installation", "tab:identity",
+    "tab:offensebuilder", "tab:quizsetup", "tab:leaderboard",
     "feature:comments", "feature:questions",
   ];
   const MANAGED_COACH_ACTION_PERMISSIONS = {

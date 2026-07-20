@@ -1783,6 +1783,28 @@
       const remote = await fetchCanonicalWorkspace({ allowMissing: true });
       if (!remote) return false;
 
+      // Managed coaches are deliberately read-only. Their browser is a study
+      // surface, not an independent team workspace, so always hydrate it from
+      // the canonical published head at sign-in. This prevents a brand-new
+      // coach profile (or a browser that previously held player data) from
+      // opening an empty/local shell instead of the team's scripts and boards.
+      if (currentUser.role === "coach" && currentUser.managedCoach === true) {
+        const restored = await restoreCloudBackup(remote, {
+          auto: true,
+          confirm: false,
+          notify: false,
+        });
+        if (restored) {
+          saveCloudSyncSettingsObject({
+            lastWorkspaceRevision: remote.revision || "",
+            lastRemoteExportDate: remote.summary.exportDate,
+            lastRemoteUpdatedAt: remote.updatedAt,
+            lastRemoteSize: remote.size,
+          });
+        }
+        return restored;
+      }
+
       // A pre-data-plane snapshot can be checksum-valid while still carrying
       // old browser-only fields. The server has already removed only its
       // explicit migration set from this response. Commit that sanitized
