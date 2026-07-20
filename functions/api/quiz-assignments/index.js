@@ -5,8 +5,9 @@ import { getTeamId } from "../../_lib/d1-threads.js";
 import { createNotification } from "../../_lib/d1-notifications.js";
 import { sendPushToUser } from "../../_lib/d1-push.js";
 import {
-  createQuizAssignment, getAssignmentPlayers, getCoachQuizAssignments,
-  getPlayerQuizAssignments, isQuizAssignmentStaff, recordQuizAssignmentAttempt,
+  archiveQuizAssignment, createQuizAssignment, getAssignmentPlayers, getCoachQuizAssignments,
+  getPlayerQuizAssignments, getQuizAssignmentForStaff, isQuizAssignmentStaff, recordQuizAssignmentAttempt,
+  markQuizAssignmentOpened, recordQuizAssignmentDelivery,
 } from "../../_lib/d1-quiz-assignments.js";
 
 async function sessionContext(request, env) {
@@ -49,7 +50,29 @@ export async function onRequestPost(context) {
       const result = await recordQuizAssignmentAttempt(context.env.DB, ctx.teamId, ctx.session.d1UserId, body);
       return withSecurityHeaders(authJson({ ok: true, result }));
     }
+    if (body.action === "record-open") {
+      if (ctx.session.role !== "player" || !ctx.session.d1UserId) return authJson({ ok: false, error: "Player access required." }, { status: 403 });
+      const result = await markQuizAssignmentOpened(context.env.DB, ctx.teamId, ctx.session.d1UserId, body.assignmentId);
+      return withSecurityHeaders(authJson({ ok: true, result }));
+    }
     if (!isQuizAssignmentStaff(ctx.session)) return authJson({ ok: false, error: "Coach access required." }, { status: 403 });
+    if (body.action === "archive") {
+      const result = await archiveQuizAssignment(context.env.DB, ctx.teamId, body.assignmentId);
+      return withSecurityHeaders(authJson({ ok: true, result }));
+    }
+    if (body.action === "resend") {
+      const assignment = await getQuizAssignmentForStaff(context.env.DB, ctx.teamId, body.assignmentId);
+      if (assignment.status !== "published") throw new Error("Only active homework can be resent.");
+      const recipients = (assignment.recipients || []).filter((recipient) => !recipient.completedAt).map((recipient) => recipient.userId);
+      if (!recipients.length) throw new Error("Everyone has completed this homework.");
+      const bodyCopy = `${assignment.items.length + (assignment.customQuestions?.length || 0)} questions${assignment.dueAt ? " · check the due date" : ""}`;
+      await Promise.allSettled(recipients.map(async (userId) => {
+        await createNotification(context.env.DB, { userId, type: "quiz_homework", title: `Reminder: ${assignment.title}`, body: bodyCopy, deepLink: `quiz-assignment:${assignment.id}` });
+        await sendPushToUser(context.env, context.env.DB, userId, { title: `Reminder: ${assignment.title}`, body: bodyCopy, url: "/", tag: `quiz-homework-${assignment.id}` }).catch(() => null);
+      }));
+      await recordQuizAssignmentDelivery(context.env.DB, assignment.id, recipients, "reminded");
+      return withSecurityHeaders(authJson({ ok: true, recipients: recipients.length }));
+    }
     const created = await createQuizAssignment(context.env.DB, ctx.teamId, ctx.session, body);
     const questionCount = created.assignment.items.length + (created.assignment.customQuestions?.length || 0);
     const bodyCopy = `${questionCount} question${questionCount === 1 ? "" : "s"}${created.assignment.dueAt ? " · check the due date" : ""}`;
@@ -63,6 +86,7 @@ export async function onRequestPost(context) {
         tag: `quiz-homework-${created.assignment.id}`,
       }).catch(() => null);
     }));
+    await recordQuizAssignmentDelivery(context.env.DB, created.assignment.id, created.recipientIds, "assigned");
     return withSecurityHeaders(authJson({ ok: true, assignment: created.assignment, recipients: created.recipientIds.length }));
   } catch (err) {
     const message = String(err?.message || "Could not save homework assignment.");

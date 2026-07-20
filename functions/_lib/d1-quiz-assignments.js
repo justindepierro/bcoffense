@@ -104,6 +104,8 @@ function mapAssignment(row, recipient = {}) {
       completedAt: recipient.completed_at ? Number(recipient.completed_at) : null,
       bestPercent: Number(recipient.best_percent || 0),
       attemptsCount: Number(recipient.attempts_count || 0),
+      lastRemindedAt: recipient.last_reminded_at ? Number(recipient.last_reminded_at) : null,
+      notificationCount: Number(recipient.notification_count || 0),
     } : null,
   };
 }
@@ -159,6 +161,79 @@ export async function getPlayerQuizAssignments(db, teamId, userId) {
      ORDER BY CASE WHEN r.completed_at IS NULL THEN 0 ELSE 1 END, a.due_at ASC, a.created_at DESC LIMIT 100`,
   ).bind(userId, teamId).all();
   return (result.results || []).map((row) => mapAssignment(row, row));
+}
+
+export async function getQuizAssignmentForStaff(db, teamId, assignmentId) {
+  const id = cleanText(assignmentId, 128);
+  if (!id) throw new Error("Homework assignment is missing.");
+  const row = await db.prepare(
+    `SELECT * FROM quiz_assignments WHERE id = ? AND team_id = ? LIMIT 1`,
+  ).bind(id, teamId).first();
+  if (!row) throw new Error("Homework assignment is unavailable.");
+  const recipients = await db.prepare(
+    `SELECT r.*, u.display_name FROM quiz_assignment_recipients r
+     JOIN users u ON u.id = r.user_id
+     WHERE r.assignment_id = ? ORDER BY u.display_name COLLATE NOCASE`,
+  ).bind(id).all();
+  return { ...mapAssignment(row), recipients: (recipients.results || []).map((recipient) => mapAssignment({ items_json: "[]" }, recipient).recipient) };
+}
+
+export async function archiveQuizAssignment(db, teamId, assignmentId) {
+  const id = cleanText(assignmentId, 128);
+  const now = nowUnix();
+  const result = await db.prepare(
+    `UPDATE quiz_assignments SET status = 'archived', archived_at = ?, updated_at = ?
+     WHERE id = ? AND team_id = ? AND status != 'archived'`,
+  ).bind(now, now, id, teamId).run();
+  if (!Number(result.meta?.changes || 0)) throw new Error("Homework assignment is unavailable or already archived.");
+  return { id, archivedAt: now };
+}
+
+export async function recordQuizAssignmentDelivery(db, assignmentId, recipientIds, eventType = "assigned") {
+  const ids = [...new Set((Array.isArray(recipientIds) ? recipientIds : []).map((id) => cleanText(id, 128)).filter(Boolean))].slice(0, 300);
+  if (!ids.length) return 0;
+  const now = nowUnix();
+  const type = eventType === "reminded" ? "reminded" : "assigned";
+  const statements = [];
+  ids.forEach((userId) => {
+    statements.push(db.prepare(
+      `INSERT INTO quiz_assignment_delivery_events (id, assignment_id, user_id, event_type, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
+    ).bind(crypto.randomUUID(), assignmentId, userId, type, now));
+    if (type === "reminded") {
+      statements.push(db.prepare(
+        `UPDATE quiz_assignment_recipients
+         SET last_reminded_at = ?, notification_count = notification_count + 1
+         WHERE assignment_id = ? AND user_id = ?`,
+      ).bind(now, assignmentId, userId));
+    }
+  });
+  await db.batch(statements);
+  return ids.length;
+}
+
+export async function markQuizAssignmentOpened(db, teamId, userId, assignmentId) {
+  const id = cleanText(assignmentId, 128);
+  if (!id) throw new Error("Homework assignment is missing its identity.");
+  const assignment = await db.prepare(
+    `SELECT a.id FROM quiz_assignments a
+     JOIN quiz_assignment_recipients r ON r.assignment_id = a.id
+     WHERE a.id = ? AND a.team_id = ? AND a.status = 'published' AND r.user_id = ? LIMIT 1`,
+  ).bind(id, teamId, userId).first();
+  if (!assignment) throw new Error("This homework assignment is unavailable.");
+  const now = nowUnix();
+  await db.batch([
+    db.prepare(
+      `UPDATE quiz_assignment_recipients
+       SET started_at = COALESCE(started_at, ?)
+       WHERE assignment_id = ? AND user_id = ?`,
+    ).bind(now, id, userId),
+    db.prepare(
+      `INSERT INTO quiz_assignment_delivery_events (id, assignment_id, user_id, event_type, created_at)
+       VALUES (?, ?, ?, 'opened', ?)`,
+    ).bind(crypto.randomUUID(), id, userId, now),
+  ]);
+  return { id, startedAt: now };
 }
 
 export async function createQuizAssignment(db, teamId, session, input = {}) {
@@ -217,13 +292,19 @@ export async function recordQuizAssignmentAttempt(db, teamId, userId, input = {}
   const percent = cleanInt(input.percent, 0, 100);
   const now = nowUnix();
   const meetsRequirement = percent >= Number(assignment.required_score || 0);
-  await db.prepare(
-    `UPDATE quiz_assignment_recipients
-     SET started_at = COALESCE(started_at, ?), latest_attempt_id = ?,
-       attempts_count = attempts_count + 1,
-       best_percent = MAX(best_percent, ?),
-       completed_at = CASE WHEN ? THEN COALESCE(completed_at, ?) ELSE completed_at END
-     WHERE assignment_id = ? AND user_id = ?`,
-  ).bind(now, attemptId, percent, meetsRequirement ? 1 : 0, now, assignmentId, userId).run();
+  await db.batch([
+    db.prepare(
+      `UPDATE quiz_assignment_recipients
+       SET started_at = COALESCE(started_at, ?), latest_attempt_id = ?,
+         attempts_count = attempts_count + 1,
+         best_percent = MAX(best_percent, ?),
+         completed_at = CASE WHEN ? THEN COALESCE(completed_at, ?) ELSE completed_at END
+       WHERE assignment_id = ? AND user_id = ?`,
+    ).bind(now, attemptId, percent, meetsRequirement ? 1 : 0, now, assignmentId, userId),
+    db.prepare(
+      `INSERT INTO quiz_assignment_delivery_events (id, assignment_id, user_id, event_type, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
+    ).bind(crypto.randomUUID(), assignmentId, userId, meetsRequirement ? "completed" : "attempted", now),
+  ]);
   return { assignmentId, percent, completed: meetsRequirement, requiredScore: Number(assignment.required_score || 0) };
 }

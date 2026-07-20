@@ -12,9 +12,10 @@ async function source(relativePath) {
 }
 
 console.log("\n▸ Private quiz homework contract");
-const [migration, migrationQuestionConfig, helper, route, client, quiz, notifications, index, sw] = await Promise.all([
+const [migration, migrationQuestionConfig, migrationLifecycle, helper, route, client, quiz, notifications, index, sw] = await Promise.all([
   source("../migrations/0020_quiz_assignments.sql"),
   source("../migrations/0021_quiz_assignment_question_config.sql"),
+  source("../migrations/0022_quiz_assignment_delivery_lifecycle.sql"),
   source("../functions/_lib/d1-quiz-assignments.js"),
   source("../functions/api/quiz-assignments/index.js"),
   source("../js/script-quiz-assignments.js"),
@@ -40,15 +41,25 @@ assert(
   "assignment schema safely preserves coach-selected question types and authored multiple choice",
 );
 assert(
+  migrationLifecycle.includes("quiz_assignment_delivery_events")
+    && migrationLifecycle.includes("notification_count")
+    && helper.includes("markQuizAssignmentOpened")
+    && helper.includes("recordQuizAssignmentDelivery"),
+  "assignment lifecycle records initial delivery, opens, attempts, completions, and reminders",
+);
+assert(
   route.includes("isQuizAssignmentStaff") && route.includes("record-attempt")
+    && route.includes("record-open") && route.includes("body.action === \"resend\"")
+    && route.includes("body.action === \"archive\"")
     && route.includes("createNotification") && route.includes("sendPushToUser"),
-  "coach delivery is role-gated and sends a private in-app/push notification",
+  "coach delivery is role-gated, auditable, and supports resend plus archive",
 );
 assert(
   client.includes("startPlayerQuizAssignment") && client.includes("recordQuizAssignmentAttempt")
     && client.includes("renderPlayerQuizHomeworkDashboard") && client.includes("openQuizAssignmentManager")
+    && client.includes("openQuizAssignmentDetails") && client.includes("followUpQuizAssignment")
     && client.includes("Saved practice script") && client.includes("Game Plan") && client.includes("Custom question"),
-  "client includes coach creation, player dashboard delivery, and completion reporting",
+  "client includes coach creation, player delivery, custom questions, and assignment management",
 );
 assert(
   quiz.includes('"assignment"') && quiz.includes("_quizAssignmentId")
@@ -61,7 +72,7 @@ assert(
   "homework notification opens exactly the assigned quiz",
 );
 assert(
-  index.includes("script-quiz-assignments.js?v=1275") && sw.includes("./js/script-quiz-assignments.js"),
+  index.includes("script-quiz-assignments.js?v=1276") && sw.includes("./js/script-quiz-assignments.js"),
   "assignment client is loaded and cached with the app shell",
 );
 
