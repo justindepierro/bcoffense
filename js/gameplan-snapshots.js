@@ -43,6 +43,52 @@ function _gpActiveSnapshotForBoard(board, snapshots) {
   return snapshots.find((snapshot) => String(snapshot?.id) === id) || null;
 }
 
+function _gpSnapshotId() {
+  // Date.now alone can collide when a coach saves a copy in the same clock
+  // tick. The suffix keeps each immutable named-plan record distinct without
+  // adding a dependency on a browser-only UUID API.
+  return `snap-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function _gpSnapshotNameKey(value) {
+  return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+// Older game-plan boards could retain an active snapshot name after the
+// matching snapshot list was restored, cleared, or migrated. That made the
+// UI say "current saved plan" while Save had no record to update and asked
+// the coach to name it again. Repair the pointer only when the coach chooses
+// the normal Save action: reuse a same-named record when possible, otherwise
+// recreate the intended record under the saved name.
+function _gpRepairActiveSnapshotForSave(board, all, key) {
+  const snapshots = Array.isArray(all?.[key]) ? all[key] : [];
+  const active = _gpActiveSnapshotForBoard(board, snapshots);
+  if (active) return active;
+
+  const legacyName = String(board?.activeSnapshotName || "").trim();
+  if (!legacyName) return null;
+  const matchingSnapshot = snapshots.find((snapshot) => (
+    _gpSnapshotNameKey(snapshot?.name) === _gpSnapshotNameKey(legacyName)
+  ));
+  if (matchingSnapshot) {
+    _gpSetActiveSnapshot(matchingSnapshot);
+    return matchingSnapshot;
+  }
+
+  const snapshot = {
+    id: _gpSnapshotId(),
+    name: legacyName,
+    savedAt: new Date().toISOString(),
+    board: null,
+  };
+  snapshot.board = _gpBoardWithActiveSnapshot(board, snapshot);
+  snapshots.push(snapshot);
+  all[key] = snapshots;
+  _gpSaveAllSnapshots(all);
+  _gpSetActiveSnapshot(snapshot);
+  return snapshot;
+}
+
 async function saveGamePlanSnapshot(options = {}) {
   const board = _gpEnsureBoard();
   const total = _gpAllAssignedSigs(board).size;
@@ -54,7 +100,9 @@ async function saveGamePlanSnapshot(options = {}) {
   const all = _gpLoadAllSnapshots();
   const key = _gpActiveOpponentKey();
   if (!Array.isArray(all[key])) all[key] = [];
-  const activeSnapshot = options.asNew ? null : _gpActiveSnapshotForBoard(board, all[key]);
+  const activeSnapshot = options.asNew
+    ? null
+    : _gpRepairActiveSnapshotForSave(board, all, key);
 
   if (activeSnapshot) {
     const savedAt = new Date().toISOString();
@@ -77,7 +125,7 @@ async function saveGamePlanSnapshot(options = {}) {
   });
   if (!name || !name.trim()) return;
   const snapshot = {
-    id: `snap-${Date.now()}`,
+    id: _gpSnapshotId(),
     name: name.trim(),
     savedAt: new Date().toISOString(),
     board: null,

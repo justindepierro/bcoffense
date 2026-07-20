@@ -104,14 +104,15 @@ const PAGE_ACTIONS_CONFIG = {
     title: "Game Plan",
     verbs: [
       { icon: "📂", label: "Plans", sublabel: _paGamePlanPlansStatus, keepOpen: true, run: openGamePlanPlanCenter },
-      { icon: "💾", label: "Save Plan", sublabel: _paGamePlanSaveStatus, run: () => _paCall("saveGamePlanSnapshot") },
-      { icon: "🧠", label: "Build Plan", sublabel: "Starter draft", run: () => _paCall("openSmartGamePlanBuilder") },
+      { icon: "💾", label: "Save", sublabel: _paGamePlanSaveStatus, run: () => _paCall("saveGamePlanSnapshot") },
+      { icon: "＋", label: "Save as new", sublabel: "Copy this plan", run: () => _paCall("saveGamePlanSnapshotAsNew") },
       { icon: "🖨️", label: "Print", sublabel: "Board only", run: () => _paCall("openGamePlanPrintModal") },
     ],
     sections: [
       {
         label: "Build & organize",
         items: [
+          { icon: "🧠", label: "Build Plan", run: () => _paCall("openSmartGamePlanBuilder") },
           { icon: "📚", label: "Library", run: () => _paCall("openPlayLibrary") },
           { icon: "📋", label: "Load Wristband", run: () => _paCall("loadGamePlanWristband") },
           { icon: "➕", label: "Add Bucket", run: () => _paCall("openGamePlanAddBucket") },
@@ -163,16 +164,25 @@ function _paGamePlanSnapshotCount() {
 
 function _paGamePlanPlansStatus() {
   const board = typeof _gpEnsureBoard === "function" ? _gpEnsureBoard() : null;
-  const active = String(board?.activeSnapshotName || "").trim();
+  const snapshots = typeof _gpSnapshotsForOpponent === "function" ? _gpSnapshotsForOpponent() : [];
+  const active = typeof _gpActiveSnapshotForBoard === "function"
+    ? _gpActiveSnapshotForBoard(board, snapshots)
+    : null;
   const count = _paGamePlanSnapshotCount();
-  if (active) return `Current: ${active}`;
+  if (active) return `Current: ${active.name}`;
   return count ? `${count} saved · select one` : "Save or load a plan";
 }
 
 function _paGamePlanSaveStatus() {
   const board = typeof _gpEnsureBoard === "function" ? _gpEnsureBoard() : null;
-  const active = String(board?.activeSnapshotName || "").trim();
-  return active ? `Updates ${active}` : "Name this plan";
+  const snapshots = typeof _gpSnapshotsForOpponent === "function" ? _gpSnapshotsForOpponent() : [];
+  const active = typeof _gpActiveSnapshotForBoard === "function"
+    ? _gpActiveSnapshotForBoard(board, snapshots)
+    : null;
+  const repairName = String(board?.activeSnapshotName || "").trim();
+  if (active) return `Updates ${active.name}`;
+  if (repairName) return `Restores ${repairName}`;
+  return "Name this plan";
 }
 
 function getActivePageActionsKey() {
@@ -328,9 +338,13 @@ function _paRenderGamePlanPlanCenter() {
   const board = typeof _gpEnsureBoard === "function" ? _gpEnsureBoard() : null;
   const key = typeof _gpActiveOpponentKey === "function" ? _gpActiveOpponentKey() : "__unassigned__";
   const opponentLabel = key === "__unassigned__" ? "Current workspace" : `vs ${key}`;
-  const activeId = String(board?.activeSnapshotId || "");
-  const activeName = String(board?.activeSnapshotName || "").trim();
   const snapshots = typeof _gpSnapshotsForOpponent === "function" ? _gpSnapshotsForOpponent() : [];
+  const activeSnapshot = typeof _gpActiveSnapshotForBoard === "function"
+    ? _gpActiveSnapshotForBoard(board, snapshots)
+    : null;
+  const activeId = String(activeSnapshot?.id || "");
+  const activeName = String(activeSnapshot?.name || "").trim();
+  const recoverableName = String(board?.activeSnapshotName || "").trim();
   const ordered = snapshots.slice().sort((left, right) => {
     const leftActive = String(left?.id || "") === activeId;
     const rightActive = String(right?.id || "") === activeId;
@@ -348,9 +362,9 @@ function _paRenderGamePlanPlanCenter() {
         <span class="gp-plan-center-badge">${activeName ? "Current saved plan" : "Autosaved draft"}</span>
       </div>
       <div class="gp-plan-center-meta">${workingCount} plays · ${snapshots.length} saved plan${snapshots.length === 1 ? "" : "s"}</div>
-      <p>Your board autosaves here. <strong>Save Plan</strong> creates or updates a named version; loading one replaces this working board only after you confirm.</p>
+      <p>Your board autosaves here. <strong>Save</strong> updates the current named plan. <strong>Save as new</strong> makes a copy; loading one replaces this working board only after you confirm.</p>
       <div class="gp-plan-center-primary">
-        <button type="button" class="btn btn-primary" data-action="saveGamePlanFromActions">💾 ${activeName ? "Update current plan" : "Save current plan"}</button>
+        <button type="button" class="btn btn-primary" data-action="saveGamePlanFromActions">💾 ${activeName ? "Update current plan" : recoverableName ? `Restore & update ${escapeHtml(recoverableName)}` : "Save current plan"}</button>
         <button type="button" class="btn btn-secondary" data-action="saveGamePlanAsNewFromActions">＋ Save as new</button>
       </div>
     </section>`;
