@@ -2228,6 +2228,51 @@ body.shell-phone .pb-search-wrap {
   order: 5;
 }
 
+/* The coach playbook needs an always-visible way to narrow the library on a
+   phone. Keep the search field and one compact filter button on the same row
+   rather than depending on the shell-phone breakpoint or hiding Filters in a
+   wrapped toolbar. Player accounts use their separate, player-safe sheet. */
+@media (max-width: 640px),
+  (pointer: coarse) and (max-width: 820px),
+  (pointer: coarse) and (max-height: 640px) {
+  body.is-mobile-screen:not([data-auth-role="player"]) #playbook .pb-top-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 6px 8px;
+    overflow: visible;
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #playbook .pb-top-row .pb-search-wrap {
+    order: 1;
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #playbook .pb-top-row .pb-filter-toggle-btn {
+    order: 2;
+    display: inline-flex;
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 6px 10px;
+    border-radius: var(--radius-pill);
+    white-space: nowrap;
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #playbook .pb-top-row .pb-action-sheet-toggle,
+  body.is-mobile-screen:not([data-auth-role="player"]) #playbook .pb-top-row .pb-utility-group {
+    display: none;
+  }
+
+  body.is-mobile-screen:not([data-auth-role="player"]) #playbook .pb-top-row .pb-filter-count-badge {
+    min-width: 17px;
+    height: 17px;
+    margin-left: 3px;
+  }
+}
+
 .pb-action-sheet-backdrop {
   display: none;
   position: fixed;
