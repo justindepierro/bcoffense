@@ -275,18 +275,24 @@ function buildScriptPlayRow(play, displayNum, opts = {}) {
   const visibleLineup = getScriptVisiblePlayerLineup(play, opts);
   const noteText = String(play.notes || "").trim();
 
-  let rowColor = "";
+  // Chrome can paint a scroll-gutter/backdrop through a transparent final
+  // table cell in native print preview. Give every printed play row an
+  // explicit cell background (white unless a coaching highlight applies),
+  // rather than relying on the table behind it.
+  let rowBackground = "#ffffff";
   if (opts.highlightHuddle && play.tempo && play.tempo.toLowerCase() === "huddle") {
-    rowColor = `background: ${UI_COLORS.highlightHuddle};`;
+    rowBackground = UI_COLORS.highlightHuddle;
   } else if (
     opts.highlightCandy &&
     play.tempo &&
     play.tempo.toLowerCase() === "candy"
   ) {
-    rowColor = `background: ${UI_COLORS.highlightCandy};`;
+    rowBackground = UI_COLORS.highlightCandy;
   }
 
-  const mainRow = `<tr class="script-print-play-row" style="${rowColor}">
+  const rowStyle = `--script-print-row-bg: ${rowBackground}; background: ${rowBackground};`;
+
+  const mainRow = `<tr class="script-print-play-row" style="${rowStyle}">
     ${columns
       .map(
         (column) => {

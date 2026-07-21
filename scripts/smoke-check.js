@@ -5235,6 +5235,7 @@ function checkScriptPacketPrintContracts() {
 
 function checkScriptPrintIsolationContract() {
   const printCss = read("css/print.css");
+  const componentCss = read("css/components.css");
   const utils = read("js/utils.js");
   const scriptExport = read("js/script-export.js");
 
@@ -5247,6 +5248,15 @@ function checkScriptPrintIsolationContract() {
     ) ||
     !/body\.print-script #mainApp\s*\{[\s\S]*?display:\s*block\s*!important/.test(
       printCss,
+    ) ||
+    !/let rowBackground = "#ffffff"[\s\S]*?--script-print-row-bg: \$\{rowBackground\}/.test(
+      scriptExport,
+    ) ||
+    !/body\.print-script \.script-table tr\.script-print-play-row > td\s*\{[\s\S]*?background-color:\s*var\(--script-print-row-bg, #fff\)\s*!important/.test(
+      printCss,
+    ) ||
+    !/\.print-preview-content \.script-table tr\.script-print-play-row > td\s*\{[\s\S]*?background-color:\s*var\(--script-print-row-bg, #fff\)\s*!important/.test(
+      componentCss,
     ) ||
     !/function printIsolatedArtifact\(contentEl, options = \{\}\)/.test(utils) ||
     !/body class="print-script print-isolated-artifact"/.test(utils) ||

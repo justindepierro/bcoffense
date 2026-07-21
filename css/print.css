@@ -441,10 +441,12 @@
     word-break: break-word !important;
     vertical-align: top !important;
   }
-  /* Colored rows use an inline row background and remain intentionally
-     transparent here. Plain rows get an opaque white cell surface. */
-  body.print-script .script-table tr:not([style]) > td {
-    background-color: #fff;
+  /* Each play row supplies --script-print-row-bg. Painting it on the cells,
+     rather than leaving them transparent, prevents Chrome's print compositor
+     from showing a gray scrollbar/backdrop stripe through the final columns. */
+  body.print-script .script-table tr.script-print-play-row > td {
+    background-color: var(--script-print-row-bg, #fff) !important;
+    background-clip: padding-box !important;
   }
   body.print-script .script-table .script-print-period-block {
     break-inside: avoid-page !important;

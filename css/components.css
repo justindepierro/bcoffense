@@ -4971,8 +4971,9 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   word-break: break-word !important;
   vertical-align: top !important;
 }
-.print-preview-content .script-table tr:not([style]) > td {
-  background-color: #fff;
+.print-preview-content .script-table tr.script-print-play-row > td {
+  background-color: var(--script-print-row-bg, #fff) !important;
+  background-clip: padding-box !important;
 }
 .print-preview-content .script-table .print-period-header td {
   border: 0.6px solid var(--script-print-grid) !important;

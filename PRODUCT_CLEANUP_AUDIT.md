@@ -103,9 +103,12 @@ small, testable releases.
   semantic palette: navy for structure, green for ready/saved, amber for
   pending, red for action-needed, plus distinct personnel/period colors. Avoid
   decorative color chips that compete with the primary call.
-- [ ] **C-024 · Tighten print separately from screens.** Keep paper-only
-  sizing, clipping, and grayscale controls within print styles. Inspect Chrome
-  PDF output for clipping/gray rails before changing live-grid CSS.
+- [~] **C-024 · Tighten print separately from screens.** Release v1297 gives
+  every printed play-row cell an explicit white-or-highlighted surface, so
+  Chrome cannot show a gray compositor rail through the Reps edge; the status
+  dock remains excluded from both the page and isolated artifact. Confirm once
+  in Chrome PDF preview before marking it complete. Keep paper-only sizing,
+  clipping, and grayscale controls within print styles.
 
 ## P3 — engineering cleanup that protects UX
 
