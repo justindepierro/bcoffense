@@ -6698,6 +6698,24 @@ body.shell-tablet #playbook .pb-card-actions {
     min-height: 40px;
     font-size: 14px;
   }
+  .disc-composer-mode {
+    width: 100%;
+  }
+  .disc-composer-mode-btn {
+    flex: 1 1 0;
+    min-height: 40px;
+    font-size: 14px;
+  }
+  .disc-q-category-row {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+  .disc-q-category-label {
+    width: 100%;
+  }
+  .disc-q-category-row .disc-cat-select {
+    flex: 1 1 auto;
+  }
   .disc-char-count {
     margin-left: auto;
     min-height: 40px;
@@ -6947,6 +6965,15 @@ body.shell-tablet #playbook .pb-card-actions {
   display: flex;
   align-items: center;
   gap: 6px;
+  margin: var(--space-xs) 0;
+}
+.disc-q-category-row[hidden] {
+  display: none;
+}
+.disc-q-category-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
 }
 .disc-cat-select {
   font-size: var(--font-size-xs);
@@ -7197,6 +7224,45 @@ body.shell-tablet #playbook .pb-card-actions {
   padding: 2px var(--space-xs);
   background: var(--color-bg-input);
   color: var(--color-text);
+}
+.disc-type-select--native {
+  display: none !important;
+}
+.disc-composer-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px;
+  margin-bottom: var(--space-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-light);
+}
+.disc-composer-mode-btn {
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.disc-composer-mode-btn:hover,
+.disc-composer-mode-btn:focus-visible {
+  color: var(--color-primary);
+  outline: 0;
+}
+.disc-composer-mode-btn.is-active {
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
+  box-shadow: var(--shadow-sm);
 }
 .disc-char-count {
   font-size: 10px;

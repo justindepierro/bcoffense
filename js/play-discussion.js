@@ -272,8 +272,38 @@ function _discQCategoryBadge(category) {
 
 function discToggleQCategory(e) {
   const el = (e && e.target) ? e.target : e;
-  const row = el?.closest(".disc-composer")?.querySelector(".disc-q-category-row");
-  if (row) row.style.display = el?.value === "question" ? "" : "none";
+  const composer = el?.closest(".disc-composer");
+  const isQuestion = el?.value === "question";
+  const row = composer?.querySelector(".disc-q-category-row");
+  if (row) row.hidden = !isQuestion;
+  composer?.querySelectorAll(".disc-composer-mode-btn").forEach((button) => {
+    const isActive = button.dataset.discType === (isQuestion ? "question" : "comment");
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+}
+
+/**
+ * Switch the root composer between a general comment and a coach question.
+ * The native select remains the data source so the existing submit path stays
+ * stable; these buttons are the fast, touch-friendly control surface.
+ */
+function switchDiscComposerType(arg) {
+  const value = String(arg || "");
+  const sep = value.lastIndexOf("::");
+  if (sep < 1) return;
+  const playId = value.slice(0, sep);
+  const type = value.slice(sep + 2) === "question" ? "question" : "comment";
+  const select = document.getElementById(`discType-${playId}`);
+  if (!select) return;
+  select.value = type;
+  discToggleQCategory(select);
+  const textarea = document.getElementById(`discCompose-${playId}`);
+  if (textarea) {
+    textarea.placeholder = type === "question"
+      ? "What's your question? (Ctrl+Enter to post)"
+      : "Add a comment… (Ctrl+Enter to post)";
+  }
 }
 
 function _discQStateBadge(state) {
@@ -284,7 +314,7 @@ function _discQStateBadge(state) {
 
 function _discRoleBadge(role) {
   if (!role || role === "player") return "";
-  const label = { admin: "Admin", coach: "Coach", assistant: "Asst. Coach" }[role] || String(role);
+  const label = { admin: "Admin", coach: "Coach", assistant: "Asst. Coach", assistant_coach: "Asst. Coach" }[role] || String(role);
   return `<span class="disc-role-badge disc-role-badge--${escapeHtml(role)}">${escapeHtml(label)}</span>`;
 }
 
@@ -546,7 +576,7 @@ function _discPostHtml(p, playId, isReply = false) {
   const qStateBadge = isQuestion ? _discQStateBadge(p.questionState) : "";
   const qCatBadge = isQuestion ? _discQCategoryBadge(p.questionCategory) : "";
   const typeIcon = isQuestion ? `<span class="disc-type-icon">❓</span>` : "";
-  const coachHighlight = (p.authorRole === "coach" || p.authorRole === "admin" || p.authorRole === "assistant") ? " disc-post--coach" : "";
+  const coachHighlight = (p.authorRole === "coach" || p.authorRole === "admin" || p.authorRole === "assistant" || p.authorRole === "assistant_coach") ? " disc-post--coach" : "";
 
   // ── Prominent "I Have This Question Too" button for question root posts ──
   const sameQReaction = (isQuestion && !isReply)
@@ -768,13 +798,23 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
     `<option value="coach_clarification">Clarification 📋</option>` +
     `</select>`
     : "";
+  const rootComposerMode = !isReply
+    ? `<div class="disc-composer-mode" role="group" aria-label="Choose message type">` +
+      `<button type="button" class="disc-composer-mode-btn is-active" data-action="switchDiscComposerType"` +
+      ` data-arg="${escapeHtml(playId)}::comment" data-disc-type="comment" aria-pressed="true">💬 Comment</button>` +
+      `<button type="button" class="disc-composer-mode-btn" data-action="switchDiscComposerType"` +
+      ` data-arg="${escapeHtml(playId)}::question" data-disc-type="question" aria-pressed="false">❓ Ask question</button>` +
+      `</div>`
+    : "";
   const typeSelect = isReply ? clarifySelect :
-    `<select class="disc-type-select" id="discType-${escapeHtml(playId)}" aria-label="Post type"
+    `<select class="disc-type-select disc-type-select--native" id="discType-${escapeHtml(playId)}" aria-hidden="true" tabindex="-1"
       data-onchange="discToggleQCategory" data-pass="event">` +
     `<option value="comment">Comment</option>` +
     `<option value="question">Question ❓</option>` +
-    `</select>` +
-    `<div class="disc-q-category-row" style="display:none">` +
+    `</select>`;
+  const questionCategory = !isReply
+    ? `<div class="disc-q-category-row" hidden>` +
+    `<span class="disc-q-category-label">Question topic</span>` +
     `<select class="disc-cat-select" id="discQCat-${escapeHtml(playId)}" aria-label="Question category">` +
     `<option value="">General</option>` +
     `<option value="assignment">Assignment</option>` +
@@ -784,7 +824,8 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
     `<option value="motion">Motion</option>` +
     `<option value="protection">Protection</option>` +
     `<option value="read">Read</option>` +
-    `</select></div>`;
+    `</select></div>`
+    : "";
 
   // Coach-only attachment buttons (hidden input + markup overlay trigger)
   const attachBtns = isStaff
@@ -811,10 +852,12 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
   return (
     `<div class="disc-composer${isReply ? " disc-composer--reply" : ""}">${posCtx}` +
     attachBtns +
+    rootComposerMode +
+    typeSelect +
+    questionCategory +
     `<textarea class="disc-textarea" id="discCompose-${escapeHtml(idSuffix)}"` +
     ` placeholder="${escapeHtml(placeholder)}" rows="2" maxlength="2000" aria-label="${escapeHtml(placeholder)}"></textarea>` +
     `<div class="disc-composer-actions">` +
-    typeSelect +
     `<span class="disc-char-count" id="discChars-${escapeHtml(idSuffix)}">0 / 2000</span>` +
     (isReply
       ? `<button class="btn btn-xs" data-action="closeDiscReplyComposer" data-arg="${escapeHtml(parentPostId)}">Cancel</button>` +
@@ -2966,12 +3009,8 @@ function closeDiscAttachmentViewer() {
  * data-action="discAskCoachQuestion" data-arg="{playId}"
  */
 function discAskCoachQuestion(playId) {
-  const sel = document.getElementById(`discType-${playId}`);
   const textarea = document.getElementById(`discCompose-${playId}`);
-  if (sel) {
-    sel.value = "question";
-    sel.dispatchEvent(new Event("change", { bubbles: true }));
-  }
+  switchDiscComposerType(`${playId}::question`);
   if (textarea) {
     textarea.placeholder = "What's your question? (Ctrl+Enter to post)";
     textarea.focus();

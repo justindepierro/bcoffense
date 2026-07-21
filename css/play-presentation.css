@@ -1883,6 +1883,15 @@ body.play-presentation-mobile .pp-disc-drawer .disc-composer-actions .btn {
     padding-left: 7px;
   }
   .pp-disc-drawer .disc-composer { padding: 8px 0 0; }
+  .pp-disc-drawer .disc-composer-mode { margin-bottom: 6px; }
+  .pp-disc-drawer .disc-composer-mode-btn { min-height: 36px; }
+  .pp-disc-drawer .disc-post-actions { gap: 5px; margin-top: 6px; }
+  .pp-disc-drawer .disc-reply-btn,
+  .pp-disc-drawer .disc-same-q-btn,
+  .pp-disc-drawer .disc-reward-btn,
+  .pp-disc-drawer .disc-react-open-btn {
+    min-height: 32px;
+  }
   .pp-disc-drawer .disc-composer-attach-row { gap: 5px; }
   .pp-disc-drawer .disc-attach-btn { min-height: 34px; }
   .pp-disc-drawer input.disc-img-file-input { display: none !important; }

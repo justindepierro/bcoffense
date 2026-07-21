@@ -76,6 +76,10 @@ assert.match(playerPublish, /window\.requestImmediateTeamPublish\(kind\)/, "medi
 assert.match(discussionClient, /role === "assistant_coach"/, "the discussion UI recognizes managed assistant coaches as staff");
 assert.match(discussionClient, /_REACTION_QUICK_PICKER_ORDER/, "the reaction picker keeps the core communication choices prominent");
 assert.match(discussionClient, /disc-picker-more/, "secondary reactions are intentionally tucked behind a More control");
+assert.match(discussionClient, /function switchDiscComposerType\(arg\)/, "discussion composers support a direct touch-friendly Comment or Ask question choice");
+assert.match(discussionClient, /disc-composer-mode-btn/, "the native post-type dropdown is backed by visible composer mode buttons");
+assert.match(discussionClient, /assistant_coach/, "managed assistant coaches receive the same visual treatment as other staff in discussions");
+assert.match(playbookCss, /\.disc-composer-mode \{[\s\S]*border-radius: var\(--radius-pill\)/, "composer mode choices are styled as compact segmented controls");
 assert.match(discussionClient, /container\.classList\.toggle\("pp-discussion-body", isPresentationDrawer\)/, "the presentation discussion renderer identifies its dedicated scroll layout");
 assert.match(playbookCss, /\.disc-post \{[\s\S]*grid-template-columns: 28px minmax\(0, 1fr\)/, "discussion posts use a stable avatar-plus-content grid instead of a horizontal reply flex row");
 assert.match(playbookCss, /\.disc-post > \.disc-reply-composer-slot,[\s\S]*grid-column: 2/, "reply composers and reply trees sit below their parent content");
