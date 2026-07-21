@@ -807,8 +807,10 @@ function loadSavedScriptsList() {
 
   const archiveButton = document.getElementById("savedScriptsArchiveBtn");
   if (archiveButton) {
-    archiveButton.hidden = deletedScripts.length === 0;
-    archiveButton.textContent = `🗑️ Trash${deletedScripts.length ? ` (${deletedScripts.length})` : ""}`;
+    archiveButton.hidden = false;
+    archiveButton.textContent = deletedScripts.length
+      ? `🛟 Recovery (${deletedScripts.length})`
+      : "🛟 Recovery";
   }
 
   renderCoachPublishStatus();

@@ -501,6 +501,18 @@ document.addEventListener("click", (e) => {
     case "closeSavedScriptsArchive":
       closeSavedScriptsArchive();
       return;
+    case "openCloudSavedScriptRecovery":
+      openCloudSavedScriptRecovery();
+      return;
+    case "closeCloudSavedScriptRecovery":
+      closeCloudSavedScriptRecovery();
+      return;
+    case "searchCloudSavedScripts":
+      searchCloudSavedScripts();
+      return;
+    case "restoreCloudSavedScript":
+      restoreCloudSavedScript(el.dataset.sourceRevision || "", el.dataset.sid || "");
+      return;
     case "restoreDeletedSavedScript":
       restoreDeletedSavedScript(el.dataset.sid);
       return;

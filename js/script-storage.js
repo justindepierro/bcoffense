@@ -72,6 +72,112 @@ function closeSavedScriptsArchive() {
   setTimeout(() => overlay.remove(), 180);
 }
 
+function closeCloudSavedScriptRecovery() {
+  const overlay = document.getElementById("cloudSavedScriptRecoveryOverlay");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer(overlay, { returnFocus: false });
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.remove(), 180);
+}
+
+function renderCloudSavedScriptRecoveryResults(results = [], query = "", message = "") {
+  const resultHost = document.getElementById("cloudSavedScriptRecoveryResults");
+  if (!resultHost) return;
+  if (message) {
+    resultHost.innerHTML = `<p>${escapeHtml(message)}</p>`;
+    return;
+  }
+  if (!results.length) {
+    resultHost.innerHTML = query
+      ? `<p>No older script matched “${escapeHtml(query)}”. Try part of the title or its date.</p>`
+      : "";
+    return;
+  }
+  resultHost.innerHTML = results.map((candidate) => {
+    const savedAt = formatScriptArchiveTime(candidate.savedAt || "");
+    const historyAt = candidate.historicalRevisionAt
+      ? formatScriptArchiveTime(new Date(Number(candidate.historicalRevisionAt) * 1000).toISOString())
+      : "an earlier revision";
+    const exists = Boolean(candidate.alreadyInLibrary);
+    return `<div class="custom-modal-list-item"><div class="custom-modal-list-text"><strong>${escapeHtml(candidate.name || "Untitled script")}</strong><span class="custom-modal-list-sub">${escapeHtml(candidate.date || "No date")} • ${Number(candidate.playCount || 0)} plays • saved ${escapeHtml(savedAt)}</span><span class="custom-modal-list-sub">Found in cloud history from ${escapeHtml(historyAt)}${exists ? " • already in this library" : ""}</span></div>${exists ? '<span class="saved-card-badge">Already restored</span>' : `<button class="btn btn-sm btn-primary" data-action="restoreCloudSavedScript" data-source-revision="${escapeHtml(candidate.sourceRevision || "")}" data-sid="${escapeHtml(candidate.scriptId || "")}">Restore</button>`}</div>`;
+  }).join("");
+}
+
+function openCloudSavedScriptRecovery() {
+  closeSavedScriptsArchive();
+  closeCloudSavedScriptRecovery();
+  const overlay = document.createElement("div");
+  overlay.id = "cloudSavedScriptRecoveryOverlay";
+  overlay.className = "custom-modal-overlay";
+  overlay.innerHTML = `<div class="custom-modal custom-modal-wide" role="dialog" aria-modal="true" aria-labelledby="cloudSavedScriptRecoveryTitle"><div class="custom-modal-header"><span class="custom-modal-icon">☁️</span><h3 class="custom-modal-title" id="cloudSavedScriptRecoveryTitle">Cloud Script History</h3></div><div class="custom-modal-body"><p>Find an older saved script and restore only that record. Your current scripts and workspace stay in place.</p><div class="search-bar"><input id="cloudSavedScriptRecoveryQuery" type="search" placeholder="Search script title or date" autocomplete="off" /><button class="btn btn-primary" data-action="searchCloudSavedScripts">Search cloud history</button></div><div id="cloudSavedScriptRecoveryResults" class="custom-modal-list"></div></div><div class="custom-modal-actions"><button class="btn custom-modal-btn" data-action="closeCloudSavedScriptRecovery">Done</button></div></div>`;
+  document.body.appendChild(overlay);
+  if (typeof openLayer === "function") openLayer(overlay, { id: "cloudSavedScriptRecoveryOverlay", trapFocus: true });
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+  const input = document.getElementById("cloudSavedScriptRecoveryQuery");
+  input?.focus();
+  input?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      searchCloudSavedScripts();
+    }
+  });
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeCloudSavedScriptRecovery();
+  });
+}
+
+async function searchCloudSavedScripts() {
+  const input = document.getElementById("cloudSavedScriptRecoveryQuery");
+  const query = String(input?.value || "").trim();
+  if (query.length < 2) {
+    renderCloudSavedScriptRecoveryResults([], query, "Enter at least two characters to search cloud history.");
+    input?.focus();
+    return;
+  }
+  renderCloudSavedScriptRecoveryResults([], query, "Searching immutable cloud history…");
+  try {
+    const response = await fetch(`/admin/script-recovery?query=${encodeURIComponent(query)}`, {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result?.ok) throw new Error(result?.error || "Cloud history could not be searched.");
+    renderCloudSavedScriptRecoveryResults(result.candidates || [], query);
+  } catch (err) {
+    renderCloudSavedScriptRecoveryResults([], query, err?.message || "Cloud history could not be searched.");
+  }
+}
+
+async function restoreCloudSavedScript(sourceRevision, scriptId) {
+  const button = document.querySelector(`[data-action="restoreCloudSavedScript"][data-source-revision="${CSS.escape(String(sourceRevision || ""))}"][data-sid="${CSS.escape(String(scriptId || ""))}"]`);
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Restoring…";
+  }
+  try {
+    const response = await fetch("/admin/script-recovery", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ sourceRevision, scriptId }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result?.ok) throw new Error(result?.error || "The script could not be restored.");
+    const name = result?.script?.name || "Saved script";
+    closeCloudSavedScriptRecovery();
+    showToast(`${name} restored to the team cloud library. Refresh this page to load it here.`, {
+      type: "success",
+      duration: 6500,
+    });
+  } catch (err) {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Restore";
+    }
+    showToast(err?.message || "The script could not be restored.", { type: "error", duration: 6000 });
+  }
+}
+
 function restoreDeletedSavedScript(id) {
   const savedScripts = getSavedScripts();
   const record = savedScripts.find((item) => String(item?.id) === String(id));
@@ -132,7 +238,7 @@ function openSavedScriptsArchive(id = "") {
   const overlay = document.createElement("div");
   overlay.id = "savedScriptsArchiveOverlay";
   overlay.className = "custom-modal-overlay";
-  overlay.innerHTML = `<div class="custom-modal custom-modal-wide" role="dialog" aria-modal="true" aria-labelledby="savedScriptsArchiveTitle"><div class="custom-modal-header"><span class="custom-modal-icon">🛟</span><h3 class="custom-modal-title" id="savedScriptsArchiveTitle">${escapeHtml(title)}</h3></div><div class="custom-modal-body"><p>${selected ? "Restore an earlier version as a new copy, so the current script stays safe." : "Restore deleted scripts without replacing the rest of your workspace."}</p><div class="custom-modal-list">${selected ? (versionRows || `<p>${escapeHtml(empty)}</p>`) : (trashRows || `<p>${escapeHtml(empty)}</p>`)}</div></div><div class="custom-modal-actions"><button class="btn custom-modal-btn" data-action="closeSavedScriptsArchive">Done</button></div></div>`;
+  overlay.innerHTML = `<div class="custom-modal custom-modal-wide" role="dialog" aria-modal="true" aria-labelledby="savedScriptsArchiveTitle"><div class="custom-modal-header"><span class="custom-modal-icon">🛟</span><h3 class="custom-modal-title" id="savedScriptsArchiveTitle">${escapeHtml(title)}</h3></div><div class="custom-modal-body"><p>${selected ? "Restore an earlier version as a new copy, so the current script stays safe." : "Restore deleted scripts without replacing the rest of your workspace."}</p><div class="custom-modal-list">${selected ? (versionRows || `<p>${escapeHtml(empty)}</p>`) : (trashRows || `<p>${escapeHtml(empty)}</p>`)}</div></div><div class="custom-modal-actions">${selected ? "" : '<button class="btn" data-action="openCloudSavedScriptRecovery">☁️ Cloud history</button>'}<button class="btn custom-modal-btn" data-action="closeSavedScriptsArchive">Done</button></div></div>`;
   document.body.appendChild(overlay);
   if (typeof openLayer === "function") openLayer(overlay, { id: "savedScriptsArchiveOverlay", trapFocus: true });
   requestAnimationFrame(() => overlay.classList.add("visible"));
