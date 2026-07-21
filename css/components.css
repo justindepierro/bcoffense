@@ -6308,8 +6308,18 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
     display: grid;
     place-items: center;
   }
-  .notif-item-title { font-size: 14px; line-height: 1.3; }
-  .notif-item-body { font-size: 12px; line-height: 1.35; }
+  .notif-item-title {
+    font-size: 14px;
+    line-height: 1.3;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    padding-right: 12px;
+  }
+  .notif-item-body { font-size: 12px; line-height: 1.4; -webkit-line-clamp: 3; }
+  .notif-item-time { margin-top: 6px; font-weight: 650; }
+  .notif-item-group { line-height: 1.35; }
   .notif-unread-dot { position: absolute; right: 14px; top: 14px; }
   .notif-drawer-body { padding-bottom: max(var(--space-md), env(safe-area-inset-bottom, 0px)); }
 }

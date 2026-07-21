@@ -17,7 +17,8 @@ const TEAM_UPDATE_DEDUPE_WINDOWS = Object.freeze({
   team_announcement: 10 * 60,
 });
 
-const STAFF_NOTIFICATION_ROLES = Object.freeze(["admin", "coach", "assistant_coach"]);
+const STAFF_NOTIFICATION_ROLES = Object.freeze(["admin", "coach", "assistant", "assistant_coach"]);
+const DISCUSSION_COMMENT_DEDUPE_SECONDS = 15 * 60;
 
 /**
  * Return the D1 identity that owns an in-app notification feed.
@@ -190,7 +191,7 @@ export async function notifyTeamStaffOfPlayerPost(db, teamId, {
     `SELECT id FROM users
      WHERE team_id = ?
        AND status = 'active'
-       AND role IN ('admin', 'coach', 'assistant_coach')
+       AND role IN ('admin', 'coach', 'assistant', 'assistant_coach')
        AND id != ?
      LIMIT 100`,
   ).bind(cleanTeamId, authorId).all();
@@ -208,16 +209,55 @@ export async function notifyTeamStaffOfPlayerPost(db, teamId, {
 
   let recipients = 0;
   for (const row of rows.results || []) {
-    await createNotification(db, {
+    const notification = {
       userId: row.id,
       type: `player_${kind}`,
       title: `${title}${context}`,
       body: message || null,
       deepLink: `play:${playId}`,
-    });
+    };
+    // Several ordinary comments from the same player on the same play should
+    // keep one fresh coach alert rather than turn the bell into a stack of
+    // near-identical receipts. Questions and replies remain individual
+    // because they need a direct coach response trail.
+    if (kind === "comment") {
+      await createOrRefreshDiscussionCommentNotification(db, notification);
+    } else {
+      await createNotification(db, notification);
+    }
     recipients += 1;
   }
   return { recipients };
+}
+
+async function createOrRefreshDiscussionCommentNotification(db, notification) {
+  const now = Math.floor(Date.now() / 1000);
+  const existing = await db.prepare(
+    `SELECT id FROM notifications
+     WHERE user_id = ? AND type = ? AND title = ?
+       AND COALESCE(deep_link, '') = COALESCE(?, '')
+       AND created_at >= ?
+     ORDER BY created_at DESC LIMIT 1`,
+  ).bind(
+    notification.userId,
+    notification.type,
+    notification.title,
+    notification.deepLink,
+    now - DISCUSSION_COMMENT_DEDUPE_SECONDS,
+  ).first();
+  if (!existing?.id) return createNotification(db, notification);
+  await db.prepare(
+    `UPDATE notifications
+     SET body = ?, read_at = NULL, created_at = ?, expires_at = ?
+     WHERE id = ? AND user_id = ?`,
+  ).bind(
+    notification.body,
+    now,
+    now + NOTIF_EXPIRY_DAYS * 86400,
+    existing.id,
+    notification.userId,
+  ).run();
+  return existing.id;
 }
 
 /**
@@ -346,7 +386,7 @@ export async function markAllRead(db, userId) {
  * Notify the author of a post when someone replies to it.
  * Skips notification if the replier is the post author (self-reply).
  */
-export async function notifyOnReply(db, parentPostId, replyAuthorId, replyAuthorName, playId, replyBody, env = null) {
+export async function notifyOnReply(db, parentPostId, replyAuthorId, replyAuthorName, playId, replyBody, env = null, opts = {}) {
   const post = await db
     .prepare(
       `SELECT p.author_id, u.role FROM discussion_posts p
@@ -355,22 +395,31 @@ export async function notifyOnReply(db, parentPostId, replyAuthorId, replyAuthor
     .bind(parentPostId)
     .first();
   if (!post || post.author_id === replyAuthorId) return; // no self-notify
+  // Do not issue a generic reply notification when a richer visual-reply
+  // receipt will be delivered separately.
+  if (opts.skipPlayerRecipient && post.role === "player") return;
+  // Player posts are already delivered to every active staff feed through
+  // notifyTeamStaffOfPlayerPost(). Avoid placing a second generic reply alert
+  // in the one staff member's bell when they were the parent author.
+  if (opts.skipStaffRecipient && STAFF_NOTIFICATION_ROLES.includes(post.role)) return;
 
   const truncBody = String(replyBody || "").slice(0, 120);
+  const notificationType = opts.notificationType === "coach_reply" ? "coach_reply" : "reply";
+  const title = opts.title || `${replyAuthorName} replied to your post`;
   await createNotification(db, {
     userId: post.author_id,
-    type: "reply",
-    title: `${replyAuthorName} replied to your post`,
+    type: notificationType,
+    title,
     body: truncBody,
     deepLink: playId,
   });
 
   if (env) {
     sendPushToUser(env, db, post.author_id, {
-      title: `${replyAuthorName} replied`,
+      title,
       body: truncBody,
       url: "/",
-      tag: `reply-${parentPostId}`,
+      tag: `${notificationType}-${parentPostId}`,
     }).catch(() => { });
   }
 }

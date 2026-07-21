@@ -28,7 +28,7 @@ function assert(condition, label) {
 // ── Constants replicated from d1-threads.js (source of truth) ─────────────────
 const REACTION_KEYS = new Set([
   "thumbs_up", "thumbs_down", "heart", "football",
-  "gold_medal", "six", "happy", "strong",
+  "gold_medal", "six", "happy", "strong", "got_it",
   "same_question", "helpful",
 ]);
 
@@ -78,13 +78,14 @@ describe("Reaction key validation", () => {
   assert(REACTION_KEYS.has("six"), "six is a valid key");
   assert(REACTION_KEYS.has("happy"), "happy is a valid key");
   assert(REACTION_KEYS.has("strong"), "strong is a valid key");
+  assert(REACTION_KEYS.has("got_it"), "got_it is a valid key");
   assert(REACTION_KEYS.has("same_question"), "same_question is a valid key");
   assert(REACTION_KEYS.has("helpful"), "helpful is a valid key");
   assert(!REACTION_KEYS.has(""), "empty string is not valid");
   assert(!REACTION_KEYS.has("like"), "arbitrary 'like' key is not valid");
   assert(!REACTION_KEYS.has("fire"), "arbitrary 'fire' emoji key is not valid");
   assert(!REACTION_KEYS.has("THUMBS_UP"), "case-sensitive — uppercase rejected");
-  assert(REACTION_KEYS.size === 10, "exactly 10 reaction keys defined");
+  assert(REACTION_KEYS.size === 11, "all 11 supported reaction keys are defined");
 });
 
 describe("Reaction aggregation — counts and ordering", () => {

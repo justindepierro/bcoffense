@@ -29,7 +29,7 @@ function _discAuthUser() {
 }
 function _discIsStaff() {
   const role = _discAuthUser()?.role;
-  return role === "coach" || role === "admin" || role === "assistant";
+  return role === "coach" || role === "admin" || role === "assistant" || role === "assistant_coach";
 }
 
 // ── Relative time ─────────────────────────────────────────────────────────────
@@ -78,10 +78,14 @@ const _REACTION_SUMMARY_ORDER = [
   "thumbs_up", "heart", "football", "helpful", "got_it",
   "same_question", "gold_medal", "six", "happy", "strong", "thumbs_down",
 ];
-const _REACTION_PICKER_ORDER = [
-  "thumbs_up", "heart", "football", "gold_medal",
-  "six", "happy", "strong", "got_it",
-  "same_question", "helpful", "thumbs_down",
+// Keep the most useful communication choices visible first. The legacy
+// celebratory set remains available under More, and existing reactions remain
+// readable in the feed.
+const _REACTION_QUICK_PICKER_ORDER = [
+  "got_it", "helpful", "same_question", "thumbs_up", "football", "thumbs_down",
+];
+const _REACTION_MORE_PICKER_ORDER = [
+  "heart", "gold_medal", "six", "happy", "strong",
 ];
 
 function _discReactionsHtml(postId, reactions, excludeKey = null) {
@@ -138,7 +142,7 @@ function openDiscReactionPicker(postId) {
   const reactionsEl = document.querySelector(`[data-post-id="${escapeHtml(postId)}"] .disc-reactions`);
   const userReaction = reactionsEl?.dataset?.userReaction || null;
 
-  const btns = _REACTION_PICKER_ORDER.map((key) => {
+  const reactionButtons = (keys) => keys.map((key) => {
     const meta = _REACTION_META[key] || { emoji: "?", label: key };
     const isMine = key === userReaction;
     return (
@@ -150,9 +154,16 @@ function openDiscReactionPicker(postId) {
       `</button>`
     );
   }).join("");
+  const quickButtons = reactionButtons(_REACTION_QUICK_PICKER_ORDER);
+  const moreButtons = reactionButtons(_REACTION_MORE_PICKER_ORDER);
 
   const closeBtn = `<button class="disc-picker-close" data-action="closeDiscReactionPicker" aria-label="Close">✕</button>`;
-  setInnerHTML(picker, closeBtn + `<div class="disc-picker-grid" role="group" aria-label="Reaction options">${btns}</div>`);
+  setInnerHTML(picker, closeBtn +
+    `<div class="disc-picker-grid" role="group" aria-label="Quick reactions">${quickButtons}</div>` +
+    `<details class="disc-picker-more">` +
+      `<summary>More reactions</summary>` +
+      `<div class="disc-picker-grid" role="group" aria-label="More reactions">${moreButtons}</div>` +
+    `</details>`);
 
   // Bottom sheet on very narrow screens; use fixed positioning throughout
   const useBottomSheet = window.innerWidth <= 480;
@@ -382,7 +393,7 @@ function _discRenderBody(container, data, playId, playSig) {
   const { thread, posts, hasMore } = data;
   const isLocked = thread?.locked;
   const userRole = _discAuthUser()?.role;
-  const isStaff = userRole === "coach" || userRole === "admin" || userRole === "assistant";
+  const isStaff = ["coach", "admin", "assistant", "assistant_coach"].includes(userRole);
   const canPost = !isLocked || isStaff;
 
   // Coach moderation queue banner

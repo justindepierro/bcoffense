@@ -100,7 +100,7 @@ export async function onRequest(context) {
     const playSig = String(body.play_signature || "").trim() || null;
     const parentPostId = String(body.parent_post_id || "").trim() || null;
     const questionCategory = String(body.question_category || "").trim() || null;
-    const isStaff = session.role === "coach" || session.role === "admin" || session.role === "assistant";
+    const isStaff = ["coach", "admin", "assistant", "assistant_coach"].includes(session.role);
     // Optional attachment: { id, r2_key, type, caption, sourcePlayId, sizeBytes }
     const attachmentMeta = body.attachment && typeof body.attachment === "object"
       ? body.attachment : null;
@@ -209,16 +209,25 @@ export async function onRequest(context) {
       }).catch((err) => console.error("[discussion] staff notification failed", err));
     }
 
-    // Notify players in the thread when a coach replies (fire-and-forget)
-    if (isStaff) {
+    // A coach's top-level note is relevant to players already participating
+    // in this play discussion. A reply is intentionally narrower: it belongs
+    // to the player being answered, not every player who ever posted here.
+    const isCoachVisualReply = Boolean(isStaff && parentPostId && attachment);
+    if (isStaff && !parentPostId) {
       const posterName = session.label || session.username;
       notifyOnCoachPost(env.DB, thread.id, authorId, posterName, playId, postBody, env).catch(() => { });
     }
 
-    // Notify the parent post author when someone replies to their post (fire-and-forget)
+    // Notify the parent author only when the activity did not already produce
+    // a more specific receipt. Player replies are delivered to all staff by
+    // notifyTeamStaffOfPlayerPost; marked-up coach replies have visual_reply.
     if (parentPostId) {
       const posterName = session.label || session.username;
-      notifyOnReply(env.DB, parentPostId, authorId, posterName, playId, postBody, env).catch(() => { });
+      notifyOnReply(env.DB, parentPostId, authorId, posterName, playId, postBody, env, {
+        notificationType: isStaff ? "coach_reply" : "reply",
+        skipPlayerRecipient: isCoachVisualReply,
+        skipStaffRecipient: !isStaff,
+      }).catch(() => { });
     }
 
     // Notify when a coach posts a visual (markup/image) reply (fire-and-forget)

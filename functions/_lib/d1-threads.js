@@ -7,7 +7,7 @@ import { moderateContent, outcomeToStatus } from "./moderation.js";
 const MAX_POST_LENGTH = 2000;
 const PLAYER_EDIT_WINDOW_SECONDS = 900; // 15 minutes
 
-/** Allowed reaction keys (extended emoji set). */
+/** Allowed reaction keys. Existing keys remain accepted for old reactions. */
 const REACTION_KEYS = new Set([
   "thumbs_up", "thumbs_down", "heart", "football",
   "gold_medal", "six", "happy", "strong", "got_it",
@@ -425,12 +425,19 @@ export async function getReactionsForPosts(db, postIds, userId) {
   if (!postIds || !postIds.length) return {};
   const placeholders = postIds.map(() => "?").join(",");
   const uid = userId || "";
-  // Build query: group by post + key, flag user's own reactions
+  // Keep old stacked reaction rows from legacy clients from appearing as
+  // several current choices. New writes replace the older choice; this query
+  // also renders historic data with the same one-choice rule.
   const rows = await db
     .prepare(
       `SELECT post_id, reaction_key, COUNT(*) AS cnt,
        MAX(CASE WHEN user_id = ? THEN 1 ELSE 0 END) AS mine
-       FROM reactions WHERE post_id IN (${placeholders})
+       FROM reactions r WHERE post_id IN (${placeholders})
+       AND NOT EXISTS (
+         SELECT 1 FROM reactions newer
+         WHERE newer.post_id = r.post_id AND newer.user_id = r.user_id
+           AND (newer.created_at > r.created_at OR (newer.created_at = r.created_at AND newer.id > r.id))
+       )
        GROUP BY post_id, reaction_key`,
     )
     .bind(uid, ...postIds)
@@ -464,8 +471,15 @@ export async function toggleReaction(db, teamId, postId, userId, reactionKey) {
   } else {
     const id = crypto.randomUUID();
     const now = Math.floor(Date.now() / 1000);
-    await db.prepare("INSERT INTO reactions (id, post_id, user_id, reaction_key, created_at) VALUES (?,?,?,?,?)")
-      .bind(id, postId, userId, reactionKey, now).run();
+    // A reaction is one quick acknowledgment, not a stack of competing
+    // emoji choices. Replacing the prior choice keeps the feed legible and
+    // makes the picker state agree with the stored data.
+    await db.batch([
+      db.prepare("DELETE FROM reactions WHERE post_id = ? AND user_id = ?")
+        .bind(postId, userId),
+      db.prepare("INSERT INTO reactions (id, post_id, user_id, reaction_key, created_at) VALUES (?,?,?,?,?)")
+        .bind(id, postId, userId, reactionKey, now),
+    ]);
   }
 
   // Return updated reactions for this post
@@ -752,7 +766,7 @@ export async function getActiveCoachIds(db, teamId) {
       `SELECT DISTINCT u.id FROM users u
        JOIN discussion_posts p ON p.author_id = u.id
        JOIN play_threads t ON t.id = p.thread_id
-       WHERE t.team_id = ? AND u.role IN ('coach', 'admin', 'assistant_coach')
+       WHERE t.team_id = ? AND u.role IN ('coach', 'admin', 'assistant', 'assistant_coach')
          AND p.deleted_at IS NULL`,
     )
     .bind(teamId)
@@ -889,7 +903,15 @@ export async function getPostContext(db, postId) {
  */
 export async function getReactorsByKey(db, postId, reactionKey) {
   const rows = await db
-    .prepare(`SELECT user_id FROM reactions WHERE post_id = ? AND reaction_key = ?`)
+    .prepare(
+      `SELECT r.user_id FROM reactions r
+       WHERE r.post_id = ? AND r.reaction_key = ?
+       AND NOT EXISTS (
+         SELECT 1 FROM reactions newer
+         WHERE newer.post_id = r.post_id AND newer.user_id = r.user_id
+           AND (newer.created_at > r.created_at OR (newer.created_at = r.created_at AND newer.id > r.id))
+       )`,
+    )
     .bind(postId, reactionKey)
     .all();
   return (rows.results || []).map((r) => r.user_id);

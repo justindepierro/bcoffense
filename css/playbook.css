@@ -7331,6 +7331,28 @@ body.shell-tablet #playbook .pb-card-actions {
 .disc-reaction-picker.is-bottom-sheet .disc-picker-btn {
   padding: var(--space-sm) var(--space-xs);
 }
+.disc-picker-more {
+  margin-top: var(--space-xs);
+  border-top: 1px solid var(--color-border-light);
+  padding-top: var(--space-xs);
+}
+.disc-picker-more > summary {
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  list-style: none;
+  padding: 5px 3px;
+}
+.disc-picker-more > summary::-webkit-details-marker { display: none; }
+.disc-picker-more > summary::after {
+  content: "⌄";
+  display: inline-block;
+  margin-left: 5px;
+  transition: transform var(--transition-fast);
+}
+.disc-picker-more[open] > summary::after { transform: rotate(180deg); }
+.disc-picker-more .disc-picker-grid { margin-top: 3px; }
 .disc-picker-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
