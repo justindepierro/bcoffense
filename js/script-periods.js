@@ -5,14 +5,16 @@ let templateModalMode = "insert";
 let templateModalSearchTerm = "";
 
 const SCRIPT_PERIOD_COLOR_PALETTE = [
-  { name: "Navy", value: "#173a6a" }, { name: "Blue", value: "#1d4ed8" },
-  { name: "Cobalt", value: "#2563eb" }, { name: "Sky", value: "#0369a1" },
-  { name: "Teal", value: "#0f766e" }, { name: "Emerald", value: "#047857" },
-  { name: "Green", value: "#15803d" }, { name: "Lime", value: "#4d7c0f" },
-  { name: "Gold", value: "#a16207" }, { name: "Amber", value: "#b45309" },
-  { name: "Orange", value: "#c2410c" }, { name: "Red", value: "#b91c1c" },
-  { name: "Rose", value: "#be123c" }, { name: "Magenta", value: "#a21caf" },
-  { name: "Purple", value: "#6d28d9" }, { name: "Slate", value: "#334155" },
+  // Alternate color families by row so adjacent choices are easy to distinguish
+  // during a fast sideline scan. Custom color remains available for exceptions.
+  { name: "Navy", value: "#0b2f63" }, { name: "Gold", value: "#b77900" },
+  { name: "Teal", value: "#007c7a" }, { name: "Red", value: "#c62828" },
+  { name: "Blue", value: "#1f5fe0" }, { name: "Orange", value: "#d95f02" },
+  { name: "Green", value: "#218739" }, { name: "Purple", value: "#7a36b8" },
+  { name: "Cyan", value: "#007aab" }, { name: "Brown", value: "#8c4a18" },
+  { name: "Lime", value: "#5a8f00" }, { name: "Pink", value: "#c2256a" },
+  { name: "Slate", value: "#536574" }, { name: "Yellow", value: "#c99c00" },
+  { name: "Charcoal", value: "#26323f" }, { name: "Crimson", value: "#8e1c3c" },
 ];
 
 function renderScriptPeriodPaletteButtons(selectedColor, attributeName, attributeValue = "") {
