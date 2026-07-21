@@ -4657,6 +4657,16 @@ function checkPlayerDiagramReadinessContracts() {
   ) {
     fail("media inventory report contract is incomplete");
   }
+  if (
+    !/function _miOpenOverlayLayer\(overlay\)[\s\S]*openLayer\(overlay, \{[\s\S]*id: overlay\.id[\s\S]*scrollElement: overlay\.id[\s\S]*blocking: true/.test(mediaInventory) ||
+    !/function _miCloseOverlayLayer\(id, options = \{\}\)[\s\S]*closeLayer\(overlay, options\)/.test(mediaInventory) ||
+    !/window\.openMediaInventoryReport = async function \(\) \{[\s\S]*_miCloseOverlayLayer\("mediaInventoryOverlay", \{ returnFocus: false \}\)[\s\S]*_miOpenOverlayLayer\(overlay\)/.test(mediaInventory) ||
+    !/window\.openLegacyDiagramRecoveryWizard = async function \(\) \{[\s\S]*_miCloseOverlayLayer\("mediaInventoryOverlay", \{ returnFocus: false \}\)[\s\S]*_miCloseOverlayLayer\("legacyDiagramRecoveryOverlay", \{ returnFocus: false \}\)[\s\S]*_miOpenOverlayLayer\(overlay\)/.test(mediaInventory) ||
+    !/window\.closeMediaInventoryReport = function \(\) \{[\s\S]*_miCloseOverlayLayer\("mediaInventoryOverlay"\)/.test(mediaInventory) ||
+    !/window\.closeLegacyDiagramRecoveryWizard = function \(\) \{[\s\S]*_miCloseOverlayLayer\("legacyDiagramRecoveryOverlay"\)/.test(mediaInventory)
+  ) {
+    fail("media inventory modal layer contract is incomplete");
+  }
   const imageInventoryRoute = read("functions/images/inventory.js");
   const cloudMediaInventoryRoute = read("functions/media/inventory.js");
   const legacyDiagramMigrationRoute = read("functions/images/migrate-legacy.js");

@@ -5,6 +5,26 @@
   const MEDIA_INVENTORY_BLOB_CONCURRENCY = 6;
   let latestMediaInventoryReport = null;
 
+  function _miOpenOverlayLayer(overlay) {
+    document.body.appendChild(overlay);
+    if (typeof openLayer === "function") {
+      openLayer(overlay, {
+        id: overlay.id,
+        scrollElement: overlay.id,
+        blocking: true,
+      });
+    } else if (typeof trapFocus === "function") {
+      trapFocus(overlay);
+    }
+  }
+
+  function _miCloseOverlayLayer(id, options = {}) {
+    const overlay = document.getElementById(id);
+    if (!overlay) return;
+    if (typeof closeLayer === "function") closeLayer(overlay, options);
+    overlay.remove();
+  }
+
   function _miEscape(value) {
     if (typeof escapeHtml === "function") return escapeHtml(value);
     return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
@@ -797,7 +817,7 @@
   }
 
   window.openMediaInventoryReport = async function () {
-    document.getElementById("mediaInventoryOverlay")?.remove();
+    _miCloseOverlayLayer("mediaInventoryOverlay", { returnFocus: false });
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay visible";
     overlay.id = "mediaInventoryOverlay";
@@ -820,8 +840,7 @@
           <button type="button" class="btn btn-sm" data-action="closeMediaInventoryReport">Done</button>
         </div>
       </div>`;
-    document.body.appendChild(overlay);
-    if (typeof trapFocus === "function") trapFocus(overlay);
+    _miOpenOverlayLayer(overlay);
     try {
       const report = await buildMediaInventoryReport();
       latestMediaInventoryReport = report;
@@ -1214,6 +1233,7 @@
 
   window.openLegacyDiagramRecoveryWizard = async function () {
     if (typeof isAdminUser === "function" && !isAdminUser()) return;
+    _miCloseOverlayLayer("mediaInventoryOverlay", { returnFocus: false });
     const report = latestMediaInventoryReport || await buildMediaInventoryReport();
     const assets = _miRecoveryAssets(report);
     const targets = new Map(assets.filter((asset) => asset.proposedMediaId).map((asset) => [asset.sourceKey, asset.proposedMediaId]));
@@ -1230,7 +1250,7 @@
       showExcluded: false,
       page: 0,
     };
-    document.getElementById("legacyDiagramRecoveryOverlay")?.remove();
+    _miCloseOverlayLayer("legacyDiagramRecoveryOverlay", { returnFocus: false });
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay visible";
     overlay.id = "legacyDiagramRecoveryOverlay";
@@ -1240,14 +1260,13 @@
       <div class="custom-modal-body pb-health-body" id="legacyDiagramRecoveryBody"></div>
       <div class="custom-modal-actions"><span id="legacyDiagramRecoveryStatus" class="pb-health-more"></span><button type="button" class="btn btn-primary btn-sm" id="legacyDiagramRecoveryPromoteBtn" data-action="recoverSelectedLegacyDiagrams">Recover selected diagrams</button><button type="button" class="btn btn-sm" data-action="closeLegacyDiagramRecoveryWizard">Done</button></div>
     </div>`;
-    document.body.appendChild(overlay);
-    if (typeof trapFocus === "function") trapFocus(overlay);
+    _miOpenOverlayLayer(overlay);
     _miBindLegacyRecoveryWizard(overlay);
     _miRenderLegacyRecoveryWizard();
   };
 
   window.closeLegacyDiagramRecoveryWizard = function () {
-    document.getElementById("legacyDiagramRecoveryOverlay")?.remove();
+    _miCloseOverlayLayer("legacyDiagramRecoveryOverlay");
     legacyRecoveryState = null;
   };
 
@@ -1296,7 +1315,7 @@
   };
 
   window.closeMediaInventoryReport = function () {
-    document.getElementById("mediaInventoryOverlay")?.remove();
+    _miCloseOverlayLayer("mediaInventoryOverlay");
   };
 
   // Admin-only global clip optimizer, invoked from the Media Inventory report.

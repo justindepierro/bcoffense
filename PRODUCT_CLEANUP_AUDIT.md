@@ -69,8 +69,9 @@ small, testable releases.
   one scroll owner, backdrop/Escape dismissal, focus capture/return, and a
   phone-safe sheet. Release v1301 brings Signals watch, upload, and upload
   review dialogs into that same contract; quiz homework already followed it.
-  Continue with the remaining recovery and media-inventory overlays without
-  changing their workflows.
+  Release v1302 adds the Media Inventory and Archived Diagram Recovery dialogs,
+  including a clean handoff from the audit into recovery. Continue with the
+  remaining recovery and media-publish overlays without changing workflows.
 - [ ] **C-013 · Retire obsolete UI aliases after usage checks.** Start with
   explicit legacy display aliases in Call Sheet and Script. Remove an alias
   only after no renderer, saved setting, print path, or delegated action needs
@@ -125,8 +126,9 @@ small, testable releases.
 - [~] **C-031 · Add modal semantics coverage.** Release v1295 establishes the
   contract on the shared Actions hub and Player Playbook filters: dialog
   semantics, Escape, close control, focus return, and one scroll owner. Release
-  v1301 adds static enforcement for Signals watch/upload/review overlays.
-  Continue migrating the remaining modal families in small slices.
+  v1301 adds static enforcement for Signals watch/upload/review overlays;
+  v1302 adds Media Inventory and Archived Diagram Recovery coverage. Continue
+  migrating the remaining modal families in small slices.
 - [ ] **C-032 · Replace direct `scrollIntoView` where it can move the app
   shell.** Scope script/playbook jumps to their intended scroll container so
   sticky headers and tabs stay aligned.
