@@ -5959,6 +5959,16 @@ function checkPlayerPlaybookVisibilityContracts() {
   }
 
   if (
+    !/function _playbookHasPublishedDiagram\(play\)/.test(filters) ||
+    !/function _playbookHasDiagramForCurrentViewer\(play\)/.test(filters) ||
+    !/_isPlayerPlaybookViewer\(\)\s*\?\s*_playbookHasPublishedDiagram\(play\)/.test(filters) ||
+    !/playerHasDiagramOnly && !_playbookHasDiagramForCurrentViewer\(play\)/.test(filters) ||
+    !/playerNeedsDiagramOnly && _playbookHasDiagramForCurrentViewer\(play\)/.test(filters)
+  ) {
+    fail("player diagram filters can still be decided by a device-local image cache");
+  }
+
+  if (
     !/data-action="togglePlayPlayerVisibility"/.test(render) ||
     !/pb-player-visibility-btn/.test(render) ||
     !/pb-card-action--visibility/.test(render) ||

@@ -146,6 +146,26 @@ function _playbookHasDiagram(play) {
   return Boolean(remote?.published);
 }
 
+// A player or managed-coach study surface must never let an IndexedDB cache
+// decide whether a play is diagram-ready. A local blob can be a previous
+// release, an unfinished coach upload, or simply the one image opened during
+// this session. The signed Cloudflare manifest is the only authority for
+// player-visible media. Coach workbench filters intentionally retain the
+// broader local-or-cloud behavior above so an in-progress attachment remains
+// discoverable before it has been published.
+function _playbookHasPublishedDiagram(play) {
+  const remote = typeof window !== "undefined" && typeof window.playImages?.getCachedRemoteManifestForPlay === "function"
+    ? window.playImages.getCachedRemoteManifestForPlay(play)
+    : null;
+  return Boolean(remote?.published && remote?.status === "published");
+}
+
+function _playbookHasDiagramForCurrentViewer(play) {
+  return _isPlayerPlaybookViewer()
+    ? _playbookHasPublishedDiagram(play)
+    : _playbookHasDiagram(play);
+}
+
 function _warmPlaybookMediaFilterManifests(playList) {
   if (
     _playbookMediaFilterRefreshPending ||
@@ -304,8 +324,8 @@ function filterPlays() {
       if (unusedOnly && inWeek) return false;
     }
     if (!checkingDiagramFilter) {
-      if (hasDiagramOnly && !_playbookHasDiagram(play)) return false;
-      if (noDiagramOnly && _playbookHasDiagram(play)) return false;
+      if (hasDiagramOnly && !_playbookHasDiagramForCurrentViewer(play)) return false;
+      if (noDiagramOnly && _playbookHasDiagramForCurrentViewer(play)) return false;
     }
     if (hasClipsOnly && !_playbookHasClip(play)) return false;
     if (playerPlaybookStudyFilters.size > 0) {
@@ -313,8 +333,8 @@ function filterPlays() {
       // already downloaded to this device. Otherwise a fresh phone only shows
       // the one diagram the user happened to open first.
       if (!checkingDiagramFilter) {
-        if (playerHasDiagramOnly && !_playbookHasDiagram(play)) return false;
-        if (playerNeedsDiagramOnly && _playbookHasDiagram(play)) return false;
+        if (playerHasDiagramOnly && !_playbookHasDiagramForCurrentViewer(play)) return false;
+        if (playerNeedsDiagramOnly && _playbookHasDiagramForCurrentViewer(play)) return false;
       }
       if (playerPlaybookStudyFilters.has("video") && !_playbookHasClip(play)) return false;
       if (playerPlaybookStudyFilters.has("notes") && !_playbookHasPlayerNotes(play)) return false;

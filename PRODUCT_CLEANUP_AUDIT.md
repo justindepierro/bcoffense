@@ -43,8 +43,11 @@ small, testable releases.
 - [ ] **C-002 · Finish player media filter verification.** Confirm phone,
   tablet, and managed-coach views with the real team release: `Has Diagram`,
   `Needs Diagram`, and `Has Video` must reflect the canonical cloud manifests,
-  not the device cache. Release `ff132f4` hardens the request path; this needs
-  a live role-by-role check.
+  not the device cache. Release `ff132f4` hardens the request path; release
+  `v1305` additionally separates player/managed-coach diagram filtering from
+  local IndexedDB blobs, so only a signed Cloudflare manifest can mark a
+  player-visible play diagram-ready. Automated contracts pass; this still
+  needs a live role-by-role check.
 - [x] **C-003 · Establish a single visual status vocabulary.** Release v1290
   makes the header the quiet local-save indicator and reserves the shared dock
   for `Saving`, `Queued`, `Needs attention`, `Offline`, and temporarily
