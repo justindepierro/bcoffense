@@ -739,8 +739,7 @@ body.shell-phone #callsheet .cs-empty-cat {
 .cs-toolbar-left {
   display: grid;
   grid-template-columns:
-    minmax(132px, max-content) minmax(94px, max-content)
-    minmax(116px, max-content) minmax(104px, max-content)
+    minmax(132px, max-content) minmax(116px, max-content)
     minmax(96px, max-content);
   align-items: center;
   justify-content: start;
@@ -750,9 +749,8 @@ body.shell-phone #callsheet .cs-empty-cat {
 .cs-toolbar-right {
   display: grid;
   grid-template-columns:
-    minmax(44px, max-content) minmax(44px, max-content) 1px
-    minmax(116px, max-content) minmax(132px, max-content)
-    minmax(88px, max-content);
+    minmax(44px, max-content) minmax(44px, max-content)
+    minmax(132px, max-content) minmax(88px, max-content);
   align-items: center;
   justify-content: end;
   gap: 6px;

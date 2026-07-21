@@ -273,16 +273,16 @@ test.describe("Header and toolbar contract", () => {
     await expect(page.locator(".wb-cmd-identity")).toHaveClass(/toolbar-status/);
     await expect(page.locator(".wb-cmd-actions")).toHaveClass(/toolbar-secondary/);
 
-    for (const label of ["Colors", "Display", "Sort", "Print", "Actions", "Save"]) {
+    for (const label of ["Colors", "Library", "Actions", "Save"]) {
       await expect(commandBar.getByRole("button", { name: new RegExp(label, "i") })).toBeVisible();
     }
 
     await assertAppChromeTopLayer(page);
     await assertNoHorizontalOverflow(page);
 
-    await commandBar.getByRole("button", { name: /Display/i }).click();
-    await expect(page.locator("#wbSettingsModal")).toBeVisible();
-    await expect(page.locator("#wbSettingsModalTitle")).toHaveText(/Display Options/i);
+    await commandBar.getByRole("button", { name: /Actions/i }).click();
+    await expect(page.locator("#pageActionsSheet")).toBeVisible();
+    await expect(page.locator("#pageActionsSheet").getByRole("button", { name: /Display Options/i })).toBeVisible();
   });
 
   test("player playbook shows study actions and hides staff tools", async ({ page }) => {

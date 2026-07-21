@@ -343,7 +343,7 @@ body.app-ready:not(.is-mobile-screen)
 .wb-cmd-actions {
   display: grid;
   grid-template-columns: minmax(88px, max-content) repeat(
-      7,
+      4,
       minmax(72px, max-content)
     );
   justify-content: end;

@@ -72,11 +72,12 @@ small, testable releases.
   explicit legacy display aliases in Call Sheet and Script. Remove an alias
   only after no renderer, saved setting, print path, or delegated action needs
   it; keep data migrations separate from visual cleanup.
-- [~] **C-014 · Reduce command-strip duplication.** Release v1293 makes Script
-  keep `Library`, `Save`, and `Quiz` visible while display, print, load, send,
-  and repair tools live behind `Actions`; Game Plan keeps `Filters` and `Build
-  Plan` visible while plans, save, print, and advanced tools live behind the
-  same hub. Apply the same hierarchy to Call Sheet and Wristband next.
+- [x] **C-014 · Reduce command-strip duplication.** Release v1294 applies one
+  action hierarchy across the four daily workbenches. Script keeps `Library`,
+  `Save`, and `Quiz`; Game Plan keeps `Filters` and `Build Plan`; Call Sheet
+  keeps page/orientation controls and `Auto-Populate`; Wristband keeps undo,
+  redo, colors, library, and `Save`. Print, display, load, templates,
+  transfers, repair, and rare bulk tools now use the shared `Actions` hub.
 
 ## P2 — visual consistency and responsive polish
 
