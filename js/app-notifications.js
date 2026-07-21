@@ -244,6 +244,9 @@ async function _loadNotifications(append = false) {
 // ── HTML helpers ──────────────────────────────────────────────────────────────
 
 const _NOTIF_ICONS = {
+  player_comment: "💬",
+  player_question: "❓",
+  player_reply: "↩️",
   coach_reply: "💬",
   question_resolved: "✅",
   official_answer: "✅",

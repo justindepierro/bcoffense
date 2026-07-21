@@ -4,14 +4,7 @@
  */
 
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
-import { getNotifications, countUnread, markAllRead } from "../../_lib/d1-notifications.js";
-
-async function resolveUserId(db, session) {
-  if (session.d1UserId) return session.d1UserId;
-  const email = `${session.username}@bcoffense.internal`;
-  const row = await db.prepare("SELECT id FROM users WHERE email = ? LIMIT 1").bind(email).first();
-  return row?.id || null;
-}
+import { getNotifications, countUnread, markAllRead, ensureNotificationUser } from "../../_lib/d1-notifications.js";
 
 export async function onRequestGet(context) {
   const { request, env } = context;
@@ -20,7 +13,7 @@ export async function onRequestGet(context) {
   if (!session) return authJson({ ok: false, error: "Authentication required." }, { status: 401 });
   if (!env.DB) return authJson({ ok: false, error: "Database not configured." }, { status: 503 });
 
-  const userId = await resolveUserId(env.DB, session);
+  const userId = await ensureNotificationUser(env.DB, session);
   if (!userId) return withSecurityHeaders(authJson({ ok: true, notifications: [], hasMore: false, unread: 0 }));
 
   const url = new URL(request.url);
@@ -49,7 +42,7 @@ export async function onRequestPost(context) {
   if (!session) return authJson({ ok: false, error: "Authentication required." }, { status: 401 });
   if (!env.DB) return authJson({ ok: false, error: "Database not configured." }, { status: 503 });
 
-  const userId = await resolveUserId(env.DB, session);
+  const userId = await ensureNotificationUser(env.DB, session);
   if (!userId) return withSecurityHeaders(authJson({ ok: true }));
 
   await markAllRead(env.DB, userId);

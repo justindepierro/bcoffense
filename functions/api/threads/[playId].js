@@ -27,7 +27,7 @@ import {
   isCanonicalDiscussionAttachmentKey,
   normalizeDiscussionAttachmentId,
 } from "../../_lib/discussion-attachments.js";
-import { notifyOnCoachPost, notifyOnReply, notifyOnVisualReply, createNotification } from "../../_lib/d1-notifications.js";
+import { notifyOnCoachPost, notifyOnReply, notifyOnVisualReply, notifyTeamStaffOfPlayerPost, createNotification } from "../../_lib/d1-notifications.js";
 
 export async function onRequest(context) {
   const { request, env, params } = context;
@@ -190,6 +190,25 @@ export async function onRequest(context) {
       }
     }
 
+    const modInfo = result._moderation || {};
+
+    // Player comments and questions both belong in every active staff
+    // notification feed. Do this after the post has been stored, but never
+    // make a successful player post fail just because its alert cannot be
+    // written. The bell will surface the durable notification on its next
+    // normal poll.
+    if (!isStaff && modInfo.outcome !== "block") {
+      await notifyTeamStaffOfPlayerPost(env.DB, teamId, {
+        authorId,
+        authorName: session.label || session.username,
+        postType,
+        parentPostId,
+        playId,
+        playLabel: playSig,
+        body: postBody,
+      }).catch((err) => console.error("[discussion] staff notification failed", err));
+    }
+
     // Notify players in the thread when a coach replies (fire-and-forget)
     if (isStaff) {
       const posterName = session.label || session.username;
@@ -208,7 +227,6 @@ export async function onRequest(context) {
       notifyOnVisualReply(env.DB, parentPostId, posterName, playId, env).catch(() => { });
     }
 
-    const modInfo = result._moderation || {};
     const postData = formatPost(result);
 
     // ── Notify coaches on repeated severe violations (fire-and-forget) ────

@@ -17,6 +17,58 @@ const TEAM_UPDATE_DEDUPE_WINDOWS = Object.freeze({
   team_announcement: 10 * 60,
 });
 
+const STAFF_NOTIFICATION_ROLES = Object.freeze(["admin", "coach", "assistant_coach"]);
+
+/**
+ * Return the D1 identity that owns an in-app notification feed.
+ *
+ * Player and managed-coach sessions already carry a D1 user id. The two
+ * primary staff logins are static sessions, though, so they need a durable
+ * team-scoped user row before the bell can receive alerts. Provision that row
+ * the first time a staff member opens or polls notifications. This keeps the
+ * notification recipient model identical for every staff account and avoids
+ * tying delivery to whether someone has posted in a discussion before.
+ */
+export async function ensureNotificationUser(db, session) {
+  const d1UserId = String(session?.d1UserId || "").trim();
+  if (d1UserId) return d1UserId;
+
+  const role = String(session?.role || "").trim();
+  const teamId = String(session?.teamId || session?.team_id || "").trim();
+  const username = String(session?.username || "").trim();
+  if (!STAFF_NOTIFICATION_ROLES.includes(role) || !teamId || !username) return null;
+
+  const email = `${username}@bcoffense.internal`;
+  const existing = await db.prepare(
+    "SELECT id, team_id, status FROM users WHERE email = ? LIMIT 1",
+  ).bind(email).first();
+  if (existing) {
+    return String(existing.team_id || "") === teamId && existing.status === "active"
+      ? existing.id
+      : null;
+  }
+
+  const id = crypto.randomUUID();
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    await db.prepare(
+      `INSERT INTO users (id, email, display_name, role, team_id, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, 'active', ?, ?)`,
+    ).bind(id, email, session.label || username, role, teamId, now, now).run();
+    return id;
+  } catch (err) {
+    // A second request may have provisioned the same static account while the
+    // first was in flight. Re-read once before treating it as unavailable.
+    const concurrent = await db.prepare(
+      "SELECT id, team_id, status FROM users WHERE email = ? LIMIT 1",
+    ).bind(email).first().catch(() => null);
+    if (concurrent && String(concurrent.team_id || "") === teamId && concurrent.status === "active") {
+      return concurrent.id;
+    }
+    throw err;
+  }
+}
+
 /**
  * Create a notification for a user.
  * @param {object} opts - { userId, type, title, body, deepLink }
@@ -114,6 +166,58 @@ export async function notifyTeamPlayers(db, teamId, notification = {}, env = nul
   }
 
   return { recipients, coalesced, pushSent, pushTotal };
+}
+
+/**
+ * Alert every active staff account on a team when a player contributes to a
+ * play discussion. Questions and ordinary comments are deliberately both
+ * first-class alerts: coaches should not have to rely on a player labeling a
+ * message as a question for it to be visible in the bell.
+ */
+export async function notifyTeamStaffOfPlayerPost(db, teamId, {
+  authorId,
+  authorName,
+  postType = "comment",
+  parentPostId = null,
+  playId,
+  playLabel = "",
+  body = "",
+} = {}) {
+  const cleanTeamId = String(teamId || "").trim();
+  if (!cleanTeamId || !authorId || !playId) return { recipients: 0 };
+
+  const rows = await db.prepare(
+    `SELECT id FROM users
+     WHERE team_id = ?
+       AND status = 'active'
+       AND role IN ('admin', 'coach', 'assistant_coach')
+       AND id != ?
+     LIMIT 100`,
+  ).bind(cleanTeamId, authorId).all();
+
+  const isQuestion = postType === "question";
+  const isReply = Boolean(parentPostId);
+  const kind = isQuestion ? "question" : isReply ? "reply" : "comment";
+  const safeName = String(authorName || "A player").trim().slice(0, 120) || "A player";
+  const safeLabel = String(playLabel || "").trim().slice(0, 160);
+  const title = isQuestion
+    ? `${safeName} asked a question`
+    : `${safeName} ${isReply ? "replied" : "commented"}`;
+  const context = safeLabel ? ` on ${safeLabel}` : " on a play";
+  const message = String(body || "").trim().replace(/\s+/g, " ").slice(0, 220);
+
+  let recipients = 0;
+  for (const row of rows.results || []) {
+    await createNotification(db, {
+      userId: row.id,
+      type: `player_${kind}`,
+      title: `${title}${context}`,
+      body: message || null,
+      deepLink: `play:${playId}`,
+    });
+    recipients += 1;
+  }
+  return { recipients };
 }
 
 /**

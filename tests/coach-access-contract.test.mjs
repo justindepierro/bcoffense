@@ -41,7 +41,7 @@ assert.match(client, /Read-only workspace/, "access UI distinguishes study acces
 const cloudSync = await source("js/cloud-sync.js");
 assert.match(cloudSync, /currentUser\.managedCoach === true/, "managed coaches hydrate from the canonical team workspace at sign-in");
 assert.match(index, /id="coachAccessOverlay"/, "coach access modal is included in the app shell");
-assert.match(index, /js\/coach-access\.js\?v=1310/, "coach access client is loaded");
+assert.match(index, /js\/coach-access\.js\?v=1311/, "coach access client is loaded");
 assert.match(sw, /\.\/js\/coach-access\.js/, "coach access client is cached for offline shell use");
 assert.match(authClient, /authStudyPortal/, "managed coaches are explicitly marked for the study-first portal");
 assert.match(authClient, /STUDY_PORTAL_TABS/, "managed coaches are limited to the same core study tabs as players");
