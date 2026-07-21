@@ -15769,3 +15769,43 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     padding: 3px 8px;
   }
 }
+
+/* Tablet command strip: the desktop one-row header is efficient on wide
+   screens, but at tablet widths the save status, date, and action cluster
+   began competing for the same pixels. Keep the identity/status row readable
+   and place the compact workspace controls on their own command line. */
+@media (min-width: 821px) and (max-width: 1180px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-header-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: center;
+    gap: 4px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-header-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    width: 100%;
+    min-width: 0;
+    gap: 8px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-title-group {
+    min-width: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-save-status {
+    min-width: 0;
+    max-width: min(34vw, 300px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-workbench-controls {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: 4px;
+    border-top: 1px solid var(--coach-grid-divider);
+  }
+}

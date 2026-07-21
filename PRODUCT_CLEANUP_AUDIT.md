@@ -86,10 +86,9 @@ small, testable releases.
   Live admin pass on 2026-07-21: the Script workbench has no page-level
   horizontal overflow at 1440px or 390px; the phone Playbook filter drawer has
   a visible close control and closes cleanly. The tab rail and timeline rail
-  scroll intentionally. The mobile `Filters` trigger measures 38px high and
-  needs a 44px touch target. At 1024px, the Script save/status/date/action
-  cluster compresses into itself and makes its status copy hard to read; fix
-  this tablet command-bar breakpoint before declaring the surface complete.
+  scroll intentionally. Release v1296 raises the mobile `Filters` trigger to
+  a 44px touch target and gives the Script a dedicated tablet command row, so
+  identity, status, and date remain readable above its actions at 1024px.
   Managed coach and player release checks remain required for media-filter
   truth and role-specific touch targets.
 - [ ] **C-021 · Establish density tiers.** Desktop workbenches use Coach Grid
