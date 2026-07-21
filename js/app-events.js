@@ -495,6 +495,18 @@ document.addEventListener("click", (e) => {
     case "deleteSavedScript":
       deleteSavedScript(parseInt(el.dataset.sid, 10));
       return;
+    case "openSavedScriptsArchive":
+      openSavedScriptsArchive(el.dataset.sid || "");
+      return;
+    case "closeSavedScriptsArchive":
+      closeSavedScriptsArchive();
+      return;
+    case "restoreDeletedSavedScript":
+      restoreDeletedSavedScript(el.dataset.sid);
+      return;
+    case "restoreSavedScriptVersion":
+      restoreSavedScriptVersion(el.dataset.sid, el.dataset.versionId);
+      return;
     case "removeFilter":
       removeFilter(el.dataset.layer, el.dataset.filterValue);
       return;

@@ -695,6 +695,89 @@
     return typeof raw === "string" ? safeJSONParse(raw, fallback) : raw;
   }
 
+  // Saved scripts are independently named artifacts inside the larger
+  // workspace document. A complete workspace upload from a device that has
+  // not yet hydrated its Script Library must never make a newer server script
+  // disappear. Keep this merge deliberately narrow: other workspace surfaces
+  // still use their established edit flows, while scripts get record-level
+  // protection keyed by their stable id.
+  function scriptMergeIdentity(record, index = 0) {
+    const id = String(record?.id ?? "").trim();
+    if (id) return `id:${id}`;
+    return `legacy:${String(record?.name || "").trim().toLowerCase()}|${String(record?.date || "").trim()}|${index}`;
+  }
+
+  function scriptMergeTime(record) {
+    if (!record || typeof record !== "object") return 0;
+    return Math.max(
+      Date.parse(record.deletedAt || "") || 0,
+      Date.parse(record.updatedAt || "") || 0,
+      Date.parse(record.savedAt || "") || 0,
+      Date.parse(record.playerPublishedAt || "") || 0,
+      Date.parse(record.playerUnpublishedAt || "") || 0,
+    );
+  }
+
+  function mergeScriptVersions(left, right) {
+    const collected = [...(Array.isArray(left) ? left : []), ...(Array.isArray(right) ? right : [])]
+      .filter((entry) => entry && typeof entry === "object");
+    const seen = new Set();
+    return collected
+      .filter((entry) => {
+        const key = String(entry.versionId || entry.savedAt || entry.updatedAt || "").trim();
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((a, b) => scriptMergeTime(b) - scriptMergeTime(a))
+      .slice(0, 20);
+  }
+
+  function mergeSavedScriptCollections(localScripts, remoteScripts) {
+    const local = Array.isArray(localScripts) ? localScripts.filter(Boolean) : [];
+    const remote = Array.isArray(remoteScripts) ? remoteScripts.filter(Boolean) : [];
+    const remoteById = new Map(remote.map((record, index) => [scriptMergeIdentity(record, index), record]));
+    const merged = [];
+    const seen = new Set();
+
+    // Preserve local ordering for scripts this coach can see, but take the
+    // newest record body when both sides know the same script.
+    local.forEach((localRecord, index) => {
+      const key = scriptMergeIdentity(localRecord, index);
+      const remoteRecord = remoteById.get(key);
+      const useRemote = remoteRecord && scriptMergeTime(remoteRecord) > scriptMergeTime(localRecord);
+      const selected = useRemote ? remoteRecord : localRecord;
+      const counterpart = useRemote ? localRecord : remoteRecord;
+      merged.push({
+        ...selected,
+        versions: mergeScriptVersions(selected?.versions, counterpart?.versions),
+      });
+      seen.add(key);
+    });
+
+    // This is the critical stale-device guard: a script absent from local
+    // storage is retained from the current canonical workspace unless it is
+    // represented by an explicit, newer deletion tombstone.
+    remote.forEach((remoteRecord, index) => {
+      const key = scriptMergeIdentity(remoteRecord, index);
+      if (seen.has(key)) return;
+      merged.push({ ...remoteRecord, versions: mergeScriptVersions(remoteRecord?.versions, []) });
+    });
+
+    return merged;
+  }
+
+  function mergeCanonicalSavedScripts(localBackup, remoteBackup) {
+    const localScripts = parseBackupField(localBackup, STORAGE_KEYS.SAVED_SCRIPTS, []);
+    const remoteScripts = parseBackupField(remoteBackup, STORAGE_KEYS.SAVED_SCRIPTS, []);
+    if (!Array.isArray(localScripts) || !Array.isArray(remoteScripts)) return localBackup;
+    const mergedScripts = mergeSavedScriptCollections(localScripts, remoteScripts);
+    return {
+      ...localBackup,
+      [STORAGE_KEYS.SAVED_SCRIPTS]: JSON.stringify(mergedScripts),
+    };
+  }
+
   function countBackupCollection(value) {
     if (Array.isArray(value)) return value.length;
     if (value && typeof value === "object") return Object.keys(value).length;
@@ -1224,6 +1307,15 @@
       let diagramSyncResult = null;
       if (!silent) updateCloudSyncModalStatus("Preparing local data...", "info");
       let backup = await buildCloudBackupPayload({ interactive: !silent });
+      // Always read the current canonical head before an upload. The revision
+      // CAS alone catches simultaneous writers, but cannot tell that this
+      // browser's local Script Library predates a script saved elsewhere.
+      // Merging the script collection here means a stale device can add or
+      // edit its own work without silently erasing newer saved scripts.
+      const remoteBeforePush = await fetchCanonicalWorkspace({ allowMissing: true });
+      if (remoteBeforePush?.backup) {
+        backup = mergeCanonicalSavedScripts(backup, remoteBeforePush.backup);
+      }
       let payloadText = JSON.stringify(backup, null, 2);
       let payloadSize = getPayloadSize(payloadText);
       ({ backup, payloadText, payloadSize } = await reducePayloadIfNeeded(
@@ -1234,7 +1326,7 @@
       ));
 
       if (!silent) updateCloudSyncModalStatus("Publishing team workspace...", "info");
-      const knownRevision = getCloudSyncSettings().lastWorkspaceRevision || "";
+      const knownRevision = remoteBeforePush?.revision || getCloudSyncSettings().lastWorkspaceRevision || "";
       const data = await workspaceRevisionRequest("PUT", payloadText, knownRevision);
       const summary = getCloudBackupSummary(backup);
       const nextSettings = saveCloudSyncSettingsObject({

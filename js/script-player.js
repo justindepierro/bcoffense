@@ -34,6 +34,18 @@ function isSavedScriptPlayerVisible(record) {
   );
 }
 
+function isSavedScriptDeleted(record) {
+  return Boolean(record?.deletedAt);
+}
+
+function getActiveSavedScripts() {
+  return getSavedScripts().filter((record) => !isSavedScriptDeleted(record));
+}
+
+function getDeletedSavedScripts() {
+  return getSavedScripts().filter((record) => isSavedScriptDeleted(record));
+}
+
 function normalizeSavedScriptRecord(record, index = 0) {
   const normalized = record && typeof record === "object" ? record : {};
   return {
@@ -49,6 +61,10 @@ function normalizeSavedScriptRecord(record, index = 0) {
         ? normalized.workspace
         : null,
     savedAt: normalized.savedAt || "",
+    updatedAt: normalized.updatedAt || normalized.savedAt || "",
+    deletedAt: normalized.deletedAt || "",
+    deletedBy: normalized.deletedBy || "",
+    versions: Array.isArray(normalized.versions) ? normalized.versions : [],
     playerPublishedAt: normalized.playerPublishedAt || "",
     playerUnpublishedAt: normalized.playerUnpublishedAt || "",
   };
@@ -78,6 +94,10 @@ function getSavedScripts() {
         normalized.plays !== record?.plays ||
         normalized.workspace !== record?.workspace ||
         normalized.savedAt !== (record?.savedAt || "") ||
+        normalized.updatedAt !== (record?.updatedAt || record?.savedAt || "") ||
+        normalized.deletedAt !== (record?.deletedAt || "") ||
+        normalized.deletedBy !== (record?.deletedBy || "") ||
+        normalized.versions !== record?.versions ||
         normalized.playerPublishedAt !== (record?.playerPublishedAt || "") ||
         normalized.playerUnpublishedAt !== (record?.playerUnpublishedAt || "")
       );
@@ -403,7 +423,7 @@ function renderSavedScriptPublishMeta(savedScript) {
 }
 
 function getPlayerPublishedScripts() {
-  return getSavedScripts()
+  return getActiveSavedScripts()
     .filter((savedScript) => savedScript.playerVisible)
     .sort((a, b) => {
       const aStamp = Math.max(
@@ -716,12 +736,13 @@ function startPlayerScriptQuiz(id = "", options = {}) {
 }
 
 function loadSavedScriptsList() {
-  const savedScripts = getSavedScripts();
+  const savedScripts = getActiveSavedScripts();
+  const deletedScripts = getDeletedSavedScripts();
   const container = document.getElementById("savedScriptsList");
   const section = document.getElementById("savedScriptsSection");
   if (!container || !section) return;
 
-  if (savedScripts.length === 0) {
+  if (savedScripts.length === 0 && deletedScripts.length === 0) {
     section.classList.add("hidden");
     renderCoachPublishStatus();
     loadFullDayScriptList();
@@ -774,6 +795,7 @@ function loadSavedScriptsList() {
                         <span>Player login</span>
                       </label>
 	                    <button class="saved-load-btn" data-action="loadScript" data-sid="${savedScript.id}" title="Load this script">Load</button>
+	                    <button class="saved-rename-btn" data-action="openSavedScriptsArchive" data-sid="${savedScript.id}" title="View version history">🛟</button>
 	                    <button class="saved-rename-btn" data-action="renameSavedScript" data-sid="${savedScript.id}" title="Rename script">✏️</button>
 	                    <button class="saved-overwrite-btn" data-action="overwriteSavedScript" data-sid="${savedScript.id}" title="Overwrite with current script">Update</button>
 	                    <button class="saved-del-btn" data-action="deleteSavedScript" data-sid="${savedScript.id}" title="Delete script">✕</button>
@@ -782,6 +804,12 @@ function loadSavedScriptsList() {
         `;
     })
     .join("");
+
+  const archiveButton = document.getElementById("savedScriptsArchiveBtn");
+  if (archiveButton) {
+    archiveButton.hidden = deletedScripts.length === 0;
+    archiveButton.textContent = `🗑️ Trash${deletedScripts.length ? ` (${deletedScripts.length})` : ""}`;
+  }
 
   renderCoachPublishStatus();
   loadFullDayScriptList();
@@ -817,7 +845,7 @@ function openMobileScriptLoader() {
 }
 
 function loadSavedScriptRecord(scriptData, opts = {}) {
-  if (!scriptData) return false;
+  if (!scriptData || isSavedScriptDeleted(scriptData)) return false;
   try {
     document.getElementById("scriptName").value = scriptData.name;
     document.getElementById("scriptDate").value = scriptData.date;
@@ -867,7 +895,7 @@ function loadSavedScriptRecord(scriptData, opts = {}) {
 function loadScript(id) {
   try {
     const savedScripts = getSavedScripts();
-    const scriptData = savedScripts.find((savedScript) => savedScript.id === id);
+    const scriptData = savedScripts.find((savedScript) => savedScript.id === id && !isSavedScriptDeleted(savedScript));
     if (!scriptData) return;
     loadSavedScriptRecord(scriptData);
   } catch (err) {
@@ -1069,6 +1097,11 @@ function togglePlayerScriptAccess(id, event) {
   );
   if (!savedScript) return;
 
+  if (typeof markSavedScriptUpdated === "function") {
+    markSavedScriptUpdated(savedScript, savedScript.playerVisible ? "unpublish" : "publish");
+  } else {
+    savedScript.updatedAt = new Date().toISOString();
+  }
   savedScript.playerVisible = Boolean(event?.target?.checked);
   if (savedScript.playerVisible) {
     savedScript.playerPublishedAt = new Date().toISOString();

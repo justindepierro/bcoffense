@@ -28,6 +28,123 @@ function finalizeScriptSave(record) {
   if (typeof updateScriptArtifactStatus === "function") updateScriptArtifactStatus();
 }
 
+const SCRIPT_VERSION_LIMIT = 10;
+
+function formatScriptArchiveTime(value) {
+  const timestamp = Date.parse(value || "");
+  if (!timestamp) return "an earlier save";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
+  }).format(new Date(timestamp));
+}
+
+function scriptVersionSnapshot(record, reason = "update") {
+  if (!record || typeof record !== "object") return null;
+  const snapshot = safeDeepClone({ ...record, versions: [] });
+  return {
+    versionId: `${record.id || "script"}-${Date.now()}-${reason}`,
+    savedAt: record.updatedAt || record.savedAt || new Date().toISOString(),
+    reason,
+    record: snapshot,
+  };
+}
+
+function preserveSavedScriptVersion(record, reason = "update") {
+  const snapshot = scriptVersionSnapshot(record, reason);
+  if (!snapshot) return;
+  const existing = Array.isArray(record.versions) ? record.versions : [];
+  record.versions = [snapshot, ...existing]
+    .filter((entry) => entry && entry.record && typeof entry.record === "object")
+    .slice(0, SCRIPT_VERSION_LIMIT);
+}
+
+function markSavedScriptUpdated(record, reason = "update") {
+  preserveSavedScriptVersion(record, reason);
+  record.updatedAt = new Date().toISOString();
+  return record.updatedAt;
+}
+
+function closeSavedScriptsArchive() {
+  const overlay = document.getElementById("savedScriptsArchiveOverlay");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer(overlay, { returnFocus: false });
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.remove(), 180);
+}
+
+function restoreDeletedSavedScript(id) {
+  const savedScripts = getSavedScripts();
+  const record = savedScripts.find((item) => String(item?.id) === String(id));
+  if (!record || !record.deletedAt) return;
+  markSavedScriptUpdated(record, "restore");
+  record.deletedAt = "";
+  record.deletedBy = "";
+  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+  loadSavedScriptsList();
+  closeSavedScriptsArchive();
+  showToast(`Restored "${record.name}" to Script Library.`);
+}
+
+function restoreSavedScriptVersion(id, versionId) {
+  const savedScripts = getSavedScripts();
+  const record = savedScripts.find((item) => String(item?.id) === String(id));
+  const version = record?.versions?.find((item) => String(item?.versionId) === String(versionId));
+  if (!record || !version?.record) return;
+
+  const restored = safeDeepClone(version.record);
+  restored.id = Date.now();
+  restored.name = `${restored.name || record.name} — restored copy`;
+  restored.savedAt = new Date().toISOString();
+  restored.updatedAt = restored.savedAt;
+  restored.deletedAt = "";
+  restored.deletedBy = "";
+  restored.versions = [];
+  savedScripts.push(restored);
+  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+  loadSavedScriptsList();
+  closeSavedScriptsArchive();
+  showToast(`Created restored copy: "${restored.name}".`);
+}
+
+function openSavedScriptsArchive(id = "") {
+  const records = getSavedScripts();
+  const selected = id === "" || id === undefined || id === null
+    ? null
+    : records.find((item) => String(item?.id) === String(id));
+  const deleted = getDeletedSavedScripts();
+  const title = selected ? `History: ${selected.name}` : "Script Trash & Recovery";
+  const versionRows = selected && Array.isArray(selected.versions)
+    ? selected.versions.map((version) => {
+      const snapshot = version?.record || {};
+      const playCount = Array.isArray(snapshot.plays) ? snapshot.plays.filter((play) => !play?.isSeparator).length : 0;
+      return `<div class="custom-modal-list-item"><div class="custom-modal-list-text"><strong>${escapeHtml(version.reason || "Saved version")}</strong><span class="custom-modal-list-sub">${escapeHtml(formatScriptArchiveTime(version.savedAt || ""))} • ${playCount} plays</span></div><button class="btn btn-sm" data-action="restoreSavedScriptVersion" data-sid="${escapeHtml(String(selected.id))}" data-version-id="${escapeHtml(String(version.versionId || ""))}">Restore copy</button></div>`;
+    }).join("")
+    : "";
+  const trashRows = deleted.map((record) => {
+    const playCount = Array.isArray(record.plays) ? record.plays.filter((play) => !play?.isSeparator).length : 0;
+    return `<div class="custom-modal-list-item"><div class="custom-modal-list-text"><strong>${escapeHtml(record.name)}</strong><span class="custom-modal-list-sub">Deleted ${escapeHtml(formatScriptArchiveTime(record.deletedAt || ""))} • ${playCount} plays</span></div><button class="btn btn-sm btn-primary" data-action="restoreDeletedSavedScript" data-sid="${escapeHtml(String(record.id))}">Restore</button></div>`;
+  }).join("");
+  const empty = selected
+    ? "No earlier local versions yet. Future saves are kept here automatically."
+    : "Trash is empty. Deleted scripts remain recoverable here instead of being erased.";
+
+  closeSavedScriptsArchive();
+  const overlay = document.createElement("div");
+  overlay.id = "savedScriptsArchiveOverlay";
+  overlay.className = "custom-modal-overlay";
+  overlay.innerHTML = `<div class="custom-modal custom-modal-wide" role="dialog" aria-modal="true" aria-labelledby="savedScriptsArchiveTitle"><div class="custom-modal-header"><span class="custom-modal-icon">🛟</span><h3 class="custom-modal-title" id="savedScriptsArchiveTitle">${escapeHtml(title)}</h3></div><div class="custom-modal-body"><p>${selected ? "Restore an earlier version as a new copy, so the current script stays safe." : "Restore deleted scripts without replacing the rest of your workspace."}</p><div class="custom-modal-list">${selected ? (versionRows || `<p>${escapeHtml(empty)}</p>`) : (trashRows || `<p>${escapeHtml(empty)}</p>`)}</div></div><div class="custom-modal-actions"><button class="btn custom-modal-btn" data-action="closeSavedScriptsArchive">Done</button></div></div>`;
+  document.body.appendChild(overlay);
+  if (typeof openLayer === "function") openLayer(overlay, { id: "savedScriptsArchiveOverlay", trapFocus: true });
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+  overlay.querySelector("button")?.focus();
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeSavedScriptsArchive();
+  });
+  overlay.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeSavedScriptsArchive();
+  });
+}
+
 async function confirmScriptHandoffPersistence(summary) {
   const choice = await showChoice(
     `<p>${escapeHtml(summary)}</p><p>This is currently a local recovery draft. Save it to the Script Library so it appears in Load Scripts and remains part of the workflow.</p>`,
@@ -373,10 +490,11 @@ async function saveScript() {
       (s) => String(s.id) === String(activeScriptSaveId),
     );
     const existing = active || savedScripts.find(
-      (s) => s.name.toLowerCase() === name.toLowerCase(),
+      (s) => !s.deletedAt && s.name.toLowerCase() === name.toLowerCase(),
     );
     if (existing) {
       if (active) {
+        markSavedScriptUpdated(existing, "save");
         existing.name = name;
         existing.date = date;
         existing.plays = safeDeepClone(script);
@@ -410,6 +528,7 @@ async function saveScript() {
         },
       );
       if (choice === "option1") {
+        markSavedScriptUpdated(existing, "overwrite");
         existing.name = name;
         existing.date = date;
         existing.plays = safeDeepClone(script);
@@ -449,6 +568,8 @@ async function saveScript() {
       plays: safeDeepClone(script),
       workspace: getScriptWorkspaceState(),
       savedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      versions: [],
     };
 
     savedScripts.push(scriptData);
@@ -469,21 +590,26 @@ async function deleteSavedScript(id) {
   const savedScripts = getSavedScripts();
   const target = savedScripts.find((savedScript) => savedScript.id === id);
   if (!target) return;
-  const ok = await showConfirm(`Delete "${target.name}"?`, {
-    title: "Delete Script",
+  const ok = await showConfirm(`Move "${target.name}" to Trash? You can restore it later.`, {
+    title: "Move Script to Trash",
     icon: "🗑️",
-    confirmText: "Delete",
-    danger: true,
+    confirmText: "Move to Trash",
   });
   if (!ok) return;
-  const filtered = savedScripts.filter((savedScript) => savedScript.id !== id);
-  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, filtered);
+  markSavedScriptUpdated(target, "delete");
+  target.deletedAt = new Date().toISOString();
+  target.deletedBy = typeof getCurrentAuthUser === "function"
+    ? (getCurrentAuthUser()?.displayName || getCurrentAuthUser()?.username || "Coach")
+    : "Coach";
+  target.playerVisible = false;
+  target.playerUnpublishedAt = target.deletedAt;
+  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
   if (String(activeScriptSaveId) === String(id)) {
     resetActiveScriptIdentity();
     markScriptDirty();
   }
   loadSavedScriptsList();
-  showToast(`"${target.name}" deleted`);
+  showToast(`"${target.name}" moved to Trash. It can be restored anytime.`);
 }
 
 async function renameSavedScript(id) {
@@ -495,6 +621,7 @@ async function renameSavedScript(id) {
     icon: "✏️",
   });
   if (newName && newName.trim()) {
+    markSavedScriptUpdated(savedScript, "rename");
     savedScript.name = newName.trim();
     savedScript.savedAt = new Date().toISOString();
     storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
@@ -519,6 +646,7 @@ async function overwriteSavedScript(id) {
   );
   if (!ok) return;
 
+  markSavedScriptUpdated(savedScript, "overwrite");
   savedScript.name = document.getElementById("scriptName").value || savedScript.name;
   savedScript.date = document.getElementById("scriptDate").value || savedScript.date;
   savedScript.plays = safeDeepClone(script);
