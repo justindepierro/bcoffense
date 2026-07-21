@@ -54,8 +54,10 @@ small, testable releases.
   applies the same canonical-only, refresh-safe model to `Has Video`; release
   `v1309` fixes the server index so the player receives only real, authorized
   clip manifests—not every play media ID that is merely authorized for a future
-  upload. Automated contracts pass; this still needs the final phone, tablet,
-  and managed-coach role check against a live team release.
+  upload. Release `v1310` also fetches that private, role-scoped clip index
+  with `no-store`, preventing a browser from retaining the old broad index.
+  Automated contracts pass; this still needs the final phone, tablet, and
+  managed-coach role check against a live team release.
 - [x] **C-003 · Establish a single visual status vocabulary.** Release v1290
   makes the header the quiet local-save indicator and reserves the shared dock
   for `Saving`, `Queued`, `Needs attention`, `Offline`, and temporarily

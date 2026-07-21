@@ -177,6 +177,7 @@
       try {
         const response = await fetch("/clips/sigs", {
           credentials: "same-origin",
+          cache: "no-store",
           headers: { Accept: "application/json" },
         });
         if (!response.ok) {

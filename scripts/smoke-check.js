@@ -5976,6 +5976,7 @@ function checkPlayerPlaybookVisibilityContracts() {
     !/function hasCanonicalForPlay\(play\)/.test(clips) ||
     !/function isIndexLoaded\(\)/.test(clips) ||
     !/hasCanonicalForPlay,/.test(clips) ||
+    !/fetch\("\/clips\/sigs", \{[\s\S]*?cache:\s*"no-store"/.test(clips) ||
     !/function _playbookHasClipForCurrentViewer\(play\)/.test(filters) ||
     !/function _warmPlaybookClipFilterIndex\(\)/.test(filters) ||
     !/playerHasVideoOnly && !checkingClipFilter && !_playbookHasClipForCurrentViewer\(play\)/.test(filters)
