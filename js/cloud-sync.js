@@ -21,9 +21,13 @@
   const CLOUD_AUTO_PUSH_MAX_HOLD_MS = 2 * 60 * 1000;
   const CLOUD_AUTO_PUSH_RETRY_MS = 60 * 1000;
   const CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS = 1500;
+  const CLOUD_AUTO_PUSH_TIMEOUT_RETRY_MS = 4000;
   const CLOUD_AUTO_PUSH_MAX_RETRIES = 3;
   const TEAM_FOREGROUND_REFRESH_MIN_MS = 20 * 1000;
   const TEAM_FOREGROUND_REFRESH_INTERVAL_MS = 3 * 60 * 1000;
+  const WORKSPACE_REVISION_REQUEST_TIMEOUT_MS = 30 * 1000;
+  const TEAM_WORKSPACE_LEASE_WAIT_MS = 12 * 1000;
+  const TEAM_WORKSPACE_LEASE_RETRY_MS = 1200;
 
   // Daily workspace commits are deliberately narrower than a complete browser
   // backup. Keep this list aligned with the server allowlist in
@@ -1025,10 +1029,38 @@
     return workspaceRevisionRequest("PUT", payload, remote.revision);
   }
 
+  function workspaceRequestId(method) {
+    const suffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    return `workspace-${String(method || "request").toLowerCase()}-${suffix}`;
+  }
+
+  async function workspaceFetchWithTimeout(resource, options = {}, opts = {}) {
+    const timeoutMs = Math.max(1000, Number(opts.timeoutMs || WORKSPACE_REVISION_REQUEST_TIMEOUT_MS) || WORKSPACE_REVISION_REQUEST_TIMEOUT_MS);
+    const controller = typeof AbortController === "undefined" ? null : new AbortController();
+    const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : 0;
+    try {
+      return await fetch(resource, { ...options, signal: controller?.signal });
+    } catch (err) {
+      if (controller?.signal?.aborted) {
+        const timeoutError = new Error("Team sync timed out. Your changes are saved locally and will retry automatically.");
+        timeoutError.code = "BC_WORKSPACE_TIMEOUT";
+        timeoutError.retryable = true;
+        timeoutError.cause = err;
+        throw timeoutError;
+      }
+      throw err;
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
+  }
+
   async function workspaceRevisionRequest(method, bodyText = "", expectedRevision = "", opts = {}) {
     const headers = {
       Accept: "application/json",
       "X-BC-Auth-Mode": "json",
+      "X-BC-Request-Id": workspaceRequestId(method),
     };
     if (bodyText) headers["Content-Type"] = "application/json";
     if (method === "PUT" && expectedRevision !== undefined && expectedRevision !== null) {
@@ -1037,7 +1069,7 @@
     if (method === "GET" && opts.ifNoneMatch) {
       headers["If-None-Match"] = String(opts.ifNoneMatch);
     }
-    const response = await fetch("/workspace/revision", {
+    const response = await workspaceFetchWithTimeout("/workspace/revision", {
       method,
       credentials: "same-origin",
       headers,
@@ -1052,6 +1084,27 @@
       throw err;
     }
     return { ...data, etag: response.headers.get("ETag") || "" };
+  }
+
+  async function acquireCloudWorkspaceLease(opts = {}) {
+    const coordinator = window.workspaceSync;
+    if (!coordinator || typeof coordinator.acquireTeamWorkspaceLease !== "function") return null;
+    const lease = await coordinator.acquireTeamWorkspaceLease({
+      purpose: "canonical-workspace",
+      waitMs: opts.auto ? 0 : TEAM_WORKSPACE_LEASE_WAIT_MS,
+      ttlMs: WORKSPACE_REVISION_REQUEST_TIMEOUT_MS * 2 + 10 * 1000,
+    });
+    if (lease?.acquired) return lease;
+    const err = new Error("Another open tab is finishing a team update. This tab will retry with the newest version.");
+    err.code = "BC_WORKSPACE_LEASE_BUSY";
+    err.retryable = true;
+    err.retryAfterMs = Math.max(TEAM_WORKSPACE_LEASE_RETRY_MS, Number(lease?.retryAfterMs || 0) || 0);
+    throw err;
+  }
+
+  function releaseCloudWorkspaceLease(lease) {
+    if (!lease || typeof window.workspaceSync?.releaseTeamWorkspaceLease !== "function") return;
+    window.workspaceSync.releaseTeamWorkspaceLease(lease);
   }
 
   async function fetchCanonicalWorkspace(opts = {}) {
@@ -1360,11 +1413,17 @@
       throw new Error("Coach access is required to save the team workspace.");
     }
 
+    let workspaceLease = null;
     try {
       setCloudSyncBusy(true);
       let diagramSyncResult = null;
       if (!silent) updateCloudSyncModalStatus("Preparing local data...", "info");
       let backup = await buildCloudBackupPayload({ interactive: !silent });
+      // Coordinate competing tabs before the read/rebase/write section. A
+      // device in another browser still relies on the server CAS below, but
+      // tabs sharing this browser now serialize their expensive workspace
+      // cycle and receive the finished revision immediately.
+      workspaceLease = await acquireCloudWorkspaceLease({ auto: opts.auto === true });
       // Always read the current canonical head before an upload. The revision
       // CAS alone catches simultaneous writers, but cannot tell that this
       // browser's local Script Library predates a script saved elsewhere.
@@ -1396,6 +1455,14 @@
         lastRemoteSize: payloadSize,
         lastWorkspaceRevision: data.revision || knownRevision,
       });
+      releaseCloudWorkspaceLease(workspaceLease);
+      workspaceLease = null;
+      if (typeof window.workspaceSync?.announceTeamWorkspacePublished === "function") {
+        window.workspaceSync.announceTeamWorkspacePublished({
+          revision: data.revision || knownRevision,
+          updatedAt: data.updatedAt || nextSettings.lastPushAt,
+        });
+      }
       // The legacy all-diagram scan is an explicit recovery action only. New
       // or changed diagrams publish immediately through their durable outbox.
       if (syncDiagrams && window.playImages && typeof window.playImages.syncToRemote === "function") {
@@ -1459,6 +1526,7 @@
       }
       throw err;
     } finally {
+      releaseCloudWorkspaceLease(workspaceLease);
       setCloudSyncBusy(false);
     }
   }
@@ -1479,6 +1547,7 @@
       if (!silent) updateCloudSyncModalStatus("Publishing team data...", "info");
       const result = await pushCloudBackupInternal({
         silent,
+        auto: opts.auto === true,
         skipActivityLog: true,
         syncDiagrams: opts.syncDiagrams === true,
       });
@@ -1533,6 +1602,7 @@
       }
       return { ...result, readiness };
     } catch (err) {
+      const deferredToOtherTab = err?.code === "BC_WORKSPACE_LEASE_BUSY";
       // Automatic work is retried by flushCloudAutoPush. Do not briefly pin
       // the red failure dock or raise a toast while that retry is still in
       // flight; it teaches coaches to intervene when the system is handling
@@ -1543,15 +1613,17 @@
           retry: () => publishTeamWorkspace(opts),
         });
       }
-      recordPublishActivity({
-        result: "failed",
-        domains: getDirtyCloudKeyLabels(),
-        summary: err.message || "Publish failed",
-        failedDomain: cloudAutoPushDirtyKeys.has("playImages") ? "media" : "workspace",
-        retryAction: silent ? "Use Retry from the save status chip." : "Open Recovery Tools and retry the local workspace republish.",
-      });
-      updateCloudSyncModalStatus(err.message, "error");
-      if (!silent) showToast(err.message, { type: "error", duration: 6000 });
+      if (!deferredToOtherTab) {
+        recordPublishActivity({
+          result: "failed",
+          domains: getDirtyCloudKeyLabels(),
+          summary: err.message || "Publish failed",
+          failedDomain: cloudAutoPushDirtyKeys.has("playImages") ? "media" : "workspace",
+          retryAction: silent ? "Use Retry from the save status chip." : "Open Recovery Tools and retry the local workspace republish.",
+        });
+        updateCloudSyncModalStatus(err.message, "error");
+        if (!silent) showToast(err.message, { type: "error", duration: 6000 });
+      }
       if (throwOnError) throw err;
       return null;
     }
@@ -1923,10 +1995,23 @@
       }
       return true;
     } catch (err) {
+      const leaseBusy = err?.code === "BC_WORKSPACE_LEASE_BUSY";
       cloudAutoPushPending = true;
-      cloudAutoPushLastError = err.message || "Unknown error";
-      cloudAutoPushRetryCount += 1;
-      if (cloudAutoPushRetryCount <= CLOUD_AUTO_PUSH_MAX_RETRIES) {
+      cloudAutoPushLastError = leaseBusy ? "" : (err.message || "Unknown error");
+      if (!leaseBusy) cloudAutoPushRetryCount += 1;
+      if (leaseBusy) {
+        cloudAutoPushFirstQueuedAt = Date.now();
+        _cloudQueueJob("cloud", "auto-push", {
+          queuedLabel: "Another tab is finishing the team update",
+          runningLabel: "Publishing team update...",
+          doneLabel: "Team update published",
+          errorLabel: "Publish needs attention",
+        });
+        scheduleCloudAutoPushTimer(Math.min(TEAM_FOREGROUND_REFRESH_MIN_MS, Math.max(
+          TEAM_WORKSPACE_LEASE_RETRY_MS,
+          Number(err?.retryAfterMs || 0) || 0,
+        )));
+      } else if (cloudAutoPushRetryCount <= CLOUD_AUTO_PUSH_MAX_RETRIES) {
         cloudAutoPushFirstQueuedAt = Date.now();
         _cloudQueueJob("cloud", "auto-push", {
           queuedLabel: "Team sync retrying automatically",
@@ -1939,7 +2024,11 @@
         // minute makes the app look broken while the latest server state is
         // already available. Network failures retain the calmer backoff.
         scheduleCloudAutoPushTimer(
-          err?.status === 409 ? CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS : CLOUD_AUTO_PUSH_RETRY_MS,
+          err?.status === 409
+            ? CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS
+            : err?.code === "BC_WORKSPACE_TIMEOUT"
+              ? CLOUD_AUTO_PUSH_TIMEOUT_RETRY_MS
+              : CLOUD_AUTO_PUSH_RETRY_MS,
         );
       } else {
         _cloudFailJob(cloudJobKey, err, { label: "Publish needs attention" });
@@ -2325,6 +2414,16 @@
 
   window.addEventListener("play-images-changed", () => {
     queueCloudAutoPush("playImages", "play-images");
+  });
+
+  // A sibling tab has already committed a new immutable revision. Pull it
+  // promptly when this tab is clean; if it has edits, the normal rebase/CAS
+  // path protects those changes and the next foreground check will reconcile.
+  document.addEventListener("workspace-sync-remote-update", (event) => {
+    const revision = String(event?.detail?.revision || "");
+    if (!revision || revision === getCloudSyncSettings().lastWorkspaceRevision) return;
+    if (hasLocalTeamEditInProgress()) return;
+    refreshTeamWorkspaceOnForeground({ force: true, quiet: true });
   });
 
   document.addEventListener("visibilitychange", () => {

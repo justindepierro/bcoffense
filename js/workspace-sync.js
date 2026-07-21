@@ -19,6 +19,133 @@
   };
   let workspaceConnectivityProbe = null;
 
+  // Multiple open tabs share local storage but used to publish and refresh the
+  // canonical team revision independently. A small, expiring lease gives one
+  // tab ownership of that network cycle. It is deliberately advisory: the
+  // server-side revision CAS remains the final correctness boundary across
+  // different browsers and devices.
+  const TEAM_WORKSPACE_SYNC_CHANNEL = "bcoffense-team-workspace-v1";
+  const TEAM_WORKSPACE_LEASE_KEY = "_bcTeamWorkspaceLeaseV1";
+  const TEAM_WORKSPACE_LEASE_MIN_MS = 10 * 1000;
+  const TEAM_WORKSPACE_LEASE_MAX_MS = 2 * 60 * 1000;
+  const TEAM_WORKSPACE_LEASE_DEFAULT_MS = 75 * 1000;
+  const workspaceSyncTabId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `tab-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  let workspaceSyncChannel = null;
+
+  function _wsCoordinatorChannel() {
+    if (workspaceSyncChannel || typeof BroadcastChannel === "undefined") return workspaceSyncChannel;
+    try {
+      workspaceSyncChannel = new BroadcastChannel(TEAM_WORKSPACE_SYNC_CHANNEL);
+      workspaceSyncChannel.onmessage = (event) => {
+        const message = event?.data;
+        if (!message || message.source === workspaceSyncTabId || !message.type) return;
+        document.dispatchEvent(new CustomEvent("workspace-sync-coordination", { detail: message }));
+        if (message.type === "workspace-published") {
+          document.dispatchEvent(new CustomEvent("workspace-sync-remote-update", { detail: message }));
+        }
+      };
+    } catch (_err) {
+      // Safari private windows and hardened browser profiles can block this.
+      // The localStorage lease below still coordinates ordinary tabs.
+      workspaceSyncChannel = null;
+    }
+    return workspaceSyncChannel;
+  }
+
+  function _wsReadTeamWorkspaceLease() {
+    try {
+      const raw = localStorage.getItem(TEAM_WORKSPACE_LEASE_KEY);
+      const value = raw ? JSON.parse(raw) : null;
+      if (!value || typeof value !== "object") return null;
+      const expiresAt = Number(value.expiresAt || 0);
+      const owner = String(value.owner || "");
+      if (!owner || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) return null;
+      return { owner, expiresAt, purpose: String(value.purpose || "workspace") };
+    } catch (_err) {
+      return null;
+    }
+  }
+
+  function _wsPostCoordination(type, detail = {}) {
+    const message = {
+      type,
+      source: workspaceSyncTabId,
+      at: new Date().toISOString(),
+      ...detail,
+    };
+    try { _wsCoordinatorChannel()?.postMessage(message); } catch (_err) { /* optional */ }
+    return message;
+  }
+
+  function _wsPause(ms) {
+    return new Promise((resolve) => setTimeout(resolve, Math.max(20, ms)));
+  }
+
+  async function acquireTeamWorkspaceLease(opts = {}) {
+    const waitMs = Math.max(0, Math.min(15 * 1000, Number(opts.waitMs || 0) || 0));
+    const ttlMs = Math.max(
+      TEAM_WORKSPACE_LEASE_MIN_MS,
+      Math.min(TEAM_WORKSPACE_LEASE_MAX_MS, Number(opts.ttlMs || TEAM_WORKSPACE_LEASE_DEFAULT_MS) || TEAM_WORKSPACE_LEASE_DEFAULT_MS),
+    );
+    const purpose = String(opts.purpose || "workspace");
+    const deadline = Date.now() + waitMs;
+
+    do {
+      const existing = _wsReadTeamWorkspaceLease();
+      if (!existing || existing.owner === workspaceSyncTabId) {
+        const lease = {
+          owner: workspaceSyncTabId,
+          expiresAt: Date.now() + ttlMs,
+          purpose,
+        };
+        try {
+          localStorage.setItem(TEAM_WORKSPACE_LEASE_KEY, JSON.stringify(lease));
+          const confirmed = _wsReadTeamWorkspaceLease();
+          if (confirmed?.owner === workspaceSyncTabId) {
+            _wsPostCoordination("workspace-lease-acquired", { purpose, expiresAt: confirmed.expiresAt });
+            return { acquired: true, ...confirmed };
+          }
+        } catch (_err) {
+          // Storage may be disabled. Do not make publishing unavailable; the
+          // immutable server CAS will still prevent a bad cross-device write.
+          return { acquired: true, uncoordinated: true, purpose };
+        }
+      } else if (Date.now() >= deadline) {
+        return { acquired: false, retryAfterMs: Math.max(250, existing.expiresAt - Date.now()), ...existing };
+      }
+      await _wsPause(Math.min(300, Math.max(80, existing.expiresAt - Date.now())));
+    } while (Date.now() <= deadline);
+
+    const current = _wsReadTeamWorkspaceLease();
+    return {
+      acquired: false,
+      retryAfterMs: Math.max(250, Number(current?.expiresAt || Date.now() + 250) - Date.now()),
+      ...(current || {}),
+    };
+  }
+
+  function releaseTeamWorkspaceLease(lease = null) {
+    if (lease?.uncoordinated) return true;
+    try {
+      const current = _wsReadTeamWorkspaceLease();
+      if (!current || current.owner !== workspaceSyncTabId) return false;
+      localStorage.removeItem(TEAM_WORKSPACE_LEASE_KEY);
+      _wsPostCoordination("workspace-lease-released", { purpose: current.purpose });
+      return true;
+    } catch (_err) {
+      return false;
+    }
+  }
+
+  function announceTeamWorkspacePublished(detail = {}) {
+    _wsPostCoordination("workspace-published", {
+      revision: String(detail.revision || ""),
+      updatedAt: String(detail.updatedAt || new Date().toISOString()),
+    });
+  }
+
   function _wsNormalizeChannel(channel) {
     return WORKSPACE_SYNC_CHANNELS.includes(channel) ? channel : "local";
   }
@@ -363,6 +490,12 @@
     checkWorkspaceSyncConnectivity({ force: true })
       .finally(() => retryWorkspaceSyncWork());
   });
+  window.addEventListener("storage", (event) => {
+    if (event.key !== TEAM_WORKSPACE_LEASE_KEY || event.storageArea !== localStorage) return;
+    document.dispatchEvent(new CustomEvent("workspace-sync-coordination", {
+      detail: { type: "workspace-lease-changed", source: "storage", at: new Date().toISOString() },
+    }));
+  });
 
   window.workspaceSync = {
     queue: queueWorkspaceSyncJob,
@@ -375,6 +508,9 @@
     setStatus: setWorkspaceSyncStatus,
     getConnectivity: getWorkspaceSyncConnectivity,
     checkConnectivity: checkWorkspaceSyncConnectivity,
+    acquireTeamWorkspaceLease,
+    releaseTeamWorkspaceLease,
+    announceTeamWorkspacePublished,
   };
   window.setWorkspaceSyncStatus = setWorkspaceSyncStatus;
   window.hasWorkspaceSyncWork = hasWorkspaceSyncWork;
