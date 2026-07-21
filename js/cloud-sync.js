@@ -11,6 +11,10 @@
   const PLAYER_RELEASE_META_KEY = "_bcPlayerReleaseMeta";
   const MAX_KV_BACKUP_BYTES = 25 * 1024 * 1024;
   const CLOUD_AUTO_PUSH_DELAY_MS = 30000;
+  // Player-facing media and quiz changes are meaningful handoffs, not routine
+  // field edits. Give nearby writes a moment to settle, then publish the
+  // canonical workspace right away instead of waiting for the normal batch.
+  const CLOUD_AUTO_PUSH_CRITICAL_DELAY_MS = 1200;
   const CLOUD_AUTO_PUSH_MAX_HOLD_MS = 2 * 60 * 1000;
   const CLOUD_AUTO_PUSH_RETRY_MS = 60 * 1000;
   const CLOUD_AUTO_PUSH_MAX_RETRIES = 3;
@@ -71,6 +75,7 @@
   const CLOUD_AUTO_PUSH_KEYS = new Set(["playImages", ...CANONICAL_TEAM_WORKSPACE_KEYS]);
 
   let cloudAutoPushTimer = null;
+  let cloudAutoPushCriticalTimer = null;
   let cloudAutoPushFirstQueuedAt = 0;
   let cloudAutoPushPending = false;
   let cloudAutoPushSaving = false;
@@ -1700,6 +1705,26 @@
     return true;
   }
 
+  // Used after a player-visible handoff (diagram, clip, quiz, or published
+  // script). This remains one debounced workspace commit for a burst of work;
+  // it simply bypasses the 30-second routine-edit delay once the data has
+  // settled. Offline and server failures stay in the existing durable retry
+  // path, so the dock stays informational unless the system cannot recover.
+  function requestImmediateTeamPublish(reason = "substantial-update") {
+    if (!canAutoPushCloudBackup()) return false;
+    const queued = queueCloudAutoPush(
+      STORAGE_KEYS.PLAYER_PUBLISH_STATUS,
+      `substantial:${String(reason || "update")}`,
+    );
+    if (!queued) return false;
+    if (cloudAutoPushCriticalTimer) clearTimeout(cloudAutoPushCriticalTimer);
+    cloudAutoPushCriticalTimer = setTimeout(() => {
+      cloudAutoPushCriticalTimer = null;
+      flushCloudAutoPush();
+    }, CLOUD_AUTO_PUSH_CRITICAL_DELAY_MS);
+    return true;
+  }
+
   async function flushCloudAutoPush() {
     if (cloudAutoPushSuppress || !cloudAutoPushPending || !canAutoPushCloudBackup()) {
       renderCloudSyncStatus();
@@ -2096,5 +2121,6 @@
   window.getLatestPublishActivity = getLatestPublishActivity;
   window.recordPublishActivity = recordPublishActivity;
   window.queueCloudAutoPush = queueCloudAutoPush;
+  window.requestImmediateTeamPublish = requestImmediateTeamPublish;
   window.flushCloudAutoPush = flushCloudAutoPush;
 })();

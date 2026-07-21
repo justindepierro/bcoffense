@@ -424,6 +424,7 @@ window.pushCloudBackup
 window.queueCloudAutoPush
 window.queuePlayerLeaderboardSync
 window.queueWorkspaceSyncJob
+window.requestImmediateTeamPublish
 window.refreshPlayerCloudBackup
 window.refreshPlayerLeaderboardSummary
 window.refreshPlayerRelease

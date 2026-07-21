@@ -874,6 +874,15 @@
     if (!terminalFailure && !_readDiagramUploadQueue().length && typeof window.completeWorkspaceSyncJob === "function") {
       window.completeWorkspaceSyncJob("media:diagram-auto-upload", { label: "Diagram saved for players" });
     }
+    // A queued diagram can finish long after the original attach action. Record
+    // its player-visible handoff here so that completion immediately advances
+    // the canonical workspace/release instead of waiting for another edit.
+    if (pushed > 0 && typeof window.recordPlayerPublishStatus === "function") {
+      window.recordPlayerPublishStatus("diagrams", {
+        count: pushed,
+        label: `${pushed} queued diagram${pushed === 1 ? "" : "s"} saved for players`,
+      });
+    }
     const durablePending = window.mediaUploadOutbox?.pending
       ? (await window.mediaUploadOutbox.pending("diagram")).length
       : 0;

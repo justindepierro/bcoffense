@@ -250,6 +250,12 @@ function recordPlayerPublishStatus(kind, details = {}) {
     updatedAt,
   };
   storageManager.set(_playerPublishStatusStorageKey(), status);
+  // The status write above is part of the canonical workspace. Media, quiz,
+  // and script handoffs should reach player devices promptly rather than wait
+  // for the ordinary edit autosave batch.
+  if (typeof window.requestImmediateTeamPublish === "function") {
+    window.requestImmediateTeamPublish(kind);
+  }
   if (typeof window.recordPublishActivity === "function") {
     window.recordPublishActivity({
       id: `player-${kind}-${updatedAt}`,
