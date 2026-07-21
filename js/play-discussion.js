@@ -391,6 +391,8 @@ async function _discLoadBody(playId, playSig, bodyEl) {
 
 function _discRenderBody(container, data, playId, playSig) {
   const { thread, posts, hasMore } = data;
+  const isPresentationDrawer = container.id === "ppDiscDrawerBody";
+  container.classList.toggle("pp-discussion-body", isPresentationDrawer);
   const isLocked = thread?.locked;
   const userRole = _discAuthUser()?.role;
   const isStaff = ["coach", "admin", "assistant", "assistant_coach"].includes(userRole);

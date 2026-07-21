@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (relativePath) => readFile(new URL(relativePath, `file://${root}/`), "utf8");
 
-const [notifications, threads, threadRoute, countRoute, indexRoute, itemRoute, client, discussionClient, indexHtml, cloudSync, playerPublish] = await Promise.all([
+const [notifications, threads, threadRoute, countRoute, indexRoute, itemRoute, client, discussionClient, playbookCss, presentationCss, indexHtml, cloudSync, playerPublish] = await Promise.all([
   source("functions/_lib/d1-notifications.js"),
   source("functions/_lib/d1-threads.js"),
   source("functions/api/threads/[playId].js"),
@@ -21,6 +21,8 @@ const [notifications, threads, threadRoute, countRoute, indexRoute, itemRoute, c
   source("functions/api/notifications/[id].js"),
   source("js/app-notifications.js"),
   source("js/play-discussion.js"),
+  source("css/playbook.css"),
+  source("css/play-presentation.css"),
   source("index.html"),
   source("js/cloud-sync.js"),
   source("js/script-player.js"),
@@ -74,5 +76,10 @@ assert.match(playerPublish, /window\.requestImmediateTeamPublish\(kind\)/, "medi
 assert.match(discussionClient, /role === "assistant_coach"/, "the discussion UI recognizes managed assistant coaches as staff");
 assert.match(discussionClient, /_REACTION_QUICK_PICKER_ORDER/, "the reaction picker keeps the core communication choices prominent");
 assert.match(discussionClient, /disc-picker-more/, "secondary reactions are intentionally tucked behind a More control");
+assert.match(discussionClient, /container\.classList\.toggle\("pp-discussion-body", isPresentationDrawer\)/, "the presentation discussion renderer identifies its dedicated scroll layout");
+assert.match(playbookCss, /\.disc-post \{[\s\S]*grid-template-columns: 28px minmax\(0, 1fr\)/, "discussion posts use a stable avatar-plus-content grid instead of a horizontal reply flex row");
+assert.match(playbookCss, /\.disc-post > \.disc-reply-composer-slot,[\s\S]*grid-column: 2/, "reply composers and reply trees sit below their parent content");
+assert.match(presentationCss, /\.pp-disc-drawer-body\.pp-discussion-body \{[\s\S]*flex-direction: column/, "presentation discussion uses a contained column layout");
+assert.match(presentationCss, /\.pp-disc-drawer-body\.pp-discussion-body \.disc-posts \{[\s\S]*overflow-y: auto/, "only the presentation message list scrolls while the composer remains available");
 
 console.log("discussion notification contract: notification delivery and mobile feed contracts passed");

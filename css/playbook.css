@@ -6761,11 +6761,17 @@ body.shell-tablet #playbook .pb-card-actions {
   margin-bottom: var(--space-sm);
 }
 .disc-post {
-  display: flex;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
   gap: var(--space-xs);
   align-items: flex-start;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
 }
 .disc-post-avatar {
+  grid-column: 1;
+  grid-row: 1;
   flex-shrink: 0;
   width: 28px;
   height: 28px;
@@ -6779,7 +6785,13 @@ body.shell-tablet #playbook .pb-card-actions {
   letter-spacing: 0;
 }
 .disc-post-content {
+  grid-column: 2;
   flex: 1;
+  min-width: 0;
+}
+.disc-post > .disc-reply-composer-slot,
+.disc-post > .disc-replies {
+  grid-column: 2;
   min-width: 0;
 }
 .disc-post-meta {
