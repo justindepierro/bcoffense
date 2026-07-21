@@ -7,6 +7,20 @@
   padding-bottom: var(--space-xs);
 }
 
+/* Tablet tier: keep the print-like grid compact but make toolbar actions
+   comfortable to operate without changing the printed Call Sheet. */
+body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
+  #callsheet
+  :is(.cs-toolbar, .cs-unified-bar) {
+  gap: var(--coach-workbench-toolbar-gap);
+}
+
+body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
+  #callsheet
+  :is(.cs-toolbar .btn, .cs-toggle) {
+  min-height: var(--coach-workbench-control-height);
+}
+
 .callsheet-empty-state {
   display: grid;
   justify-items: center;

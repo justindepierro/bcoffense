@@ -189,6 +189,14 @@
   --coach-grid-surface-muted: var(--color-surface-muted);
   --coach-grid-shadow: none;
 
+  /* Workbench density contract. Desktop uses a compact Coach Grid; tablet
+     trades a little density for touch readability; phone keeps a single
+     primary task and delegates its own card/sheet layout to each surface. */
+  --coach-density-tier: desktop;
+  --coach-workbench-padding: 6px;
+  --coach-workbench-toolbar-gap: 4px;
+  --coach-workbench-control-height: var(--coach-grid-control-height);
+
   /* Shadows — navy tinted */
   --shadow-xs: 0 1px 2px rgba(10, 18, 42, 0.05);
   --shadow-sm:
@@ -522,4 +530,31 @@ textarea:focus {
     --space-lg: 14px;
     --space-xl: 18px;
   }
+}
+
+/* The shell classes are set before the app becomes interactive. Keeping the
+   tier values here makes every workbench inherit the same scale instead of
+   independently guessing at tablet and phone dimensions. */
+:root.shell-tablet.is-mobile-screen {
+  --coach-density-tier: tablet;
+  --coach-workbench-padding: 8px;
+  --coach-workbench-toolbar-gap: 6px;
+  --coach-workbench-control-height: 40px;
+  --coach-grid-gap: 6px;
+  --coach-grid-control-height: 40px;
+  --coach-grid-compact-control-height: 36px;
+  --coach-grid-inline-field-height: 32px;
+  --coach-grid-library-row-height: 50px;
+}
+
+:root.shell-phone.is-mobile-screen {
+  --coach-density-tier: phone;
+  --coach-workbench-padding: 10px;
+  --coach-workbench-toolbar-gap: 8px;
+  --coach-workbench-control-height: 44px;
+  --coach-grid-gap: 8px;
+  --coach-grid-control-height: 44px;
+  --coach-grid-compact-control-height: 40px;
+  --coach-grid-inline-field-height: 40px;
+  --coach-grid-library-row-height: 56px;
 }

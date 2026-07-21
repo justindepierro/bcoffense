@@ -1133,6 +1133,28 @@ function checkResponsiveAuditFixContracts() {
   console.log("responsive audit fixes contract ok");
 }
 
+function checkDensityTierContracts() {
+  const baseCss = read("css/base.css");
+  const scriptCss = read("css/script.css");
+  const gameplanCss = read("css/gameplan.css");
+  const callsheetCss = read("css/callsheet.css");
+  const wristbandCss = read("css/wristband.css");
+
+  if (
+    !/--coach-density-tier:\s*desktop/.test(baseCss) ||
+    !/:root\.shell-tablet\.is-mobile-screen[\s\S]*--coach-density-tier:\s*tablet[\s\S]*--coach-workbench-control-height:\s*40px/.test(baseCss) ||
+    !/:root\.shell-phone\.is-mobile-screen[\s\S]*--coach-density-tier:\s*phone[\s\S]*--coach-workbench-control-height:\s*44px/.test(baseCss) ||
+    !/shell-tablet[\s\S]*#script[\s\S]*min-height:\s*var\(--coach-workbench-control-height\)/.test(scriptCss) ||
+    !/shell-tablet[\s\S]*#gameplan[\s\S]*min-height:\s*var\(--coach-workbench-control-height\)/.test(gameplanCss) ||
+    !/shell-tablet[\s\S]*#callsheet[\s\S]*min-height:\s*var\(--coach-workbench-control-height\)/.test(callsheetCss) ||
+    !/shell-tablet[\s\S]*#wristband[\s\S]*min-height:\s*var\(--coach-workbench-control-height\)/.test(wristbandCss)
+  ) {
+    fail("desktop, tablet, and phone workbench density tiers are not consistently declared");
+  }
+
+  console.log("workbench density tier contracts ok");
+}
+
 function checkScriptCoachRowScanningContract() {
   const render = read("js/script-render.js");
   const css = read("css/script.css");
@@ -5964,6 +5986,7 @@ checkScriptPeriodColorContract();
 checkScriptCallMarkerOrderContract();
 checkCoachControlDismissalContract();
 checkResponsiveAuditFixContracts();
+checkDensityTierContracts();
 checkScriptCoachRowScanningContract();
 checkScriptGamePlanProvenanceContract();
 checkCoachGridThemeContract();

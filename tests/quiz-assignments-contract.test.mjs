@@ -97,7 +97,7 @@ assert(
   "homework notification opens exactly the assigned quiz",
 );
 assert(
-  index.includes("script-quiz-assignments.js?v=1298") && sw.includes("./js/script-quiz-assignments.js"),
+  index.includes("script-quiz-assignments.js?v=1299") && sw.includes("./js/script-quiz-assignments.js"),
   "assignment client is loaded and cached with the app shell",
 );
 

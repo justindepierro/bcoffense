@@ -91,10 +91,11 @@ small, testable releases.
   identity, status, and date remain readable above its actions at 1024px.
   Managed coach and player release checks remain required for media-filter
   truth and role-specific touch targets.
-- [ ] **C-021 · Establish density tiers.** Desktop workbenches use Coach Grid
-  compact density; tablet uses readable compact density; phone uses cards,
-  sheets, and a single-column primary task. Never scale a desktop table down
-  until it merely fits.
+- [~] **C-021 · Establish density tiers.** Release v1299 declares shared
+  desktop, tablet, and phone density tokens. Desktop keeps Coach Grid compact;
+  tablet gives Script, Game Plan, Call Sheet, and Wristband a common readable
+  40px toolbar-control tier; phone preserves its card/sheet, single-primary-
+  task flows. Confirm one iPad/tablet coach session before marking done.
 - [x] **C-022 · Cap nonessential timeline and summary height.** Release v1298
   makes the Practice Timeline a 92px jump rail with a single compact action
   row per period; additional periods remain horizontally scrollable instead of

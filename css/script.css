@@ -4926,6 +4926,20 @@ body[data-auth-role="player"] #script .script-tools-drawer {
   }
 }
 
+/* Tablet tier: the Script keeps its desktop grid, but its command surfaces
+   become finger-readable instead of inheriting the compact desktop height. */
+body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
+  #script
+  :is(.script-header-panel, .script-workbench-controls) {
+  gap: var(--coach-workbench-toolbar-gap);
+}
+
+body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
+  #script
+  :is(.script-workbench-pill, .script-workbench-primary-actions .btn) {
+  min-height: var(--coach-workbench-control-height);
+}
+
 /* Add Period button */
 .btn-add-period {
   min-height: 44px;

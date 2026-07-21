@@ -9,6 +9,20 @@
   overflow: clip;
 }
 
+/* Tablet tier: the physical card layout remains unchanged; only workspace
+   chrome receives the shared readable control size. */
+body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
+  #wristband
+  :is(.wb-page-header, .wb-cmd-bar) {
+  gap: var(--coach-workbench-toolbar-gap);
+}
+
+body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
+  #wristband
+  :is(.wb-cmd-actions > .btn, .wb-cmd-actions > .tool-menu-wrap > .btn, .wb-toolbar-group .btn) {
+  min-height: var(--coach-workbench-control-height);
+}
+
 .wb-page-header-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(180px, max-content);

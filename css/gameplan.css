@@ -24,6 +24,19 @@
   padding: var(--space-md);
 }
 
+/* Tablet tier: preserve the board while making its core controls readable. */
+body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
+  #gameplan
+  :is(.gp-header, .gp-toolbar) {
+  gap: var(--coach-workbench-toolbar-gap);
+}
+
+body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
+  #gameplan
+  :is(.gp-header .btn, .gp-toolbar .btn, .gp-jump-pill) {
+  min-height: var(--coach-workbench-control-height);
+}
+
 .gp-header {
   display: flex;
   flex-wrap: wrap;
