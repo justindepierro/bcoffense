@@ -957,6 +957,76 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
   margin-top: var(--space-sm);
 }
 
+/* Settings is an operations landing page. Keep one authoring surface visible
+   at a time so roster, depth charts, portal branding, and recovery do not
+   compete in a single long scroll. */
+.team-settings-surface-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.team-settings-surface-nav__item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-areas: "icon title" "icon detail";
+  align-items: center;
+  gap: 2px 8px;
+  min-height: 62px;
+  padding: 9px 10px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  box-shadow: var(--shadow-xs);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+}
+
+.team-settings-surface-nav__item > span { grid-area: icon; font-size: 1.1rem; }
+.team-settings-surface-nav__item strong { grid-area: title; font-size: var(--font-size-sm); }
+.team-settings-surface-nav__item small { grid-area: detail; color: var(--color-text-secondary); font-size: var(--font-size-xs); line-height: 1.2; }
+.team-settings-surface-nav__item:hover,
+.team-settings-surface-nav__item:focus-visible,
+.team-settings-surface-nav__item.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-bg-blue-tint);
+  box-shadow: var(--shadow-focus);
+  transform: translateY(-1px);
+}
+
+.team-settings-shell[data-team-settings-surface="home"] .team-settings-topbar,
+.team-settings-shell[data-team-settings-surface="home"] .team-settings-grid,
+.team-settings-shell[data-team-settings-surface="home"] .team-settings-panel--portal {
+  display: none;
+}
+
+.team-settings-shell[data-team-settings-surface="identity"] .team-settings-grid,
+.team-settings-shell[data-team-settings-surface="identity"] .team-settings-panel--portal,
+.team-settings-shell[data-team-settings-surface="roster"] .team-settings-topbar,
+.team-settings-shell[data-team-settings-surface="roster"] .team-settings-panel--packages,
+.team-settings-shell[data-team-settings-surface="roster"] .team-settings-panel--sub-packages,
+.team-settings-shell[data-team-settings-surface="roster"] .team-settings-panel--portal,
+.team-settings-shell[data-team-settings-surface="personnel"] .team-settings-topbar,
+.team-settings-shell[data-team-settings-surface="personnel"] .team-settings-panel--roster,
+.team-settings-shell[data-team-settings-surface="personnel"] .team-settings-panel--portal,
+.team-settings-shell[data-team-settings-surface="portal"] .team-settings-topbar,
+.team-settings-shell[data-team-settings-surface="portal"] .team-settings-grid {
+  display: none;
+}
+
+.team-settings-shell[data-team-settings-surface="roster"] .team-settings-grid,
+.team-settings-shell[data-team-settings-surface="personnel"] .team-settings-grid {
+  display: block;
+}
+
+.team-settings-shell[data-team-settings-surface="roster"] .team-settings-panel,
+.team-settings-shell[data-team-settings-surface="personnel"] .team-settings-panel {
+  width: 100%;
+}
+
 /* Managed coach access modal */
 .coach-access-panel { width: min(1120px, calc(100vw - 32px)); }
 .coach-access-overlay .pa-header { align-items: flex-start; }
@@ -1085,6 +1155,7 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
 /* ── Player Portal settings panel (items 46, 50) ── */
 .team-settings-panel--portal {
   grid-column: 1 / -1;
+  margin-top: var(--space-md);
 }
 
 .team-settings-portal-field {

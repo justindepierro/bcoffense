@@ -17,6 +17,12 @@ const TEAM_ROSTER_POSITION_OPTIONS = [
   { value: "RG", label: "RG" },
   { value: "RT", label: "RT" },
 ];
+const TEAM_SETTINGS_SURFACES = new Set(["home", "identity", "roster", "personnel", "portal"]);
+
+function normalizeTeamSettingsSurface(value = "") {
+  const surface = String(value || "").trim().toLowerCase();
+  return TEAM_SETTINGS_SURFACES.has(surface) ? surface : "home";
+}
 
 function normalizeTeamRosterPosition(value = "") {
   const raw = String(value || "").trim().toUpperCase();
@@ -45,6 +51,7 @@ function buildTeamRosterPositionOptions(selectedValue = "", blankLabel = "Positi
 
 function normalizeTeamSettingsCollapsedState(state = {}) {
   return {
+    surface: normalizeTeamSettingsSurface(state?.surface),
     roster: Boolean(state?.roster),
     packages: Boolean(state?.packages),
     swaps: Boolean(state?.swaps),
@@ -74,6 +81,22 @@ function setTeamSettingsPanelCollapsed(panelKey, isCollapsed) {
   const state = getTeamSettingsCollapsedState();
   state[panelKey] = Boolean(isCollapsed);
   saveTeamSettingsCollapsedState(state);
+}
+
+function setTeamSettingsSurface(surface = "home") {
+  const nextSurface = normalizeTeamSettingsSurface(surface);
+  const state = getTeamSettingsCollapsedState();
+  state.surface = nextSurface;
+  // Opening a workspace should reveal its first useful control instead of
+  // dropping the coach into a second collapsed layer.
+  if (nextSurface === "roster") state.roster = false;
+  if (nextSurface === "personnel") {
+    state.packages = false;
+    state.swaps = false;
+  }
+  if (nextSurface === "portal") state.portal = false;
+  saveTeamSettingsCollapsedState(state);
+  renderTeamSettings();
 }
 
 function getTeamPackageRowStateKey(kind) {
@@ -354,6 +377,16 @@ function syncTeamSettingsDependents() {
 
 function renderTeamSettings() {
   teamSettingsViewState = captureTeamSettingsViewState();
+  const shell = document.querySelector(".team-settings-shell");
+  const settingsState = getTeamSettingsCollapsedState();
+  if (shell) {
+    shell.dataset.teamSettingsSurface = settingsState.surface;
+    shell.querySelectorAll("[data-action=\"setTeamSettingsSurface\"]").forEach((button) => {
+      const active = button.dataset.arg === settingsState.surface;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  }
   const rosterContainer = document.getElementById("teamRosterList");
   const packageContainer = document.getElementById("teamPersonnelPackages");
   const swapContainer = document.getElementById("teamSwapGroups");

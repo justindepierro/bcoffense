@@ -1336,12 +1336,19 @@ function checkCoachGridTeamWorkspaceContract() {
 
   if (
     !/team-settings-shell coach-grid-team-workspace/.test(html) ||
+    !/team-settings-surface-nav/.test(html) ||
+    !/data-action="setTeamSettingsSurface"/.test(html) ||
     !/role="dialog" aria-modal="true" aria-labelledby="playersAdminTitle"/.test(html) ||
     !/Coach Grid: Team Workspace/.test(css) ||
     !/team-roster-grid-head/.test(css) ||
     !/\.pa-list-head/.test(css) ||
     !/--coach-grid-control-height/.test(css) ||
     !/team-roster-grid-head/.test(teamSettings) ||
+    !/const TEAM_SETTINGS_SURFACES/.test(teamSettings) ||
+    !/function setTeamSettingsSurface\(surface = "home"\)/.test(teamSettings) ||
+    !/dataset\.teamSettingsSurface/.test(teamSettings) ||
+    !/\.team-settings-surface-nav/.test(css) ||
+    !/data-team-settings-surface="roster"/.test(css) ||
     !/pa-list-head/.test(playersAdmin) ||
     !/openLayer\(overlay, \{ id: "players-admin", exclusive: false \}\)/.test(playersAdmin) ||
     !/Team Workspace \(Settings \+ Player Accounts\)/.test(theme)

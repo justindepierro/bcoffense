@@ -54,10 +54,11 @@ small, testable releases.
 
 ## P1 — reduce over-nested and duplicate UI
 
-- [ ] **C-010 · Split Settings into an operations landing page.** Keep a
-  compact summary at Settings, then open dedicated full-height surfaces for:
-  `Roster & account links`, `Personnel & sub packages`, `Player portal`,
-  `Coach access`, and `Recovery`. Default only the last-used section open.
+- [x] **C-010 · Split Settings into an operations landing page.** Release
+  v1291 keeps the current data/editor controls intact but replaces the long
+  initial wall with focused `Team identity`, `Roster & links`, `Personnel`,
+  and `Player portal` workspaces. Player accounts, Coach access, and Recovery
+  now have named entry points; the last authoring workspace stays open.
 - [ ] **C-011 · Make roster editing a purposeful table.** Keep the current
   inline editor, but place bulk import, add-player, account linking, position
   tags, and delete actions in a compact command strip and one controlled list.
