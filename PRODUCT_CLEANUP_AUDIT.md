@@ -50,9 +50,10 @@ small, testable releases.
   on opening Player Playbook and reports `Checking diagrams…` rather than a
   device-cache count. Release `v1307` also treats a background release refresh
   as a fresh manifest check, so `Needs Diagram` cannot briefly classify every
-  play as missing after its cache is intentionally cleared. Automated contracts
-  pass; this still needs the final phone, tablet, and managed-coach role check
-  against a live team release.
+  play as missing after its cache is intentionally cleared. Release `v1308`
+  applies the same canonical-only, refresh-safe model to `Has Video`.
+  Automated contracts pass; this still needs the final phone, tablet, and
+  managed-coach role check against a live team release.
 - [x] **C-003 · Establish a single visual status vocabulary.** Release v1290
   makes the header the quiet local-save indicator and reserves the shared dock
   for `Saving`, `Queued`, `Needs attention`, `Offline`, and temporarily

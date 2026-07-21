@@ -202,6 +202,21 @@
     return candidateSigs(play).some((s) => _indexSet.has(s));
   }
 
+  // Player-facing views must use the immutable media ID only. Historic
+  // signature fallbacks remain useful for staff recovery, but can never be a
+  // safe answer for a player filter because older play calls may share text.
+  function hasCanonicalForPlay(play) {
+    if (!_indexSet) return false;
+    const mediaId = typeof getPlayMediaId === "function"
+      ? String(getPlayMediaId(play) || "").trim()
+      : String(play?.mediaId || "").trim();
+    return Boolean(mediaId && _indexSet.has(mediaId));
+  }
+
+  function isIndexLoaded() {
+    return _indexSet instanceof Set;
+  }
+
   function silentMimeType() {
     if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") return "";
     return [
@@ -1221,6 +1236,8 @@
     loadIndex,
     has,
     hasForPlay,
+    hasCanonicalForPlay,
+    isIndexLoaded,
     configureLoopPreviewVideo,
     openViewer: openPlayClipViewer,
   };

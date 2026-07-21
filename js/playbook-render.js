@@ -242,10 +242,8 @@ function renderPlaybook() {
         imageSig: localImageSig || remoteImageSig,
         hasCloudDiagram,
         hasClips:
-          typeof window !== "undefined" &&
-            window.playClips &&
-            typeof window.playClips.hasForPlay === "function"
-            ? window.playClips.hasForPlay(play)
+          typeof _playbookHasClipForCurrentViewer === "function"
+            ? _playbookHasClipForCurrentViewer(play)
             : false,
         signalCount:
           typeof getSignalCountForPlay === "function"
@@ -879,6 +877,9 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
   // the summary and quick filters converge on the same canonical answer.
   if (typeof _warmPlaybookMediaFilterManifests === "function") {
     _warmPlaybookMediaFilterManifests(playerVisiblePlays);
+  }
+  if (isStudyPortal && typeof _warmPlaybookClipFilterIndex === "function") {
+    _warmPlaybookClipFilterIndex();
   }
   const diagramCount =
     typeof _playbookHasPublishedDiagram === "function"

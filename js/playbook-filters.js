@@ -3,6 +3,7 @@ let highlightedWristbandPlayKeys = new Set();
 const playbookMediaFilters = new Set();
 let _playbookMediaFilterRefreshPending = false;
 let _playbookMediaFilterRetryTimer = null;
+let _playbookClipFilterRefreshPending = false;
 
 const PB_PICTURE_FILTER_LABELS = {
   wideZone: "Wide Zone",
@@ -237,6 +238,43 @@ function _playbookHasClip(play) {
   );
 }
 
+function _playbookHasClipForCurrentViewer(play) {
+  if (_isPlayerPlaybookViewer()) {
+    return Boolean(
+      play &&
+      typeof window !== "undefined" &&
+      typeof window.playClips?.hasCanonicalForPlay === "function" &&
+      window.playClips.hasCanonicalForPlay(play)
+    );
+  }
+  return _playbookHasClip(play);
+}
+
+function _warmPlaybookClipFilterIndex() {
+  if (
+    _playbookClipFilterRefreshPending ||
+    !window.playClips ||
+    typeof window.playClips.loadIndex !== "function" ||
+    window.playClips.isIndexLoaded?.()
+  ) return false;
+  _playbookClipFilterRefreshPending = true;
+  window.playClips.loadIndex()
+    .finally(() => {
+      _playbookClipFilterRefreshPending = false;
+      filterPlays();
+    });
+  return true;
+}
+
+function _isPlaybookClipFilterChecking() {
+  return Boolean(
+    typeof window !== "undefined" &&
+    window.playClips &&
+    typeof window.playClips.isIndexLoaded === "function" &&
+    !window.playClips.isIndexLoaded()
+  );
+}
+
 function _playbookHasPlayerNotes(play) {
   return Boolean(play && String(play.playerNotes || "").trim());
 }
@@ -278,6 +316,7 @@ function filterPlays() {
   const hasClipsOnly = playbookMediaFilters.has("hasClips");
   const playerHasDiagramOnly = playerPlaybookStudyFilters.has("diagram");
   const playerNeedsDiagramOnly = playerPlaybookStudyFilters.has("missingDiagram");
+  const playerHasVideoOnly = playerPlaybookStudyFilters.has("video");
   const hasDiagramFilter = (
     hasDiagramOnly ||
     noDiagramOnly ||
@@ -291,6 +330,9 @@ function filterPlays() {
   // player device appear to have only one diagram (or none at all).
   const checkingDiagramFilter =
     hasDiagramFilter && _hasUnresolvedPlaybookMediaManifests(plays);
+  const hasClipFilter = hasClipsOnly || playerHasVideoOnly;
+  if (hasClipFilter) _warmPlaybookClipFilterIndex();
+  const checkingClipFilter = hasClipFilter && _isPlaybookClipFilterChecking();
   const gameWeek = getGameWeek();
   const taggedForOpponent = gamePlanOnly && gameWeek.opponentName && typeof getGamePlanTags === "function"
     ? new Set((getGamePlanTags()[gameWeek.opponentName] || []))
@@ -333,7 +375,7 @@ function filterPlays() {
       if (hasDiagramOnly && !_playbookHasDiagramForCurrentViewer(play)) return false;
       if (noDiagramOnly && _playbookHasDiagramForCurrentViewer(play)) return false;
     }
-    if (hasClipsOnly && !_playbookHasClip(play)) return false;
+    if (hasClipsOnly && !checkingClipFilter && !_playbookHasClipForCurrentViewer(play)) return false;
     if (playerPlaybookStudyFilters.size > 0) {
       // Study filters use the published cloud manifest, not just the diagrams
       // already downloaded to this device. Otherwise a fresh phone only shows
@@ -342,7 +384,7 @@ function filterPlays() {
         if (playerHasDiagramOnly && !_playbookHasDiagramForCurrentViewer(play)) return false;
         if (playerNeedsDiagramOnly && _playbookHasDiagramForCurrentViewer(play)) return false;
       }
-      if (playerPlaybookStudyFilters.has("video") && !_playbookHasClip(play)) return false;
+      if (playerHasVideoOnly && !checkingClipFilter && !_playbookHasClipForCurrentViewer(play)) return false;
       if (playerPlaybookStudyFilters.has("notes") && !_playbookHasPlayerNotes(play)) return false;
     }
     if (activeTypes.size > 0 && !activeTypes.has(play.type)) return false;

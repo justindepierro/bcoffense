@@ -4535,7 +4535,7 @@ function checkPlayerDiagramReadinessContracts() {
     !/function _remoteIdentityKeysForPlay\(play\)/.test(playImages) ||
     !/async function checkRemoteForPlay\(play\)/.test(playImages) ||
     !/async function checkRemoteForPlays\(playsArray\)/.test(playImages) ||
-    !/fetch\("\/images\/batch-manifest"/.test(playImages) ||
+    !/_remoteFetch\("\/images\/batch-manifest"/.test(playImages) ||
     !/checkRemoteForPlays,/.test(playImages) ||
     !/\/images\/manifest\?sig=\$\{encodeURIComponent\(identityKey\)\}/.test(playImages) ||
     !/async function ensureDisplayReadinessForPlay\(play\)/.test(playImages) ||
@@ -5937,6 +5937,7 @@ function checkFunctionShadows() {
 function checkPlayerPlaybookVisibilityContracts() {
   const actions = read("js/playbook-actions.js");
   const filters = read("js/playbook-filters.js");
+  const clips = read("js/play-clips.js");
   const render = read("js/playbook-render.js");
   const editor = read("js/playbook-editor.js");
   const auth = read("js/auth.js");
@@ -5968,6 +5969,17 @@ function checkPlayerPlaybookVisibilityContracts() {
     !/playerNeedsDiagramOnly && _playbookHasDiagramForCurrentViewer\(play\)/.test(filters)
   ) {
     fail("player diagram filters can still be decided by a device-local image cache");
+  }
+
+  if (
+    !/function hasCanonicalForPlay\(play\)/.test(clips) ||
+    !/function isIndexLoaded\(\)/.test(clips) ||
+    !/hasCanonicalForPlay,/.test(clips) ||
+    !/function _playbookHasClipForCurrentViewer\(play\)/.test(filters) ||
+    !/function _warmPlaybookClipFilterIndex\(\)/.test(filters) ||
+    !/playerHasVideoOnly && !checkingClipFilter && !_playbookHasClipForCurrentViewer\(play\)/.test(filters)
+  ) {
+    fail("player video filters are not constrained to the canonical clip index");
   }
 
   if (
