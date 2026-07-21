@@ -5446,6 +5446,17 @@ function checkSignalPlayIntegrationContracts() {
   const clipBatchManifest = read("functions/clips/batch-manifest.js");
 
   if (
+    !/function _sigOpenClipModalItem\(item\)[\s\S]*openLayer\(overlay, \{[\s\S]*id: "signalClipModalOverlay"[\s\S]*scrollElement: "signalClipModalOverlay"[\s\S]*blocking: true/.test(signals) ||
+    !/function closeSignalClipModal\(\)[\s\S]*closeLayer\(overlay\)/.test(signals) ||
+    !/function openSignalUploadModal\(arg\)[\s\S]*openLayer\(overlay, \{[\s\S]*id: "signalUploadModalOverlay"[\s\S]*scrollElement: "signalUploadModalOverlay"[\s\S]*blocking: true/.test(signals) ||
+    !/function closeSignalUploadModal\(\)[\s\S]*closeLayer\(overlay\)/.test(signals) ||
+    !/function _sigRenderUploadReviewModal\(\)[\s\S]*openLayer\(overlay, \{[\s\S]*id: "signalUploadReviewModalOverlay"[\s\S]*scrollElement: "signalUploadReviewModalOverlay"[\s\S]*blocking: true/.test(signals) ||
+    !/function closeSignalUploadReviewModal\(\)[\s\S]*closeLayer\(overlay\)/.test(signals)
+  ) {
+    fail("signal modal layer contract is incomplete");
+  }
+
+  if (
     !/function resolveSignalsForPlay\(play, options = \{\}\)/.test(signals) ||
     !/const includeDraft = opts\.includeDraft === true && _sigCanManage\(\)/.test(signals) ||
     !/categoryFilter\.size && !categoryFilter\.has/.test(signals) ||

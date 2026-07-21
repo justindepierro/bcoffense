@@ -67,8 +67,10 @@ small, testable releases.
 - [~] **C-012 · Consolidate overlay families.** Release v1295 moves the shared
   `Actions` hub and Player Playbook filter sheet onto the common layer helper:
   one scroll owner, backdrop/Escape dismissal, focus capture/return, and a
-  phone-safe sheet. Continue the same pattern through quiz, homework, and
-  media overlays without changing their workflows.
+  phone-safe sheet. Release v1301 brings Signals watch, upload, and upload
+  review dialogs into that same contract; quiz homework already followed it.
+  Continue with the remaining recovery and media-inventory overlays without
+  changing their workflows.
 - [ ] **C-013 · Retire obsolete UI aliases after usage checks.** Start with
   explicit legacy display aliases in Call Sheet and Script. Remove an alias
   only after no renderer, saved setting, print path, or delegated action needs
@@ -122,8 +124,9 @@ small, testable releases.
   boundaries without changing global action names or loading order.
 - [~] **C-031 · Add modal semantics coverage.** Release v1295 establishes the
   contract on the shared Actions hub and Player Playbook filters: dialog
-  semantics, Escape, close control, focus return, and one scroll owner. Add
-  static coverage and migrate the remaining modal families in small slices.
+  semantics, Escape, close control, focus return, and one scroll owner. Release
+  v1301 adds static enforcement for Signals watch/upload/review overlays.
+  Continue migrating the remaining modal families in small slices.
 - [ ] **C-032 · Replace direct `scrollIntoView` where it can move the app
   shell.** Scope script/playbook jumps to their intended scroll container so
   sticky headers and tabs stay aligned.

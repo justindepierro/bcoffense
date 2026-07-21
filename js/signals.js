@@ -671,7 +671,15 @@ function _sigOpenClipModalItem(item) {
       <p class="signals-clip-modal__meta">${escapeHtml(meta)}</p>
     </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "signalClipModalOverlay",
+      scrollElement: "signalClipModalOverlay",
+      blocking: true,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+  }
   _sigConfigureLoopVideos(overlay);
 }
 
@@ -702,7 +710,10 @@ async function _sigOpenFirstClipForSummary(summary) {
 }
 
 function closeSignalClipModal() {
-  document.getElementById("signalClipModalOverlay")?.remove();
+  const overlay = document.getElementById("signalClipModalOverlay");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer(overlay);
+  overlay.remove();
 }
 
 function _sigSummaryFromArg(arg) {
@@ -712,7 +723,10 @@ function _sigSummaryFromArg(arg) {
 }
 
 function closeSignalUploadModal() {
-  document.getElementById("signalUploadModalOverlay")?.remove();
+  const overlay = document.getElementById("signalUploadModalOverlay");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer(overlay);
+  overlay.remove();
 }
 
 function _sigClearPendingUpload() {
@@ -726,7 +740,11 @@ function _sigClearPendingUpload() {
 }
 
 function closeSignalUploadReviewModal() {
-  document.getElementById("signalUploadReviewModalOverlay")?.remove();
+  const overlay = document.getElementById("signalUploadReviewModalOverlay");
+  if (overlay) {
+    if (typeof closeLayer === "function") closeLayer(overlay);
+    overlay.remove();
+  }
   _sigClearPendingUpload();
 }
 
@@ -783,8 +801,18 @@ function _sigRenderUploadReviewModal() {
              <button type="button" class="btn btn-secondary" data-action="resetSignalUploadReview"${isProcessing ? " disabled" : ""}>Choose Different</button>`}
       </footer>
     </div>`;
-  if (!existing) document.body.appendChild(overlay);
-  if (!existing && typeof trapFocus === "function") trapFocus(overlay);
+  if (!existing) {
+    document.body.appendChild(overlay);
+    if (typeof openLayer === "function") {
+      openLayer(overlay, {
+        id: "signalUploadReviewModalOverlay",
+        scrollElement: "signalUploadReviewModalOverlay",
+        blocking: true,
+      });
+    } else if (typeof trapFocus === "function") {
+      trapFocus(overlay);
+    }
+  }
   _sigConfigureLoopVideos(overlay);
 }
 
@@ -937,9 +965,17 @@ function openSignalUploadModal(arg) {
         ${clipCount ? `<button type="button" class="btn btn-secondary" data-action="watchSignalUploadModalClip" data-arg="${escapeAttr(argValue)}">Watch Current</button>` : ""}
         <button type="button" class="btn btn-secondary" data-action="openSignalComponentDetails" data-arg="${escapeAttr(argValue)}">Details</button>
       </footer>
-    </div>`;
+  </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "signalUploadModalOverlay",
+      scrollElement: "signalUploadModalOverlay",
+      blocking: true,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+  }
 }
 
 function openSignalComponentDetails(arg) {
@@ -953,6 +989,7 @@ function openSignalComponentDetails(arg) {
 async function watchSignalUploadModalClip(arg) {
   const summary = _sigSummaryFromArg(arg);
   if (!summary) return;
+  closeSignalUploadModal();
   const opened = await _sigOpenFirstClipForSummary(summary);
   if (!opened && typeof showToast === "function") {
     showToast("No signal clip is ready yet.", { type: "warning", duration: 2200 });
