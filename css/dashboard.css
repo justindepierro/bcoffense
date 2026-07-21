@@ -3776,7 +3776,39 @@
   .q-inbox-panel {
     width: 100vw;
   }
+  .q-inbox-head {
+    padding-top: max(var(--space-md), env(safe-area-inset-top, 0px));
+  }
+  .q-inbox-toolbar {
+    gap: 8px;
+  }
+  .q-inbox-summary {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .q-inbox-summary::-webkit-scrollbar { display: none; }
+  .q-sum-badge { flex: 0 0 auto; min-height: 40px; }
   .q-inbox-controls {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+  .q-inbox-select:first-child {
+    grid-column: 1 / -1;
+  }
+  .q-inbox-select {
+    min-height: 42px;
+    font-size: 16px;
+  }
+  .q-inbox-item {
+    padding: 12px var(--space-md);
+  }
+  .q-inbox-play { max-width: min(58vw, 250px); }
+  .q-inbox-actions {
+    width: 100%;
+    margin-left: 0;
   }
 }

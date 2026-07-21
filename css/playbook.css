@@ -6634,6 +6634,88 @@ body.shell-tablet #playbook .pb-card-actions {
   .disc-section .disc-composer:last-child {
     padding-bottom: max(var(--space-sm), env(safe-area-inset-bottom));
   }
+  .disc-section {
+    padding-inline: var(--space-sm);
+  }
+  .disc-filter-bar,
+  .disc-q-cat-filter-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .disc-filter-bar::-webkit-scrollbar,
+  .disc-q-cat-filter-bar::-webkit-scrollbar { display: none; }
+  .disc-filter-btn,
+  .disc-q-cat-btn {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding-inline: 12px;
+  }
+  .disc-post {
+    gap: 8px;
+  }
+  .disc-post-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+  }
+  .disc-post-meta {
+    gap: 5px;
+    margin-bottom: 4px;
+  }
+  .disc-post-body {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .disc-post-actions {
+    gap: 4px;
+    margin-top: 7px;
+  }
+  .disc-action-btn,
+  .disc-reply-btn,
+  .disc-reward-btn,
+  .disc-more-btn {
+    min-height: 40px;
+  }
+  .disc-composer {
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+  .disc-textarea {
+    min-height: 76px;
+    font-size: 16px;
+    line-height: 1.4;
+  }
+  .disc-composer-actions,
+  .disc-edit-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .disc-type-select,
+  .disc-cat-select {
+    min-height: 40px;
+    font-size: 14px;
+  }
+  .disc-char-count {
+    margin-left: auto;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .disc-composer-actions .btn,
+  .disc-edit-actions .btn {
+    min-height: 40px;
+  }
+  .disc-more-menu {
+    z-index: calc(var(--z-modal) + 2);
+    min-width: 156px;
+  }
+  .disc-replies {
+    margin-left: 8px;
+    padding-left: 8px;
+  }
 }
 .pb-wf-s-header {
   display: flex;

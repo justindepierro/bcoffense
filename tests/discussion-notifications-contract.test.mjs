@@ -12,13 +12,14 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (relativePath) => readFile(new URL(relativePath, `file://${root}/`), "utf8");
 
-const [notifications, threadRoute, countRoute, indexRoute, itemRoute, client] = await Promise.all([
+const [notifications, threadRoute, countRoute, indexRoute, itemRoute, client, indexHtml] = await Promise.all([
   source("functions/_lib/d1-notifications.js"),
   source("functions/api/threads/[playId].js"),
   source("functions/api/notifications/count.js"),
   source("functions/api/notifications/index.js"),
   source("functions/api/notifications/[id].js"),
   source("js/app-notifications.js"),
+  source("index.html"),
 ]);
 
 assert.match(
@@ -48,5 +49,12 @@ for (const route of [countRoute, indexRoute, itemRoute]) {
 assert.match(client, /player_comment: "💬"/, "the bell has an icon for player comments");
 assert.match(client, /player_question: "❓"/, "the bell has an icon for player questions");
 assert.match(client, /player_reply: "↩️"/, "the bell has an icon for player replies");
+assert.match(client, /const _NOTIF_CONVERSATION_TYPES = new Set/, "discussion alerts are explicitly classified as conversation work");
+assert.match(client, /function _notifGroupItems\(items\)/, "repeated practice publish receipts are grouped in the feed");
+assert.match(client, /function setNotifFilter\(filter = "all"\)/, "the mobile drawer can focus on messages or practice work");
+assert.match(client, /Promise\.all\(notifIds\.map/, "opening a grouped update acknowledges every collapsed receipt");
+assert.match(notifications, /script_published: 24 \* 60 \* 60/, "script publish alerts coalesce for a full day");
+assert.match(notifications, /media_update: 24 \* 60 \* 60/, "media alerts coalesce for a full day");
+assert.match(indexHtml, /class="notif-filter-bar"/, "notification filters are present in the shell");
 
-console.log("discussion notification contract: 11 assertions passed");
+console.log("discussion notification contract: notification delivery and mobile feed contracts passed");

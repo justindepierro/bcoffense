@@ -11,9 +11,9 @@ const NOTIF_EXPIRY_DAYS = 30;
 // Team-wide publish events can be emitted several times while a coach saves a
 // script and its media. These are useful as one current alert, not dozens.
 const TEAM_UPDATE_DEDUPE_WINDOWS = Object.freeze({
-  media_update: 6 * 60 * 60,
-  script_published: 30 * 60,
-  new_quiz: 30 * 60,
+  media_update: 24 * 60 * 60,
+  script_published: 24 * 60 * 60,
+  new_quiz: 24 * 60 * 60,
   team_announcement: 10 * 60,
 });
 

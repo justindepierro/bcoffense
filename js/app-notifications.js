@@ -15,6 +15,8 @@ let _notifHasMore = false;
 let _notifLastCheckedAt = "";
 let _notifLastError = "";
 let _notifLastUnread = 0;
+let _notifItems = [];
+let _notifFilter = "all";
 const _notifRecentBroadcasts = new Map();
 const NOTIF_POLL_INTERVAL_MS = 60_000; // 60 s
 const NOTIF_BROADCAST_DEDUPE_MS = 45_000;
@@ -110,6 +112,9 @@ async function openNotifDrawer() {
   const backdrop = document.getElementById("notifBackdrop");
   _notifDrawerOpen = true;
   _notifOffset = 0;
+  _notifItems = [];
+  _notifFilter = "all";
+  _syncNotifFilterButtons();
   if (backdrop) backdrop.hidden = false;
   drawer.classList.add("is-open");
   drawer.setAttribute("aria-hidden", "false");
@@ -179,30 +184,8 @@ async function _loadNotifications(append = false) {
     _notifHasMore = Boolean(data.hasMore || data.has_more);
     _notifOffset += notifications.length;
 
-    if (!append) {
-      if (notifications.length === 0) {
-        listEl.innerHTML = _notifStateHtml({
-          icon: "✅",
-          title: _isPlayerNotificationUser() ? "No new practice updates" : "All caught up",
-          body: _isPlayerNotificationUser()
-            ? "When coach publishes a practice, replies to a question, or sends a quiz, it will land here."
-            : "New updates will show here when there is something to review.",
-          action: _isPlayerNotificationUser() ? "showTab" : "",
-          actionArg: _isPlayerNotificationUser() ? "script" : "",
-          actionLabel: _isPlayerNotificationUser() ? "Open Practice" : "",
-          tone: "empty",
-        });
-      } else {
-        listEl.innerHTML = notifications.map(_notifItemHtml).join("");
-      }
-    } else {
-      listEl.querySelector(".notif-loading")?.remove();
-      notifications.forEach((n) => {
-        const tmp = document.createElement("div");
-        tmp.innerHTML = _notifItemHtml(n);
-        if (tmp.firstElementChild) listEl.appendChild(tmp.firstElementChild);
-      });
-    }
+    _notifItems = append ? [..._notifItems, ...notifications] : notifications;
+    _renderNotificationList(listEl);
 
     // Update unread badge from fresh count
     _setNotificationState({
@@ -272,6 +255,78 @@ function _isPlayerNotificationUser() {
   return document.body?.dataset?.authRole === "player";
 }
 
+// Conversations are always shown one-by-one. Mechanical publish activity is
+// grouped so one busy save session cannot bury a player asking for help.
+const _NOTIF_CONVERSATION_TYPES = new Set([
+  "player_comment", "player_question", "player_reply", "coach_reply",
+  "question_resolved", "official_answer", "reply", "visual_reply",
+]);
+const _NOTIF_PRACTICE_TYPES = new Set([
+  "script_published", "new_quiz", "quiz_homework", "media_update", "team_announcement",
+]);
+const _NOTIF_GROUPABLE_TYPES = new Set(["script_published", "new_quiz", "media_update"]);
+
+function _notifBucket(item) {
+  if (_NOTIF_CONVERSATION_TYPES.has(item?.type)) return "conversation";
+  if (_NOTIF_PRACTICE_TYPES.has(item?.type)) return "practice";
+  return "other";
+}
+
+function _notifGroupItems(items) {
+  const grouped = [];
+  const byKey = new Map();
+  for (const item of items) {
+    const key = _NOTIF_GROUPABLE_TYPES.has(item?.type)
+      ? `${item.type}|${item.deepLink || ""}`
+      : "";
+    const existing = key ? byKey.get(key) : null;
+    if (existing) {
+      existing.notificationIds.push(String(item.id));
+      existing.groupCount += 1;
+      // A grouped card is unread until every underlying receipt is read.
+      // That keeps a quiet older update from disappearing behind a newer read one.
+      existing.read = Boolean(existing.read && item.read);
+      continue;
+    }
+    const next = { ...item, notificationIds: [String(item.id)], groupCount: 1 };
+    grouped.push(next);
+    if (key) byKey.set(key, next);
+  }
+  return grouped;
+}
+
+function _syncNotifFilterButtons() {
+  document.querySelectorAll(".notif-filter-btn").forEach((btn) => {
+    const active = String(btn.dataset.arg || "all") === _notifFilter;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
+
+function _renderNotificationList(listEl = document.getElementById("notifList")) {
+  if (!listEl) return;
+  const notifications = _notifGroupItems(_notifItems)
+    .filter((item) => _notifFilter === "all" || _notifBucket(item) === _notifFilter);
+  if (!notifications.length) {
+    const hasItems = _notifItems.length > 0;
+    listEl.innerHTML = _notifStateHtml({
+      icon: hasItems ? "🗂️" : "✅",
+      title: hasItems ? "Nothing in this view" : (_isPlayerNotificationUser() ? "No new practice updates" : "All caught up"),
+      body: hasItems
+        ? "Try All to see every update."
+        : (_isPlayerNotificationUser()
+          ? "When coach publishes a practice, replies to a question, or sends a quiz, it will land here."
+          : "New messages and practice updates will show here when there is something to review."),
+      action: hasItems ? "setNotifFilter" : (_isPlayerNotificationUser() ? "showTab" : ""),
+      actionArg: hasItems ? "all" : (_isPlayerNotificationUser() ? "script" : ""),
+      actionLabel: hasItems ? "Show all" : (_isPlayerNotificationUser() ? "Open Practice" : ""),
+      tone: "empty",
+    });
+    return;
+  }
+  listEl.innerHTML = notifications.map(_notifItemHtml).join("");
+}
+
 function _notifStateHtml({ icon, title, body, action = "", actionArg = "", actionLabel = "", tone = "" }) {
   const actionAttrs = action
     ? ` data-action="${escapeHtml(action)}"${actionArg ? ` data-arg="${escapeHtml(actionArg)}"` : ""}`
@@ -292,15 +347,23 @@ function _notifItemHtml(n) {
   const icon = _NOTIF_ICONS[n.type] || "🔔";
   const unreadCls = n.read ? "" : " notif-item--unread";
   const typeCls = n.type ? ` notif-item--${escapeHtml(String(n.type).replace(/[^a-z0-9_-]/gi, "-"))}` : "";
+  const notificationIds = Array.isArray(n.notificationIds) && n.notificationIds.length
+    ? n.notificationIds
+    : [n.id];
   const link = n.deepLink
-    ? ` data-action="openNotifDeepLink" data-arg="${escapeHtml(n.id)}::${escapeHtml(n.deepLink)}"`
+    ? ` data-action="openNotifDeepLink" data-arg="${escapeHtml(notificationIds.join(","))}::${escapeHtml(n.deepLink)}"`
+    : "";
+  const grouped = Number(n.groupCount || 1) > 1;
+  const groupLabel = grouped
+    ? `<div class="notif-item-group">${escapeHtml(String(n.groupCount))} similar practice updates</div>`
     : "";
   return (
-    `<li class="notif-item${unreadCls}${typeCls}" id="notif-${escapeHtml(n.id)}"${link} role="button" tabindex="0">` +
+    `<li class="notif-item${unreadCls}${typeCls}${grouped ? " notif-item--grouped" : ""}" id="notif-${escapeHtml(n.id)}"${link} role="button" tabindex="0">` +
     `<div class="notif-item-icon" aria-hidden="true">${icon}</div>` +
     `<div class="notif-item-content">` +
     `<div class="notif-item-title">${escapeHtml(n.title)}</div>` +
     (n.body ? `<div class="notif-item-body">${escapeHtml(n.body)}</div>` : "") +
+    groupLabel +
     `<div class="notif-item-time">${escapeHtml(_notifRelTime(n.createdAt))}</div>` +
     `</div>` +
     (n.read ? "" : `<span class="notif-unread-dot" aria-hidden="true"></span>`) +
@@ -313,16 +376,20 @@ function _notifItemHtml(n) {
 async function openNotifDeepLink(arg) {
   const sep = String(arg || "").indexOf("::");
   if (sep < 0) return;
-  const notifId = arg.slice(0, sep);
+  const notifIds = arg.slice(0, sep).split(",").map((id) => id.trim()).filter(Boolean);
   const deepLink = arg.slice(sep + 2);
 
-  // Mark read optimistically
-  const itemEl = document.getElementById(`notif-${notifId}`);
+  // A grouped practice item may represent several noisy publish receipts.
+  // Opening it acknowledges each receipt, while conversation alerts always
+  // remain individual and therefore never get collapsed.
+  const itemEl = document.getElementById(`notif-${notifIds[0] || ""}`);
   if (itemEl) {
     itemEl.classList.remove("notif-item--unread");
     itemEl.querySelector(".notif-unread-dot")?.remove();
   }
-  fetch(`/api/notifications/${encodeURIComponent(notifId)}`, { method: "PATCH" }).catch(() => { });
+  Promise.all(notifIds.map((notifId) =>
+    fetch(`/api/notifications/${encodeURIComponent(notifId)}`, { method: "PATCH" }).catch(() => null),
+  )).finally(() => _pollUnreadCount({ render: false }));
 
   closeNotifDrawer();
 
@@ -394,7 +461,14 @@ async function loadMoreNotifs() {
 
 function retryNotifs() {
   _notifOffset = 0;
+  _notifItems = [];
   _loadNotifications(false);
+}
+
+function setNotifFilter(filter = "all") {
+  _notifFilter = ["all", "conversation", "practice"].includes(filter) ? filter : "all";
+  _syncNotifFilterButtons();
+  _renderNotificationList();
 }
 
 async function openPlayerNotificationSettings() {
