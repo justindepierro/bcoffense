@@ -4305,6 +4305,16 @@ function checkWorkspaceSyncContracts() {
   ) {
     fail("automatic diagram saving and media readiness diagnostics are incomplete");
   }
+  if (
+    !/function _piOpenOverlayLayer\(overlay\)[\s\S]*openLayer\(overlay, \{[\s\S]*id: overlay\.id[\s\S]*scrollElement: overlay\.id[\s\S]*blocking: true/.test(playImages) ||
+    !/function _piCloseOverlayLayer\(id, options = \{\}\)[\s\S]*closeLayer\(overlay, options\)/.test(playImages) ||
+    !/window\.openPlayDiagramHealth = async function \(\) \{[\s\S]*_piCloseOverlayLayer\("publishMediaOverlay", \{ returnFocus: false \}\)[\s\S]*_piCloseOverlayLayer\("playDiagramHealthOverlay", \{ returnFocus: false \}\)[\s\S]*_piOpenOverlayLayer\(overlay\)/.test(playImages) ||
+    !/window\.closePlayDiagramHealth = function \(\) \{[\s\S]*_piCloseOverlayLayer\("playDiagramHealthOverlay"\)/.test(playImages) ||
+    !/window\.openPublishMediaModal = async function \(\) \{[\s\S]*_piCloseOverlayLayer\("playDiagramHealthOverlay", \{ returnFocus: false \}\)[\s\S]*_piCloseOverlayLayer\("publishMediaOverlay", \{ returnFocus: false \}\)[\s\S]*_piOpenOverlayLayer\(overlay\)/.test(playImages) ||
+    !/window\.closePublishMedia = function \(\) \{[\s\S]*_piCloseOverlayLayer\("publishMediaOverlay"\)/.test(playImages)
+  ) {
+    fail("media publish modal layer contract is incomplete");
+  }
   if (/data-action="syncPlayImagesToCloud"/.test(html)) {
     fail("advanced diagram recovery upload should not appear in primary Playbook chrome");
   }

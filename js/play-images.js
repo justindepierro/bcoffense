@@ -46,6 +46,27 @@
   // turns into hundreds of simultaneous per-play requests.
   const REMOTE_MANIFEST_BATCH_CONCURRENCY = 3;
   const REMOTE_MANIFEST_FALLBACK_CONCURRENCY = 4;
+
+  function _piOpenOverlayLayer(overlay) {
+    document.body.appendChild(overlay);
+    if (typeof openLayer === "function") {
+      openLayer(overlay, {
+        id: overlay.id,
+        scrollElement: overlay.id,
+        blocking: true,
+      });
+    } else if (typeof trapFocus === "function") {
+      trapFocus(overlay);
+    }
+  }
+
+  function _piCloseOverlayLayer(id, options = {}) {
+    const overlay = document.getElementById(id);
+    if (!overlay) return;
+    if (typeof closeLayer === "function") closeLayer(overlay, options);
+    overlay.remove();
+  }
+
   const PLAY_IMAGE_SOURCE_FIELDS = [
     "type",
     "personnel",
@@ -2607,7 +2628,8 @@
   }
 
   window.openPlayDiagramHealth = async function () {
-    document.getElementById("playDiagramHealthOverlay")?.remove();
+    _piCloseOverlayLayer("publishMediaOverlay", { returnFocus: false });
+    _piCloseOverlayLayer("playDiagramHealthOverlay", { returnFocus: false });
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay visible";
     overlay.id = "playDiagramHealthOverlay";
@@ -2627,8 +2649,7 @@
           <button type="button" class="btn btn-sm" data-action="closePlayDiagramHealth">Done</button>
         </div>
       </div>`;
-    document.body.appendChild(overlay);
-    if (typeof trapFocus === "function") trapFocus(overlay);
+    _piOpenOverlayLayer(overlay);
     try {
       const report = await buildPlayDiagramHealthReport();
       const body = document.getElementById("playDiagramHealthBody");
@@ -2642,7 +2663,7 @@
   };
 
   window.closePlayDiagramHealth = function () {
-    document.getElementById("playDiagramHealthOverlay")?.remove();
+    _piCloseOverlayLayer("playDiagramHealthOverlay");
   };
 
   window.openPlayDiagramHealthEdit = function (index) {
@@ -2665,7 +2686,8 @@
   }
 
   window.openPublishMediaModal = async function () {
-    document.getElementById("publishMediaOverlay")?.remove();
+    _piCloseOverlayLayer("playDiagramHealthOverlay", { returnFocus: false });
+    _piCloseOverlayLayer("publishMediaOverlay", { returnFocus: false });
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay visible";
     overlay.id = "publishMediaOverlay";
@@ -2686,8 +2708,7 @@
           <button type="button" class="btn btn-sm" data-action="closePublishMedia">Done</button>
         </div>
       </div>`;
-    document.body.appendChild(overlay);
-    if (typeof trapFocus === "function") trapFocus(overlay);
+    _piOpenOverlayLayer(overlay);
     try {
       await _renderPublishMediaModalBody();
     } catch (err) {
@@ -2699,7 +2720,7 @@
   };
 
   window.closePublishMedia = function () {
-    document.getElementById("publishMediaOverlay")?.remove();
+    _piCloseOverlayLayer("publishMediaOverlay");
   };
 
   window.publishPlayerMedia = async function () {

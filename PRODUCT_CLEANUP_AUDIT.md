@@ -64,14 +64,16 @@ small, testable releases.
   list. Link health, account state, and homework groups are visible at a glance;
   bulk import/add tools stay collapsed and one player expands for editing only
   when needed.
-- [~] **C-012 · Consolidate overlay families.** Release v1295 moves the shared
+- [x] **C-012 · Consolidate overlay families.** Release v1295 moves the shared
   `Actions` hub and Player Playbook filter sheet onto the common layer helper:
   one scroll owner, backdrop/Escape dismissal, focus capture/return, and a
   phone-safe sheet. Release v1301 brings Signals watch, upload, and upload
   review dialogs into that same contract; quiz homework already followed it.
   Release v1302 adds the Media Inventory and Archived Diagram Recovery dialogs,
-  including a clean handoff from the audit into recovery. Continue with the
-  remaining recovery and media-publish overlays without changing workflows.
+  including a clean handoff from the audit into recovery. Release v1303
+  completes this family with Diagram Health and Publish Media. The daily
+  authoring, quiz/homework, and media workflows now share one layer contract
+  without changing their underlying recovery or publishing behavior.
 - [ ] **C-013 · Retire obsolete UI aliases after usage checks.** Start with
   explicit legacy display aliases in Call Sheet and Script. Remove an alias
   only after no renderer, saved setting, print path, or delegated action needs
@@ -127,8 +129,9 @@ small, testable releases.
   contract on the shared Actions hub and Player Playbook filters: dialog
   semantics, Escape, close control, focus return, and one scroll owner. Release
   v1301 adds static enforcement for Signals watch/upload/review overlays;
-  v1302 adds Media Inventory and Archived Diagram Recovery coverage. Continue
-  migrating the remaining modal families in small slices.
+  v1302 adds Media Inventory and Archived Diagram Recovery coverage; and v1303
+  adds Diagram Health and Publish Media. Continue migrating the remaining
+  specialized modal families in small slices.
 - [ ] **C-032 · Replace direct `scrollIntoView` where it can move the app
   shell.** Scope script/playbook jumps to their intended scroll container so
   sticky headers and tabs stay aligned.
