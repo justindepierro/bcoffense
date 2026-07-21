@@ -213,6 +213,14 @@ function _warmPlaybookMediaFilterManifests(playList) {
   return true;
 }
 
+function _hasUnresolvedPlaybookMediaManifests(playList) {
+  if (typeof getPlayMediaId !== "function") return false;
+  return (Array.isArray(playList) ? playList : []).some((play) => {
+    const mediaId = String(getPlayMediaId(play) || "").trim();
+    return mediaId && !_playbookMediaFilterChecks.has(mediaId);
+  });
+}
+
 function togglePlaybookMediaFilter(value) {
   const key = String(value || "");
   if (!key) return;
@@ -278,13 +286,19 @@ function filterPlays() {
   const hasClipsOnly = playbookMediaFilters.has("hasClips");
   const playerHasDiagramOnly = playerPlaybookStudyFilters.has("diagram");
   const playerNeedsDiagramOnly = playerPlaybookStudyFilters.has("missingDiagram");
-  const checkingDiagramFilter = (
+  const hasDiagramFilter = (
     hasDiagramOnly ||
     noDiagramOnly ||
     playerHasDiagramOnly ||
     playerNeedsDiagramOnly
-  )
-    && _warmPlaybookMediaFilterManifests(plays);
+  );
+  if (hasDiagramFilter) _warmPlaybookMediaFilterManifests(plays);
+  // Keep the full, safe list visible while any requested Cloudflare answer is
+  // still in flight. Previously a second render could see the batch already
+  // pending and prematurely filter from a partial cache, which made a fresh
+  // player device appear to have only one diagram (or none at all).
+  const checkingDiagramFilter =
+    hasDiagramFilter && _hasUnresolvedPlaybookMediaManifests(plays);
   const gameWeek = getGameWeek();
   const taggedForOpponent = gamePlanOnly && gameWeek.opponentName && typeof getGamePlanTags === "function"
     ? new Set((getGamePlanTags()[gameWeek.opponentName] || []))

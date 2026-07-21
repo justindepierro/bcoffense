@@ -874,15 +874,23 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
     typeof isPlayHiddenFromPlayers === "function"
       ? plays.filter((play) => !isPlayHiddenFromPlayers(play))
       : plays;
-
+  // Player readiness is a Cloudflare release concern, never a device-cache
+  // concern. Start the bounded manifest warm-up when this surface opens so
+  // the summary and quick filters converge on the same canonical answer.
+  if (typeof _warmPlaybookMediaFilterManifests === "function") {
+    _warmPlaybookMediaFilterManifests(playerVisiblePlays);
+  }
   const diagramCount =
-    typeof _playbookHasStoredDiagram === "function"
-      ? playerVisiblePlays.filter((play) => _playbookHasStoredDiagram(play)).length
+    typeof _playbookHasPublishedDiagram === "function"
+      ? playerVisiblePlays.filter((play) => _playbookHasPublishedDiagram(play)).length
       : 0;
+  const diagramsChecking =
+    typeof _hasUnresolvedPlaybookMediaManifests === "function" &&
+    _hasUnresolvedPlaybookMediaManifests(playerVisiblePlays);
   const notesCount = playerVisiblePlays.filter((play) => String(play.playerNotes || "").trim()).length;
   const stats = [
     `${filteredCount} showing`,
-    `${diagramCount} diagrams ready`,
+    diagramsChecking ? "Checking diagrams…" : `${diagramCount} diagrams ready`,
     `${notesCount} coach notes`,
     loadedScriptStats
       ? `${loadedScriptStats.playCount} practice plays loaded`

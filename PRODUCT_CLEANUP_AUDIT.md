@@ -46,8 +46,11 @@ small, testable releases.
   not the device cache. Release `ff132f4` hardens the request path; release
   `v1305` additionally separates player/managed-coach diagram filtering from
   local IndexedDB blobs, so only a signed Cloudflare manifest can mark a
-  player-visible play diagram-ready. Automated contracts pass; this still
-  needs a live role-by-role check.
+  player-visible play diagram-ready. Release `v1306` warms that same manifest
+  on opening Player Playbook, reports `Checking diagrams…` rather than a
+  device-cache count, and never applies a diagram filter from a partial batch.
+  Automated contracts pass; this still needs the final phone, tablet, and
+  managed-coach role check against a live team release.
 - [x] **C-003 · Establish a single visual status vocabulary.** Release v1290
   makes the header the quiet local-save indicator and reserves the shared dock
   for `Saving`, `Queued`, `Needs attention`, `Offline`, and temporarily

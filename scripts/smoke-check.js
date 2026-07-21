@@ -5962,6 +5962,8 @@ function checkPlayerPlaybookVisibilityContracts() {
     !/function _playbookHasPublishedDiagram\(play\)/.test(filters) ||
     !/function _playbookHasDiagramForCurrentViewer\(play\)/.test(filters) ||
     !/_isPlayerPlaybookViewer\(\)\s*\?\s*_playbookHasPublishedDiagram\(play\)/.test(filters) ||
+    !/function _hasUnresolvedPlaybookMediaManifests\(playList\)/.test(filters) ||
+    !/const checkingDiagramFilter\s*=\s*hasDiagramFilter\s*&&\s*_hasUnresolvedPlaybookMediaManifests\(plays\)/.test(filters) ||
     !/playerHasDiagramOnly && !_playbookHasDiagramForCurrentViewer\(play\)/.test(filters) ||
     !/playerNeedsDiagramOnly && _playbookHasDiagramForCurrentViewer\(play\)/.test(filters)
   ) {
@@ -5972,7 +5974,9 @@ function checkPlayerPlaybookVisibilityContracts() {
     !/data-action="togglePlayPlayerVisibility"/.test(render) ||
     !/pb-player-visibility-btn/.test(render) ||
     !/pb-card-action--visibility/.test(render) ||
-    !/playerVisiblePlays/.test(render)
+    !/playerVisiblePlays/.test(render) ||
+    !/_playbookHasPublishedDiagram\(play\)/.test(render) ||
+    !/Checking diagrams/.test(render)
   ) {
     fail("player playbook visibility render controls or counts are missing");
   }
