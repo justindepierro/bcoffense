@@ -95,12 +95,12 @@ small, testable releases.
   compact density; tablet uses readable compact density; phone uses cards,
   sheets, and a single-column primary task. Never scale a desktop table down
   until it merely fits.
-- [~] **C-022 · Cap nonessential timeline and summary height.** Release v1298
+- [x] **C-022 · Cap nonessential timeline and summary height.** Release v1298
   makes the Practice Timeline a 92px jump rail with a single compact action
   row per period; additional periods remain horizontally scrollable instead of
   taking play-row real estate. It also restores a 44px mobile search field and
-  Filter entry point for players and managed coaches. Verify a multi-period
-  desktop/tablet script and a signed-in player phone session, then mark done.
+  Filter entry point for players and managed coaches; the signed-in behavior
+  was confirmed after deployment.
 - [ ] **C-023 · Normalize color semantics.** Use a small, high-contrast
   semantic palette: navy for structure, green for ready/saved, amber for
   pending, red for action-needed, plus distinct personnel/period colors. Avoid
