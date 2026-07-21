@@ -4094,11 +4094,25 @@ function checkWorkspaceSyncContracts() {
     ".workspace-sync-dock--syncing",
     ".workspace-sync-dock--saved",
     ".workspace-sync-dock--error",
-    "body[data-auth-role=\"player\"] .workspace-sync-dock",
+    ".workspace-sync-dock--offline",
+    ".workspace-sync-dock--unavailable",
     "@keyframes workspaceSyncSpin",
   ].forEach((token) => {
     if (!layout.includes(token)) {
       fail(`workspace sync dock style missing ${token}`);
+    }
+  });
+
+  [
+    "function checkWorkspaceSyncConnectivity(opts = {})",
+    "fetch(\"/auth/me\"",
+    "reachability: \"unknown\"",
+    "return \"offline\"",
+    "return \"unavailable\"",
+    "getConnectivity: getWorkspaceSyncConnectivity",
+  ].forEach((token) => {
+    if (!workspaceSync.includes(token)) {
+      fail(`workspace connectivity contract missing ${token}`);
     }
   });
 
@@ -4117,7 +4131,6 @@ function checkWorkspaceSyncContracts() {
     "window.failWorkspaceSyncJob(key, err",
     "setWorkspaceSyncStatus(\"cloud\", \"syncing\"",
     "setWorkspaceSyncStatus(\"cloud\", \"queued\"",
-    "setWorkspaceSyncStatus(\"cloud\", \"error\"",
     "setWorkspaceSyncStatus(\"cloud\", \"synced\"",
     "async function publishTeamWorkspace(opts = {})",
     "async function buildTeamPublishReadinessReport(pushResult = {})",
@@ -4137,6 +4150,10 @@ function checkWorkspaceSyncContracts() {
       fail(`workspace sync cloud/media contract missing ${token}`);
     }
   });
+
+  if (!/setWorkspaceSyncStatus\(\s*"cloud",\s*retrying \? "queued" : "error"/.test(cloudSync)) {
+    fail("workspace sync cloud/media contract missing retry-aware cloud error state");
+  }
 
   if (
     /setWorkspaceSyncStatus\("media", hasIssues \? "error"/.test(cloudSync) ||

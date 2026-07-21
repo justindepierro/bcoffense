@@ -1376,10 +1376,16 @@
       }
       return { ...result, readiness };
     } catch (err) {
-      _cloudFailJob(publishJobKey, err, {
-        label: "Publish needs attention",
-        retry: () => publishTeamWorkspace(opts),
-      });
+      // Automatic work is retried by flushCloudAutoPush. Do not briefly pin
+      // the red failure dock or raise a toast while that retry is still in
+      // flight; it teaches coaches to intervene when the system is handling
+      // the transient network issue itself.
+      if (!opts.auto) {
+        _cloudFailJob(publishJobKey, err, {
+          label: "Publish needs attention",
+          retry: () => publishTeamWorkspace(opts),
+        });
+      }
       recordPublishActivity({
         result: "failed",
         domains: getDirtyCloudKeyLabels(),
@@ -1610,10 +1616,17 @@
       return;
     }
     if (cloudAutoPushLastError) {
-      statusEl.textContent = `Publish needs attention - ${cloudAutoPushLastError}`;
+      const retrying = cloudAutoPushPending && cloudAutoPushRetryCount <= CLOUD_AUTO_PUSH_MAX_RETRIES;
+      statusEl.textContent = retrying
+        ? "Team sync retrying automatically..."
+        : `Publish needs attention - ${cloudAutoPushLastError}`;
       statusEl.className = "cloud-sync-status cloud-sync-status-warn";
       if (typeof window.setWorkspaceSyncStatus === "function") {
-        window.setWorkspaceSyncStatus("cloud", "error", { label: "Publish needs attention" });
+        window.setWorkspaceSyncStatus(
+          "cloud",
+          retrying ? "queued" : "error",
+          { label: retrying ? "Team sync retrying automatically" : "Publish needs attention" },
+        );
       }
       return;
     }
@@ -1736,14 +1749,17 @@
       cloudAutoPushPending = true;
       cloudAutoPushLastError = err.message || "Unknown error";
       cloudAutoPushRetryCount += 1;
-      _cloudFailJob(cloudJobKey, err, { label: "Publish needs attention" });
-      showToast(`Publish needs attention: ${cloudAutoPushLastError}`, {
-        type: "warning",
-        duration: 6000,
-      });
       if (cloudAutoPushRetryCount <= CLOUD_AUTO_PUSH_MAX_RETRIES) {
         cloudAutoPushFirstQueuedAt = Date.now();
+        _cloudQueueJob("cloud", "auto-push", {
+          queuedLabel: "Team sync retrying automatically",
+          runningLabel: "Publishing team update...",
+          doneLabel: "Team update published",
+          errorLabel: "Publish needs attention",
+        });
         scheduleCloudAutoPushTimer(CLOUD_AUTO_PUSH_RETRY_MS);
+      } else {
+        _cloudFailJob(cloudJobKey, err, { label: "Publish needs attention" });
       }
       return false;
     } finally {

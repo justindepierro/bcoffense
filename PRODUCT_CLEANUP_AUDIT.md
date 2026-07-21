@@ -34,20 +34,23 @@ small, testable releases.
 
 ## P0 — correctness and trust
 
-- [ ] **C-001 · Validate the live offline state.** The live admin tab showed
-  `You’re offline` while the app shell remained open. Reproduce with a normal
-  connection and verify that `navigator.onLine`, workspace sync reachability,
-  and the visible status agree. Never let a stale/offline state hide media,
-  filter results, or save confidence.
+- [~] **C-001 · Validate the live offline state.** The old full-width message
+  relied only on `navigator.onLine`. Release v1290 replaces it with an
+  authenticated `/auth/me` reachability probe and a shared status dock, so
+  browser-offline and team-service-unavailable states are now distinct. Do one
+  live desktop + phone confirmation after deployment; never let a stale state
+  hide media, filter results, or save confidence.
 - [ ] **C-002 · Finish player media filter verification.** Confirm phone,
   tablet, and managed-coach views with the real team release: `Has Diagram`,
   `Needs Diagram`, and `Has Video` must reflect the canonical cloud manifests,
   not the device cache. Release `ff132f4` hardens the request path; this needs
   a live role-by-role check.
-- [ ] **C-003 · Establish a single visual status vocabulary.** Consolidate
-  workspace dock, save text, publish pills, media retry chips, and notification
-  badges into the states `Saved`, `Saving`, `Queued`, `Needs attention`, and
-  `Offline`. A status may appear once per work area, never as a stack of toasts.
+- [x] **C-003 · Establish a single visual status vocabulary.** Release v1290
+  makes the header the quiet local-save indicator and reserves the shared dock
+  for `Saving`, `Queued`, `Needs attention`, `Offline`, and temporarily
+  unavailable team sync. Normal saved flashes and transient auto-publish
+  warning toasts are removed; red is reserved for an unresolved upload or
+  publish failure.
 
 ## P1 — reduce over-nested and duplicate UI
 

@@ -254,8 +254,9 @@ body[data-auth-role="player"] .save-status {
 .workspace-sync-dock--queued,
 .workspace-sync-dock--saving,
 .workspace-sync-dock--syncing,
-.workspace-sync-dock--saved,
-.workspace-sync-dock--error {
+.workspace-sync-dock--error,
+.workspace-sync-dock--offline,
+.workspace-sync-dock--unavailable {
   opacity: 1;
   transform: translateY(0);
 }
@@ -303,8 +304,22 @@ body[data-auth-role="player"] .save-status {
   background: var(--color-danger);
 }
 
-body[data-auth-role="player"] .workspace-sync-dock {
+/* "Saved" remains in the header. Do not flash a second green toast-like chip
+   after every autosave; the dock is reserved for work in progress and action. */
+.workspace-sync-dock--saved {
   display: none;
+}
+
+.workspace-sync-dock--offline,
+.workspace-sync-dock--unavailable {
+  border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary-light) 45%, var(--color-surface));
+  color: var(--color-primary-dark);
+}
+
+.workspace-sync-dock--offline .workspace-sync-dock__dot,
+.workspace-sync-dock--unavailable .workspace-sync-dock__dot {
+  background: var(--color-primary);
 }
 
 /* Keep the coach-facing status clear of the compact mobile command dock. */

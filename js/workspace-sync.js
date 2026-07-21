@@ -7,6 +7,17 @@
   }, {});
   const workspaceSyncJobs = new Map();
   let workspaceSyncClearTimer = 0;
+  // navigator.onLine only tells us whether the browser has a network route.
+  // Keep the last lightweight authenticated probe separate so a captive
+  // network, a sleeping laptop, or a temporary Worker outage is not shown as
+  // the same thing as a real offline device.
+  const workspaceConnectivity = {
+    browserOnline: typeof navigator === "undefined" || navigator.onLine !== false,
+    reachability: "unknown", // unknown | online | unavailable
+    checkedAt: "",
+    lastError: "",
+  };
+  let workspaceConnectivityProbe = null;
 
   function _wsNormalizeChannel(channel) {
     return WORKSPACE_SYNC_CHANNELS.includes(channel) ? channel : "local";
@@ -21,19 +32,73 @@
       return "Needs attention";
     }
     if (state === "queued" || state === "dirty") {
-      return channel === "local" ? "Saving..." : "Publishing...";
+      return channel === "local" ? "Saving on this device" : "Sync queued";
     }
     if (state === "syncing" || state === "saving") {
-      return channel === "local" ? "Saving..." : "Publishing...";
+      return channel === "local" ? "Saving on this device" : "Updating team";
     }
     if (state === "synced" || state === "saved") {
-      return "Saved";
+      return "Saved locally";
     }
     return "";
   }
 
   function _wsDisplayLabel(channel, state, label) {
     return label || _wsDefaultLabel(channel, state);
+  }
+
+  function getWorkspaceSyncConnectivity() {
+    return { ...workspaceConnectivity };
+  }
+
+  function _wsSetConnectivity(next = {}) {
+    Object.assign(workspaceConnectivity, next, { checkedAt: new Date().toISOString() });
+    document.dispatchEvent(new CustomEvent("workspace-connectivity-changed", {
+      detail: getWorkspaceSyncConnectivity(),
+    }));
+    renderWorkspaceSyncDock();
+  }
+
+  async function checkWorkspaceSyncConnectivity(opts = {}) {
+    const browserOnline = typeof navigator === "undefined" || navigator.onLine !== false;
+    if (!browserOnline) {
+      _wsSetConnectivity({ browserOnline: false, reachability: "unknown", lastError: "" });
+      return getWorkspaceSyncConnectivity();
+    }
+    if (workspaceConnectivityProbe && !opts.force) return workspaceConnectivityProbe;
+    const controller = typeof AbortController === "undefined" ? null : new AbortController();
+    const timeout = controller ? setTimeout(() => controller.abort(), 5000) : 0;
+    workspaceConnectivityProbe = fetch("/auth/me", {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+      signal: controller?.signal,
+    })
+      // A response (including 401/5xx) proves the app server is reachable.
+      .then(() => {
+        _wsSetConnectivity({ browserOnline: true, reachability: "online", lastError: "" });
+        return getWorkspaceSyncConnectivity();
+      })
+      .catch((err) => {
+        _wsSetConnectivity({
+          browserOnline: true,
+          reachability: "unavailable",
+          lastError: String(err?.message || "Team sync could not be reached."),
+        });
+        return getWorkspaceSyncConnectivity();
+      })
+      .finally(() => {
+        if (timeout) clearTimeout(timeout);
+        workspaceConnectivityProbe = null;
+      });
+    return workspaceConnectivityProbe;
+  }
+
+  function _wsConnectivityState() {
+    if (workspaceConnectivity.browserOnline === false) return "offline";
+    if (workspaceConnectivity.reachability === "unavailable") return "unavailable";
+    return "";
   }
 
   function ensureWorkspaceSyncDock() {
@@ -66,11 +131,38 @@
       stateFor("dirty");
     if (active) {
       const [channel, item] = active;
+      const connectivityState = _wsConnectivityState();
+      // A true upload conflict still needs review. Routine queued work should
+      // instead tell the coach it is safely stored locally while disconnected.
+      if (item.state !== "error" && connectivityState) {
+        return {
+          state: connectivityState,
+          channel,
+          label: connectivityState === "offline"
+            ? "Offline · saved on this device"
+            : "Team sync unavailable · saved locally",
+          canRetry: connectivityState === "unavailable",
+        };
+      }
       return {
         state: item.state,
         channel,
         label: _wsDisplayLabel(channel, item.state, item.label),
         canRetry: item.state === "error" && _wsHasRetryableJob(channel),
+      };
+    }
+    // Players need a clear offline cue even when they have no local edits.
+    // Staff only see it while work is pending, avoiding a permanent status
+    // chip during normal desktop work.
+    const connectivityState = _wsConnectivityState();
+    if (connectivityState && document.body?.dataset?.authRole === "player") {
+      return {
+        state: connectivityState,
+        channel: "player",
+        label: connectivityState === "offline"
+          ? "Offline · showing your last loaded practice"
+          : "Practice updates are temporarily unavailable",
+        canRetry: connectivityState === "unavailable",
       };
     }
     const synced = stateFor("synced") || stateFor("saved");
@@ -231,6 +323,7 @@
   }
 
   function retryWorkspaceSyncWork() {
+    checkWorkspaceSyncConnectivity({ force: true }).finally(() => renderWorkspaceSyncDock());
     const job = [...workspaceSyncJobs.values()]
       .filter((item) => item.state === "error" && typeof item.retry === "function")
       .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))[0];
@@ -260,6 +353,15 @@
   document.addEventListener("DOMContentLoaded", () => {
     ensureWorkspaceSyncDock();
     renderWorkspaceSyncDock();
+    checkWorkspaceSyncConnectivity();
+  });
+
+  window.addEventListener("offline", () => {
+    _wsSetConnectivity({ browserOnline: false, reachability: "unknown", lastError: "" });
+  });
+  window.addEventListener("online", () => {
+    checkWorkspaceSyncConnectivity({ force: true })
+      .finally(() => retryWorkspaceSyncWork());
   });
 
   window.workspaceSync = {
@@ -271,6 +373,8 @@
     retry: retryWorkspaceSyncWork,
     hasWork: hasWorkspaceSyncWork,
     setStatus: setWorkspaceSyncStatus,
+    getConnectivity: getWorkspaceSyncConnectivity,
+    checkConnectivity: checkWorkspaceSyncConnectivity,
   };
   window.setWorkspaceSyncStatus = setWorkspaceSyncStatus;
   window.hasWorkspaceSyncWork = hasWorkspaceSyncWork;

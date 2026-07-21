@@ -1068,27 +1068,9 @@ function updateSaveStatus(state) {
   }
 }
 
-// ── Offline connectivity banner (item 49: player-aware message) ──
-(function _initOfflineBanner() {
-  const banner = document.createElement("div");
-  banner.className = "offline-banner";
-  banner.setAttribute("role", "status");
-  banner.setAttribute("aria-live", "polite");
-  document.body.prepend(banner);
-  const update = () => {
-    const isOffline = !navigator.onLine;
-    banner.classList.toggle("visible", isOffline);
-    if (isOffline) {
-      const role = document.body.dataset.authRole || "";
-      banner.textContent = role === "player"
-        ? "📱 You’re offline — your last loaded practice is still available in the Script tab."
-        : "📡 You’re offline — changes are saved locally and will update when reconnected";
-    }
-  };
-  window.addEventListener("online", update);
-  window.addEventListener("offline", update);
-  update();
-})();
+// Connectivity status is owned by workspace-sync.js. Keeping that state in
+// one place avoids the old full-width offline banner disagreeing with the
+// shared save/retry dock.
 
 // ── Mobile Coach Mode dock ──
 const MOBILE_COACH_LOCK_ALLOWED_ACTIONS = new Set([

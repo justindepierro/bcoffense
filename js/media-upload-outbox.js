@@ -137,11 +137,10 @@
     const nextAttemptAt = new Date(Date.now() + delay).toISOString();
     const updated = {
       ...job,
-      // A retryable server failure (including a failed R2 verification) stays
-      // durable and automatic. After repeated attempts it becomes visible as
-      // blocked instead of silently retrying forever; a coach can retry it
-      // after reconnecting or correcting the underlying problem.
-      state: opts.terminal || attempts >= MAX_AUTOMATIC_ATTEMPTS ? "blocked" : "queued",
+      // Only a known non-retryable conflict is blocked. Network failures stay
+      // queued with backoff so an offline device never becomes permanently
+      // red just because it was away from Wi-Fi for a while.
+      state: opts.terminal ? "blocked" : "queued",
       attempts,
       lastError: _cleanText(error?.message || error || "Upload failed", 1000),
       nextAttemptAt,
@@ -172,6 +171,25 @@
     return _publicJob(completed, false);
   }
 
+  async function retryNow(opts = {}) {
+    const includeBlocked = opts.includeBlocked !== false;
+    const jobs = await list({ states: includeBlocked ? ["queued", "blocked"] : ["queued"], includeBlob: true });
+    const retried = [];
+    for (const job of jobs) {
+      const next = {
+        ...job,
+        state: "queued",
+        attempts: 0,
+        nextAttemptAt: "",
+        updatedAt: _now(),
+      };
+      await _withStore("readwrite", async (store) => _request(store.put(next)));
+      retried.push(_publicJob(next, false));
+    }
+    pendingCount = retried.length;
+    return retried;
+  }
+
   async function remove(id) {
     if (!id) return false;
     const job = await get(id, { includeBlob: false });
@@ -197,6 +215,12 @@
   async function getHealth() {
     const jobs = await list({ states: ["queued", "blocked"] });
     const now = Date.now();
+    const connectivity = window.workspaceSync?.getConnectivity?.() || {};
+    // Time alone is not a failure. A laptop can stay offline through a whole
+    // practice, and its original diagram/video blob is still safely retained
+    // here. Promote a queued item only after the app has confirmed that the
+    // team service is reachable and automatic retries have had a fair chance.
+    const serviceReachable = connectivity.reachability === "online" && navigator.onLine !== false;
     const queued = jobs.filter((job) => job.state === "queued");
     const blocked = jobs.filter((job) => job.state === "blocked");
     const stale = jobs.filter((job) => {
@@ -209,7 +233,8 @@
       queued: queued.length,
       blocked: blocked.length,
       stale: stale.length,
-      needsAttention: blocked.length > 0 || stale.length > 0,
+      needsAttention: blocked.length > 0 || (serviceReachable && stale.length > 0),
+      waitingOffline: !serviceReachable && queued.length > 0,
       oldestQueuedAt: jobs[0]?.queuedAt || "",
     };
   }
@@ -227,14 +252,19 @@
     const key = window.queueWorkspaceSyncJob("media", "durable-upload-outbox", {
       queuedLabel: health.needsAttention
         ? `${health.blocked || health.stale} media upload${(health.blocked || health.stale) === 1 ? "" : "s"} need attention`
-        : `${health.pending} media upload${health.pending === 1 ? "" : "s"} saving when online`,
+        : health.waitingOffline
+          ? `${health.pending} media upload${health.pending === 1 ? "" : "s"} saved on this device`
+          : `${health.pending} media upload${health.pending === 1 ? "" : "s"} saving when online`,
       runningLabel: "Saving media…",
       doneLabel: "Media saved for players",
       errorLabel: "Media upload needs attention",
-      retry: () => Promise.all([
-        window.playImages?.flushQueuedDiagramUploads?.(),
-        window.playClips?.flushQueuedClipUploads?.(),
-      ]),
+      retry: async () => {
+        await retryNow();
+        return Promise.all([
+          window.playImages?.flushQueuedDiagramUploads?.(),
+          window.playClips?.flushQueuedClipUploads?.(),
+        ]);
+      },
     });
     if (health.needsAttention && typeof window.failWorkspaceSyncJob === "function") {
       window.failWorkspaceSyncJob(key, new Error("One or more media uploads have been waiting too long."), {
@@ -256,6 +286,7 @@
     pending,
     markRetry,
     markComplete,
+    retryNow,
     remove,
     clearExpiredCompleted,
     getHealth,
@@ -269,6 +300,9 @@
   }, { once: true });
   window.addEventListener("online", () => {
     refreshHealth().catch(() => { /* upload owners retry separately on reconnect */ });
+  });
+  document.addEventListener("workspace-connectivity-changed", () => {
+    refreshHealth().catch(() => { /* status refresh is best effort */ });
   });
   window.setInterval(() => {
     refreshHealth().catch(() => { /* status refresh is best effort */ });
