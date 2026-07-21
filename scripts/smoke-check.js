@@ -5938,6 +5938,7 @@ function checkPlayerPlaybookVisibilityContracts() {
   const actions = read("js/playbook-actions.js");
   const filters = read("js/playbook-filters.js");
   const clips = read("js/play-clips.js");
+  const clipSigsRoute = read("functions/clips/sigs.js");
   const render = read("js/playbook-render.js");
   const editor = read("js/playbook-editor.js");
   const auth = read("js/auth.js");
@@ -5980,6 +5981,13 @@ function checkPlayerPlaybookVisibilityContracts() {
     !/playerHasVideoOnly && !checkingClipFilter && !_playbookHasClipForCurrentViewer\(play\)/.test(filters)
   ) {
     fail("player video filters are not constrained to the canonical clip index");
+  }
+
+  if (
+    !/const allowed = new Set\(Array\.isArray\(principal\.release\?\.media\?\.clipSigs\)/.test(clipSigsRoute) ||
+    !/sigs\.filter\(\(sig\) => allowed\.has\(sig\)\)/.test(clipSigsRoute)
+  ) {
+    fail("player clip index does not distinguish authorized media IDs from real clip manifests");
   }
 
   if (
