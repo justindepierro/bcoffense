@@ -121,7 +121,7 @@
 }
 .gp-cmd-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(86px, max-content));
+  grid-template-columns: repeat(3, minmax(86px, max-content));
   align-items: center;
   gap: var(--space-xs);
   justify-content: flex-end;

@@ -33,7 +33,6 @@ const PAGE_ACTIONS_CONFIG = {
     title: "Practice Script",
     verbs: [
       { icon: "📂", label: "Load", keepOpen: true, run: openScriptLoadView },
-      { icon: "💾", label: "Save", run: () => _paCall("saveScript") },
       { icon: "🖨️", label: "Print", run: () => _paCall("generatePDF") },
       { icon: "⚙️", label: "Display", sublabel: _paScriptDisplayStatus, run: () => _paCall("toggleScriptDisplayPanel") },
     ],

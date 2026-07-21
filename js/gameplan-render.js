@@ -166,10 +166,7 @@ function renderGamePlan() {
         <button class="btn btn-sm btn-primary" data-action="openSmartGamePlanBuilder" title="Recommend a first-draft plan from the playbook">
           🧠 Build Plan
         </button>
-        <button class="btn btn-sm btn-success" data-action="openGamePlanPrintModal" title="Print the board-only game plan">
-          🖨️ Print
-        </button>
-        <button class="btn btn-sm btn-primary page-actions-open-btn" data-action="openPageActions" title="Library, Load Wristband, Density, Templates, Clear, and more" aria-haspopup="dialog">
+        <button class="btn btn-sm btn-outline page-actions-open-btn" data-action="openPageActions" title="Save, print, load plans, and open more Game Plan tools" aria-haspopup="dialog">
           ⚡ Actions
         </button>
         </div>

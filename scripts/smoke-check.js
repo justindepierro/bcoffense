@@ -205,7 +205,7 @@ function checkPageStyleContracts() {
   if (
     !/\.gp-cmd-bar\s*\{[\s\S]*overflow:\s*clip/.test(gameplanCss) ||
     !/\.gp-cmd-main\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(320px,\s*max-content\)/.test(gameplanCss) ||
-    !/\.gp-cmd-actions\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(4,\s*minmax\(86px,\s*max-content\)\)/.test(gameplanCss) ||
+    !/\.gp-cmd-actions\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(3,\s*minmax\(86px,\s*max-content\)\)/.test(gameplanCss) ||
     !/\.gp-cmd-actions \.btn\s*\{[\s\S]*min-width:\s*0[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(gameplanCss) ||
     !/@media \(max-width:\s*1180px\)[\s\S]*#gameplan \.gp-cmd-main\s*\{[\s\S]*grid-template-columns:\s*1fr[\s\S]*#gameplan \.gp-cmd-actions\s*\{[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(92px,\s*1fr\)\)/.test(gameplanCss)
   ) {

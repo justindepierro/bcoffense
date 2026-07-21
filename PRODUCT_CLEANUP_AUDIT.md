@@ -72,10 +72,11 @@ small, testable releases.
   explicit legacy display aliases in Call Sheet and Script. Remove an alias
   only after no renderer, saved setting, print path, or delegated action needs
   it; keep data migrations separate from visual cleanup.
-- [ ] **C-014 · Reduce command-strip duplication.** Audit Script, Game Plan,
-  Call Sheet, and Wristband action bars against the Coach Grid hierarchy.
-  Promote recurring daily actions; put rare export, repair, bulk, and display
-  options behind a consistent `Actions`/`More` menu.
+- [~] **C-014 · Reduce command-strip duplication.** Release v1293 makes Script
+  keep `Library`, `Save`, and `Quiz` visible while display, print, load, send,
+  and repair tools live behind `Actions`; Game Plan keeps `Filters` and `Build
+  Plan` visible while plans, save, print, and advanced tools live behind the
+  same hub. Apply the same hierarchy to Call Sheet and Wristband next.
 
 ## P2 — visual consistency and responsive polish
 
