@@ -3,6 +3,7 @@ let teamDepthDragState = null;
 let teamSettingsViewState = null;
 let teamPortalMotdNotifyTimer = null;
 let teamPortalMotdLastNotified = "";
+const teamRosterBrowseState = { query: "", filter: "all", editingPlayerId: "" };
 
 const TEAM_ROSTER_POSITION_OPTIONS = [
   { value: "QB", label: "QB" },
@@ -208,6 +209,77 @@ function buildTeamSettingsRosterSummary(roster) {
     .map(([position, count]) => `${position} ${count}`)
     .join(" | ");
   return `${formatTeamCountLabel(roster.length, "player")} | ${formatTeamCountLabel(linkedCount, "linked account")} | ${topPositions}`;
+}
+
+function getTeamRosterBrowseText(player = {}) {
+  return [
+    player.number,
+    player.name,
+    player.primaryPosition || player.position,
+    player.secondaryPosition,
+    player.positionGroup,
+    player.accountUsername,
+    ...(Array.isArray(player.tags) ? player.tags : []),
+  ].join(" ").toLowerCase();
+}
+
+function getVisibleTeamRoster(roster = []) {
+  const query = String(teamRosterBrowseState.query || "").trim().toLowerCase();
+  const filter = String(teamRosterBrowseState.filter || "all");
+  return roster.filter((player) => {
+    if (query && !getTeamRosterBrowseText(player).includes(query)) return false;
+    if (filter === "linked") return Boolean(String(player.accountUsername || "").trim());
+    if (filter === "unlinked") return !String(player.accountUsername || "").trim();
+    if (filter === "missing-position") return !String(player.primaryPosition || player.position || "").trim();
+    if (filter === "skill" || filter === "linemen") return player.positionGroup === filter;
+    return true;
+  });
+}
+
+function toggleTeamRosterPlayerEdit(playerId = "") {
+  const nextId = String(playerId || "").trim();
+  teamRosterBrowseState.editingPlayerId = teamRosterBrowseState.editingPlayerId === nextId ? "" : nextId;
+  renderTeamRosterList();
+}
+
+function buildTeamRosterListMarkup(roster = []) {
+  const visible = getVisibleTeamRoster(roster);
+  const count = document.getElementById("teamRosterVisibleCount");
+  if (count) count.textContent = `${visible.length} of ${roster.length}`;
+  if (!roster.length) return '<div class="team-settings-empty">No roster yet. Add players one at a time or paste a roster above.</div>';
+  if (!visible.length) return '<div class="team-settings-empty">No players match that roster search or filter.</div>';
+  return `<div class="team-roster-grid-head" aria-hidden="true">
+      <span>#</span><span>Player</span><span>Position</span><span>Portal account</span><span>Groups</span><span>Tools</span>
+    </div>${visible.map((player) => {
+      const playerId = escapeAttr(player.id);
+      const isEditing = teamRosterBrowseState.editingPlayerId === String(player.id || "");
+      const position = [player.primaryPosition || player.position, player.secondaryPosition].filter(Boolean).join(" / ") || "Position not set";
+      const tags = Array.isArray(player.tags) ? player.tags : [];
+      return `<div class="team-roster-row ${isEditing ? "is-editing" : ""}" data-player-id="${playerId}">
+        <span class="team-roster-cell team-roster-cell--num">${escapeHtml(player.number || "—")}</span>
+        <div class="team-roster-player"><strong>${escapeHtml(player.name || "Unnamed player")}</strong><small>${escapeHtml(player.positionGroup || "Roster")}</small></div>
+        <span class="team-roster-position-summary">${escapeHtml(position)}</span>
+        <button type="button" class="team-roster-account-link ${player.accountUsername ? "is-linked" : ""}" data-action="openPlayersAdmin" title="Manage ${escapeHtml(player.name)}'s portal account link"><span aria-hidden="true">${player.accountUsername ? "🔗" : "＋"}</span><span>${escapeHtml(player.accountUsername || "Link account")}</span></button>
+        <div class="team-roster-tag-chips" aria-label="Current homework groups">${tags.map((tag) => `<span>#${escapeHtml(String(tag).replace(/^#/, ""))}</span>`).join("") || "<small>No groups</small>"}</div>
+        <button type="button" class="btn btn-sm team-roster-edit-toggle" data-action="toggleTeamRosterPlayerEdit" data-arg="${playerId}" aria-expanded="${isEditing ? "true" : "false"}">${isEditing ? "Done" : "Edit"}</button>
+        <div class="team-roster-editor"${isEditing ? "" : " hidden"}>
+          <label><span>#</span><input type="text" class="team-roster-cell" value="${escapeAttr(player.number)}" data-field="teamPlayerNumber" data-player-id="${playerId}" aria-label="Number for ${escapeHtml(player.name)}" /></label>
+          <label><span>Name</span><input type="text" class="team-roster-cell" value="${escapeAttr(player.name)}" data-field="teamPlayerName" data-player-id="${playerId}" aria-label="Name for ${escapeHtml(player.name)}" /></label>
+          <label><span>Primary</span><select class="team-roster-cell" data-field="teamPlayerPrimaryPosition" data-player-id="${playerId}" aria-label="Primary position for ${escapeHtml(player.name)}">${buildTeamRosterPositionOptions(player.primaryPosition || player.position, "Primary")}</select></label>
+          <label><span>Secondary</span><select class="team-roster-cell" data-field="teamPlayerSecondaryPosition" data-player-id="${playerId}" aria-label="Secondary position for ${escapeHtml(player.name)}">${buildTeamRosterPositionOptions(player.secondaryPosition, "Secondary")}</select></label>
+          <label><span>Group</span><select class="team-roster-cell" data-field="teamPlayerPositionGroup" data-player-id="${playerId}" aria-label="Position group for ${escapeHtml(player.name)}"><option value="" ${player.positionGroup ? "" : "selected"}>Role type</option><option value="skill" ${player.positionGroup === "skill" ? "selected" : ""}>Skill</option><option value="linemen" ${player.positionGroup === "linemen" ? "selected" : ""}>Linemen</option></select></label>
+          <label class="team-roster-editor-tags"><span>Homework groups</span><input type="text" class="team-roster-cell" value="${escapeAttr(tags.map((tag) => `#${String(tag).replace(/^#/, "")}`).join(" "))}" data-field="teamPlayerTags" data-player-id="${playerId}" placeholder="#redzone #varsity" aria-label="Custom homework tags for ${escapeHtml(player.name)}" /></label>
+          <button type="button" class="btn btn-sm btn-outline" data-action="openPlayersAdmin">Manage portal link</button>
+          <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamPlayer" data-player-id="${playerId}" aria-label="Remove ${escapeHtml(player.name)}">Remove player</button>
+        </div>
+      </div>`;
+    }).join("")}`;
+}
+
+function renderTeamRosterList() {
+  const rosterContainer = document.getElementById("teamRosterList");
+  if (!rosterContainer) return;
+  rosterContainer.innerHTML = buildTeamRosterListMarkup(getTeamRoster());
 }
 
 function getTeamRosterHealth(roster) {
@@ -481,43 +553,7 @@ function renderTeamSettings() {
     </div>
   `;
 
-  rosterContainer.innerHTML = roster.length
-    ? `<div class="team-roster-grid-head" aria-hidden="true">
-        <span>#</span>
-        <span>Player</span>
-        <span>Primary</span>
-        <span>Secondary</span>
-        <span>Portal account</span>
-        <span>Group</span>
-        <span>Tags</span>
-        <span>Remove</span>
-      </div>${roster.map((player) => `
-        <div class="team-roster-row" data-player-id="${escapeAttr(player.id)}">
-          <input type="text" class="team-roster-cell team-roster-cell--num" value="${escapeAttr(player.number)}" data-field="teamPlayerNumber" data-player-id="${escapeAttr(player.id)}" placeholder="#" aria-label="Number for ${escapeHtml(player.name)}" />
-          <input type="text" class="team-roster-cell team-roster-cell--name" value="${escapeAttr(player.name)}" data-field="teamPlayerName" data-player-id="${escapeAttr(player.id)}" placeholder="Player name" aria-label="Name for ${escapeHtml(player.name)}" />
-          <select class="team-roster-cell team-roster-cell--pos" data-field="teamPlayerPrimaryPosition" data-player-id="${escapeAttr(player.id)}" aria-label="Primary position for ${escapeHtml(player.name)}">
-            ${buildTeamRosterPositionOptions(player.primaryPosition || player.position, "Primary")}
-          </select>
-          <select class="team-roster-cell team-roster-cell--pos" data-field="teamPlayerSecondaryPosition" data-player-id="${escapeAttr(player.id)}" aria-label="Secondary position for ${escapeHtml(player.name)}">
-            ${buildTeamRosterPositionOptions(player.secondaryPosition, "Secondary")}
-          </select>
-          <button type="button" class="team-roster-account-link ${player.accountUsername ? "is-linked" : ""}" data-action="openPlayersAdmin" title="Manage ${escapeHtml(player.name)}'s portal account link">
-            <span aria-hidden="true">${player.accountUsername ? "🔗" : "＋"}</span>
-            <span>${escapeHtml(player.accountUsername || "Link account")}</span>
-          </button>
-          <select class="team-roster-cell team-roster-cell--group" data-field="teamPlayerPositionGroup" data-player-id="${escapeAttr(player.id)}" aria-label="Position group for ${escapeHtml(player.name)}">
-            <option value="" ${player.positionGroup ? "" : "selected"}>Role type</option>
-            <option value="skill" ${player.positionGroup === "skill" ? "selected" : ""}>Skill</option>
-            <option value="linemen" ${player.positionGroup === "linemen" ? "selected" : ""}>Linemen</option>
-          </select>
-          <div class="team-roster-tag-editor">
-            <input type="text" class="team-roster-cell team-roster-cell--tags" value="${escapeAttr((player.tags || []).map((tag) => `#${String(tag).replace(/^#/, "")}`).join(" "))}" data-field="teamPlayerTags" data-player-id="${escapeAttr(player.id)}" placeholder="#redzone #varsity" aria-label="Custom homework tags for ${escapeHtml(player.name)}" />
-            <div class="team-roster-tag-chips" aria-label="Current homework groups">${(player.tags || []).map((tag) => `<span>#${escapeHtml(String(tag).replace(/^#/, ""))}</span>`).join("") || "<small>Use #tags for quiz groups</small>"}</div>
-          </div>
-          <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamPlayer" data-player-id="${escapeAttr(player.id)}" aria-label="Remove ${escapeHtml(player.name)}">✕</button>
-        </div>
-      `).join("")}`
-    : '<div class="team-settings-empty">No roster yet. Add players one at a time or paste a roster below.</div>';
+  renderTeamRosterList();
 
   packageContainer.innerHTML = packages.length
     ? packages.map((pkg, pkgIndex) => {
@@ -1002,6 +1038,23 @@ function initTeamSettings() {
     });
 
   applyTeamSettingsCollapsedState();
+
+  const rosterSearchInput = document.getElementById("teamRosterSearchInput");
+  const rosterFilterInput = document.getElementById("teamRosterFilterInput");
+  if (rosterSearchInput && rosterSearchInput.dataset.bound !== "true") {
+    rosterSearchInput.dataset.bound = "true";
+    rosterSearchInput.addEventListener("input", () => {
+      teamRosterBrowseState.query = rosterSearchInput.value;
+      renderTeamRosterList();
+    });
+  }
+  if (rosterFilterInput && rosterFilterInput.dataset.bound !== "true") {
+    rosterFilterInput.dataset.bound = "true";
+    rosterFilterInput.addEventListener("change", () => {
+      teamRosterBrowseState.filter = rosterFilterInput.value;
+      renderTeamRosterList();
+    });
+  }
 
   const updateRosterField = (control) => {
     const input = control?.closest?.("[data-player-id][data-field]");

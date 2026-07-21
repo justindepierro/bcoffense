@@ -1344,6 +1344,12 @@ function checkCoachGridTeamWorkspaceContract() {
     !/\.pa-list-head/.test(css) ||
     !/--coach-grid-control-height/.test(css) ||
     !/team-roster-grid-head/.test(teamSettings) ||
+    !/team-roster-command-bar/.test(html) ||
+    !/teamRosterSearchInput/.test(html) ||
+    !/teamRosterFilterInput/.test(html) ||
+    !/function getVisibleTeamRoster/.test(teamSettings) ||
+    !/function toggleTeamRosterPlayerEdit/.test(teamSettings) ||
+    !/team-roster-editor/.test(css) ||
     !/const TEAM_SETTINGS_SURFACES/.test(teamSettings) ||
     !/function setTeamSettingsSurface\(surface = "home"\)/.test(teamSettings) ||
     !/dataset\.teamSettingsSurface/.test(teamSettings) ||

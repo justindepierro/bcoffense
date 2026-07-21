@@ -59,10 +59,11 @@ small, testable releases.
   initial wall with focused `Team identity`, `Roster & links`, `Personnel`,
   and `Player portal` workspaces. Player accounts, Coach access, and Recovery
   now have named entry points; the last authoring workspace stays open.
-- [ ] **C-011 · Make roster editing a purposeful table.** Keep the current
-  inline editor, but place bulk import, add-player, account linking, position
-  tags, and delete actions in a compact command strip and one controlled list.
-  Do not render all player fields as an always-expanded form on initial load.
+- [x] **C-011 · Make roster editing a purposeful table.** Release v1292
+  replaces the always-open roster form with a searchable, filterable Coach Grid
+  list. Link health, account state, and homework groups are visible at a glance;
+  bulk import/add tools stay collapsed and one player expands for editing only
+  when needed.
 - [ ] **C-012 · Consolidate overlay families.** Reduce the 63 entry points to
   four approved patterns: anchored menu, side drawer, centered modal, and
   full-screen mobile sheet. Existing features stay intact; their container,
