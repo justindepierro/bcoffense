@@ -24,38 +24,46 @@
   --color-accent-light: #f5ede0;
 
   /* Functional: Success */
-  --color-success: #2e7d32;
-  --color-success-hover: #1b5e20;
-  --color-success-light: #90ee90;
+  --color-success: #167a3f;
+  --color-success-hover: #0f5d2f;
+  --color-success-light: #cdf4d9;
 
   /* Functional: Danger */
-  --color-danger: #c62828;
-  --color-danger-hover: #b71c1c;
-  --color-danger-light: #ffebee;
+  --color-danger: #b42318;
+  --color-danger-hover: #8f1d15;
+  --color-danger-light: #fde4e1;
 
   /* Functional: Warning */
-  --color-warning: #e68a00;
-  --color-warning-hover: #cc7a00;
-  --color-warning-light: #fff3e0;
+  --color-warning: #a85f00;
+  --color-warning-hover: #814900;
+  --color-warning-light: #fff0c7;
 
   /* Functional: Info */
-  --color-info: #5a6f87;
-  --color-info-hover: #4a5d73;
-  --color-info-light: #e8edf3;
+  --color-info: #1d5fbf;
+  --color-info-hover: #174b96;
+  --color-info-light: #dceaff;
   --color-royal-blue: #4169e1;
 
+  /* Status vocabulary: use these meanings everywhere, not one-off colors.
+     Navy = structure/context; green = ready; amber = pending; red = action. */
+  --color-structure: #173a6a;
+  --color-ready: var(--color-success);
+  --color-pending: var(--color-warning);
+  --color-action: var(--color-danger);
+  --color-structure-light: #e1eaf7;
+
   /* Status tints — constraints & evaluation UI */
-  --color-status-ok-border: #c3e6cb;
-  --color-status-ok-bg: #f0fff4;
-  --color-status-ok-text: #1b6b38;
-  --color-status-warn-border: #ffeeba;
-  --color-status-warn-bg: #fffdf0;
-  --color-status-warn-text: #856404;
-  --color-status-error-border: #f5c6cb;
-  --color-status-error-bg: #fff8f8;
-  --color-status-error-text: #c0392b;
-  --color-status-info-bg: #e8f4fd;
-  --color-status-info-text: #1a73e8;
+  --color-status-ok-border: #9ed8b0;
+  --color-status-ok-bg: #edf9f1;
+  --color-status-ok-text: var(--color-ready);
+  --color-status-warn-border: #ecc46e;
+  --color-status-warn-bg: #fff8e5;
+  --color-status-warn-text: var(--color-pending);
+  --color-status-error-border: #efaaa3;
+  --color-status-error-bg: #fff1ef;
+  --color-status-error-text: var(--color-action);
+  --color-status-info-bg: var(--color-structure-light);
+  --color-status-info-text: var(--color-structure);
 
   /* Secondary & Neutrals */
   --color-secondary: #64748b;

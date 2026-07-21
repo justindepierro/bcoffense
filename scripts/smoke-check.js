@@ -1155,6 +1155,30 @@ function checkDensityTierContracts() {
   console.log("workbench density tier contracts ok");
 }
 
+function checkColorSemanticsContracts() {
+  const baseCss = read("css/base.css");
+  const periodControls = read("js/script-periods.js");
+  const scriptCss = read("css/script.css");
+  const utils = read("js/utils.js");
+  const paletteSection = periodControls.match(/const SCRIPT_PERIOD_COLOR_PALETTE = \[([\s\S]*?)\];/);
+  const paletteCount = paletteSection ? (paletteSection[1].match(/name:/g) || []).length : 0;
+
+  if (
+    !/--color-structure:\s*#173a6a/.test(baseCss) ||
+    !/--color-ready:\s*var\(--color-success\)/.test(baseCss) ||
+    !/--color-pending:\s*var\(--color-warning\)/.test(baseCss) ||
+    !/--color-action:\s*var\(--color-danger\)/.test(baseCss) ||
+    !/periodDefault:\s*"#173a6a"/.test(utils) ||
+    paletteCount !== 16 ||
+    !/Choose from 16 standard period colors/.test(periodControls) ||
+    !/grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\)/.test(scriptCss)
+  ) {
+    fail("semantic status vocabulary or the 16-color Script period palette is incomplete");
+  }
+
+  console.log("color semantics contracts ok");
+}
+
 function checkScriptCoachRowScanningContract() {
   const render = read("js/script-render.js");
   const css = read("css/script.css");
@@ -5987,6 +6011,7 @@ checkScriptCallMarkerOrderContract();
 checkCoachControlDismissalContract();
 checkResponsiveAuditFixContracts();
 checkDensityTierContracts();
+checkColorSemanticsContracts();
 checkScriptCoachRowScanningContract();
 checkScriptGamePlanProvenanceContract();
 checkCoachGridThemeContract();

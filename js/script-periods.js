@@ -5,18 +5,14 @@ let templateModalMode = "insert";
 let templateModalSearchTerm = "";
 
 const SCRIPT_PERIOD_COLOR_PALETTE = [
-  { name: "Navy", value: "#0b2f63" }, { name: "Royal", value: "#1248d6" },
-  { name: "Electric Blue", value: "#1463e8" }, { name: "Sky", value: "#0077b6" },
-  { name: "Cyan", value: "#008eab" }, { name: "Teal", value: "#007c78" },
-  { name: "Emerald", value: "#00866a" }, { name: "Green", value: "#19863d" },
-  { name: "Lime", value: "#5b9300" }, { name: "Olive", value: "#587000" },
-  { name: "Gold", value: "#b27a00" }, { name: "Amber", value: "#ca7900" },
-  { name: "Orange", value: "#d95700" }, { name: "Tangerine", value: "#e45a16" },
-  { name: "Red", value: "#cf2525" }, { name: "Rose", value: "#d11245" },
-  { name: "Pink", value: "#cf1764" }, { name: "Magenta", value: "#ae1897" },
-  { name: "Purple", value: "#7b1fa2" }, { name: "Violet", value: "#6826d7" },
-  { name: "Indigo", value: "#3f3bc4" }, { name: "Steel", value: "#3f5870" },
-  { name: "Slate", value: "#334155" }, { name: "Charcoal", value: "#1f2937" },
+  { name: "Navy", value: "#173a6a" }, { name: "Blue", value: "#1d4ed8" },
+  { name: "Cobalt", value: "#2563eb" }, { name: "Sky", value: "#0369a1" },
+  { name: "Teal", value: "#0f766e" }, { name: "Emerald", value: "#047857" },
+  { name: "Green", value: "#15803d" }, { name: "Lime", value: "#4d7c0f" },
+  { name: "Gold", value: "#a16207" }, { name: "Amber", value: "#b45309" },
+  { name: "Orange", value: "#c2410c" }, { name: "Red", value: "#b91c1c" },
+  { name: "Rose", value: "#be123c" }, { name: "Magenta", value: "#a21caf" },
+  { name: "Purple", value: "#6d28d9" }, { name: "Slate", value: "#334155" },
 ];
 
 function renderScriptPeriodPaletteButtons(selectedColor, attributeName, attributeValue = "") {
@@ -36,7 +32,7 @@ function getScriptPeriodTextColor(color) {
 
 function renderScriptPeriodColorControl(index, color, label) {
   return `
-    <button type="button" class="ph-color-palette-btn" data-action="openScriptPeriodColorPalette" data-idx="${index}" title="Choose from 24 standard period colors" aria-label="Choose color for ${escapeHtml(label)}" style="--period-color-swatch: ${color};"><span aria-hidden="true"></span></button>
+    <button type="button" class="ph-color-palette-btn" data-action="openScriptPeriodColorPalette" data-idx="${index}" title="Choose from 16 standard period colors" aria-label="Choose color for ${escapeHtml(label)}" style="--period-color-swatch: ${color};"><span aria-hidden="true"></span></button>
     <input type="color" class="ph-color-input" value="${color}" data-field="periodColor" data-idx="${index}" tabindex="-1" aria-hidden="true">
   `;
 }

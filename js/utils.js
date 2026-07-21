@@ -14,7 +14,7 @@ const TOOLTIP_DELAY_MS = 200;
 // ============ Shared Color Tokens ============
 // Mirrors CSS custom properties for use in JS-generated inline styles
 const UI_COLORS = {
-  periodDefault: "#333333",
+  periodDefault: "#173a6a",
   highlightHuddle: "#fff59d",
   highlightCandy: "#f8bbd9",
   textBlack: "#000",

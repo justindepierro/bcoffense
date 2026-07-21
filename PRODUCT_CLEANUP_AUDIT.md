@@ -102,10 +102,12 @@ small, testable releases.
   taking play-row real estate. It also restores a 44px mobile search field and
   Filter entry point for players and managed coaches; the signed-in behavior
   was confirmed after deployment.
-- [ ] **C-023 · Normalize color semantics.** Use a small, high-contrast
-  semantic palette: navy for structure, green for ready/saved, amber for
-  pending, red for action-needed, plus distinct personnel/period colors. Avoid
-  decorative color chips that compete with the primary call.
+- [~] **C-023 · Normalize color semantics.** Release v1300 establishes navy
+  for structure/context, green for ready, amber for pending, and red for
+  action-needed. The Script period chooser now offers 16 high-contrast,
+  deliberately distinct coaching colors instead of 24 near-duplicates; its
+  default, editor, timeline, and print header share the same navy foundation.
+  Confirm the period-color modal and a printed Script, then mark done.
 - [~] **C-024 · Tighten print separately from screens.** Release v1297 gives
   every printed play-row cell an explicit white-or-highlighted surface, so
   Chrome cannot show a gray compositor rail through the Reps edge; the status
