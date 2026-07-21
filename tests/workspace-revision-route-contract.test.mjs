@@ -3,7 +3,10 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const source = await readFile(new URL("functions/workspace/revision.js", `file://${root}/`), "utf8");
+const [source, cloudSync] = await Promise.all([
+  readFile(new URL("functions/workspace/revision.js", `file://${root}/`), "utf8"),
+  readFile(new URL("js/cloud-sync.js", `file://${root}/`), "utf8"),
+]);
 
 assert.match(source, /commitWorkspaceAndPlayerRelease/, "daily workspace route uses the atomic D1\/R2 commit helper");
 assert.match(source, /X-BC-Expected-Workspace-Revision/, "daily workspace route accepts an explicit CAS revision");
@@ -16,5 +19,11 @@ assert.match(source, /opts\.allowLegacyRepair !== false/, "staff reads repair a 
 assert.match(source, /expectedWorkspaceRevision: current\.pointer\.workspaceRevision/, "legacy repair uses the current workspace head as its CAS base");
 assert.doesNotMatch(source, /sync\/backup/, "daily workspace route never delegates to raw recovery backup");
 assert.match(source, /readCurrentWorkspaceRevision/, "coach workspace reads use the immutable pointer");
+assert.match(source, /readCurrentWorkspacePointer\(context\.env, principal\.teamId\)/, "foreground freshness checks read the compact current pointer before loading R2 bytes");
+assert.match(source, /If-None-Match/, "workspace reads honor ETags for no-body freshness responses");
+assert.match(cloudSync, /function rebaseCanonicalWorkspaceForAutoPush/, "automatic saves rebase onto the newest team workspace instead of pushing a stale full browser snapshot");
+assert.match(cloudSync, /opts\.auto[\s\S]*rebaseCanonicalWorkspaceForAutoPush/, "only background saves use key-scoped rebasing while deliberate recovery retains its existing behavior");
+assert.match(cloudSync, /CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS/, "revision conflicts retry promptly after reloading the current head");
+assert.match(cloudSync, /function refreshTeamWorkspaceOnForeground/, "open devices perform lightweight foreground freshness checks");
 
-console.log("workspace revision route contract: 10 assertions passed");
+console.log("workspace revision route and live-sync contract: 16 assertions passed");

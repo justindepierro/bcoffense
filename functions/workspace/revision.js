@@ -155,6 +155,17 @@ async function getWorkspace(context, opts = {}) {
   const principal = await requireStaffContext(context);
   if (principal.error) return principal.error;
   try {
+    // Foreground freshness probes are intentionally cheap: a matching ETag
+    // returns from D1 before the immutable R2 workspace body is read.
+    const pointer = await readCurrentWorkspacePointer(context.env, principal.teamId);
+    if (!pointer) return workspaceError("No canonical team workspace is available yet.", 404);
+    const pointerEtag = `"${pointer.workspaceRevision}"`;
+    if (context.request.headers.get("If-None-Match") === pointerEtag) {
+      return withSecurityHeaders(new Response(null, {
+        status: 304,
+        headers: { "Cache-Control": "private, no-store", "ETag": pointerEtag, "Vary": "Cookie" },
+      }));
+    }
     const current = await readCurrentWorkspaceRevision(context.env, context.env.CLIPS, principal.teamId);
     if (!current.pointer || !current.metadata || !current.payload) {
       return workspaceError("No canonical team workspace is available yet.", 404);

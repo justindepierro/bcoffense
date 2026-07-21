@@ -10,14 +10,20 @@
   const PLAYER_RELEASE_ETAG_KEY = "_bcPlayerReleaseEtag";
   const PLAYER_RELEASE_META_KEY = "_bcPlayerReleaseMeta";
   const MAX_KV_BACKUP_BYTES = 25 * 1024 * 1024;
-  const CLOUD_AUTO_PUSH_DELAY_MS = 30000;
+  // Routine saves should feel prompt on a staff sideline device, while still
+  // giving rapid field edits a short batching window. The earlier 30-second
+  // delay made two active browsers look out of sync for too long.
+  const CLOUD_AUTO_PUSH_DELAY_MS = 8000;
   // Player-facing media and quiz changes are meaningful handoffs, not routine
   // field edits. Give nearby writes a moment to settle, then publish the
   // canonical workspace right away instead of waiting for the normal batch.
   const CLOUD_AUTO_PUSH_CRITICAL_DELAY_MS = 1200;
   const CLOUD_AUTO_PUSH_MAX_HOLD_MS = 2 * 60 * 1000;
   const CLOUD_AUTO_PUSH_RETRY_MS = 60 * 1000;
+  const CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS = 1500;
   const CLOUD_AUTO_PUSH_MAX_RETRIES = 3;
+  const TEAM_FOREGROUND_REFRESH_MIN_MS = 20 * 1000;
+  const TEAM_FOREGROUND_REFRESH_INTERVAL_MS = 3 * 60 * 1000;
 
   // Daily workspace commits are deliberately narrower than a complete browser
   // backup. Keep this list aligned with the server allowlist in
@@ -82,6 +88,8 @@
   let cloudAutoPushLastError = "";
   let cloudAutoPushRetryCount = 0;
   let cloudAutoPushSuppress = false;
+  let teamForegroundRefreshPromise = null;
+  let teamForegroundRefreshAt = 0;
   const cloudAutoPushDirtyKeys = new Set();
 
   function buildCanonicalTeamWorkspace(backup) {
@@ -778,6 +786,42 @@
     };
   }
 
+  /**
+   * A browser holds a usable local workspace cache, not an exclusive copy of
+   * the team's database. Before an automatic save, start with the newest
+   * canonical workspace and apply only the keys that changed in this browser.
+   *
+   * This keeps a coach editing a script from accidentally writing an older
+   * game plan, roster, or signal collection back over another active device.
+   * Scripts get their existing record-level merge on top of that key-level
+   * protection. Explicit recovery publishes intentionally retain their full
+   * snapshot semantics.
+   */
+  function rebaseCanonicalWorkspaceForAutoPush(localBackup, remoteBackup, dirtyKeys) {
+    if (!remoteBackup || typeof remoteBackup !== "object") return localBackup;
+    const local = localBackup && typeof localBackup === "object" ? localBackup : {};
+    const merged = buildCanonicalTeamWorkspace(remoteBackup);
+    const dirty = dirtyKeys instanceof Set ? dirtyKeys : new Set(dirtyKeys || []);
+
+    // The envelope describes this newly-created immutable revision. It is not
+    // a user-editable shared surface, so always make it fresh.
+    ["app", "version", "exportDate"].forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(local, key)) merged[key] = local[key];
+    });
+
+    dirty.forEach((key) => {
+      if (!CANONICAL_TEAM_WORKSPACE_KEYS.has(key)) return;
+      if (key === STORAGE_KEYS.SAVED_SCRIPTS) return;
+      if (Object.prototype.hasOwnProperty.call(local, key)) merged[key] = local[key];
+      else delete merged[key];
+    });
+
+    if (dirty.has(STORAGE_KEYS.SAVED_SCRIPTS)) {
+      return mergeCanonicalSavedScripts({ ...merged, [STORAGE_KEYS.SAVED_SCRIPTS]: local[STORAGE_KEYS.SAVED_SCRIPTS] }, remoteBackup);
+    }
+    return merged;
+  }
+
   function countBackupCollection(value) {
     if (Array.isArray(value)) return value.length;
     if (value && typeof value === "object") return Object.keys(value).length;
@@ -981,7 +1025,7 @@
     return workspaceRevisionRequest("PUT", payload, remote.revision);
   }
 
-  async function workspaceRevisionRequest(method, bodyText = "", expectedRevision = "") {
+  async function workspaceRevisionRequest(method, bodyText = "", expectedRevision = "", opts = {}) {
     const headers = {
       Accept: "application/json",
       "X-BC-Auth-Mode": "json",
@@ -989,6 +1033,9 @@
     if (bodyText) headers["Content-Type"] = "application/json";
     if (method === "PUT" && expectedRevision !== undefined && expectedRevision !== null) {
       headers["X-BC-Expected-Workspace-Revision"] = String(expectedRevision || "");
+    }
+    if (method === "GET" && opts.ifNoneMatch) {
+      headers["If-None-Match"] = String(opts.ifNoneMatch);
     }
     const response = await fetch("/workspace/revision", {
       method,
@@ -1009,7 +1056,18 @@
 
   async function fetchCanonicalWorkspace(opts = {}) {
     try {
-      const data = await workspaceRevisionRequest("GET");
+      const data = await workspaceRevisionRequest("GET", "", "", {
+        ifNoneMatch: opts.ifNoneMatch || "",
+      });
+      if (data.notModified) {
+        return {
+          notModified: true,
+          revision: String(data.etag || "").replace(/^"|"$/g, ""),
+          playerReleaseRevision: "",
+          updatedAt: "",
+          size: 0,
+        };
+      }
       if (!data.workspace || typeof data.workspace !== "object") {
         throw new Error("Canonical workspace did not include restorable team data.");
       }
@@ -1314,7 +1372,9 @@
       // edit its own work without silently erasing newer saved scripts.
       const remoteBeforePush = await fetchCanonicalWorkspace({ allowMissing: true });
       if (remoteBeforePush?.backup) {
-        backup = mergeCanonicalSavedScripts(backup, remoteBeforePush.backup);
+        backup = opts.auto
+          ? rebaseCanonicalWorkspaceForAutoPush(backup, remoteBeforePush.backup, cloudAutoPushDirtyKeys)
+          : mergeCanonicalSavedScripts(backup, remoteBeforePush.backup);
       }
       let payloadText = JSON.stringify(backup, null, 2);
       let payloadSize = getPayloadSize(payloadText);
@@ -1874,7 +1934,13 @@
           doneLabel: "Team update published",
           errorLabel: "Publish needs attention",
         });
-        scheduleCloudAutoPushTimer(CLOUD_AUTO_PUSH_RETRY_MS);
+        // A revision conflict means another staff device just finished a
+        // valid save. Re-fetch and rebase almost immediately; waiting a full
+        // minute makes the app look broken while the latest server state is
+        // already available. Network failures retain the calmer backoff.
+        scheduleCloudAutoPushTimer(
+          err?.status === 409 ? CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS : CLOUD_AUTO_PUSH_RETRY_MS,
+        );
       } else {
         _cloudFailJob(cloudJobKey, err, { label: "Publish needs attention" });
       }
@@ -1887,6 +1953,87 @@
 
   function hasCloudAutoPushWork() {
     return Boolean(cloudAutoPushPending || cloudAutoPushSaving || cloudAutoPushLastError);
+  }
+
+  function hasLocalTeamEditInProgress() {
+    return Boolean(
+      hasCloudAutoPushWork() ||
+      (typeof scriptDirty !== "undefined" && scriptDirty) ||
+      (typeof wristbandDirty !== "undefined" && wristbandDirty)
+    );
+  }
+
+  /**
+   * Keep an open device current without turning the canonical workspace into
+   * a noisy polling UI. Player release reads are ETag-backed. Staff devices
+   * make the same light revision check and apply a newer workspace only when
+   * this browser has no local edit or upload work to protect.
+   */
+  async function refreshTeamWorkspaceOnForeground(opts = {}) {
+    if (teamForegroundRefreshPromise) return teamForegroundRefreshPromise;
+    const now = Date.now();
+    if (!opts.force && now - teamForegroundRefreshAt < TEAM_FOREGROUND_REFRESH_MIN_MS) return null;
+    teamForegroundRefreshAt = now;
+
+    teamForegroundRefreshPromise = (async () => {
+      const currentUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+      if (!currentUser) return null;
+      if (currentUser.role === "player") {
+        return refreshPlayerRelease({ force: false, navigate: false });
+      }
+      const canReadTeamWorkspace = ["admin", "coach", "assistant_coach"].includes(String(currentUser.role || ""));
+      if (!canReadTeamWorkspace || hasLocalTeamEditInProgress()) return null;
+
+      const settings = getCloudSyncSettings();
+      const remote = await fetchCanonicalWorkspace({
+        allowMissing: true,
+        ifNoneMatch: settings.lastWorkspaceRevision || "",
+      });
+      if (!remote || remote.notModified || !remote.revision || remote.revision === settings.lastWorkspaceRevision) return remote;
+
+      // A browser with no recorded canonical head may be an older offline
+      // workspace, not an empty new device. Preserve that cautious first-run
+      // behavior: surface metadata through normal recovery instead of ever
+      // replacing substantive untracked coach work in the background.
+      if (!settings.lastWorkspaceRevision && await hasSubstantiveLocalTeamData()) {
+        saveCloudSyncSettingsObject({
+          lastRemoteExportDate: remote.summary?.exportDate || "",
+          lastRemoteUpdatedAt: remote.updatedAt || "",
+          lastRemoteSize: remote.size || 0,
+        });
+        return remote;
+      }
+
+      const restored = await restoreCloudBackup(remote, {
+        auto: true,
+        confirm: false,
+        notify: false,
+        navigate: false,
+      });
+      if (restored) {
+        saveCloudSyncSettingsObject({
+          lastWorkspaceRevision: remote.revision,
+          lastRemoteExportDate: remote.summary?.exportDate || "",
+          lastRemoteUpdatedAt: remote.updatedAt || "",
+          lastRemoteSize: remote.size || 0,
+        });
+        if (!opts.quiet && typeof showToast === "function") {
+          showToast("Latest team update loaded", { type: "success", duration: 2200 });
+        }
+      }
+      return { ...remote, restored };
+    })();
+
+    try {
+      return await teamForegroundRefreshPromise;
+    } catch (err) {
+      // Freshness checks are enhancement work. Do not compete with an open
+      // practice screen or present a recovery error for a transient poll.
+      console.warn("Team foreground refresh deferred:", err);
+      return null;
+    } finally {
+      teamForegroundRefreshPromise = null;
+    }
   }
 
   async function autoPullLatestCloudBackup() {
@@ -2184,7 +2331,20 @@
     if (document.visibilityState === "hidden" && cloudAutoPushPending) {
       flushCloudAutoPush();
     }
+    if (document.visibilityState === "visible") {
+      refreshTeamWorkspaceOnForeground({ quiet: true });
+    }
   });
+
+  window.addEventListener("focus", () => {
+    refreshTeamWorkspaceOnForeground({ quiet: true });
+  });
+
+  window.setInterval(() => {
+    if (document.visibilityState === "visible") {
+      refreshTeamWorkspaceOnForeground({ quiet: true });
+    }
+  }, TEAM_FOREGROUND_REFRESH_INTERVAL_MS);
 
   window.addEventListener("beforeunload", (e) => {
     if (!canAutoPushCloudBackup() || !hasCloudAutoPushWork()) return;
