@@ -35,6 +35,7 @@ let _sigSelectorState = null;
 let _sigClipModalCache = new Map();
 let _sigPendingUpload = null;
 let _sigManifestReconcilePromise = null;
+let _sigLegacyMigrationPromise = null;
 
 function _sigCanManage() {
   return typeof canEditUser === "function" ? Boolean(canEditUser()) : false;
@@ -198,12 +199,43 @@ async function reconcilePublishedSignalRecords() {
   return _sigManifestReconcilePromise;
 }
 
+// One-time server migration for clips created before team-scoped manifests
+// existed. It is admin-only and copy-first: the server retains the archived
+// bytes and only switches a signal to its canonical manifest after verifying
+// the copied object. Run quietly in bounded batches so opening the app never
+// turns into a long or noisy maintenance task.
+async function _sigMigrateLegacySignalManifests() {
+  if (typeof isAdminUser !== "function" || !isAdminUser()) return 0;
+  if (_sigLegacyMigrationPromise) return _sigLegacyMigrationPromise;
+  _sigLegacyMigrationPromise = (async () => {
+    let migrated = 0;
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const response = await fetch("/media/migrate-legacy-signal-manifests", {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { Accept: "application/json", "X-BC-Auth-Mode": "json" },
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok) break;
+      const count = Array.isArray(data.migrated) ? data.migrated.length : 0;
+      migrated += count;
+      if (data.complete || !count) break;
+    }
+    return migrated;
+  })().catch(() => 0).finally(() => {
+    _sigLegacyMigrationPromise = null;
+  });
+  return _sigLegacyMigrationPromise;
+}
+
 function _sigScheduleManifestReconciliation() {
   const start = () => {
     // Let authentication and the normal clip-index warmup share the same
     // request before this low-priority historical-repair pass runs.
     setTimeout(() => {
-      reconcilePublishedSignalRecords().then((changed) => {
+      reconcilePublishedSignalRecords().then(async (changed) => {
+        await _sigMigrateLegacySignalManifests();
         if (changed && document.getElementById("signals")?.classList.contains("active")) renderSignals();
       }).catch(() => { });
     }, 1100);
