@@ -111,7 +111,9 @@ let _pbFilterDrawerOpen = false;
 // One entry point for the compact filter button. Players stay in the
 // player-safe filter sheet; staff retain the full playbook filter drawer.
 function openPlaybookFilters() {
-  const isStudyPortal = document.body?.dataset?.authStudyPortal === "true";
+  const isStudyPortal =
+    document.body?.dataset?.authStudyPortal === "true" ||
+    document.body?.dataset?.authRole === "player";
   if (isStudyPortal && typeof openPlayerPlaybookFilters === "function") {
     openPlayerPlaybookFilters();
     return;

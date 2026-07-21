@@ -1117,12 +1117,17 @@ function checkCoachControlDismissalContract() {
 function checkResponsiveAuditFixContracts() {
   const scriptCss = read("css/script.css");
   const playbookCss = read("css/playbook.css");
+  const playbookChrome = read("js/playbook-chrome.js");
 
   if (
     !/@media \(min-width: 821px\) and \(max-width: 1180px\)[\s\S]*#script \.script-header-panel[\s\S]*display:\s*grid[\s\S]*#script \.script-header-top[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\) max-content[\s\S]*#script \.script-workbench-controls[\s\S]*justify-content:\s*flex-end/.test(scriptCss) ||
-    !/body\.is-mobile-screen:not\(\[data-auth-role="player"\]\) #playbook \.pb-top-row \.pb-filter-toggle-btn \{[\s\S]*min-height:\s*44px/.test(playbookCss)
+    !/body\.is-mobile-screen:not\(\[data-auth-role="player"\]\) #playbook \.pb-top-row \.pb-filter-toggle-btn \{[\s\S]*min-height:\s*44px/.test(playbookCss) ||
+    !/#script \.script-timeline \{[\s\S]*grid-template-rows:\s*22px 58px[\s\S]*max-height:\s*92px/.test(scriptCss) ||
+    !/body\.is-mobile-screen\[data-auth-role="player"\] #playbook \.pb-controls \{[\s\S]*display:\s*block/.test(playbookCss) ||
+    !/body\.is-mobile-screen\[data-auth-role="player"\] #playbook \.pb-top-row \.pb-search-wrap input \{[\s\S]*min-height:\s*44px/.test(playbookCss) ||
+    !/authRole === "player"/.test(playbookChrome)
   ) {
-    fail("responsive audit fixes are missing the tablet Script header or phone Filters touch target");
+    fail("responsive audit fixes are missing the compact timeline or player search/filter entry point");
   }
 
   console.log("responsive audit fixes contract ok");

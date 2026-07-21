@@ -15809,3 +15809,67 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     border-top: 1px solid var(--coach-grid-divider);
   }
 }
+
+/* Practice Timeline: this is a jump rail, not a second workbench. Keep it to
+   one compact command row and let additional periods scroll sideways so play
+   rows retain the vertical space coaches use most. */
+#script .script-timeline {
+  grid-template-rows: 22px 58px;
+  gap: 3px;
+  max-height: 92px;
+  padding: 4px 6px;
+}
+
+#script .script-timeline-head > div {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  gap: 6px;
+}
+
+#script .script-timeline-head p,
+#script .script-timeline-hint {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#script .script-timeline-track {
+  min-height: 58px;
+  max-height: 58px;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+#script .script-timeline-card {
+  grid-template-rows: minmax(0, 1fr) 21px;
+  min-height: 56px;
+  height: 56px;
+  padding: 3px 5px;
+}
+
+#script .script-timeline-card-main {
+  grid-template-columns: minmax(0, 1fr) 48px;
+  gap: 5px;
+}
+
+#script .script-timeline-actions {
+  gap: 3px;
+}
+
+#script .script-timeline-action {
+  min-height: 21px;
+  padding: 2px 3px;
+  font-size: var(--font-size-3xs);
+}
+
+@media (max-width: 640px) {
+  #script .script-timeline-head h4 {
+    display: none;
+  }
+
+  #script .script-timeline-hint {
+    display: none;
+  }
+}
