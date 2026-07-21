@@ -25,8 +25,9 @@ const SIGNAL_COMPONENTS = [
 
 const SIGNAL_MAX_DURATION_SEC = 5;
 const SIGNAL_MAX_BYTES = 25 * 1024 * 1024;
+const SIGNAL_MAX_SOURCE_BYTES = 100 * 1024 * 1024;
 const SIGNAL_IPHONE_CAPTURE_HINT =
-  "iPhone: 1080p HD at 30 fps, 4-5s, Most Compatible/H.264 works best. Audio is removed before upload.";
+  "iPhone: 1080p HD at 30 fps, 4-5s, Most Compatible/H.264 works best. We optimize before upload when this phone supports it.";
 
 let _sigSelected = null;
 let _sigLastRenderToken = 0;
@@ -764,15 +765,21 @@ function _sigRenderUploadReviewModal() {
   const willTrim = state.duration && state.duration > SIGNAL_MAX_DURATION_SEC;
   const stage = state.stage || "source";
   const isProcessing = stage === "processing";
+  const isUploading = stage === "uploading";
   const isReady = stage === "ready";
-  const activeUrl = isReady ? state.preparedUrl : state.sourceUrl;
+  const activeUrl = isReady || isUploading ? state.preparedUrl : state.sourceUrl;
+  const usedOriginalFallback = state.prepared?.processingMode === "original-fallback";
   const headline = isReady
-    ? "Final preview ready"
+    ? usedOriginalFallback ? "Ready to upload" : "Optimized preview ready"
+    : isUploading
+      ? "Uploading signal..."
     : isProcessing
       ? "Preparing final clip..."
       : "Review before processing";
   const subcopy = isReady
-    ? `Audio removed${state.preparedDuration ? `, ${state.preparedDuration.toFixed(1)}s` : ""}. Confirm when this looks right.`
+    ? usedOriginalFallback
+      ? `This phone kept the original player-safe file${state.preparedDuration ? `, ${state.preparedDuration.toFixed(1)}s` : ""}. Playback stays muted.`
+      : `Audio removed${state.preparedDuration ? `, ${state.preparedDuration.toFixed(1)}s` : ""}. Confirm when this looks right.`
     : willTrim
       ? `This clip is over ${SIGNAL_MAX_DURATION_SEC}s, so the upload will use the first ${SIGNAL_MAX_DURATION_SEC}s.`
       : `This clip is within the ${SIGNAL_MAX_DURATION_SEC}s limit.`;
@@ -794,7 +801,9 @@ function _sigRenderUploadReviewModal() {
         <video class="signals-upload-review-video" src="${escapeAttr(activeUrl || "")}" autoplay loop muted playsinline preload="auto" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"></video>
       </div>
       <footer class="signals-upload-modal__actions signals-upload-review-actions">
-        ${isReady
+        ${isUploading
+      ? `<button type="button" class="btn btn-primary" disabled>Uploading...</button>`
+      : isReady
       ? `<button type="button" class="btn btn-primary" data-action="confirmSignalReviewedUpload">Upload This Clip</button>
              <button type="button" class="btn btn-secondary" data-action="resetSignalUploadReview">Choose Different</button>`
       : `<button type="button" class="btn btn-primary" data-action="processSignalUploadReview"${isProcessing ? " disabled" : ""}>${isProcessing ? "Processing..." : "Preview Final Clip"}</button>
@@ -824,9 +833,9 @@ async function openSignalUploadReviewModal(file) {
     showToast("Choose a video file.", { type: "error", duration: 3000 });
     return;
   }
-  if (file.size > SIGNAL_MAX_BYTES) {
+  if (file.size > SIGNAL_MAX_SOURCE_BYTES) {
     showToast(
-      `Signal clip is ${_sigFormatMegabytes(file.size)}. Keep it under ${_sigFormatMegabytes(SIGNAL_MAX_BYTES)}.`,
+      `Signal source is ${_sigFormatMegabytes(file.size)}. Choose a source under ${_sigFormatMegabytes(SIGNAL_MAX_SOURCE_BYTES)}.`,
       { type: "error", duration: 4200 },
     );
     return;
@@ -854,6 +863,7 @@ async function processSignalUploadReview() {
       maxDurationSec: SIGNAL_MAX_DURATION_SEC,
       durationGraceSec: 0.5,
       trimToMaxDuration: true,
+      allowOriginalFallback: true,
       showProcessingToast: false,
       publishType: "signals",
     });
@@ -891,11 +901,25 @@ async function confirmSignalReviewedUpload() {
   try {
     const sig = _sigClipKey(summary.componentType, summary.compareKey);
     const label = `${summary.componentLabel}: ${summary.displayValue}`;
-    const result = await window.playClips.uploadPreparedForSig(sig, state.prepared, label, {
+    state.stage = "uploading";
+    _sigRenderUploadReviewModal();
+    const result = await window.playClips.uploadPreparedWithRetryForSig(sig, state.prepared, label, {
       publishType: "signals",
       replaceExisting: true,
+      outboxMetadata: {
+        signal: {
+          componentType: summary.componentType,
+          compareKey: summary.compareKey,
+        },
+      },
     });
     _sigSelected = { componentType: summary.componentType, compareKey: summary.compareKey };
+    if (result.queued) {
+      showToast("Signal clip is safely saved on this phone and will upload automatically when the connection is ready.", { type: "info", duration: 4200 });
+      closeSignalUploadReviewModal();
+      renderSignals();
+      return;
+    }
     _sigUpsertRecord(summary, {
       clipCount: 1,
       durationMs: Number(result.clip?.duration || state.preparedDuration || 0) * 1000,
@@ -912,6 +936,10 @@ async function confirmSignalReviewedUpload() {
     renderSignals();
     openSignalUploadModal(`${summary.componentType}|${summary.compareKey}`);
   } catch (err) {
+    if (_sigPendingUpload === state) {
+      state.stage = "ready";
+      _sigRenderUploadReviewModal();
+    }
     showToast(err?.message || "Signal upload failed.", { type: "error", duration: 4500 });
   }
 }
@@ -959,7 +987,7 @@ function openSignalUploadModal(arg) {
         <button type="button" class="btn btn-primary signals-upload-modal__upload" data-action="triggerClick" data-target="signalUploadClipFile">
           Upload Clip
         </button>
-        <p class="signals-upload-hint">Max ${SIGNAL_MAX_DURATION_SEC}s, ${_sigFormatMegabytes(SIGNAL_MAX_BYTES)}. ${escapeHtml(SIGNAL_IPHONE_CAPTURE_HINT)}</p>
+        <p class="signals-upload-hint">Max ${SIGNAL_MAX_DURATION_SEC}s. Source up to ${_sigFormatMegabytes(SIGNAL_MAX_SOURCE_BYTES)}; final player clip up to ${_sigFormatMegabytes(SIGNAL_MAX_BYTES)}. ${escapeHtml(SIGNAL_IPHONE_CAPTURE_HINT)}</p>
       </div>
       <footer class="signals-upload-modal__actions">
         ${clipCount ? `<button type="button" class="btn btn-secondary" data-action="watchSignalUploadModalClip" data-arg="${escapeAttr(argValue)}">Watch Current</button>` : ""}
@@ -1701,4 +1729,26 @@ window.addEventListener("play-clips-changed", (event) => {
   if (sig.startsWith("signals/") && document.getElementById("signals")?.classList.contains("active")) {
     renderSignals();
   }
+});
+
+// A connection can drop after the coach has selected a signal.  The durable
+// outbox owns the blob until it reaches R2, then this event creates the
+// corresponding published signal record.  That keeps player readiness honest:
+// queued clips do not look published, and completed clips immediately do.
+window.addEventListener("play-clip-uploaded", (event) => {
+  const detail = event?.detail || {};
+  const signal = detail.metadata?.signal;
+  if (!signal?.componentType || !signal?.compareKey) return;
+  const summary = _sigFindSummary(signal.componentType, signal.compareKey);
+  if (!summary) return;
+  _sigUpsertRecord(summary, {
+    clipCount: 1,
+    durationMs: Number(detail.clip?.duration || 0) * 1000,
+    visibility: "published",
+    notes: summary.record?.notes || "",
+  });
+  if (typeof recordPlayerPublishStatus === "function") {
+    recordPlayerPublishStatus("signals", { label: `Signal uploaded: ${summary.displayValue}` });
+  }
+  if (document.getElementById("signals")?.classList.contains("active")) renderSignals();
 });

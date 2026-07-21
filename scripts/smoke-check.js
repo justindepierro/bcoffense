@@ -5812,7 +5812,15 @@ function checkSignalPlayIntegrationContracts() {
     !/\.signals-upload-review-modal/.test(signalsCss) ||
     !/accept="video\/mp4,video\/quicktime,video\/\*"/.test(signals) ||
     !/1080p HD at 30 fps/.test(signals) ||
-    !/Keep it under \$\{_sigFormatMegabytes\(SIGNAL_MAX_BYTES\)\}/.test(signals) ||
+    !/const SIGNAL_MAX_SOURCE_BYTES = 100 \* 1024 \* 1024/.test(signals) ||
+    !/Source up to \$\{_sigFormatMegabytes\(SIGNAL_MAX_SOURCE_BYTES\)\}/.test(signals) ||
+    !/allowOriginalFallback: true/.test(signals) ||
+    !/const MAX_SOURCE_BYTES = 100 \* 1024 \* 1024/.test(clips) ||
+    !/processingMode = "original-fallback"/.test(clips) ||
+    !/async function uploadPreparedWithRetryForSig\(sig, prepared, label, opts = \{\}\)/.test(clips) ||
+    !/uploadPreparedWithRetryForSig,/.test(clips) ||
+    !/new CustomEvent\("play-clip-uploaded"/.test(clips) ||
+    !/window\.addEventListener\("play-clip-uploaded"/.test(signals) ||
     !/_sigConfigureLoopVideos\(preview\)/.test(signals) ||
     !/_sigConfigureLoopVideos\(listEl\)/.test(signals) ||
     !/<video loop muted playsinline preload="metadata" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"/.test(signals) ||

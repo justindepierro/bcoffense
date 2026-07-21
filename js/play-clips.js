@@ -10,6 +10,7 @@
      await playClips.uploadForSig(sig, file, label, opts) → upload to a stable signature
      await playClips.prepareSilentVideoUpload(file, opts) → processed silent clip preview
      await playClips.uploadPreparedForSig(sig, prepared, label, opts) → upload processed clip
+     await playClips.uploadPreparedWithRetryForSig(sig, prepared, label, opts) → upload or retain for retry
      await playClips.listForSig(sig)       → [{ id, label, contentType, size, duration, uploadedAt, url }]
      await playClips.listForSigs(sigs)     → { [sig]: clips[] } using cached manifest reads
      await playClips.removeForSig(sig, id) → { ok, clips }
@@ -17,12 +18,17 @@
      playClips.fileUrl(play, id)           → streaming URL for a <video> src
      playClips.getManifestCache()          → debug manifest cache snapshot
      playClips.canManage()                 → bool (admin/coach)
-     playClips.MAX_CLIPS / MAX_BYTES / MAX_DURATION_SEC
+     playClips.MAX_CLIPS / MAX_BYTES / MAX_SOURCE_BYTES / MAX_DURATION_SEC
 */
 
 (function () {
   const MAX_CLIPS = 3;
-  const MAX_BYTES = 25 * 1024 * 1024; // 25 MiB
+  // The server accepts a final, player-safe clip of up to 25 MiB.  Allow a
+  // larger source file locally so modern phones can be optimized *before* the
+  // final-size guard is applied.  Rejecting the source at 25 MiB meant a
+  // normal iPhone capture never reached the optimizer.
+  const MAX_BYTES = 25 * 1024 * 1024; // final upload: 25 MiB
+  const MAX_SOURCE_BYTES = 100 * 1024 * 1024; // local source: 100 MiB
   const MAX_DURATION_SEC = 15;
   const DURATION_GRACE_SEC = 2; // allow slight overage from encoder rounding
   const SILENT_UPLOAD_FPS = 30;
@@ -574,9 +580,9 @@
     if (!type.startsWith("video/")) {
       throw new Error("Clip must be a video file.");
     }
-    if (file.size > MAX_BYTES) {
+    if (file.size > MAX_SOURCE_BYTES) {
       throw new Error(
-        `Clip is ${(file.size / (1024 * 1024)).toFixed(1)} MB — the limit is 25 MB.`,
+        `Clip source is ${(file.size / (1024 * 1024)).toFixed(1)} MB — choose a source under ${(MAX_SOURCE_BYTES / (1024 * 1024)).toFixed(0)} MB.`,
       );
     }
 
@@ -602,7 +608,30 @@
       );
     }
     const targetDuration = shouldTrimUpload ? maxDurationSec : duration;
-    const uploadFile = await createSilentVideoFile(file, targetDuration);
+    let uploadFile;
+    let processingMode = "optimized";
+    try {
+      uploadFile = await createSilentVideoFile(file, targetDuration);
+    } catch (err) {
+      // iOS browsers sometimes do not expose MediaRecorder/canvas capture even
+      // though they can play the selected H.264 clip.  A short, already-small
+      // source is still safe to publish, so retain it rather than losing the
+      // coach's upload.  It is always played muted in the app.
+      const canUseOriginalFallback = Boolean(opts.allowOriginalFallback)
+        && file.size <= MAX_BYTES
+        && !shouldTrimUpload
+        && (!duration || duration <= maxDurationSec + durationGraceSec);
+      if (!canUseOriginalFallback) {
+        if (opts.allowOriginalFallback && file.size > MAX_BYTES) {
+          throw new Error(
+            `This phone could not optimize the ${Math.round(file.size / (1024 * 1024))} MB source. Record in 1080p/30 fps Most Compatible, or choose an original under 25 MB.`,
+          );
+        }
+        throw err;
+      }
+      uploadFile = file;
+      processingMode = "original-fallback";
+    }
     if (uploadFile.size > MAX_BYTES) {
       throw new Error(
         `Silent clip is ${(uploadFile.size / (1024 * 1024)).toFixed(1)} MB — the limit is 25 MB.`,
@@ -621,6 +650,8 @@
       shouldTrimUpload,
       maxDurationSec,
       uploadType: (uploadFile.type || type).toLowerCase(),
+      processingMode,
+      audioRemoved: processingMode === "optimized",
     };
   }
 
@@ -660,7 +691,7 @@
     });
     const data = await response.json().catch(() => null);
     if (!response.ok || !data || !data.ok) {
-      throw new Error((data && data.error) || "Upload failed.");
+      throw new Error((data && data.error) || `Upload failed (${response.status}).`);
     }
     if (_indexSet) _indexSet.add(sig);
     invalidateManifestCache(sig);
@@ -689,7 +720,7 @@
     return new Request(`/__local/clip-upload/${encodeURIComponent(id)}`);
   }
 
-  async function _queuePreparedClip(sig, prepared, label, error) {
+  async function _queuePreparedClip(sig, prepared, label, error, opts = {}) {
     const uploadFile = prepared?.uploadFile || prepared;
     const id = crypto.randomUUID();
     let outboxId = "";
@@ -701,6 +732,9 @@
         contentType: uploadFile.type || prepared?.uploadType || "video/mp4",
         label,
         duration: Number(prepared?.uploadDuration || 0),
+        metadata: opts.outboxMetadata && typeof opts.outboxMetadata === "object"
+          ? opts.outboxMetadata
+          : {},
       });
       outboxId = job.id;
     } else {
@@ -737,6 +771,11 @@
           }, job.label, { skipExistingCheck: true });
           await window.mediaUploadOutbox.markComplete(job.id, { clip: receipt?.clip || null, uploadedAt: new Date().toISOString() });
           _writeClipUploadQueue(_readClipUploadQueue().filter((item) => item.outboxId !== job.id));
+          try {
+            window.dispatchEvent(new CustomEvent("play-clip-uploaded", {
+              detail: { sig: job.target, clip: receipt?.clip || null, metadata: job.metadata || {}, queued: true },
+            }));
+          } catch (_err) { /* non-critical UI update */ }
           pushed += 1;
         } catch (err) {
           await window.mediaUploadOutbox.markRetry(job.id, err);
@@ -775,6 +814,22 @@
     return { pushed, pending };
   }
 
+  function _isRetryableUploadError(err) {
+    const message = String(err?.message || err || "").toLowerCase();
+    return navigator.onLine === false
+      || /network|fetch|failed to fetch|upload failed|timeout|temporar|\b5\d\d\b/.test(message);
+  }
+
+  async function uploadPreparedWithRetryForSig(sig, prepared, label, opts = {}) {
+    try {
+      return await uploadPreparedForSig(sig, prepared, label, { ...opts, skipExistingCheck: true });
+    } catch (err) {
+      if (!_isRetryableUploadError(err)) throw err;
+      await _queuePreparedClip(sig, prepared, label, err?.message || err, opts);
+      return { ok: true, queued: true };
+    }
+  }
+
   async function uploadForSig(sig, file, label, opts = {}) {
     if (!sig) {
       throw new Error("Missing stable clip signature.");
@@ -786,15 +841,7 @@
       }
     }
     const prepared = await prepareSilentVideoUpload(file, opts);
-    try {
-      return await uploadPreparedForSig(sig, prepared, label, { ...opts, skipExistingCheck: true });
-    } catch (err) {
-      if (navigator.onLine === false || /network|fetch|upload failed/i.test(String(err?.message || err))) {
-        await _queuePreparedClip(sig, prepared, label, err?.message || err);
-        return { ok: true, queued: true };
-      }
-      throw err;
-    }
+    return uploadPreparedWithRetryForSig(sig, prepared, label, opts);
   }
 
   async function upload(play, file, label, opts = {}) {
@@ -1215,6 +1262,7 @@
   window.playClips = {
     MAX_CLIPS,
     MAX_BYTES,
+    MAX_SOURCE_BYTES,
     MAX_DURATION_SEC,
     sigForPlay,
     canManage,
@@ -1228,6 +1276,7 @@
     prepareSilentVideoUpload,
     uploadForSig,
     uploadPreparedForSig,
+    uploadPreparedWithRetryForSig,
     upload,
     flushQueuedClipUploads,
     removeForSig,
