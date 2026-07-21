@@ -1,7 +1,6 @@
 let highlightedWristbandPlays = [];
 let highlightedWristbandPlayKeys = new Set();
 const playbookMediaFilters = new Set();
-const _playbookMediaFilterChecks = new Set();
 let _playbookMediaFilterRefreshPending = false;
 let _playbookMediaFilterRetryTimer = null;
 
@@ -166,6 +165,14 @@ function _playbookHasDiagramForCurrentViewer(play) {
     : _playbookHasDiagram(play);
 }
 
+function _hasDefinitivePlaybookMediaManifest(play) {
+  const manifest = typeof window !== "undefined" &&
+    typeof window.playImages?.getCachedRemoteManifestForPlay === "function"
+    ? window.playImages.getCachedRemoteManifestForPlay(play)
+    : null;
+  return Boolean(manifest && ["published", "unpublished"].includes(manifest.status));
+}
+
 function _warmPlaybookMediaFilterManifests(playList) {
   if (
     _playbookMediaFilterRefreshPending ||
@@ -175,30 +182,15 @@ function _warmPlaybookMediaFilterManifests(playList) {
   ) return false;
   const pending = playList.filter((play) => {
     const mediaId = String(getPlayMediaId(play) || "").trim();
-    return mediaId && !_playbookMediaFilterChecks.has(mediaId);
+    return mediaId && !_hasDefinitivePlaybookMediaManifest(play);
   });
   if (!pending.length) return false;
   _playbookMediaFilterRefreshPending = true;
   window.playImages.checkRemoteForPlays(pending)
-    .then((manifests) => {
-      pending.forEach((play) => {
-        const mediaId = String(getPlayMediaId(play) || "").trim();
-        const manifest = mediaId
-          ? manifests?.[mediaId] || window.playImages.getCachedRemoteManifestForPlay?.(play)
-          : null;
-        // Only remember a definitive answer. A timeout/offline/error result
-        // must be retried later; otherwise the study filter silently excludes
-        // every diagram that was still checking on a fresh device.
-        if (mediaId && manifest && ["published", "unpublished"].includes(manifest.status)) {
-          _playbookMediaFilterChecks.add(mediaId);
-        }
-      });
-    })
     .finally(() => {
       _playbookMediaFilterRefreshPending = false;
       const hasUnresolved = pending.some((play) => {
-        const manifest = window.playImages.getCachedRemoteManifestForPlay?.(play);
-        return !manifest || !["published", "unpublished"].includes(manifest.status);
+        return !_hasDefinitivePlaybookMediaManifest(play);
       });
       if (hasUnresolved) {
         // Keep the unfiltered list visible while Cloudflare is unavailable.
@@ -217,7 +209,7 @@ function _hasUnresolvedPlaybookMediaManifests(playList) {
   if (typeof getPlayMediaId !== "function") return false;
   return (Array.isArray(playList) ? playList : []).some((play) => {
     const mediaId = String(getPlayMediaId(play) || "").trim();
-    return mediaId && !_playbookMediaFilterChecks.has(mediaId);
+    return mediaId && !_hasDefinitivePlaybookMediaManifest(play);
   });
 }
 
