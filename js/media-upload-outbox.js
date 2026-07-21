@@ -71,6 +71,37 @@
     return copy;
   }
 
+  function _receiptPayload(job, state = "") {
+    if (!job?.id || !job?.kind || !job?.target) return null;
+    return {
+      id: String(job.id),
+      kind: String(job.kind),
+      target: String(job.target),
+      state: state || (job.state === "completed" ? "completed" : job.state === "blocked" ? "blocked" : "queued"),
+      attempts: Math.max(0, Number(job.attempts || 0) || 0),
+      bytes: Math.max(0, Number(job.bytes || job.blob?.size || job.receipt?.bytes || 0) || 0),
+      queuedAt: job.queuedAt || "",
+      completedAt: job.completedAt || "",
+      lastError: job.lastError || "",
+      receipt: job.receipt && typeof job.receipt === "object" ? job.receipt : {},
+    };
+  }
+
+  function _reportRemoteReceipt(job, state = "") {
+    const payload = _receiptPayload(job, state);
+    if (!payload || typeof fetch !== "function" || (typeof location !== "undefined" && location.protocol === "file:")) return;
+    // Receipt reporting is deliberately best-effort. The local outbox and
+    // source-specific upload verification remain authoritative; this is only
+    // a server-visible health trail and must never make a good local save fail.
+    fetch("/media/receipts", {
+      method: "POST",
+      credentials: "same-origin",
+      keepalive: true,
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(payload),
+    }).catch(() => { /* health monitor will simply have less evidence offline */ });
+  }
+
   function _normalizeInput(input = {}) {
     const kind = _cleanText(input.kind, 40);
     const target = _cleanText(input.target || input.identityKey || input.sig, 1024);
@@ -82,6 +113,7 @@
       target,
       blob,
       contentType: _cleanText(input.contentType || blob.type || "application/octet-stream", 200),
+      bytes: Math.max(0, Number(blob.size || 0) || 0),
       label: _cleanText(input.label, 240),
       duration: Math.max(0, Number(input.duration || 0) || 0),
       checksum: _cleanText(input.checksum, 128).toLowerCase(),
@@ -111,6 +143,7 @@
     };
     await _withStore("readwrite", async (store) => _request(store.put(job)));
     pendingCount += existing && ["queued", "blocked"].includes(existing.state) ? 0 : 1;
+    _reportRemoteReceipt(job, "queued");
     return _publicJob(job, false);
   }
 
@@ -147,6 +180,7 @@
       updatedAt: _now(),
     };
     await _withStore("readwrite", async (store) => _request(store.put(updated)));
+    _reportRemoteReceipt(updated, updated.state === "blocked" ? "blocked" : "retrying");
     return _publicJob(updated, false);
   }
 
@@ -164,6 +198,7 @@
       blob: null,
     };
     await _withStore("readwrite", async (store) => _request(store.put(completed)));
+    _reportRemoteReceipt(completed, "completed");
     if (["queued", "blocked"].includes(job.state)) pendingCount = Math.max(0, pendingCount - 1);
     if (pendingCount === 0 && typeof window.completeWorkspaceSyncJob === "function") {
       window.completeWorkspaceSyncJob("media:durable-upload-outbox", { label: "Media saved for players" });
@@ -184,6 +219,7 @@
         updatedAt: _now(),
       };
       await _withStore("readwrite", async (store) => _request(store.put(next)));
+      _reportRemoteReceipt(next, "queued");
       retried.push(_publicJob(next, false));
     }
     pendingCount = retried.length;
@@ -275,6 +311,8 @@
   }
 
   async function restorePendingWorkspaceStatus() {
+    const queued = await pending();
+    queued.forEach((job) => _reportRemoteReceipt(job, job.state === "blocked" ? "blocked" : "queued"));
     const health = await refreshHealth();
     return health.pending;
   }

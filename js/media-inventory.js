@@ -684,22 +684,32 @@
       <section class="pb-health-section">
         <div class="pb-health-section-head">
           <h4>Automatic Cloud Health</h4>
-          <span>${_miEscape(scheduledHealth.available ? (scheduled.status === "healthy" ? "Healthy" : "Needs attention") : "Waiting")}</span>
+          <span>${_miEscape(scheduledHealth.available
+            ? (scheduled.status === "healthy" ? "Healthy" : scheduled.status === "waiting" ? "Uploads waiting safely" : "Needs attention")
+            : "Waiting")}</span>
         </div>
         ${scheduledHealth.available ? `
           <div class="pb-health-summary pb-publish-media-summary">
             ${_miRenderCard(`${scheduled.diagramPointerCount || 0}/${scheduled.diagramObjectCount || 0}`, "Verified diagrams")}
             ${_miRenderCard(scheduled.missingClipCount || 0, "Missing clip files")}
             ${_miRenderCard(scheduled.legacyClipManifestCount || 0, "Legacy clip manifests")}
+            ${_miRenderCard(scheduled.pendingUploadCount || 0, "Server-tracked uploads")}
+            ${_miRenderCard(scheduled.stuckUploadCount || 0, "Stuck uploads")}
             ${_miRenderCard(scheduled.releaseAgeSeconds < 0 ? "—" : `${Math.floor((scheduled.releaseAgeSeconds || 0) / 60)}m`, "Current release age")}
           </div>
-          <div class="pb-health-guidance">Last server check: ${_miEscape(new Date((scheduled.completedAt || 0) * 1000).toLocaleString())}. Cloudflare checks diagrams, clip manifests and bytes, release freshness, and reports real storage mismatches without changing media.</div>
-          ${(scheduled.missingDiagramCount || scheduled.invalidDiagramPathCount || scheduled.checksumMismatchCount || scheduled.missingClipCount)
+          <div class="pb-health-guidance">Last server check: ${_miEscape(new Date((scheduled.completedAt || 0) * 1000).toLocaleString())}. Cloudflare checks diagrams, clips, release freshness, and server-visible upload receipts. A queued upload is not an error while its original file is safely retained on an offline device.</div>
+          ${(scheduled.missingDiagramCount || scheduled.invalidDiagramPathCount || scheduled.checksumMismatchCount || scheduled.missingClipCount || scheduled.stuckUploadCount)
             ? _miRenderPlayRows([
               ..._miArray(scheduled.detail?.missingMediaIds).map((label) => ({ label, detail: "Current diagram pointer is missing its immutable Cloudflare object." })),
               ..._miArray(scheduled.detail?.missingClipIds).map((label) => ({ label, detail: "A clip manifest points to a missing Cloudflare video object." })),
+              ..._miArray(scheduled.detail?.stuckUploads).map((row) => ({
+                label: `${row.kind || "Media"}: ${row.target || "unknown target"}`,
+                detail: `${row.state || "waiting"} after ${row.attempts || 0} attempt${Number(row.attempts || 0) === 1 ? "" : "s"}; use Retry from a device that has the source file.`,
+              })),
             ], "Cloud health needs attention; refresh after correcting the listed media.")
-            : `<div class="pb-health-empty">Automatic server checks are clear. You do not need to run this audit routinely.</div>`}
+            : scheduled.pendingUploadCount
+              ? `<div class="pb-health-empty">${_miEscape(scheduled.pendingUploadCount)} upload${Number(scheduled.pendingUploadCount) === 1 ? " is" : "s are"} safely waiting for its device to reconnect.</div>`
+              : `<div class="pb-health-empty">Automatic server checks are clear. You do not need to run this audit routinely.</div>`}
         ` : `<div class="pb-health-empty">${_miEscape(scheduledHealth.reason || "The first hourly Cloudflare check has not run yet.")}</div>`}
       </section>
       <section class="pb-health-section">

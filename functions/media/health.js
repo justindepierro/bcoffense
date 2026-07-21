@@ -18,7 +18,7 @@ export async function onRequestGet(context) {
       `SELECT status, completed_at, diagram_pointer_count, diagram_object_count,
         missing_diagram_count, invalid_diagram_path_count, checksum_mismatch_count,
         clip_manifest_count, missing_clip_count, legacy_clip_manifest_count,
-        release_age_seconds, detail_json
+        release_age_seconds, pending_upload_count, stuck_upload_count, detail_json
        FROM media_health_runs WHERE team_id = ? ORDER BY completed_at DESC LIMIT 1`,
     ).bind(teamId).first();
     if (!row) return authJson({ ok: true, available: false, reason: "The first hourly media check has not run yet." });
@@ -30,7 +30,8 @@ export async function onRequestGet(context) {
       missingDiagramCount: Number(row.missing_diagram_count || 0), invalidDiagramPathCount: Number(row.invalid_diagram_path_count || 0),
       checksumMismatchCount: Number(row.checksum_mismatch_count || 0),
       clipManifestCount: Number(row.clip_manifest_count || 0), missingClipCount: Number(row.missing_clip_count || 0),
-      legacyClipManifestCount: Number(row.legacy_clip_manifest_count || 0), releaseAgeSeconds: Number(row.release_age_seconds || 0), detail,
+      legacyClipManifestCount: Number(row.legacy_clip_manifest_count || 0), releaseAgeSeconds: Number(row.release_age_seconds || 0),
+      pendingUploadCount: Number(row.pending_upload_count || 0), stuckUploadCount: Number(row.stuck_upload_count || 0), detail,
     } });
   } catch (_err) {
     return authJson({ ok: false, error: "Scheduled media health could not be read." }, { status: 502 });

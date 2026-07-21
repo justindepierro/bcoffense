@@ -9,6 +9,7 @@ const R2_PAGE_SIZE = 1000;
 const KV_PAGE_SIZE = 1000;
 const LEGACY_CLIP_MANIFEST_PREFIX = "clips:";
 const LEGACY_CLIP_PREFIX = "clips/";
+const STUCK_UPLOAD_SECONDS = 15 * 60;
 
 function teamPrefix(teamId) {
   return `media/teams/${encodeURIComponent(String(teamId || "").trim())}/`;
@@ -84,12 +85,18 @@ async function runTeamHealth(env, teamId, includeLegacy) {
   const startedAt = Math.floor(Date.now() / 1000);
   const diagramPrefix = `${teamPrefix(teamId)}plays/`;
   const clipPrefix = `${teamPrefix(teamId)}clips/`;
-  const [pointers, diagramList, clipList, manifestList, release] = await Promise.all([
+  const [pointers, diagramList, clipList, manifestList, release, pendingUploads, stuckUploads] = await Promise.all([
     env.DB.prepare("SELECT media_id, r2_key, checksum FROM team_media_manifests WHERE team_id = ? AND kind = 'diagram'").bind(teamId).all(),
     listR2(env.CLIPS, [diagramPrefix]),
     listR2(env.CLIPS, [clipPrefix, ...(includeLegacy ? [LEGACY_CLIP_PREFIX] : [])]),
     listManifestSigs(env.SYNC_KV, teamId, includeLegacy),
     env.DB.prepare("SELECT updated_at FROM team_player_release_current WHERE team_id = ? LIMIT 1").bind(teamId).first(),
+    env.DB.prepare(
+      "SELECT id, kind, target_key, state, attempts, queued_at, updated_at, last_error FROM team_media_upload_receipts WHERE team_id = ? AND state != 'completed' ORDER BY updated_at ASC LIMIT 100",
+    ).bind(teamId).all(),
+    env.DB.prepare(
+      "SELECT id, kind, target_key, state, attempts, queued_at, updated_at, last_error FROM team_media_upload_receipts WHERE team_id = ? AND (state = 'blocked' OR (state = 'retrying' AND updated_at <= ?)) ORDER BY updated_at ASC LIMIT 100",
+    ).bind(teamId, startedAt - STUCK_UPLOAD_SECONDS).all(),
   ]);
   const clipManifests = await readClipManifestHealth(env.SYNC_KV, env, teamId, manifestList.sigs);
   const diagramObjectByKey = new Map((diagramList.objects || []).map((object) => [String(object.key || ""), object]));
@@ -121,7 +128,14 @@ async function runTeamHealth(env, teamId, includeLegacy) {
     });
   });
   const releaseAgeSeconds = release?.updated_at ? Math.max(0, startedAt - Number(release.updated_at)) : -1;
-  const status = missing.length || invalid.length || checksumMismatch.length || missingClips.length ? "attention" : "healthy";
+  const pendingReceiptRows = pendingUploads.results || [];
+  const stuckReceiptRows = stuckUploads.results || [];
+  const hasMediaIssue = missing.length || invalid.length || checksumMismatch.length || missingClips.length;
+  const status = hasMediaIssue || stuckReceiptRows.length
+    ? "attention"
+    : pendingReceiptRows.length
+      ? "waiting"
+      : "healthy";
   const completedAt = Math.floor(Date.now() / 1000);
   const detail = {
     scanComplete: !diagramList.truncated && !clipList.truncated && !manifestList.truncated,
@@ -130,19 +144,37 @@ async function runTeamHealth(env, teamId, includeLegacy) {
     checksumMismatchMediaIds: checksumMismatch.slice(0, 25),
     missingClipIds: missingClips.slice(0, 25),
     clipCount,
+    // A queued receipt is not automatically a failure: it may be a phone
+    // safely offline with its original bytes retained in IndexedDB. Only a
+    // blocked or stale retrying receipt is promoted to attention above.
+    pendingUploads: pendingReceiptRows.slice(0, 12).map((row) => ({
+      id: String(row.id || ""), kind: String(row.kind || ""), target: String(row.target_key || ""),
+      state: String(row.state || ""), attempts: Number(row.attempts || 0) || 0,
+      queuedAt: Number(row.queued_at || 0) || 0, updatedAt: Number(row.updated_at || 0) || 0,
+    })),
+    stuckUploads: stuckReceiptRows.slice(0, 12).map((row) => ({
+      id: String(row.id || ""), kind: String(row.kind || ""), target: String(row.target_key || ""),
+      state: String(row.state || ""), attempts: Number(row.attempts || 0) || 0,
+      queuedAt: Number(row.queued_at || 0) || 0, updatedAt: Number(row.updated_at || 0) || 0,
+    })),
   };
   await env.DB.prepare(
     `INSERT INTO media_health_runs
       (id, team_id, status, started_at, completed_at, diagram_pointer_count, diagram_object_count,
        missing_diagram_count, invalid_diagram_path_count, checksum_mismatch_count, clip_manifest_count,
-       missing_clip_count, legacy_clip_manifest_count, release_age_seconds, detail_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       missing_clip_count, legacy_clip_manifest_count, release_age_seconds, pending_upload_count,
+       stuck_upload_count, detail_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).bind(
     crypto.randomUUID(), teamId, status, startedAt, completedAt, rows.length, diagramObjectByKey.size,
     missing.length, invalid.length, checksumMismatch.length, clipManifests.length, missingClips.length,
-    clipManifests.filter((manifest) => manifest.legacy).length, releaseAgeSeconds, JSON.stringify(detail),
+    clipManifests.filter((manifest) => manifest.legacy).length, releaseAgeSeconds,
+    pendingReceiptRows.length, stuckReceiptRows.length, JSON.stringify(detail),
   ).run();
-  return { teamId, status, pointers: rows.length, diagrams: diagramObjectByKey.size, clips: clipCount };
+  return {
+    teamId, status, pointers: rows.length, diagrams: diagramObjectByKey.size, clips: clipCount,
+    pendingUploads: pendingReceiptRows.length, stuckUploads: stuckReceiptRows.length,
+  };
 }
 
 async function runHealth(env) {
