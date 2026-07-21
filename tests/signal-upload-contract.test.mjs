@@ -33,6 +33,9 @@ assert(/const SIGNAL_MAX_SOURCE_BYTES = 100 \* 1024 \* 1024/.test(signals), "sig
 assert(/allowOriginalFallback: true/.test(signals), "signal review enables the safe mobile fallback");
 assert(/uploadPreparedWithRetryForSig/.test(signals), "signal confirmation uses durable retry");
 assert(/window\.addEventListener\("play-clip-uploaded"/.test(signals), "signal record is created only after a queued upload completes");
+assert(/async function reconcilePublishedSignalRecords\(\)/.test(signals), "staff startup reconciles old clip manifests that are missing their published signal record");
+assert(/window\.playClips\.loadIndex/.test(signals), "signal reconciliation uses the shared indexed manifest request instead of one request per signal");
+assert(/recordPlayerPublishStatus\("signals"/.test(signals), "reconciled signal metadata immediately advances the player release");
 
 if (failed) process.exit(1);
 console.log("Signal phone upload contract passed.");

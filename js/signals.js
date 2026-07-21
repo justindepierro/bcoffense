@@ -34,6 +34,7 @@ let _sigLastRenderToken = 0;
 let _sigSelectorState = null;
 let _sigClipModalCache = new Map();
 let _sigPendingUpload = null;
+let _sigManifestReconcilePromise = null;
 
 function _sigCanManage() {
   return typeof canEditUser === "function" ? Boolean(canEditUser()) : false;
@@ -121,6 +122,95 @@ function _sigSaveRecords(records) {
   _sigRecordsCache = normalized;
   _sigRecordsCacheAt = Date.now();
   _sigRecordsMapCache = null;
+}
+
+// Signal clips and their small workspace records are intentionally separate:
+// the clip is committed to team-scoped R2/KV first, then its record is carried
+// in the next immutable workspace release. Older uploads (and an interrupted
+// browser handoff) can therefore leave a real clip without its matching
+// workspace record. Repair that safely from the authoritative clip index on
+// staff startup. This is a compact, idempotent metadata migration -- it never
+// uploads, deletes, or changes the actual signal video.
+async function reconcilePublishedSignalRecords() {
+  if (!_sigCanManage()) return false;
+  if (_sigManifestReconcilePromise) return _sigManifestReconcilePromise;
+  if (!window.playClips || typeof window.playClips.loadIndex !== "function") return false;
+
+  _sigManifestReconcilePromise = (async () => {
+    const index = await window.playClips.loadIndex();
+    const signalSigs = [...(index instanceof Set ? index : [])]
+      .map((sig) => String(sig || "").trim())
+      .filter((sig) => sig.startsWith("signals/"));
+    if (!signalSigs.length) return false;
+
+    const records = _sigLoadRecords();
+    const byId = _sigRecordsMap(records);
+    const next = [...records];
+    let changed = 0;
+    const now = new Date().toISOString();
+    const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+
+    signalSigs.forEach((sig) => {
+      const [, componentType, ...keyParts] = sig.split("/");
+      const compareKey = keyParts.join("/");
+      if (!componentType || !compareKey || !_sigComponentByType(componentType)) return;
+      const summary = _sigFindSummary(componentType, compareKey);
+      if (!summary) return;
+      const id = _sigRecordId(componentType, compareKey);
+      const existing = byId.get(id);
+      // Signal manifests are replace-only, so an indexed signal has exactly
+      // one current clip. Preserve a coach's draft visibility if they made
+      // that explicit; missing historic records become published by default.
+      if (Number(existing?.clipCount || 0) > 0) return;
+      const record = _sigNormalizeRecord({
+        ...(existing || {}),
+        id,
+        category: summary.category,
+        componentType,
+        componentValue: summary.displayValue,
+        compareKey,
+        clipKey: sig,
+        clipCount: 1,
+        visibility: existing?.visibility || "published",
+        createdBy: existing?.createdBy || user?.username || user?.role || "",
+        createdAt: existing?.createdAt || now,
+        updatedAt: now,
+      });
+      if (!record) return;
+      const indexInRecords = next.findIndex((item) => item.id === id);
+      if (indexInRecords >= 0) next[indexInRecords] = record;
+      else next.push(record);
+      byId.set(id, record);
+      changed += 1;
+    });
+
+    if (!changed) return false;
+    _sigSaveRecords(next);
+    if (typeof recordPlayerPublishStatus === "function") {
+      recordPlayerPublishStatus("signals", {
+        label: `${changed} published signal ${changed === 1 ? "record" : "records"} restored from Cloudflare media`,
+      });
+    }
+    return true;
+  })().catch(() => false).finally(() => {
+    _sigManifestReconcilePromise = null;
+  });
+  return _sigManifestReconcilePromise;
+}
+
+function _sigScheduleManifestReconciliation() {
+  const start = () => {
+    // Let authentication and the normal clip-index warmup share the same
+    // request before this low-priority historical-repair pass runs.
+    setTimeout(() => {
+      reconcilePublishedSignalRecords().then((changed) => {
+        if (changed && document.getElementById("signals")?.classList.contains("active")) renderSignals();
+      }).catch(() => { });
+    }, 1100);
+  };
+  if (typeof window.whenAuthReady === "function") window.whenAuthReady().then(start).catch(() => { });
+  else if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, { once: true });
+  else start();
 }
 
 function _sigRecordsMap(records = _sigLoadRecords()) {
@@ -1752,3 +1842,5 @@ window.addEventListener("play-clip-uploaded", (event) => {
   }
   if (document.getElementById("signals")?.classList.contains("active")) renderSignals();
 });
+
+_sigScheduleManifestReconciliation();
