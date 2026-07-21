@@ -3672,8 +3672,7 @@ kbd {
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-fast);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: hidden;
 }
 .page-actions-overlay.visible {
   opacity: 1;
@@ -3725,6 +3724,7 @@ kbd {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 14px;
   display: flex;
   flex-direction: column;

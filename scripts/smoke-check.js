@@ -1085,6 +1085,10 @@ function checkCoachControlDismissalContract() {
   const scriptDisplay = read("js/script-display-options.js");
   const scriptPlayer = read("js/script-player.js");
   const scriptCss = read("css/script.css");
+  const pageActions = read("js/page-actions.js");
+  const playbookFilters = read("js/playbook-filters.js");
+  const components = read("css/components.css");
+  const playbookCss = read("css/playbook.css");
 
   if (
     !/id="scriptDisplayOverlay" data-action="closeScriptDisplayPanelOverlay"/.test(html) ||
@@ -1092,10 +1096,19 @@ function checkCoachControlDismissalContract() {
     !/function setScriptDisplayPanelOpen\(isOpen\)/.test(scriptDisplay) ||
     !/function dismissOpenCoachControlSurface\(\)/.test(appEvents) ||
     !/\["scriptDisplayOverlay", "visible", "closeScriptDisplayPanel"\]/.test(appEvents) ||
+    !/\["playerPlaybookFilterOverlay", "visible", "closePlayerPlaybookFilters"\]/.test(appEvents) ||
     !/\.script-display-overlay\.visible \{[\s\S]*pointer-events:\s*auto/.test(scriptCss) ||
-    !/function openSavedScriptsWorkspace\(opts = \{\}\)/.test(scriptPlayer)
+    !/function openSavedScriptsWorkspace\(opts = \{\}\)/.test(scriptPlayer) ||
+    !/openLayer\(overlay, \{[\s\S]*id: "page-actions"[\s\S]*scrollElement: "pageActionsBody"/.test(pageActions) ||
+    !/closeLayer\(overlay\)/.test(pageActions) ||
+    !/\.page-actions-overlay \{[\s\S]*overflow:\s*hidden/.test(components) ||
+    !/\.page-actions-body \{[\s\S]*overflow-y:\s*auto[\s\S]*scrollbar-gutter:\s*stable/.test(components) ||
+    !/openLayer\(overlay, \{[\s\S]*id: "player-playbook-filters"[\s\S]*scrollElement: overlay\.querySelector\("\.pb-player-filter-body"\)/.test(playbookFilters) ||
+    !/closeLayer\(overlay, \{ returnFocus: options\.returnFocus !== false \}\)/.test(playbookFilters) ||
+    !/\.pb-player-filter-overlay \{[\s\S]*pointer-events:\s*none[\s\S]*overflow:\s*hidden/.test(playbookCss) ||
+    !/\.pb-player-filter-body \{[\s\S]*min-height:\s*0[\s\S]*overflow-y:\s*auto[\s\S]*scrollbar-gutter:\s*stable/.test(playbookCss)
   ) {
-    fail("coach control surfaces are missing a consistent saved-script or dismissal path");
+    fail("coach control surfaces are missing the shared layer, focus, or single-scroll contract");
   }
 
   console.log("coach control dismissal contract ok");

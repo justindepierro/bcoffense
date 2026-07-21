@@ -198,6 +198,8 @@ function getActivePageActionsKey() {
   return typeof currentActiveTab !== "undefined" ? currentActiveTab : "";
 }
 
+let pageActionsCloseTimer = null;
+
 function openPageActions() {
   const key = getActivePageActionsKey();
   const config = PAGE_ACTIONS_CONFIG[key];
@@ -210,21 +212,42 @@ function openPageActions() {
     return;
   }
   renderPageActionsRoot(config);
+  if (pageActionsCloseTimer) {
+    clearTimeout(pageActionsCloseTimer);
+    pageActionsCloseTimer = null;
+  }
   overlay.hidden = false;
   overlay.removeAttribute("inert");
   overlay.setAttribute("aria-hidden", "false");
-  requestAnimationFrame(() => overlay.classList.add("visible"));
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "page-actions",
+      scrollElement: "pageActionsBody",
+    });
+  } else if (typeof trapFocus === "function" && !overlay.dataset.focusTrapReady) {
+    trapFocus(overlay);
+    overlay.dataset.focusTrapReady = "true";
+  }
+  requestAnimationFrame(() => {
+    overlay.classList.add("visible");
+    overlay.querySelector(".page-actions-close")?.focus();
+  });
 }
 
 function closePageActions() {
   const overlay = document.getElementById("pageActionsSheet");
   if (!overlay) return;
+  if (pageActionsCloseTimer) {
+    clearTimeout(pageActionsCloseTimer);
+    pageActionsCloseTimer = null;
+  }
   overlay.classList.remove("visible");
   overlay.setAttribute("aria-hidden", "true");
   overlay.setAttribute("inert", "");
-  setTimeout(() => {
+  if (typeof closeLayer === "function") closeLayer(overlay);
+  pageActionsCloseTimer = setTimeout(() => {
     overlay.hidden = true;
+    pageActionsCloseTimer = null;
   }, 180);
 }
 

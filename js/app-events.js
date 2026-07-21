@@ -45,6 +45,7 @@ function dismissOpenCoachControlSurface() {
 
   const dismissiblePanels = [
     ["pageActionsSheet", "visible", "closePageActions"],
+    ["playerPlaybookFilterOverlay", "visible", "closePlayerPlaybookFilters"],
     ["wbSettingsModal", "visible", "closeWbSettingsModal"],
     ["scriptDisplayOverlay", "visible", "closeScriptDisplayPanel"],
     ["helpOverlay", "visible", "closeHelpPanel"],

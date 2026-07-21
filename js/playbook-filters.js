@@ -506,7 +506,7 @@ function _decodePlayerPlaybookFilterArg(arg) {
 }
 
 function openPlayerPlaybookFilters(focusKey = "") {
-  closePlayerPlaybookFilters();
+  closePlayerPlaybookFilters({ returnFocus: false, immediate: true });
   if (typeof ensurePlaybookImageBadgesReady === "function") {
     ensurePlaybookImageBadgesReady();
   }
@@ -525,6 +525,7 @@ function openPlayerPlaybookFilters(focusKey = "") {
   overlay.setAttribute("role", "dialog");
   overlay.setAttribute("aria-modal", "true");
   overlay.setAttribute("aria-labelledby", "playerPlaybookFilterTitle");
+  overlay.setAttribute("aria-hidden", "false");
 
   const groupsHtml = orderedGroups
     .map((group) => {
@@ -568,8 +569,18 @@ function openPlayerPlaybookFilters(focusKey = "") {
     </section>`;
 
   document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add("visible"));
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "player-playbook-filters",
+      scrollElement: overlay.querySelector(".pb-player-filter-body"),
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+  }
+  requestAnimationFrame(() => {
+    overlay.classList.add("visible");
+    overlay.querySelector(".pb-player-filter-close")?.focus();
+  });
 }
 
 function _isPlayerPlaybookFilterActive(group, value) {
@@ -585,10 +596,19 @@ function _isPlayerPlaybookFilterActive(group, value) {
   return false;
 }
 
-function closePlayerPlaybookFilters() {
+function closePlayerPlaybookFilters(options = {}) {
   const overlay = document.getElementById("playerPlaybookFilterOverlay");
   if (!overlay) return;
   overlay.classList.remove("visible");
+  overlay.setAttribute("aria-hidden", "true");
+  overlay.setAttribute("inert", "");
+  if (typeof closeLayer === "function") {
+    closeLayer(overlay, { returnFocus: options.returnFocus !== false });
+  }
+  if (options.immediate) {
+    overlay.remove();
+    return;
+  }
   setTimeout(() => overlay.remove(), 160);
 }
 

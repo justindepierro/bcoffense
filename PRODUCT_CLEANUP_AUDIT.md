@@ -64,10 +64,11 @@ small, testable releases.
   list. Link health, account state, and homework groups are visible at a glance;
   bulk import/add tools stay collapsed and one player expands for editing only
   when needed.
-- [ ] **C-012 · Consolidate overlay families.** Reduce the 63 entry points to
-  four approved patterns: anchored menu, side drawer, centered modal, and
-  full-screen mobile sheet. Existing features stay intact; their container,
-  close behavior, focus handling, and footer anatomy become consistent.
+- [~] **C-012 · Consolidate overlay families.** Release v1295 moves the shared
+  `Actions` hub and Player Playbook filter sheet onto the common layer helper:
+  one scroll owner, backdrop/Escape dismissal, focus capture/return, and a
+  phone-safe sheet. Continue the same pattern through quiz, homework, and
+  media overlays without changing their workflows.
 - [ ] **C-013 · Retire obsolete UI aliases after usage checks.** Start with
   explicit legacy display aliases in Call Sheet and Script. Remove an alias
   only after no renderer, saved setting, print path, or delegated action needs
@@ -106,10 +107,10 @@ small, testable releases.
 - [ ] **C-030 · Split the largest style and behavior owners by surface.**
   Split `script.css` and `script-quiz.js` along existing runtime/render
   boundaries without changing global action names or loading order.
-- [ ] **C-031 · Add modal semantics coverage.** The static audit found modal
-  shells without explicit dialog semantics. Move each to the shared layer
-  helper and require role, accessible label, Escape, close control, focus
-  return, and a single scroll owner.
+- [~] **C-031 · Add modal semantics coverage.** Release v1295 establishes the
+  contract on the shared Actions hub and Player Playbook filters: dialog
+  semantics, Escape, close control, focus return, and one scroll owner. Add
+  static coverage and migrate the remaining modal families in small slices.
 - [ ] **C-032 · Replace direct `scrollIntoView` where it can move the app
   shell.** Scope script/playbook jumps to their intended scroll container so
   sticky headers and tabs stay aligned.

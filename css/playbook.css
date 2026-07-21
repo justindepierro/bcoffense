@@ -1235,11 +1235,14 @@ body.is-mobile-screen .pb-signal-badge {
   padding: 16px;
   background: rgba(15, 23, 42, 0.52);
   opacity: 0;
+  pointer-events: none;
   transition: opacity 160ms ease;
+  overflow: hidden;
 }
 
 .pb-player-filter-overlay.visible {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .pb-player-filter-dialog {
@@ -1302,10 +1305,13 @@ body.is-mobile-screen .pb-signal-badge {
 }
 
 .pb-player-filter-body {
+  min-height: 0;
   display: grid;
   gap: var(--space-md);
   padding: 14px 16px;
-  overflow: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .pb-player-filter-group h3 {
