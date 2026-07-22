@@ -48,6 +48,7 @@
   // table can show a 🎬 indicator synchronously without a request per row.
   let _indexSet = null;
   let _indexPromise = null;
+  let _legacyPlayMigrationPromise = null;
   const _manifestCache = new Map();
 
   // Candidate keys are permanent-media-ID first. Tag/content-derived keys are
@@ -222,6 +223,37 @@
 
   function isIndexLoaded() {
     return _indexSet instanceof Set;
+  }
+
+  // Historic play clips used display-derived tags instead of permanent media
+  // IDs. The server resolves only exact current-workspace matches, copies and
+  // verifies those bytes, and retires any unlinked tag as recovery evidence.
+  // Keep that maintenance quiet and bounded during an admin warmup.
+  async function migrateLegacyPlayClipManifests() {
+    if (typeof isAdminUser !== "function" || !isAdminUser()) return 0;
+    if (_legacyPlayMigrationPromise) return _legacyPlayMigrationPromise;
+    _legacyPlayMigrationPromise = (async () => {
+      let migrated = 0;
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const response = await fetch("/media/migrate-legacy-play-clip-manifests", {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: { Accept: "application/json", "X-BC-Auth-Mode": "json" },
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data?.ok) break;
+        const count = Array.isArray(data.migrated) ? data.migrated.length : 0;
+        const retired = Array.isArray(data.retired) ? data.retired.length : 0;
+        migrated += count;
+        if (data.complete || data.skipped?.length || data.failed?.length || (!count && !retired)) break;
+      }
+      if (migrated) resetReleaseCache();
+      return migrated;
+    })().catch(() => 0).finally(() => {
+      _legacyPlayMigrationPromise = null;
+    });
+    return _legacyPlayMigrationPromise;
   }
 
   function silentMimeType() {
@@ -1283,6 +1315,7 @@
     remove,
     recompressClipForSig,
     recompressAllClips,
+    migrateLegacyPlayClipManifests,
     loadIndex,
     has,
     hasForPlay,
@@ -1294,9 +1327,13 @@
 
   // Warm the clip index once the page is interactive so the playbook can show
   // its 🎬 indicators on first render. Re-render media-aware surfaces once it lands.
-  function _initClipIndex() {
+  async function _initClipIndex() {
     flushQueuedClipUploads().catch(() => { /* queue remains durable */ });
-    loadIndex().then(() => {
+    if (typeof window.whenAuthReady === "function") {
+      await window.whenAuthReady().catch(() => null);
+    }
+    await migrateLegacyPlayClipManifests();
+    return loadIndex().then(() => {
       if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
       else if (typeof renderPlaybook === "function") renderPlaybook();
       if (typeof requestRenderScript === "function") requestRenderScript();

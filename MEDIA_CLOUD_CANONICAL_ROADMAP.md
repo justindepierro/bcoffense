@@ -73,11 +73,12 @@ the configured R2 bucket after diagram cleanup:
 - [x] Device outboxes assess themselves on startup, reconnect, and each minute
   while open; after eight automatic attempts or 15 minutes waiting, the shared
   workspace dock exposes a durable Retry action.
-- [ ] The new `bcoffense-media-health` Worker code and staff status endpoint
-  are deployed, but Cloudflare rejected this account's cron-schedule API call
-  with HTTP 403. No hourly server run is claimed until the account can grant
-  cron-trigger management; then rerun `wrangler deploy --config
-  wrangler.media-health.toml` and verify the first `media_health_runs` row.
+- [x] The `bcoffense-media-health` Worker and staff status endpoint are live
+  with the `17 * * * *` schedule. Production runs through July 22 complete
+  hourly as **healthy**: 142 current D1 diagram pointers, 143 R2 diagram
+  objects, zero missing/invalid/checksum-mismatched diagrams, 47 clip
+  manifests, zero missing clips, and zero pending or stuck uploads. Three
+  historic play-tag manifests remain for the permanent-ID migration below.
 
 ## Product contract — locked
 
@@ -120,12 +121,12 @@ They describe the remote account, not the un-deployed code below.
 | Area | Verified fact | Consequence |
 | --- | --- | --- |
 | Teams and accounts | D1 has one team and 17 user rows. Migration 0011 assigned all 17 users to the verified primary team. | Team-scoped routes now have an explicit membership basis. |
-| D1 migrations | The remote ledger records 0011–0017 and the release preflight passes. | The schema gate is satisfied for the deployed canonical release. |
+| D1 migrations | The remote ledger records 24 applied migrations and the release preflight passes. | The schema gate is satisfied for the deployed canonical release. |
 | Legacy diagram metadata | The old media_manifests table has 122 rows and now records checksums, but it remains a legacy evidence table. | It is not proof of a correct canonical mapping or player authority. |
 | New diagram table | team_media_manifests is present after migration 0012. | New team-scoped diagram routes have their required schema; legacy rows still need reconciliation. |
 | Referential integrity | PRAGMA foreign_key_check was clean. | Preserve the database; this is not a corruption-rebuild exercise. |
 | Session state | A live users.sessions_invalid_before column was observed outside the tracked migrations. | Migration 0013 uses a separate state table rather than an unsafe ALTER TABLE. |
-| KV inventory | A direct Wrangler key listing returned no keys, while an earlier UI inventory reported media/clip records. | Reconcile the binding/environment after deployment; do not treat either count as canonical evidence. |
+| KV inventory | A remote Wrangler listing verified 47 current team-scoped clip manifests plus 3 historic display-derived play manifests. | Current manifests are authoritative; the three historic play tags are retained only until the verified permanent-ID migration finishes. |
 
 Earlier browser inventory reports and historic migration counts are useful
 leads, but they are not accepted as completed canonical data migration until
@@ -174,13 +175,24 @@ player session.
   historic exact promotions or count them as migrated.
 - [ ] Recover known local-only diagrams from old browsers/backups before
   declaring an asset permanently missing.
-- [ ] Reconcile the direct KV inventory with the earlier UI inventory and
-  identify the active namespace/environment for each retained clip manifest.
+- [x] Reconcile the remote KV inventory: 47 current team-scoped manifests are
+  active; three historic display-derived play manifests were identified. The
+  migration copies only exact immutable-workspace matches to permanent media
+  IDs, verifies R2 bytes before committing, and tombstones unlinked historic
+  tags without deleting recovery evidence.
 
 **Current recovery progress:** production now has 124 current canonical
 diagram pointers, each with a distinct checksum. Continue treating the
 recovery wizard’s remaining candidates as review evidence; do not bulk-promote
 by filename, timestamp, or count alone.
+
+**July 22 production monitor evidence:** the hourly media-health Worker has
+verified 142 current D1 diagram pointers against 143 R2 diagram objects with
+zero missing bytes, invalid paths, or checksum mismatches; all 47 current clip
+manifests resolve, and no upload receipt is pending or stuck. Anonymous reads
+of workspace, release, media, clip, notification, and sync routes return a
+JSON 401 with `Cache-Control: no-store`. A clean authenticated admin, coach,
+and player-device acceptance check remains outstanding.
 
 **Current player-release parity:** a fresh authorized coach read rebuilt the
 live atomic workspace/player-release head on July 19, 2026. The release
