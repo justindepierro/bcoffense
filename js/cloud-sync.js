@@ -2164,7 +2164,7 @@
       // Normal coach startup reads the revisioned D1/R2 workspace. The old
       // KV backup is deliberately admin-only recovery data and must never win
       // over the canonical team head during a routine device bootstrap.
-      const remote = await fetchCanonicalWorkspace({ allowMissing: true });
+      let remote = await fetchCanonicalWorkspace({ allowMissing: true });
       if (!remote) return false;
 
       // Managed coaches are deliberately read-only. Their browser is a study
@@ -2203,7 +2203,11 @@
               lastRemoteUpdatedAt: repaired.updatedAt || remote.updatedAt,
               lastRemoteSize: Number(repaired.size || remote.size) || 0,
             });
-            return false;
+            // A just-repaired legacy workspace is still the startup source.
+            // Read its new immutable revision before continuing so a fresh
+            // private staff browser does not fall through to an empty shell.
+            remote = await fetchCanonicalWorkspace({ allowMissing: true });
+            if (!remote) return false;
           }
         } catch (repairError) {
           // A concurrent coach already won the same repair; the next regular

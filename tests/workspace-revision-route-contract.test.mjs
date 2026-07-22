@@ -40,5 +40,8 @@ assert.match(workspaceSync, /function acquireTeamWorkspaceLease/, "workspace syn
 assert.match(workspaceSync, /workspace-published/, "workspace sync broadcasts successful team revision handoffs");
 assert.match(appInit, /Loading team workspace\.\.\./, "each staff login checks its canonical workspace before rendering");
 assert.match(appInit, /waitForStaffWorkspaceBootstrap/, "staff startup hydration has a bounded bootstrap path");
+assert.match(appInit, /return autoPullLatestCloudBackup\(\);/, "staff startup waits for the canonical pull instead of rendering a stale shell first");
+assert.doesNotMatch(appInit, /Promise\.race\(\[\s*autoPullLatestCloudBackup/, "staff startup does not release an empty UI while the canonical pull continues in the background");
+assert.match(cloudSync, /remote = await fetchCanonicalWorkspace\(\{ allowMissing: true \}\);/, "a repaired legacy workspace is re-read before staff startup continues");
 
-console.log("workspace revision route and live-sync contract: 30 assertions passed");
+console.log("workspace revision route and live-sync contract: 33 assertions passed");

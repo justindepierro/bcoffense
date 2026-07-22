@@ -32,15 +32,13 @@ async function initApp() {
     if (typeof setStartupLoadingMessage === "function") {
       setStartupLoadingMessage("Loading team workspace...");
     }
-    // Every staff login gets one bounded canonical read before first render.
-    // This keeps a normal phone current as well as preventing a private/new
-    // browser from landing on an empty workspace. The pull continues safely
-    // after this timeout and restoreCloudBackup refreshes an already-open
-    // shell. cloud-sync still protects active or untracked local work.
-    return Promise.race([
-      autoPullLatestCloudBackup(),
-      new Promise((resolve) => setTimeout(() => resolve(false), 4800)),
-    ]);
+    // Every staff login completes its canonical read before first render.
+    // A deliberate initial wait is calmer and safer than opening a stale or
+    // empty workspace, then visibly reloading it underneath the coach.
+    // cloud-sync owns the bounded network deadline and protects active or
+    // untracked local work. Its session guard also makes the queued post-paint
+    // auto-pull a no-op once this startup read has completed.
+    return autoPullLatestCloudBackup();
   };
   const runOptionalInit = (label, callback) => {
     try {
