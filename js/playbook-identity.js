@@ -376,10 +376,6 @@ function setPlaybookCategoryCleanupScope(scope) {
   _renderCatCleanupList();
 }
 
-// (legacy "Hide already matching" replaced by show-mode pills — kept as a no-op shim
-//  in case any old data-onchange="setPlaybookCategoryCleanupHide" references survive in cache.)
-function setPlaybookCategoryCleanupHide() { /* deprecated */ }
-
 function _renderCatCleanupSelect() {
   const sel = document.getElementById("catCleanupSelect");
   if (!sel) return;

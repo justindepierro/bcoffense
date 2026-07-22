@@ -87,10 +87,13 @@ small, testable releases.
   completes this family with Diagram Health and Publish Media. The daily
   authoring, quiz/homework, and media workflows now share one layer contract
   without changing their underlying recovery or publishing behavior.
-- [ ] **C-013 · Retire obsolete UI aliases after usage checks.** Start with
-  explicit legacy display aliases in Call Sheet and Script. Remove an alias
-  only after no renderer, saved setting, print path, or delegated action needs
-  it; keep data migrations separate from visual cleanup.
+- [~] **C-013 · Retire obsolete UI aliases after usage checks.** The first safe
+  slice removes the unused `setPlaybookCategoryCleanupHide` no-op and ten
+  readiness-only Script CSS aliases with zero remaining renderer, setting,
+  print, or delegated-action references. `shell-cleanup-contract.test.mjs`
+  now verifies each runtime script is loaded/cached exactly once and those
+  aliases cannot quietly return. Keep data migrations separate from visual
+  cleanup; Call Sheet aliases still need their own usage audit.
 - [x] **C-014 · Reduce command-strip duplication.** Release v1294 applies one
   action hierarchy across the four daily workbenches. Script keeps `Library`,
   `Save`, and `Quiz`; Game Plan keeps `Filters` and `Build Plan`; Call Sheet

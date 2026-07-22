@@ -924,17 +924,6 @@ body[data-auth-role="player"]
   --prb-accent: var(--color-primary);
 }
 
-/* Legacy alias */
-.play-readiness-badge--trusted {
-  --prb-bg: var(--color-success-light);
-  --prb-border: color-mix(
-    in srgb,
-    var(--color-success) 42%,
-    var(--color-border-light)
-  );
-  --prb-accent: var(--color-success-hover);
-}
-
 .play-readiness-badge--gameready {
   --prb-bg: var(--color-success-light);
   --prb-border: color-mix(
@@ -944,17 +933,6 @@ body[data-auth-role="player"]
   );
   --prb-accent: var(--color-success-hover);
 }
-/* Legacy alias */
-.play-readiness-badge--ready {
-  --prb-bg: var(--color-primary-light);
-  --prb-border: color-mix(
-    in srgb,
-    var(--color-primary) 42%,
-    var(--color-border-light)
-  );
-  --prb-accent: var(--color-primary);
-}
-
 .play-readiness-badge--building {
   --prb-bg: var(--color-warning-light);
   --prb-border: color-mix(
@@ -1430,20 +1408,6 @@ body[data-auth-role="player"]
 .pr-confidence--empty {
   color: var(--color-text-secondary);
 }
-/* Legacy aliases (migration compat) */
-.pr-confidence--trusted {
-  color: var(--color-primary);
-}
-.pr-confidence--ready {
-  color: var(--color-success);
-}
-.pr-confidence--needs {
-  color: var(--color-warning-hover);
-}
-.pr-confidence--risk {
-  color: var(--color-danger);
-}
-
 /* Score grid — large variant for widget + modal */
 .play-readiness-score-grid--large {
   grid-template-columns: repeat(5, minmax(48px, 1fr));
@@ -1646,20 +1610,6 @@ body[data-auth-role="player"]
 .play-readiness-widget--notready .play-readiness-fill {
   background: var(--color-danger);
 }
-/* Legacy aliases */
-.play-readiness-widget--trusted .play-readiness-fill {
-  background: var(--color-primary);
-}
-.play-readiness-widget--ready .play-readiness-fill {
-  background: var(--color-success);
-}
-.play-readiness-widget--needs .play-readiness-fill {
-  background: var(--color-warning);
-}
-.play-readiness-widget--risk .play-readiness-fill {
-  background: var(--color-danger);
-}
-
 .play-readiness-metrics {
   display: flex;
   align-items: center;
