@@ -1039,14 +1039,28 @@ function presentPublishedPlayerScript(id) {
 }
 
 function openPlayerCurrentScriptPresentation(id = "") {
+  const requestedId = id !== undefined && id !== null ? String(id).trim() : "";
   const loadedPlayCount = Array.isArray(script)
     ? script.filter((entry) => entry && !entry.isSeparator).length
     : 0;
   tracePlayerScriptAction("current presentation start", {
     action: "openPlayerCurrentScriptPresentation",
-    id: id !== undefined && id !== null ? String(id) : "",
+    id: requestedId,
     loadedPlayCount,
   });
+
+  // A launcher card always provides its script ID. Honor that explicit choice
+  // before considering whatever script happened to be loaded earlier in this
+  // browser session; otherwise a player can reopen an older practice instead
+  // of the card they just selected.
+  if (requestedId) {
+    tracePlayerScriptAction("current presentation requested", {
+      action: "openPlayerCurrentScriptPresentation",
+      id: requestedId,
+      reason: "explicit-published-script",
+    });
+    return presentPublishedPlayerScript(requestedId);
+  }
 
   if (loadedPlayCount > 0) {
     if (typeof setPlayPresentationMode === "function") {
@@ -1069,7 +1083,7 @@ function openPlayerCurrentScriptPresentation(id = "") {
     if (opened) return true;
   }
 
-  const fallbackScript = getDefaultPlayerPublishedScript(id);
+  const fallbackScript = getDefaultPlayerPublishedScript();
   if (!fallbackScript) {
     tracePlayerScriptAction(
       "current presentation failed",

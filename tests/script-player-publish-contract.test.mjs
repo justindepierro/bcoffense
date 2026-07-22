@@ -33,6 +33,11 @@ assert.match(
   "both publishing and removing a script request a fresh player release",
 );
 assert.match(
+  scriptPlayer,
+  /const requestedId = id !== undefined && id !== null \? String\(id\)\.trim\(\) : "";[\s\S]*?if \(requestedId\) \{[\s\S]*?return presentPublishedPlayerScript\(requestedId\);[\s\S]*?if \(loadedPlayCount > 0\)/s,
+  "an explicit player launcher choice loads that published script instead of reopening stale in-memory plays",
+);
+assert.match(
   cloudSync,
   /function requestImmediateTeamPublish\(reason = "substantial-update", opts = \{\}\)[\s\S]*?opts\.awaitCompletion === true[\s\S]*?return flushCloudAutoPush\(\)/s,
   "a substantial update can force and await its canonical workspace commit",
