@@ -239,6 +239,7 @@ const _NOTIF_ICONS = {
   new_quiz: "📝",
   quiz_homework: "📚",
   media_update: "🎞️",
+  team_update: "🏈",
   team_announcement: "📣",
   moderation_alert: "⚠️",
 };
@@ -262,9 +263,9 @@ const _NOTIF_CONVERSATION_TYPES = new Set([
   "question_resolved", "official_answer", "reply", "visual_reply",
 ]);
 const _NOTIF_PRACTICE_TYPES = new Set([
-  "script_published", "new_quiz", "quiz_homework", "media_update", "team_announcement",
+  "team_update", "script_published", "new_quiz", "quiz_homework", "media_update", "team_announcement",
 ]);
-const _NOTIF_GROUPABLE_TYPES = new Set(["script_published", "new_quiz", "media_update"]);
+const _NOTIF_GROUPABLE_TYPES = new Set(["team_update", "script_published", "new_quiz", "media_update"]);
 
 function _notifBucket(item) {
   if (_NOTIF_CONVERSATION_TYPES.has(item?.type)) return "conversation";
@@ -409,6 +410,11 @@ async function openNotifDeepLink(arg) {
     return;
   }
 
+  if (deepLink === "dashboard") {
+    if (typeof showTab === "function") showTab("dashboard");
+    return;
+  }
+
   if (deepLink.startsWith("quiz-assignment:")) {
     const assignmentId = deepLink.slice("quiz-assignment:".length);
     if (typeof refreshQuizAssignments === "function") await refreshQuizAssignments({ quiet: true });
@@ -493,32 +499,18 @@ function _isStaffNotificationUser() {
 
 function _notificationPayloadForPublish(kind, details = {}) {
   const label = String(details.label || details.name || "").trim();
-  const id = String(details.id || details.scriptId || "").trim();
-  if (kind === "scripts") {
+  if (["scripts", "quizzes", "diagrams", "clips", "signals"].includes(kind)) {
+    const body = kind === "scripts"
+      ? (label ? `${label} is ready to review.` : "A practice is ready to review.")
+      : kind === "quizzes"
+        ? (label || "New quiz work is ready in Player Home.")
+        : (label || "Practice media updated — new diagrams, videos, or signals are ready.");
     return {
-      type: "script_published",
-      title: label ? `Practice ready: ${label}` : "A practice is ready",
-      body: "Open it to review your calls, signals, and quiz work.",
-      deepLink: id ? `script:${id}` : "script",
-      tag: id ? `script-published-${id}` : "script-published",
-    };
-  }
-  if (kind === "quizzes") {
-    return {
-      type: "new_quiz",
-      title: "Quiz work is available",
-      body: label || "Open Quiz from Player Home when you are ready.",
-      deepLink: "quiz",
-      tag: "new-quiz",
-    };
-  }
-  if (kind === "diagrams" || kind === "clips") {
-    return {
-      type: "media_update",
-      title: "Practice media updated",
-      body: label || "New diagrams or videos are ready in your current practice.",
-      deepLink: "script",
-      tag: "practice-media",
+      type: "team_update",
+      title: "Team practice updated",
+      body,
+      deepLink: "dashboard",
+      tag: "team-practice-update",
     };
   }
   if (kind === "announcements") {

@@ -498,6 +498,7 @@ function clearFilters() {
 
 function clearAllFilters() {
   clearFilters();
+  _refreshPlayerPlaybookFilterOverlay();
 }
 
 function clearTypeFilters() {
@@ -632,7 +633,7 @@ function openPlayerPlaybookFilters(focusKey = "") {
       </div>
       <footer class="pb-player-filter-footer">
         <button type="button" class="btn btn-secondary" data-action="clearAllFilters">Clear Filters</button>
-        <button type="button" class="btn btn-primary" data-action="openSelectedPlaybookPresentation">Present Showing</button>
+        <button type="button" class="btn btn-primary" id="playerPlaybookFilterApply" data-action="presentPlayerFilteredPlays">Show ${filteredPlays.length} play${filteredPlays.length === 1 ? "" : "s"}</button>
       </footer>
     </section>`;
 
@@ -680,6 +681,25 @@ function closePlayerPlaybookFilters(options = {}) {
   setTimeout(() => overlay.remove(), 160);
 }
 
+function _refreshPlayerPlaybookFilterOverlay() {
+  const overlay = document.getElementById("playerPlaybookFilterOverlay");
+  if (!overlay) return;
+  overlay.querySelectorAll(".pb-player-filter-option[data-arg]").forEach((button) => {
+    const parsed = _decodePlayerPlaybookFilterArg(button.dataset.arg);
+    const group = parsed && PLAYER_PLAYBOOK_FILTER_GROUPS.find((item) => item.key === parsed.key);
+    const active = Boolean(parsed && group && _isPlayerPlaybookFilterActive(group, parsed.value));
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+  const apply = overlay.querySelector("#playerPlaybookFilterApply");
+  if (apply) apply.textContent = `Show ${filteredPlays.length} play${filteredPlays.length === 1 ? "" : "s"}`;
+}
+
+function presentPlayerFilteredPlays() {
+  closePlayerPlaybookFilters();
+  return openSelectedPlaybookPresentation();
+}
+
 function applyPlayerPlaybookFilter(arg) {
   const parsed = _decodePlayerPlaybookFilterArg(arg);
   if (!parsed || !parsed.value) return;
@@ -716,7 +736,7 @@ function applyPlayerPlaybookFilter(arg) {
 
   currentPage = 0;
   filterPlays();
-  closePlayerPlaybookFilters();
+  _refreshPlayerPlaybookFilterOverlay();
 }
 
 function initPlaybookSearch() {

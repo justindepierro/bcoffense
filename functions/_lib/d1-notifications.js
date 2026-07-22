@@ -11,6 +11,10 @@ const NOTIF_EXPIRY_DAYS = 30;
 // Team-wide publish events can be emitted several times while a coach saves a
 // script and its media. These are useful as one current alert, not dozens.
 const TEAM_UPDATE_DEDUPE_WINDOWS = Object.freeze({
+  // Scripts, media, and team quiz availability commonly arrive as one save
+  // burst. Keep that burst as one useful player-facing update rather than
+  // incrementing the bell three separate times.
+  team_update: 20 * 60,
   media_update: 24 * 60 * 60,
   script_published: 24 * 60 * 60,
   new_quiz: 24 * 60 * 60,
@@ -93,12 +97,23 @@ async function createOrRefreshTeamNotification(db, { userId, type, title, body, 
   const now = Math.floor(Date.now() / 1000);
   const windowSeconds = TEAM_UPDATE_DEDUPE_WINDOWS[type] || 0;
   if (windowSeconds > 0) {
+    // One team update can contain a script, media, and quiz handoff. It is
+    // intentionally coalesced across destinations; legacy event types retain
+    // their exact deep-link grouping.
     const existing = await db.prepare(
-      `SELECT id FROM notifications
-       WHERE user_id = ? AND type = ? AND COALESCE(deep_link, '') = COALESCE(?, '')
-         AND created_at >= ?
-       ORDER BY created_at DESC LIMIT 1`,
-    ).bind(userId, type, deepLink, now - windowSeconds).first();
+      type === "team_update"
+        ? `SELECT id FROM notifications
+           WHERE user_id = ? AND type = ? AND created_at >= ?
+           ORDER BY created_at DESC LIMIT 1`
+        : `SELECT id FROM notifications
+           WHERE user_id = ? AND type = ? AND COALESCE(deep_link, '') = COALESCE(?, '')
+             AND created_at >= ?
+           ORDER BY created_at DESC LIMIT 1`,
+    ).bind(
+      ...(type === "team_update"
+        ? [userId, type, now - windowSeconds]
+        : [userId, type, deepLink, now - windowSeconds]),
+    ).first();
     if (existing?.id) {
       await db.prepare(
         `UPDATE notifications

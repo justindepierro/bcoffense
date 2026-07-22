@@ -2235,6 +2235,25 @@ function _playerBootstrapStepLabel(step) {
   return `Checking ${step.label.toLowerCase()}...`;
 }
 
+let playerTeamRefreshRenderTimer = null;
+
+function _queuePlayerTeamRefreshRender(state = {}) {
+  if (typeof renderPlayerDashboardHome !== "function") return;
+  if (!state.busy) {
+    clearTimeout(playerTeamRefreshRenderTimer);
+    playerTeamRefreshRenderTimer = null;
+    renderPlayerDashboardHome();
+    return;
+  }
+  if (playerTeamRefreshRenderTimer) return;
+  // A release check updates several steps. Coalesce those visual writes so
+  // mobile Home stays stable rather than re-rendering for every request.
+  playerTeamRefreshRenderTimer = setTimeout(() => {
+    playerTeamRefreshRenderTimer = null;
+    renderPlayerDashboardHome();
+  }, 180);
+}
+
 function _setPlayerTeamRefreshState(state = {}, opts = {}) {
   window.playerTeamRefreshState = {
     tone: state.tone || "idle",
@@ -2245,9 +2264,7 @@ function _setPlayerTeamRefreshState(state = {}, opts = {}) {
     steps: _clonePlayerBootstrapSteps(state.steps),
     result: state.result || null,
   };
-  if (opts.render !== false && typeof renderPlayerDashboardHome === "function") {
-    renderPlayerDashboardHome();
-  }
+  if (opts.render !== false) _queuePlayerTeamRefreshRender(state);
 }
 
 function _refreshPlayerTeamSurfaces() {

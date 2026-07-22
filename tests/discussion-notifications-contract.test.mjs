@@ -70,6 +70,9 @@ assert.match(client, /Promise\.all\(notifIds\.map/, "opening a grouped update ac
 assert.match(client, /closeNotifDrawer\(\);[\s\S]*if \(deepLink === "script"/, "opening an alert closes the mobile drawer before routing to its destination");
 assert.match(notifications, /script_published: 24 \* 60 \* 60/, "script publish alerts coalesce for a full day");
 assert.match(notifications, /media_update: 24 \* 60 \* 60/, "media alerts coalesce for a full day");
+assert.match(notifications, /team_update: 20 \* 60/, "one player-facing team update coalesces a publish burst");
+assert.match(client, /team_update: "🏈"/, "the bell gives a grouped team update a clear icon");
+assert.match(client, /deepLink === "dashboard"/, "a grouped team update routes players to Home");
 assert.match(indexHtml, /class="notif-filter-bar"/, "notification filters are present in the shell");
 assert.match(cloudSync, /function requestImmediateTeamPublish\(reason = "substantial-update"\)/, "substantial player-facing changes bypass the routine autosave delay");
 assert.match(playerPublish, /window\.requestImmediateTeamPublish\(kind\)/, "media, script, and quiz publish receipts request an immediate team update");

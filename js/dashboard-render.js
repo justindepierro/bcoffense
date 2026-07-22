@@ -248,7 +248,10 @@ function _dashRenderPlayerRefreshAction() {
   const installAction = installState.available
     ? `<button type="button" class="player-home-refresh__install" data-action="installPlayerA2HS">${escapeHtml(installState.label || "Install app")}</button>`
     : "";
-  if (!busy && !needsRetry && !installAction) return "";
+  const releaseState = storageManager.get(STORAGE_KEYS.PLAYER_RELEASE_STATE, {});
+  const latestCoachUpdate = state.result?.freshness?.data?.updatedAt ||
+    releaseState?.updatedAt || state.result?.data?.updatedAt || "";
+  const checkedAt = state.updatedAt || state.result?.finishedAt || "";
   const actionClass = installAction
     ? "player-home-refresh__actions"
     : "player-home-refresh__actions player-home-refresh__actions--single";
@@ -256,14 +259,14 @@ function _dashRenderPlayerRefreshAction() {
     ? "Checking for coach updates"
     : needsRetry
       ? tone === "offline" ? "Updates wait for connection" : "Update check paused"
-      : "Install app";
+      : "Practice is up to date";
   const body = busy
     ? "Refreshing your latest practice and quiz state."
     : needsRetry
       ? tone === "offline"
         ? "Your loaded practice still works. Reconnect when you want the newest alerts."
         : "Home and Practice still work. Retry when your connection is ready."
-      : "Add this app to your Home Screen for the best practice view.";
+      : `${latestCoachUpdate ? `Coach update ${_dashFormatRelativeTime(latestCoachUpdate) || "ready"}. ` : "Latest coach release is loaded. "}${checkedAt ? `Checked ${_dashFormatRelativeTime(checkedAt) || "just now"}.` : ""}`;
   return `<section class="player-home-refresh player-home-refresh--${escapeAttr(tone)}" aria-label="Coach updates">
     <div class="player-home-refresh__copy">
       <strong>${escapeHtml(title)}</strong>
@@ -271,8 +274,8 @@ function _dashRenderPlayerRefreshAction() {
     </div>
     <div class="${actionClass}">
       ${installAction}
-      <button type="button" class="player-home-refresh__btn" data-action="refreshPlayerTeamApp" ${busy || !needsRetry ? "disabled" : ""}>
-        ${escapeHtml(busy ? "Checking..." : needsRetry ? "Retry" : "Ready")}
+      <button type="button" class="player-home-refresh__btn" data-action="refreshPlayerTeamApp" ${busy ? "disabled" : ""}>
+        ${escapeHtml(busy ? "Checking..." : needsRetry ? "Retry" : "Check now")}
       </button>
     </div>
   </section>`;
@@ -1594,7 +1597,9 @@ function renderPlayerDashboardHome() {
       : "Practice will appear here when your coach publishes it.";
   const notificationStatus = getPlayerHomeNotificationStatus();
   const practiceStatus = getPlayerHomePracticeStatus(featuredScript, loadedScript, todayValue);
-  const freshnessMarkup = _dashRenderPlayerFreshnessStrip(featuredScript, publishedScripts);
+  // The compact delivery card below owns normal ready/checking/offline state.
+  // Do not stack the old multi-step loader above it during routine refreshes.
+  const freshnessMarkup = "";
   const refreshMarkup = _dashRenderPlayerRefreshAction();
   const homeworkMarkup = typeof renderPlayerQuizHomeworkDashboard === "function"
     ? renderPlayerQuizHomeworkDashboard()

@@ -10,6 +10,7 @@ import { notifyTeamPlayers } from "../../_lib/d1-notifications.js";
 
 const STAFF_ROLES = new Set(["admin", "coach", "assistant", "assistant_coach"]);
 const ALLOWED_TYPES = new Set([
+  "team_update",
   "script_published",
   "new_quiz",
   "media_update",
