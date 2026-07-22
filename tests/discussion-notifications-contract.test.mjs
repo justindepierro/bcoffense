@@ -81,6 +81,11 @@ assert.match(playerPublish, /window\.requestImmediateTeamPublish\(kind\)/, "medi
 assert.match(discussionClient, /role === "assistant_coach"/, "the discussion UI recognizes managed assistant coaches as staff");
 assert.match(discussionClient, /_REACTION_QUICK_PICKER_ORDER/, "the reaction picker keeps the core communication choices prominent");
 assert.match(discussionClient, /disc-picker-more/, "secondary reactions are intentionally tucked behind a More control");
+assert.match(discussionClient, /function _discEnsureScope\(container\)/, "each discussion surface receives a stable local interaction scope");
+assert.match(discussionClient, /function _discPostInScope\(scopeRoot, postId\)/, "reply and reaction updates resolve inside the panel that initiated them");
+assert.match(discussionClient, /section\.querySelector\("\.disc-body"\)/, "Game Plan and Playbook discussions do not reuse a document-global discussion body");
+assert.match(discussionClient, /data-disc-posts/, "discussion post lists are addressed through their local scope rather than a repeated global ID");
+assert.match(discussionClient, /discReactionPickerOverlay/, "mobile reaction sheets shield the background from accidental taps");
 assert.match(discussionClient, /function switchDiscComposerType\(arg\)/, "discussion composers support a direct touch-friendly Comment or Ask question choice");
 assert.match(discussionClient, /disc-composer-mode-btn/, "the native post-type dropdown is backed by visible composer mode buttons");
 assert.match(discussionClient, /assistant_coach/, "managed assistant coaches receive the same visual treatment as other staff in discussions");
@@ -90,5 +95,6 @@ assert.match(playbookCss, /\.disc-post \{[\s\S]*grid-template-columns: 28px minm
 assert.match(playbookCss, /\.disc-post > \.disc-reply-composer-slot,[\s\S]*grid-column: 2/, "reply composers and reply trees sit below their parent content");
 assert.match(presentationCss, /\.pp-disc-drawer-body\.pp-discussion-body \{[\s\S]*flex-direction: column/, "presentation discussion uses a contained column layout");
 assert.match(presentationCss, /\.pp-disc-drawer-body\.pp-discussion-body \.disc-posts \{[\s\S]*overflow-y: auto/, "only the presentation message list scrolls while the composer remains available");
+assert.match(playbookCss, /\.disc-reaction-picker-overlay\.visible/, "mobile reaction picker has a dedicated interaction-blocking backdrop");
 
-console.log("discussion notification contract: notification delivery and mobile feed contracts passed");
+console.log("discussion notification contract: notification delivery, scoped thread, and mobile feed contracts passed");

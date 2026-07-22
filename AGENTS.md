@@ -518,6 +518,16 @@ const _ELEMENT_FNS = new Set([
   "loadMoreDiscussion",
   "submitDiscReply",
   "loadMoreDiscReplies",
+  "setDiscFilter",
+  "setDiscQCategory",
+  "openDiscReplyComposer",
+  "closeDiscReplyComposer",
+  "startEditPost",
+  "toggleDiscReaction",
+  "openDiscReactionPicker",
+  "selectDiscReaction",
+  "resolveDiscPost",
+  "markDiscPostOfficial",
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 ```

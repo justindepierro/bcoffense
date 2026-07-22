@@ -121,12 +121,19 @@ function _discReactionsHtml(postId, reactions, excludeKey = null) {
 
 let _discPickerPostId = null;
 let _discPickerTrigger = null;
+let _discPickerScopeRoot = null;
 let _discPickerEscHandler = null;
 let _discPickerArrowHandler = null;
+let _discReplyTrigger = null;
 
-function openDiscReactionPicker(postId) {
+function openDiscReactionPicker(postId, el) {
   _discPickerPostId = postId;
-  _discPickerTrigger = document.querySelector(`[data-action="openDiscReactionPicker"][data-arg="${escapeHtml(postId)}"]`);
+  _discPickerTrigger = el instanceof Element ? el : null;
+  _discPickerScopeRoot = _discScopeRoot(_discPickerTrigger);
+  if (!_discPickerTrigger) {
+    _discPickerTrigger = document.querySelector(`[data-action="openDiscReactionPicker"][data-arg="${CSS.escape(String(postId))}"]`);
+    _discPickerScopeRoot = _discScopeRoot(_discPickerTrigger);
+  }
 
   let picker = document.getElementById("discReactionPicker");
   if (!picker) {
@@ -137,9 +144,17 @@ function openDiscReactionPicker(postId) {
     picker.setAttribute("aria-label", "Choose a reaction");
     document.body.appendChild(picker);
   }
+  let pickerOverlay = document.getElementById("discReactionPickerOverlay");
+  if (!pickerOverlay) {
+    pickerOverlay = document.createElement("div");
+    pickerOverlay.id = "discReactionPickerOverlay";
+    pickerOverlay.className = "disc-reaction-picker-overlay";
+    pickerOverlay.addEventListener("click", closeDiscReactionPicker);
+    document.body.appendChild(pickerOverlay);
+  }
 
   // Find user's current reaction for this post from the reactions bar
-  const reactionsEl = document.querySelector(`[data-post-id="${escapeHtml(postId)}"] .disc-reactions`);
+  const reactionsEl = _discPostInScope(_discPickerScopeRoot, postId)?.querySelector(".disc-reactions") || null;
   const userReaction = reactionsEl?.dataset?.userReaction || null;
 
   const reactionButtons = (keys) => keys.map((key) => {
@@ -169,6 +184,8 @@ function openDiscReactionPicker(postId) {
   // Bottom sheet on very narrow screens; use fixed positioning throughout
   const useBottomSheet = window.innerWidth <= 480;
   picker.classList.toggle("is-bottom-sheet", useBottomSheet);
+  picker.setAttribute("aria-modal", useBottomSheet ? "true" : "false");
+  pickerOverlay.classList.toggle("visible", useBottomSheet);
   picker.classList.add("visible");
 
   if (!useBottomSheet && _discPickerTrigger) {
@@ -218,6 +235,8 @@ function closeDiscReactionPicker() {
   const picker = document.getElementById("discReactionPicker");
   picker?.classList.remove("visible");
   picker?.classList.remove("is-bottom-sheet");
+  picker?.setAttribute("aria-modal", "false");
+  document.getElementById("discReactionPickerOverlay")?.classList.remove("visible");
   _discPickerPostId = null;
   if (_discPickerEscHandler) {
     document.removeEventListener("keydown", _discPickerEscHandler);
@@ -230,11 +249,13 @@ function closeDiscReactionPicker() {
   // Restore focus to the trigger button that opened the picker
   _discPickerTrigger?.focus();
   _discPickerTrigger = null;
+  _discPickerScopeRoot = null;
 }
 
-async function selectDiscReaction(arg) {
+async function selectDiscReaction(arg, el) {
+  const trigger = _discPickerTrigger;
   closeDiscReactionPicker();
-  await toggleDiscReaction(arg);
+  await toggleDiscReaction(arg, trigger || el);
 }
 
 // Close picker on outside click
@@ -341,6 +362,62 @@ let _discEditState = null;       // { postId, original }
 let _discLastPlayId = null;      // for retryDiscussion()
 let _discLastPlaySig = null;
 let _discScriptContext = null;   // { periodName, playIndex } — set by openScriptDiscussion
+let _discScopeSequence = 0;
+
+// A play thread can legitimately be open in the playbook, Game Plan, and the
+// swipe drawer at the same time.  Those surfaces used to share document-wide
+// IDs, so an action in one surface could silently update the first matching
+// copy elsewhere in the DOM.  Keep every interaction rooted in the body that
+// rendered it instead of relying on document.getElementById().
+function _discEnsureScope(container) {
+  if (!container?.dataset) return "";
+  if (!container.dataset.discScope) {
+    const base = String(container.id || "discussion").replace(/[^a-zA-Z0-9_-]/g, "-");
+    container.dataset.discScope = `${base}-${++_discScopeSequence}`;
+  }
+  return container.dataset.discScope;
+}
+
+function _discScopeRoot(el) {
+  if (!(el instanceof Element)) return null;
+  const root = el.closest("[data-disc-scope]");
+  if (root) return root;
+  const sheetScope = el.closest("#discReplySheet")?.dataset?.discScope;
+  return sheetScope
+    ? document.querySelector(`[data-disc-scope="${CSS.escape(sheetScope)}"]`)
+    : null;
+}
+
+function _discPostsRoot(scopeRoot) {
+  return scopeRoot?.querySelector("[data-disc-posts]") || null;
+}
+
+function _discPostInScope(scopeRoot, postId) {
+  if (!scopeRoot || !postId) return null;
+  return Array.from(scopeRoot.querySelectorAll(".disc-post[data-post-id]")).find(
+    (post) => post.dataset.postId === String(postId),
+  ) || null;
+}
+
+function _discReplySlotInScope(scopeRoot, postId) {
+  return Array.from(scopeRoot?.querySelectorAll("[data-disc-reply-slot]") || []).find(
+    (slot) => slot.dataset.discReplySlot === String(postId),
+  ) || null;
+}
+
+function _discRepliesInScope(scopeRoot, postId) {
+  return Array.from(scopeRoot?.querySelectorAll("[data-disc-replies]") || []).find(
+    (replies) => replies.dataset.discReplies === String(postId),
+  ) || null;
+}
+
+function _discRootComposer(scopeRoot) {
+  return scopeRoot?.querySelector(".disc-composer[data-disc-root-composer]") || null;
+}
+
+function _discCountInScope(scopeRoot) {
+  return scopeRoot?.closest(".disc-section")?.querySelector(".disc-count") || null;
+}
 
 // ── Main render ───────────────────────────────────────────────────────────────
 
@@ -389,13 +466,13 @@ async function renderDiscussionSection(play, container) {
     `<div class="pb-wf-s-header">` +
     `<span class="pb-wf-s-icon">💬</span>` +
     `<span class="pb-wf-s-title">Discussion</span>` +
-    `<span class="disc-count" id="discCount"></span>` +
+    `<span class="disc-count"></span>` +
     `</div>` +
-    `<div class="disc-body" id="discBody"><p class="disc-loading">Loading…</p></div>`;
+    `<div class="disc-body"><p class="disc-loading">Loading…</p></div>`;
   container.appendChild(section);
 
   await _discEnsureUserId();
-  await _discLoadBody(playId, playSig, document.getElementById("discBody"));
+  await _discLoadBody(playId, playSig, section.querySelector(".disc-body"));
 }
 
 async function _discLoadBody(playId, playSig, bodyEl) {
@@ -406,7 +483,7 @@ async function _discLoadBody(playId, playSig, bodyEl) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "Failed to load");
 
-    const countEl = document.getElementById("discCount");
+    const countEl = _discCountInScope(bodyEl);
     if (countEl && data.thread) countEl.textContent = String(data.thread.total);
 
     _discRenderBody(bodyEl, data, playId, playSig);
@@ -422,6 +499,7 @@ async function _discLoadBody(playId, playSig, bodyEl) {
 
 function _discRenderBody(container, data, playId, playSig) {
   const { thread, posts, hasMore } = data;
+  _discEnsureScope(container);
   const isPresentationDrawer = container.id === "ppDiscDrawerBody";
   container.classList.toggle("pp-discussion-body", isPresentationDrawer);
   const isLocked = thread?.locked;
@@ -481,7 +559,7 @@ function _discRenderBody(container, data, playId, playSig) {
     container,
     modBanner +
     filterBar +
-    `<div class="disc-posts" id="discPosts-${escapeHtml(playId)}" role="feed" aria-label="Discussion thread">${postsHtml}</div>` +
+    `<div class="disc-posts" id="discPosts-${escapeHtml(playId)}" data-disc-posts role="feed" aria-label="Discussion thread">${postsHtml}</div>` +
     loadMore +
     askCoachBtn +
     composer +
@@ -618,7 +696,7 @@ function _discPostHtml(p, playId, isReply = false) {
   const hiddenCount = replyCount - shownCount;
 
   const repliesHtml = replies.length
-    ? `<div class="disc-replies" id="disc-replies-${escapeHtml(p.id)}">` +
+    ? `<div class="disc-replies" id="disc-replies-${escapeHtml(p.id)}" data-disc-replies="${escapeHtml(p.id)}">` +
     replies.map((r) => _discPostHtml(r, playId, true)).join("") +
     (hiddenCount > 0
       ? `<button class="btn btn-xs disc-load-replies" data-action="loadMoreDiscReplies"` +
@@ -627,7 +705,7 @@ function _discPostHtml(p, playId, isReply = false) {
       : "") +
     `</div>`
     : (replyCount > 0
-      ? `<div class="disc-replies" id="disc-replies-${escapeHtml(p.id)}">` +
+      ? `<div class="disc-replies" id="disc-replies-${escapeHtml(p.id)}" data-disc-replies="${escapeHtml(p.id)}">` +
       `<button class="btn btn-xs disc-load-replies" data-action="loadMoreDiscReplies"` +
       ` data-arg="${escapeHtml(p.id)}" data-cursor="">` +
       `View ${replyCount} repl${replyCount === 1 ? "y" : "ies"}…</button>` +
@@ -636,7 +714,7 @@ function _discPostHtml(p, playId, isReply = false) {
 
   // Inline reply composer placeholder (rendered on demand)
   const replyComposerPlaceholder = !isReply
-    ? `<div class="disc-reply-composer-slot" id="disc-reply-slot-${escapeHtml(p.id)}"></div>`
+    ? `<div class="disc-reply-composer-slot" id="disc-reply-slot-${escapeHtml(p.id)}" data-disc-reply-slot="${escapeHtml(p.id)}"></div>`
     : "";
 
   return (
@@ -672,15 +750,14 @@ function _discPostHtml(p, playId, isReply = false) {
   );
 }
 
-function setDiscFilter(arg) {
+function setDiscFilter(arg, el) {
   const sep = String(arg || "").indexOf("::");
   if (sep < 0) return;
   const filter = arg.slice(0, sep);
   const playId = arg.slice(sep + 2);
 
-  const postsEl = document.getElementById(`discPosts-${playId}`);
-  // Use parentElement — works for both discBody and ppDiscDrawerBody contexts
-  const container = postsEl?.parentElement;
+  const container = _discScopeRoot(el) || null;
+  const postsEl = _discPostsRoot(container) || document.getElementById(`discPosts-${playId}`);
 
   // Update main filter button states
   const filterBar = container?.querySelector(".disc-filter-bar");
@@ -733,8 +810,8 @@ function setDiscFilter(arg) {
     post.hidden = !show;
     const pid = post.dataset.postId || "";
     if (pid) {
-      const replySlot = document.getElementById(`disc-reply-slot-${pid}`);
-      const replies = document.getElementById(`disc-replies-${pid}`);
+      const replySlot = _discReplySlotInScope(container, pid) || document.getElementById(`disc-reply-slot-${pid}`);
+      const replies = _discRepliesInScope(container, pid) || document.getElementById(`disc-replies-${pid}`);
       if (replySlot) replySlot.hidden = !show;
       if (replies) replies.hidden = !show;
     }
@@ -755,14 +832,14 @@ function setDiscFilter(arg) {
   }
 }
 
-function setDiscQCategory(arg) {
+function setDiscQCategory(arg, el) {
   const sep = String(arg || "").indexOf("::");
   if (sep < 0) return;
   const cat = arg.slice(0, sep);
   const playId = arg.slice(sep + 2);
 
-  const postsEl = document.getElementById(`discPosts-${playId}`);
-  const container = postsEl?.parentElement;
+  const container = _discScopeRoot(el) || null;
+  const postsEl = _discPostsRoot(container) || document.getElementById(`discPosts-${playId}`);
   const qBar = container?.querySelector(".disc-q-cat-filter-bar");
   if (qBar) {
     qBar.querySelectorAll(".disc-q-cat-btn").forEach((btn) => {
@@ -853,7 +930,7 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
     : "";
 
   return (
-    `<div class="disc-composer${isReply ? " disc-composer--reply" : ""}">${posCtx}` +
+    `<div class="disc-composer${isReply ? " disc-composer--reply" : ""}"${isReply ? "" : " data-disc-root-composer"}>${posCtx}` +
     attachBtns +
     rootComposerMode +
     typeSelect +
@@ -883,8 +960,10 @@ async function submitDiscPost(arg, el) {
   const playSig = btn?.dataset?.playSig || "";
   if (!playId) return;
 
-  const textarea = document.getElementById(`discCompose-${playId}`);
-  const typeSelect = document.getElementById(`discType-${playId}`);
+  const scopeRoot = _discScopeRoot(btn);
+  const composer = _discRootComposer(scopeRoot);
+  const textarea = composer?.querySelector("textarea.disc-textarea") || document.getElementById(`discCompose-${playId}`);
+  const typeSelect = composer?.querySelector(".disc-type-select") || document.getElementById(`discType-${playId}`);
   if (!textarea) return;
 
   const body = textarea.value.trim();
@@ -903,14 +982,14 @@ async function submitDiscPost(arg, el) {
     id: `opt-${Date.now()}`,
     body,
     postType: typeSelect?.value || "comment",
-    questionCategory: document.getElementById(`discQCat-${playId}`)?.value || "",
+    questionCategory: composer?.querySelector(".disc-cat-select")?.value || document.getElementById(`discQCat-${playId}`)?.value || "",
     authorName: _discAuthUser()?.name || _discAuthUser()?.username || "You",
     authorRole: _discAuthUser()?.role || "player",
     authorId: _discCurrentUserId || "me",
     reactions: [], replyCount: 0, replies: [],
     createdAt: new Date().toISOString(),
   };
-  const list = document.getElementById(`discPosts-${playId}`);
+  const list = _discPostsRoot(scopeRoot) || document.getElementById(`discPosts-${playId}`);
   let optimisticNode = null;
   if (list) {
     list.querySelector(".disc-empty")?.remove();
@@ -925,7 +1004,7 @@ async function submitDiscPost(arg, el) {
   }
   // Clear composer immediately for snappy feel
   textarea.value = "";
-  const charElOpt = document.getElementById(`discChars-${playId}`);
+  const charElOpt = composer?.querySelector(".disc-char-count") || document.getElementById(`discChars-${playId}`);
   if (charElOpt) { charElOpt.textContent = "0 / 2000"; charElOpt.classList.remove("disc-char-warn", "disc-char-limit"); }
 
   try {
@@ -936,7 +1015,7 @@ async function submitDiscPost(arg, el) {
       body: JSON.stringify({
         body,
         post_type: typeSelect?.value || "comment",
-        question_category: document.getElementById(`discQCat-${playId}`)?.value || null,
+        question_category: composer?.querySelector(".disc-cat-select")?.value || document.getElementById(`discQCat-${playId}`)?.value || null,
         play_signature: playSig,
         attachment: pendingAttach || undefined,
       }),
@@ -974,7 +1053,7 @@ async function submitDiscPost(arg, el) {
         if (realNode) list.replaceChild(realNode, optimisticNode);
         else optimisticNode.classList.remove("disc-post--pending");
       }
-      const countEl = document.getElementById("discCount");
+      const countEl = _discCountInScope(scopeRoot);
       if (countEl) countEl.textContent = String(Math.max(0, parseInt(countEl.textContent || "0", 10) + 1));
     } else {
       // Held or blocked — remove optimistic post
@@ -994,18 +1073,19 @@ async function submitDiscPost(arg, el) {
 
 // ── Reply composer helpers ───────────────────────────────────────────────────
 
-function _discCloseAllReplyComposers() {
+function _discCloseAllReplyComposers(scopeRoot = null) {
   // Close any open inline composers
-  document.querySelectorAll(".disc-composer--reply").forEach((c) => c.remove());
+  (scopeRoot || document).querySelectorAll(".disc-composer--reply").forEach((c) => c.remove());
   // Force-close bottom sheet without confirm (used when opening a new one)
   const sheet = document.getElementById("discReplySheet");
-  if (sheet?.classList.contains("visible")) {
+  const sameScope = !scopeRoot || sheet?.dataset?.discScope === scopeRoot.dataset.discScope;
+  if (sheet?.classList.contains("visible") && sameScope) {
     const pid = sheet.dataset.parentPostId;
     sheet.classList.remove("visible");
     document.getElementById("discReplySheetOverlay")?.classList.remove("visible");
     _discRemoveVpListeners(sheet);
     if (pid) try { sessionStorage.removeItem(`disc-reply-draft-${pid}`); } catch (_) { /* benign: sessionStorage blocked (private mode) */ }
-    setTimeout(() => { sheet.innerHTML = ""; delete sheet.dataset.parentPostId; }, 220);
+    setTimeout(() => { sheet.innerHTML = ""; delete sheet.dataset.parentPostId; delete sheet.dataset.discScope; }, 220);
   }
 }
 
@@ -1024,7 +1104,7 @@ function _discWireReplyComposerDraft(container, parentPostId) {
     const draft = sessionStorage.getItem(`disc-reply-draft-${parentPostId}`);
     if (draft) {
       ta.value = draft;
-      const charEl = document.getElementById(`discChars-reply-${parentPostId}`);
+      const charEl = container.querySelector(".disc-char-count") || null;
       if (charEl) charEl.textContent = `${draft.length} / 2000`;
     }
   } catch (_) { /* benign: sessionStorage blocked (private mode) */ }
@@ -1047,14 +1127,15 @@ function _discWireReplyComposerDraft(container, parentPostId) {
   ta.focus();
 }
 
-function openDiscReplyComposer(arg) {
+function openDiscReplyComposer(arg, el) {
   const sep = String(arg || "").indexOf("::");
   if (sep < 0) return;
   const parentPostId = arg.slice(0, sep);
   const playId = arg.slice(sep + 2);
 
+  const scopeRoot = _discScopeRoot(el);
   const playSig = _discLastPlaySig || "";
-  const parentPostEl = document.getElementById(`disc-post-${parentPostId}`);
+  const parentPostEl = _discPostInScope(scopeRoot, parentPostId) || document.getElementById(`disc-post-${parentPostId}`);
   const parentAuthor = parentPostEl?.dataset?.authorName || "";
   const parentBody = parentPostEl?.dataset?.bodyText || "";
   const bannerHtml = parentAuthor
@@ -1076,9 +1157,10 @@ function openDiscReplyComposer(arg) {
       return;
     }
     // Close any other open composers first
-    _discCloseAllReplyComposers();
+    _discCloseAllReplyComposers(scopeRoot);
+    _discReplyTrigger = el instanceof Element ? el : null;
 
-    const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
+    const slot = _discReplySlotInScope(scopeRoot, parentPostId) || document.getElementById(`disc-reply-slot-${parentPostId}`);
     if (!slot) return;
 
     let overlay = document.getElementById("discReplySheetOverlay");
@@ -1094,33 +1176,39 @@ function openDiscReplyComposer(arg) {
       sheet.id = "discReplySheet";
       sheet.className = "disc-reply-sheet";
       sheet.setAttribute("role", "dialog");
+      sheet.setAttribute("aria-modal", "true");
       sheet.setAttribute("aria-label", "Reply composer");
       document.body.appendChild(sheet);
     }
     overlay.onclick = () => closeDiscReplyComposer(parentPostId);
     sheet.dataset.parentPostId = String(parentPostId);
+    sheet.dataset.discScope = scopeRoot?.dataset?.discScope || "";
     sheet.innerHTML =
       `<div class="disc-reply-sheet-head">` +
       `<div class="disc-reply-sheet-handle" aria-hidden="true"></div>` +
       `<button type="button" class="disc-reply-sheet-close" data-action="closeDiscReplyComposer" data-arg="${escapeHtml(parentPostId)}" aria-label="Close reply">✕</button>` +
       `</div>` + bannerHtml + _discComposerHtml(playId, playSig, parentPostId);
     overlay.classList.add("visible");
-    requestAnimationFrame(() => sheet.classList.add("visible"));
+    requestAnimationFrame(() => {
+      sheet.classList.add("visible");
+      sheet.querySelector("textarea.disc-textarea")?.focus();
+    });
     _discWireReplyComposerDraft(sheet, parentPostId);
     _discWireComposerAttachments(sheet);
     return;
   }
 
   // Desktop/tablet: close other composers, render inline
-  _discCloseAllReplyComposers();
-  const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
+  _discCloseAllReplyComposers(scopeRoot);
+  const slot = _discReplySlotInScope(scopeRoot, parentPostId) || document.getElementById(`disc-reply-slot-${parentPostId}`);
   if (!slot) return;
   slot.innerHTML = bannerHtml + _discComposerHtml(playId, playSig, parentPostId);
   _discWireReplyComposerDraft(slot, parentPostId);
   _discWireComposerAttachments(slot);
 }
 
-async function closeDiscReplyComposer(parentPostId) {
+async function closeDiscReplyComposer(parentPostId, el) {
+  const scopeRoot = _discScopeRoot(el);
   // Handle bottom sheet mode first
   const sheet = document.getElementById("discReplySheet");
   if (sheet?.classList.contains("visible") && sheet.dataset.parentPostId === String(parentPostId)) {
@@ -1137,11 +1225,13 @@ async function closeDiscReplyComposer(parentPostId) {
     sheet.classList.remove("visible");
     document.getElementById("discReplySheetOverlay")?.classList.remove("visible");
     try { sessionStorage.removeItem(`disc-reply-draft-${parentPostId}`); } catch (_) { /* benign: sessionStorage blocked (private mode) */ }
-    setTimeout(() => { sheet.innerHTML = ""; delete sheet.dataset.parentPostId; }, 220);
+    setTimeout(() => { sheet.innerHTML = ""; delete sheet.dataset.parentPostId; delete sheet.dataset.discScope; }, 220);
+    _discReplyTrigger?.focus?.();
+    _discReplyTrigger = null;
     return;
   }
   // Handle inline slot mode
-  const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
+  const slot = _discReplySlotInScope(scopeRoot, parentPostId) || document.getElementById(`disc-reply-slot-${parentPostId}`);
   if (!slot) return;
   const textarea = slot.querySelector("textarea.disc-textarea");
   if (textarea?.value?.trim()) {
@@ -1163,7 +1253,9 @@ async function submitDiscReply(arg, el) {
   const playSig = btn?.dataset?.playSig || "";
   if (!parentPostId || !playId) return;
 
-  const textarea = document.getElementById(`discCompose-reply-${parentPostId}`);
+  const scopeRoot = _discScopeRoot(btn);
+  const replyComposer = btn?.closest(".disc-composer") || scopeRoot?.querySelector(".disc-composer--reply");
+  const textarea = replyComposer?.querySelector("textarea.disc-textarea") || document.getElementById(`discCompose-reply-${parentPostId}`);
   if (!textarea) return;
 
   const body = textarea.value.trim();
@@ -1188,12 +1280,13 @@ async function submitDiscReply(arg, el) {
     reactions: [], replyCount: 0, replies: [],
     createdAt: new Date().toISOString(),
   };
-  let repliesEl = document.getElementById(`disc-replies-${parentPostId}`);
+  let repliesEl = _discRepliesInScope(scopeRoot, parentPostId) || document.getElementById(`disc-replies-${parentPostId}`);
   if (!repliesEl) {
     repliesEl = document.createElement("div");
     repliesEl.className = "disc-replies";
     repliesEl.id = `disc-replies-${parentPostId}`;
-    const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
+    repliesEl.dataset.discReplies = String(parentPostId);
+    const slot = _discReplySlotInScope(scopeRoot, parentPostId) || document.getElementById(`disc-reply-slot-${parentPostId}`);
     slot?.insertAdjacentElement("beforebegin", repliesEl);
   }
   const optWrap = document.createElement("div");
@@ -1207,14 +1300,14 @@ async function submitDiscReply(arg, el) {
   }
 
   // Close the reply composer immediately (clear text first to skip confirm)
-  const _replyTa = document.getElementById(`discCompose-reply-${parentPostId}`);
+  const _replyTa = textarea;
   if (_replyTa) _replyTa.value = "";
-  closeDiscReplyComposer(parentPostId);
+  closeDiscReplyComposer(parentPostId, btn);
 
   try {
     const replyComposerId = `reply-${parentPostId}`;
     const pendingAttach = _discPendingAttachments.get(replyComposerId) || null;
-    const replyTypeEl = document.getElementById(`discType-reply-${parentPostId}`);
+    const replyTypeEl = replyComposer?.querySelector(".disc-type-select") || document.getElementById(`discType-reply-${parentPostId}`);
     const replyPostType = replyTypeEl?.value === "coach_clarification" ? "coach_clarification" : "comment";
     const res = await fetch(`/api/threads/${playId}`, {
       method: "POST",
@@ -1279,7 +1372,8 @@ async function loadMoreDiscReplies(arg, el) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error);
 
-    const repliesEl = document.getElementById(`disc-replies-${rootPostId}`);
+    const scopeRoot = _discScopeRoot(btn);
+    const repliesEl = _discRepliesInScope(scopeRoot, rootPostId) || document.getElementById(`disc-replies-${rootPostId}`);
     if (repliesEl && data.replies.length) {
       // Find current play
       const discSection = repliesEl.closest("[data-play-id]");
@@ -1540,10 +1634,12 @@ async function _discModerationAction(postId, action, reason, extras = {}) {
 
 // ── Reaction update helper ────────────────────────────────────────────────────
 
-function startEditPost(postId) {
+function startEditPost(postId, el) {
   if (_discEditState) _discCancelEdit();
 
-  const bodyEl = document.getElementById(`disc-body-${postId}`);
+  const scopeRoot = _discScopeRoot(el);
+  const postEl = _discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`);
+  const bodyEl = postEl?.querySelector(".disc-post-body") || document.getElementById(`disc-body-${postId}`);
   if (!bodyEl) return;
   const original = bodyEl.textContent || "";
 
@@ -1569,7 +1665,7 @@ function startEditPost(postId) {
   textarea.insertAdjacentElement("afterend", actions);
   textarea.focus();
 
-  _discEditState = { postId, original };
+  _discEditState = { postId, original, scopeRoot };
 
   saveBtn.addEventListener("click", () => _discSaveEdit(postId, textarea, actions));
   cancelBtn.addEventListener("click", () => _discCancelEdit());
@@ -1577,8 +1673,8 @@ function startEditPost(postId) {
 
 function _discCancelEdit() {
   if (!_discEditState) return;
-  const { postId, original } = _discEditState;
-  const postEl = document.getElementById(`disc-post-${postId}`);
+  const { postId, original, scopeRoot } = _discEditState;
+  const postEl = _discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`);
   const ta = postEl?.querySelector(".disc-edit-textarea");
   const actions = postEl?.querySelector(".disc-edit-actions");
 
@@ -1613,7 +1709,8 @@ async function _discSaveEdit(postId, textarea, actionsEl) {
     textarea.replaceWith(div);
     actionsEl?.remove();
 
-    const meta = document.querySelector(`#disc-post-${postId} .disc-post-meta`);
+    const scopeRoot = _discEditState?.scopeRoot || _discScopeRoot(textarea);
+    const meta = (_discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`))?.querySelector(".disc-post-meta");
     if (meta && !meta.querySelector(".disc-edited")) {
       const span = document.createElement("span");
       span.className = "disc-edited";
@@ -1628,6 +1725,7 @@ async function _discSaveEdit(postId, textarea, actionsEl) {
 
 async function deleteDiscPost(postId, el) {
   const playId = el?.dataset?.playId;
+  const scopeRoot = _discScopeRoot(el);
 
   const ok = await showConfirm("Delete this post? This can't be undone.", {
     title: "Delete Post", icon: "🗑", confirmText: "Delete", danger: true,
@@ -1639,9 +1737,9 @@ async function deleteDiscPost(postId, el) {
     const data = await res.json();
     if (!data.ok) { showToast(data.error || "Delete failed.", { duration: 3000, type: "error" }); return; }
 
-    document.getElementById(`disc-post-${postId}`)?.remove();
+    (_discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`))?.remove();
 
-    const countEl = document.getElementById("discCount");
+    const countEl = _discCountInScope(scopeRoot);
     if (countEl) countEl.textContent = String(Math.max(0, parseInt(countEl.textContent || "1", 10) - 1));
   } catch (_) {
     showToast("Network error — try again.", { duration: 3000, type: "error" });
@@ -1664,7 +1762,8 @@ async function loadMoreDiscussion(arg, el) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error);
 
-    const list = document.getElementById(`discPosts-${playId}`);
+    const scopeRoot = _discScopeRoot(btn);
+    const list = _discPostsRoot(scopeRoot) || document.getElementById(`discPosts-${playId}`);
     if (list && data.posts.length) {
       data.posts.forEach((p) => {
         const wrap = document.createElement("div");
@@ -1700,14 +1799,15 @@ function retryDiscussion() {
 
 // ── Reactions ─────────────────────────────────────────────────────────────────
 
-async function toggleDiscReaction(arg) {
+async function toggleDiscReaction(arg, el) {
   const sep = String(arg || "").lastIndexOf("::");
   if (sep < 0) return;
   const postId = arg.slice(0, sep);
   const reactionKey = arg.slice(sep + 2);
   if (!postId || !reactionKey) return;
 
-  const postEl = document.getElementById(`disc-post-${postId}`);
+  const scopeRoot = _discScopeRoot(el);
+  const postEl = _discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`);
 
   // ── Optimistic update ──────────────────────────────────────────────────────
   const reactionsBar = postEl?.querySelector(".disc-reactions");
@@ -1763,7 +1863,7 @@ async function toggleDiscReaction(arg) {
       showToast(data.error || "Failed to react.", { duration: 2500, type: "error" });
       return;
     }
-    _discUpdateReactions(postId, data.reactions);
+    _discUpdateReactions(postId, data.reactions, scopeRoot);
   } catch (_) {
     // Rollback on network error
     if (snapHtml) {
@@ -1780,9 +1880,9 @@ async function toggleDiscReaction(arg) {
   }
 }
 
-function _discUpdateReactions(postId, reactions) {
+function _discUpdateReactions(postId, reactions, scopeRoot = null) {
   // Replace the whole reactions bar with fresh HTML
-  const postEl = document.getElementById(`disc-post-${postId}`);
+  const postEl = _discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`);
   if (!postEl) return;
   const existing = postEl.querySelector(".disc-reactions");
   if (!existing) return;
@@ -1818,7 +1918,7 @@ function _discUpdateReactions(postId, reactions) {
 
 // ── Q&A controls (coaches) ────────────────────────────────────────────────────
 
-async function resolveDiscPost(arg) {
+async function resolveDiscPost(arg, el) {
   const sep = String(arg || "").lastIndexOf("::");
   if (sep < 0) return;
   const postId = arg.slice(0, sep);
@@ -1834,14 +1934,14 @@ async function resolveDiscPost(arg) {
     });
     const data = await res.json();
     if (!data.ok) { showToast(data.error || "Failed.", { duration: 2500, type: "error" }); return; }
-    _discUpdateQState(postId, data.questionState);
+    _discUpdateQState(postId, data.questionState, _discScopeRoot(el));
   } catch (_) {
     showToast("Network error.", { duration: 2500, type: "error" });
   }
 }
 
-function _discUpdateQState(postId, newState) {
-  const postEl = document.getElementById(`disc-post-${postId}`);
+function _discUpdateQState(postId, newState, scopeRoot = null) {
+  const postEl = _discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`);
   if (!postEl) return;
 
   // Toggle resolved styling
@@ -1881,12 +1981,12 @@ function _discUpdateQState(postId, newState) {
 
 // ── Official Answer ───────────────────────────────────────────────────────────
 
-async function markDiscPostOfficial(arg) {
+async function markDiscPostOfficial(arg, el) {
   const sep = String(arg || "").indexOf("::");
   if (sep < 0) return;
   const postId = arg.slice(0, sep);
   const playId = arg.slice(sep + 2);
-  const postEl = document.getElementById(`disc-post-${postId}`);
+  const postEl = _discPostInScope(_discScopeRoot(el), postId) || document.getElementById(`disc-post-${postId}`);
   if (!postEl || !playId) return;
 
   const isCurrentlyOfficial = postEl.dataset.isOfficial === "1";

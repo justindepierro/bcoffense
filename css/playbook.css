@@ -7375,6 +7375,16 @@ body.shell-tablet #playbook .pb-card-actions {
 }
 
 /* ── Reaction picker popup ──────────────────────────────────────────────────── */
+.disc-reaction-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-modal) - 1);
+  display: none;
+  background: rgba(0, 0, 0, 0.32);
+}
+.disc-reaction-picker-overlay.visible {
+  display: block;
+}
 .disc-reaction-picker {
   position: fixed;
   z-index: var(--z-modal);
@@ -7446,6 +7456,7 @@ body.shell-tablet #playbook .pb-card-actions {
   font-size: 26px;
 }
 .disc-reaction-picker.is-bottom-sheet .disc-picker-btn {
+  min-height: 48px;
   padding: var(--space-sm) var(--space-xs);
 }
 .disc-picker-more {
@@ -7815,7 +7826,8 @@ body.shell-tablet #playbook .pb-card-actions {
 /* Sheet is phone-only — never show it on wider viewports */
 @media (min-width: 601px) {
   .disc-reply-sheet,
-  .disc-reply-sheet-overlay {
+  .disc-reply-sheet-overlay,
+  .disc-reaction-picker-overlay {
     display: none !important;
   }
 }
