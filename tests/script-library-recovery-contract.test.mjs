@@ -17,6 +17,9 @@ assert.match(scriptStorage, /target\.deletedAt = new Date\(\)\.toISOString\(\)/,
 assert.match(scriptStorage, /function restoreDeletedSavedScript/, "trash supports self-service restore");
 assert.match(scriptStorage, /function restoreSavedScriptVersion/, "history restores a safe copy instead of overwriting the current record");
 assert.match(scriptPlayer, /function getDeletedSavedScripts/, "saved scripts expose a distinct trash collection");
+assert.match(scriptPlayer, /function reconcileDuplicateSavedScriptDocuments/, "legacy same-day saved copies are consolidated into one living script");
+assert.match(scriptStorage, /function duplicateCurrentScript\(\)/, "copying is an explicit action instead of a normal-save duplicate path");
+assert.doesNotMatch(scriptStorage, /title: "Duplicate Name"/, "normal saves do not interrupt coaches with duplicate-name prompts");
 assert.match(scriptPlayer, /function getPlayerPublishedScripts\(\)[\s\S]*?getActiveSavedScripts\(\)/, "deleted scripts are never projected to player logins");
 assert.match(scriptStorage, /function openCloudSavedScriptRecovery/, "admins can self-serve immutable cloud script history");
 assert.match(scriptStorage, /function restoreCloudSavedScript/, "cloud history restores through an explicit user action");

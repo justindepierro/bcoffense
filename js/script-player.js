@@ -38,6 +38,90 @@ function isSavedScriptDeleted(record) {
   return Boolean(record?.deletedAt);
 }
 
+// A practice is identified by its coach-facing title and date. The numeric
+// record id remains its stable storage id, but this key lets us repair the
+// historic "Save as Copy" behavior that created two indistinguishable
+// practices for the same day.
+function getSavedScriptDocumentKey(record) {
+  const name = String(record?.name || "").trim().toLocaleLowerCase();
+  const date = String(record?.date || "").trim();
+  return name ? `${name}\u001f${date}` : "";
+}
+
+function getSavedScriptRecordTime(record) {
+  return Math.max(
+    Date.parse(record?.updatedAt || "") || 0,
+    Date.parse(record?.playerPublishedAt || "") || 0,
+    Date.parse(record?.savedAt || "") || 0,
+  );
+}
+
+function savedScriptDocumentSnapshot(record, reason) {
+  const copy = typeof safeDeepClone === "function"
+    ? safeDeepClone(record)
+    : JSON.parse(JSON.stringify(record || {}));
+  if (copy && typeof copy === "object") copy.versions = [];
+  return {
+    versionId: `${record?.id || "script"}-${Date.now()}-${reason}`,
+    savedAt: record?.updatedAt || record?.savedAt || new Date().toISOString(),
+    reason,
+    record: copy,
+  };
+}
+
+// Old builds could create same-name/same-date records through "Save as Copy".
+// Keep the newest record as the living practice, preserve the older record in
+// its local history, and carry forward its player availability. This is a
+// one-time, recoverable consolidation: the older record is moved to Trash,
+// never erased.
+function reconcileDuplicateSavedScriptDocuments(records) {
+  const active = Array.isArray(records) ? records.filter((record) => !isSavedScriptDeleted(record)) : [];
+  const byDocument = new Map();
+  active.forEach((record) => {
+    const key = getSavedScriptDocumentKey(record);
+    if (!key) return;
+    const group = byDocument.get(key) || [];
+    group.push(record);
+    byDocument.set(key, group);
+  });
+
+  let changed = false;
+  let latestPublished = null;
+  byDocument.forEach((group) => {
+    if (group.length < 2) return;
+    const ordered = [...group].sort((left, right) => {
+      const delta = getSavedScriptRecordTime(right) - getSavedScriptRecordTime(left);
+      return delta || String(right?.id || "").localeCompare(String(left?.id || ""));
+    });
+    const primary = ordered[0];
+    const wasPublished = ordered.some((record) => isSavedScriptPlayerVisible(record));
+    const timestamp = new Date().toISOString();
+
+    if (wasPublished && !isSavedScriptPlayerVisible(primary)) {
+      primary.playerVisible = true;
+      primary.playerPublishedAt = timestamp;
+      primary.updatedAt = timestamp;
+      latestPublished = primary;
+      changed = true;
+    }
+
+    ordered.slice(1).forEach((duplicate) => {
+      const snapshot = savedScriptDocumentSnapshot(duplicate, "merged duplicate copy");
+      const priorVersions = Array.isArray(primary.versions) ? primary.versions : [];
+      primary.versions = [snapshot, ...priorVersions]
+        .filter((entry, index, list) => entry?.versionId && list.findIndex((candidate) => candidate?.versionId === entry.versionId) === index)
+        .slice(0, 20);
+      duplicate.playerVisible = false;
+      duplicate.deletedAt = timestamp;
+      duplicate.deletedBy = "document-consolidation";
+      duplicate.updatedAt = timestamp;
+      changed = true;
+    });
+  });
+
+  return { changed, latestPublished };
+}
+
 function getActiveSavedScripts() {
   return getSavedScripts().filter((record) => !isSavedScriptDeleted(record));
 }
@@ -80,7 +164,9 @@ function getSavedScripts() {
   const normalizedScripts = rawScripts.map((record, index) =>
     normalizeSavedScriptRecord(record, index),
   );
+  const reconciliation = reconcileDuplicateSavedScriptDocuments(normalizedScripts);
   const needsRepair =
+    reconciliation.changed ||
     !Array.isArray(stored) ||
     rawScripts.some((record, index) => {
       const normalized = normalizedScripts[index];
@@ -105,6 +191,21 @@ function getSavedScripts() {
 
   if (needsRepair) {
     storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, normalizedScripts);
+  }
+
+  // The repaired document should reach players like any other meaningful
+  // script update. Delay this until the current stack has finished reading
+  // storage so this normalizer never re-enters itself synchronously.
+  if (reconciliation.latestPublished && typeof recordPlayerPublishStatus === "function") {
+    const published = reconciliation.latestPublished;
+    setTimeout(() => {
+      recordPlayerPublishStatus("scripts", {
+        updatedAt: published.playerPublishedAt || published.updatedAt || new Date().toISOString(),
+        label: published.name || "Practice script",
+        id: published.id || "",
+        visibility: "published",
+      }).catch(() => {});
+    }, 0);
   }
 
   return normalizedScripts;
@@ -800,9 +901,9 @@ function loadSavedScriptsList() {
                         <span>Player login</span>
                       </label>
 	                    <button class="saved-load-btn" data-action="loadScript" data-sid="${savedScript.id}" title="Load this script">Load</button>
+	                    <button class="saved-copy-btn" data-action="duplicateSavedScript" data-sid="${savedScript.id}" title="Create a separate draft copy">Copy</button>
 	                    <button class="saved-rename-btn" data-action="openSavedScriptsArchive" data-sid="${savedScript.id}" title="View version history">🛟</button>
 	                    <button class="saved-rename-btn" data-action="renameSavedScript" data-sid="${savedScript.id}" title="Rename script">✏️</button>
-	                    <button class="saved-overwrite-btn" data-action="overwriteSavedScript" data-sid="${savedScript.id}" title="Overwrite with current script">Update</button>
 	                    <button class="saved-del-btn" data-action="deleteSavedScript" data-sid="${savedScript.id}" title="Delete script">✕</button>
 	                </div>
             </div>
@@ -909,6 +1010,36 @@ function loadScript(id) {
     console.error("loadScript error:", err);
     showToast("❌ Error loading script.", { duration: 4000, type: "error" });
   }
+}
+
+function duplicateSavedScript(id) {
+  const savedScripts = getSavedScripts();
+  const source = savedScripts.find((record) => String(record?.id) === String(id) && !isSavedScriptDeleted(record));
+  if (!source) return null;
+  const copiedAt = new Date().toISOString();
+  const base = String(source.name || "Practice Script").trim() || "Practice Script";
+  const name = typeof getUniqueSavedScriptCopyName === "function"
+    ? getUniqueSavedScriptCopyName(base, savedScripts)
+    : `${base} — Copy`;
+  const copy = {
+    ...safeDeepClone(source),
+    id: Date.now(),
+    name,
+    playerVisible: false,
+    playerPublishedAt: "",
+    playerUnpublishedAt: "",
+    savedAt: copiedAt,
+    updatedAt: copiedAt,
+    deletedAt: "",
+    deletedBy: "",
+    versions: [],
+  };
+  savedScripts.push(copy);
+  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+  loadSavedScriptRecord(copy, { toastMessage: `Opened draft copy "${name}"` });
+  loadSavedScriptsList();
+  showToast(`📄 Created a separate draft: "${name}".`);
+  return copy;
 }
 
 function getPlayerPublishedScriptById(id) {

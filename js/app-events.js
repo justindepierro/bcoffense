@@ -510,6 +510,12 @@ document.addEventListener("click", (e) => {
     case "overwriteSavedScript":
       overwriteSavedScript(parseInt(el.dataset.sid, 10));
       return;
+    case "duplicateSavedScript":
+      duplicateSavedScript(parseInt(el.dataset.sid, 10));
+      return;
+    case "duplicateCurrentScript":
+      duplicateCurrentScript();
+      return;
     case "deleteSavedScript":
       deleteSavedScript(parseInt(el.dataset.sid, 10));
       return;

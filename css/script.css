@@ -4371,6 +4371,12 @@ body[data-auth-study-portal="true"]
   color: var(--color-text-inverse);
   font-weight: 600;
 }
+.saved-copy-btn {
+  background: var(--color-bg-blue-tint);
+  color: var(--color-primary-dark);
+  border: 1px solid var(--color-primary-light) !important;
+  font-weight: 700;
+}
 .saved-rename-btn {
   background: var(--color-border-light);
   color: var(--color-text-muted);

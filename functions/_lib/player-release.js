@@ -192,6 +192,38 @@ function projectScript(record, index, resolveMediaId) {
   };
 }
 
+function playerScriptDocumentKey(record, index) {
+  const name = cleanString(record?.name, 240).toLocaleLowerCase();
+  const date = cleanString(record?.date, 64);
+  return name ? `${name}\u001f${date}` : `id:${cleanString(record?.id || index, 512)}`;
+}
+
+function playerScriptUpdatedAt(record) {
+  return Math.max(
+    Date.parse(record?.updatedAt || "") || 0,
+    Date.parse(record?.playerPublishedAt || "") || 0,
+    Date.parse(record?.savedAt || "") || 0,
+  );
+}
+
+// Defense in depth: the browser consolidates legacy duplicate documents, but
+// a stale device must never make two same-day copies appear on player logins.
+// The newest visible revision wins the release projection deterministically.
+function newestVisibleScripts(records) {
+  const winners = new Map();
+  asArray(records).forEach((record, index) => {
+    if (!isPlayerVisible(record?.playerVisible)) return;
+    const key = playerScriptDocumentKey(record, index);
+    const prior = winners.get(key);
+    if (!prior || playerScriptUpdatedAt(record) >= playerScriptUpdatedAt(prior.record)) {
+      winners.set(key, { record, index });
+    }
+  });
+  return [...winners.values()]
+    .sort((left, right) => left.index - right.index)
+    .map((entry) => entry);
+}
+
 function activeGamePlanKey(source) {
   const gameWeek = asObject(readBackupValue(source, "gameWeek", {}), {});
   return cleanString(gameWeek.opponentName, 512) || "__unassigned__";
@@ -440,8 +472,8 @@ export async function buildPlayerRelease(backup, opts = {}) {
     .filter((play) => play && !play.isSeparator)
     .slice(0, MAX_PLAYS);
 
-  const scripts = asArray(readBackupValue(source, "savedScripts", []))
-    .map((script, index) => projectScript(script, index, resolveCanonicalMediaId))
+  const scripts = newestVisibleScripts(readBackupValue(source, "savedScripts", []))
+    .map(({ record: script, index }) => projectScript(script, index, resolveCanonicalMediaId))
     .filter(Boolean)
     .slice(0, MAX_SCRIPTS);
   const scriptPlays = scripts.flatMap((script) => script.plays || []);

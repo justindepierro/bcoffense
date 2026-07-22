@@ -60,6 +60,7 @@ const backup = {
       name: "Friday Fast",
       date: "2026-07-18",
       playerVisible: true,
+      savedAt: "2026-07-18T12:00:00.000Z",
       workspace: { coachOnly: true },
       plays: [
         { isSeparator: true, label: "Team", minutes: 10, color: "#123456", private: "no" },
@@ -71,6 +72,14 @@ const backup = {
     {
       id: "script-hidden",
       playerVisible: false,
+      plays: [visiblePlay],
+    },
+    {
+      id: "script-visible-old-copy",
+      name: "Friday Fast",
+      date: "2026-07-18",
+      playerVisible: true,
+      savedAt: "2026-07-17T12:00:00.000Z",
       plays: [visiblePlay],
     },
   ]),
@@ -140,7 +149,7 @@ const repeat = await buildPlayerRelease(backup, {
 assert(release.schema === "bcoffense.player-release/v1", "uses the versioned player-release schema");
 assert(release.release.teamId === "team-1", "pins the release to its server team");
 assert(release.release.revision === repeat.release.revision, "same source produces a stable revision");
-assert(release.scripts.length === 1, "excludes unpublished scripts");
+assert(release.scripts.length === 1, "excludes unpublished and duplicate same-day scripts");
 assert(release.scripts[0].workspace === undefined, "does not carry script workspace state");
 assert(release.scripts[0].plays.length === 3, "keeps separator plus only player-eligible plays");
 assert(release.gamePlanQuiz?.id === "Opponent A", "projects the active game plan as a stable quiz source");

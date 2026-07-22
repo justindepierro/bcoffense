@@ -595,79 +595,38 @@ async function saveScript() {
     const active = savedScripts.find(
       (s) => String(s.id) === String(activeScriptSaveId),
     );
-    const existing = active || savedScripts.find(
-      (s) => !s.deletedAt && s.name.toLowerCase() === name.toLowerCase(),
-    );
+    const sameDocument = !active && typeof getSavedScriptDocumentKey === "function"
+      ? savedScripts.find((candidate) =>
+        !candidate.deletedAt &&
+        getSavedScriptDocumentKey(candidate) === getSavedScriptDocumentKey({ name, date }),
+      )
+      : null;
+    const existing = active || sameDocument;
     if (existing) {
-      if (active) {
-        markSavedScriptUpdated(existing, "save");
-        existing.name = name;
-        existing.date = date;
-        existing.plays = safeDeepClone(script);
-        existing.workspace = getScriptWorkspaceState();
-        existing.savedAt = new Date().toISOString();
-        const playerVisible = typeof isSavedScriptPlayerVisible === "function"
-          ? isSavedScriptPlayerVisible(existing)
-          : Boolean(existing.playerVisible);
-        if (playerVisible) {
-          existing.playerPublishedAt = existing.savedAt;
-        }
-        storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
-        if (playerVisible) {
-          if (typeof recordPlayerPublishStatus === "function") {
-            await recordPlayerPublishStatus("scripts", {
-              updatedAt: existing.playerPublishedAt,
-              label: existing.name || "Practice script",
-              id: existing.id || "",
-            }, { awaitCompletion: true });
-          }
-        }
-        loadSavedScriptsList();
-        finalizeScriptSave(existing);
-        showToast(`✅ "${name}" updated in Script Library.`);
-        return true;
+      markSavedScriptUpdated(existing, "save");
+      existing.name = name;
+      existing.date = date;
+      existing.plays = safeDeepClone(script);
+      existing.workspace = getScriptWorkspaceState();
+      existing.savedAt = new Date().toISOString();
+      const playerVisible = typeof isSavedScriptPlayerVisible === "function"
+        ? isSavedScriptPlayerVisible(existing)
+        : Boolean(existing.playerVisible);
+      if (playerVisible) {
+        existing.playerPublishedAt = existing.savedAt;
       }
-      const choice = await showChoice(
-        `A script named "${existing.name}" already exists.`,
-        {
-          title: "Duplicate Name",
-          icon: "⚠️",
-          option1: "💾 Overwrite",
-          option2: "➕ Save as Copy",
-        },
-      );
-      if (choice === "option1") {
-        markSavedScriptUpdated(existing, "overwrite");
-        existing.name = name;
-        existing.date = date;
-        existing.plays = safeDeepClone(script);
-        existing.workspace = getScriptWorkspaceState();
-        existing.savedAt = new Date().toISOString();
-        const playerVisible = typeof isSavedScriptPlayerVisible === "function"
-          ? isSavedScriptPlayerVisible(existing)
-          : Boolean(existing.playerVisible);
-        if (playerVisible) {
-          existing.playerPublishedAt = existing.savedAt;
-        }
-        storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
-        if (playerVisible) {
-          if (typeof recordPlayerPublishStatus === "function") {
-            await recordPlayerPublishStatus("scripts", {
-              updatedAt: existing.playerPublishedAt,
-              label: existing.name || "Practice script",
-              id: existing.id || "",
-            }, { awaitCompletion: true });
-          }
-        }
-        loadSavedScriptsList();
-        finalizeScriptSave(existing);
-        showToast(`✅ "${name}" updated!`);
-        return true;
+      storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+      if (playerVisible && typeof recordPlayerPublishStatus === "function") {
+        await recordPlayerPublishStatus("scripts", {
+          updatedAt: existing.playerPublishedAt,
+          label: existing.name || "Practice script",
+          id: existing.id || "",
+        }, { awaitCompletion: true });
       }
-
-      if (choice !== "option2") {
-        return false;
-      }
+      loadSavedScriptsList();
+      finalizeScriptSave(existing);
+      showToast(`✅ "${name}" saved.`);
+      return true;
     }
 
     const scriptData = {
@@ -695,6 +654,53 @@ async function saveScript() {
     showToast("❌ Error saving script.", { duration: 4000, type: "error" });
     return false;
   }
+}
+
+function getUniqueSavedScriptCopyName(baseName, savedScripts = []) {
+  const base = String(baseName || "Practice Script").trim() || "Practice Script";
+  const names = new Set(savedScripts
+    .filter((record) => !record?.deletedAt)
+    .map((record) => String(record?.name || "").trim().toLocaleLowerCase()));
+  let copyName = `${base} — Copy`;
+  let copyNumber = 2;
+  while (names.has(copyName.toLocaleLowerCase())) {
+    copyName = `${base} — Copy ${copyNumber}`;
+    copyNumber += 1;
+  }
+  return copyName;
+}
+
+async function duplicateCurrentScript() {
+  const savedScripts = getSavedScripts();
+  const source = savedScripts.find((record) => String(record.id) === String(activeScriptSaveId)) || null;
+  const name = getUniqueSavedScriptCopyName(
+    document.getElementById("scriptName")?.value || source?.name,
+    savedScripts,
+  );
+  const copiedAt = new Date().toISOString();
+  const copy = {
+    id: Date.now(),
+    name,
+    date: document.getElementById("scriptDate")?.value || source?.date || "",
+    period: source?.period || "",
+    tempo: source?.tempo || "",
+    // A duplicate is a new draft on purpose. It never silently replaces the
+    // player practice; publishing is inherited only by normal saves.
+    playerVisible: false,
+    plays: safeDeepClone(script),
+    workspace: getScriptWorkspaceState(),
+    savedAt: copiedAt,
+    updatedAt: copiedAt,
+    versions: [],
+  };
+  savedScripts.push(copy);
+  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+  const nameInput = document.getElementById("scriptName");
+  if (nameInput) nameInput.value = name;
+  loadSavedScriptsList();
+  finalizeScriptSave(copy);
+  showToast(`📄 Saved a separate draft: "${name}".`);
+  return copy;
 }
 
 
