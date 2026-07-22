@@ -23,6 +23,25 @@ async function initApp() {
       new Promise((resolve) => setTimeout(() => resolve({ status: "deferred" }), 2800)),
     ]);
   };
+  const hasUsableStoredPlaybook = (value) => Array.isArray(value) && value.length > 0;
+  const waitForStaffWorkspaceBootstrap = (user) => {
+    const canReadTeamWorkspace = ["admin", "coach", "assistant_coach"].includes(String(user?.role || ""));
+    if (!canReadTeamWorkspace || typeof autoPullLatestCloudBackup !== "function") {
+      return Promise.resolve(false);
+    }
+    if (typeof setStartupLoadingMessage === "function") {
+      setStartupLoadingMessage("Loading team workspace...");
+    }
+    // Every staff login gets one bounded canonical read before first render.
+    // This keeps a normal phone current as well as preventing a private/new
+    // browser from landing on an empty workspace. The pull continues safely
+    // after this timeout and restoreCloudBackup refreshes an already-open
+    // shell. cloud-sync still protects active or untracked local work.
+    return Promise.race([
+      autoPullLatestCloudBackup(),
+      new Promise((resolve) => setTimeout(() => resolve(false), 4800)),
+    ]);
+  };
   const runOptionalInit = (label, callback) => {
     try {
       callback();
@@ -54,13 +73,22 @@ async function initApp() {
       runMigrations();
     }
 
-    const storedPlaybook = needsPlayerRelease
+    let storedPlaybook = needsPlayerRelease
       ? null
       : typeof appDiagnostics !== "undefined"
         ? await appDiagnostics.measure("startup:get-playbook", () => storageManager.getPlaybook())
         : await storageManager.getPlaybook();
+    if (!needsPlayerRelease) {
+      const bootstrap = () => waitForStaffWorkspaceBootstrap(authUser);
+      if (typeof appDiagnostics !== "undefined") {
+        await appDiagnostics.measure("startup:staff-workspace", bootstrap);
+      } else {
+        await bootstrap();
+      }
+      storedPlaybook = await storageManager.getPlaybook();
+    }
     storageManager.compactLocalStorage({ removeExpiredDrafts: true });
-    if (storedPlaybook) {
+    if (hasUsableStoredPlaybook(storedPlaybook)) {
       if (typeof setStartupLoadingMessage === "function") {
         setStartupLoadingMessage("Restoring playbook...");
       }

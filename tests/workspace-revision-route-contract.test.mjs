@@ -3,10 +3,11 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const [source, cloudSync, workspaceSync] = await Promise.all([
+const [source, cloudSync, workspaceSync, appInit] = await Promise.all([
   readFile(new URL("functions/workspace/revision.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/cloud-sync.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/workspace-sync.js", `file://${root}/`), "utf8"),
+  readFile(new URL("js/app-init.js", `file://${root}/`), "utf8"),
 ]);
 
 assert.match(source, /commitWorkspaceAndPlayerRelease/, "daily workspace route uses the atomic D1\/R2 commit helper");
@@ -26,6 +27,9 @@ assert.match(cloudSync, /function rebaseCanonicalWorkspaceForAutoPush/, "automat
 assert.match(cloudSync, /opts\.auto[\s\S]*rebaseCanonicalWorkspaceForAutoPush/, "only background saves use key-scoped rebasing while deliberate recovery retains its existing behavior");
 assert.match(cloudSync, /CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS/, "revision conflicts retry promptly after reloading the current head");
 assert.match(cloudSync, /function refreshTeamWorkspaceOnForeground/, "open devices perform lightweight foreground freshness checks");
+assert.match(cloudSync, /function shouldProtectUntrackedLocalWorkspace/, "only browser-only untracked work is protected from automatic replacement");
+assert.match(cloudSync, /remoteMatchesKnownRevision/, "staff freshness follows canonical revision identity instead of device timestamps");
+assert.match(cloudSync, /hasLocalTeamEditInProgress\(\)/, "active local saves remain protected during automatic workspace refresh");
 assert.match(cloudSync, /function workspaceFetchWithTimeout/, "workspace revision requests have a bounded client deadline");
 assert.match(cloudSync, /BC_WORKSPACE_TIMEOUT/, "a timed-out workspace request is classified as safe-to-retry work");
 assert.match(cloudSync, /function acquireCloudWorkspaceLease/, "cloud publishing coordinates concurrent browser tabs before a revision write");
@@ -34,5 +38,7 @@ assert.match(cloudSync, /workspace-sync-remote-update/, "a clean sibling tab ref
 assert.match(workspaceSync, /TEAM_WORKSPACE_LEASE_KEY/, "workspace sync stores an expiring cross-tab lease");
 assert.match(workspaceSync, /function acquireTeamWorkspaceLease/, "workspace sync provides a lease acquisition API");
 assert.match(workspaceSync, /workspace-published/, "workspace sync broadcasts successful team revision handoffs");
+assert.match(appInit, /Loading team workspace\.\.\./, "each staff login checks its canonical workspace before rendering");
+assert.match(appInit, /waitForStaffWorkspaceBootstrap/, "staff startup hydration has a bounded bootstrap path");
 
-console.log("workspace revision route and live-sync contract: 25 assertions passed");
+console.log("workspace revision route and live-sync contract: 30 assertions passed");

@@ -689,6 +689,20 @@
     }
   }
 
+  function hasKnownCanonicalWorkspaceRevision(settings = {}) {
+    return Boolean(String(settings?.lastWorkspaceRevision || "").trim());
+  }
+
+  function shouldProtectUntrackedLocalWorkspace(settings = {}, hasLocalWorkspace = false) {
+    // A device that has previously restored or published the canonical
+    // workspace can safely follow a newer canonical revision when it has no
+    // active local work. A substantive browser with no recorded revision is
+    // different: it may be an older/offline workspace that was never safely
+    // published, so leave it for deliberate recovery instead of overwriting
+    // it in the background.
+    return Boolean(hasLocalWorkspace && !hasKnownCanonicalWorkspaceRevision(settings));
+  }
+
   function getCloudBackupSummary(backup) {
     const validation = storageManager.validateBackup(backup);
     return {
@@ -2084,7 +2098,8 @@
       // workspace, not an empty new device. Preserve that cautious first-run
       // behavior: surface metadata through normal recovery instead of ever
       // replacing substantive untracked coach work in the background.
-      if (!settings.lastWorkspaceRevision && await hasSubstantiveLocalTeamData()) {
+      const hasLocalWorkspace = await hasSubstantiveLocalTeamData();
+      if (shouldProtectUntrackedLocalWorkspace(settings, hasLocalWorkspace)) {
         saveCloudSyncSettingsObject({
           lastRemoteExportDate: remote.summary?.exportDate || "",
           lastRemoteUpdatedAt: remote.updatedAt || "",
@@ -2200,19 +2215,15 @@
       }
 
       const settings = getCloudSyncSettings();
-      const remoteTime = getCloudTime(remote.summary.exportDate || remote.updatedAt);
-      const knownTime = getCloudTime(
-        settings.lastRemoteExportDate ||
-        settings.lastPullAt ||
-        settings.lastPushAt,
-      );
       const hasLocalWorkspace = await hasSubstantiveLocalTeamData();
+      const remoteMatchesKnownRevision = hasKnownCanonicalWorkspaceRevision(settings) &&
+        remote.revision === settings.lastWorkspaceRevision;
 
-      if (!Number.isFinite(remoteTime)) return false;
-      if (Number.isFinite(knownTime) && remoteTime <= knownTime + 500) {
+      if (remoteMatchesKnownRevision) {
         // A prior build could record that it had seen the remote workspace
         // without restoring it. Do not let that marker strand an otherwise
-        // empty coach device on the upload screen.
+        // empty coach device on the upload screen. Revision identity—not a
+        // timestamp rounded by different devices—is the authoritative test.
         if (!hasLocalWorkspace) {
           const restored = await restoreCloudBackup(remote, {
             auto: true,
@@ -2238,13 +2249,23 @@
         return false;
       }
 
-      // A cloud snapshot is recovery data, not a live synchronization stream.
-      // Never let startup overwrite a coach's nonempty browser workspace — even
-      // if this device has not seen the remote timestamp before. The previous
-      // admin-only guard left coach accounts exposed to a destructive automatic
-      // restore. Store only the remote metadata so Recovery Tools can present a
-      // deliberate, validated restore flow later.
-      if (hasLocalWorkspace) {
+      // Active saves always win over a background refresh. Do not advance the
+      // locally-recorded revision here: the next clean foreground check must
+      // still see this newer remote revision and hydrate it.
+      if (hasLocalTeamEditInProgress()) {
+        saveCloudSyncSettingsObject({
+          lastRemoteExportDate: remote.summary.exportDate,
+          lastRemoteUpdatedAt: remote.updatedAt,
+          lastRemoteSize: remote.size,
+        });
+        return false;
+      }
+
+      // Preserve a browser-only workspace that has never been associated with
+      // the canonical head. Once a device has a known revision, however, it is
+      // a managed team device and should automatically receive the newer team
+      // revision instead of remaining stale until an admin opens Recovery.
+      if (shouldProtectUntrackedLocalWorkspace(settings, hasLocalWorkspace)) {
         saveCloudSyncSettingsObject({
           lastRemoteExportDate: remote.summary.exportDate,
           lastRemoteUpdatedAt: remote.updatedAt,
