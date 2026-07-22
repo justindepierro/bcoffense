@@ -259,6 +259,24 @@ const _NOTIF_ICONS = {
   moderation_alert: "⚠️",
 };
 
+const _NOTIF_LABELS = {
+  player_comment: "Player message",
+  player_question: "Player question",
+  player_reply: "Player reply",
+  coach_reply: "Coach reply",
+  question_resolved: "Question resolved",
+  official_answer: "Official answer",
+  reply: "New reply",
+  visual_reply: "Coach markup",
+  script_published: "Practice ready",
+  new_quiz: "New quiz",
+  quiz_homework: "Homework assigned",
+  media_update: "Media updated",
+  team_update: "Team update",
+  team_announcement: "Announcement",
+  moderation_alert: "Needs review",
+};
+
 function _notifRelTime(unixSec) {
   const diff = Math.floor(Date.now() / 1000) - unixSec;
   if (diff < 60) return "just now";
@@ -361,6 +379,7 @@ function _notifStateHtml({ icon, title, body, action = "", actionArg = "", actio
 
 function _notifItemHtml(n) {
   const icon = _NOTIF_ICONS[n.type] || "🔔";
+  const label = _NOTIF_LABELS[n.type] || "Team update";
   const unreadCls = n.read ? "" : " notif-item--unread";
   const typeCls = n.type ? ` notif-item--${escapeHtml(String(n.type).replace(/[^a-z0-9_-]/gi, "-"))}` : "";
   const notificationIds = Array.isArray(n.notificationIds) && n.notificationIds.length
@@ -377,6 +396,7 @@ function _notifItemHtml(n) {
     `<li class="notif-item${unreadCls}${typeCls}${grouped ? " notif-item--grouped" : ""}" id="notif-${escapeHtml(n.id)}"${link} role="button" tabindex="0">` +
     `<div class="notif-item-icon" aria-hidden="true">${icon}</div>` +
     `<div class="notif-item-content">` +
+    `<div class="notif-item-kicker">${escapeHtml(label)}${n.read ? "" : `<span>New</span>`}</div>` +
     `<div class="notif-item-title">${escapeHtml(n.title)}</div>` +
     (n.body ? `<div class="notif-item-body">${escapeHtml(n.body)}</div>` : "") +
     groupLabel +

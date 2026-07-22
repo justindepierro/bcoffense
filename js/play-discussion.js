@@ -104,17 +104,17 @@ function _discReactionsHtml(postId, reactions, excludeKey = null) {
     return (
       `<button class="disc-react-chip${r.mine ? " is-mine" : ""}"` +
       ` data-action="toggleDiscReaction" data-arg="${escapeHtml(postId)}::${r.key}"` +
-      ` title="${escapeHtml(meta.label)}" aria-pressed="${r.mine ? "true" : "false"}">` +
-      meta.emoji + ` <span class="disc-react-count">${r.count}</span></button>`
+      ` title="${escapeHtml(meta.label)}" aria-label="${escapeHtml(meta.label)} — ${r.count} reaction${r.count === 1 ? "" : "s"}" aria-pressed="${r.mine ? "true" : "false"}">` +
+      `<span aria-hidden="true">${meta.emoji}</span> <span class="disc-react-count">${r.count}</span></button>`
     );
   }).join("");
 
-  const openBtn = `<button class="disc-react-open-btn" data-action="openDiscReactionPicker" data-arg="${escapeHtml(postId)}" aria-label="React">+ React</button>`;
+  const openBtn = `<button class="disc-react-open-btn" data-action="openDiscReactionPicker" data-arg="${escapeHtml(postId)}" aria-label="Add a reaction"><span aria-hidden="true">🙂</span> React</button>`;
   const seeAllBtn = active.length > 0
     ? `<button class="disc-react-see-all" data-action="openDiscReactionBreakdown" data-arg="${escapeHtml(postId)}" title="See who reacted" aria-label="See all reactions">⋯</button>`
     : "";
   const userReactionAttr = mineReaction ? ` data-user-reaction="${escapeHtml(mineReaction.key)}"` : "";
-  return `<div class="disc-reactions"${userReactionAttr}>${chips}${seeAllBtn}${openBtn}</div>`;
+  return `<div class="disc-reactions" role="group" aria-label="Post reactions"${userReactionAttr}>${chips}${seeAllBtn}${openBtn}</div>`;
 }
 
 // ── Reaction picker ───────────────────────────────────────────────────────────
@@ -157,8 +157,9 @@ function openDiscReactionPicker(postId) {
   const quickButtons = reactionButtons(_REACTION_QUICK_PICKER_ORDER);
   const moreButtons = reactionButtons(_REACTION_MORE_PICKER_ORDER);
 
-  const closeBtn = `<button class="disc-picker-close" data-action="closeDiscReactionPicker" aria-label="Close">✕</button>`;
-  setInnerHTML(picker, closeBtn +
+  const closeBtn = `<button class="disc-picker-close" data-action="closeDiscReactionPicker" aria-label="Close reaction picker">✕</button>`;
+  setInnerHTML(picker,
+    `<div class="disc-picker-head"><div><strong>React</strong><span>Choose a quick response</span></div>${closeBtn}</div>` +
     `<div class="disc-picker-grid" role="group" aria-label="Quick reactions">${quickButtons}</div>` +
     `<details class="disc-picker-more">` +
       `<summary>More reactions</summary>` +
@@ -301,8 +302,8 @@ function switchDiscComposerType(arg) {
   const textarea = document.getElementById(`discCompose-${playId}`);
   if (textarea) {
     textarea.placeholder = type === "question"
-      ? "What's your question? (Ctrl+Enter to post)"
-      : "Add a comment… (Ctrl+Enter to post)";
+      ? "What is your question?"
+      : "Write a message…";
   }
 }
 
@@ -539,7 +540,7 @@ function _discPostHtml(p, playId, isReply = false) {
     : "";
 
   const replyBtn = !isReply
-    ? `<button class="disc-reply-btn" data-action="openDiscReplyComposer" data-arg="${escapeHtml(p.id)}::${escapeHtml(playId)}" title="Reply">↩ Reply</button>`
+    ? `<button class="disc-reply-btn" data-action="openDiscReplyComposer" data-arg="${escapeHtml(p.id)}::${escapeHtml(playId)}" title="Reply to ${escapeHtml(p.authorName)}"><span aria-hidden="true">↩</span> Reply</button>`
     : "";
 
   const editBtn = canAct
@@ -588,7 +589,7 @@ function _discPostHtml(p, playId, isReply = false) {
     ? `<button class="disc-same-q-btn${userHasSameQ ? " is-mine" : ""}"` +
     ` data-action="toggleDiscReaction" data-arg="${escapeHtml(p.id)}::same_question"` +
     ` aria-pressed="${userHasSameQ ? "true" : "false"}" title="I have this question too">` +
-    `❓ I have this${sameQCount > 1 ? ` <span class="disc-same-q-count">· ${sameQCount}</span>` : ""}` +
+    `<span aria-hidden="true">❓</span> Same question${sameQCount > 1 ? ` <span class="disc-same-q-count">· ${sameQCount}</span>` : ""}` +
     `</button>`
     : "";
   const canRewardDiscussion = isStaff && p.authorRole === "player" && !String(p.id || "").startsWith("opt-");
@@ -608,7 +609,7 @@ function _discPostHtml(p, playId, isReply = false) {
     : "";
   const actionsHtml = (inlineActions || moreMenu)
     ? `<div class="disc-post-actions">${inlineActions}${moreMenu}</div>`
-    : `<div class="disc-post-actions"></div>`;
+    : "";
 
   // Render inline replies
   const replies = p.replies || [];
@@ -660,8 +661,10 @@ function _discPostHtml(p, playId, isReply = false) {
     `</div>` +
     `<div class="disc-post-body" id="disc-body-${escapeHtml(p.id)}">${bodyContent}</div>` +
     _discAttachmentsHtml(p.attachments) +
+    `<div class="disc-post-footer">` +
     _discReactionsHtml(p.id, p.reactions, (isQuestion && !isReply) ? "same_question" : null) +
     actionsHtml +
+    `</div>` +
     `</div>` +
     replyComposerPlaceholder +
     repliesHtml +
@@ -778,7 +781,7 @@ function setDiscQCategory(arg) {
 
 function _discComposerHtml(playId, playSig, parentPostId = null) {
   const isReply = !!parentPostId;
-  const placeholder = isReply ? "Write a reply… (Ctrl+Enter to post)" : "Add a comment… (Ctrl+Enter to post)";
+  const placeholder = isReply ? "Write a reply…" : "Write a message…";
   const idSuffix = isReply ? `reply-${parentPostId}` : playId;
   const isStaff = _discIsStaff();
   const playerPos = !isReply && !isStaff ? _discGetPlayerPosition() : null;
@@ -801,9 +804,9 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
   const rootComposerMode = !isReply
     ? `<div class="disc-composer-mode" role="group" aria-label="Choose message type">` +
       `<button type="button" class="disc-composer-mode-btn is-active" data-action="switchDiscComposerType"` +
-      ` data-arg="${escapeHtml(playId)}::comment" data-disc-type="comment" aria-pressed="true">💬 Comment</button>` +
+      ` data-arg="${escapeHtml(playId)}::comment" data-disc-type="comment" aria-pressed="true"><span aria-hidden="true">💬</span> Comment</button>` +
       `<button type="button" class="disc-composer-mode-btn" data-action="switchDiscComposerType"` +
-      ` data-arg="${escapeHtml(playId)}::question" data-disc-type="question" aria-pressed="false">❓ Ask question</button>` +
+      ` data-arg="${escapeHtml(playId)}::question" data-disc-type="question" aria-pressed="false"><span aria-hidden="true">❓</span> Ask question</button>` +
       `</div>`
     : "";
   const typeSelect = isReply ? clarifySelect :
@@ -1096,7 +1099,11 @@ function openDiscReplyComposer(arg) {
     }
     overlay.onclick = () => closeDiscReplyComposer(parentPostId);
     sheet.dataset.parentPostId = String(parentPostId);
-    sheet.innerHTML = `<div class="disc-reply-sheet-handle" aria-hidden="true"></div>` + bannerHtml + _discComposerHtml(playId, playSig, parentPostId);
+    sheet.innerHTML =
+      `<div class="disc-reply-sheet-head">` +
+      `<div class="disc-reply-sheet-handle" aria-hidden="true"></div>` +
+      `<button type="button" class="disc-reply-sheet-close" data-action="closeDiscReplyComposer" data-arg="${escapeHtml(parentPostId)}" aria-label="Close reply">✕</button>` +
+      `</div>` + bannerHtml + _discComposerHtml(playId, playSig, parentPostId);
     overlay.classList.add("visible");
     requestAnimationFrame(() => sheet.classList.add("visible"));
     _discWireReplyComposerDraft(sheet, parentPostId);

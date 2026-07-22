@@ -1903,16 +1903,25 @@ body.play-presentation-mobile .pp-disc-drawer .disc-composer-actions .btn {
     padding-left: 7px;
   }
   .pp-disc-drawer .disc-composer {
-    padding: 8px 0 max(10px, env(safe-area-inset-bottom, 0px));
+    padding: 8px 10px max(10px, env(safe-area-inset-bottom, 0px));
+    border-radius: 14px;
   }
   .pp-disc-drawer .disc-composer-mode { margin-bottom: 6px; }
   .pp-disc-drawer .disc-composer-mode-btn { min-height: 36px; }
-  .pp-disc-drawer .disc-post-actions { gap: 5px; margin-top: 6px; }
+  .pp-disc-drawer .disc-post-actions { gap: 5px; }
   .pp-disc-drawer .disc-reply-btn,
   .pp-disc-drawer .disc-same-q-btn,
   .pp-disc-drawer .disc-reward-btn,
   .pp-disc-drawer .disc-react-open-btn {
     min-height: 40px;
+  }
+  .pp-disc-drawer .disc-post-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .pp-disc-drawer .disc-post-actions,
+  .pp-disc-drawer .disc-reactions {
+    width: 100%;
   }
   .pp-disc-drawer .disc-composer-attach-row { gap: 5px; }
   .pp-disc-drawer .disc-attach-btn { min-height: 34px; }
