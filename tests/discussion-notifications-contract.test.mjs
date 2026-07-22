@@ -57,6 +57,9 @@ assert.match(threadRoute, /notificationType: isStaff \? "coach_reply" : "reply"/
 assert.match(threadRoute, /skipPlayerRecipient: isCoachVisualReply/, "marked-up coach replies avoid a second generic reply receipt");
 assert.match(threads, /role IN \('coach', 'admin', 'assistant', 'assistant_coach'\)/, "legacy assistant staff are included in discussion safety escalation recipients");
 assert.match(threads, /DELETE FROM reactions WHERE post_id = \? AND user_id = \?/, "a new reaction replaces an older reaction from the same person on that post");
+assert.match(threads, /UPDATE discussion_posts SET updated_at = \? WHERE id = \?/, "reaction changes advance the discussion revision used by fresh readers");
+assert.match(threadRoute, /If-None-Match/, "thread reads accept a conditional revision from an already-open panel");
+assert.match(threadRoute, /status: 304/, "an unchanged thread avoids re-sending the full discussion payload");
 for (const route of [countRoute, indexRoute, itemRoute]) {
   assert.match(route, /ensureNotificationUser\(env\.DB, session\)/, "all notification endpoints resolve static staff consistently");
 }
@@ -82,9 +85,15 @@ assert.match(discussionClient, /role === "assistant_coach"/, "the discussion UI 
 assert.match(discussionClient, /_REACTION_QUICK_PICKER_ORDER/, "the reaction picker keeps the core communication choices prominent");
 assert.match(discussionClient, /disc-picker-more/, "secondary reactions are intentionally tucked behind a More control");
 assert.match(discussionClient, /function _discEnsureScope\(container\)/, "each discussion surface receives a stable local interaction scope");
+assert.match(discussionClient, /const _discThreadCache = new Map\(\)/, "recent thread data is kept only in memory for an instant, authenticated reopen");
+assert.match(discussionClient, /const _discLoadControllers = new WeakMap\(\)/, "an older thread request can be cancelled before it paints a reused panel");
+assert.match(discussionClient, /signal: controller\.signal/, "thread fetches are attached to their panel cancellation signal");
 assert.match(discussionClient, /function _discPostInScope\(scopeRoot, postId\)/, "reply and reaction updates resolve inside the panel that initiated them");
 assert.match(discussionClient, /section\.querySelector\("\.disc-body"\)/, "Game Plan and Playbook discussions do not reuse a document-global discussion body");
 assert.match(discussionClient, /data-disc-posts/, "discussion post lists are addressed through their local scope rather than a repeated global ID");
+assert.match(discussionClient, /function _discComposerKey\(composer\)/, "attachment drafts are scoped to the visible composer, not only the play");
+assert.doesNotMatch(discussionClient, /id="discCompose-\$\{/, "multiple discussion surfaces do not emit duplicate composer IDs");
+assert.doesNotMatch(discussionClient, /id="disc-pending-\$\{/, "pending attachment previews do not collide across open surfaces");
 assert.match(discussionClient, /discReactionPickerOverlay/, "mobile reaction sheets shield the background from accidental taps");
 assert.match(discussionClient, /function switchDiscComposerType\(arg\)/, "discussion composers support a direct touch-friendly Comment or Ask question choice");
 assert.match(discussionClient, /disc-composer-mode-btn/, "the native post-type dropdown is backed by visible composer mode buttons");

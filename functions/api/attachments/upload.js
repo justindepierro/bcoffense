@@ -72,9 +72,13 @@ export async function onRequestPost(context) {
   const type = String(formData.get("type") || "image").trim();
   const playId = String(formData.get("playId") || "").trim();
   const caption = String(formData.get("caption") || "").slice(0, 500).trim();
+  const requestedUploadId = String(formData.get("uploadId") || "").trim();
 
   if (type !== "markup" && type !== "image") {
     return authJson({ ok: false, error: "type must be 'markup' or 'image'." }, { status: 422 });
+  }
+  if (requestedUploadId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedUploadId)) {
+    return authJson({ ok: false, error: "Invalid upload retry identifier." }, { status: 422 });
   }
 
   // ── Validate size ───────────────────────────────────────────────────────
@@ -112,7 +116,10 @@ export async function onRequestPost(context) {
   }
 
   // ── Upload to R2 ────────────────────────────────────────────────────────
-  const id = uuid();
+  // A client retries a lost response with the same upload ID. R2 writes to
+  // this immutable, team-scoped key are idempotent, so flaky mobile networks
+  // cannot create a fresh orphan object for each retry.
+  const id = requestedUploadId || uuid();
   const ext = extForType(mimeType);
   const r2Key = discussionAttachmentR2Key(teamId, id, ext);
   if (!r2Key) {

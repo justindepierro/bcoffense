@@ -311,16 +311,19 @@ function discToggleQCategory(e) {
  * stable; these buttons are the fast, touch-friendly control surface.
  */
 function switchDiscComposerType(arg) {
+  const el = arguments[1];
   const value = String(arg || "");
   const sep = value.lastIndexOf("::");
   if (sep < 1) return;
   const playId = value.slice(0, sep);
   const type = value.slice(sep + 2) === "question" ? "question" : "comment";
-  const select = document.getElementById(`discType-${playId}`);
+  const scopeRoot = _discResolveScope(el, playId);
+  const composer = _discRootComposer(scopeRoot);
+  const select = composer?.querySelector(".disc-type-select") || null;
   if (!select) return;
   select.value = type;
   discToggleQCategory(select);
-  const textarea = document.getElementById(`discCompose-${playId}`);
+  const textarea = composer?.querySelector("textarea.disc-textarea") || null;
   if (textarea) {
     textarea.placeholder = type === "question"
       ? "What is your question?"
@@ -363,6 +366,12 @@ let _discLastPlayId = null;      // for retryDiscussion()
 let _discLastPlaySig = null;
 let _discScriptContext = null;   // { periodName, playIndex } — set by openScriptDiscussion
 let _discScopeSequence = 0;
+// Discussion can be open in more than one surface at once. Keep the latest
+// server snapshot in memory for an instant reopen, but always revalidate it.
+// This is deliberately session-only: discussion content is authenticated and
+// should not be left in persistent browser storage after logout.
+const _discThreadCache = new Map();
+const _discLoadControllers = new WeakMap();
 
 // A play thread can legitimately be open in the playbook, Game Plan, and the
 // swipe drawer at the same time.  Those surfaces used to share document-wide
@@ -381,7 +390,15 @@ function _discEnsureScope(container) {
 function _discScopeRoot(el) {
   if (!(el instanceof Element)) return null;
   const root = el.closest("[data-disc-scope]");
-  if (root) return root;
+  if (root && root.id !== "discReplySheet") return root;
+  if (root?.id === "discReplySheet") {
+    const sheetScope = root.dataset.discScope;
+    return sheetScope
+      ? Array.from(document.querySelectorAll("[data-disc-scope]")).find(
+        (candidate) => candidate !== root && candidate.dataset.discScope === sheetScope,
+      ) || null
+      : null;
+  }
   const sheetScope = el.closest("#discReplySheet")?.dataset?.discScope;
   return sheetScope
     ? document.querySelector(`[data-disc-scope="${CSS.escape(sheetScope)}"]`)
@@ -415,8 +432,47 @@ function _discRootComposer(scopeRoot) {
   return scopeRoot?.querySelector(".disc-composer[data-disc-root-composer]") || null;
 }
 
+// Attachment drafts belong to a *visible composer*, not just a play. A coach
+// can have the same play open in the playbook, Game Plan, and swipe view at
+// once, so a play-only key would let one panel overwrite another panel's draft.
+function _discComposerKey(composer) {
+  if (!(composer instanceof Element)) return "";
+  const scope = _discScopeRoot(composer)?.dataset?.discScope || "discussion";
+  const token = composer.dataset.discComposerToken || "root";
+  return `${scope}::${token}`;
+}
+
+function _discComposerForKey(composerKey) {
+  return Array.from(document.querySelectorAll(".disc-composer")).find(
+    (composer) => _discComposerKey(composer) === String(composerKey),
+  ) || null;
+}
+
 function _discCountInScope(scopeRoot) {
   return scopeRoot?.closest(".disc-section")?.querySelector(".disc-count") || null;
+}
+
+function _discCacheKey(playId) {
+  const user = _discAuthUser();
+  return `${String(user?.username || user?.d1UserId || user?.label || "session")}::${String(playId || "")}`;
+}
+
+function _discInvalidateThreadCache(playId) {
+  if (!playId) return;
+  _discThreadCache.delete(_discCacheKey(playId));
+}
+
+function _discScopePlaySignature(scopeRoot, fallback = "") {
+  return String(scopeRoot?.dataset?.discPlaySig || fallback || "");
+}
+
+function _discCurrentBodyForPlay(playId) {
+  const bodies = Array.from(document.querySelectorAll(".disc-body[data-disc-play-id]"));
+  return bodies.find((body) => body.dataset.discPlayId === String(playId)) || null;
+}
+
+function _discResolveScope(el, playId = "") {
+  return _discScopeRoot(el) || _discCurrentBodyForPlay(playId);
 }
 
 // ── Main render ───────────────────────────────────────────────────────────────
@@ -477,18 +533,53 @@ async function renderDiscussionSection(play, container) {
 
 async function _discLoadBody(playId, playSig, bodyEl) {
   if (!bodyEl) return;
+  _discEnsureScope(bodyEl);
+  bodyEl.dataset.discPlayId = String(playId);
+  bodyEl.dataset.discPlaySig = String(playSig || "");
+
+  // A panel can be destroyed or reused while a request is still in flight.
+  // Abort its older request so a slow response can never repaint the wrong play.
+  _discLoadControllers.get(bodyEl)?.abort();
+  const controller = new AbortController();
+  _discLoadControllers.set(bodyEl, controller);
+  const cacheKey = _discCacheKey(playId);
+  const cached = _discThreadCache.get(cacheKey) || null;
+
+  if (cached?.data) {
+    _discRenderBody(bodyEl, cached.data, playId, playSig);
+    _discApplyDeepLink(playId, bodyEl);
+  } else {
+    setInnerHTML(bodyEl, `<p class="disc-loading">Loading…</p>`);
+  }
+
   try {
-    const res = await fetch(`/api/threads/${playId}`);
+    const headers = cached?.etag ? { "If-None-Match": cached.etag } : {};
+    const res = await fetch(`/api/threads/${playId}`, { headers, signal: controller.signal });
+    if (controller.signal.aborted || _discLoadControllers.get(bodyEl) !== controller || !bodyEl.isConnected) return;
+    if (res.status === 304 && cached?.data) {
+      _discApplyDeepLink(playId, bodyEl);
+      return;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "Failed to load");
+
+    _discThreadCache.set(cacheKey, {
+      data,
+      etag: res.headers.get("ETag") || "",
+      receivedAt: Date.now(),
+    });
 
     const countEl = _discCountInScope(bodyEl);
     if (countEl && data.thread) countEl.textContent = String(data.thread.total);
 
     _discRenderBody(bodyEl, data, playId, playSig);
-    _discApplyDeepLink(playId);
+    _discApplyDeepLink(playId, bodyEl);
   } catch (err) {
+    if (err?.name === "AbortError" || controller.signal.aborted) return;
+    // A cached thread is still useful if a quiet revalidation fails. Keep the
+    // conversation readable instead of replacing it with a failure screen.
+    if (cached?.data) return;
     setInnerHTML(
       bodyEl,
       `<p class="disc-error">Couldn't load discussion: ${escapeHtml(err.message)}</p>` +
@@ -509,8 +600,8 @@ function _discRenderBody(container, data, playId, playSig) {
 
   // Coach moderation queue banner
   const modBanner = isStaff
-    ? `<div class="disc-mod-banner" id="discModBanner" style="display:none">` +
-    `<span class="disc-mod-badge" id="discModCount"></span>` +
+    ? `<div class="disc-mod-banner" data-disc-mod-banner style="display:none">` +
+    `<span class="disc-mod-badge" data-disc-mod-count></span>` +
     `<button class="btn btn-xs" data-action="openDiscModerationQueue">Review</button>` +
     `</div>`
     : "";
@@ -559,13 +650,14 @@ function _discRenderBody(container, data, playId, playSig) {
     container,
     modBanner +
     filterBar +
-    `<div class="disc-posts" id="discPosts-${escapeHtml(playId)}" data-disc-posts role="feed" aria-label="Discussion thread">${postsHtml}</div>` +
+    `<div class="disc-posts" data-disc-posts role="feed" aria-label="Discussion thread">${postsHtml}</div>` +
     loadMore +
     askCoachBtn +
     composer +
     monitoringNotice +
     lockCtrl,
   );
+  _discWireComposerAttachments(container);
 
   // Auto-restore previously expanded reply threads from sessionStorage
   requestAnimationFrame(() => {
@@ -696,7 +788,7 @@ function _discPostHtml(p, playId, isReply = false) {
   const hiddenCount = replyCount - shownCount;
 
   const repliesHtml = replies.length
-    ? `<div class="disc-replies" id="disc-replies-${escapeHtml(p.id)}" data-disc-replies="${escapeHtml(p.id)}">` +
+    ? `<div class="disc-replies" data-disc-replies="${escapeHtml(p.id)}">` +
     replies.map((r) => _discPostHtml(r, playId, true)).join("") +
     (hiddenCount > 0
       ? `<button class="btn btn-xs disc-load-replies" data-action="loadMoreDiscReplies"` +
@@ -705,7 +797,7 @@ function _discPostHtml(p, playId, isReply = false) {
       : "") +
     `</div>`
     : (replyCount > 0
-      ? `<div class="disc-replies" id="disc-replies-${escapeHtml(p.id)}" data-disc-replies="${escapeHtml(p.id)}">` +
+      ? `<div class="disc-replies" data-disc-replies="${escapeHtml(p.id)}">` +
       `<button class="btn btn-xs disc-load-replies" data-action="loadMoreDiscReplies"` +
       ` data-arg="${escapeHtml(p.id)}" data-cursor="">` +
       `View ${replyCount} repl${replyCount === 1 ? "y" : "ies"}…</button>` +
@@ -714,12 +806,12 @@ function _discPostHtml(p, playId, isReply = false) {
 
   // Inline reply composer placeholder (rendered on demand)
   const replyComposerPlaceholder = !isReply
-    ? `<div class="disc-reply-composer-slot" id="disc-reply-slot-${escapeHtml(p.id)}" data-disc-reply-slot="${escapeHtml(p.id)}"></div>`
+    ? `<div class="disc-reply-composer-slot" data-disc-reply-slot="${escapeHtml(p.id)}"></div>`
     : "";
 
   return (
     `<div class="disc-post${isResolved ? " disc-post--resolved" : ""}${isOfficial ? " disc-post--official" : ""}${coachHighlight}${isReply ? " disc-post--reply" : ""}"` +
-    ` id="disc-post-${escapeHtml(p.id)}" data-post-id="${escapeHtml(p.id)}"` +
+    ` data-post-id="${escapeHtml(p.id)}"` +
     ` data-post-type="${escapeHtml(p.postType || "comment")}"` +
     (p.questionCategory ? ` data-q-category="${escapeHtml(p.questionCategory)}"` : "") +
     ` data-is-official="${isOfficial ? "1" : "0"}"` +
@@ -737,7 +829,7 @@ function _discPostHtml(p, playId, isReply = false) {
     (p.editedAt ? `<span class="disc-edited">(edited)</span>` : "") +
     (p.sourceContext ? `<span class="disc-post-ctx">${escapeHtml(p.sourceContext)}</span>` : "") +
     `</div>` +
-    `<div class="disc-post-body" id="disc-body-${escapeHtml(p.id)}">${bodyContent}</div>` +
+    `<div class="disc-post-body">${bodyContent}</div>` +
     _discAttachmentsHtml(p.attachments) +
     `<div class="disc-post-footer">` +
     _discReactionsHtml(p.id, p.reactions, (isQuestion && !isReply) ? "same_question" : null) +
@@ -757,7 +849,7 @@ function setDiscFilter(arg, el) {
   const playId = arg.slice(sep + 2);
 
   const container = _discScopeRoot(el) || null;
-  const postsEl = _discPostsRoot(container) || document.getElementById(`discPosts-${playId}`);
+  const postsEl = _discPostsRoot(container);
 
   // Update main filter button states
   const filterBar = container?.querySelector(".disc-filter-bar");
@@ -810,8 +902,8 @@ function setDiscFilter(arg, el) {
     post.hidden = !show;
     const pid = post.dataset.postId || "";
     if (pid) {
-      const replySlot = _discReplySlotInScope(container, pid) || document.getElementById(`disc-reply-slot-${pid}`);
-      const replies = _discRepliesInScope(container, pid) || document.getElementById(`disc-replies-${pid}`);
+      const replySlot = _discReplySlotInScope(container, pid);
+      const replies = _discRepliesInScope(container, pid);
       if (replySlot) replySlot.hidden = !show;
       if (replies) replies.hidden = !show;
     }
@@ -839,7 +931,7 @@ function setDiscQCategory(arg, el) {
   const playId = arg.slice(sep + 2);
 
   const container = _discScopeRoot(el) || null;
-  const postsEl = _discPostsRoot(container) || document.getElementById(`discPosts-${playId}`);
+  const postsEl = _discPostsRoot(container);
   const qBar = container?.querySelector(".disc-q-cat-filter-bar");
   if (qBar) {
     qBar.querySelectorAll(".disc-q-cat-btn").forEach((btn) => {
@@ -859,7 +951,7 @@ function setDiscQCategory(arg, el) {
 function _discComposerHtml(playId, playSig, parentPostId = null) {
   const isReply = !!parentPostId;
   const placeholder = isReply ? "Write a reply…" : "Write a message…";
-  const idSuffix = isReply ? `reply-${parentPostId}` : playId;
+  const composerToken = isReply ? `reply-${parentPostId}` : "root";
   const isStaff = _discIsStaff();
   const playerPos = !isReply && !isStaff ? _discGetPlayerPosition() : null;
   const gw = (typeof getGameWeek === "function") ? getGameWeek() : null;
@@ -873,7 +965,7 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
     : "";
   // Clarification reply type for staff (lets coaches add context without marking question answered)
   const clarifySelect = isReply && isStaff
-    ? `<select class="disc-type-select disc-type-select--reply" id="discType-${escapeHtml(idSuffix)}" aria-label="Reply type">` +
+    ? `<select class="disc-type-select disc-type-select--reply" aria-label="Reply type">` +
     `<option value="comment">Reply</option>` +
     `<option value="coach_clarification">Clarification 📋</option>` +
     `</select>`
@@ -887,7 +979,7 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
       `</div>`
     : "";
   const typeSelect = isReply ? clarifySelect :
-    `<select class="disc-type-select disc-type-select--native" id="discType-${escapeHtml(playId)}" aria-hidden="true" tabindex="-1"
+    `<select class="disc-type-select disc-type-select--native" aria-hidden="true" tabindex="-1"
       data-onchange="discToggleQCategory" data-pass="event">` +
     `<option value="comment">Comment</option>` +
     `<option value="question">Question ❓</option>` +
@@ -895,7 +987,7 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
   const questionCategory = !isReply
     ? `<div class="disc-q-category-row" hidden>` +
     `<span class="disc-q-category-label">Question topic</span>` +
-    `<select class="disc-cat-select" id="discQCat-${escapeHtml(playId)}" aria-label="Question category">` +
+    `<select class="disc-cat-select" aria-label="Question category">` +
     `<option value="">General</option>` +
     `<option value="assignment">Assignment</option>` +
     `<option value="technique">Technique</option>` +
@@ -911,34 +1003,33 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
   const attachBtns = isStaff
     ? `<div class="disc-composer-attach-row">` +
     `<button class="btn btn-xs disc-attach-btn" data-action="discOpenMarkupOverlay"` +
-    ` data-arg="${escapeHtml(idSuffix)}::${escapeHtml(playId)}" title="Annotate play diagram">` +
+    ` data-play-id="${escapeHtml(playId)}" title="Annotate play diagram">` +
     `✏️ Mark Up Play</button>` +
     `<label class="btn btn-xs disc-attach-btn" title="Attach image">` +
     `📎 Image` +
     `<input type="file" accept="image/jpeg,image/png,image/webp" class="disc-img-file-input"` +
-    ` data-composer-id="${escapeHtml(idSuffix)}" data-play-id="${escapeHtml(playId)}" style="display:none">` +
+    ` data-play-id="${escapeHtml(playId)}" style="display:none">` +
     `</label>` +
-    `<div class="disc-pending-attachment" id="disc-pending-${escapeHtml(idSuffix)}" style="display:none">` +
-    `<img class="disc-pending-thumb" id="disc-pending-thumb-${escapeHtml(idSuffix)}" alt="Pending attachment" src="">` +
-    `<span class="disc-upload-spinner" id="disc-upload-spinner-${escapeHtml(idSuffix)}" aria-hidden="true"></span>` +
-    `<button class="btn btn-xs disc-upload-retry-btn" id="disc-upload-retry-${escapeHtml(idSuffix)}"` +
-    ` style="display:none" data-action="discRetryAttachmentUpload" data-arg="${escapeHtml(idSuffix)}">↺ Retry</button>` +
-    `<button class="btn btn-xs disc-remove-attach-btn" id="disc-remove-${escapeHtml(idSuffix)}" data-action="discRemovePendingAttachment"` +
-    ` data-arg="${escapeHtml(idSuffix)}">✕</button>` +
+    `<div class="disc-pending-attachment" data-disc-pending-attachment style="display:none">` +
+    `<img class="disc-pending-thumb" alt="Pending attachment" src="">` +
+    `<span class="disc-upload-spinner" aria-hidden="true"></span>` +
+    `<button class="btn btn-xs disc-upload-retry-btn"` +
+    ` style="display:none" data-action="discRetryAttachmentUpload">↺ Retry</button>` +
+    `<button class="btn btn-xs disc-remove-attach-btn" data-action="discRemovePendingAttachment">✕</button>` +
     `</div>` +
     `</div>`
     : "";
 
   return (
-    `<div class="disc-composer${isReply ? " disc-composer--reply" : ""}"${isReply ? "" : " data-disc-root-composer"}>${posCtx}` +
+    `<div class="disc-composer${isReply ? " disc-composer--reply" : ""}" data-disc-composer-token="${escapeHtml(composerToken)}"${isReply ? "" : " data-disc-root-composer"}>${posCtx}` +
     attachBtns +
     rootComposerMode +
     typeSelect +
     questionCategory +
-    `<textarea class="disc-textarea" id="discCompose-${escapeHtml(idSuffix)}"` +
+    `<textarea class="disc-textarea"` +
     ` placeholder="${escapeHtml(placeholder)}" rows="2" maxlength="2000" aria-label="${escapeHtml(placeholder)}"></textarea>` +
     `<div class="disc-composer-actions">` +
-    `<span class="disc-char-count" id="discChars-${escapeHtml(idSuffix)}">0 / 2000</span>` +
+    `<span class="disc-char-count">0 / 2000</span>` +
     (isReply
       ? `<button class="btn btn-xs" data-action="closeDiscReplyComposer" data-arg="${escapeHtml(parentPostId)}">Cancel</button>` +
       `<button class="btn btn-xs btn-primary" data-action="submitDiscReply"` +
@@ -960,10 +1051,10 @@ async function submitDiscPost(arg, el) {
   const playSig = btn?.dataset?.playSig || "";
   if (!playId) return;
 
-  const scopeRoot = _discScopeRoot(btn);
+  const scopeRoot = _discResolveScope(btn, playId);
   const composer = _discRootComposer(scopeRoot);
-  const textarea = composer?.querySelector("textarea.disc-textarea") || document.getElementById(`discCompose-${playId}`);
-  const typeSelect = composer?.querySelector(".disc-type-select") || document.getElementById(`discType-${playId}`);
+  const textarea = composer?.querySelector("textarea.disc-textarea") || null;
+  const typeSelect = composer?.querySelector(".disc-type-select") || null;
   if (!textarea) return;
 
   const body = textarea.value.trim();
@@ -982,14 +1073,14 @@ async function submitDiscPost(arg, el) {
     id: `opt-${Date.now()}`,
     body,
     postType: typeSelect?.value || "comment",
-    questionCategory: composer?.querySelector(".disc-cat-select")?.value || document.getElementById(`discQCat-${playId}`)?.value || "",
+    questionCategory: composer?.querySelector(".disc-cat-select")?.value || "",
     authorName: _discAuthUser()?.name || _discAuthUser()?.username || "You",
     authorRole: _discAuthUser()?.role || "player",
     authorId: _discCurrentUserId || "me",
     reactions: [], replyCount: 0, replies: [],
     createdAt: new Date().toISOString(),
   };
-  const list = _discPostsRoot(scopeRoot) || document.getElementById(`discPosts-${playId}`);
+  const list = _discPostsRoot(scopeRoot);
   let optimisticNode = null;
   if (list) {
     list.querySelector(".disc-empty")?.remove();
@@ -1004,18 +1095,19 @@ async function submitDiscPost(arg, el) {
   }
   // Clear composer immediately for snappy feel
   textarea.value = "";
-  const charElOpt = composer?.querySelector(".disc-char-count") || document.getElementById(`discChars-${playId}`);
+  const charElOpt = composer?.querySelector(".disc-char-count") || null;
   if (charElOpt) { charElOpt.textContent = "0 / 2000"; charElOpt.classList.remove("disc-char-warn", "disc-char-limit"); }
 
   try {
-    const pendingAttach = _discPendingAttachments.get(playId) || null;
+    const composerKey = _discComposerKey(composer);
+    const pendingAttach = _discPendingAttachments.get(composerKey) || null;
     const res = await fetch(`/api/threads/${playId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         body,
         post_type: typeSelect?.value || "comment",
-        question_category: composer?.querySelector(".disc-cat-select")?.value || document.getElementById(`discQCat-${playId}`)?.value || null,
+        question_category: composer?.querySelector(".disc-cat-select")?.value || null,
         play_signature: playSig,
         attachment: pendingAttach || undefined,
       }),
@@ -1042,9 +1134,10 @@ async function submitDiscPost(arg, el) {
     }
 
     if (data.post?.moderationStatus === "approved") {
+      _discInvalidateThreadCache(playId);
       // Clear pending attachment after successful post
-      _discPendingAttachments.delete(playId);
-      _discClearPendingAttachmentUI(playId);
+      _discPendingAttachments.delete(composerKey);
+      _discClearPendingAttachmentUI(composerKey);
       // Replace optimistic node with real post from server
       if (optimisticNode && list) {
         const realWrap = document.createElement("div");
@@ -1133,9 +1226,9 @@ function openDiscReplyComposer(arg, el) {
   const parentPostId = arg.slice(0, sep);
   const playId = arg.slice(sep + 2);
 
-  const scopeRoot = _discScopeRoot(el);
-  const playSig = _discLastPlaySig || "";
-  const parentPostEl = _discPostInScope(scopeRoot, parentPostId) || document.getElementById(`disc-post-${parentPostId}`);
+  const scopeRoot = _discResolveScope(el, playId);
+  const playSig = _discScopePlaySignature(scopeRoot, _discLastPlaySig);
+  const parentPostEl = _discPostInScope(scopeRoot, parentPostId);
   const parentAuthor = parentPostEl?.dataset?.authorName || "";
   const parentBody = parentPostEl?.dataset?.bodyText || "";
   const bannerHtml = parentAuthor
@@ -1160,7 +1253,7 @@ function openDiscReplyComposer(arg, el) {
     _discCloseAllReplyComposers(scopeRoot);
     _discReplyTrigger = el instanceof Element ? el : null;
 
-    const slot = _discReplySlotInScope(scopeRoot, parentPostId) || document.getElementById(`disc-reply-slot-${parentPostId}`);
+    const slot = _discReplySlotInScope(scopeRoot, parentPostId);
     if (!slot) return;
 
     let overlay = document.getElementById("discReplySheetOverlay");
@@ -1200,7 +1293,7 @@ function openDiscReplyComposer(arg, el) {
 
   // Desktop/tablet: close other composers, render inline
   _discCloseAllReplyComposers(scopeRoot);
-  const slot = _discReplySlotInScope(scopeRoot, parentPostId) || document.getElementById(`disc-reply-slot-${parentPostId}`);
+  const slot = _discReplySlotInScope(scopeRoot, parentPostId);
   if (!slot) return;
   slot.innerHTML = bannerHtml + _discComposerHtml(playId, playSig, parentPostId);
   _discWireReplyComposerDraft(slot, parentPostId);
@@ -1208,7 +1301,7 @@ function openDiscReplyComposer(arg, el) {
 }
 
 async function closeDiscReplyComposer(parentPostId, el) {
-  const scopeRoot = _discScopeRoot(el);
+  const scopeRoot = _discResolveScope(el);
   // Handle bottom sheet mode first
   const sheet = document.getElementById("discReplySheet");
   if (sheet?.classList.contains("visible") && sheet.dataset.parentPostId === String(parentPostId)) {
@@ -1231,7 +1324,7 @@ async function closeDiscReplyComposer(parentPostId, el) {
     return;
   }
   // Handle inline slot mode
-  const slot = _discReplySlotInScope(scopeRoot, parentPostId) || document.getElementById(`disc-reply-slot-${parentPostId}`);
+  const slot = _discReplySlotInScope(scopeRoot, parentPostId);
   if (!slot) return;
   const textarea = slot.querySelector("textarea.disc-textarea");
   if (textarea?.value?.trim()) {
@@ -1253,9 +1346,9 @@ async function submitDiscReply(arg, el) {
   const playSig = btn?.dataset?.playSig || "";
   if (!parentPostId || !playId) return;
 
-  const scopeRoot = _discScopeRoot(btn);
+  const scopeRoot = _discResolveScope(btn, playId);
   const replyComposer = btn?.closest(".disc-composer") || scopeRoot?.querySelector(".disc-composer--reply");
-  const textarea = replyComposer?.querySelector("textarea.disc-textarea") || document.getElementById(`discCompose-reply-${parentPostId}`);
+  const textarea = replyComposer?.querySelector("textarea.disc-textarea") || null;
   if (!textarea) return;
 
   const body = textarea.value.trim();
@@ -1280,13 +1373,12 @@ async function submitDiscReply(arg, el) {
     reactions: [], replyCount: 0, replies: [],
     createdAt: new Date().toISOString(),
   };
-  let repliesEl = _discRepliesInScope(scopeRoot, parentPostId) || document.getElementById(`disc-replies-${parentPostId}`);
+  let repliesEl = _discRepliesInScope(scopeRoot, parentPostId);
   if (!repliesEl) {
     repliesEl = document.createElement("div");
     repliesEl.className = "disc-replies";
-    repliesEl.id = `disc-replies-${parentPostId}`;
     repliesEl.dataset.discReplies = String(parentPostId);
-    const slot = _discReplySlotInScope(scopeRoot, parentPostId) || document.getElementById(`disc-reply-slot-${parentPostId}`);
+    const slot = _discReplySlotInScope(scopeRoot, parentPostId);
     slot?.insertAdjacentElement("beforebegin", repliesEl);
   }
   const optWrap = document.createElement("div");
@@ -1305,9 +1397,9 @@ async function submitDiscReply(arg, el) {
   closeDiscReplyComposer(parentPostId, btn);
 
   try {
-    const replyComposerId = `reply-${parentPostId}`;
-    const pendingAttach = _discPendingAttachments.get(replyComposerId) || null;
-    const replyTypeEl = replyComposer?.querySelector(".disc-type-select") || document.getElementById(`discType-reply-${parentPostId}`);
+    const composerKey = _discComposerKey(replyComposer);
+    const pendingAttach = _discPendingAttachments.get(composerKey) || null;
+    const replyTypeEl = replyComposer?.querySelector(".disc-type-select") || null;
     const replyPostType = replyTypeEl?.value === "coach_clarification" ? "coach_clarification" : "comment";
     const res = await fetch(`/api/threads/${playId}`, {
       method: "POST",
@@ -1333,9 +1425,10 @@ async function submitDiscReply(arg, el) {
     }
 
     if (data.post?.moderationStatus === "approved") {
+      _discInvalidateThreadCache(playId);
       // Clear pending attachment
-      _discPendingAttachments.delete(replyComposerId);
-      _discClearPendingAttachmentUI(replyComposerId);
+      _discPendingAttachments.delete(composerKey);
+      _discClearPendingAttachmentUI(composerKey);
       // Replace optimistic with real reply
       if (optimisticReplyNode && repliesEl) {
         const realWrap = document.createElement("div");
@@ -1372,8 +1465,8 @@ async function loadMoreDiscReplies(arg, el) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error);
 
-    const scopeRoot = _discScopeRoot(btn);
-    const repliesEl = _discRepliesInScope(scopeRoot, rootPostId) || document.getElementById(`disc-replies-${rootPostId}`);
+    const scopeRoot = _discResolveScope(btn);
+    const repliesEl = _discRepliesInScope(scopeRoot, rootPostId);
     if (repliesEl && data.replies.length) {
       // Find current play
       const discSection = repliesEl.closest("[data-play-id]");
@@ -1410,10 +1503,12 @@ async function _discCheckModerationQueue() {
     if (!res.ok) return;
     const data = await res.json();
     const count = data.count || 0;
-    const banner = document.getElementById("discModBanner");
-    const countEl = document.getElementById("discModCount");
-    if (banner) banner.style.display = count > 0 ? "flex" : "none";
-    if (countEl) countEl.textContent = `${count} post${count === 1 ? "" : "s"} pending review`;
+    document.querySelectorAll("[data-disc-mod-banner]").forEach((banner) => {
+      banner.style.display = count > 0 ? "flex" : "none";
+    });
+    document.querySelectorAll("[data-disc-mod-count]").forEach((countEl) => {
+      countEl.textContent = `${count} post${count === 1 ? "" : "s"} pending review`;
+    });
   } catch (_) { /* silent */ }
 }
 
@@ -1618,7 +1713,8 @@ async function _discModerationAction(postId, action, reason, extras = {}) {
 
     // If approved, refresh the discussion to show the post
     if (action === "approve" && _discLastPlayId) {
-      const bodyEl = document.getElementById("discBody");
+      _discInvalidateThreadCache(_discLastPlayId);
+      const bodyEl = _discCurrentBodyForPlay(_discLastPlayId);
       if (bodyEl) {
         bodyEl.innerHTML = `<p class="disc-loading">Refreshing…</p>`;
         await _discLoadBody(_discLastPlayId, _discLastPlaySig, bodyEl);
@@ -1637,9 +1733,9 @@ async function _discModerationAction(postId, action, reason, extras = {}) {
 function startEditPost(postId, el) {
   if (_discEditState) _discCancelEdit();
 
-  const scopeRoot = _discScopeRoot(el);
-  const postEl = _discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`);
-  const bodyEl = postEl?.querySelector(".disc-post-body") || document.getElementById(`disc-body-${postId}`);
+  const scopeRoot = _discResolveScope(el, playId);
+  const postEl = _discPostInScope(scopeRoot, postId);
+  const bodyEl = postEl?.querySelector(".disc-post-body") || null;
   if (!bodyEl) return;
   const original = bodyEl.textContent || "";
 
@@ -1674,14 +1770,13 @@ function startEditPost(postId, el) {
 function _discCancelEdit() {
   if (!_discEditState) return;
   const { postId, original, scopeRoot } = _discEditState;
-  const postEl = _discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`);
+  const postEl = _discPostInScope(scopeRoot, postId);
   const ta = postEl?.querySelector(".disc-edit-textarea");
   const actions = postEl?.querySelector(".disc-edit-actions");
 
   if (ta) {
     const div = document.createElement("div");
     div.className = "disc-post-body";
-    div.id = `disc-body-${postId}`;
     div.textContent = original;
     ta.replaceWith(div);
   }
@@ -1704,19 +1799,19 @@ async function _discSaveEdit(postId, textarea, actionsEl) {
 
     const div = document.createElement("div");
     div.className = "disc-post-body";
-    div.id = `disc-body-${postId}`;
     div.textContent = data.post.body;
     textarea.replaceWith(div);
     actionsEl?.remove();
 
     const scopeRoot = _discEditState?.scopeRoot || _discScopeRoot(textarea);
-    const meta = (_discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`))?.querySelector(".disc-post-meta");
+    const meta = _discPostInScope(scopeRoot, postId)?.querySelector(".disc-post-meta");
     if (meta && !meta.querySelector(".disc-edited")) {
       const span = document.createElement("span");
       span.className = "disc-edited";
       span.textContent = "(edited)";
       meta.appendChild(span);
     }
+    _discInvalidateThreadCache(scopeRoot?.dataset?.discPlayId || "");
     _discEditState = null;
   } catch (_) {
     showToast("Network error — try again.", { duration: 3000, type: "error" });
@@ -1725,7 +1820,7 @@ async function _discSaveEdit(postId, textarea, actionsEl) {
 
 async function deleteDiscPost(postId, el) {
   const playId = el?.dataset?.playId;
-  const scopeRoot = _discScopeRoot(el);
+  const scopeRoot = _discResolveScope(el, playId);
 
   const ok = await showConfirm("Delete this post? This can't be undone.", {
     title: "Delete Post", icon: "🗑", confirmText: "Delete", danger: true,
@@ -1737,7 +1832,8 @@ async function deleteDiscPost(postId, el) {
     const data = await res.json();
     if (!data.ok) { showToast(data.error || "Delete failed.", { duration: 3000, type: "error" }); return; }
 
-    (_discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`))?.remove();
+    _discPostInScope(scopeRoot, postId)?.remove();
+    _discInvalidateThreadCache(playId || scopeRoot?.dataset?.discPlayId || "");
 
     const countEl = _discCountInScope(scopeRoot);
     if (countEl) countEl.textContent = String(Math.max(0, parseInt(countEl.textContent || "1", 10) - 1));
@@ -1763,7 +1859,7 @@ async function loadMoreDiscussion(arg, el) {
     if (!data.ok) throw new Error(data.error);
 
     const scopeRoot = _discScopeRoot(btn);
-    const list = _discPostsRoot(scopeRoot) || document.getElementById(`discPosts-${playId}`);
+    const list = _discPostsRoot(scopeRoot);
     if (list && data.posts.length) {
       data.posts.forEach((p) => {
         const wrap = document.createElement("div");
@@ -1788,12 +1884,14 @@ async function loadMoreDiscussion(arg, el) {
 }
 
 /** Retry loading the discussion after an error. */
-function retryDiscussion() {
-  if (!_discLastPlayId) return;
-  const bodyEl = document.getElementById("discBody");
+function retryDiscussion(arg, el) {
+  const bodyEl = _discResolveScope(el, _discLastPlayId);
+  const playId = bodyEl?.dataset?.discPlayId || _discLastPlayId;
+  const playSig = _discScopePlaySignature(bodyEl, _discLastPlaySig);
+  if (!playId) return;
   if (bodyEl) {
     bodyEl.innerHTML = `<p class="disc-loading">Loading…</p>`;
-    _discLoadBody(_discLastPlayId, _discLastPlaySig, bodyEl);
+    _discLoadBody(playId, playSig, bodyEl);
   }
 }
 
@@ -1806,8 +1904,8 @@ async function toggleDiscReaction(arg, el) {
   const reactionKey = arg.slice(sep + 2);
   if (!postId || !reactionKey) return;
 
-  const scopeRoot = _discScopeRoot(el);
-  const postEl = _discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`);
+  const scopeRoot = _discResolveScope(el);
+  const postEl = _discPostInScope(scopeRoot, postId);
 
   // ── Optimistic update ──────────────────────────────────────────────────────
   const reactionsBar = postEl?.querySelector(".disc-reactions");
@@ -1864,6 +1962,7 @@ async function toggleDiscReaction(arg, el) {
       return;
     }
     _discUpdateReactions(postId, data.reactions, scopeRoot);
+    _discInvalidateThreadCache(scopeRoot?.dataset?.discPlayId || "");
   } catch (_) {
     // Rollback on network error
     if (snapHtml) {
@@ -1882,7 +1981,7 @@ async function toggleDiscReaction(arg, el) {
 
 function _discUpdateReactions(postId, reactions, scopeRoot = null) {
   // Replace the whole reactions bar with fresh HTML
-  const postEl = _discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`);
+  const postEl = _discPostInScope(scopeRoot, postId);
   if (!postEl) return;
   const existing = postEl.querySelector(".disc-reactions");
   if (!existing) return;
@@ -1935,13 +2034,14 @@ async function resolveDiscPost(arg, el) {
     const data = await res.json();
     if (!data.ok) { showToast(data.error || "Failed.", { duration: 2500, type: "error" }); return; }
     _discUpdateQState(postId, data.questionState, _discScopeRoot(el));
+    _discInvalidateThreadCache(_discScopeRoot(el)?.dataset?.discPlayId || "");
   } catch (_) {
     showToast("Network error.", { duration: 2500, type: "error" });
   }
 }
 
 function _discUpdateQState(postId, newState, scopeRoot = null) {
-  const postEl = _discPostInScope(scopeRoot, postId) || document.getElementById(`disc-post-${postId}`);
+  const postEl = _discPostInScope(scopeRoot, postId);
   if (!postEl) return;
 
   // Toggle resolved styling
@@ -1986,7 +2086,7 @@ async function markDiscPostOfficial(arg, el) {
   if (sep < 0) return;
   const postId = arg.slice(0, sep);
   const playId = arg.slice(sep + 2);
-  const postEl = _discPostInScope(_discScopeRoot(el), postId) || document.getElementById(`disc-post-${postId}`);
+  const postEl = _discPostInScope(_discResolveScope(el, playId), postId);
   if (!postEl || !playId) return;
 
   const isCurrentlyOfficial = postEl.dataset.isOfficial === "1";
@@ -2035,6 +2135,8 @@ async function markDiscPostOfficial(arg, el) {
       if (repliesContainer) repliesContainer.insertAdjacentElement("afterbegin", postEl);
     }
 
+    _discInvalidateThreadCache(playId);
+
     // If marking official on a reply to a question, auto-mark question as answered
     if (nowOfficial) {
       const parentPost = postEl.closest(".disc-post:not(.disc-post--reply)");
@@ -2056,10 +2158,11 @@ async function markDiscPostOfficial(arg, el) {
 
 // ── Reaction breakdown ────────────────────────────────────────────────────────
 
-async function openDiscReactionBreakdown(postId) {
+async function openDiscReactionBreakdown(postId, el) {
   if (!postId) return;
-  const postEl = document.getElementById(`disc-post-${postId}`);
-  const playId = postEl?.closest("[data-play-id]")?.dataset?.playId || _discLastPlayId;
+  const scopeRoot = _discResolveScope(el);
+  const postEl = _discPostInScope(scopeRoot, postId);
+  const playId = scopeRoot?.dataset?.discPlayId || postEl?.closest("[data-play-id]")?.dataset?.playId || _discLastPlayId;
   const isStaff = _discIsStaff();
 
   // Build fallback from DOM if fetch fails
@@ -2108,7 +2211,7 @@ async function openDiscReactionBreakdown(postId) {
   }
 }
 
-async function toggleDiscThreadLock(arg) {
+async function toggleDiscThreadLock(arg, el) {
   const sep = String(arg || "").lastIndexOf("::");
   if (sep < 0) return;
   const playId = arg.slice(0, sep);
@@ -2128,40 +2231,42 @@ async function toggleDiscThreadLock(arg) {
     const isNowLocked = data.locked;
 
     // Update the lock button
-    const btn = document.querySelector("[data-action='toggleDiscThreadLock']");
+    const scopeRoot = _discResolveScope(el, playId);
+    const btn = scopeRoot?.querySelector("[data-action='toggleDiscThreadLock']") || null;
     if (btn) {
       btn.textContent = isNowLocked ? "🔓 Unlock Thread" : "🔒 Lock Thread";
       btn.dataset.arg = `${playId}::${isNowLocked ? "0" : "1"}`;
     }
 
     // Toggle composer visibility
-    const composerEl = document.querySelector(".disc-composer");
-    const lockedEl = document.querySelector(".disc-locked");
+    const composerEl = _discRootComposer(scopeRoot);
+    const lockedEl = scopeRoot?.querySelector(".disc-locked") || null;
     if (isNowLocked) {
       composerEl?.remove();
       if (!lockedEl) {
         const p = document.createElement("p");
         p.className = "disc-locked";
         p.textContent = "🔒 Thread is locked.";
-        document.querySelector(`#discPosts-${playId}`)?.insertAdjacentElement("afterend", p);
+        _discPostsRoot(scopeRoot)?.insertAdjacentElement("afterend", p);
       }
     } else {
       lockedEl?.remove();
-      if (!composerEl && _discLastPlaySig !== null) {
-        const playSig = _discLastPlaySig || "";
+      if (!composerEl && scopeRoot) {
+        const playSig = _discScopePlaySignature(scopeRoot, _discLastPlaySig);
         const tmp = document.createElement("div");
         tmp.innerHTML = _discComposerHtml(playId, playSig);
         const newComposer = tmp.firstElementChild;
-        const lockCtrlEl = document.querySelector(".disc-thread-controls");
+        const lockCtrlEl = scopeRoot.querySelector(".disc-thread-controls");
         if (lockCtrlEl) {
           lockCtrlEl.insertAdjacentElement("beforebegin", newComposer);
         } else {
-          const body = document.getElementById("discBody");
-          if (body) body.appendChild(newComposer);
+          scopeRoot.appendChild(newComposer);
         }
         _discWireComposerAttachments(newComposer?.parentElement || document.body);
       }
     }
+
+    _discInvalidateThreadCache(playId);
 
     showToast(isNowLocked ? "Thread locked." : "Thread unlocked.", { duration: 2500, type: "success" });
   } catch (_) {
@@ -2310,33 +2415,16 @@ async function openPresentationDiscussion() {
   const playSig = [play.formation, play.play].filter(Boolean).join(" ");
 
   const body = document.getElementById("ppDiscDrawerBody");
-  if (body) {
-    body.innerHTML = `<p class="disc-loading">Loading…</p>`;
-  }
 
   await _discEnsureUserId();
 
-  // Re-use the same load path as the workflow panel, targeting the drawer body
+  // Re-use the same cache-aware, abortable load path as the workflow panel.
   if (body) {
-    try {
-      const res = await fetch(`/api/threads/${playId}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || "Failed to load");
-
-      // Update button count badge
-      if (btn && data.thread) {
-        if (data.thread.total > 0) btn.dataset.count = data.thread.total;
-        else delete btn.dataset.count;
-      }
-
-      _discRenderBody(body, data, playId, playSig);
-    } catch (err) {
-      setInnerHTML(
-        body,
-        `<p class="disc-error">Couldn't load: ${escapeHtml(err.message)}</p>` +
-        `<button class="btn btn-xs" data-action="retryPresentationDiscussion">Retry</button>`,
-      );
+    await _discLoadBody(playId, playSig, body);
+    const data = _discThreadCache.get(_discCacheKey(playId))?.data || null;
+    if (btn && data?.thread) {
+      if (data.thread.total > 0) btn.dataset.count = data.thread.total;
+      else delete btn.dataset.count;
     }
   }
 }
@@ -2379,7 +2467,7 @@ async function askPresentationQuestion() {
   await new Promise((resolve) => setTimeout(resolve, 250));
   const play = _ppCurrentPlay();
   if (!play) return;
-  discAskCoachQuestion(getPlayThreadId(play));
+  discAskCoachQuestion(getPlayThreadId(play), document.getElementById("ppDiscDrawerBody"));
 }
 
 // ── Char count + keyboard shortcut ───────────────────────────────────────────
@@ -2387,10 +2475,7 @@ async function askPresentationQuestion() {
 document.addEventListener("input", (e) => {
   const ta = e.target;
   if (!ta.classList.contains("disc-textarea") || ta.classList.contains("disc-edit-textarea")) return;
-  const raw = ta.id || "";
-  const id = raw.startsWith("discCompose-") ? raw.slice("discCompose-".length) : null;
-  if (!id) return;
-  const el = document.getElementById(`discChars-${id}`);
+  const el = ta.closest(".disc-composer")?.querySelector(".disc-char-count") || null;
   if (el) {
     const len = ta.value.length;
     el.textContent = `${len} / 2000`;
@@ -2579,11 +2664,12 @@ const _discPendingAttachments = new Map();
 const _discFailedUploads = new Map();
 
 /** Show/hide the uploading spinner and grey out the thumb. */
-function _discSetUploadingState(composerId, isUploading) {
-  const pendingEl = document.getElementById(`disc-pending-${composerId}`);
-  const spinnerEl = document.getElementById(`disc-upload-spinner-${composerId}`);
-  const retryEl = document.getElementById(`disc-upload-retry-${composerId}`);
-  const removeEl = document.getElementById(`disc-remove-${composerId}`);
+function _discSetUploadingState(composerKey, isUploading) {
+  const composer = _discComposerForKey(composerKey);
+  const pendingEl = composer?.querySelector("[data-disc-pending-attachment]") || null;
+  const spinnerEl = composer?.querySelector(".disc-upload-spinner") || null;
+  const retryEl = composer?.querySelector(".disc-upload-retry-btn") || null;
+  const removeEl = composer?.querySelector(".disc-remove-attach-btn") || null;
   if (!pendingEl) return;
   if (isUploading) {
     pendingEl.classList.add("disc-pending--uploading");
@@ -2598,25 +2684,28 @@ function _discSetUploadingState(composerId, isUploading) {
 }
 
 /** Show the retry button after a failed upload. */
-function _discShowRetryState(composerId) {
-  const retryEl = document.getElementById(`disc-upload-retry-${composerId}`);
-  const removeEl = document.getElementById(`disc-remove-${composerId}`);
+function _discShowRetryState(composerKey) {
+  const composer = _discComposerForKey(composerKey);
+  const retryEl = composer?.querySelector(".disc-upload-retry-btn") || null;
+  const removeEl = composer?.querySelector(".disc-remove-attach-btn") || null;
   if (retryEl) retryEl.style.display = "inline-flex";
   if (removeEl) removeEl.disabled = false;
 }
 
 /** Clear the pending attachment thumbnail UI for a given composer. */
-function _discClearPendingAttachmentUI(composerId) {
-  const pendingEl = document.getElementById(`disc-pending-${composerId}`);
-  const thumbEl = document.getElementById(`disc-pending-thumb-${composerId}`);
+function _discClearPendingAttachmentUI(composerKey) {
+  const composer = _discComposerForKey(composerKey);
+  const pendingEl = composer?.querySelector("[data-disc-pending-attachment]") || null;
+  const thumbEl = composer?.querySelector(".disc-pending-thumb") || null;
   if (pendingEl) pendingEl.style.display = "none";
   if (thumbEl) thumbEl.src = "";
 }
 
 /** Show the pending attachment thumbnail in the composer. */
-function _discShowPendingAttachmentUI(composerId, previewUrl) {
-  const pendingEl = document.getElementById(`disc-pending-${composerId}`);
-  const thumbEl = document.getElementById(`disc-pending-thumb-${composerId}`);
+function _discShowPendingAttachmentUI(composerKey, previewUrl) {
+  const composer = _discComposerForKey(composerKey);
+  const pendingEl = composer?.querySelector("[data-disc-pending-attachment]") || null;
+  const thumbEl = composer?.querySelector(".disc-pending-thumb") || null;
   if (pendingEl) pendingEl.style.display = "flex";
   if (thumbEl) thumbEl.src = previewUrl;
 }
@@ -2625,66 +2714,79 @@ function _discShowPendingAttachmentUI(composerId, previewUrl) {
  * Upload a blob/file to /api/attachments/upload and return { id, r2_key, type, sizeBytes }.
  * Returns null on failure (already shows a toast).
  */
-async function _discUploadAttachment(blob, type, caption, sourcePlayId) {
-  const formData = new FormData();
-  formData.append("file", blob, `disc-attach.${type === "markup" ? "png" : blob.name || "jpg"}`);
-  formData.append("type", type === "markup" ? "markup" : "image");
-  if (caption) formData.append("caption", caption);
-  if (sourcePlayId) formData.append("playId", sourcePlayId);
-
-  try {
-    const res = await fetch("/api/attachments/upload", { method: "POST", body: formData });
-    const data = await res.json();
-    if (!data.ok) {
-      showToast(data.error || "Attachment upload failed.", { duration: 4000, type: "error" });
-      return null;
+async function _discUploadAttachment(blob, type, caption, sourcePlayId, uploadId = crypto.randomUUID()) {
+  let failure = "";
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const formData = new FormData();
+    formData.append("file", blob, `disc-attach.${type === "markup" ? "png" : blob.name || "jpg"}`);
+    formData.append("type", type === "markup" ? "markup" : "image");
+    formData.append("uploadId", uploadId);
+    if (caption) formData.append("caption", caption);
+    if (sourcePlayId) formData.append("playId", sourcePlayId);
+    try {
+      const res = await fetch("/api/attachments/upload", { method: "POST", body: formData });
+      const data = await res.json().catch(() => ({}));
+      if (data.ok) {
+        return { id: data.id, r2_key: data.r2_key, type: data.type, sizeBytes: data.sizeBytes, uploadId };
+      }
+      failure = data.error || "Attachment upload failed.";
+      // Validation and permissions need coach action, not another request.
+      if (res.status < 500) break;
+    } catch (_) {
+      failure = "Network error — attachment not uploaded.";
     }
-    return { id: data.id, r2_key: data.r2_key, type: data.type, sizeBytes: data.sizeBytes };
-  } catch (_) {
-    showToast("Network error — attachment not uploaded.", { duration: 3000, type: "error" });
-    return null;
+    // One silent retry smooths transient mobile handoffs without creating a
+    // second R2 object because the immutable upload ID is reused.
+    if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 750));
   }
+  showToast(failure || "Attachment upload failed.", { duration: 3500, type: "error" });
+  return null;
 }
 
 /**
  * Remove the pending attachment for a composer (called by "✕" remove button).
- * data-action="discRemovePendingAttachment" data-arg="{composerId}"
+ * data-action="discRemovePendingAttachment" scoped to the active composer.
  */
-function discRemovePendingAttachment(composerId) {
-  composerId = String(composerId);
-  _discPendingAttachments.delete(composerId);
-  _discFailedUploads.delete(composerId);
-  _discClearPendingAttachmentUI(composerId);
+function discRemovePendingAttachment(arg, el) {
+  const button = el instanceof Element ? el : (arg instanceof Element ? arg : null);
+  const composerKey = _discComposerKey(button?.closest(".disc-composer"));
+  if (!composerKey) return;
+  _discPendingAttachments.delete(composerKey);
+  _discFailedUploads.delete(composerKey);
+  _discClearPendingAttachmentUI(composerKey);
   // Also reset retry/spinner state in case it was showing
-  const retryEl = document.getElementById(`disc-upload-retry-${composerId}`);
-  const spinnerEl = document.getElementById(`disc-upload-spinner-${composerId}`);
+  const composer = _discComposerForKey(composerKey);
+  const retryEl = composer?.querySelector(".disc-upload-retry-btn") || null;
+  const spinnerEl = composer?.querySelector(".disc-upload-spinner") || null;
   if (retryEl) retryEl.style.display = "none";
   if (spinnerEl) spinnerEl.style.display = "none";
 }
 
 /**
  * Retry a failed image upload using the stored file reference.
- * data-action="discRetryAttachmentUpload" data-arg="{composerId}"
+ * data-action="discRetryAttachmentUpload" scoped to the active composer.
  */
-async function discRetryAttachmentUpload(composerId) {
-  composerId = String(composerId);
-  const failed = _discFailedUploads.get(composerId);
+async function discRetryAttachmentUpload(arg, el) {
+  const button = el instanceof Element ? el : (arg instanceof Element ? arg : null);
+  const composerKey = _discComposerKey(button?.closest(".disc-composer"));
+  if (!composerKey) return;
+  const failed = _discFailedUploads.get(composerKey);
   if (!failed) return;
-  const { file, playId, previewUrl } = failed;
+  const { file, playId, previewUrl, uploadId } = failed;
 
   // Restore the preview and start uploading again
-  _discShowPendingAttachmentUI(composerId, previewUrl);
-  _discSetUploadingState(composerId, true);
+  _discShowPendingAttachmentUI(composerKey, previewUrl);
+  _discSetUploadingState(composerKey, true);
 
-  const result = await _discUploadAttachment(file, "image", "", playId);
-  _discSetUploadingState(composerId, false);
+  const result = await _discUploadAttachment(file, "image", "", playId, uploadId);
+  _discSetUploadingState(composerKey, false);
   if (!result) {
-    _discShowRetryState(composerId);
+    _discShowRetryState(composerKey);
     return;
   }
-  _discFailedUploads.delete(composerId);
+  _discFailedUploads.delete(composerKey);
   result.sourcePlayId = playId;
-  _discPendingAttachments.set(composerId, result);
+  _discPendingAttachments.set(composerKey, result);
   showToast("Image ready to post.", { duration: 2000, type: "success" });
 }
 
@@ -2706,27 +2808,29 @@ function _discWireAttachmentInputs(container) {
         input.value = "";
         return;
       }
-      const composerId = input.dataset.composerId;
+      const composerKey = _discComposerKey(input.closest(".disc-composer"));
       const playId = input.dataset.playId;
+      if (!composerKey || !playId) return;
+      const uploadId = crypto.randomUUID();
       // Show local preview immediately and start uploading state
       const previewUrl = URL.createObjectURL(file);
-      _discShowPendingAttachmentUI(composerId, previewUrl);
-      _discSetUploadingState(composerId, true);
-      _discFailedUploads.delete(composerId);
+      _discShowPendingAttachmentUI(composerKey, previewUrl);
+      _discSetUploadingState(composerKey, true);
+      _discFailedUploads.delete(composerKey);
 
-      const result = await _discUploadAttachment(file, "image", "", playId);
+      const result = await _discUploadAttachment(file, "image", "", playId, uploadId);
       input.value = "";
-      _discSetUploadingState(composerId, false);
+      _discSetUploadingState(composerKey, false);
       if (!result) {
         // Keep the preview visible but show retry — don't clear the thumb
-        _discFailedUploads.set(composerId, { file, playId, previewUrl });
-        _discShowRetryState(composerId);
-        _discPendingAttachments.delete(composerId);
+        _discFailedUploads.set(composerKey, { file, playId, previewUrl, uploadId });
+        _discShowRetryState(composerKey);
+        _discPendingAttachments.delete(composerKey);
         return;
       }
       URL.revokeObjectURL(previewUrl);
       result.sourcePlayId = playId;
-      _discPendingAttachments.set(composerId, result);
+      _discPendingAttachments.set(composerKey, result);
       showToast("Image ready to post.", { duration: 2000, type: "success" });
     });
   });
@@ -2751,12 +2855,12 @@ const _discMarkup = {
   currentPath: null,
 };
 
-/** Open the play markup overlay. arg = "{composerId}::{playId}" */
-async function discOpenMarkupOverlay(arg) {
-  const sep = String(arg).indexOf("::");
-  if (sep < 0) return;
-  const composerId = arg.slice(0, sep);
-  const playId = arg.slice(sep + 2);
+/** Open the play markup overlay for the composer that initiated it. */
+async function discOpenMarkupOverlay(arg, el) {
+  const trigger = el instanceof Element ? el : (arg instanceof Element ? arg : null);
+  const composerId = _discComposerKey(trigger?.closest(".disc-composer"));
+  const playId = trigger?.dataset?.playId || "";
+  if (!composerId || !playId) return;
 
   _discMarkup.composerId = composerId;
   _discMarkup.playId = playId;
@@ -3115,9 +3219,11 @@ function closeDiscAttachmentViewer() {
  * Pre-select the question type in the root composer for a given play.
  * data-action="discAskCoachQuestion" data-arg="{playId}"
  */
-function discAskCoachQuestion(playId) {
-  const textarea = document.getElementById(`discCompose-${playId}`);
-  switchDiscComposerType(`${playId}::question`);
+function discAskCoachQuestion(playId, el) {
+  const scopeRoot = _discResolveScope(el, playId);
+  const composer = _discRootComposer(scopeRoot);
+  const textarea = composer?.querySelector("textarea.disc-textarea") || null;
+  switchDiscComposerType(`${playId}::question`, el);
   if (textarea) {
     textarea.placeholder = "What's your question? (Ctrl+Enter to post)";
     textarea.focus();
@@ -3160,9 +3266,9 @@ let _discDeepLinkPostId = null;
  * Called after a discussion section renders — if deep-link params match the
  * current playId, scroll to and highlight the target post.
  */
-function _discApplyDeepLink(playId) {
+function _discApplyDeepLink(playId, bodyEl = null) {
   if (!_discDeepLinkPlayId || _discDeepLinkPlayId !== playId || !_discDeepLinkPostId) return;
-  const targetEl = document.getElementById(`disc-post-${_discDeepLinkPostId}`);
+  const targetEl = _discPostInScope(bodyEl || _discCurrentBodyForPlay(playId), _discDeepLinkPostId);
   if (!targetEl) return;
   targetEl.classList.add("disc-post--highlighted");
   targetEl.scrollIntoView({ behavior: "smooth", block: "center" });

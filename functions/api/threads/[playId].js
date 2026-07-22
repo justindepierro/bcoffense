@@ -52,15 +52,34 @@ export async function onRequest(context) {
 
     const thread = await getThread(env.DB, teamId, playId);
     if (!thread) {
-      return withSecurityHeaders(authJson({ ok: true, thread: null, posts: [], hasMore: false }));
+      const emptyEtag = `"disc-empty-${encodeURIComponent(playId)}"`;
+      if (request.headers.get("If-None-Match") === emptyEtag) {
+        return withSecurityHeaders(new Response(null, {
+          status: 304,
+          headers: { "ETag": emptyEtag, "Cache-Control": "private, no-cache" },
+        }));
+      }
+      return authJson({ ok: true, thread: null, posts: [], hasMore: false }, {
+        headers: { "ETag": emptyEtag, "Cache-Control": "private, no-cache" },
+      });
     }
 
     const userId = session.d1UserId || null;
     const { posts, hasMore } = await getThreadPosts(env.DB, thread.id, { limit, afterId, userId });
     const total = await countThreadPosts(env.DB, thread.id);
+    const revision = await env.DB.prepare(
+      `SELECT COALESCE(MAX(updated_at), 0) AS post_updated_at
+       FROM discussion_posts WHERE thread_id = ?`,
+    ).bind(thread.id).first();
+    const etag = `"disc-${thread.id}-${thread.updated_at || 0}-${revision?.post_updated_at || 0}-${total}"`;
+    if (request.headers.get("If-None-Match") === etag) {
+      return withSecurityHeaders(new Response(null, {
+        status: 304,
+        headers: { "ETag": etag, "Cache-Control": "private, no-cache" },
+      }));
+    }
 
-    return withSecurityHeaders(
-      authJson({
+    return authJson({
         ok: true,
         thread: {
           id: thread.id,
@@ -72,8 +91,7 @@ export async function onRequest(context) {
         },
         posts: posts.map(formatPost),
         hasMore,
-      }),
-    );
+      }, { headers: { "ETag": etag, "Cache-Control": "private, no-cache" } });
   }
 
   // ── POST — create post ────────────────────────────────────────────────────

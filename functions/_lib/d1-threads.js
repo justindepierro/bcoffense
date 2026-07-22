@@ -466,11 +466,14 @@ export async function toggleReaction(db, teamId, postId, userId, reactionKey) {
     .prepare("SELECT id FROM reactions WHERE post_id = ? AND user_id = ? AND reaction_key = ? LIMIT 1")
     .bind(postId, userId, reactionKey).first();
 
+  const now = Math.floor(Date.now() / 1000);
   if (existing) {
-    await db.prepare("DELETE FROM reactions WHERE id = ?").bind(existing.id).run();
+    await db.batch([
+      db.prepare("DELETE FROM reactions WHERE id = ?").bind(existing.id),
+      db.prepare("UPDATE discussion_posts SET updated_at = ? WHERE id = ?").bind(now, postId),
+    ]);
   } else {
     const id = crypto.randomUUID();
-    const now = Math.floor(Date.now() / 1000);
     // A reaction is one quick acknowledgment, not a stack of competing
     // emoji choices. Replacing the prior choice keeps the feed legible and
     // makes the picker state agree with the stored data.
@@ -479,6 +482,7 @@ export async function toggleReaction(db, teamId, postId, userId, reactionKey) {
         .bind(postId, userId),
       db.prepare("INSERT INTO reactions (id, post_id, user_id, reaction_key, created_at) VALUES (?,?,?,?,?)")
         .bind(id, postId, userId, reactionKey, now),
+      db.prepare("UPDATE discussion_posts SET updated_at = ? WHERE id = ?").bind(now, postId),
     ]);
   }
 

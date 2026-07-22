@@ -127,6 +127,14 @@ const _ELEMENT_FNS = new Set([
   "selectDiscReaction",
   "resolveDiscPost",
   "markDiscPostOfficial",
+  "openDiscReactionBreakdown",
+  "toggleDiscThreadLock",
+  "discAskCoachQuestion",
+  "switchDiscComposerType",
+  "retryDiscussion",
+  "discOpenMarkupOverlay",
+  "discRemovePendingAttachment",
+  "discRetryAttachmentUpload",
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 
