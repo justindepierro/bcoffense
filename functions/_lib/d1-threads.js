@@ -271,10 +271,33 @@ export async function getPostReplies(db, teamId, playId, rootPostId, { limit = 2
  * Create a new post (or reply). Returns the new post row + moderation info.
  * parentPostId: set to create a reply; omit for root posts.
  */
-export async function createPost(db, { threadId, authorId, postType, body, parentPostId = null, questionCategory = null, moderationOpts = {} }) {
+export async function createPost(db, { threadId, authorId, postType, body, parentPostId = null, questionCategory = null, moderationOpts = {}, clientPostId = null }) {
   const trimmed = sanitizePostBody(body);
   if (!trimmed) return { error: "Post body is required." };
   if (trimmed.length > MAX_POST_LENGTH) return { error: `Posts must be ${MAX_POST_LENGTH} characters or fewer.` };
+
+  const id = clientPostId ? String(clientPostId).trim() : crypto.randomUUID();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+    return { error: "Invalid message retry identifier." };
+  }
+  // The browser saves this UUID before sending. A lost mobile response may
+  // retry the request, so return the original team/author-owned post instead
+  // of inserting the same thought twice.
+  const existingIdentity = await db.prepare(
+    "SELECT thread_id, author_id FROM discussion_posts WHERE id = ? LIMIT 1",
+  ).bind(id).first();
+  if (existingIdentity) {
+    if (existingIdentity.thread_id !== threadId || existingIdentity.author_id !== authorId) {
+      return { error: "Message retry identifier is not valid for this thread." };
+    }
+    const existing = await db.prepare(`SELECT ${POST_SELECT} FROM discussion_posts p
+      JOIN users u ON u.id = p.author_id WHERE p.id = ? LIMIT 1`).bind(id).first();
+    if (!existing) return { error: "Could not recover the previous message." };
+    const outcome = existing.moderation_status === "blocked"
+      ? "block"
+      : existing.moderation_status === "held" ? "review" : "allow";
+    return { ...existing, _moderation: { outcome, displayWarning: null }, _idempotent: true };
+  }
 
   // ── Reply ancestry ──────────────────────────────────────────────────────
   let rootPostId = null;
@@ -292,7 +315,6 @@ export async function createPost(db, { threadId, authorId, postType, body, paren
   const modResult = moderateContent(trimmed, {}, moderationOpts);
   const moderationStatus = outcomeToStatus(modResult.outcome);
 
-  const id = crypto.randomUUID();
   const now = Math.floor(Date.now() / 1000);
   const type = postType === "question" ? "question" : "comment";
   const questionState = type === "question" ? "open" : null;
@@ -929,7 +951,7 @@ export async function getReactorsByKey(db, postId, reactionKey) {
 export async function createPostAttachment(db, { id, postId, type, r2Key, caption, sourcePlayId, sizeBytes }) {
   await db
     .prepare(
-      `INSERT INTO post_attachments (id, post_id, type, r2_key, caption, source_play_id, size_bytes, created_at)
+      `INSERT OR IGNORE INTO post_attachments (id, post_id, type, r2_key, caption, source_play_id, size_bytes, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, unixepoch())`,
     )
     .bind(id, postId, type, r2Key, caption || null, sourcePlayId || null, sizeBytes || null)

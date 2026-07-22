@@ -6211,6 +6211,21 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
+.notif-item--inbox {
+  border-left: 3px solid var(--color-warning);
+}
+.notif-item-priority {
+  display: inline-flex;
+  margin-top: 3px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  color: var(--color-text);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
 .notif-unread-dot {
   width: 8px;
   height: 8px;

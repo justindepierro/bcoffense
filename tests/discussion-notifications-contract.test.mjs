@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (relativePath) => readFile(new URL(relativePath, `file://${root}/`), "utf8");
 
-const [notifications, threads, threadRoute, countRoute, indexRoute, itemRoute, client, discussionClient, playbookCss, presentationCss, indexHtml, cloudSync, playerPublish] = await Promise.all([
+const [notifications, threads, threadRoute, countRoute, indexRoute, itemRoute, client, discussionClient, discussionOutbox, playbookCss, presentationCss, indexHtml, cloudSync, playerPublish] = await Promise.all([
   source("functions/_lib/d1-notifications.js"),
   source("functions/_lib/d1-threads.js"),
   source("functions/api/threads/[playId].js"),
@@ -21,6 +21,7 @@ const [notifications, threads, threadRoute, countRoute, indexRoute, itemRoute, c
   source("functions/api/notifications/[id].js"),
   source("js/app-notifications.js"),
   source("js/play-discussion.js"),
+  source("js/discussion-outbox.js"),
   source("css/playbook.css"),
   source("css/play-presentation.css"),
   source("index.html"),
@@ -45,19 +46,23 @@ assert.match(
 );
 assert.match(
   threadRoute,
-  /if \(!isStaff && modInfo\.outcome !== "block"\)[\s\S]*await notifyTeamStaffOfPlayerPost/,
+  /if \(!isIdempotentRetry && !isStaff && modInfo\.outcome !== "block"\)[\s\S]*await notifyTeamStaffOfPlayerPost/,
   "every deliverable player post invokes staff notification delivery",
 );
 assert.match(threadRoute, /playId,[\s\S]*playLabel: playSig,[\s\S]*body: postBody/, "staff alerts include a play deep link and post context");
 assert.match(notifications, /DISCUSSION_COMMENT_DEDUPE_SECONDS = 15 \* 60/, "repeat player comments coalesce into one fresh staff alert");
 assert.match(notifications, /createOrRefreshDiscussionCommentNotification/, "discussion comment notifications use their focused dedupe helper");
 assert.match(notifications, /skipStaffRecipient && STAFF_NOTIFICATION_ROLES\.includes\(post\.role\)/, "staff do not receive a duplicate direct reply after player activity already reaches the staff feed");
-assert.match(threadRoute, /if \(isStaff && !parentPostId\)/, "only top-level coach notes fan out to prior thread participants");
+assert.match(threadRoute, /if \(!isIdempotentRetry && isStaff && !parentPostId\)/, "only a new top-level coach note fans out to prior thread participants");
 assert.match(threadRoute, /notificationType: isStaff \? "coach_reply" : "reply"/, "direct coach replies retain a clear coach-reply receipt for the addressed player");
 assert.match(threadRoute, /skipPlayerRecipient: isCoachVisualReply/, "marked-up coach replies avoid a second generic reply receipt");
 assert.match(threads, /role IN \('coach', 'admin', 'assistant', 'assistant_coach'\)/, "legacy assistant staff are included in discussion safety escalation recipients");
 assert.match(threads, /DELETE FROM reactions WHERE post_id = \? AND user_id = \?/, "a new reaction replaces an older reaction from the same person on that post");
 assert.match(threads, /UPDATE discussion_posts SET updated_at = \? WHERE id = \?/, "reaction changes advance the discussion revision used by fresh readers");
+assert.match(threads, /clientPostId = null/, "discussion posts accept a client-owned retry identifier");
+assert.match(threads, /_idempotent: true/, "a replayed client post returns its original durable row");
+assert.match(threadRoute, /clientPostId,/, "the thread route passes the retry identifier to durable post creation");
+assert.match(threadRoute, /isIdempotentRetry/, "replayed messages do not fan out duplicate notifications or workflow changes");
 assert.match(threadRoute, /If-None-Match/, "thread reads accept a conditional revision from an already-open panel");
 assert.match(threadRoute, /status: 304/, "an unchanged thread avoids re-sending the full discussion payload");
 for (const route of [countRoute, indexRoute, itemRoute]) {
@@ -68,6 +73,8 @@ assert.match(client, /player_question: "❓"/, "the bell has an icon for player 
 assert.match(client, /player_reply: "↩️"/, "the bell has an icon for player replies");
 assert.match(client, /const _NOTIF_CONVERSATION_TYPES = new Set/, "discussion alerts are explicitly classified as conversation work");
 assert.match(client, /function _notifGroupItems\(items\)/, "repeated practice publish receipts are grouped in the feed");
+assert.match(client, /_NOTIF_STAFF_INBOX_TYPES/, "staff discussion activity has a dedicated coach-inbox classification");
+assert.match(client, /Coach follow-up/, "the notification drawer clearly labels player activity requiring staff review");
 assert.match(client, /function setNotifFilter\(filter = "all"\)/, "the mobile drawer can focus on messages or practice work");
 assert.match(client, /Promise\.all\(notifIds\.map/, "opening a grouped update acknowledges every collapsed receipt");
 assert.match(client, /closeNotifDrawer\(\);[\s\S]*if \(deepLink === "script"/, "opening an alert closes the mobile drawer before routing to its destination");
@@ -92,6 +99,11 @@ assert.match(discussionClient, /function _discPostInScope\(scopeRoot, postId\)/,
 assert.match(discussionClient, /section\.querySelector\("\.disc-body"\)/, "Game Plan and Playbook discussions do not reuse a document-global discussion body");
 assert.match(discussionClient, /data-disc-posts/, "discussion post lists are addressed through their local scope rather than a repeated global ID");
 assert.match(discussionClient, /function _discComposerKey\(composer\)/, "attachment drafts are scoped to the visible composer, not only the play");
+assert.match(discussionClient, /function _discSendDurable\(payload\)/, "new comments and replies use the durable send boundary");
+assert.match(discussionClient, /discussion-outbox-delivered/, "a delayed message replaces only its own optimistic card when delivered");
+assert.match(discussionOutbox, /indexedDB\.open\(DB_NAME, VERSION\)/, "the outbox persists pending discussion work across app restarts");
+assert.match(discussionOutbox, /client_post_id: job\.id/, "outbox retries carry a stable idempotency identifier");
+assert.match(discussionOutbox, /window\.addEventListener\("online"/, "pending messages resume automatically when connectivity returns");
 assert.doesNotMatch(discussionClient, /id="discCompose-\$\{/, "multiple discussion surfaces do not emit duplicate composer IDs");
 assert.doesNotMatch(discussionClient, /id="disc-pending-\$\{/, "pending attachment previews do not collide across open surfaces");
 assert.match(discussionClient, /discReactionPickerOverlay/, "mobile reaction sheets shield the background from accidental taps");

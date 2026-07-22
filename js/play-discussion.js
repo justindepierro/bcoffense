@@ -1044,6 +1044,31 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
 // submitDiscPost, deleteDiscPost, loadMoreDiscussion are in _ELEMENT_FNS
 // so they receive (arg, element).  startEditPost receives (arg) only.
 
+async function _discSendDurable(payload) {
+  // The outbox writes first, then either delivers immediately or keeps the
+  // exact post for a safe retry. The small fallback preserves discussion
+  // posting if IndexedDB is unavailable in an unusually restricted browser.
+  if (window.discussionOutbox?.send) return window.discussionOutbox.send(payload);
+  const res = await fetch(`/api/threads/${encodeURIComponent(payload.playId)}`, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      body: payload.body,
+      post_type: payload.postType,
+      question_category: payload.questionCategory || null,
+      play_signature: payload.playSig || "",
+      parent_post_id: payload.parentPostId || null,
+      attachment: payload.attachment || undefined,
+      client_post_id: payload.id,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return res.ok && data.ok
+    ? { sent: true, data }
+    : { rejected: true, error: data.error || `HTTP ${res.status}`, data };
+}
+
 async function submitDiscPost(arg, el) {
   // When called from _ELEMENT_FNS with no data-arg, element is first param
   const btn = (el instanceof Element) ? el : (arg instanceof Element ? arg : null);
@@ -1060,17 +1085,12 @@ async function submitDiscPost(arg, el) {
   const body = textarea.value.trim();
   if (!body) { textarea.focus(); return; }
 
-  if (!navigator.onLine) {
-    showToast("You're offline — reconnect and try again.", { duration: 4000, type: "warning" });
-    return;
-  }
-
   btn.disabled = true;
   btn.textContent = "Posting…";
 
   // ── Optimistic render ──────────────────────────────────────────────────────
   const optimisticPost = {
-    id: `opt-${Date.now()}`,
+    id: crypto.randomUUID(),
     body,
     postType: typeSelect?.value || "comment",
     questionCategory: composer?.querySelector(".disc-cat-select")?.value || "",
@@ -1101,19 +1121,25 @@ async function submitDiscPost(arg, el) {
   try {
     const composerKey = _discComposerKey(composer);
     const pendingAttach = _discPendingAttachments.get(composerKey) || null;
-    const res = await fetch(`/api/threads/${playId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        body,
-        post_type: typeSelect?.value || "comment",
-        question_category: composer?.querySelector(".disc-cat-select")?.value || null,
-        play_signature: playSig,
-        attachment: pendingAttach || undefined,
-      }),
+    const outcome = await _discSendDurable({
+      id: optimisticPost.id,
+      playId,
+      body,
+      postType: typeSelect?.value || "comment",
+      questionCategory: composer?.querySelector(".disc-cat-select")?.value || null,
+      playSig,
+      attachment: pendingAttach || undefined,
     });
-    const data = await res.json();
-    if (!data.ok) {
+    if (outcome.queued) {
+      _discPendingAttachments.delete(composerKey);
+      _discClearPendingAttachmentUI(composerKey);
+      optimisticNode?.classList.remove("disc-post--pending");
+      optimisticNode?.classList.add("disc-post--queued");
+      showToast("Saved on this device — it will send automatically.", { duration: 3500, type: "info" });
+      return;
+    }
+    const data = outcome.data || {};
+    if (outcome.rejected || !data.ok) {
       optimisticNode?.remove();
       // Restore composer text on hard failure
       if (textarea && !textarea.value) textarea.value = body;
@@ -1122,7 +1148,7 @@ async function submitDiscPost(arg, el) {
       } else if (data.muted) {
         showToast(data.error || "You are temporarily unable to post.", { duration: 6000, type: "error" });
       } else {
-        showToast(data.error || "Failed to post.", { duration: 3000, type: "error" });
+        showToast(outcome.error || data.error || "Failed to post.", { duration: 3000, type: "error" });
       }
       return;
     }
@@ -1354,17 +1380,12 @@ async function submitDiscReply(arg, el) {
   const body = textarea.value.trim();
   if (!body) { textarea.focus(); return; }
 
-  if (!navigator.onLine) {
-    showToast("You're offline — reconnect and try again.", { duration: 4000, type: "warning" });
-    return;
-  }
-
   btn.disabled = true;
   btn.textContent = "Posting…";
 
   // ── Optimistic reply render ────────────────────────────────────────────────
   const optimisticReply = {
-    id: `opt-${Date.now()}`,
+    id: crypto.randomUUID(),
     body,
     postType: "comment",
     authorName: _discAuthUser()?.name || _discAuthUser()?.username || "You",
@@ -1401,21 +1422,27 @@ async function submitDiscReply(arg, el) {
     const pendingAttach = _discPendingAttachments.get(composerKey) || null;
     const replyTypeEl = replyComposer?.querySelector(".disc-type-select") || null;
     const replyPostType = replyTypeEl?.value === "coach_clarification" ? "coach_clarification" : "comment";
-    const res = await fetch(`/api/threads/${playId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        body,
-        post_type: replyPostType,
-        play_signature: playSig,
-        parent_post_id: parentPostId,
-        attachment: pendingAttach || undefined,
-      }),
+    const outcome = await _discSendDurable({
+      id: optimisticReply.id,
+      playId,
+      body,
+      postType: replyPostType,
+      playSig,
+      parentPostId,
+      attachment: pendingAttach || undefined,
     });
-    const data = await res.json();
-    if (!data.ok) {
+    if (outcome.queued) {
+      _discPendingAttachments.delete(composerKey);
+      _discClearPendingAttachmentUI(composerKey);
+      optimisticReplyNode?.classList.remove("disc-post--pending");
+      optimisticReplyNode?.classList.add("disc-post--queued");
+      showToast("Saved on this device — it will send automatically.", { duration: 3500, type: "info" });
+      return;
+    }
+    const data = outcome.data || {};
+    if (outcome.rejected || !data.ok) {
       optimisticReplyNode?.remove();
-      showToast(data.error || "Failed to post.", { duration: 3000, type: "error" });
+      showToast(outcome.error || data.error || "Failed to post.", { duration: 3000, type: "error" });
       return;
     }
 
@@ -3303,6 +3330,40 @@ document.addEventListener("DOMContentLoaded", () => {
       openPlayWorkflowPanel(idx);
     }
   }, 250);
+});
+
+// A queued post may finish after the phone has reconnected or after the app
+// resumes. Replace only that optimistic card; never re-render the whole panel
+// and risk throwing away a coach's reply draft.
+document.addEventListener("discussion-outbox-delivered", (event) => {
+  const job = event.detail?.job;
+  const post = event.detail?.data?.post;
+  if (!job?.id || !job.playId || !post) return;
+  _discInvalidateThreadCache(job.playId);
+  document.querySelectorAll(".disc-body[data-disc-play-id]").forEach((bodyEl) => {
+    if (bodyEl.dataset.discPlayId !== String(job.playId)) return;
+    const queuedNode = _discPostInScope(bodyEl, job.id);
+    if (!queuedNode?.classList.contains("disc-post--queued")) return;
+    const wrap = document.createElement("div");
+    wrap.innerHTML = _discPostHtml(post, job.playId, Boolean(post.parentPostId));
+    const realNode = wrap.firstElementChild;
+    if (!realNode) return;
+    queuedNode.replaceWith(realNode);
+    const countEl = _discCountInScope(bodyEl);
+    if (countEl && !post.parentPostId) {
+      countEl.textContent = String(Math.max(0, parseInt(countEl.textContent || "0", 10) + 1));
+    }
+  });
+});
+
+document.addEventListener("discussion-outbox-rejected", (event) => {
+  const job = event.detail?.job;
+  if (!job?.id || !job?.playId) return;
+  document.querySelectorAll(".disc-body[data-disc-play-id]").forEach((bodyEl) => {
+    if (bodyEl.dataset.discPlayId !== String(job.playId)) return;
+    _discPostInScope(bodyEl, job.id)?.remove();
+  });
+  showToast(event.detail?.error || "That saved message could not be posted.", { duration: 5000, type: "error" });
 });
 
 /**

@@ -118,6 +118,7 @@ export async function onRequest(context) {
     const playSig = String(body.play_signature || "").trim() || null;
     const parentPostId = String(body.parent_post_id || "").trim() || null;
     const questionCategory = String(body.question_category || "").trim() || null;
+    const clientPostId = String(body.client_post_id || "").trim() || null;
     const isStaff = ["coach", "admin", "assistant", "assistant_coach"].includes(session.role);
     // Optional attachment: { id, r2_key, type, caption, sourcePlayId, sizeBytes }
     const attachmentMeta = body.attachment && typeof body.attachment === "object"
@@ -181,6 +182,7 @@ export async function onRequest(context) {
       parentPostId,
       questionCategory,
       moderationOpts,
+      clientPostId,
     });
 
     if (result?.error) return authJson({ ok: false, error: result.error }, { status: 422 });
@@ -198,8 +200,12 @@ export async function onRequest(context) {
       }).catch(() => { /* non-fatal — attachment metadata loss is acceptable */ });
     }
 
-    // Auto-answer parent question when a staff member replies (but not for clarifications)
-    if (isStaff && parentPostId && postType !== "coach_clarification") {
+    const isIdempotentRetry = result._idempotent === true;
+
+    // A response can be lost after the server stored a post. Retries carry the
+    // same client UUID, so only the original request may fan out alerts or
+    // change question state. This keeps weak mobile connections duplicate-safe.
+    if (!isIdempotentRetry && isStaff && parentPostId && postType !== "coach_clarification") {
       const parent = await env.DB.prepare(
         "SELECT post_type, question_state FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1"
       ).bind(parentPostId).first();
@@ -215,7 +221,7 @@ export async function onRequest(context) {
     // make a successful player post fail just because its alert cannot be
     // written. The bell will surface the durable notification on its next
     // normal poll.
-    if (!isStaff && modInfo.outcome !== "block") {
+    if (!isIdempotentRetry && !isStaff && modInfo.outcome !== "block") {
       await notifyTeamStaffOfPlayerPost(env.DB, teamId, {
         authorId,
         authorName: session.label || session.username,
@@ -231,7 +237,7 @@ export async function onRequest(context) {
     // in this play discussion. A reply is intentionally narrower: it belongs
     // to the player being answered, not every player who ever posted here.
     const isCoachVisualReply = Boolean(isStaff && parentPostId && attachment);
-    if (isStaff && !parentPostId) {
+    if (!isIdempotentRetry && isStaff && !parentPostId) {
       const posterName = session.label || session.username;
       notifyOnCoachPost(env.DB, thread.id, authorId, posterName, playId, postBody, env).catch(() => { });
     }
@@ -239,7 +245,7 @@ export async function onRequest(context) {
     // Notify the parent author only when the activity did not already produce
     // a more specific receipt. Player replies are delivered to all staff by
     // notifyTeamStaffOfPlayerPost; marked-up coach replies have visual_reply.
-    if (parentPostId) {
+    if (!isIdempotentRetry && parentPostId) {
       const posterName = session.label || session.username;
       notifyOnReply(env.DB, parentPostId, authorId, posterName, playId, postBody, env, {
         notificationType: isStaff ? "coach_reply" : "reply",
@@ -249,7 +255,7 @@ export async function onRequest(context) {
     }
 
     // Notify when a coach posts a visual (markup/image) reply (fire-and-forget)
-    if (isStaff && parentPostId && attachment) {
+    if (!isIdempotentRetry && isStaff && parentPostId && attachment) {
       const posterName = session.label || session.username;
       notifyOnVisualReply(env.DB, parentPostId, posterName, playId, env).catch(() => { });
     }
@@ -257,7 +263,7 @@ export async function onRequest(context) {
     const postData = formatPost(result);
 
     // ── Notify coaches on repeated severe violations (fire-and-forget) ────
-    if (modInfo.outcome === "block") {
+    if (!isIdempotentRetry && modInfo.outcome === "block") {
       _notifyCoachesOnRepeatedViolation(env.DB, authorId, teamId, session, result.id).catch(() => { });
     }
 
@@ -268,6 +274,7 @@ export async function onRequest(context) {
         outcome: modInfo.outcome || "allow",
         displayWarning: modInfo.displayWarning || null,
       },
+      idempotent: isIdempotentRetry,
     }));
   }
 

@@ -299,8 +299,14 @@ const _NOTIF_PRACTICE_TYPES = new Set([
   "team_update", "script_published", "new_quiz", "quiz_homework", "media_update", "team_announcement",
 ]);
 const _NOTIF_GROUPABLE_TYPES = new Set(["team_update", "script_published", "new_quiz", "media_update"]);
+const _NOTIF_STAFF_INBOX_TYPES = new Set(["player_comment", "player_question", "player_reply"]);
+
+function _notifNeedsStaffReply(item) {
+  return _isStaffNotificationUser() && _NOTIF_STAFF_INBOX_TYPES.has(item?.type);
+}
 
 function _notifBucket(item) {
+  if (item?.inboxGroup) return "inbox";
   if (_NOTIF_CONVERSATION_TYPES.has(item?.type)) return "conversation";
   if (_NOTIF_PRACTICE_TYPES.has(item?.type)) return "practice";
   return "other";
@@ -310,9 +316,10 @@ function _notifGroupItems(items) {
   const grouped = [];
   const byKey = new Map();
   for (const item of items) {
+    const inbox = _notifNeedsStaffReply(item);
     const key = _NOTIF_GROUPABLE_TYPES.has(item?.type)
       ? `${item.type}|${item.deepLink || ""}`
-      : "";
+      : (inbox ? `coach-inbox|${item.deepLink || ""}` : "");
     const existing = key ? byKey.get(key) : null;
     if (existing) {
       existing.notificationIds.push(String(item.id));
@@ -320,9 +327,14 @@ function _notifGroupItems(items) {
       // A grouped card is unread until every underlying receipt is read.
       // That keeps a quiet older update from disappearing behind a newer read one.
       existing.read = Boolean(existing.read && item.read);
+      existing.inboxGroup = Boolean(existing.inboxGroup || inbox);
+      if (inbox) {
+        existing.title = `${existing.groupCount} player updates need review`;
+        existing.body = "Open this play conversation to respond or follow up.";
+      }
       continue;
     }
-    const next = { ...item, notificationIds: [String(item.id)], groupCount: 1 };
+    const next = { ...item, notificationIds: [String(item.id)], groupCount: 1, inboxGroup: inbox };
     grouped.push(next);
     if (key) byKey.set(key, next);
   }
@@ -340,14 +352,14 @@ function _syncNotifFilterButtons() {
 function _renderNotificationList(listEl = document.getElementById("notifList")) {
   if (!listEl) return;
   const notifications = _notifGroupItems(_notifItems)
-    .filter((item) => _notifFilter === "all" || _notifBucket(item) === _notifFilter);
+    .filter((item) => _notifFilter === "all" || _notifBucket(item) === _notifFilter || (_notifFilter === "conversation" && _NOTIF_CONVERSATION_TYPES.has(item?.type)));
   if (!notifications.length) {
     const hasItems = _notifItems.length > 0;
     listEl.innerHTML = _notifStateHtml({
       icon: hasItems ? "🗂️" : "✅",
-      title: hasItems ? "Nothing in this view" : (_isPlayerNotificationUser() ? "No new practice updates" : "All caught up"),
+      title: hasItems ? (_notifFilter === "inbox" ? "No coach follow-ups" : "Nothing in this view") : (_isPlayerNotificationUser() ? "No new practice updates" : "All caught up"),
       body: hasItems
-        ? "Try All to see every update."
+        ? (_notifFilter === "inbox" ? "Player comments and questions that need attention will appear here." : "Try All to see every update.")
         : (_isPlayerNotificationUser()
           ? "When coach publishes a practice, replies to a question, or sends a quiz, it will land here."
           : "New messages and practice updates will show here when there is something to review."),
@@ -389,14 +401,17 @@ function _notifItemHtml(n) {
     ? ` data-action="openNotifDeepLink" data-arg="${escapeHtml(notificationIds.join(","))}::${escapeHtml(n.deepLink)}"`
     : "";
   const grouped = Number(n.groupCount || 1) > 1;
+  const inbox = Boolean(n.inboxGroup);
   const groupLabel = grouped
-    ? `<div class="notif-item-group">${escapeHtml(String(n.groupCount))} similar practice updates</div>`
+    ? `<div class="notif-item-group">${inbox ? `${escapeHtml(String(n.groupCount))} player updates in this conversation` : `${escapeHtml(String(n.groupCount))} similar practice updates`}</div>`
     : "";
+  const inboxLabel = inbox ? `<div class="notif-item-priority">Coach follow-up</div>` : "";
   return (
-    `<li class="notif-item${unreadCls}${typeCls}${grouped ? " notif-item--grouped" : ""}" id="notif-${escapeHtml(n.id)}"${link} role="button" tabindex="0">` +
+    `<li class="notif-item${unreadCls}${typeCls}${grouped ? " notif-item--grouped" : ""}${inbox ? " notif-item--inbox" : ""}" id="notif-${escapeHtml(n.id)}"${link} role="button" tabindex="0">` +
     `<div class="notif-item-icon" aria-hidden="true">${icon}</div>` +
     `<div class="notif-item-content">` +
     `<div class="notif-item-kicker">${escapeHtml(label)}${n.read ? "" : `<span>New</span>`}</div>` +
+    inboxLabel +
     `<div class="notif-item-title">${escapeHtml(n.title)}</div>` +
     (n.body ? `<div class="notif-item-body">${escapeHtml(n.body)}</div>` : "") +
     groupLabel +
@@ -507,7 +522,7 @@ function retryNotifs() {
 }
 
 function setNotifFilter(filter = "all") {
-  _notifFilter = ["all", "conversation", "practice"].includes(filter) ? filter : "all";
+  _notifFilter = ["all", "inbox", "conversation", "practice"].includes(filter) ? filter : "all";
   _syncNotifFilterButtons();
   _renderNotificationList();
 }

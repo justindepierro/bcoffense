@@ -7862,6 +7862,16 @@ body.shell-tablet #playbook .pb-card-actions {
   pointer-events: none;
   animation: discPendingPulse 1.4s ease-in-out infinite;
 }
+.disc-post--queued {
+  opacity: 0.78;
+  border-left: 3px solid var(--color-warning);
+}
+.disc-post--queued .disc-post-footer::after {
+  content: "Sending when online";
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
 @keyframes discPendingPulse {
   0%,
   100% {

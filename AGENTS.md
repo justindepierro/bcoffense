@@ -362,6 +362,7 @@ window.debouncedOnDashSearchInput
 window.deleteSignalClip
 window.dismissTeamWorkspacePullSummary
 window.deletePlayImage
+window.discussionOutbox
 window.ensurePlayImageUrl
 window.failWorkspaceSyncJob
 window.flushCloudAutoPush
