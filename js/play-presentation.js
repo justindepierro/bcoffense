@@ -2642,7 +2642,7 @@ function renderPlayPresentation() {
 function isPlayPresentationInteractiveSwipeTarget(target) {
   return Boolean(
     target?.closest?.(
-      "button, input, select, textarea, a, [role='button'], .pp-mode-switcher, .pp-nav, .pp-position-picker, .pp-position-lock-row, .pp-readiness-score-rail",
+      "button, input, select, textarea, a, [role='button'], [contenteditable='true'], .pp-mode-switcher, .pp-nav, .pp-position-picker, .pp-position-lock-row, .pp-readiness-score-rail, .pp-disc-drawer, .pp-detail-panel",
     ),
   );
 }
@@ -2691,6 +2691,10 @@ function handlePlayPresentationTouchEnd(event) {
 function handlePlayPresentationKeydown(event) {
   const overlay = document.getElementById("playPresentationOverlay");
   if (!overlay?.classList.contains("is-open")) return;
+
+  // Do not turn ordinary cursor movement or a typed mode number inside a
+  // discussion composer into presenter navigation.
+  if (event.target?.closest?.("input, textarea, select, [contenteditable='true']")) return;
 
   if (event.key === "Escape") {
     event.preventDefault();

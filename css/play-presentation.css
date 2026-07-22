@@ -1773,13 +1773,13 @@ body.play-presentation-open .quick-tools {
 .pp-disc-drawer .disc-more-btn,
 .pp-disc-drawer .disc-reply-btn,
 .pp-disc-drawer .disc-action-btn {
-  color: rgb(255 255 255 / 55%);
+  color: var(--color-text-secondary);
 }
 .pp-disc-drawer .disc-more-btn:hover,
 .pp-disc-drawer .disc-reply-btn:hover,
 .pp-disc-drawer .disc-action-btn:hover {
-  background: rgb(255 255 255 / 10%);
-  color: var(--color-text-inverse);
+  background: var(--color-bg-hover-row);
+  color: var(--color-primary);
 }
 .pp-disc-drawer .disc-reward-btn {
   border-color: rgb(255 255 255 / 18%);
@@ -1876,7 +1876,9 @@ body.play-presentation-mobile .pp-disc-drawer .disc-composer-actions .btn {
 
 @media (max-width: 600px) {
   .pp-disc-drawer {
-    max-height: calc(var(--app-vh, 1vh) * 88);
+    /* Keep study context visible above a phone discussion sheet. */
+    max-height: calc(var(--app-vh, 1vh) * 76);
+    max-height: 76dvh;
     border-radius: 18px 18px 0 0;
   }
   .pp-disc-drawer-head {
@@ -1900,7 +1902,9 @@ body.play-presentation-mobile .pp-disc-drawer .disc-composer-actions .btn {
     margin-left: 4px;
     padding-left: 7px;
   }
-  .pp-disc-drawer .disc-composer { padding: 8px 0 0; }
+  .pp-disc-drawer .disc-composer {
+    padding: 8px 0 max(10px, env(safe-area-inset-bottom, 0px));
+  }
   .pp-disc-drawer .disc-composer-mode { margin-bottom: 6px; }
   .pp-disc-drawer .disc-composer-mode-btn { min-height: 36px; }
   .pp-disc-drawer .disc-post-actions { gap: 5px; margin-top: 6px; }
@@ -1908,7 +1912,7 @@ body.play-presentation-mobile .pp-disc-drawer .disc-composer-actions .btn {
   .pp-disc-drawer .disc-same-q-btn,
   .pp-disc-drawer .disc-reward-btn,
   .pp-disc-drawer .disc-react-open-btn {
-    min-height: 32px;
+    min-height: 40px;
   }
   .pp-disc-drawer .disc-composer-attach-row { gap: 5px; }
   .pp-disc-drawer .disc-attach-btn { min-height: 34px; }
@@ -1918,6 +1922,22 @@ body.play-presentation-mobile .pp-disc-drawer .disc-composer-actions .btn {
     font-size: 10px;
     line-height: 1.3;
   }
+}
+
+/* Presenter swipes belong to the play canvas. The discussion sheet needs
+   native vertical scrolling and immediate button/text-input interactions. */
+.pp-disc-drawer,
+.pp-disc-drawer-body,
+.pp-disc-drawer .disc-posts,
+.pp-disc-drawer .disc-composer {
+  touch-action: pan-y;
+}
+
+.pp-disc-drawer button,
+.pp-disc-drawer select,
+.pp-disc-drawer textarea,
+.pp-disc-drawer input {
+  touch-action: manipulation;
 }
 
 /* ===== M-041 — Icon buttons, setup sheet, iPad help, theme override ===== */
@@ -2494,7 +2514,11 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   .pp-header {
     gap: var(--space-xs);
     min-height: 54px;
-    padding: var(--space-xs);
+    /* Preserve the standalone iPhone status-area inset in compact view. */
+    padding: max(var(--space-xs), env(safe-area-inset-top, 0px))
+      max(var(--space-xs), env(safe-area-inset-right, 0px))
+      var(--space-xs)
+      max(var(--space-xs), env(safe-area-inset-left, 0px));
   }
 
   .pp-source {
