@@ -252,7 +252,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
+  min-height: 44px;
   padding: 7px 10px;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
@@ -283,7 +283,9 @@
 
 .player-home-refresh--ready .player-home-refresh__btn,
 .player-home-refresh--idle .player-home-refresh__btn {
-  min-height: 38px;
+  /* This is a primary recovery action on Player Home. Keep it at the shared
+     44px touch target even when the normal state is calm. */
+  min-height: 44px;
   padding-inline: 10px;
   color: var(--color-primary-dark);
 }

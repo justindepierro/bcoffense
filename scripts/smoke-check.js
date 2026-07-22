@@ -3674,7 +3674,7 @@ function checkStressAuditHarness() {
 	    !/#script \.script-toolbar \.toolbar-btn-xs\s*\{[\s\S]*flex:\s*0 0 44px[\s\S]*min-width:\s*44px[\s\S]*min-height:\s*44px/.test(scriptCss) ||
 	    !/body\.shell-phone #callsheet \.callsheet-play \.remove-play,[\s\S]*body\.shell-phone #callsheet \.callsheet-play \.cs-hash-swap\s*\{[\s\S]*width:\s*44px[\s\S]*min-height:\s*44px/.test(callsheetCss) ||
 	    !/\.player-home-refresh__btn\s*\{[\s\S]*min-height:\s*44px/.test(dashboardCss) ||
-	    !/\.player-home-refresh__install\s*\{[\s\S]*min-height:\s*38px/.test(dashboardCss)
+	    !/\.player-home-refresh__install\s*\{[\s\S]*min-height:\s*44px/.test(dashboardCss)
 	  ) {
     fail("stress audit touch-target fixes are missing");
   }

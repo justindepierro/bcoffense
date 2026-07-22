@@ -444,6 +444,7 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
   body.is-mobile-screen[data-auth-role="player"] .tab {
     position: relative;
     flex: 1 1 0;
+    min-width: 0;
     flex-direction: column;
     gap: 3px;
     justify-content: center;
@@ -470,6 +471,30 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
     height: 22px;
     flex-shrink: 0;
     pointer-events: none;
+  }
+
+  /* Five destinations fit comfortably on modern phones, but the full
+     “Leaderboard” label crowds a 320px viewport. Keep its accessible full
+     label in markup and use a compact visual label only at this narrow tier. */
+  @media (max-width: 360px) {
+    body.is-mobile-screen[data-auth-role="player"] #tab-leaderboard {
+      font-size: 0;
+      padding-inline: 4px;
+    }
+
+    body.is-mobile-screen[data-auth-role="player"] #tab-leaderboard::before {
+      content: attr(data-player-phone-label);
+      display: block;
+      order: 2;
+      color: inherit;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    body.is-mobile-screen[data-auth-role="player"] #tab-leaderboard .tab-icon {
+      order: 1;
+    }
   }
 
   /* Active indicator pill (item 25) */

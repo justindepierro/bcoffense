@@ -145,6 +145,67 @@ function safePathFromUrl(requestUrl) {
 function serveStatic(port) {
   const server = createServer((req, res) => {
     const parsed = new URL(req.url || "/", "http://localhost");
+    // This harness intentionally uses a static app server instead of a full
+    // remote Cloudflare environment. Keep the player-only Pages contracts
+    // available as empty, valid fixtures so a UI check catches real browser
+    // failures rather than expected 404s from routes the static server cannot
+    // otherwise provide.
+    if (parsed.pathname === "/player/release") {
+      const release = {
+        schema: "bcoffense.player-release/v1",
+        release: {
+          teamId: "mobile-debug-team",
+          revision: "mobile-debug-release",
+          updatedAt: "2026-07-21T00:00:00.000Z",
+        },
+        team: { name: "Mobile Debug" },
+        scripts: [],
+        playbook: [],
+        signals: [],
+        settings: {},
+        media: { diagramMediaIds: [], diagrams: [], clipSigs: [] },
+      };
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+        ETag: '"mobile-debug-release"',
+      });
+      res.end(JSON.stringify({ ok: true, release }));
+      return;
+    }
+    if (parsed.pathname === "/api/quiz-assignments") {
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: true, assignments: [], players: [] }));
+      return;
+    }
+    if (parsed.pathname === "/workspace/revision") {
+      const workspace = {
+        app: "BCOffense",
+        version: 3,
+        exportDate: "2026-07-21T00:00:00.000Z",
+        teamName: "Mobile Debug",
+        playbook: [],
+      };
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+        ETag: '"mobile-debug-workspace"',
+      });
+      res.end(JSON.stringify({
+        ok: true,
+        workspace,
+        revision: "mobile-debug-workspace",
+        playerReleaseRevision: "mobile-debug-release",
+        updatedAt: workspace.exportDate,
+        size: JSON.stringify(workspace).length,
+      }));
+      return;
+    }
+    if (parsed.pathname === "/media/migrate-legacy-signal-manifests") {
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: true, migrated: [], complete: true }));
+      return;
+    }
     if (parsed.pathname === "/auth/me") {
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ user: null }));
@@ -183,11 +244,12 @@ function serveStatic(port) {
         res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         res.end(JSON.stringify({
           user: {
-            username: role,
-            role,
-            label: role.charAt(0).toUpperCase() + role.slice(1),
-          },
-        }));
+          username: role,
+          role,
+          label: role.charAt(0).toUpperCase() + role.slice(1),
+          teamId: "mobile-debug-team",
+        },
+      }));
       });
       return;
     }
@@ -379,7 +441,7 @@ async function inspectPage(page) {
       if (!interactive) return;
       if (el.matches(".skip-link:not(:focus)")) return;
       if (el.matches("input[type='checkbox'], input[type='radio'], input[type='color']")) return;
-      if (el.closest(".callsheet-table, .playbook-table-wrap, .wristband-grid")) return;
+      if (el.closest(".callsheet-table, .playbook-table-wrap, #playbookTable, .wristband-grid")) return;
       if (rect.width < 44 || rect.height < 44) {
         smallTargets.push({
           selector: describeElement(el),
