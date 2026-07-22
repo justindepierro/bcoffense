@@ -1187,6 +1187,16 @@ function _isMobileCoachLockAllowedControl(el) {
   ) {
     return true;
   }
+  // Review lock protects play/script edits, not team communication. Coaches
+  // still need to acknowledge questions, react, and reply while reviewing a
+  // practice on a phone. Keep every shared discussion surface interactive.
+  if (
+    el.closest(
+      ".disc-section, .pp-disc-drawer, #discReplySheet, #discReactionPicker, #gpDiscModalBody",
+    )
+  ) {
+    return true;
+  }
   if (el.classList?.contains("tab") || el.closest?.(".tab")) return true;
   if (_isMobileCoachLockSafeInput(el)) return true;
 
