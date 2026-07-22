@@ -1556,6 +1556,16 @@ function renderPlayerDashboardHome() {
   const focusStats = featuredStats || loadedScript?.stats || null;
   const focus = _dashBuildPlayerHomeFocus(focusSource, focusStats);
 
+  // Player Home is the daily launch point, not another navigation menu. Pick
+  // one useful next step from the work already delivered to this player, then
+  // leave the rest of the study tools as secondary choices below it.
+  const homeworkAssignments = typeof _quizAssignmentState !== "undefined" &&
+    Array.isArray(_quizAssignmentState?.assignments)
+    ? _quizAssignmentState.assignments
+    : [];
+  const pendingHomework = homeworkAssignments.find((assignment) => !assignment?.recipient?.completedAt) || null;
+  const unreadUpdates = Math.max(0, Number(window.playerNotificationState?.unread || 0));
+
   // Contextual hero description
   const heroDesc = featuredScript
     ? featuredScript.date === todayValue
@@ -1604,6 +1614,93 @@ function renderPlayerDashboardHome() {
   const homeworkMarkup = typeof renderPlayerQuizHomeworkDashboard === "function"
     ? renderPlayerQuizHomeworkDashboard()
     : "";
+  const homeworkStatus = pendingHomework
+    ? (typeof _quizAssignmentPlayerStatus === "function"
+      ? _quizAssignmentPlayerStatus(pendingHomework)
+      : { label: "Ready to start", tone: "new" })
+    : null;
+  const homeworkTitle = pendingHomework?.title || "Homework quiz";
+  const homeworkAction = pendingHomework
+    ? `data-action="startPlayerQuizAssignment" data-arg="${escapeAttr(String(pendingHomework.id))}"`
+    : 'data-action="openPlayerQuizHub"';
+  const nextStep = (() => {
+    if (pendingHomework?.recipient?.startedAt) {
+      return {
+        eyebrow: "Next up",
+        title: "Finish your homework",
+        body: `${homeworkTitle} · ${homeworkStatus?.label || "In progress"}`,
+        action: "Continue homework",
+        attrs: homeworkAction,
+        tone: "homework",
+      };
+    }
+    if (featuredScript || loadedScript) {
+      return {
+        eyebrow: "Next up",
+        title: featuredScript?.name || loadedScript?.name || "Open your practice",
+        body: featuredScript
+          ? `${focus.scriptLabel} is ready. Start with the calls, then use Swipe View for your rules.`
+          : "Your loaded practice is ready to review.",
+        action: "Open practice",
+        attrs: practiceAction,
+        tone: "practice",
+      };
+    }
+    if (pendingHomework) {
+      return {
+        eyebrow: "Next up",
+        title: "Start your homework",
+        body: `${homeworkTitle} · ${homeworkStatus?.label || "Ready to start"}`,
+        action: "Start homework",
+        attrs: homeworkAction,
+        tone: "homework",
+      };
+    }
+    if (unreadUpdates) {
+      return {
+        eyebrow: "Next up",
+        title: `${unreadUpdates} coach update${unreadUpdates === 1 ? "" : "s"} to read`,
+        body: "Open your updates to see new coach messages, quiz work, or practice changes.",
+        action: "Read updates",
+        attrs: 'data-action="openNotifDrawer"',
+        tone: "updates",
+      };
+    }
+    return {
+      eyebrow: "Next up",
+      title: "Get ahead on the playbook",
+      body: "No new practice or homework is waiting. Review calls before the next install.",
+      action: "Open playbook",
+      attrs: playbookAction,
+      tone: "study",
+    };
+  })();
+  const commandCenterMarkup = `<section class="player-home-command" aria-label="Today’s command center">
+    <article class="player-home-command__next player-home-command__next--${escapeAttr(nextStep.tone)}">
+      <div>
+        <span class="player-home-card__eyebrow">${escapeHtml(nextStep.eyebrow)}</span>
+        <h3>${escapeHtml(nextStep.title)}</h3>
+        <p>${escapeHtml(nextStep.body)}</p>
+      </div>
+      <button type="button" class="player-home-command__cta" ${nextStep.attrs}>
+        <span>${escapeHtml(nextStep.action)}</span><span aria-hidden="true">→</span>
+      </button>
+    </article>
+    <div class="player-home-command__status" aria-label="Today’s status">
+      <button type="button" class="player-home-command__status-item" ${practiceAction}>
+        <span>Practice</span>
+        <strong>${featuredScript || loadedScript ? "Ready" : "Waiting"}</strong>
+      </button>
+      <button type="button" class="player-home-command__status-item" ${homeworkAction}>
+        <span>Homework</span>
+        <strong>${pendingHomework ? (homeworkStatus?.tone === "late" ? "Past due" : "To do") : "Clear"}</strong>
+      </button>
+      <button type="button" class="player-home-command__status-item" data-action="openNotifDrawer">
+        <span>Updates</span>
+        <strong>${unreadUpdates ? `${unreadUpdates} unread` : "Caught up"}</strong>
+      </button>
+    </div>
+  </section>`;
   const recentScriptsMarkup = publishedScripts.length
     ? publishedScripts
       .slice(0, 4)
@@ -1667,14 +1764,9 @@ function renderPlayerDashboardHome() {
     </section>
     ${freshnessMarkup}
     ${refreshMarkup}
+    ${commandCenterMarkup}
     ${homeworkMarkup}
     <section class="player-home-quick-actions" aria-label="Player quick actions">
-      <button type="button" class="player-home-quick-action player-home-quick-action--primary"
-        ${practiceAction}>
-        <span class="player-home-quick-icon"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
-        <strong>Open Practice</strong>
-        <small>Script, periods, and calls</small>
-      </button>
       <button type="button" class="player-home-quick-action player-home-quick-action--film" ${swipeAction}>
         <span class="player-home-quick-icon"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
         <strong>Swipe View</strong>

@@ -904,7 +904,10 @@ Use `CONSOLIDATED_ROADMAP.md` as the active queue. The current mobile items are:
 1. `[x]` Notifications/offline polish for opt-in, denied, offline, and newly published practice states.
 2. `[x]` iPad player screenshot pass across Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions.
 3. `[ ]` Player delight pass for quiz answers, streaks, sticker awards, and ready confirmation.
-4. `[ ]` Practice/Home polish follow-up with real team data.
+4. `[~]` Practice/Home polish follow-up with real team data. Player Home now
+   prioritizes one Next up action (in-progress homework, current practice,
+   unread updates, or playbook), alongside a compact Practice / Homework /
+   Updates status strip. Confirm the hierarchy with a populated team release.
 5. `[ ]` Safe-area/body-lock QA for full-screen drawers, modal footers, coach dock, and landscape presentation controls.
 6. `[ ]` Decide whether the viewport harness becomes a required ship gate.
 7. `[ ]` Add or document manual coverage for soft-keyboard `visualViewport` resize and 200% text zoom.
