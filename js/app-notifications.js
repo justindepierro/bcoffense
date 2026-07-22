@@ -118,7 +118,20 @@ async function openNotifDrawer() {
   if (backdrop) backdrop.hidden = false;
   drawer.classList.add("is-open");
   drawer.setAttribute("aria-hidden", "false");
+  drawer.setAttribute("aria-modal", "true");
+  // Notifications are a real modal surface on phones. Register it with the
+  // shared layer manager so focus, the browser back/escape behavior, and body
+  // scroll stay consistent with the player portal and presentation overlay.
+  if (typeof openLayer === "function") {
+    openLayer(drawer, {
+      id: "notification-drawer",
+      scrollElement: "notifDrawerBody",
+      safeArea: false,
+      blocking: true,
+    });
+  }
   document.getElementById("notifBellBtn")?.setAttribute("aria-expanded", "true");
+  drawer.querySelector(".notif-close-btn")?.focus();
   if (typeof _refreshPushUI === "function") _refreshPushUI();
   await _loadNotifications(false);
 }
@@ -130,6 +143,8 @@ function closeNotifDrawer() {
   _notifDrawerOpen = false;
   drawer.classList.remove("is-open");
   drawer.setAttribute("aria-hidden", "true");
+  drawer.setAttribute("aria-modal", "false");
+  if (typeof closeLayer === "function") closeLayer("notification-drawer");
   if (backdrop) backdrop.hidden = true;
   document.getElementById("notifBellBtn")?.setAttribute("aria-expanded", "false");
 }
@@ -557,12 +572,61 @@ async function notifyPlayersOfTeamUpdate(kind, details = {}) {
 
 // ── Deep link handler ─────────────────────────────────────────────────────────
 
+function _discussionPlayMatchesId(play, playId) {
+  if (!play || !playId) return false;
+  const target = String(playId);
+  const decoded = (() => {
+    try { return decodeURIComponent(target); } catch (_) { return target; }
+  })();
+  if (typeof getPlayThreadId === "function" && getPlayThreadId(play) === target) return true;
+  if (play._id && (String(play._id) === decoded || encodeURIComponent(play._id) === target)) return true;
+  return [play.personnel, play.formation, play.play].map((value) => String(value || "")).join("::") === decoded;
+}
+
+function _openPlayerDiscussionForPlayId(playId) {
+  const locateInLoadedScript = () => typeof script !== "undefined" && Array.isArray(script)
+    ? script.findIndex((entry) => entry && !entry.isSeparator && _discussionPlayMatchesId(entry, playId))
+    : -1;
+
+  let scriptIndex = locateInLoadedScript();
+  if (scriptIndex < 0 && typeof getPlayerPublishedScripts === "function") {
+    const savedScript = getPlayerPublishedScripts().find((candidate) =>
+      Array.isArray(candidate?.plays) && candidate.plays.some((entry) =>
+        entry && !entry.isSeparator && _discussionPlayMatchesId(entry, playId),
+      ),
+    );
+    if (savedScript && typeof loadPublishedPlayerScript === "function") {
+      loadPublishedPlayerScript(savedScript.id, { skipToast: true });
+      scriptIndex = locateInLoadedScript();
+    }
+  }
+  if (scriptIndex < 0 || typeof openScriptPresentation !== "function") return false;
+
+  if (typeof showTab === "function") showTab("script");
+  window.setTimeout(() => {
+    if (typeof setPlayPresentationMode === "function") setPlayPresentationMode("player");
+    if (!openScriptPresentation(scriptIndex)) return;
+    window.setTimeout(() => {
+      if (typeof openPresentationDiscussion === "function") openPresentationDiscussion();
+    }, 180);
+  }, 0);
+  return true;
+}
+
 /**
- * Called when a notification deep link targets a play ID.
- * Navigates to the Playbook tab and opens the play's discussion.
+ * Called when a notification deep link targets a play ID. Players reopen the
+ * exact published practice and thread; staff retain the richer editor flow.
  */
 function openDiscussionForPlayId(playId) {
   if (!playId) return;
+
+  if (_isPlayerNotificationUser()) {
+    if (_openPlayerDiscussionForPlayId(playId)) return;
+    // A practice may have been retired after an alert was delivered. The
+    // player's question hub is the useful, non-destructive fallback.
+    if (typeof openPlayerPortal === "function") openPlayerPortal();
+    return;
+  }
 
   // Switch to playbook tab
   if (typeof showTab === "function") showTab("playbook");

@@ -911,6 +911,7 @@ Use `CONSOLIDATED_ROADMAP.md` as the active queue. The current mobile items are:
 5. `[ ]` Safe-area/body-lock QA for full-screen drawers, modal footers, coach dock, and landscape presentation controls.
 6. `[ ]` Decide whether the viewport harness becomes a required ship gate.
 7. `[ ]` Add or document manual coverage for soft-keyboard `visualViewport` resize and 200% text zoom.
+8. `[~]` Discussion and alert routing polish. The notification drawer now uses the shared layer/body-lock contract, and player discussion alerts reopen the exact published practice and Swipe View thread. Confirm this flow with a real player comment and coach reply on phone and desktop.
 
 ---
 

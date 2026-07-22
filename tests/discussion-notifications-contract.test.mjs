@@ -68,6 +68,8 @@ assert.match(client, /function _notifGroupItems\(items\)/, "repeated practice pu
 assert.match(client, /function setNotifFilter\(filter = "all"\)/, "the mobile drawer can focus on messages or practice work");
 assert.match(client, /Promise\.all\(notifIds\.map/, "opening a grouped update acknowledges every collapsed receipt");
 assert.match(client, /closeNotifDrawer\(\);[\s\S]*if \(deepLink === "script"/, "opening an alert closes the mobile drawer before routing to its destination");
+assert.match(client, /openLayer\(drawer, \{[\s\S]*id: "notification-drawer"/, "the notification drawer uses the shared modal and scroll-lock contract");
+assert.match(client, /function _openPlayerDiscussionForPlayId\(playId\)[\s\S]*openPresentationDiscussion/, "player discussion alerts reopen the notified play in Swipe View instead of the coach editor");
 assert.match(notifications, /script_published: 24 \* 60 \* 60/, "script publish alerts coalesce for a full day");
 assert.match(notifications, /media_update: 24 \* 60 \* 60/, "media alerts coalesce for a full day");
 assert.match(notifications, /team_update: 20 \* 60/, "one player-facing team update coalesces a publish burst");
