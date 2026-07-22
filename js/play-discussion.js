@@ -27,6 +27,32 @@ function getPlayThreadId(play) {
 function _discAuthUser() {
   return typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
 }
+
+// Rendering can start while auth.js is still validating the secure session.
+// Count badges are optional, so wait for a verified identity rather than
+// calling a protected endpoint early and creating a noisy 401 in the console.
+function _discCanFetchRemote() {
+  return Boolean(_discAuthUser());
+}
+
+async function _discFetchBatchCounts(playIds) {
+  if (!_discCanFetchRemote()) return null;
+  const ids = [...new Set((playIds || []).map((id) => String(id || "").trim()).filter(Boolean))];
+  if (!ids.length) return {};
+
+  const params = ids.map((id) => encodeURIComponent(id)).join(",");
+  const res = await fetch(`/api/threads/batch-counts?plays=${params}`, {
+    credentials: "same-origin",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  // A session may expire in another tab. Counts are progressive enhancement,
+  // so leave the badges quiet until the next authenticated render.
+  if (res.status === 401 || !res.ok) return null;
+  const data = await res.json();
+  return data.ok ? (data.counts || {}) : null;
+}
+
 function _discIsStaff() {
   const role = _discAuthUser()?.role;
   return role === "coach" || role === "admin" || role === "assistant" || role === "assistant_coach";
@@ -2308,6 +2334,7 @@ async function toggleDiscThreadLock(arg, el) {
  * Called after renderScript() completes.
  */
 async function loadScriptDiscussionCounts() {
+  if (!_discCanFetchRemote()) return;
   const badges = document.querySelectorAll("[data-disc-play-id]");
   if (!badges.length) return;
 
@@ -2315,13 +2342,8 @@ async function loadScriptDiscussionCounts() {
   if (!playIds.length) return;
 
   try {
-    const params = playIds.map((id) => encodeURIComponent(id)).join(",");
-    const res = await fetch(`/api/threads/batch-counts?plays=${params}`);
-    if (!res.ok) return;
-    const data = await res.json();
-    if (!data.ok) return;
-
-    const counts = data.counts || {};
+    const counts = await _discFetchBatchCounts(playIds);
+    if (!counts) return;
     for (const badge of badges) {
       const playId = badge.dataset.discPlayId;
       const info = counts[playId];
@@ -2527,6 +2549,7 @@ document.addEventListener("keydown", (e) => {
  * Updates .gp-disc-badge visibility and adds has-open-q class to the button.
  */
 async function loadGamePlanDiscussionCounts() {
+  if (!_discCanFetchRemote()) return;
   const els = document.querySelectorAll("#gameplan [data-disc-play-id]");
   if (!els.length) return;
 
@@ -2534,13 +2557,8 @@ async function loadGamePlanDiscussionCounts() {
   if (!playIds.length) return;
 
   try {
-    const params = playIds.map((id) => encodeURIComponent(id)).join(",");
-    const res = await fetch(`/api/threads/batch-counts?plays=${params}`);
-    if (!res.ok) return;
-    const data = await res.json();
-    if (!data.ok) return;
-
-    const counts = data.counts || {};
+    const counts = await _discFetchBatchCounts(playIds);
+    if (!counts) return;
     for (const el of els) {
       const playId = el.dataset.discPlayId;
       const info = counts[playId];
@@ -2565,6 +2583,7 @@ async function loadGamePlanDiscussionCounts() {
  * Shows .cs-disc-warning badge when openQuestions > 0.
  */
 async function loadCallSheetDiscussionCounts() {
+  if (!_discCanFetchRemote()) return;
   const els = document.querySelectorAll("#callSheetGrid [data-disc-play-id]");
   if (!els.length) return;
 
@@ -2572,13 +2591,8 @@ async function loadCallSheetDiscussionCounts() {
   if (!playIds.length) return;
 
   try {
-    const params = playIds.map((id) => encodeURIComponent(id)).join(",");
-    const res = await fetch(`/api/threads/batch-counts?plays=${params}`);
-    if (!res.ok) return;
-    const data = await res.json();
-    if (!data.ok) return;
-
-    const counts = data.counts || {};
+    const counts = await _discFetchBatchCounts(playIds);
+    if (!counts) return;
     for (const el of els) {
       const playId = el.dataset.discPlayId;
       const info = counts[playId];

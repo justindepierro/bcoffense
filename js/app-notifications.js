@@ -52,8 +52,18 @@ function initNotifications(opts = {}) {
 // ── Badge ─────────────────────────────────────────────────────────────────────
 
 async function _pollUnreadCount(opts = {}) {
+  // The shell can mount before auth.js completes its secure-cookie check.
+  // A notification poll without a verified identity is neither useful nor a
+  // failure, so skip it and let the authenticated render start polling.
+  const authUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  if (!authUser) return;
   try {
-    const res = await fetch("/api/notifications/count");
+    const res = await fetch("/api/notifications/count", {
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (res.status === 401) return;
     if (!res.ok) return;
     const data = await res.json();
     _setNotificationState({

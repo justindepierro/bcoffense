@@ -71,6 +71,8 @@ for (const route of [countRoute, indexRoute, itemRoute]) {
 assert.match(client, /player_comment: "💬"/, "the bell has an icon for player comments");
 assert.match(client, /player_question: "❓"/, "the bell has an icon for player questions");
 assert.match(client, /player_reply: "↩️"/, "the bell has an icon for player replies");
+assert.match(client, /getCurrentAuthUser === "function" \? getCurrentAuthUser\(\) : null/, "the unread poll waits for a verified session before calling its protected endpoint");
+assert.match(client, /credentials: "same-origin"[\s\S]*cache: "no-store"/, "notification reads use the current same-site session and never reuse a stale count");
 assert.match(client, /const _NOTIF_CONVERSATION_TYPES = new Set/, "discussion alerts are explicitly classified as conversation work");
 assert.match(client, /function _notifGroupItems\(items\)/, "repeated practice publish receipts are grouped in the feed");
 assert.match(client, /_NOTIF_STAFF_INBOX_TYPES/, "staff discussion activity has a dedicated coach-inbox classification");
@@ -89,6 +91,9 @@ assert.match(indexHtml, /class="notif-filter-bar"/, "notification filters are pr
 assert.match(cloudSync, /function requestImmediateTeamPublish\(reason = "substantial-update", opts = \{\}\)/, "substantial player-facing changes bypass the routine autosave delay");
 assert.match(playerPublish, /window\.requestImmediateTeamPublish\(kind, \{/, "media, script, and quiz publish receipts request an immediate team update");
 assert.match(discussionClient, /role === "assistant_coach"/, "the discussion UI recognizes managed assistant coaches as staff");
+assert.match(discussionClient, /function _discCanFetchRemote\(\)/, "discussion count reads wait for a verified session instead of racing secure startup");
+assert.match(discussionClient, /function _discFetchBatchCounts\(playIds\)/, "script, game-plan, and call-sheet badges share one authenticated count boundary");
+assert.match(discussionClient, /credentials: "same-origin"[\s\S]*cache: "no-store"/, "discussion badge reads use the active same-site session and avoid stale counts");
 assert.match(discussionClient, /_REACTION_QUICK_PICKER_ORDER/, "the reaction picker keeps the core communication choices prominent");
 assert.match(discussionClient, /disc-picker-more/, "secondary reactions are intentionally tucked behind a More control");
 assert.match(discussionClient, /function _discEnsureScope\(container\)/, "each discussion surface receives a stable local interaction scope");
