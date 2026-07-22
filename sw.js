@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v1332";
+const CACHE_NAME = "bcoffense-v1333";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -23,6 +23,24 @@ const NETWORK_FIRST_PATTERNS = [
 function shouldUseNetworkFirst(request, url) {
   if (request.mode === "navigate") return true;
   return NETWORK_FIRST_PATTERNS.some((pattern) => pattern.test(url.pathname));
+}
+
+function isPrivateDataRoute(url) {
+  // Cloudflare Functions below these prefixes return authenticated, team- or
+  // user-scoped data. They must bypass Cache Storage entirely—even if a future
+  // route accidentally omits a no-store header—so a device can never replay
+  // another session's or an older workspace's response.
+  return [
+    "/admin/",
+    "/api/",
+    "/auth/",
+    "/clips/",
+    "/images/",
+    "/media/",
+    "/player/",
+    "/sync/",
+    "/workspace/",
+  ].some((prefix) => url.pathname.startsWith(prefix));
 }
 
 function isCacheableResponse(response, allowOpaque = false) {
@@ -293,27 +311,11 @@ self.addEventListener("fetch", (event) => {
   // Skip non-http(s) schemes (e.g. chrome-extension://) — can't be cached
   if (!event.request.url.startsWith("http")) return;
 
-  // Auth identity, player releases, and video clips are all private,
-  // role-scoped responses. Let the browser make a direct network request;
-  // never let this worker replay another user's cached identity/release.
-  if (
-    url.pathname.startsWith("/clips/") ||
-    url.pathname === "/auth/me" ||
-    url.pathname === "/player/release"
-  ) return;
-
-  // Diagram manifests and files are authenticated, per-play API responses.
-  // They must never use the generic query-insensitive cache path below: that
-  // can serve one play's result for another and leave the player view waiting.
-  if (url.pathname.startsWith("/images/")) {
-    event.respondWith(
-      fetch(event.request).catch(() => new Response("Diagram service unavailable", {
-        status: 503,
-        headers: { "Content-Type": "text/plain; charset=utf-8" },
-      })),
-    );
-    return;
-  }
+  // Every authenticated Cloudflare data endpoint is network-only. This is a
+  // deliberate second boundary after the server's no-store headers: cached
+  // assets stay fast offline, while workspace, media, notification, quiz, and
+  // account reads always reflect the current authenticated team.
+  if (isPrivateDataRoute(url)) return;
 
   // External resources (fonts, CDNs): network-first with cache fallback
   if (url.origin !== location.origin) {

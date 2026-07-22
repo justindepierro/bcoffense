@@ -3582,10 +3582,12 @@ function checkServiceWorkerLifecycle() {
     fail("service worker update activation is not explicitly user-gated");
   }
   if (
-    !/url\.pathname === "\/auth\/me"/.test(sw) ||
-    !/url\.pathname === "\/player\/release"/.test(sw) ||
-    !/url\.pathname\.startsWith\("\/images\/"\)/.test(sw) ||
-    !/url\.pathname\.startsWith\("\/clips\/"\)/.test(sw)
+    !/function isPrivateDataRoute\(url\)/.test(sw) ||
+    !/"\/auth\/"/.test(sw) ||
+    !/"\/player\/"/.test(sw) ||
+    !/"\/images\/"/.test(sw) ||
+    !/"\/clips\/"/.test(sw) ||
+    !/if \(isPrivateDataRoute\(url\)\) return;/.test(sw)
   ) {
     fail("service worker can cache private player or media responses");
   }
@@ -5013,7 +5015,8 @@ function checkScrollOwnershipContract() {
 }
 
 function checkServiceWorkerCachePolicy() {
-  const source = extractFunctionSource(read("sw.js"), "isCacheableResponse");
+  const serviceWorker = read("sw.js");
+  const source = extractFunctionSource(serviceWorker, "isCacheableResponse");
   if (!source) {
     fail("isCacheableResponse function not found");
     return;
@@ -5045,6 +5048,16 @@ function checkServiceWorkerCachePolicy() {
   }
   if (isCacheable(response(false, "", "opaque"))) {
     fail("service worker caches opaque responses without explicit permission");
+  }
+
+  if (
+    !/function isPrivateDataRoute\(url\)/.test(serviceWorker) ||
+    !/"\/workspace\/"/.test(serviceWorker) ||
+    !/"\/api\/"/.test(serviceWorker) ||
+    !/"\/auth\/"/.test(serviceWorker) ||
+    !/if \(isPrivateDataRoute\(url\)\) return;/.test(serviceWorker)
+  ) {
+    fail("service worker can cache an authenticated team-data route");
   }
 
   console.log("service worker cache policy ok");
