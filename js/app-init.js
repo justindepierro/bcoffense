@@ -32,13 +32,20 @@ async function initApp() {
     if (typeof setStartupLoadingMessage === "function") {
       setStartupLoadingMessage("Loading team workspace...");
     }
+    if (typeof setStartupLoadingDetail === "function") {
+      setStartupLoadingDetail("Getting the latest plays, scripts, media, game plans, and assignments.");
+    }
     // Every staff login completes its canonical read before first render.
     // A deliberate initial wait is calmer and safer than opening a stale or
     // empty workspace, then visibly reloading it underneath the coach.
     // cloud-sync owns the bounded network deadline and protects active or
     // untracked local work. Its session guard also makes the queued post-paint
     // auto-pull a no-op once this startup read has completed.
-    return autoPullLatestCloudBackup();
+    if (typeof setStartupLoadingHold === "function") setStartupLoadingHold(true);
+    return Promise.resolve(autoPullLatestCloudBackup())
+      .finally(() => {
+        if (typeof setStartupLoadingHold === "function") setStartupLoadingHold(false);
+      });
   };
   const runOptionalInit = (label, callback) => {
     try {

@@ -3,11 +3,12 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const [source, cloudSync, workspaceSync, appInit] = await Promise.all([
+const [source, cloudSync, workspaceSync, appInit, appShell] = await Promise.all([
   readFile(new URL("functions/workspace/revision.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/cloud-sync.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/workspace-sync.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/app-init.js", `file://${root}/`), "utf8"),
+  readFile(new URL("js/app-shell.js", `file://${root}/`), "utf8"),
 ]);
 
 assert.match(source, /commitWorkspaceAndPlayerRelease/, "daily workspace route uses the atomic D1\/R2 commit helper");
@@ -40,8 +41,11 @@ assert.match(workspaceSync, /function acquireTeamWorkspaceLease/, "workspace syn
 assert.match(workspaceSync, /workspace-published/, "workspace sync broadcasts successful team revision handoffs");
 assert.match(appInit, /Loading team workspace\.\.\./, "each staff login checks its canonical workspace before rendering");
 assert.match(appInit, /waitForStaffWorkspaceBootstrap/, "staff startup hydration has a bounded bootstrap path");
-assert.match(appInit, /return autoPullLatestCloudBackup\(\);/, "staff startup waits for the canonical pull instead of rendering a stale shell first");
+assert.match(appInit, /setStartupLoadingHold\(true\)/, "staff startup holds the loader while its canonical pull is in flight");
+assert.match(appInit, /Promise\.resolve\(autoPullLatestCloudBackup\(\)\)/, "staff startup waits for the canonical pull instead of rendering a stale shell first");
 assert.doesNotMatch(appInit, /Promise\.race\(\[\s*autoPullLatestCloudBackup/, "staff startup does not release an empty UI while the canonical pull continues in the background");
 assert.match(cloudSync, /remote = await fetchCanonicalWorkspace\(\{ allowMissing: true \}\);/, "a repaired legacy workspace is re-read before staff startup continues");
+assert.match(appShell, /function setStartupLoadingHold/, "the shared startup loader supports an explicit workspace hydration hold");
+assert.match(appShell, /!isStartupLoadingHeld\(\)/, "the generic startup fallback cannot dismiss an authoritative workspace load");
 
-console.log("workspace revision route and live-sync contract: 33 assertions passed");
+console.log("workspace revision route and live-sync contract: 36 assertions passed");

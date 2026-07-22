@@ -65,6 +65,12 @@ h1 {
   font-size: var(--font-size-sm);
   font-weight: 600;
 }
+.startup-loader__detail {
+  max-width: 28rem;
+  color: var(--color-white-alpha-60);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+}
 .startup-loader__spinner {
   width: 40px;
   height: 40px;

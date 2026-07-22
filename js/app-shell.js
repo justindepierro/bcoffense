@@ -158,14 +158,32 @@ if (typeof window !== "undefined") {
 }
 
 // ── Startup loading cover ──
+let startupLoadingHeld = false;
+
+function setStartupLoadingHold(held = true) {
+  startupLoadingHeld = Boolean(held);
+  const loader = document.getElementById("startupLoader");
+  if (loader) loader.setAttribute("aria-busy", startupLoadingHeld ? "true" : "false");
+}
+
+function isStartupLoadingHeld() {
+  return startupLoadingHeld;
+}
+
 function setStartupLoadingMessage(message) {
   const el = document.getElementById("startupLoaderStatus");
+  if (el && message) el.textContent = message;
+}
+
+function setStartupLoadingDetail(message) {
+  const el = document.getElementById("startupLoaderDetail");
   if (el && message) el.textContent = message;
 }
 
 function finishStartupLoading(opts = {}) {
   if (window.__startupLoaderFinished) return;
   window.__startupLoaderFinished = true;
+  setStartupLoadingHold(false);
 
   const loader = document.getElementById("startupLoader");
   const reveal = () => {
@@ -191,7 +209,7 @@ function finishStartupLoading(opts = {}) {
 
 window.addEventListener("load", () => {
   setTimeout(() => {
-    if (document.body.classList.contains("app-booting")) {
+    if (document.body.classList.contains("app-booting") && !isStartupLoadingHeld()) {
       finishStartupLoading({ delay: 0 });
     }
   }, 6000);
