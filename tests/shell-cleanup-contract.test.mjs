@@ -14,10 +14,11 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (relativePath) => readFile(new URL(relativePath, `file://${root}/`), "utf8");
 const sort = (items) => [...items].sort();
 
-const [indexHtml, serviceWorker, identitySource, scriptCss, jsEntries] = await Promise.all([
+const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, jsEntries] = await Promise.all([
   source("index.html"),
   source("sw.js"),
   source("js/playbook-identity.js"),
+  source("js/playbook.js"),
   source("css/script.css"),
   readdir(new URL("js/", `file://${root}/`)),
 ]);
@@ -32,6 +33,11 @@ assert.deepEqual(sort(shellScripts), sort(runtimeFiles), "every runtime JS file 
 assert.deepEqual(sort(cachedScripts), sort(runtimeFiles), "every runtime JS file is cached by the service worker");
 
 assert.doesNotMatch(identitySource, /setPlaybookCategoryCleanupHide/, "the retired category-cleanup no-op shim stays removed");
+assert.match(
+  playbookSource,
+  /group\.dataset\.chipListenerBound === "true"/,
+  "playbook filter-chip listeners remain idempotent across workspace hydration",
+);
 for (const selector of [
   "play-readiness-badge--trusted",
   "play-readiness-badge--ready",

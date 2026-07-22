@@ -91,8 +91,9 @@ small, testable releases.
   slice removes the unused `setPlaybookCategoryCleanupHide` no-op and ten
   readiness-only Script CSS aliases with zero remaining renderer, setting,
   print, or delegated-action references. `shell-cleanup-contract.test.mjs`
-  now verifies each runtime script is loaded/cached exactly once and those
-  aliases cannot quietly return. Keep data migrations separate from visual
+  now verifies each runtime script is loaded/cached exactly once, those aliases
+  cannot quietly return, and Playbook filter-chip listeners remain idempotent
+  across workspace rehydration. Keep data migrations separate from visual
   cleanup; Call Sheet aliases still need their own usage audit.
 - [x] **C-014 · Reduce command-strip duplication.** Release v1294 applies one
   action hierarchy across the four daily workbenches. Script keeps `Library`,

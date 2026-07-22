@@ -328,15 +328,12 @@ function _onChipClick(e) {
 }
 
 function initChipListeners() {
-  document
-    .getElementById("pbChipsType")
-    ?.addEventListener("click", _onChipClick);
-  document
-    .getElementById("pbChipsPersonnel")
-    ?.addEventListener("click", _onChipClick);
-  document
-    .getElementById("pbChipsPicture")
-    ?.addEventListener("click", _onChipClick);
+  ["pbChipsType", "pbChipsPersonnel", "pbChipsPicture"].forEach((id) => {
+    const group = document.getElementById(id);
+    if (!group || group.dataset.chipListenerBound === "true") return;
+    group.dataset.chipListenerBound = "true";
+    group.addEventListener("click", _onChipClick);
+  });
 }
 
 // ── More Filters toggle ──
