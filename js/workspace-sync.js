@@ -437,6 +437,20 @@
     return true;
   }
 
+  // Player-facing changes are one canonical workspace commit, even when a
+  // burst contains a script save, a diagram, and a signal clip. Keep their
+  // individual receipt visible until that commit has actually completed; the
+  // old behavior marked the player job done as soon as it was queued.
+  function completePlayerPublishJobs(opts = {}) {
+    const jobs = [...workspaceSyncJobs.values()]
+      .filter((job) => job.channel === "player")
+      .map((job) => job.key);
+    jobs.forEach((key) => completeWorkspaceSyncJob(key, {
+      label: opts.label || "Player update ready",
+    }));
+    return jobs.length;
+  }
+
   function failWorkspaceSyncJob(key, error, opts = {}) {
     const job = workspaceSyncJobs.get(key);
     if (!job) return false;
@@ -447,6 +461,17 @@
     if (opts.label) job.errorLabel = opts.label;
     _wsReconcileChannel(job.channel, "error", job.errorLabel || _wsDefaultLabel(job.channel, "error"));
     return true;
+  }
+
+  function failPlayerPublishJobs(error, opts = {}) {
+    const jobs = [...workspaceSyncJobs.values()]
+      .filter((job) => job.channel === "player")
+      .map((job) => job.key);
+    jobs.forEach((key) => failWorkspaceSyncJob(key, error, {
+      label: opts.label || "Player update needs attention",
+      retry: opts.retry,
+    }));
+    return jobs.length;
   }
 
   function retryWorkspaceSyncWork() {
@@ -501,7 +526,9 @@
     queue: queueWorkspaceSyncJob,
     start: startWorkspaceSyncJob,
     complete: completeWorkspaceSyncJob,
+    completePlayerPublishJobs,
     fail: failWorkspaceSyncJob,
+    failPlayerPublishJobs,
     run: runWorkspaceSyncJob,
     retry: retryWorkspaceSyncWork,
     hasWork: hasWorkspaceSyncWork,
@@ -517,7 +544,9 @@
   window.queueWorkspaceSyncJob = queueWorkspaceSyncJob;
   window.startWorkspaceSyncJob = startWorkspaceSyncJob;
   window.completeWorkspaceSyncJob = completeWorkspaceSyncJob;
+  window.completePlayerPublishJobs = completePlayerPublishJobs;
   window.failWorkspaceSyncJob = failWorkspaceSyncJob;
+  window.failPlayerPublishJobs = failPlayerPublishJobs;
   window.runWorkspaceSyncJob = runWorkspaceSyncJob;
   window.retryWorkspaceSyncWork = retryWorkspaceSyncWork;
 })();

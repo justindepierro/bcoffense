@@ -1682,17 +1682,20 @@ async function mobileCoachTogglePublish() {
   target.playerVisible = nowPublished;
   if (nowPublished) {
     target.playerPublishedAt = new Date().toISOString();
-    if (typeof recordPlayerPublishStatus === "function") {
-      recordPlayerPublishStatus("scripts", {
-        updatedAt: target.playerPublishedAt,
-        label: target.name || "Practice script",
-        id: target.id || "",
-      });
-    }
   } else {
     target.playerUnpublishedAt = new Date().toISOString();
   }
   storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, saved);
+  if (typeof recordPlayerPublishStatus === "function") {
+    await recordPlayerPublishStatus("scripts", {
+      updatedAt: nowPublished ? target.playerPublishedAt : target.playerUnpublishedAt,
+      label: nowPublished
+        ? (target.name || "Practice script")
+        : `${target.name || "Practice script"} removed from player logins`,
+      id: target.id || "",
+      visibility: nowPublished ? "published" : "unpublished",
+    }, { awaitCompletion: true });
+  }
   if (typeof loadSavedScriptsList === "function") loadSavedScriptsList();
   _updateMobileCoachPublishStatus();
   if (typeof showToast === "function") {

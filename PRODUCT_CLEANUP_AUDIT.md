@@ -13,8 +13,9 @@ small, testable releases.
 - Static UI audit: no strict failures; 1,888 review signals were triaged rather
   than treated as defects by count alone.
 - Source inventory: 63 persistent overlay/panel entry points, 335 declarative
-  actions, and a few very large ownership files (`script.css` 15.8k lines,
-  `playbook.css` 8.4k, `script-quiz.js` 7.4k).
+  actions, and a few high-churn ownership files (`script.css` 8.4k lines,
+  `script-quiz.css` 7.4k, `playbook.css` 8.4k, and
+  `script-quiz-foundation.js` 4.1k).
 - The live Settings surface exposed roster, personnel, sub packages, player
   portal branding, recovery, coach access, and account links in one long
   workspace. It is functional, but its hierarchy is too broad for daily use.
@@ -139,9 +140,19 @@ small, testable releases.
 
 ## P3 — engineering cleanup that protects UX
 
-- [ ] **C-030 · Split the largest style and behavior owners by surface.**
-  Split `script.css` and `script-quiz.js` along existing runtime/render
-  boundaries without changing global action names or loading order.
+- [~] **C-030 · Split the largest style and behavior owners by surface.**
+  Release v1343 begins the safe CSS split at the existing Script Quiz boundary:
+  `script.css` now owns the Coach Grid workbench and `script-quiz.css` owns the
+  7.4k-line quiz/assignment surface. The browser loads them in their exact
+  former order, and the shell contract verifies both are loaded and cached once.
+  The same release moves Quiz settings, roster health, awards, and coach setup
+  into `script-quiz-foundation.js`, leaving the 3.3k-line player runtime in
+  `script-quiz.js`; the two scripts retain their exact former execution order.
+  The same release corrects the player-script handoff: a player-visible script
+  is written locally before its release is requested, its sync receipt remains
+  active until the immutable cloud release commits, and an open player app
+  revalidates the tiny ETag-backed release every 45 seconds without a visible
+  refresh state.
 - [~] **C-031 · Add modal semantics coverage.** Release v1295 establishes the
   contract on the shared Actions hub and Player Playbook filters: dialog
   semantics, Escape, close control, focus return, and one scroll owner. Release

@@ -86,8 +86,8 @@ assert.match(notifications, /team_update: 20 \* 60/, "one player-facing team upd
 assert.match(client, /team_update: "🏈"/, "the bell gives a grouped team update a clear icon");
 assert.match(client, /deepLink === "dashboard"/, "a grouped team update routes players to Home");
 assert.match(indexHtml, /class="notif-filter-bar"/, "notification filters are present in the shell");
-assert.match(cloudSync, /function requestImmediateTeamPublish\(reason = "substantial-update"\)/, "substantial player-facing changes bypass the routine autosave delay");
-assert.match(playerPublish, /window\.requestImmediateTeamPublish\(kind\)/, "media, script, and quiz publish receipts request an immediate team update");
+assert.match(cloudSync, /function requestImmediateTeamPublish\(reason = "substantial-update", opts = \{\}\)/, "substantial player-facing changes bypass the routine autosave delay");
+assert.match(playerPublish, /window\.requestImmediateTeamPublish\(kind, \{/, "media, script, and quiz publish receipts request an immediate team update");
 assert.match(discussionClient, /role === "assistant_coach"/, "the discussion UI recognizes managed assistant coaches as staff");
 assert.match(discussionClient, /_REACTION_QUICK_PICKER_ORDER/, "the reaction picker keeps the core communication choices prominent");
 assert.match(discussionClient, /disc-picker-more/, "secondary reactions are intentionally tucked behind a More control");

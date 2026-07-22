@@ -248,8 +248,8 @@ function getPlayerPublishStatus() {
   return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
 }
 
-function recordPlayerPublishStatus(kind, details = {}) {
-  if (!kind || typeof storageManager === "undefined" || typeof storageManager.set !== "function") return;
+async function recordPlayerPublishStatus(kind, details = {}, opts = {}) {
+  if (!kind || typeof storageManager === "undefined" || typeof storageManager.set !== "function") return false;
   const updatedAt = details.updatedAt || new Date().toISOString();
   const publishJobKey = typeof window.queueWorkspaceSyncJob === "function"
     ? window.queueWorkspaceSyncJob("player", kind, {
@@ -273,8 +273,15 @@ function recordPlayerPublishStatus(kind, details = {}) {
   // The status write above is part of the canonical workspace. Media, quiz,
   // and script handoffs should reach player devices promptly rather than wait
   // for the ordinary edit autosave batch.
+  let publishResult = true;
   if (typeof window.requestImmediateTeamPublish === "function") {
-    window.requestImmediateTeamPublish(kind);
+    try {
+      publishResult = await window.requestImmediateTeamPublish(kind, {
+        awaitCompletion: opts.awaitCompletion === true,
+      });
+    } catch (_err) {
+      publishResult = false;
+    }
   }
   if (typeof window.recordPublishActivity === "function") {
     window.recordPublishActivity({
@@ -287,13 +294,11 @@ function recordPlayerPublishStatus(kind, details = {}) {
       size: 0,
     });
   }
-  if (publishJobKey && typeof window.completeWorkspaceSyncJob === "function") {
-    window.completeWorkspaceSyncJob(publishJobKey, { label: "Player publish updated" });
-  }
   if (typeof renderCoachPublishStatus === "function") renderCoachPublishStatus();
   if (typeof notifyPlayersOfTeamUpdate === "function") {
     notifyPlayersOfTeamUpdate(kind, details).catch(() => { });
   }
+  return publishResult !== false;
 }
 
 function _getLatestPlayerScriptPublish(savedScripts = getSavedScripts()) {
@@ -1092,7 +1097,7 @@ function openPlayerCurrentScriptPresentation(id = "") {
   return presentPublishedPlayerScript(fallbackScript.id);
 }
 
-function togglePlayerScriptAccess(id, event) {
+async function togglePlayerScriptAccess(id, event) {
   const savedScripts = getSavedScripts();
   const savedScript = savedScripts.find(
     (candidate) => String(candidate.id) === String(id),
@@ -1107,15 +1112,18 @@ function togglePlayerScriptAccess(id, event) {
   savedScript.playerVisible = Boolean(event?.target?.checked);
   if (savedScript.playerVisible) {
     savedScript.playerPublishedAt = new Date().toISOString();
-    recordPlayerPublishStatus("scripts", {
-      updatedAt: savedScript.playerPublishedAt,
-      label: savedScript.name || "Practice script",
-      id: savedScript.id || "",
-    });
   } else {
     savedScript.playerUnpublishedAt = new Date().toISOString();
   }
   storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+  await recordPlayerPublishStatus("scripts", {
+    updatedAt: savedScript.playerVisible ? savedScript.playerPublishedAt : savedScript.playerUnpublishedAt,
+    label: savedScript.playerVisible
+      ? (savedScript.name || "Practice script")
+      : `${savedScript.name || "Practice script"} removed from player logins`,
+    id: savedScript.id || "",
+    visibility: savedScript.playerVisible ? "published" : "unpublished",
+  }, { awaitCompletion: true });
   loadSavedScriptsList();
   showToast(
     savedScript.playerVisible

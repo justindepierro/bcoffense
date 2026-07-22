@@ -20,15 +20,17 @@ async function source(relativePath) {
 
 console.log("\n▸ Quiz Cloudflare data path");
 
-const [release, storage, quiz, sync, releaseClient, revision, syncRoute] = await Promise.all([
+const [release, storage, quizFoundation, quizRuntime, sync, releaseClient, revision, syncRoute] = await Promise.all([
   source("../functions/_lib/player-release.js"),
   source("../js/storage.js"),
+  source("../js/script-quiz-foundation.js"),
   source("../js/script-quiz.js"),
   source("../js/player-quiz-sync.js"),
   source("../js/cloud-sync.js"),
   source("../functions/workspace/revision.js"),
   source("../functions/api/leaderboard/sync.js"),
 ]);
+const quiz = `${quizFoundation}\n${quizRuntime}`;
 
 assert(
   release.includes("projectActiveGamePlanQuiz")

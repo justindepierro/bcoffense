@@ -606,19 +606,22 @@ async function saveScript() {
         existing.plays = safeDeepClone(script);
         existing.workspace = getScriptWorkspaceState();
         existing.savedAt = new Date().toISOString();
-        if (typeof isSavedScriptPlayerVisible === "function"
+        const playerVisible = typeof isSavedScriptPlayerVisible === "function"
           ? isSavedScriptPlayerVisible(existing)
-          : Boolean(existing.playerVisible)) {
+          : Boolean(existing.playerVisible);
+        if (playerVisible) {
           existing.playerPublishedAt = existing.savedAt;
+        }
+        storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+        if (playerVisible) {
           if (typeof recordPlayerPublishStatus === "function") {
-            recordPlayerPublishStatus("scripts", {
+            await recordPlayerPublishStatus("scripts", {
               updatedAt: existing.playerPublishedAt,
               label: existing.name || "Practice script",
               id: existing.id || "",
-            });
+            }, { awaitCompletion: true });
           }
         }
-        storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
         loadSavedScriptsList();
         finalizeScriptSave(existing);
         showToast(`✅ "${name}" updated in Script Library.`);
@@ -640,19 +643,22 @@ async function saveScript() {
         existing.plays = safeDeepClone(script);
         existing.workspace = getScriptWorkspaceState();
         existing.savedAt = new Date().toISOString();
-        if (typeof isSavedScriptPlayerVisible === "function"
+        const playerVisible = typeof isSavedScriptPlayerVisible === "function"
           ? isSavedScriptPlayerVisible(existing)
-          : Boolean(existing.playerVisible)) {
+          : Boolean(existing.playerVisible);
+        if (playerVisible) {
           existing.playerPublishedAt = existing.savedAt;
+        }
+        storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+        if (playerVisible) {
           if (typeof recordPlayerPublishStatus === "function") {
-            recordPlayerPublishStatus("scripts", {
+            await recordPlayerPublishStatus("scripts", {
               updatedAt: existing.playerPublishedAt,
               label: existing.name || "Practice script",
               id: existing.id || "",
-            });
+            }, { awaitCompletion: true });
           }
         }
-        storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
         loadSavedScriptsList();
         finalizeScriptSave(existing);
         showToast(`✅ "${name}" updated!`);
@@ -710,6 +716,14 @@ async function deleteSavedScript(id) {
   target.playerVisible = false;
   target.playerUnpublishedAt = target.deletedAt;
   storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+  if (typeof recordPlayerPublishStatus === "function") {
+    await recordPlayerPublishStatus("scripts", {
+      updatedAt: target.playerUnpublishedAt,
+      label: `${target.name || "Practice script"} removed from player logins`,
+      id: target.id || "",
+      visibility: "unpublished",
+    }, { awaitCompletion: true });
+  }
   if (String(activeScriptSaveId) === String(id)) {
     resetActiveScriptIdentity();
     markScriptDirty();
@@ -758,19 +772,22 @@ async function overwriteSavedScript(id) {
   savedScript.plays = safeDeepClone(script);
   savedScript.workspace = getScriptWorkspaceState();
   savedScript.savedAt = new Date().toISOString();
-  if (typeof isSavedScriptPlayerVisible === "function"
+  const playerVisible = typeof isSavedScriptPlayerVisible === "function"
     ? isSavedScriptPlayerVisible(savedScript)
-    : Boolean(savedScript.playerVisible)) {
+    : Boolean(savedScript.playerVisible);
+  if (playerVisible) {
     savedScript.playerPublishedAt = savedScript.savedAt;
+  }
+  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+  if (playerVisible) {
     if (typeof recordPlayerPublishStatus === "function") {
-      recordPlayerPublishStatus("scripts", {
+      await recordPlayerPublishStatus("scripts", {
         updatedAt: savedScript.playerPublishedAt,
         label: savedScript.name || "Practice script",
         id: savedScript.id || "",
-      });
+      }, { awaitCompletion: true });
     }
   }
-  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
   loadSavedScriptsList();
   finalizeScriptSave(savedScript);
   showToast(`"${savedScript.name}" updated!`);

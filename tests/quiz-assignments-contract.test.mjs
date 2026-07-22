@@ -12,13 +12,14 @@ async function source(relativePath) {
 }
 
 console.log("\n▸ Private quiz homework contract");
-const [migration, migrationQuestionConfig, migrationLifecycle, helper, route, client, quiz, notifications, playersAdmin, storage, workspaceRoute, index, sw] = await Promise.all([
+const [migration, migrationQuestionConfig, migrationLifecycle, helper, route, client, quizFoundation, quizRuntime, notifications, playersAdmin, storage, workspaceRoute, index, sw] = await Promise.all([
   source("../migrations/0020_quiz_assignments.sql"),
   source("../migrations/0021_quiz_assignment_question_config.sql"),
   source("../migrations/0022_quiz_assignment_delivery_lifecycle.sql"),
   source("../functions/_lib/d1-quiz-assignments.js"),
   source("../functions/api/quiz-assignments/index.js"),
   source("../js/script-quiz-assignments.js"),
+  source("../js/script-quiz-foundation.js"),
   source("../js/script-quiz.js"),
   source("../js/app-notifications.js"),
   source("../js/players-admin.js"),
@@ -27,6 +28,7 @@ const [migration, migrationQuestionConfig, migrationLifecycle, helper, route, cl
   source("../index.html"),
   source("../sw.js"),
 ]);
+const quiz = `${quizFoundation}\n${quizRuntime}`;
 
 assert(
   migration.includes("quiz_assignments") && migration.includes("quiz_assignment_recipients")

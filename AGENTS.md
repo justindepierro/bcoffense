@@ -31,7 +31,8 @@ css/
   components.css        ← Buttons, modals, toast, badges, utilities
   playbook.css          ← Playbook table, collections, print panel
   signals.css           ← Signal collection tab and component clip UI
-  script.css            ← Practice script builder
+  script.css            ← Practice script Coach Grid workbench
+  script-quiz.css       ← Quiz and homework presentation styles
   play-presentation.css ← Shared landscape play presenter for Playbook and Script
   wristband.css         ← Wristband maker, cards, grid
   callsheet.css         ← Call sheet grid, columns, constraints panel
@@ -80,6 +81,8 @@ js/
   playbook-analytics.js ← Playbook data health center (duplicates, missing fields, vocabulary, category coverage)
   playbook-identity.js  ← Cleanup by call sheet category (identity alignment checker)
   script-*.js           ← Practice script runtime split by concern (state, add, render, storage, integrations, etc.)
+  script-quiz-foundation.js ← Quiz settings, roster health, awards, and coach setup
+  script-quiz.js        ← Player quiz runtime and question/answer flow
   media-inventory.js    ← Cross-media inventory report for diagrams, clips, signals, and quiz readiness
   play-readiness.js     ← Coach-only play readiness scoring model, rep/action report storage, and script row widgets
   play-presentation.js  ← Shared landscape play presentation viewer
@@ -161,7 +164,7 @@ All scripts use `defer` and load in this exact order from index.html:
 7.   js/storage.js
 8.   js/storage-ui.js
 9.   js/workspace-sync.js
-10.  js/media-upload-outbox.js
+10.   js/media-upload-outbox.js
 11.   js/play-images.js
 12.   js/cloud-sync.js
 13.   js/staged-restore.js
@@ -172,120 +175,122 @@ All scripts use `defer` and load in this exact order from index.html:
 18.   js/team-settings.js
 19.   js/players-admin.js
 20.   js/coach-access.js
-21.   js/play-discussion.js
-22.   js/playbook.js
-22.   js/playbook-collections.js
-23.   js/playbook-print.js
-24.   js/playbook-editor.js
-25.   js/playbook-import.js
-26.   js/playbook-export.js
-27.   js/playbook-chrome.js
-28.   js/playbook-reports.js
-29.   js/playbook-reports-identity.js
-30.   js/playbook-state.js
-31.   js/playbook-filters.js
-32.   js/playbook-navigation.js
-33.   js/playbook-actions.js
-34.   js/playbook-render.js
-35.   js/playbook-sanitize.js
-36.   js/playbook-analytics.js
-37.   js/playbook-analytics-render.js
-38.   js/playbook-identity.js
-39.   js/script-state.js
-40.   js/script-shared.js
-41.   js/script-players.js
-42.   js/script-display-options.js
-43.   js/play-readiness.js
-44.   js/script-add.js
-45.   js/script-sort.js
-46.   js/script-export.js
-47.   js/script-available.js
-48.   js/script-selection.js
-49.   js/script-timeline.js
-50.   js/script-render.js
-51.   js/script-quiz-state.js
-52.   js/script-quiz.js
-53.   js/script-quiz-progress.js
-54.   js/script-quiz-leaderboard.js
-55.   js/player-quiz-sync.js
-56.   js/script-quiz-assignments.js
-57.   js/script-health.js
-58.   js/script-periods.js
-59.   js/script-period-sync.js
-60.   js/script-smart.js
-61.   js/script-storage.js
-62.   js/script-player.js
-63.   js/media-inventory.js
-64.   js/script-integrations.js
-64.   js/play-presentation.js
-65.   js/wristband.js
-66.   js/wristband-library.js
-67.   js/wristband-render.js
-68.   js/wristband-cards.js
-69.   js/wristband-export.js
-70.   js/wristband-chrome.js
-71.   js/wristband-logo.js
-72.   js/wristband-search.js
-73.   js/wristband-modals.js
-74.   js/wristband-cell-popup.js
-75.   js/wristband-cell-actions.js
-76.   js/wristband-sort.js
-77.   js/wristband-storage.js
-78.   js/wristband-runtime.js
-79.   js/callsheet-render.js
-80.   js/callsheet.js
-81.   js/callsheet-print.js
-82.   js/callsheet-sort.js
-83.   js/callsheet-filters.js
-84.   js/callsheet-smart.js
-85.   js/callsheet-export.js
-86.   js/callsheet-display.js
-87.   js/callsheet-categories.js
-88.   js/callsheet-metadata.js
-89.   js/callsheet-layout.js
-90.   js/callsheet-templates.js
-91.   js/callsheet-picker-runtime.js
-92.   js/callsheet-gameplan-drawer.js
-93.   js/constraints.js
-94.   js/constraints-ui.js
-95.   js/script-vision.js
-96.   js/tendencies-render.js
-97.   js/tendencies.js
-98.   js/tendencies-print.js
-99.   js/installation-render.js
-100.   js/installation.js
-101.   js/installation-print.js
-102.   js/identity.js
-103.   js/offensebuilder.js
-104.   js/help.js
-105.   js/dashboard-render.js
-106.   js/dashboard.js
-107.   js/gameplan.js
-108.   js/gameplan-render.js
-109.   js/gameplan-dnd.js
-110.   js/gameplan-actions.js
-111.   js/gameplan-smart.js
-112.   js/gameplan-health.js
-113.   js/gameplan-print.js
-114.   js/gameplan-integrations.js
-115.   js/gameplan-snapshots.js
-116.   js/print-studio.js
-117.   js/script-events.js
-118.   js/anchored-menu.js
-119.   js/app-events.js
-120.   js/app-command.js
-121.   js/page-actions.js
-122.   js/app-notifications.js
-123.   js/push-notifications.js
-124.   js/player-portal.js
-125.   js/dashboard-questions.js
-126.   js/app-shell.js
-127.   js/app-session.js
-128.   js/app-navigation.js
-129.   js/app-module-init.js
-130.   js/app-bootstrap.js
-131.   js/app-init.js
-132.   js/app.js
+21.   js/discussion-outbox.js
+22.   js/play-discussion.js
+23.   js/playbook.js
+24.   js/playbook-collections.js
+25.   js/playbook-print.js
+26.   js/playbook-editor.js
+27.   js/playbook-import.js
+28.   js/playbook-export.js
+29.   js/playbook-chrome.js
+30.   js/playbook-reports.js
+31.   js/playbook-reports-identity.js
+32.   js/playbook-state.js
+33.   js/playbook-filters.js
+34.   js/playbook-navigation.js
+35.   js/playbook-actions.js
+36.   js/playbook-render.js
+37.   js/playbook-sanitize.js
+38.   js/playbook-analytics.js
+39.   js/playbook-analytics-render.js
+40.   js/playbook-identity.js
+41.   js/script-state.js
+42.   js/script-shared.js
+43.   js/script-players.js
+44.   js/script-display-options.js
+45.   js/play-readiness.js
+46.   js/script-add.js
+47.   js/script-sort.js
+48.   js/script-export.js
+49.   js/script-available.js
+50.   js/script-selection.js
+51.   js/script-timeline.js
+52.   js/script-render.js
+53.   js/script-quiz-state.js
+54.   js/script-quiz-foundation.js
+55.   js/script-quiz.js
+56.   js/script-quiz-progress.js
+57.   js/script-quiz-leaderboard.js
+58.   js/player-quiz-sync.js
+59.   js/script-quiz-assignments.js
+60.   js/script-health.js
+61.   js/script-periods.js
+62.   js/script-period-sync.js
+63.   js/script-smart.js
+64.   js/script-storage.js
+65.   js/script-player.js
+66.   js/media-inventory.js
+67.   js/script-integrations.js
+68.   js/play-presentation.js
+69.   js/wristband.js
+70.   js/wristband-library.js
+71.   js/wristband-render.js
+72.   js/wristband-cards.js
+73.   js/wristband-export.js
+74.   js/wristband-chrome.js
+75.   js/wristband-logo.js
+76.   js/wristband-search.js
+77.   js/wristband-modals.js
+78.   js/wristband-cell-popup.js
+79.   js/wristband-cell-actions.js
+80.   js/wristband-sort.js
+81.   js/wristband-storage.js
+82.   js/wristband-runtime.js
+83.   js/callsheet-render.js
+84.   js/callsheet.js
+85.   js/callsheet-print.js
+86.   js/callsheet-sort.js
+87.   js/callsheet-filters.js
+88.   js/callsheet-smart.js
+89.   js/callsheet-export.js
+90.   js/callsheet-display.js
+91.   js/callsheet-categories.js
+92.   js/callsheet-metadata.js
+93.   js/callsheet-layout.js
+94.   js/callsheet-templates.js
+95.   js/callsheet-picker-runtime.js
+96.   js/callsheet-gameplan-drawer.js
+97.   js/constraints.js
+98.   js/constraints-ui.js
+99.   js/script-vision.js
+100.   js/tendencies-render.js
+101.   js/tendencies.js
+102.   js/tendencies-print.js
+103.   js/installation-render.js
+104.   js/installation.js
+105.   js/installation-print.js
+106.   js/identity.js
+107.   js/offensebuilder.js
+108.   js/help.js
+109.   js/dashboard-render.js
+110.   js/dashboard.js
+111.   js/gameplan.js
+112.   js/gameplan-render.js
+113.   js/gameplan-dnd.js
+114.   js/gameplan-actions.js
+115.   js/gameplan-smart.js
+116.   js/gameplan-health.js
+117.   js/gameplan-print.js
+118.   js/gameplan-integrations.js
+119.   js/gameplan-snapshots.js
+120.   js/print-studio.js
+121.   js/script-events.js
+122.   js/anchored-menu.js
+123.   js/app-events.js
+124.   js/app-command.js
+125.   js/page-actions.js
+126.   js/app-notifications.js
+127.   js/push-notifications.js
+128.   js/player-portal.js
+129.   js/dashboard-questions.js
+130.   js/app-shell.js
+131.   js/app-session.js
+132.   js/app-navigation.js
+133.   js/app-module-init.js
+134.   js/app-bootstrap.js
+135.   js/app-init.js
+136.   js/app.js
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -351,6 +356,7 @@ window.closeMediaInventoryReport
 window.closeSignalClipModal
 window.closeSignalUploadModal
 window.closeSignalUploadReviewModal
+window.completePlayerPublishJobs
 window.completeWorkspaceSyncJob
 window.confirmSignalReviewedUpload
 window.confirmStagedRestore
@@ -364,6 +370,7 @@ window.dismissTeamWorkspacePullSummary
 window.deletePlayImage
 window.discussionOutbox
 window.ensurePlayImageUrl
+window.failPlayerPublishJobs
 window.failWorkspaceSyncJob
 window.flushCloudAutoPush
 window.getCurrentAuthUser
@@ -521,14 +528,6 @@ const _ELEMENT_FNS = new Set([
   "loadMoreDiscReplies",
   "setDiscFilter",
   "setDiscQCategory",
-  "openDiscReactionBreakdown",
-  "toggleDiscThreadLock",
-  "discAskCoachQuestion",
-  "switchDiscComposerType",
-  "retryDiscussion",
-  "discOpenMarkupOverlay",
-  "discRemovePendingAttachment",
-  "discRetryAttachmentUpload",
   "openDiscReplyComposer",
   "closeDiscReplyComposer",
   "startEditPost",
@@ -537,6 +536,14 @@ const _ELEMENT_FNS = new Set([
   "selectDiscReaction",
   "resolveDiscPost",
   "markDiscPostOfficial",
+  "openDiscReactionBreakdown",
+  "toggleDiscThreadLock",
+  "discAskCoachQuestion",
+  "switchDiscComposerType",
+  "retryDiscussion",
+  "discOpenMarkupOverlay",
+  "discRemovePendingAttachment",
+  "discRetryAttachmentUpload",
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 ```

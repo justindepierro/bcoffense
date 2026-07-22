@@ -667,7 +667,7 @@ function checkHistoryContracts() {
 
 function checkConflictContracts() {
   const utils = read("js/utils.js");
-  const scriptRender = `${read("js/script-render.js")}\n${read("js/script-quiz-state.js")}\n${read("js/script-quiz.js")}\n${read("js/script-quiz-progress.js")}\n${read("js/script-quiz-leaderboard.js")}`;
+  const scriptRender = `${read("js/script-render.js")}\n${read("js/script-quiz-state.js")}\n${read("js/script-quiz-foundation.js")}\n${read("js/script-quiz.js")}\n${read("js/script-quiz-progress.js")}\n${read("js/script-quiz-leaderboard.js")}`;
   const scriptVision = read("js/script-vision.js");
   const callSheet = read("js/callsheet.js");
   const callSheetDrawer = read("js/callsheet-gameplan-drawer.js");
@@ -4823,7 +4823,7 @@ function checkPlayerDiagramReadinessContracts() {
 
 function checkPlayerQuizSettingsContracts() {
   const scriptRender = read("js/script-render.js");
-  const scriptQuiz = `${read("js/script-quiz-state.js")}\n${read("js/script-quiz.js")}\n${read("js/script-quiz-progress.js")}\n${read("js/script-quiz-leaderboard.js")}`;
+  const scriptQuiz = `${read("js/script-quiz-state.js")}\n${read("js/script-quiz-foundation.js")}\n${read("js/script-quiz.js")}\n${read("js/script-quiz-progress.js")}\n${read("js/script-quiz-leaderboard.js")}`;
   const scriptCss = read("css/script.css");
   const quizSurface = `${scriptQuiz}\n${scriptCss}`;
 
@@ -5466,7 +5466,7 @@ function checkSignalPlayIntegrationContracts() {
   const clips = read("js/play-clips.js");
   const playbookRender = read("js/playbook-render.js");
   const scriptRender = read("js/script-render.js");
-  const scriptQuiz = `${read("js/script-quiz-state.js")}\n${read("js/script-quiz.js")}\n${read("js/script-quiz-progress.js")}\n${read("js/script-quiz-leaderboard.js")}`;
+  const scriptQuiz = `${read("js/script-quiz-state.js")}\n${read("js/script-quiz-foundation.js")}\n${read("js/script-quiz.js")}\n${read("js/script-quiz-progress.js")}\n${read("js/script-quiz-leaderboard.js")}`;
   const quizRuntime = `${scriptQuiz}\n${scriptRender}`;
   const presentation = read("js/play-presentation.js");
   const presentationCss = read("css/play-presentation.css");

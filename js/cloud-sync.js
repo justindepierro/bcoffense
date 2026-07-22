@@ -25,6 +25,10 @@
   const CLOUD_AUTO_PUSH_MAX_RETRIES = 3;
   const TEAM_FOREGROUND_REFRESH_MIN_MS = 20 * 1000;
   const TEAM_FOREGROUND_REFRESH_INTERVAL_MS = 3 * 60 * 1000;
+  // A player can keep the installed app open during practice. Revalidate the
+  // small ETag-backed release more often than the staff workspace so a coach
+  // save becomes visible without teaching players to refresh or reopen.
+  const PLAYER_RELEASE_REFRESH_INTERVAL_MS = 45 * 1000;
   const WORKSPACE_REVISION_REQUEST_TIMEOUT_MS = 30 * 1000;
   const TEAM_WORKSPACE_LEASE_WAIT_MS = 12 * 1000;
   const TEAM_WORKSPACE_LEASE_RETRY_MS = 1200;
@@ -1948,7 +1952,7 @@
   // it simply bypasses the 30-second routine-edit delay once the data has
   // settled. Offline and server failures stay in the existing durable retry
   // path, so the dock stays informational unless the system cannot recover.
-  function requestImmediateTeamPublish(reason = "substantial-update") {
+  function requestImmediateTeamPublish(reason = "substantial-update", opts = {}) {
     if (!canAutoPushCloudBackup()) return false;
     const queued = queueCloudAutoPush(
       STORAGE_KEYS.PLAYER_PUBLISH_STATUS,
@@ -1956,6 +1960,10 @@
     );
     if (!queued) return false;
     if (cloudAutoPushCriticalTimer) clearTimeout(cloudAutoPushCriticalTimer);
+    if (opts.awaitCompletion === true) {
+      cloudAutoPushCriticalTimer = null;
+      return flushCloudAutoPush();
+    }
     cloudAutoPushCriticalTimer = setTimeout(() => {
       cloudAutoPushCriticalTimer = null;
       flushCloudAutoPush();
@@ -2001,6 +2009,9 @@
       cloudAutoPushLastError = "";
       cloudAutoPushRetryCount = 0;
       _cloudCompleteJob(cloudJobKey, { label: "Team update published" });
+      if (typeof window.completePlayerPublishJobs === "function") {
+        window.completePlayerPublishJobs({ label: "Player update ready" });
+      }
       if (!moreChangesQueued) {
         cloudAutoPushDirtyKeys.clear();
       } else {
@@ -2046,6 +2057,9 @@
         );
       } else {
         _cloudFailJob(cloudJobKey, err, { label: "Publish needs attention" });
+        if (typeof window.failPlayerPublishJobs === "function") {
+          window.failPlayerPublishJobs(err, { label: "Player update needs attention" });
+        }
       }
       return false;
     } finally {
@@ -2466,9 +2480,20 @@
 
   window.setInterval(() => {
     if (document.visibilityState === "visible") {
-      refreshTeamWorkspaceOnForeground({ quiet: true });
+      const currentUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+      if (currentUser?.role !== "player") {
+        refreshTeamWorkspaceOnForeground({ quiet: true });
+      }
     }
   }, TEAM_FOREGROUND_REFRESH_INTERVAL_MS);
+
+  window.setInterval(() => {
+    if (document.visibilityState !== "visible") return;
+    const currentUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    if (currentUser?.role === "player") {
+      refreshTeamWorkspaceOnForeground({ quiet: true });
+    }
+  }, PLAYER_RELEASE_REFRESH_INTERVAL_MS);
 
   window.addEventListener("beforeunload", (e) => {
     if (!canAutoPushCloudBackup() || !hasCloudAutoPushWork()) return;
