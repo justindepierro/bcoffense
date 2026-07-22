@@ -5,10 +5,13 @@ async function initApp() {
     if (typeof setStartupLoadingMessage === "function") {
       setStartupLoadingMessage("Checking secure session...");
     }
-    return Promise.race([
-      whenAuthReady(),
-      new Promise((resolve) => setTimeout(resolve, 4200)),
-    ]);
+    if (typeof setStartupLoadingDetail === "function") {
+      setStartupLoadingDetail("Verifying this device's secure access.");
+    }
+    // auth.js already owns a short, abortable request deadline. Do not race it
+    // with another startup timeout: proceeding without an identity can choose
+    // the wrong workspace path and leave a private staff session empty.
+    return whenAuthReady();
   };
   const waitForPlayerBootstrapStartup = () => {
     const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;

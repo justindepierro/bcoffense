@@ -41,6 +41,8 @@ assert.match(workspaceSync, /function acquireTeamWorkspaceLease/, "workspace syn
 assert.match(workspaceSync, /workspace-published/, "workspace sync broadcasts successful team revision handoffs");
 assert.match(appInit, /Loading team workspace\.\.\./, "each staff login checks its canonical workspace before rendering");
 assert.match(appInit, /waitForStaffWorkspaceBootstrap/, "staff startup hydration has a bounded bootstrap path");
+assert.match(appInit, /return whenAuthReady\(\);/, "startup waits for the authoritative auth result before choosing a workspace path");
+assert.doesNotMatch(appInit, /whenAuthReady\(\),\s*new Promise\(\(resolve\) => setTimeout\(resolve, 4200\)\)/, "startup does not continue with an unknown identity after an arbitrary auth race");
 assert.match(appInit, /setStartupLoadingHold\(true\)/, "staff startup holds the loader while its canonical pull is in flight");
 assert.match(appInit, /Promise\.resolve\(autoPullLatestCloudBackup\(\)\)/, "staff startup waits for the canonical pull instead of rendering a stale shell first");
 assert.doesNotMatch(appInit, /Promise\.race\(\[\s*autoPullLatestCloudBackup/, "staff startup does not release an empty UI while the canonical pull continues in the background");
@@ -48,4 +50,4 @@ assert.match(cloudSync, /remote = await fetchCanonicalWorkspace\(\{ allowMissing
 assert.match(appShell, /function setStartupLoadingHold/, "the shared startup loader supports an explicit workspace hydration hold");
 assert.match(appShell, /!isStartupLoadingHeld\(\)/, "the generic startup fallback cannot dismiss an authoritative workspace load");
 
-console.log("workspace revision route and live-sync contract: 36 assertions passed");
+console.log("workspace revision route and live-sync contract: 38 assertions passed");
