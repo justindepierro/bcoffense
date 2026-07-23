@@ -1402,13 +1402,21 @@ function initGamePlan() {
 // the master `plays[]` array. The play editor and dashboard mutate plays
 // directly, but the game plan stored a `{...play}` copy at drop time, so
 // edits to tags/notes/key players/etc. don't appear in the game plan boxes
-// until we re-hydrate. We match by `_gpPlaySignature` (immutable-ish key
-// fields) and replace each snapshot with a fresh copy. Any snapshot that
-// no longer matches any master play is left as-is (could be a deleted or
-// renamed play — staff can clean it up manually).
+// until we re-hydrate. Linked snapshots resolve by immutable source ID, with
+// `_gpPlaySignature` kept only as a legacy fallback. Any snapshot that no
+// longer matches any master play is left as-is (could be a deleted play).
 function refreshGamePlanFromPlaybook() {
   if (!Array.isArray(plays) || plays.length === 0) return 0;
-  // Build signature→play map once (O(n)) to avoid O(n²) lookups in nested loop
+  // Keep the display-signature map for legacy snapshots, but always prefer a
+  // source ID when a Game Plan card was copied from the playbook. Editable
+  // call fields may legitimately change after a card is placed; the source
+  // identity and canonical media ID must remain the refresh authority.
+  const playBySourceId = new Map(
+    plays
+      .filter((play) => play && String(play.id || "").trim())
+      .map((play) => [String(play.id).trim(), play]),
+  );
+  // Build signature→play map once (O(n)) as the compatibility fallback.
   const playBySignature = new Map(
     plays.map((p) => [_gpPlaySignature(p), p])
   );
@@ -1419,13 +1427,17 @@ function refreshGamePlanFromPlaybook() {
       const arr = board.assignments[boxId];
       if (!Array.isArray(arr)) return;
       arr.forEach((snap, i) => {
-        const fresh = playBySignature.get(_gpPlaySignature(snap)); // O(1) lookup
+        const sourceId = typeof getStablePlaySourceId === "function"
+          ? getStablePlaySourceId(snap)
+          : String(snap?.playbookId || snap?.sourcePlayId || "").trim();
+        const fresh = (sourceId && playBySourceId.get(sourceId)) || playBySignature.get(_gpPlaySignature(snap));
         if (fresh) {
           // Preserve assignment metadata (flags, etc.)
           const preserved = {};
           if (snap._gpFlags) preserved._gpFlags = { ...snap._gpFlags };
-          // Add more preserved fields here if needed
-          arr[i] = { ...fresh, ...preserved };
+          arr[i] = typeof copyPlayWithSourceIdentity === "function"
+            ? copyPlayWithSourceIdentity(fresh, preserved)
+            : { ...fresh, ...preserved };
           updated += 1;
         }
       });

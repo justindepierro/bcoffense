@@ -5,9 +5,11 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (relativePath) => readFile(new URL(relativePath, `file://${root}/`), "utf8");
 
-const [editor, images, quizFoundation, quiz] = await Promise.all([
+const [editor, images, gamePlan, callSheet, quizFoundation, quiz] = await Promise.all([
   source("js/playbook-editor.js"),
   source("js/play-images.js"),
+  source("js/gameplan.js"),
+  source("js/callsheet.js"),
   source("js/script-quiz-foundation.js"),
   source("js/script-quiz.js"),
 ]);
@@ -36,6 +38,16 @@ assert.match(
   images,
   /async function pushRemote\(play, blob, options = \{\}\)[\s\S]*?await checkRemoteForPlay\(play, \{ fresh: true \}\);/,
   "explicit diagram uploads compare against the current cloud version before writing",
+);
+assert.match(
+  gamePlan,
+  /const playBySourceId = new Map\([\s\S]*?getStablePlaySourceId\(snap\)[\s\S]*?playBySourceId\.get\(sourceId\)[\s\S]*?copyPlayWithSourceIdentity\(fresh, preserved\)/,
+  "Game Plan refreshes linked cards from their canonical source before legacy call matching",
+);
+assert.match(
+  callSheet,
+  /const bySourceId = new Map\([\s\S]*?getStablePlaySourceId\(snap\)[\s\S]*?bySourceId\.get\(sourceId\)[\s\S]*?copyPlayForCallSheet\(fresh, getLocalOverrides\(snap\)\)/,
+  "Call Sheet refreshes linked cards from their canonical source while preserving cell-local display overrides",
 );
 assert.match(
   quizFoundation,

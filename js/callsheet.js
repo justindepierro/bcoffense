@@ -1235,20 +1235,42 @@ function getCallSheetUsedPlayKeys() {
  * Re-hydrate every `{...play}` snapshot stored on the call sheet from the
  * master `plays[]` array. Mirrors `refreshGamePlanFromPlaybook()` in
  * gameplan.js — when staff edits a play in the editor or dashboard, the
- * already-placed call sheet entries are stale until re-populated. We match
- * by `csPlayKey` (formation+play+personnel, lowercased) and replace each
- * snapshot with a fresh copy. Snapshots whose key no longer maps to any
- * master play are left as-is (could be a renamed/deleted play). Returns
- * the number of entries refreshed.
+ * already-placed call sheet entries are stale until re-populated. A linked
+ * snapshot resolves by its immutable source ID first, then uses `csPlayKey`
+ * only as a legacy fallback. Snapshots with neither match are left as-is
+ * (could be a deleted play). Returns the number of entries refreshed.
  */
 function refreshCallSheetFromPlaybook() {
   if (!Array.isArray(plays) || plays.length === 0) return 0;
   if (!callSheet || typeof callSheet !== "object") return 0;
-  // Build a quick lookup so we don't do O(n) per entry.
+  // Keep a legacy comparison map for imported sheets, but a placed play's
+  // source ID is authoritative. Play-call fields can change after placement
+  // (or differ on a linked surface), while the source ID and media pointer do
+  // not. Matching by display fields first is how a stale snapshot survives a
+  // legitimate edit.
+  const bySourceId = new Map(
+    plays
+      .filter((play) => play && String(play.id || "").trim())
+      .map((play) => [String(play.id).trim(), play]),
+  );
   const byKey = new Map();
   plays.forEach((p) => {
     byKey.set(csPlayKey(p), p);
   });
+  const getLocalOverrides = (snapshot) => {
+    const fields = [
+      "playType", "wristbandNumber", "highlighted", "highlightColor",
+      "borderColor", "cellBg", "cellTextColor", "cellBold", "cellItalic",
+      "cellUnderline", "cellStrikethrough", "cellFontSize", "cellNote",
+      "cellFormationTags", "cellBackTags",
+    ];
+    return fields.reduce((overrides, field) => {
+      if (Object.prototype.hasOwnProperty.call(snapshot || {}, field)) {
+        overrides[field] = snapshot[field];
+      }
+      return overrides;
+    }, {});
+  };
   let updated = 0;
   Object.keys(callSheet).forEach((catId) => {
     const data = callSheet[catId];
@@ -1257,12 +1279,14 @@ function refreshCallSheetFromPlaybook() {
       const arr = data[side];
       if (!Array.isArray(arr)) return;
       arr.forEach((snap, i) => {
-        const fresh = byKey.get(csPlayKey(snap));
+        const sourceId = typeof getStablePlaySourceId === "function"
+          ? getStablePlaySourceId(snap)
+          : String(snap?.playbookId || snap?.sourcePlayId || "").trim();
+        const fresh = (sourceId && bySourceId.get(sourceId)) || byKey.get(csPlayKey(snap));
         if (fresh) {
-          // `{ ...snap, ...fresh }` — fresh-wins for any shared key, but
-          // call-sheet-only fields tacked on at placement time (e.g.
-          // `wristbandNumber`) survive because they don't exist on fresh.
-          arr[i] = { ...snap, ...fresh };
+          arr[i] = typeof copyPlayForCallSheet === "function"
+            ? copyPlayForCallSheet(fresh, getLocalOverrides(snap))
+            : { ...snap, ...fresh };
           updated += 1;
         }
       });
