@@ -993,15 +993,32 @@ function loadFullDayScriptList(forceShow = false) {
   updateScriptPacketSummary();
 }
 
-function openScriptPacketBuilder() {
-  loadFullDayScriptList(true);
-  const section = document.getElementById("fullDaySection");
-  if (!section) return;
-  section.classList.remove("hidden");
-  requestAnimationFrame(() => {
-    scrollElementWithinPanel(section, { behavior: "smooth", block: "center" });
-    document.getElementById("scriptPacketTitle")?.focus({ preventScroll: true });
-  });
+async function openScriptPacketBuilder() {
+  // “Print Packet” is a current-script action. The old route only revealed a
+  // buried multi-script panel in the tools drawer, which made the diagram
+  // controls effectively unreachable. Keep that full-day picker below for
+  // advanced use, but take this primary action straight to its setup modal.
+  const currentScript = _getCurrentScriptPacketRecord();
+  if (_getScriptPacketRecordStats(currentScript).playCount === 0) {
+    await showModal("Add at least one play before building a diagram packet.", {
+      title: "Practice Script Packet",
+      icon: "🗂️",
+    });
+    return;
+  }
+  _scriptPacketPrintOptions = {
+    ..._scriptPacketPrintOptions,
+    packetTitle: `${currentScript.name || "Practice Script"} Diagram Packet`,
+    includeScriptTables: false,
+    includeDiagrams: true,
+    showMeta: true,
+    showDefense: false,
+    showCoaching: false,
+    showNotes: false,
+  };
+  const confirmed = await openScriptPacketPrintModal([currentScript]);
+  if (!confirmed) return;
+  return _renderScriptPacketAndPrint([currentScript]);
 }
 
 function selectAllDayScripts() {
@@ -1030,10 +1047,11 @@ function _getSelectedScriptPacketRecords() {
 }
 
 let _scriptPacketPrintOptions = {
+  packetTitle: "",
   paperSize: "letter",
   orientation: "portrait",
   diagramDensity: "large",
-  includeScriptTables: true,
+  includeScriptTables: false,
   includeDiagrams: true,
   includeMissingImages: false,
   showMeta: true,
@@ -1078,6 +1096,10 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
         <div class="custom-modal-body">
           <p class="script-packet-print-summary">${escapeHtml(_scriptPacketOptionSummary(selectedScripts))}</p>
           <div class="script-packet-print-form">
+            <div class="script-packet-print-row script-packet-print-row--wide">
+              <label for="scriptPacketTitleModal">Packet title</label>
+              <input id="scriptPacketTitleModal" type="text" maxlength="120" value="${escapeAttr(o.packetTitle || "Practice Script Diagram Packet")}" />
+            </div>
             <div class="script-packet-print-row">
               <label for="scriptPacketPaper">Paper</label>
               <select id="scriptPacketPaper">
@@ -1096,8 +1118,9 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
             <div class="script-packet-print-row">
               <label for="scriptPacketDiagramDensity">Diagram size</label>
               <select id="scriptPacketDiagramDensity">
-                <option value="large" ${o.diagramDensity === "large" ? "selected" : ""}>Large — 4 diagrams per page</option>
-                <option value="compact" ${o.diagramDensity === "compact" ? "selected" : ""}>Compact — 8 diagrams per page</option>
+                <option value="two" ${o.diagramDensity === "two" ? "selected" : ""}>Two-up — 2 diagrams per page</option>
+                <option value="large" ${o.diagramDensity === "large" ? "selected" : ""}>Four-up — 4 diagrams per page</option>
+                <option value="compact" ${o.diagramDensity === "compact" ? "selected" : ""}>Eight-up — 8 diagrams per page</option>
                 <option value="full" ${o.diagramDensity === "full" ? "selected" : ""}>Full page — 1 diagram per page</option>
               </select>
             </div>
@@ -1133,6 +1156,7 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
     overlay.querySelector("#scriptPacketPrintCancel").addEventListener("click", () => close(false));
     overlay.querySelector("#scriptPacketPrintConfirm").addEventListener("click", () => {
       _scriptPacketPrintOptions = {
+        packetTitle: overlay.querySelector("#scriptPacketTitleModal").value.trim() || "Practice Script Diagram Packet",
         paperSize: overlay.querySelector("#scriptPacketPaper").value || "letter",
         orientation: overlay.querySelector("#scriptPacketOrientation").value || "portrait",
         diagramDensity: overlay.querySelector("#scriptPacketDiagramDensity").value || "large",
@@ -1363,6 +1387,7 @@ function _scriptPacketDiagramPages(scriptData, packetTitle, options) {
 function _scriptPacketDiagramLayout(options) {
   const density = options.diagramDensity || "large";
   if (density === "full") return { perPage: 1, cols: 1, rows: 1 };
+  if (density === "two") return { perPage: 2, cols: 1, rows: 2 };
   if (density === "compact") {
     return options.orientation === "landscape"
       ? { perPage: 8, cols: 4, rows: 2 }
@@ -1418,6 +1443,7 @@ async function _renderScriptPacketAndPrint(selectedScripts) {
     const options = _scriptPacketPrintOptions;
     const displayOpts = getScriptDisplayOptions();
     const packetTitle =
+      String(options.packetTitle || "").trim() ||
       document.getElementById("scriptPacketTitle")?.value.trim() ||
       "Practice Script Packet";
     if (options.includeDiagrams && window.playImages) {
