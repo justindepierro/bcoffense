@@ -1041,10 +1041,12 @@
     }
   }
 
-  async function repairCanonicalWorkspace(remote) {
+  async function repairCanonicalWorkspace(remote, opts = {}) {
     if (!remote?.needsCanonicalRepair || !remote?.backup || !remote?.revision) return null;
     const payload = JSON.stringify(remote.backup);
-    return workspaceRevisionRequest("PUT", payload, remote.revision);
+    return workspaceRevisionRequest("PUT", payload, remote.revision, {
+      timeoutMs: opts.timeoutMs,
+    });
   }
 
   function workspaceRequestId(method) {
@@ -1093,7 +1095,7 @@
       headers,
       body: bodyText || undefined,
       cache: "no-store",
-    });
+    }, { timeoutMs: opts.timeoutMs });
     const data = response.status === 304 ? { ok: true, notModified: true } : await response.json().catch(() => ({}));
     if (!response.ok && response.status !== 304) {
       const err = new Error(data.error || `Workspace request failed with ${response.status}`);
@@ -1129,6 +1131,7 @@
     try {
       const data = await workspaceRevisionRequest("GET", "", "", {
         ifNoneMatch: opts.ifNoneMatch || "",
+        timeoutMs: opts.timeoutMs,
       });
       if (data.notModified) {
         return {
@@ -2154,7 +2157,7 @@
     }
   }
 
-  async function autoPullLatestCloudBackup() {
+  async function autoPullLatestCloudBackup(opts = {}) {
     if (sessionStorage.getItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY) === "1") return false;
     sessionStorage.setItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY, "1");
 
@@ -2178,7 +2181,10 @@
       // Normal coach startup reads the revisioned D1/R2 workspace. The old
       // KV backup is deliberately admin-only recovery data and must never win
       // over the canonical team head during a routine device bootstrap.
-      let remote = await fetchCanonicalWorkspace({ allowMissing: true });
+      let remote = await fetchCanonicalWorkspace({
+        allowMissing: true,
+        timeoutMs: opts.timeoutMs,
+      });
       if (!remote) return false;
 
       // Managed coaches are deliberately read-only. Their browser is a study
@@ -2210,7 +2216,9 @@
       // canonical revision without a manual publish or recovery action.
       if (remote.needsCanonicalRepair && canAutoPushCloudBackup()) {
         try {
-          const repaired = await repairCanonicalWorkspace(remote);
+          const repaired = await repairCanonicalWorkspace(remote, {
+            timeoutMs: opts.timeoutMs,
+          });
           if (repaired?.ok) {
             saveCloudSyncSettingsObject({
               lastWorkspaceRevision: repaired.revision || remote.revision,
@@ -2220,7 +2228,10 @@
             // A just-repaired legacy workspace is still the startup source.
             // Read its new immutable revision before continuing so a fresh
             // private staff browser does not fall through to an empty shell.
-            remote = await fetchCanonicalWorkspace({ allowMissing: true });
+            remote = await fetchCanonicalWorkspace({
+              allowMissing: true,
+              timeoutMs: opts.timeoutMs,
+            });
             if (!remote) return false;
           }
         } catch (repairError) {
@@ -2316,7 +2327,7 @@
       // auth-ready retry—can recover from a transient worker/network failure.
       sessionStorage.removeItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY);
       console.warn("Cloud auto-pull failed:", err);
-      if (err.status !== 401 && err.status !== 404) {
+      if (err.status !== 401 && err.status !== 404 && err.code !== "BC_WORKSPACE_TIMEOUT") {
         showToast(currentUser.role === "player" ? "Try Again" : `Team workspace update failed: ${err.message}`, {
           type: "warning",
           duration: 5000,

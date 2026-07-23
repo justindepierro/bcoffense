@@ -1,5 +1,8 @@
 async function initApp() {
   let startupFailed = false;
+  // Prefer the canonical workspace before first paint, but an unavailable
+  // network must never leave a coach trapped on the startup screen.
+  const STAFF_WORKSPACE_STARTUP_TIMEOUT_MS = 14 * 1000;
   const waitForAuthStartup = () => {
     if (typeof whenAuthReady !== "function") return Promise.resolve();
     if (typeof setStartupLoadingMessage === "function") {
@@ -45,7 +48,9 @@ async function initApp() {
     // untracked local work. Its session guard also makes the queued post-paint
     // auto-pull a no-op once this startup read has completed.
     if (typeof setStartupLoadingHold === "function") setStartupLoadingHold(true);
-    return Promise.resolve(autoPullLatestCloudBackup())
+    return Promise.resolve(autoPullLatestCloudBackup({
+      timeoutMs: STAFF_WORKSPACE_STARTUP_TIMEOUT_MS,
+    }))
       .finally(() => {
         if (typeof setStartupLoadingHold === "function") setStartupLoadingHold(false);
       });
