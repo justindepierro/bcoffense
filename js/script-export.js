@@ -1489,13 +1489,23 @@ async function _renderScriptPacketAndPrint(selectedScripts) {
       document.body.classList.remove("print-script", "script-packet-printing");
     };
     const printNow = () => {
+      const restoreTitle = setPrintTitle("Practice Script Packet", packetTitle);
+      const finishPacket = () => {
+        restoreTitle();
+        cleanupPacket();
+      };
+      if (typeof printIsolatedArtifact === "function" && printIsolatedArtifact(host, {
+        title: document.title,
+        bodyClass: "script-packet-printing",
+        onAfterPrint: finishPacket,
+      })) {
+        return;
+      }
       document.body.classList.add("print-script", "script-packet-printing");
       try {
-        const restoreTitle = setPrintTitle("Practice Script Packet", packetTitle);
         window.print();
-        restoreTitle();
       } finally {
-        cleanupPacket();
+        finishPacket();
       }
     };
 

@@ -622,7 +622,7 @@
     display: none !important;
   }
 
-  body.script-packet-printing > #scriptPacketPrintRoot {
+  body.script-packet-printing > .script-packet-print-root {
     display: block !important;
     width: auto !important;
     margin: 0 !important;
@@ -630,8 +630,8 @@
     background: #fff !important;
   }
 
-  body.script-packet-printing #scriptPacketPrintRoot,
-  body.script-packet-printing #scriptPacketPrintRoot * {
+  body.script-packet-printing .script-packet-print-root,
+  body.script-packet-printing .script-packet-print-root * {
     visibility: visible !important;
   }
 

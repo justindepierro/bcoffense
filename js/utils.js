@@ -157,6 +157,7 @@ function showPrintPreview(contentEl, onPrint, onCancel) {
  * @param {HTMLElement} contentEl - Printable artifact to clone.
  * @param {object} [options]
  * @param {string} [options.title] - Filename/title for the native print dialog.
+ * @param {string} [options.bodyClass] - Additional print-mode class for artifact-specific print CSS.
  * @param {Function} [options.onAfterPrint] - Called once printing is finished.
  * @returns {boolean} True when an isolated print job was started.
  */
@@ -173,6 +174,11 @@ function printIsolatedArtifact(contentEl, options = {}) {
     .join("");
   const dynamicPrintCss = document.getElementById("appPrintStyle")?.textContent || "";
   const title = String(options.title || document.title || "Print");
+  const bodyClass = String(options.bodyClass || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .join(" ");
   const frame = document.createElement("iframe");
   const frameId = `isolatedPrintFrame-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   let finished = false;
@@ -266,7 +272,7 @@ function printIsolatedArtifact(contentEl, options = {}) {
       }
     </style>
   </head>
-  <body class="print-script print-isolated-artifact">${clone.outerHTML}</body>
+  <body class="print-script print-isolated-artifact ${escapeAttr(bodyClass)}">${clone.outerHTML}</body>
 </html>`;
   document.body.appendChild(frame);
   return true;
