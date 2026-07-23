@@ -198,7 +198,7 @@ function setScriptPeriodColor(index, color) {
 function openScriptPeriodColorPalette(index) {
   const period = script[index];
   if (!period?.isSeparator) return;
-  document.getElementById("scriptPeriodColorModalOverlay")?.remove();
+  closeScriptPeriodColorPalette({ returnFocus: false });
   const currentColor = period.color || UI_COLORS.periodDefault;
   const overlay = document.createElement("div");
   overlay.id = "scriptPeriodColorModalOverlay";
@@ -213,19 +213,34 @@ function openScriptPeriodColorPalette(index) {
       <div class="script-period-color-palette" aria-label="Standard period colors">${renderScriptPeriodPaletteButtons(currentColor, "data-period-palette-color")}</div>
       <label class="script-period-custom-color">Custom color <input type="color" value="${currentColor}" aria-label="Custom period color"></label>
     </div>`;
-  overlay.querySelector(".modal-close-btn")?.addEventListener("click", () => overlay.remove());
+  overlay.querySelector(".modal-close-btn")?.addEventListener("click", closeScriptPeriodColorPalette);
   overlay.querySelectorAll("[data-period-palette-color]").forEach((swatch) => {
     swatch.addEventListener("click", () => {
       setScriptPeriodColor(index, swatch.dataset.periodColor);
-      overlay.remove();
+      closeScriptPeriodColorPalette();
     });
   });
   overlay.querySelector(".script-period-custom-color input")?.addEventListener("change", (event) => {
     setScriptPeriodColor(index, event.target.value);
-    overlay.remove();
+    closeScriptPeriodColorPalette();
   });
   wireScriptOverlayDismiss(overlay);
   document.body.appendChild(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "scriptPeriodColorModalOverlay",
+      scrollElement: overlay.querySelector(".modal-content") || overlay,
+      blocking: true,
+    });
+  }
+}
+
+function closeScriptPeriodColorPalette(options = {}) {
+  const overlay = document.getElementById("scriptPeriodColorModalOverlay");
+  if (typeof closeLayer === "function") {
+    closeLayer("scriptPeriodColorModalOverlay", options);
+  }
+  overlay?.remove();
 }
 
 function updatePeriodLabel(index, label, live = false) {

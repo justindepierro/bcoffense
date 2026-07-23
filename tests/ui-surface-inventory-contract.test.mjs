@@ -186,6 +186,23 @@ for (const [name, content, surfaceId] of [
   assert.match(content, new RegExp(`closeLayer\\("${surfaceId}"`), `${name} releases the shared blocking-layer lifecycle before removal`);
 }
 
+const [scriptShared, scriptPeriods, scriptHealth] = await Promise.all([
+  source("js/script-shared.js"),
+  source("js/script-periods.js"),
+  source("js/script-health.js"),
+]);
+for (const [name, content, surfaceId] of [
+  ["Script personnel override", scriptShared, "scriptPersonnelOverrideModalOverlay"],
+  ["Script call wording", scriptShared, "scriptCallOverrideModalOverlay"],
+  ["Script period colors", scriptPeriods, "scriptPeriodColorModalOverlay"],
+]) {
+  assert.match(content, new RegExp(`openLayer\\(overlay, \\{[\\s\\S]*?id: "${surfaceId}"[\\s\\S]*?scrollElement: overlay\\.querySelector[\\s\\S]*?blocking: true`), `${name} uses the shared blocking-layer lifecycle`);
+  assert.match(content, new RegExp(`closeLayer\\("${surfaceId}"`), `${name} releases the shared blocking-layer lifecycle before removal`);
+}
+assert.match(scriptShared, /function wireScriptOverlayDismiss\(overlay\)[\s\S]*?closeLayer\(overlay\.dataset\.layerId \|\| overlay\.id\)[\s\S]*?overlay\.remove\(\)/, "legacy Script backdrop and Escape dismissal releases a registered layer first");
+assert.match(scriptHealth, /openLayer\(overlay, \{[\s\S]*?id: "scriptShortcutsModal"[\s\S]*?scrollElement: overlay\.querySelector[\s\S]*?blocking: true[\s\S]*?onEscape:/, "Script shortcuts use the shared focus, safe-area, and Escape lifecycle");
+assert.match(scriptHealth, /closeLayer\("scriptShortcutsModal"/, "Script shortcuts release their layer state before their closing animation");
+
 for (const [name, toolbar] of Object.entries(WORKBENCH_TOOLBARS)) {
   const ownerSource = await source(toolbar.owner);
   assert.ok(ownerSource.includes(toolbar.marker), `${name} toolbar has an active declared owner`);

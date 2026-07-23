@@ -187,7 +187,10 @@ small, testable releases.
   side drawer. Release v1355 applies that same lifecycle to the Call Sheet's
   category editor, Smart Suggestions, and template library; each now locks the
   background, returns focus, and cleans up its layer state before removal.
-  Continue migrating the remaining non-discussion specialized modal families
+  Release v1356 brings the Script's personnel override, call-wording editor,
+  period color picker, and keyboard-shortcut reference into that lifecycle;
+  its legacy backdrop/Escape helper now releases an active layer before it
+  removes an overlay. Continue migrating the remaining non-discussion specialized
   in small slices.
 - [x] **C-032 · Replace direct `scrollIntoView` where it can move the app
   shell.** Release v1348 routes Script, Playbook, Discussion, Notifications,

@@ -455,13 +455,23 @@ function setScriptToolbarStatus(message, tone = "info", duration = 2000) {
 function wireScriptOverlayDismiss(overlay) {
   if (!overlay) return;
 
+  const dismiss = () => {
+    // Script overlays predate the shared layer lifecycle. Always release a
+    // registered layer before removing its DOM so a backdrop dismissal or
+    // Escape key can never leave the document scroll-locked.
+    if (typeof closeLayer === "function") {
+      closeLayer(overlay.dataset.layerId || overlay.id);
+    }
+    overlay.remove();
+  };
+
   overlay.addEventListener("click", (event) => {
-    if (event.target === overlay) overlay.remove();
+    if (event.target === overlay) dismiss();
   });
   overlay.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
     event.preventDefault();
-    overlay.remove();
+    dismiss();
   });
 }
 
@@ -641,7 +651,9 @@ function renderScriptPersonnelOverrideButton(play, index, playLabel, options = {
 }
 
 function closeScriptPersonnelOverrideModal() {
-  document.getElementById("scriptPersonnelOverrideModalOverlay")?.remove();
+  const overlay = document.getElementById("scriptPersonnelOverrideModalOverlay");
+  if (typeof closeLayer === "function") closeLayer("scriptPersonnelOverrideModalOverlay");
+  overlay?.remove();
 }
 
 function updateScriptPersonnelOverrideControl(index) {
@@ -727,6 +739,13 @@ function openScriptPersonnelOverrideModal(index) {
   });
   wireScriptOverlayDismiss(overlay);
   document.body.appendChild(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "scriptPersonnelOverrideModalOverlay",
+      scrollElement: overlay.querySelector(".modal-content") || overlay,
+      blocking: true,
+    });
+  }
   overlay.querySelector(".modal-close-btn")?.focus();
 }
 
@@ -873,7 +892,9 @@ function renderScriptCallOverrideButton(play, index, playLabel) {
 }
 
 function closeScriptCallOverrideModal() {
-  document.getElementById("scriptCallOverrideModalOverlay")?.remove();
+  const overlay = document.getElementById("scriptCallOverrideModalOverlay");
+  if (typeof closeLayer === "function") closeLayer("scriptCallOverrideModalOverlay");
+  overlay?.remove();
 }
 
 function openScriptCallOverrideModal(index) {
@@ -959,5 +980,12 @@ function openScriptCallOverrideModal(index) {
   });
   wireScriptOverlayDismiss(overlay);
   document.body.appendChild(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "scriptCallOverrideModalOverlay",
+      scrollElement: overlay.querySelector(".modal-content") || overlay,
+      blocking: true,
+    });
+  }
   overlay.querySelector('[name="prefix"]')?.focus();
 }

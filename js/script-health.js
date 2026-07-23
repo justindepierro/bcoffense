@@ -161,16 +161,20 @@ function showScriptShortcutsModal() {
     </div>
   `;
   document.body.appendChild(overlay);
-  trapFocus(overlay);
-  const close = () => {
+  const close = (options = {}) => {
+    if (typeof closeLayer === "function") closeLayer("scriptShortcutsModal", options);
     overlay.classList.remove("visible");
     setTimeout(() => overlay.remove(), 180);
   };
   overlay.querySelector("#scriptShortcutsCloseBtn")?.addEventListener("click", close);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
-  overlay.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" || e.key === "Enter") { e.preventDefault(); close(); }
-  });
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "scriptShortcutsModal",
+      scrollElement: overlay.querySelector(".custom-modal") || overlay,
+      blocking: true,
+      onEscape: () => close(),
+    });
+  }
   overlay.querySelector("#scriptShortcutsCloseBtn")?.focus();
 }
-
