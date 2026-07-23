@@ -1665,6 +1665,7 @@ test.describe("Player mobile experience", () => {
     await expect(presentation.getByText("Showing Q rule")).toBeVisible();
     await expect(presentation.getByText("Secure the edge and finish through contact.")).toBeVisible();
     await expect(presentation.getByText("Coach says: watch the force defender first")).toBeVisible();
+    await expect(presentation.locator("#playPresentationTitle")).toContainText("Buck Sweep Read Force");
     await expect(presentation.locator(".pp-diagram-canvas")).toBeVisible();
     await expect(presentation.locator("#playPresentationDiagramStatus")).toContainText("Diagram ready");
     await expect(presentation.locator(".pp-zoom-controls")).toBeHidden();
@@ -1690,6 +1691,10 @@ test.describe("Player mobile experience", () => {
 
     await presentation.getByRole("button", { name: /Next play/i }).click();
     await expect(presentation.locator("#playPresentationCounter")).toContainText("2 / 2");
+    await expect(presentation.getByRole("button", { name: /Start this script over/i })).toBeVisible();
+    await presentation.getByRole("button", { name: /Start this script over/i }).click();
+    await expect(presentation.locator("#playPresentationCounter")).toContainText("1 / 2");
+    await expect(presentation.locator("#playPresentationTitle")).toContainText("Buck Sweep Read Force");
 
     await presentation.getByRole("button", { name: /Close presentation/i }).click();
     await expect(presentation).toBeHidden();

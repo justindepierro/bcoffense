@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (relativePath) => readFile(new URL(relativePath, `file://${root}/`), "utf8");
 
-const [notifications, threads, threadRoute, countRoute, indexRoute, itemRoute, client, discussionClient, discussionMedia, discussionOutbox, playbookCss, presentationCss, indexHtml, cloudSync, playerPublish] = await Promise.all([
+const [notifications, threads, threadRoute, countRoute, indexRoute, itemRoute, client, discussionClient, discussionMedia, discussionOutbox, playbookCss, discussionCss, presentationCss, indexHtml, cloudSync, playerPublish] = await Promise.all([
   source("functions/_lib/d1-notifications.js"),
   source("functions/_lib/d1-threads.js"),
   source("functions/api/threads/[playId].js"),
@@ -24,6 +24,7 @@ const [notifications, threads, threadRoute, countRoute, indexRoute, itemRoute, c
   source("js/discussion-media.js"),
   source("js/discussion-outbox.js"),
   source("css/playbook.css"),
+  source("css/discussion.css"),
   source("css/play-presentation.css"),
   source("index.html"),
   source("js/cloud-sync.js"),
@@ -125,12 +126,13 @@ assert.doesNotMatch(discussionClient, /const _discPendingAttachments = new Map\(
 assert.match(discussionClient, /function switchDiscComposerType\(arg\)/, "discussion composers support a direct touch-friendly Comment or Ask question choice");
 assert.match(discussionClient, /disc-composer-mode-btn/, "the native post-type dropdown is backed by visible composer mode buttons");
 assert.match(discussionClient, /assistant_coach/, "managed assistant coaches receive the same visual treatment as other staff in discussions");
-assert.match(playbookCss, /\.disc-composer-mode \{[\s\S]*border-radius: var\(--radius-pill\)/, "composer mode choices are styled as compact segmented controls");
+assert.match(discussionCss, /\.disc-composer-mode \{[\s\S]*border-radius: var\(--radius-pill\)/, "composer mode choices are styled as compact segmented controls");
 assert.match(discussionClient, /container\.classList\.toggle\("pp-discussion-body", isPresentationDrawer\)/, "the presentation discussion renderer identifies its dedicated scroll layout");
-assert.match(playbookCss, /\.disc-post \{[\s\S]*grid-template-columns: 28px minmax\(0, 1fr\)/, "discussion posts use a stable avatar-plus-content grid instead of a horizontal reply flex row");
-assert.match(playbookCss, /\.disc-post > \.disc-reply-composer-slot,[\s\S]*grid-column: 2/, "reply composers and reply trees sit below their parent content");
+assert.match(discussionCss, /\.disc-post \{[\s\S]*grid-template-columns: 28px minmax\(0, 1fr\)/, "discussion posts use a stable avatar-plus-content grid instead of a horizontal reply flex row");
+assert.match(discussionCss, /\.disc-post > \.disc-reply-composer-slot,[\s\S]*grid-column: 2/, "reply composers and reply trees sit below their parent content");
 assert.match(presentationCss, /\.pp-disc-drawer-body\.pp-discussion-body \{[\s\S]*flex-direction: column/, "presentation discussion uses a contained column layout");
 assert.match(presentationCss, /\.pp-disc-drawer-body\.pp-discussion-body \.disc-posts \{[\s\S]*overflow-y: auto/, "only the presentation message list scrolls while the composer remains available");
-assert.match(playbookCss, /\.disc-reaction-picker-overlay\.visible/, "mobile reaction picker has a dedicated interaction-blocking backdrop");
+assert.match(discussionCss, /\.disc-reaction-picker-overlay\.visible/, "mobile reaction picker has a dedicated interaction-blocking backdrop");
+assert.doesNotMatch(playbookCss, /\.disc-post \{|\.disc-reaction-picker-overlay|\.disc-type-select--reply/, "Playbook styling no longer owns shared discussion controls");
 
 console.log("discussion notification contract: notification delivery, scoped thread, and mobile feed contracts passed");

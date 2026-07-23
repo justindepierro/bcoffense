@@ -1106,6 +1106,15 @@ function getPlayPresentationPlayLabel(play) {
     .join(" ") || "Untitled Play";
 }
 
+// The header is intentionally plain text rather than a rendered full call.
+// It stays pinned above the portrait scroll surface, so a player can always
+// identify the play without returning to the body content.
+function getPlayPresentationHeaderTitle(item) {
+  return getPlayPresentationPlayLabel(
+    getPlayPresentationDisplayPlay(item?.play),
+  );
+}
+
 // A practice script can carry visual-only call adjustments (including a
 // personnel color override).  Presentation must honor those adjustments for
 // coaches and players, but the original play remains the media identity for
@@ -1621,15 +1630,30 @@ function togglePlayPresentationPositionLock() {
 
 function movePlayPresentation(direction) {
   const delta = parseInt(direction, 10);
-  if (!Number.isInteger(delta) || delta === 0) return;
+  if (!Number.isInteger(delta) || delta === 0) return false;
   const nextIndex = playPresentationState.index + delta;
-  if (nextIndex < 0 || nextIndex >= playPresentationState.items.length) return;
+  const itemCount = playPresentationState.items.length;
+  if (nextIndex >= itemCount && delta > 0 && playPresentationState.source === "script") {
+    // A script is one bounded study packet. Reaching its final play must never
+    // fall through to another launcher, script, or page-level navigation.
+    // Restart the same immutable presentation list from its first play.
+    playPresentationState.index = 0;
+    resetPlayPresentationZoom();
+    clearPlayPresentationTele();
+    renderPlayPresentation();
+    if (playPresentationDetailOpen) renderPlayPresentationDetailPanel();
+    if (typeof syncPresentationDiscussion === "function") syncPresentationDiscussion();
+    tracePlayPresentationAction("script restarted", { action: "movePlayPresentation" });
+    return true;
+  }
+  if (nextIndex < 0 || nextIndex >= itemCount) return false;
   playPresentationState.index = nextIndex;
   resetPlayPresentationZoom();
   clearPlayPresentationTele();
   renderPlayPresentation();
   if (playPresentationDetailOpen) renderPlayPresentationDetailPanel();
   if (typeof syncPresentationDiscussion === "function") syncPresentationDiscussion();
+  return true;
 }
 
 function getPlayPresentationChipMarkup(play) {
@@ -2584,6 +2608,7 @@ function renderPlayPresentation() {
 
   const sourceLabel = document.getElementById("playPresentationSource");
   const counter = document.getElementById("playPresentationCounter");
+  const title = document.getElementById("playPresentationTitle");
   const previous = document.getElementById("playPresentationPrev");
   const next = document.getElementById("playPresentationNext");
   if (sourceLabel) {
@@ -2595,10 +2620,22 @@ function renderPlayPresentation() {
   if (counter) {
     counter.textContent = `${playPresentationState.index + 1} / ${playPresentationState.items.length}`;
   }
+  if (title) title.textContent = getPlayPresentationHeaderTitle(item);
   if (previous) previous.disabled = playPresentationState.index === 0;
   if (next) {
-    next.disabled =
+    const atLastScriptPlay =
+      playPresentationState.source === "script" &&
+      playPresentationState.items.length > 1 &&
       playPresentationState.index >= playPresentationState.items.length - 1;
+    next.disabled =
+      !atLastScriptPlay &&
+      playPresentationState.index >= playPresentationState.items.length - 1;
+    next.textContent = atLastScriptPlay ? "↺" : "▶";
+    next.setAttribute(
+      "aria-label",
+      atLastScriptPlay ? "Start this script over" : "Next play",
+    );
+    next.title = atLastScriptPlay ? "Start this script over" : "Next play";
   }
 
   document.querySelectorAll("[data-presentation-mode]").forEach((button) => {

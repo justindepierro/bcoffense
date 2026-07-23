@@ -89,10 +89,17 @@ body.play-presentation-open .quick-tools {
 }
 
 .pp-header-context {
+  display: grid;
+  grid-template-areas:
+    "source counter"
+    "title title";
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--space-xs);
   min-width: 0;
 }
 
 .pp-source {
+  grid-area: source;
   overflow: hidden;
   font-size: var(--font-size-sm);
   font-weight: 900;
@@ -102,6 +109,7 @@ body.play-presentation-open .quick-tools {
 }
 
 .pp-counter {
+  grid-area: counter;
   flex: 0 0 auto;
   padding: 3px 8px;
   border-radius: var(--radius-pill);
@@ -110,6 +118,18 @@ body.play-presentation-open .quick-tools {
   font-size: var(--font-size-xs);
   font-weight: 900;
   line-height: 1.1;
+}
+
+.pp-header-play-title {
+  grid-area: title;
+  min-width: 0;
+  overflow: hidden;
+  color: rgb(255 255 255 / 88%);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pp-mode-switcher {
@@ -1996,6 +2016,7 @@ body.play-presentation-mobile .pp-disc-drawer .disc-composer-actions .btn {
 /* Clean View strips the projected output to the diagram + call. */
 .play-presentation-overlay[data-pp-clean="1"] .pp-mode-switcher,
 .play-presentation-overlay[data-pp-clean="1"] .pp-source,
+.play-presentation-overlay[data-pp-clean="1"] .pp-header-play-title,
 .play-presentation-overlay[data-pp-clean="1"] .pp-footer,
 .play-presentation-overlay[data-pp-clean="1"] .pp-coach-section-notes {
   display: none;
@@ -2977,6 +2998,11 @@ body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-header {
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-source {
   max-width: 92px;
   font-size: 0.64rem;
+}
+
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-header-play-title {
+  display: none;
 }
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-counter {

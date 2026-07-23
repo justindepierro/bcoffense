@@ -68,6 +68,13 @@ small, testable releases.
 
 ## P1 — reduce over-nested and duplicate UI
 
+- [x] **C-012a · Keep Swipe View bounded and legible in portrait.** Release
+  v1353 makes the final play of a Script presentation explicitly restart that
+  same bounded packet instead of leaving an inert endpoint that can fall
+  through to another launcher. The header now owns a plain-text current play
+  title outside the portrait scroll surface, so the call remains identifiable
+  while a player studies rules or asks a question.
+
 - [x] **C-010 · Split Settings into an operations landing page.** Release
   v1291 keeps the current data/editor controls intact but replaces the long
   initial wall with focused `Team identity`, `Roster & links`, `Personnel`,
@@ -162,6 +169,9 @@ small, testable releases.
   guards that seam, and both owners are loaded and cached in their required
   order. Remaining: split the largest shared CSS owners (`playbook.css` and
   `components.css`) by feature surface without changing selector contracts.
+  Release v1353 moves the complete shared discussion stylesheet out of
+  `playbook.css` into `discussion.css`; the three stray Playbook workflow
+  selectors embedded in that block return to their actual feature owner.
 - [~] **C-031 · Add modal semantics coverage.** Release v1295 establishes the
   contract on the shared Actions hub and Player Playbook filters: dialog
   semantics, Escape, close control, focus return, and one scroll owner. Release

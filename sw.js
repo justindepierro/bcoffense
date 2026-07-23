@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v1352";
+const CACHE_NAME = "bcoffense-v1353";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -101,6 +101,7 @@ const LOCAL_ASSETS = [
   "./css/layout.css",
   "./css/components.css",
   "./css/playbook.css",
+  "./css/discussion.css",
   "./css/signals.css",
   "./css/script.css",
   "./css/script-quiz.css",
