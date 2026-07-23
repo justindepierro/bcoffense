@@ -160,8 +160,13 @@ small, testable releases.
   semantics, Escape, close control, focus return, and one scroll owner. Release
   v1301 adds static enforcement for Signals watch/upload/review overlays;
   v1302 adds Media Inventory and Archived Diagram Recovery coverage; and v1303
-  adds Diagram Health and Publish Media. Continue migrating the remaining
-  specialized modal families in small slices.
+  adds Diagram Health and Publish Media. Release v1350 completes the
+  communication slice: phone reaction and reply sheets, Game Plan/Wristband
+  discussion, diagram markup, and attachment viewing now share the same
+  blocking-layer lifecycle (safe area, focus, Escape, backdrop, and one scroll
+  owner) while the Swipe View discussion remains the intentionally nonblocking
+  side drawer. Continue migrating the remaining non-discussion specialized
+  modal families in small slices.
 - [x] **C-032 · Replace direct `scrollIntoView` where it can move the app
   shell.** Release v1348 routes Script, Playbook, Discussion, Notifications,
   Wristband, Tendencies, quiz, command palette, and mobile-coach jumps through
