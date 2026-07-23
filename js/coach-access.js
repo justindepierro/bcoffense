@@ -44,6 +44,7 @@ const COACH_ACCESS_DEFAULTS = [
 let coachAccessAccounts = [];
 let coachAccessSelectedId = "";
 const coachAccessDrafts = new Map();
+let coachAccessLoadController = null;
 
 function getCoachAccessOverlay() {
   return document.getElementById("coachAccessOverlay");
@@ -63,27 +64,47 @@ function openCoachAccessManager() {
   overlay.classList.add("visible");
   overlay.removeAttribute("inert");
   overlay.removeAttribute("aria-hidden");
-  if (typeof openLayer === "function") openLayer(overlay, { id: "coach-access", exclusive: false });
+  coachAccessDrafts.clear();
+  coachAccessSelectedId = "";
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "coachAccessOverlay",
+      scrollElement: overlay.querySelector(".pa-panel") || overlay,
+      blocking: true,
+      onEscape: () => closeCoachAccessManager(),
+    });
+  }
   loadCoachAccessAccounts();
 }
 
-function closeCoachAccessManager() {
+function closeCoachAccessManager(options = {}) {
   const overlay = getCoachAccessOverlay();
   if (!overlay) return;
+  coachAccessLoadController?.abort();
+  coachAccessLoadController = null;
   overlay.classList.remove("visible");
   overlay.setAttribute("inert", "");
   overlay.setAttribute("aria-hidden", "true");
-  if (typeof closeLayer === "function") closeLayer("coach-access");
+  if (typeof closeLayer === "function") closeLayer("coachAccessOverlay", options);
 }
 
 async function loadCoachAccessAccounts() {
   const body = document.getElementById("coachAccessBody");
-  if (!body) return;
+  const overlay = getCoachAccessOverlay();
+  if (!body || !overlay) return;
+  coachAccessLoadController?.abort();
+  const controller = new AbortController();
+  coachAccessLoadController = controller;
   body.innerHTML = '<p class="pa-loading">Loading coach access…</p>';
   try {
-    const response = await fetch("/auth/players", { credentials: "same-origin" });
+    const response = await fetch("/auth/players", {
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
+    });
     const data = await response.json();
     if (!response.ok || !data.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    if (coachAccessLoadController !== controller || !overlay.classList.contains("visible")) return;
     coachAccessAccounts = (data.players || []).filter((account) => account.role === "coach");
     coachAccessAccounts.forEach((coach) => {
       if (!coachAccessDrafts.has(coach.id)) {
@@ -95,7 +116,11 @@ async function loadCoachAccessAccounts() {
     }
     renderCoachAccessManager();
   } catch (error) {
+    if (error?.name === "AbortError" || coachAccessLoadController !== controller) return;
+    if (!overlay.classList.contains("visible")) return;
     body.innerHTML = `<p class="pa-error">Failed to load coach access: ${escapeHtml(error.message)}</p>`;
+  } finally {
+    if (coachAccessLoadController === controller) coachAccessLoadController = null;
   }
 }
 

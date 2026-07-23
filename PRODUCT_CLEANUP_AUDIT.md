@@ -197,8 +197,11 @@ small, testable releases.
   above it without dropping the editor's focus or scroll lock. Release v1359
   finishes the remaining Call Sheet picker, wristband loader, sort, and display
   preset paths; nonblocking drawers no longer keep the document locked after a
-  nested dialog closes. Continue migrating the remaining non-discussion
-  specialized modal families in small slices.
+  nested dialog closes. Release v1360 begins the Settings/account pass: player
+  links and coach access load fresh account data, cancel stale requests, discard
+  unsaved permission drafts on a new opening, and use the shared blocking-layer
+  lifecycle. Continue migrating the remaining non-discussion specialized modal
+  families in small slices.
 - [x] **C-032 · Replace direct `scrollIntoView` where it can move the app
   shell.** Release v1348 routes Script, Playbook, Discussion, Notifications,
   Wristband, Tendencies, quiz, command palette, and mobile-coach jumps through

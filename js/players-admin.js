@@ -9,6 +9,7 @@
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let _paPlayers = [];
+let _paLoadController = null;
 
 function normalizePlayerAccountEmail(value = "") {
   return String(value || "").trim().toLowerCase();
@@ -90,36 +91,56 @@ function openPlayersAdmin() {
   overlay.removeAttribute("inert");
   overlay.removeAttribute("aria-hidden");
   if (typeof openLayer === "function") {
-    openLayer(overlay, { id: "players-admin", exclusive: false });
+    openLayer(overlay, {
+      id: "playersAdminOverlay",
+      scrollElement: overlay.querySelector(".pa-panel") || overlay,
+      blocking: true,
+      onEscape: () => closePlayersAdmin(),
+    });
   }
   loadPlayersAdminList();
 }
 
-function closePlayersAdmin() {
+function closePlayersAdmin(options = {}) {
   const overlay = document.getElementById("playersAdminOverlay");
   if (!overlay) return;
+  _paLoadController?.abort();
+  _paLoadController = null;
   overlay.classList.remove("visible");
   overlay.setAttribute("inert", "");
   overlay.setAttribute("aria-hidden", "true");
-  if (typeof closeLayer === "function") closeLayer("players-admin");
+  if (typeof closeLayer === "function") closeLayer("playersAdminOverlay", options);
 }
 
 // ── Load & render ─────────────────────────────────────────────────────────────
 
 async function loadPlayersAdminList() {
   const body = document.getElementById("playersAdminBody");
-  if (!body) return;
+  const overlay = document.getElementById("playersAdminOverlay");
+  if (!body || !overlay) return;
+  _paLoadController?.abort();
+  const controller = new AbortController();
+  _paLoadController = controller;
   body.innerHTML = '<p class="pa-loading">Loading player accounts…</p>';
 
   try {
-    const res = await fetch("/auth/players");
+    const res = await fetch("/auth/players", {
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "Unknown error");
+    if (_paLoadController !== controller || !overlay.classList.contains("visible")) return;
     _paPlayers = data.players || [];
     renderPlayersAdminList(_paPlayers, body);
   } catch (err) {
+    if (err?.name === "AbortError" || _paLoadController !== controller) return;
+    if (!overlay.classList.contains("visible")) return;
     body.innerHTML = `<p class="pa-error">Failed to load players: ${escapeHtml(err.message)}</p>`;
+  } finally {
+    if (_paLoadController === controller) _paLoadController = null;
   }
 }
 

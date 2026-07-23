@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
 
-const [migration, policy, auth, middleware, accounts, accountAction, client, authClient, shell, scriptPlayer, scriptRender, playbookRender, components, index, sw] = await Promise.all([
+const [migration, policy, auth, middleware, accounts, accountAction, client, playersAdmin, authClient, shell, scriptPlayer, scriptRender, playbookRender, components, index, sw] = await Promise.all([
   source("migrations/0023_staff_access.sql"),
   source("functions/_lib/staff-access.js"),
   source("functions/_lib/auth.js"),
@@ -13,6 +13,7 @@ const [migration, policy, auth, middleware, accounts, accountAction, client, aut
   source("functions/auth/players.js"),
   source("functions/auth/players/[id].js"),
   source("js/coach-access.js"),
+  source("js/players-admin.js"),
   source("js/auth.js"),
   source("js/app-shell.js"),
   source("js/script-player.js"),
@@ -38,6 +39,11 @@ assert.match(accountAction, /session\.role !== "admin"/, "only admin can change 
 assert.match(client, /Invite a Coach/, "admin UI can invite a managed coach");
 assert.match(client, /Save access/, "admin UI exposes per-feature access checkboxes");
 assert.match(client, /Read-only workspace/, "access UI distinguishes study access from write grants");
+assert.match(client, /id: "coachAccessOverlay"[\s\S]*?scrollElement:[\s\S]*?blocking: true[\s\S]*?onEscape:/, "coach access uses the shared blocking-layer lifecycle");
+assert.match(client, /cache: "no-store"[\s\S]*?signal: controller\.signal/, "coach access always reads a fresh account list and cancels stale responses");
+assert.match(client, /coachAccessDrafts\.clear\(\);[\s\S]*?coachAccessSelectedId = "";/, "opening coach access begins with fresh server permissions instead of stale unsaved grants");
+assert.match(playersAdmin, /id: "playersAdminOverlay"[\s\S]*?scrollElement:[\s\S]*?blocking: true[\s\S]*?onEscape:/, "player account links use the shared blocking-layer lifecycle");
+assert.match(playersAdmin, /cache: "no-store"[\s\S]*?signal: controller\.signal/, "player account links always read fresh data and cancel stale responses");
 const cloudSync = await source("js/cloud-sync.js");
 assert.match(cloudSync, /currentUser\.managedCoach === true/, "managed coaches hydrate from the canonical team workspace at sign-in");
 assert.match(index, /id="coachAccessOverlay"/, "coach access modal is included in the app shell");
