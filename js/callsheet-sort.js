@@ -70,6 +70,7 @@ function csSortCompare(valA, valB, field, direction) {
  * Open the call sheet sort modal
  */
 function openCsSortModal(categoryId) {
+  closeCsSortModal({ returnFocus: false });
   const cat = CALLSHEET_CATEGORIES.find((c) => c.id === categoryId);
   const displayName = cat ? getCategoryDisplayName(cat) : categoryId;
 
@@ -133,25 +134,30 @@ function openCsSortModal(categoryId) {
   `;
 
   document.body.insertAdjacentHTML("beforeend", modalHtml);
+  const overlay = document.getElementById("csSortOverlay");
   // backdrop close
-  document.getElementById("csSortOverlay")?.addEventListener("click", (e) => {
+  overlay?.addEventListener("click", (e) => {
     if (e.target.id === "csSortOverlay") closeCsSortModal();
   });
-  trapFocus(document.getElementById("csSortOverlay"));
-  if (typeof openLayer === "function")
-    openLayer(document.getElementById("csSortOverlay"), {
-      id: "cs-sort-modal",
-      exclusive: false,
-      trapFocus: false,
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "csSortOverlay",
+      scrollElement: overlay?.querySelector(".cs-sort-modal") || overlay,
+      blocking: true,
+      onEscape: () => closeCsSortModal(),
     });
+  } else if (overlay && typeof trapFocus === "function") {
+    trapFocus(overlay);
+  }
+  overlay?.querySelector(".cs-sort-close")?.focus();
   renderCsSortCriteria();
 }
 
 /**
  * Close the sort modal
  */
-function closeCsSortModal() {
-  if (typeof closeLayer === "function") closeLayer("cs-sort-modal");
+function closeCsSortModal(options = {}) {
+  if (typeof closeLayer === "function") closeLayer("csSortOverlay", options);
   const overlay = document.getElementById("csSortOverlay");
   if (overlay) overlay.remove();
 }
@@ -359,8 +365,7 @@ function applyCsSort(originCategoryId) {
   renderCallSheet();
 
   // Close modal
-  const overlay = document.getElementById("csSortOverlay");
-  if (overlay) overlay.remove();
+  closeCsSortModal({ returnFocus: false });
 
   const scopeLabel =
     scope === "category"

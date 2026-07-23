@@ -194,9 +194,11 @@ small, testable releases.
   Builder into the same lifecycle, so changing context or closing either no
   longer risks leaving background scroll/focus state behind. Release v1358
   makes the Playbook editor an explicit shared layer and nests rule inheritance
-  above it without dropping the editor's focus or scroll lock. Continue
-  migrating the remaining non-discussion specialized modal families in small
-  slices.
+  above it without dropping the editor's focus or scroll lock. Release v1359
+  finishes the remaining Call Sheet picker, wristband loader, sort, and display
+  preset paths; nonblocking drawers no longer keep the document locked after a
+  nested dialog closes. Continue migrating the remaining non-discussion
+  specialized modal families in small slices.
 - [x] **C-032 · Replace direct `scrollIntoView` where it can move the app
   shell.** Release v1348 routes Script, Playbook, Discussion, Notifications,
   Wristband, Tendencies, quiz, command palette, and mobile-coach jumps through

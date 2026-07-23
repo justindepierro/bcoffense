@@ -18,9 +18,17 @@ function openDisplayPanel() {
   const btn = document.getElementById("csDisplayPanelBtn");
   if (btn) btn.classList.add("active");
   if (typeof openLayer === "function") {
-    openLayer(overlay, { id: "cs-display-panel", exclusive: false });
+    openLayer(overlay, {
+      id: "csDisplayPanel",
+      scrollElement: overlay.querySelector(".cs-display-panel") || overlay,
+      blocking: false,
+      exclusive: false,
+      trapFocus: false,
+      onEscape: () => closeDisplayPanel(),
+    });
   }
-  // Trap focus inside the panel
+  // Move focus to the panel's close control without trapping the rest of the
+  // Call Sheet; this is a nonblocking side drawer.
   const closeBtn = overlay.querySelector(".cs-display-panel-close");
   if (closeBtn) closeBtn.focus();
 }
@@ -29,7 +37,7 @@ function closeDisplayPanel() {
   const overlay = document.getElementById("csDisplayPanel");
   if (!overlay) return;
   overlay.classList.remove("visible");
-  if (typeof closeLayer === "function") closeLayer("cs-display-panel");
+  if (typeof closeLayer === "function") closeLayer("csDisplayPanel");
   const btn = document.getElementById("csDisplayPanelBtn");
   if (btn) btn.classList.remove("active");
 }
@@ -451,6 +459,7 @@ function refreshPresetDropdown() {
  * Open manage presets modal to delete user presets
  */
 function manageDisplayPresets() {
+  closeCsManagePresets({ returnFocus: false });
   const presets = storageManager.get(
     STORAGE_KEYS.CALLSHEET_DISPLAY_PRESETS,
     [],
@@ -486,13 +495,30 @@ function manageDisplayPresets() {
     </div>
   `;
   overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) overlay.remove();
+    if (e.target === overlay) closeCsManagePresets();
   });
   document.body.appendChild(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "csManagePresetsOverlay",
+      scrollElement: overlay.querySelector(".cs-sort-modal") || overlay,
+      blocking: true,
+      // Keep the Display drawer usable after this nested management dialog
+      // closes instead of treating it as a competing page-level modal.
+      exclusive: false,
+      onEscape: () => closeCsManagePresets(),
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+  }
+  overlay.querySelector(".cs-sort-close")?.focus();
 }
 
-function closeCsManagePresets() {
-  document.getElementById("csManagePresetsOverlay")?.remove();
+function closeCsManagePresets(options = {}) {
+  const overlay = document.getElementById("csManagePresetsOverlay");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer("csManagePresetsOverlay", options);
+  overlay.remove();
 }
 
 function deleteDisplayPreset(idx) {
@@ -507,7 +533,7 @@ function deleteDisplayPreset(idx) {
   // Refresh the manage modal
   const overlay = document.getElementById("csManagePresetsOverlay");
   if (overlay) {
-    overlay.remove();
+    closeCsManagePresets({ returnFocus: false });
     manageDisplayPresets();
   }
   showToast(`🗑️ Deleted "${name}"`);

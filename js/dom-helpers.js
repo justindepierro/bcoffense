@@ -158,6 +158,10 @@ function getActiveLayerState() {
   return states[states.length - 1] || null;
 }
 
+function hasBlockingAppLayer() {
+  return Array.from(activeAppLayers.values()).some((state) => state.blocking);
+}
+
 function preventBackgroundLayerTouch(event) {
   const activeLayer = getActiveLayerState();
   if (!activeLayer) return;
@@ -192,7 +196,10 @@ function lockBodyForLayer() {
 }
 
 function unlockBodyForLayer() {
-  if (!appLayerBodyLockState || activeAppLayers.size > 0) return;
+  // Drawers can remain registered while a focused dialog opens above them.
+  // Only another *blocking* layer should keep the document locked; otherwise a
+  // closed dialog would leave the page frozen behind a nonblocking drawer.
+  if (!appLayerBodyLockState || hasBlockingAppLayer()) return;
   const { scrollX, scrollY, bodyTop, bodyLeft, scrollOwner } = appLayerBodyLockState;
   appLayerBodyLockState = null;
   document.body.classList.remove("app-layer-locked");

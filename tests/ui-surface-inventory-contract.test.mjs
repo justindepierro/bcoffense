@@ -186,6 +186,27 @@ for (const [name, content, surfaceId] of [
   assert.match(content, new RegExp(`closeLayer\\("${surfaceId}"`), `${name} releases the shared blocking-layer lifecycle before removal`);
 }
 
+const [callSheetPicker, callSheetDisplay, callSheetSort, domHelpers] = await Promise.all([
+  source("js/callsheet-picker-runtime.js"),
+  source("js/callsheet-display.js"),
+  source("js/callsheet-sort.js"),
+  source("js/dom-helpers.js"),
+]);
+for (const [name, surfaceId] of [
+  ["Call Sheet play picker", "callSheetPickerOverlay"],
+  ["Call Sheet wristband loader", "loadWristbandModal"],
+]) {
+  assert.match(callSheetPicker, new RegExp(`openLayer\\([^,]+, \\{[\\s\\S]*?id: "${surfaceId}"[\\s\\S]*?scrollElement:[\\s\\S]*?blocking: true[\\s\\S]*?onEscape:`), `${name} uses the shared focus, safe-area, and Escape lifecycle`);
+  assert.match(callSheetPicker, new RegExp(`closeLayer\\("${surfaceId}"`), `${name} releases its registered layer before it hides`);
+}
+assert.match(callSheetDisplay, /id: "csDisplayPanel"[\s\S]*?blocking: false[\s\S]*?trapFocus: false[\s\S]*?onEscape:/, "the Call Sheet display drawer remains nonblocking instead of freezing the workbench");
+assert.match(callSheetDisplay, /id: "csManagePresetsOverlay"[\s\S]*?blocking: true[\s\S]*?exclusive: false[\s\S]*?onEscape:/, "display preset management nests above its nonblocking drawer safely");
+assert.match(callSheetDisplay, /closeLayer\("csManagePresetsOverlay"/, "display preset management releases its blocking layer before removal");
+assert.match(callSheetSort, /id: "csSortOverlay"[\s\S]*?scrollElement:[\s\S]*?blocking: true[\s\S]*?onEscape:/, "Call Sheet sorting uses one shared blocking layer");
+assert.match(callSheetSort, /closeCsSortModal\(\{ returnFocus: false \}\)/, "applying a Call Sheet sort releases the modal lifecycle instead of removing the DOM node directly");
+assert.match(domHelpers, /function hasBlockingAppLayer\(\)[\s\S]*?state\.blocking/, "layer ownership distinguishes nonblocking drawers from dialogs that lock the page");
+assert.match(domHelpers, /if \(!appLayerBodyLockState \|\| hasBlockingAppLayer\(\)\) return;/, "closing a dialog above a drawer releases the page lock when no blocking layer remains");
+
 const [scriptShared, scriptPeriods, scriptHealth] = await Promise.all([
   source("js/script-shared.js"),
   source("js/script-periods.js"),

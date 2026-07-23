@@ -39,7 +39,18 @@ function openCallSheetPlayPicker(categoryId, hash) {
   populateCallSheetPlayList();
 
   const overlay = setCallSheetOverlayVisibility("callSheetPickerOverlay", true);
-  if (overlay) trapFocus(overlay);
+  if (!overlay) return;
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "callSheetPickerOverlay",
+      scrollElement: overlay.querySelector(".cell-popup") || overlay,
+      blocking: true,
+      onEscape: () => closeCallSheetPicker(),
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+  }
+  setTimeout(() => document.getElementById("callSheetPlaySearch")?.focus(), 0);
 }
 
 function populateCallSheetPickerFilters() {
@@ -178,9 +189,13 @@ function _csPickerRestoreFilters() {
   });
 }
 
-function closeCallSheetPicker(event) {
+function closeCallSheetPicker(eventOrOptions) {
+  const event = eventOrOptions?.target ? eventOrOptions : null;
   if (event && event.target !== event.currentTarget) return;
   _csPickerSaveFilters();
+  if (typeof closeLayer === "function") {
+    closeLayer("callSheetPickerOverlay", eventOrOptions?.returnFocus === false ? { returnFocus: false } : {});
+  }
   setCallSheetOverlayVisibility("callSheetPickerOverlay", false);
 }
 
@@ -451,10 +466,25 @@ function openLoadWristbandModal() {
       .join("");
 
   setCallSheetOverlayVisibility("loadWristbandModal", true);
+  if (typeof openLayer === "function") {
+    openLayer(modal, {
+      id: "loadWristbandModal",
+      scrollElement: modal.querySelector(".cell-popup") || modal,
+      blocking: true,
+      onEscape: () => closeLoadWristbandModal(),
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(modal);
+  }
+  setTimeout(() => select.focus(), 0);
 }
 
-function closeLoadWristbandModal(event) {
+function closeLoadWristbandModal(eventOrOptions) {
+  const event = eventOrOptions?.target ? eventOrOptions : null;
   if (event && event.target !== event.currentTarget) return;
+  if (typeof closeLayer === "function") {
+    closeLayer("loadWristbandModal", eventOrOptions?.returnFocus === false ? { returnFocus: false } : {});
+  }
   setCallSheetOverlayVisibility("loadWristbandModal", false);
 }
 
