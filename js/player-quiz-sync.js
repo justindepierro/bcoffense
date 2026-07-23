@@ -60,6 +60,25 @@
     });
   }
 
+  async function _getVerifiedLeaderboardUser() {
+    if (typeof window.whenAuthReady === "function") {
+      await window.whenAuthReady().catch(() => null);
+    }
+    return typeof window.getCurrentAuthUser === "function"
+      ? window.getCurrentAuthUser()
+      : null;
+  }
+
+  function _notifyLeaderboardAuthRequired() {
+    try {
+      window.dispatchEvent(new CustomEvent("bc-auth-session-required", {
+        detail: { message: "Your secure session ended. Sign in to continue." },
+      }));
+    } catch (_err) {
+      // Auth boot will restore the sign-in gate on the next startup check.
+    }
+  }
+
   async function requestJson(path, options = {}) {
     const response = await fetch(path, {
       credentials: "same-origin",
@@ -70,6 +89,9 @@
         ...(options.headers || {}),
       },
     });
+    if (response.status === 401) {
+      _notifyLeaderboardAuthRequired();
+    }
     if (!response.ok) {
       const text = await response.text().catch(() => "");
       throw new Error(text || `Leaderboard request failed: ${response.status}`);
@@ -102,6 +124,8 @@
   }
 
   async function refreshPlayerLeaderboardSummary(options = {}) {
+    const user = await _getVerifiedLeaderboardUser();
+    if (!user) return null;
     try {
       const weekKey = encodeURIComponent(currentWeekKey());
       const data = await requestJson(`/api/leaderboard/summary?weekKey=${weekKey}`);
@@ -117,6 +141,8 @@
   }
 
   async function syncPlayerLeaderboardNow(options = {}) {
+    const user = await _getVerifiedLeaderboardUser();
+    if (user?.role !== "player") return null;
     if (syncInFlight) return null;
     const payload = buildPlayerLeaderboardSyncPayload();
     if (shouldSkipPayload(payload)) {
@@ -175,7 +201,13 @@
   window.syncPlayerLeaderboardNow = syncPlayerLeaderboardNow;
 
   document.addEventListener("DOMContentLoaded", () => {
-    window.setTimeout(() => refreshPlayerLeaderboardSummary({ quiet: true }), SUMMARY_REFRESH_MS);
-    window.setTimeout(() => syncPlayerLeaderboardNow({ quiet: true }), SUMMARY_REFRESH_MS + 2500);
+    void (async () => {
+      const user = await _getVerifiedLeaderboardUser();
+      if (!user) return;
+      window.setTimeout(() => refreshPlayerLeaderboardSummary({ quiet: true }), SUMMARY_REFRESH_MS);
+      if (user.role === "player") {
+        window.setTimeout(() => syncPlayerLeaderboardNow({ quiet: true }), SUMMARY_REFRESH_MS + 2500);
+      }
+    })();
   });
 })();

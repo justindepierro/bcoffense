@@ -118,6 +118,7 @@
   const _urlVersions = new Map(); // sig → invalidation counter
   const _knownKeys = new Set();
   const _remoteManifestCache = new Map();
+  let _remoteAuthBlocked = false;
   let _keysPromise = null;
   let _keysPromiseDatabase = "";
   let _keysLoaded = false;
@@ -583,10 +584,52 @@
     );
   }
 
+  async function _hasRemoteMediaSession() {
+    if (typeof window.whenAuthReady === "function") {
+      await window.whenAuthReady().catch(() => null);
+    }
+    const user = typeof window.getCurrentAuthUser === "function"
+      ? window.getCurrentAuthUser()
+      : null;
+    if (user) {
+      _remoteAuthBlocked = false;
+      return true;
+    }
+    return false;
+  }
+
+  function _notifyRemoteAuthRequired() {
+    if (_remoteAuthBlocked) return;
+    _remoteAuthBlocked = true;
+    try {
+      window.dispatchEvent(new CustomEvent("bc-auth-session-required", {
+        detail: { message: "Your secure session ended. Sign in to load team media." },
+      }));
+    } catch (_err) {
+      // The next authenticated startup check will still restore the lock.
+    }
+  }
+
+  function _remoteUnauthorizedResult(identityKey = "") {
+    return {
+      ok: false,
+      status: "unauthorized",
+      published: false,
+      sig: identityKey,
+      reason: "auth-required",
+    };
+  }
+
   async function _remoteFetch(resource, options = {}) {
+    if (!(await _hasRemoteMediaSession())) {
+      const error = new Error("A verified session is required to load team media.");
+      error.code = "BC_MEDIA_AUTH_REQUIRED";
+      throw error;
+    }
     const controller = typeof AbortController === "undefined" ? null : new AbortController();
     let timer = null;
     const request = fetch(resource, {
+      credentials: "same-origin",
       ...options,
       cache: "no-store",
       ...(controller ? { signal: controller.signal } : {}),
@@ -600,7 +643,14 @@
       }, REMOTE_MEDIA_TIMEOUT_MS);
     });
     try {
-      return await Promise.race([request, deadline]);
+      const response = await Promise.race([request, deadline]);
+      if (response.status === 401) {
+        _notifyRemoteAuthRequired();
+        const error = new Error("Your secure session ended while loading team media.");
+        error.code = "BC_MEDIA_AUTH_REQUIRED";
+        throw error;
+      }
+      return response;
     } finally {
       clearTimeout(timer);
     }
@@ -904,6 +954,7 @@
         await set(identityKey, blob, { emit: false });
         return _urlCache.get(_normalizeSig(identityKey)) || null;
       } catch (_e) {
+        if (_e?.code === "BC_MEDIA_AUTH_REQUIRED") break;
         // Try the next compatible remote key.
       }
     }
@@ -917,6 +968,9 @@
     const identityKeys = _remoteIdentityKeysForPlay(play);
     if (!identityKeys.length) {
       return { ok: false, status: "unpublished", published: false, reason: "no-stable-key" };
+    }
+    if (!(await _hasRemoteMediaSession())) {
+      return _remoteUnauthorizedResult(identityKeys[0]);
     }
     let lastResult = null;
     for (const identityKey of identityKeys) {
@@ -966,6 +1020,9 @@
         if (result.published) return result;
         lastResult = result;
       } catch (err) {
+        if (err?.code === "BC_MEDIA_AUTH_REQUIRED") {
+          return _remoteUnauthorizedResult(identityKey);
+        }
         const timedOut = err?.name === "AbortError";
         return {
           ok: false,
@@ -1006,6 +1063,17 @@
         .map(_normalizeSig)
         .filter(Boolean),
     )];
+    if (!(await _hasRemoteMediaSession())) {
+      identityKeys.forEach((identityKey) => {
+        result[identityKey] = _remoteUnauthorizedResult(identityKey);
+      });
+      _recordPerf("media:image-batch-manifest", startedAt, {
+        requested: identityKeys.length,
+        method: "auth-blocked",
+        published: 0,
+      });
+      return result;
+    }
     const missing = identityKeys.filter((identityKey) => !_getCachedRemoteManifest(identityKey));
     let method = missing.length ? "fallback" : "cache";
     if (missing.length > 1 && typeof fetch === "function") {
@@ -1050,7 +1118,23 @@
       }
     }
     const unresolvedIdentityKeys = identityKeys.filter((identityKey) => !_getCachedRemoteManifest(identityKey));
+    if (_remoteAuthBlocked) {
+      identityKeys.forEach((identityKey) => {
+        result[identityKey] = _getCachedRemoteManifest(identityKey) || _remoteUnauthorizedResult(identityKey);
+      });
+      _recordPerf("media:image-batch-manifest", startedAt, {
+        requested: identityKeys.length,
+        missing: missing.length,
+        method: "auth-expired",
+        published: Object.values(result).filter((item) => item?.published).length,
+      });
+      return result;
+    }
     await _withConcurrency(unresolvedIdentityKeys, REMOTE_MANIFEST_FALLBACK_CONCURRENCY, async (identityKey) => {
+      if (_remoteAuthBlocked) {
+        result[identityKey] = _remoteUnauthorizedResult(identityKey);
+        return;
+      }
       if (!_getCachedRemoteManifest(identityKey)) {
         try {
         const response = await _remoteFetch(`/images/manifest?sig=${encodeURIComponent(identityKey)}`, {
@@ -1069,14 +1153,18 @@
               reason: `http-${response.status}`,
             });
           }
-        } catch (_err) {
-          _cacheRemoteManifest(identityKey, {
-            ok: false,
-            status: "offline",
-            published: false,
-            sig: identityKey,
-            reason: "network",
-          });
+        } catch (err) {
+          if (err?.code === "BC_MEDIA_AUTH_REQUIRED") {
+            result[identityKey] = _remoteUnauthorizedResult(identityKey);
+          } else {
+            _cacheRemoteManifest(identityKey, {
+              ok: false,
+              status: "offline",
+              published: false,
+              sig: identityKey,
+              reason: "network",
+            });
+          }
         }
       }
       result[identityKey] = _getCachedRemoteManifest(identityKey);
@@ -1707,6 +1795,14 @@
     }
 
     if (!remote) remote = await checkRemoteForPlay(play);
+    if (remote.status === "unauthorized") {
+      return {
+        status: "auth-required",
+        source: "remote",
+        url: "",
+        message: "Sign in to load the latest team diagram.",
+      };
+    }
     if (remote.status === "offline") {
       return {
         status: "offline",

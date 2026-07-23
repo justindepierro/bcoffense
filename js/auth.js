@@ -1272,6 +1272,25 @@
     showLoginOverlay("", { statusMsg: "Signed out." });
   }
 
+  // Protected API clients dispatch this event when the server has definitively
+  // rejected the current cookie. Keep that recovery in one place so an expired
+  // session becomes one clear sign-in state instead of a cascade of failed
+  // media, notification, and leaderboard requests.
+  function handleExpiredServerSession(message = "Your secure session ended. Sign in to continue.") {
+    if (!authReady || (!currentAuthUser && document.getElementById("authLoginOverlay"))) return;
+    currentAuthUser = null;
+    clearStoredAuthUser();
+    if (typeof resetCloudSyncAutoPull === "function") {
+      resetCloudSyncAutoPull();
+    }
+    applyRoleUi();
+    showLoginOverlay("", { statusMsg: message, messageIsStatus: true });
+  }
+
+  window.addEventListener("bc-auth-session-required", (event) => {
+    handleExpiredServerSession(event?.detail?.message);
+  });
+
   function handleBlockedInteraction(e) {
     if (e.target.closest("#authLoginOverlay")) return;
 
