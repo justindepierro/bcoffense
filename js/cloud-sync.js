@@ -1260,6 +1260,24 @@
     };
   }
 
+  function getPlayerReleaseReloadTab(opts = {}) {
+    if (opts.navigate === false) return "";
+
+    // A release can arrive while a player is studying the Playbook, Signals,
+    // or a Script. Rebuild the now-current release in that same allowed
+    // surface; sending every refresh to Dashboard feels like an unexpected
+    // sign-out and breaks their place in the study flow.
+    const activeTab = String(
+      (typeof currentActiveTab !== "undefined" && currentActiveTab) ||
+      document.body?.dataset?.activeTab ||
+      "",
+    ).trim();
+    if (activeTab && (typeof canAccessTab !== "function" || canAccessTab(activeTab))) {
+      return activeTab;
+    }
+    return "dashboard";
+  }
+
   async function applyPlayerRelease(release, opts = {}) {
     if (!storageManager || typeof storageManager.replacePlayerReleaseData !== "function") {
       throw new Error("This app version cannot safely apply the player release.");
@@ -1287,7 +1305,7 @@
     if (typeof collapsedPeriods !== "undefined") collapsedPeriods = new Set();
     if (typeof playerScriptImageKeysLoaded !== "undefined") playerScriptImageKeysLoaded = false;
 
-    const targetTab = opts.navigate === false ? "" : "dashboard";
+    const targetTab = getPlayerReleaseReloadTab(opts);
     await reloadAppFromStorage(targetTab ? { targetTab } : {});
     if (targetTab && typeof setWorkspaceSurface === "function") {
       setWorkspaceSurface("app", { initModules: false });

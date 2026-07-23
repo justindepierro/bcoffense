@@ -40,7 +40,9 @@ small, testable releases.
   authenticated `/auth/me` reachability probe and a shared status dock, so
   browser-offline and team-service-unavailable states are now distinct. Do one
   live desktop + phone confirmation after deployment; never let a stale state
-  hide media, filter results, or save confidence.
+  hide media, filter results, or save confidence. Release v1354 also keeps a
+  player on their current permitted study tab when a fresh player release is
+  applied, rather than dropping them back on Dashboard mid-Playbook.
 - [ ] **C-002 · Finish player media filter verification.** Confirm phone,
   tablet, and managed-coach views with the real team release: `Has Diagram`,
   `Needs Diagram`, and `Has Video` must reflect the canonical cloud manifests,

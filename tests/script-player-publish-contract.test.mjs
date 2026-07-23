@@ -53,6 +53,16 @@ assert.match(
   "an open player app revalidates an ETag-backed release on a short cadence",
 );
 assert.match(
+  cloudSync,
+  /function getPlayerReleaseReloadTab\(opts = \{\}\)[\s\S]*?const activeTab = String\([\s\S]*?return activeTab;[\s\S]*?return "dashboard";/,
+  "a new player release preserves the current allowed study tab instead of forcing Dashboard",
+);
+assert.doesNotMatch(
+  cloudSync,
+  /const targetTab = opts\.navigate === false \? "" : "dashboard";/,
+  "player release refreshes cannot unconditionally displace a player to Dashboard",
+);
+assert.match(
   workspaceSync,
   /function completePlayerPublishJobs\(opts = \{\}\)/,
   "the shared sync queue can resolve all player publish receipts after one merged commit",

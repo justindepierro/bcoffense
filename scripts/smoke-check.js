@@ -2412,7 +2412,7 @@ function checkPlayerPortalContracts() {
     !/async function refreshPlayerRelease\(opts = \{\}\)/.test(cloudSync) ||
     !/function refreshPlayerCloudBackup\(opts = \{\}\)/.test(cloudSync) ||
     !/async function refreshPlayerCloudBackup\(opts = \{\}\)\s*\{\s*return refreshPlayerRelease\(opts\);\s*\}/.test(cloudSync) ||
-    !/const targetTab = opts\.navigate === false \? "" : "dashboard"/.test(cloudSync) ||
+    !/function getPlayerReleaseReloadTab\(opts = \{\}\)[\s\S]*?const activeTab = String\([\s\S]*?return activeTab;[\s\S]*?return "dashboard";/.test(cloudSync) ||
     !/await reloadAppFromStorage\(targetTab \? \{ targetTab \} : \{\}\)/.test(cloudSync) ||
     !/currentUser\?\.role === "player"[\s\S]*refreshPlayerTeamApp\(\{ quiet: false, force: true \}\)[\s\S]*closeCloudSyncModal\(\)/.test(cloudSync) ||
     !/setWorkspaceSurface\("app", \{ initModules: false \}\)/.test(cloudSync)
