@@ -169,9 +169,12 @@ small, testable releases.
   the nearest real panel; on phone it retains native document scrolling. The
   login keyboard visibility path remains intentionally native because its
   overlay is the active viewport owner.
-- [ ] **C-033 · Add a UI inventory contract.** Every overlay, drawer, and
-  toolbar gets a declared owner and approved pattern. New UI cannot add a fifth
-  modal style or a second vertical scroll owner without an explicit exception.
+- [x] **C-033 · Add a UI inventory contract.** Release v1349 adds a
+  machine-checked registry for every named overlay, drawer, modal, sheet, and
+  panel. Each record declares one source owner, one of four approved interaction
+  patterns, and one scroll owner; a new unregistered surface or cross-file
+  creator fails unit tests. `UI_SURFACE_INVENTORY.md` documents the same rules
+  for future workbench toolbars and layers.
 
 ## Safe cleanup sequence
 
