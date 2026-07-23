@@ -112,6 +112,12 @@ assert.match(discussionOutbox, /window\.addEventListener\("online"/, "pending me
 assert.doesNotMatch(discussionClient, /id="discCompose-\$\{/, "multiple discussion surfaces do not emit duplicate composer IDs");
 assert.doesNotMatch(discussionClient, /id="disc-pending-\$\{/, "pending attachment previews do not collide across open surfaces");
 assert.match(discussionClient, /discReactionPickerOverlay/, "mobile reaction sheets shield the background from accidental taps");
+assert.match(discussionClient, /id: "discussion-reaction-picker"[\s\S]*blocking: true/, "phone reaction choices use the shared blocking-layer contract");
+assert.match(discussionClient, /id: "discussion-reply-sheet"[\s\S]*scrollElement: sheet[\s\S]*blocking: true/, "mobile replies own one safe, locked sheet instead of a loose overlay pair");
+assert.match(discussionClient, /id: "game-plan-discussion"[\s\S]*scrollElement: body[\s\S]*blocking: true/, "Game Plan and Wristband discussion use the shared modal lifecycle");
+assert.match(discussionClient, /id: "discussion-markup"[\s\S]*scrollElement: overlay\.querySelector\("\.disc-markup-panel"\)[\s\S]*blocking: true/, "diagram markup uses the shared modal lifecycle without closing its reply composer");
+assert.match(discussionClient, /discAttachmentViewerOverlay[\s\S]*id: "discussion-attachment-viewer"[\s\S]*blocking: true/, "attachment viewing is a registered, safe blocking layer");
+assert.match(discussionClient, /overlay\.addEventListener\("keydown", \(event\) => \{[\s\S]*event\.key !== "Escape"/, "discussion blocking layers provide an explicit Escape dismissal path");
 assert.match(discussionClient, /function switchDiscComposerType\(arg\)/, "discussion composers support a direct touch-friendly Comment or Ask question choice");
 assert.match(discussionClient, /disc-composer-mode-btn/, "the native post-type dropdown is backed by visible composer mode buttons");
 assert.match(discussionClient, /assistant_coach/, "managed assistant coaches receive the same visual treatment as other staff in discussions");

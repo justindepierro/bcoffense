@@ -211,8 +211,22 @@ function openDiscReactionPicker(postId, el) {
   const useBottomSheet = window.innerWidth <= 480;
   picker.classList.toggle("is-bottom-sheet", useBottomSheet);
   picker.setAttribute("aria-modal", useBottomSheet ? "true" : "false");
+  picker.setAttribute("aria-hidden", "false");
+  pickerOverlay.setAttribute("aria-hidden", useBottomSheet ? "false" : "true");
   pickerOverlay.classList.toggle("visible", useBottomSheet);
   picker.classList.add("visible");
+  if (useBottomSheet && typeof openLayer === "function") {
+    // Phone reactions are a true blocking sheet. Keep the desktop picker a
+    // lightweight anchored popover, but give the touch surface the same body
+    // lock and focus behavior as every other mobile decision layer.
+    openLayer(picker, {
+      id: "discussion-reaction-picker",
+      scrollElement: picker,
+      blocking: true,
+      exclusive: false,
+      safeArea: false,
+    });
+  }
 
   if (!useBottomSheet && _discPickerTrigger) {
     const rect = _discPickerTrigger.getBoundingClientRect();
@@ -259,10 +273,16 @@ function openDiscReactionPicker(postId, el) {
 
 function closeDiscReactionPicker() {
   const picker = document.getElementById("discReactionPicker");
+  if (typeof closeLayer === "function") {
+    closeLayer(picker, { returnFocus: false });
+  }
   picker?.classList.remove("visible");
   picker?.classList.remove("is-bottom-sheet");
   picker?.setAttribute("aria-modal", "false");
-  document.getElementById("discReactionPickerOverlay")?.classList.remove("visible");
+  picker?.setAttribute("aria-hidden", "true");
+  const pickerOverlay = document.getElementById("discReactionPickerOverlay");
+  pickerOverlay?.classList.remove("visible");
+  pickerOverlay?.setAttribute("aria-hidden", "true");
   _discPickerPostId = null;
   if (_discPickerEscHandler) {
     document.removeEventListener("keydown", _discPickerEscHandler);
@@ -1226,8 +1246,14 @@ function _discCloseAllReplyComposers(scopeRoot = null) {
   const sameScope = !scopeRoot || sheet?.dataset?.discScope === scopeRoot.dataset.discScope;
   if (sheet?.classList.contains("visible") && sameScope) {
     const pid = sheet.dataset.parentPostId;
+    if (typeof closeLayer === "function") {
+      closeLayer(sheet, { returnFocus: false });
+    }
     sheet.classList.remove("visible");
-    document.getElementById("discReplySheetOverlay")?.classList.remove("visible");
+    sheet.setAttribute("aria-hidden", "true");
+    const overlay = document.getElementById("discReplySheetOverlay");
+    overlay?.classList.remove("visible");
+    overlay?.setAttribute("aria-hidden", "true");
     _discRemoveVpListeners(sheet);
     if (pid) try { sessionStorage.removeItem(`disc-reply-draft-${pid}`); } catch (_) { /* benign: sessionStorage blocked (private mode) */ }
     setTimeout(() => { sheet.innerHTML = ""; delete sheet.dataset.parentPostId; delete sheet.dataset.discScope; }, 220);
@@ -1314,6 +1340,13 @@ function openDiscReplyComposer(arg, el) {
       overlay = document.createElement("div");
       overlay.id = "discReplySheetOverlay";
       overlay.className = "disc-reply-sheet-overlay";
+      overlay.setAttribute("aria-hidden", "true");
+      overlay.addEventListener("click", (event) => {
+        if (event.target !== overlay) return;
+        const currentSheet = document.getElementById("discReplySheet");
+        const currentPostId = currentSheet?.dataset?.parentPostId || "";
+        if (currentPostId) closeDiscReplyComposer(currentPostId);
+      });
       document.body.appendChild(overlay);
     }
     if (!sheet) {
@@ -1323,9 +1356,16 @@ function openDiscReplyComposer(arg, el) {
       sheet.setAttribute("role", "dialog");
       sheet.setAttribute("aria-modal", "true");
       sheet.setAttribute("aria-label", "Reply composer");
+      sheet.setAttribute("aria-hidden", "true");
+      sheet.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        event.stopPropagation();
+        const currentPostId = sheet.dataset.parentPostId || "";
+        if (currentPostId) closeDiscReplyComposer(currentPostId);
+      });
       document.body.appendChild(sheet);
     }
-    overlay.onclick = () => closeDiscReplyComposer(parentPostId);
     sheet.dataset.parentPostId = String(parentPostId);
     sheet.dataset.discScope = scopeRoot?.dataset?.discScope || "";
     sheet.innerHTML =
@@ -1334,8 +1374,19 @@ function openDiscReplyComposer(arg, el) {
       `<button type="button" class="disc-reply-sheet-close" data-action="closeDiscReplyComposer" data-arg="${escapeHtml(parentPostId)}" aria-label="Close reply">✕</button>` +
       `</div>` + bannerHtml + _discComposerHtml(playId, playSig, parentPostId);
     overlay.classList.add("visible");
+    overlay.setAttribute("aria-hidden", "false");
     requestAnimationFrame(() => {
       sheet.classList.add("visible");
+      sheet.setAttribute("aria-hidden", "false");
+      if (typeof openLayer === "function") {
+        openLayer(sheet, {
+          id: "discussion-reply-sheet",
+          scrollElement: sheet,
+          blocking: true,
+          exclusive: false,
+          safeArea: false,
+        });
+      }
       sheet.querySelector("textarea.disc-textarea")?.focus();
     });
     _discWireReplyComposerDraft(sheet, parentPostId);
@@ -1367,8 +1418,14 @@ async function closeDiscReplyComposer(parentPostId, el) {
       if (!confirmed) return;
     }
     _discRemoveVpListeners(sheet);
+    if (typeof closeLayer === "function") {
+      closeLayer(sheet, { returnFocus: false });
+    }
     sheet.classList.remove("visible");
-    document.getElementById("discReplySheetOverlay")?.classList.remove("visible");
+    sheet.setAttribute("aria-hidden", "true");
+    const overlay = document.getElementById("discReplySheetOverlay");
+    overlay?.classList.remove("visible");
+    overlay?.setAttribute("aria-hidden", "true");
     try { sessionStorage.removeItem(`disc-reply-draft-${parentPostId}`); } catch (_) { /* benign: sessionStorage blocked (private mode) */ }
     setTimeout(() => { sheet.innerHTML = ""; delete sheet.dataset.parentPostId; delete sheet.dataset.discScope; }, 220);
     _discReplyTrigger?.focus?.();
@@ -2617,7 +2674,7 @@ function _getOrCreateDiscModal() {
     overlay = document.createElement("div");
     overlay.id = "gpDiscModalOverlay";
     overlay.className = "disc-floating-overlay";
-    overlay.setAttribute("data-action", "closeGPDiscModalOverlay");
+    overlay.setAttribute("aria-hidden", "true");
     overlay.innerHTML = `
       <div class="disc-floating-panel" role="dialog" aria-modal="true" aria-label="Play Discussion">
         <div class="disc-floating-header">
@@ -2626,6 +2683,15 @@ function _getOrCreateDiscModal() {
         </div>
         <div id="gpDiscModalBody" class="disc-floating-body"></div>
       </div>`;
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) closeGPDiscModal();
+    });
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      closeGPDiscModal();
+    });
     document.body.appendChild(overlay);
   }
   return overlay;
@@ -2656,14 +2722,26 @@ async function openGamePlanPlayDiscussion(discPlayId) {
   body.innerHTML = "";
 
   overlay.classList.add("visible");
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  overlay.setAttribute("aria-hidden", "false");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "game-plan-discussion",
+      scrollElement: body,
+      blocking: true,
+      exclusive: false,
+      safeArea: true,
+    });
+  }
 
   await renderDiscussionSection(play, body);
 }
 
 function closeGPDiscModal() {
   const overlay = document.getElementById("gpDiscModalOverlay");
-  if (overlay) overlay.classList.remove("visible");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer(overlay);
+  overlay.classList.remove("visible");
+  overlay.setAttribute("aria-hidden", "true");
 }
 
 // ── Wristband Cell Popup Discussion ──────────────────────────────────────────
@@ -2689,7 +2767,16 @@ async function openWristbandCellDiscussion() {
   body.innerHTML = "";
 
   overlay.classList.add("visible");
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  overlay.setAttribute("aria-hidden", "false");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "game-plan-discussion",
+      scrollElement: body,
+      blocking: true,
+      exclusive: false,
+      safeArea: true,
+    });
+  }
 
   await renderDiscussionSection(play, body);
 }
@@ -2919,7 +3006,16 @@ async function discOpenMarkupOverlay(arg, el) {
     document.body.appendChild(overlay);
   }
   overlay.classList.add("visible");
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  overlay.setAttribute("aria-hidden", "false");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "discussion-markup",
+      scrollElement: overlay.querySelector(".disc-markup-panel"),
+      blocking: true,
+      exclusive: false,
+      safeArea: true,
+    });
+  }
 
   // Load the play image (use play-images.js if available)
   const img = new Image();
@@ -2956,6 +3052,7 @@ function _discBuildMarkupOverlay() {
   overlay.setAttribute("role", "dialog");
   overlay.setAttribute("aria-modal", "true");
   overlay.setAttribute("aria-label", "Mark up play diagram");
+  overlay.setAttribute("aria-hidden", "true");
   overlay.innerHTML =
     `<div class="disc-markup-panel">` +
     `<div class="disc-markup-toolbar">` +
@@ -2988,6 +3085,15 @@ function _discBuildMarkupOverlay() {
     `</div>`;
 
   _discMarkupWirePointer(overlay);
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) discMarkupClose();
+  });
+  overlay.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    discMarkupClose();
+  });
   return overlay;
 }
 
@@ -3172,7 +3278,10 @@ function discMarkupClear() {
 /** Close the markup overlay without attaching. data-action="discMarkupClose" */
 function discMarkupClose() {
   const overlay = document.getElementById("discMarkupOverlay");
-  if (overlay) overlay.classList.remove("visible");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer(overlay);
+  overlay.classList.remove("visible");
+  overlay.setAttribute("aria-hidden", "true");
 }
 
 /**
@@ -3221,14 +3330,15 @@ function openDiscAttachmentViewer(arg) {
   const id = sep >= 0 ? arg.slice(0, sep) : arg;
   const caption = sep >= 0 ? arg.slice(sep + 2) : "";
 
-  let viewer = document.getElementById("discAttachmentViewer");
+  let viewer = document.getElementById("discAttachmentViewerOverlay");
   if (!viewer) {
     viewer = document.createElement("div");
-    viewer.id = "discAttachmentViewer";
+    viewer.id = "discAttachmentViewerOverlay";
     viewer.className = "disc-attachment-viewer";
     viewer.setAttribute("role", "dialog");
     viewer.setAttribute("aria-modal", "true");
     viewer.setAttribute("aria-label", "Attachment viewer");
+    viewer.setAttribute("aria-hidden", "true");
     viewer.innerHTML =
       `<div class="disc-attachment-viewer-inner">` +
       `<button class="disc-attachment-viewer-close" data-action="closeDiscAttachmentViewer" aria-label="Close">✕</button>` +
@@ -3247,11 +3357,24 @@ function openDiscAttachmentViewer(arg) {
   if (capEl) { capEl.textContent = caption; capEl.style.display = caption ? "" : "none"; }
 
   viewer.classList.add("visible");
-  if (typeof trapFocus === "function") trapFocus(viewer);
+  viewer.setAttribute("aria-hidden", "false");
+  if (typeof openLayer === "function") {
+    openLayer(viewer, {
+      id: "discussion-attachment-viewer",
+      scrollElement: viewer.querySelector(".disc-attachment-viewer-inner"),
+      blocking: true,
+      exclusive: false,
+      safeArea: true,
+    });
+  }
 }
 
 function closeDiscAttachmentViewer() {
-  document.getElementById("discAttachmentViewer")?.classList.remove("visible");
+  const viewer = document.getElementById("discAttachmentViewerOverlay");
+  if (!viewer) return;
+  if (typeof closeLayer === "function") closeLayer(viewer);
+  viewer.classList.remove("visible");
+  viewer.setAttribute("aria-hidden", "true");
 }
 
 // ── Phase 9: Ask Coach & Question Links ──────────────────────────────────────

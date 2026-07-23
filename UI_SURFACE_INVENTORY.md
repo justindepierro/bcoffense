@@ -12,7 +12,7 @@ whose ID ends in `Overlay`, `Modal`, `Panel`, `Drawer`, or `Sheet`.
 
 | Pattern | When to use it | Scroll owner |
 | --- | --- | --- |
-| `blocking-layer` | A focused decision that pauses the current task: edit, recover, upload, quiz setup, or confirmation. | `layer` |
+| `blocking-layer` | A focused decision that pauses the current task: edit, recover, upload, quiz setup, confirmation, reply, reactions, or media review. | `layer` |
 | `nonblocking-drawer` | Context that can stay visible beside the task: filters, notifications, discussion, display tools. | `panel` |
 | `workspace-panel` | A permanent part of one workbench, never a page-level overlay. | `workspace` |
 | `embedded-panel` | Supporting status or summary inside an existing workbench. | `workspace` or `panel` |

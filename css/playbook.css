@@ -7435,7 +7435,7 @@ body.shell-tablet #playbook .pb-card-actions {
   top: auto !important;
   left: 0 !important;
   right: 0 !important;
-  bottom: max(0px, env(safe-area-inset-bottom)) !important;
+  bottom: 0 !important;
   width: 100% !important;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   border-bottom: none;
@@ -7777,6 +7777,10 @@ body.shell-tablet #playbook .pb-card-actions {
 }
 .disc-reply-sheet.visible {
   bottom: 0;
+}
+.disc-reply-sheet[aria-hidden="true"] {
+  pointer-events: none;
+  visibility: hidden;
 }
 .disc-reply-sheet-handle {
   width: 36px;
