@@ -155,6 +155,13 @@ small, testable releases.
   active until the immutable cloud release commits, and an open player app
   revalidates the tiny ETag-backed release every 45 seconds without a visible
   refresh state.
+  Release v1352 continues the same ownership split for communication: the
+  attachment upload/retry, diagram markup, and attachment-viewer lifecycle now
+  live in `discussion-media.js`, while `play-discussion.js` owns threads,
+  replies, reactions, moderation, and surface integration. A static contract
+  guards that seam, and both owners are loaded and cached in their required
+  order. Remaining: split the largest shared CSS owners (`playbook.css` and
+  `components.css`) by feature surface without changing selector contracts.
 - [~] **C-031 · Add modal semantics coverage.** Release v1295 establishes the
   contract on the shared Actions hub and Player Playbook filters: dialog
   semantics, Escape, close control, focus return, and one scroll owner. Release

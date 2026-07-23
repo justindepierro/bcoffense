@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (relativePath) => readFile(new URL(relativePath, `file://${root}/`), "utf8");
 
-const [notifications, threads, threadRoute, countRoute, indexRoute, itemRoute, client, discussionClient, discussionOutbox, playbookCss, presentationCss, indexHtml, cloudSync, playerPublish] = await Promise.all([
+const [notifications, threads, threadRoute, countRoute, indexRoute, itemRoute, client, discussionClient, discussionMedia, discussionOutbox, playbookCss, presentationCss, indexHtml, cloudSync, playerPublish] = await Promise.all([
   source("functions/_lib/d1-notifications.js"),
   source("functions/_lib/d1-threads.js"),
   source("functions/api/threads/[playId].js"),
@@ -21,6 +21,7 @@ const [notifications, threads, threadRoute, countRoute, indexRoute, itemRoute, c
   source("functions/api/notifications/[id].js"),
   source("js/app-notifications.js"),
   source("js/play-discussion.js"),
+  source("js/discussion-media.js"),
   source("js/discussion-outbox.js"),
   source("css/playbook.css"),
   source("css/play-presentation.css"),
@@ -115,9 +116,12 @@ assert.match(discussionClient, /discReactionPickerOverlay/, "mobile reaction she
 assert.match(discussionClient, /id: "discussion-reaction-picker"[\s\S]*blocking: true/, "phone reaction choices use the shared blocking-layer contract");
 assert.match(discussionClient, /id: "discussion-reply-sheet"[\s\S]*scrollElement: sheet[\s\S]*blocking: true/, "mobile replies own one safe, locked sheet instead of a loose overlay pair");
 assert.match(discussionClient, /id: "game-plan-discussion"[\s\S]*scrollElement: body[\s\S]*blocking: true/, "Game Plan and Wristband discussion use the shared modal lifecycle");
-assert.match(discussionClient, /id: "discussion-markup"[\s\S]*scrollElement: overlay\.querySelector\("\.disc-markup-panel"\)[\s\S]*blocking: true/, "diagram markup uses the shared modal lifecycle without closing its reply composer");
-assert.match(discussionClient, /discAttachmentViewerOverlay[\s\S]*id: "discussion-attachment-viewer"[\s\S]*blocking: true/, "attachment viewing is a registered, safe blocking layer");
-assert.match(discussionClient, /overlay\.addEventListener\("keydown", \(event\) => \{[\s\S]*event\.key !== "Escape"/, "discussion blocking layers provide an explicit Escape dismissal path");
+assert.match(discussionMedia, /id: "discussion-markup"[\s\S]*scrollElement: overlay\.querySelector\("\.disc-markup-panel"\)[\s\S]*blocking: true/, "diagram markup uses the shared modal lifecycle without closing its reply composer");
+assert.match(discussionMedia, /discAttachmentViewerOverlay[\s\S]*id: "discussion-attachment-viewer"[\s\S]*blocking: true/, "attachment viewing is a registered, safe blocking layer");
+assert.match(discussionMedia, /overlay\.addEventListener\("keydown", \(event\) => \{[\s\S]*event\.key !== "Escape"/, "discussion blocking layers provide an explicit Escape dismissal path");
+assert.match(discussionMedia, /const _discPendingAttachments = new Map\(\)/, "attachment drafts are owned with the attachment and markup runtime");
+assert.match(discussionMedia, /function _discWireAttachmentInputs\(container\)/, "composer attachment inputs are wired by the media owner");
+assert.doesNotMatch(discussionClient, /const _discPendingAttachments = new Map\(\)/, "thread runtime does not retain attachment state after the media split");
 assert.match(discussionClient, /function switchDiscComposerType\(arg\)/, "discussion composers support a direct touch-friendly Comment or Ask question choice");
 assert.match(discussionClient, /disc-composer-mode-btn/, "the native post-type dropdown is backed by visible composer mode buttons");
 assert.match(discussionClient, /assistant_coach/, "managed assistant coaches receive the same visual treatment as other staff in discussions");

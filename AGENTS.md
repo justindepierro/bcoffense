@@ -177,6 +177,7 @@ All scripts use `defer` and load in this exact order from index.html:
 20.   js/coach-access.js
 21.   js/discussion-outbox.js
 22.   js/play-discussion.js
+22a.  js/discussion-media.js
 23.   js/playbook.js
 24.   js/playbook-collections.js
 25.   js/playbook-print.js
