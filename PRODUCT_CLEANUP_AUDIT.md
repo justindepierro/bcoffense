@@ -184,8 +184,11 @@ small, testable releases.
   discussion, diagram markup, and attachment viewing now share the same
   blocking-layer lifecycle (safe area, focus, Escape, backdrop, and one scroll
   owner) while the Swipe View discussion remains the intentionally nonblocking
-  side drawer. Continue migrating the remaining non-discussion specialized
-  modal families in small slices.
+  side drawer. Release v1355 applies that same lifecycle to the Call Sheet's
+  category editor, Smart Suggestions, and template library; each now locks the
+  background, returns focus, and cleans up its layer state before removal.
+  Continue migrating the remaining non-discussion specialized modal families
+  in small slices.
 - [x] **C-032 · Replace direct `scrollIntoView` where it can move the app
   shell.** Release v1348 routes Script, Playbook, Discussion, Notifications,
   Wristband, Tendencies, quiz, command palette, and mobile-coach jumps through

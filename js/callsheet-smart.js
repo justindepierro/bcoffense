@@ -192,10 +192,21 @@ function openSmartSuggestionsModal(categoryId) {
     ?.addEventListener("click", (e) => {
       if (e.target.id === "csSuggestOverlay") closeCsSuggest();
     });
+  const overlay = document.getElementById("csSuggestOverlay");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "csSuggestOverlay",
+      scrollElement: overlay.querySelector(".cs-suggest-modal") || overlay,
+      blocking: true,
+      onEscape: () => closeCsSuggest(),
+    });
+  }
 }
 
-function closeCsSuggest() {
-  document.getElementById("csSuggestOverlay")?.remove();
+function closeCsSuggest(options = {}) {
+  const overlay = document.getElementById("csSuggestOverlay");
+  if (typeof closeLayer === "function") closeLayer("csSuggestOverlay", options);
+  overlay?.remove();
 }
 
 /**
@@ -233,7 +244,7 @@ function addSuggestionToSheet(categoryId, hash, suggestionIdx) {
   renderCallSheet();
 
   // Refresh the modal
-  document.getElementById("csSuggestOverlay")?.remove();
+  closeCsSuggest({ returnFocus: false });
   openSmartSuggestionsModal(categoryId);
   showToast(`💡 Added to ${hash} hash`);
 }

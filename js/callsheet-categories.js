@@ -124,12 +124,21 @@ function openAddCallSheetCategoryModal() {
       closeAddCallSheetCategoryModal();
     }
   });
-  trapFocus(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "csAddCategoryOverlay",
+      scrollElement: overlay.querySelector(".cs-sort-modal") || overlay,
+      blocking: true,
+      onEscape: () => closeAddCallSheetCategoryModal(),
+    });
+  }
   document.getElementById("csAddCategoryName")?.focus();
 }
 
 function closeAddCallSheetCategoryModal() {
-  document.getElementById("csAddCategoryOverlay")?.remove();
+  const overlay = document.getElementById("csAddCategoryOverlay");
+  if (typeof closeLayer === "function") closeLayer("csAddCategoryOverlay");
+  overlay?.remove();
 }
 
 function saveNewCallSheetCategory() {

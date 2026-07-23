@@ -345,11 +345,21 @@ function openTemplatesModal(mode = "manage") {
     ?.addEventListener("click", (e) => {
       if (e.target.id === "csTemplateOverlay") closeTemplateModal();
     });
+  const overlay = document.getElementById("csTemplateOverlay");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "csTemplateOverlay",
+      scrollElement: overlay.querySelector(".cs-sort-modal") || overlay,
+      blocking: true,
+      onEscape: () => closeTemplateModal(),
+    });
+  }
 }
 
-function closeTemplateModal() {
+function closeTemplateModal(options = {}) {
   const overlay = document.getElementById("csTemplateOverlay");
-  if (overlay) overlay.remove();
+  if (typeof closeLayer === "function") closeLayer("csTemplateOverlay", options);
+  overlay?.remove();
 }
 
 async function loadTemplate(idx) {

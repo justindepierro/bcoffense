@@ -44,8 +44,8 @@ const UI_SURFACES = Object.freeze({
   csSuggestOverlay: { owner: "js/callsheet-smart.js", pattern: "blocking-layer", scrollOwner: "layer" },
   csTemplateOverlay: { owner: "js/callsheet-templates.js", pattern: "blocking-layer", scrollOwner: "layer" },
   dashFillPickerOverlay: { owner: "js/dashboard.js", pattern: "blocking-layer", scrollOwner: "layer" },
-  discMarkupOverlay: { owner: "js/play-discussion.js", pattern: "blocking-layer", scrollOwner: "layer" },
-  discAttachmentViewerOverlay: { owner: "js/play-discussion.js", pattern: "blocking-layer", scrollOwner: "layer" },
+  discMarkupOverlay: { owner: "js/discussion-media.js", pattern: "blocking-layer", scrollOwner: "layer" },
+  discAttachmentViewerOverlay: { owner: "js/discussion-media.js", pattern: "blocking-layer", scrollOwner: "layer" },
   discReactionPickerOverlay: { owner: "js/play-discussion.js", pattern: "blocking-layer", scrollOwner: "layer" },
   discReplySheet: { owner: "js/play-discussion.js", pattern: "blocking-layer", scrollOwner: "layer" },
   discReplySheetOverlay: { owner: "js/play-discussion.js", pattern: "blocking-layer", scrollOwner: "layer" },
@@ -171,6 +171,20 @@ for (const [id, entry] of Object.entries(UI_SURFACES)) {
 const blockingLayers = Object.values(UI_SURFACES).filter((entry) => entry.pattern === "blocking-layer");
 const drawers = Object.values(UI_SURFACES).filter((entry) => entry.pattern === "nonblocking-drawer");
 assert.ok(blockingLayers.length > 0 && drawers.length > 0, "the inventory distinguishes blocking dialogs from nonblocking drawers");
+
+const [callSheetCategories, callSheetSmart, callSheetTemplates] = await Promise.all([
+  source("js/callsheet-categories.js"),
+  source("js/callsheet-smart.js"),
+  source("js/callsheet-templates.js"),
+]);
+for (const [name, content, surfaceId] of [
+  ["Call Sheet category editor", callSheetCategories, "csAddCategoryOverlay"],
+  ["Call Sheet suggestions", callSheetSmart, "csSuggestOverlay"],
+  ["Call Sheet templates", callSheetTemplates, "csTemplateOverlay"],
+]) {
+  assert.match(content, new RegExp(`openLayer\\(overlay, \\{[\\s\\S]*?id: "${surfaceId}"[\\s\\S]*?scrollElement: overlay\\.querySelector[\\s\\S]*?blocking: true[\\s\\S]*?onEscape:`), `${name} uses the shared blocking-layer lifecycle`);
+  assert.match(content, new RegExp(`closeLayer\\("${surfaceId}"`), `${name} releases the shared blocking-layer lifecycle before removal`);
+}
 
 for (const [name, toolbar] of Object.entries(WORKBENCH_TOOLBARS)) {
   const ownerSource = await source(toolbar.owner);

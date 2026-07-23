@@ -222,9 +222,17 @@ function openLayer(layer, options = {}) {
       options.returnFocus === false
         ? null
         : document.activeElement instanceof HTMLElement
-          ? document.activeElement
+        ? document.activeElement
           : null,
   };
+
+  if (typeof options.onEscape === "function") {
+    state.escapeHandler = (event) => {
+      if (event.key !== "Escape" || getActiveLayerState()?.id !== id) return;
+      event.preventDefault();
+      options.onEscape(event);
+    };
+  }
 
   if (options.exclusive !== false) {
     Array.from(activeAppLayers.keys()).forEach((activeId) => {
@@ -242,6 +250,9 @@ function openLayer(layer, options = {}) {
     trapFocus(element);
     element.dataset.focusTrapReady = "true";
   }
+  if (state.escapeHandler) {
+    document.addEventListener("keydown", state.escapeHandler, true);
+  }
   return true;
 }
 
@@ -255,6 +266,9 @@ function closeLayer(layer, options = {}) {
   if (!state) return false;
 
   activeAppLayers.delete(id);
+  if (state.escapeHandler) {
+    document.removeEventListener("keydown", state.escapeHandler, true);
+  }
   state.element.dataset.layerOpen = "false";
   state.element.classList.remove("app-layer-active", "app-layer-safe-area");
   if (options.returnFocus !== false && state.returnFocus?.isConnected) {
