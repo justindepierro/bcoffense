@@ -192,8 +192,11 @@ small, testable releases.
   its legacy backdrop/Escape helper now releases an active layer before it
   removes an overlay. Release v1357 brings Game Plan box matching and Smart
   Builder into the same lifecycle, so changing context or closing either no
-  longer risks leaving background scroll/focus state behind. Continue migrating
-  the remaining non-discussion specialized modal families in small slices.
+  longer risks leaving background scroll/focus state behind. Release v1358
+  makes the Playbook editor an explicit shared layer and nests rule inheritance
+  above it without dropping the editor's focus or scroll lock. Continue
+  migrating the remaining non-discussion specialized modal families in small
+  slices.
 - [x] **C-032 · Replace direct `scrollIntoView` where it can move the app
   shell.** Release v1348 routes Script, Playbook, Discussion, Notifications,
   Wristband, Tendencies, quiz, command palette, and mobile-coach jumps through

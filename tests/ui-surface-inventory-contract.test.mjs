@@ -212,6 +212,12 @@ for (const [name, surfaceId] of [
   assert.match(gamePlanSmart, new RegExp(`closeLayer\\("${surfaceId}"`), `${name} releases the shared blocking-layer lifecycle before removal`);
 }
 
+const playbookEditor = await source("js/playbook-editor.js");
+assert.match(playbookEditor, /openLayer\(overlay, \{[\s\S]*?id: "playEditorOverlay"[\s\S]*?scrollElement: body \|\| overlay[\s\S]*?blocking: true[\s\S]*?onEscape:/, "the Playbook editor uses the shared blocking-layer lifecycle without resetting its focus target during play-to-play navigation");
+assert.match(playbookEditor, /closeLayer\("playEditorOverlay"/, "the Playbook editor releases its layer state before it is hidden");
+assert.match(playbookEditor, /openLayer\(overlay, \{[\s\S]*?id: "playRuleInheritanceOverlay"[\s\S]*?blocking: true[\s\S]*?exclusive: false[\s\S]*?onEscape:/, "rule inheritance nests above the editor without unlocking the underlying edit session");
+assert.match(playbookEditor, /closeLayer\("playRuleInheritanceOverlay"/, "the rule inheritance picker releases its layer state before removal");
+
 for (const [name, toolbar] of Object.entries(WORKBENCH_TOOLBARS)) {
   const ownerSource = await source(toolbar.owner);
   assert.ok(ownerSource.includes(toolbar.marker), `${name} toolbar has an active declared owner`);

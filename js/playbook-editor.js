@@ -427,7 +427,7 @@ function _renderRuleInheritanceResults() {
 }
 
 function openPlayRuleInheritance() {
-  document.getElementById("playRuleInheritanceOverlay")?.remove();
+  closePlayRuleInheritance({ returnFocus: false });
   const overlay = document.createElement("div");
   overlay.id = "playRuleInheritanceOverlay";
   overlay.className = "custom-modal-overlay visible pb-rule-inherit-overlay";
@@ -455,16 +455,28 @@ function openPlayRuleInheritance() {
   _renderRuleInheritanceResults();
   const searchInput = document.getElementById("playRuleInheritanceSearch");
   if (searchInput) setTimeout(() => searchInput.focus(), 0);
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "playRuleInheritanceOverlay",
+      scrollElement: overlay.querySelector(".custom-modal") || overlay,
+      blocking: true,
+      // This picker is intentionally nested above the still-open editor.
+      // Keep the editor's layer active so dismissing the picker cannot unlock
+      // the document or lose the editor's original return-focus target.
+      exclusive: false,
+      onEscape: () => closePlayRuleInheritance(),
+    });
+  }
 }
 
 function filterPlayRuleInheritance() {
   _renderRuleInheritanceResults();
 }
 
-function closePlayRuleInheritance() {
+function closePlayRuleInheritance(options = {}) {
   const overlay = document.getElementById("playRuleInheritanceOverlay");
   if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer("playRuleInheritanceOverlay", options);
   overlay.classList.remove("visible");
   setTimeout(() => overlay.remove(), 180);
 }
@@ -734,6 +746,14 @@ function _populateEditorForm(play, isNew) {
   overlay.removeAttribute("inert");
   overlay.setAttribute("aria-hidden", "false");
   overlay.classList.add("visible");
+  if (typeof openLayer === "function" && overlay.dataset.layerOpen !== "true") {
+    openLayer(overlay, {
+      id: "playEditorOverlay",
+      scrollElement: body || overlay,
+      blocking: true,
+      onEscape: () => closePlayEditor(),
+    });
+  }
 
   // Wire up the play image controls
   _wirePlayEditorImage(play, isNew);
@@ -894,10 +914,11 @@ async function deletePlayFromEditor() {
   showToast("🗑️ Play deleted", { duration: 2000, type: "success" });
 }
 
-function closePlayEditor() {
-  closePlayRuleInheritance();
+function closePlayEditor(options = {}) {
+  closePlayRuleInheritance({ returnFocus: false });
   const overlay = document.getElementById("playEditorOverlay");
   if (overlay) {
+    if (typeof closeLayer === "function") closeLayer("playEditorOverlay", options);
     overlay.classList.remove("visible");
     overlay.setAttribute("aria-hidden", "true");
     overlay.setAttribute("inert", "");
