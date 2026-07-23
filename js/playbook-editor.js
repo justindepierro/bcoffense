@@ -53,6 +53,28 @@ function _getScriptEditorNavigationIndexes() {
   }, []);
 }
 
+// Script rows intentionally carry script-only overrides (personnel, prefix,
+// notes, etc.). Those overrides must never decide which canonical play owns
+// the editor or its media. Resolve by the preserved source ID first, then use
+// object/content matching only for legacy rows that predate source identity.
+function _resolvePlayEditorMasterIndex(play) {
+  if (!play || !Array.isArray(plays)) return -1;
+  const sourceId = typeof getStablePlaySourceId === "function"
+    ? getStablePlaySourceId(play)
+    : "";
+  if (sourceId) {
+    const sourceIndex = plays.findIndex((candidate) =>
+      String(candidate?.id || "").trim() === sourceId,
+    );
+    if (sourceIndex >= 0) return sourceIndex;
+  }
+  const directIndex = plays.indexOf(play);
+  if (directIndex >= 0) return directIndex;
+  return plays.findIndex((candidate) =>
+    typeof playsMatch === "function" ? playsMatch(candidate, play) : candidate === play,
+  );
+}
+
 function _resetPendingPlayEditorMedia() {
   if (_pendingPlayEditorImage?.url) {
     try { URL.revokeObjectURL(_pendingPlayEditorImage.url); } catch (_err) { /* ignore */ }
@@ -943,11 +965,18 @@ function openPlayEditorForPlay(play, options = {}) {
   } else {
     _resetPlayEditorNavigation();
   }
-  const filteredIdx = filteredPlays.findIndex((p) => p === play || playsMatch(p, play));
-  _editingFilteredIdx = filteredIdx;
-  _editingMasterIdx = filteredIdx >= 0
-    ? plays.indexOf(filteredPlays[filteredIdx])
-    : plays.findIndex((p) => p === play || playsMatch(p, play));
+  _editingMasterIdx = _resolvePlayEditorMasterIndex(play);
+  const canonicalPlay = _editingMasterIdx >= 0 ? plays[_editingMasterIdx] : null;
+  const canonicalSourceId = typeof getStablePlaySourceId === "function"
+    ? getStablePlaySourceId(canonicalPlay || play)
+    : "";
+  _editingFilteredIdx = canonicalPlay && Array.isArray(filteredPlays)
+    ? filteredPlays.findIndex((candidate) =>
+      candidate === canonicalPlay ||
+      (canonicalSourceId && typeof getStablePlaySourceId === "function" &&
+        getStablePlaySourceId(candidate) === canonicalSourceId),
+    )
+    : -1;
   _populateEditorForm(_editingMasterIdx >= 0 ? plays[_editingMasterIdx] : play, false);
 }
 
@@ -1161,7 +1190,7 @@ function _wirePlayEditorImage(play, isNew) {
       await window.playImages.set(sig, blob);
       let cloudResult = null;
       if (window.playImages.pushRemote) {
-        cloudResult = await window.playImages.pushRemote(play, blob);
+        cloudResult = await window.playImages.pushRemote(play, blob, { fresh: true });
       }
       await _refreshPreview();
       clearImageBusy();
@@ -1431,7 +1460,7 @@ function _flushPendingPlayEditorMedia(play) {
       if (!sig) throw new Error("Image could not attach because this play has no stable signature.");
       await window.playImages.set(sig, imageBlob);
       if (window.playImages.pushRemote) {
-        const cloudResult = await window.playImages.pushRemote(play, imageBlob);
+        const cloudResult = await window.playImages.pushRemote(play, imageBlob, { fresh: true });
         if (cloudResult && cloudResult.ok === false && !cloudResult.skipped) {
           throw new Error(`Image saved locally, but cloud upload failed: ${cloudResult.error || "Unknown error"}`);
         }

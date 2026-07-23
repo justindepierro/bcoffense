@@ -18,6 +18,7 @@ let playPresentationState = {
   autoPositionItemKey: "",
   imageToken: 0,
   returnFocus: null,
+  returnContext: null,
 };
 
 let playPresentationDiagramResizeObserver = null;
@@ -1204,7 +1205,7 @@ function openPlaybookPresentation(filteredIndex) {
   return openPlayPresentation(items, startIndex, "playbook");
 }
 
-function openScriptPresentation(scriptIndex) {
+function openScriptPresentation(scriptIndex, options = {}) {
   const targetIndex = parseInt(scriptIndex, 10);
   const items = getPlayPresentationItemsFromScript();
   if (items.length === 0) {
@@ -1232,6 +1233,7 @@ function openScriptPresentation(scriptIndex) {
     items,
     requestedIndex >= 0 ? requestedIndex : Math.max(0, selectedIndex),
     "script",
+    options,
   );
 }
 
@@ -1393,7 +1395,7 @@ function ensurePlayPresentationOverlayDisplayed(overlay, phase = "open") {
   return isPlayPresentationOverlayVisible(overlay);
 }
 
-function openPlayPresentation(items, startIndex, source) {
+function openPlayPresentation(items, startIndex, source, options = {}) {
   const overlay = document.getElementById("playPresentationOverlay");
   if (!overlay || !Array.isArray(items) || items.length === 0) {
     tracePlayPresentationAction(
@@ -1413,10 +1415,21 @@ function openPlayPresentation(items, startIndex, source) {
     return false;
   }
 
+  const requestedReturn = options?.returnContext || null;
   playPresentationState.returnFocus =
-    document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
+    requestedReturn?.focus instanceof HTMLElement
+      ? requestedReturn.focus
+      : document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+  playPresentationState.returnContext = requestedReturn?.tab
+    ? {
+      tab: String(requestedReturn.tab),
+      scrollY: Number.isFinite(Number(requestedReturn.scrollY))
+        ? Math.max(0, Number(requestedReturn.scrollY))
+        : null,
+    }
+    : null;
   const ordered = applyPlayPresentationOrder(
     items,
     Math.max(0, Math.min(parseInt(startIndex, 10) || 0, items.length - 1)),
@@ -1547,6 +1560,14 @@ function closePlayPresentation() {
 
   if (document.fullscreenElement === overlay && document.exitFullscreen) {
     document.exitFullscreen().catch(() => { });
+  }
+  const returnContext = playPresentationState.returnContext;
+  playPresentationState.returnContext = null;
+  if (returnContext?.tab && typeof showTab === "function" && currentActiveTab !== returnContext.tab) {
+    showTab(returnContext.tab);
+    if (Number.isFinite(returnContext.scrollY)) {
+      requestAnimationFrame(() => window.scrollTo({ top: returnContext.scrollY, behavior: "auto" }));
+    }
   }
   if (playPresentationState.returnFocus?.isConnected) {
     playPresentationState.returnFocus.focus();

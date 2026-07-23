@@ -5,9 +5,10 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (relativePath) => readFile(new URL(relativePath, `file://${root}/`), "utf8");
 
-const [scriptStorage, scriptPlayer, cloudSync, workspaceSync] = await Promise.all([
+const [scriptStorage, scriptPlayer, presentation, cloudSync, workspaceSync] = await Promise.all([
   source("js/script-storage.js"),
   source("js/script-player.js"),
+  source("js/play-presentation.js"),
   source("js/cloud-sync.js"),
   source("js/workspace-sync.js"),
 ]);
@@ -36,6 +37,21 @@ assert.match(
   scriptPlayer,
   /const requestedId = id !== undefined && id !== null \? String\(id\)\.trim\(\) : "";[\s\S]*?if \(requestedId\) \{[\s\S]*?return presentPublishedPlayerScript\(requestedId\);[\s\S]*?if \(loadedPlayCount > 0\)/s,
   "an explicit player launcher choice loads that published script instead of reopening stale in-memory plays",
+);
+assert.match(
+  scriptPlayer,
+  /const returnContext = \{[\s\S]*?tab: typeof currentActiveTab === "string" \? currentActiveTab : "",[\s\S]*?openScriptPresentation\(undefined, \{ returnContext \}\)/,
+  "opening a published player script captures the launching tab before it loads the temporary script view",
+);
+assert.match(
+  presentation,
+  /function openScriptPresentation\(scriptIndex, options = \{\}\)[\s\S]*?openPlayPresentation\([\s\S]*?options,/,
+  "script presentation forwards a caller return context into the shared presenter",
+);
+assert.match(
+  presentation,
+  /const returnContext = playPresentationState\.returnContext;[\s\S]*?showTab\(returnContext\.tab\)/,
+  "closing a launched presentation restores the originating allowed tab instead of leaving a temporary script page open",
 );
 assert.match(
   cloudSync,

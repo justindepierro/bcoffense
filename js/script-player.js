@@ -1128,6 +1128,11 @@ function loadPublishedPlayerScript(id, opts = {}) {
 }
 
 function presentPublishedPlayerScript(id) {
+  const returnContext = {
+    tab: typeof currentActiveTab === "string" ? currentActiveTab : "",
+    scrollY: Number(window.scrollY || 0),
+    focus: document.activeElement instanceof HTMLElement ? document.activeElement : null,
+  };
   tracePlayerScriptAction("present start", {
     action: "presentPublishedPlayerScript",
     id: String(id),
@@ -1150,7 +1155,7 @@ function presentPublishedPlayerScript(id) {
   }
   const opened =
     typeof openScriptPresentation === "function"
-      ? openScriptPresentation()
+      ? openScriptPresentation(undefined, { returnContext })
       : false;
   tracePlayerScriptAction(opened ? "present opened" : "present failed", {
     action: "presentPublishedPlayerScript",

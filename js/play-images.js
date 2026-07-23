@@ -910,7 +910,7 @@
     return null;
   }
 
-  async function checkRemoteForPlay(play) {
+  async function checkRemoteForPlay(play, options = {}) {
     if (!_remoteAvailable()) {
       return { ok: false, status: "offline", published: false, reason: "offline" };
     }
@@ -920,6 +920,10 @@
     }
     let lastResult = null;
     for (const identityKey of identityKeys) {
+      // A deliberate coach replacement must compare against the version that
+      // exists now, not a manifest cached by another tab/device. Normal
+      // surfaces still use the short-lived cache to keep dense pages fast.
+      if (options.fresh === true) _remoteManifestCache.delete(identityKey);
       const cached = _getCachedRemoteManifest(identityKey);
       if (cached) {
         if (cached.published) return cached;
@@ -1103,7 +1107,7 @@
     return fallback;
   }
 
-  async function pushRemote(play, blob) {
+  async function pushRemote(play, blob, options = {}) {
     if (!_remoteAvailable()) {
       return { ok: false, skipped: true, error: "Cloud media publish is not available on this page." };
     }
@@ -1115,6 +1119,9 @@
       return { ok: false, skipped: true, error: "This play does not have a stable cloud image key." };
     }
     try {
+      if (options.fresh === true) {
+        await checkRemoteForPlay(play, { fresh: true });
+      }
       // This is an explicit coach action (attach/replace), so it supersedes a
       // previously blocked offline conflict for the same local diagram.
       await _removeQueuedDiagramUpload(storedDisplaySignatureForPlay(play) || identityKey, identityKey);

@@ -745,6 +745,15 @@ function openPlayerQuizHub() {
   }
 }
 
+// Leaderboard launchers use the same source/mode chooser as every other
+// entry point. Keeping one hub prevents the quiz configuration from drifting
+// between the dashboard, homework, and leaderboard.
+function openPlayerQuizHubWithMode(modeKey = "") {
+  const mode = _getPlayerQuizModes().find((entry) => entry.key === String(modeKey || ""));
+  if (mode && !mode.disabled) _playerQuizSelectedMode = mode.key;
+  openPlayerQuizHub();
+}
+
 function closePlayerQuizHub() {
   const overlay = document.getElementById("playerQuizHubOverlay");
   if (!overlay) return;

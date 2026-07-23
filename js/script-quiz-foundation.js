@@ -2063,6 +2063,19 @@ function renderPlayerLeaderboardPage() {
   const syncLabel = syncMeta?.synced
     ? "Team synced"
     : "Local board";
+  const rosterPlayer = _getQuizRosterPlayerForCurrentUser();
+  const rosterPosition = typeof _getCurrentQuizRosterPositionKeys === "function"
+    ? _getCurrentQuizRosterPositionKeys().primary
+    : "";
+  const rosterPositionLabel = rosterPosition && typeof _getQuizPosition === "function"
+    ? _getQuizPosition(rosterPosition)?.label
+    : "";
+  const rosterQuizLabel = rosterPlayer && rosterPositionLabel
+    ? `Defaulting to your roster primary: ${rosterPositionLabel}.`
+    : "Choose a role in the quiz setup to tailor the questions.";
+  const launchModes = typeof _getPlayerQuizModes === "function"
+    ? _getPlayerQuizModes().filter((mode) => !mode.disabled).slice(0, 3)
+    : [];
   const recentHtml = recentAttempts.length
     ? recentAttempts.map((attempt) => `
         <div class="player-leaderboard-attempt${attempt.completed === false ? " is-partial" : ""}">
@@ -2083,7 +2096,29 @@ function renderPlayerLeaderboardPage() {
           <h2>${isSeason ? "Season points and weekly pace" : "Quiz points and weekly standard"}</h2>
           <p>${isSeason ? "Track the whole season while still chasing the weekly standard." : `Get to ${settings.weeklyGoal} points this week. Game Plan quizzes count ${settings.gameplanWeight}x.`}</p>
         </div>
-        <button type="button" class="btn btn-primary" data-action="openPlayerQuizHub">Start Quiz</button>
+        <button type="button" class="player-leaderboard-start-quiz" data-action="openPlayerQuizHub" aria-label="Choose and start a quiz">
+          <span class="player-leaderboard-start-quiz__icon" aria-hidden="true">⚡</span>
+          <span><small>Ready to study?</small><strong>Choose a quiz</strong></span>
+          <span class="player-leaderboard-start-quiz__arrow" aria-hidden="true">→</span>
+        </button>
+      </section>
+      <section class="player-leaderboard-quiz-launcher" aria-label="Start a quiz">
+        <div class="player-leaderboard-quiz-launcher__intro">
+          <span>Quiz launcher</span>
+          <h3>Pick a study mode, then fine-tune it.</h3>
+          <p>${escapeHtml(rosterQuizLabel)}</p>
+        </div>
+        <div class="player-leaderboard-quiz-launcher__modes">
+          ${launchModes.map((mode) => `
+            <button type="button" data-action="openPlayerQuizHubWithMode" data-arg="${escapeAttr(mode.key)}">
+              <strong>${escapeHtml(mode.label)}</strong>
+              <small>${escapeHtml(mode.note)}</small>
+              <span>${escapeHtml(mode.time)}</span>
+            </button>`).join("")}
+          <button type="button" class="player-leaderboard-quiz-launcher__all" data-action="openPlayerQuizHub">
+            <strong>All quiz options</strong><small>Choose script, Game Plan, signals, and position.</small><span>→</span>
+          </button>
+        </div>
       </section>
       ${draft ? _renderPlayerQuizResumeCard(draft, "page") : ""}
       <div class="player-leaderboard-view-toggle" role="group" aria-label="Leaderboard view">
