@@ -148,9 +148,15 @@ body.shell-phone .app-control-trigger { min-height: 44px; }
   overscroll-behavior: contain;
   will-change: opacity;
 }
+.custom-modal-overlay:not(.visible) {
+  /* Opacity alone leaves hidden dialog controls in the accessibility tree.
+     Keep inactive overlays out of focus navigation until they are opened. */
+  visibility: hidden;
+}
 .custom-modal-overlay.visible {
   opacity: 1;
   pointer-events: auto;
+  visibility: visible;
 }
 .custom-modal-overlay.visible .custom-modal {
   transform: translateY(0) scale(1);
