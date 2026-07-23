@@ -2192,32 +2192,9 @@ function dismissPlayerA2HS() {
   storageManager.set(STORAGE_KEYS.A2HS_DISMISSED, Date.now());
 }
 
-// Item 31: Swipe-to-navigate between player tabs
-(function _initPlayerSwipeNav() {
-  let _sx = 0, _sy = 0, _st = 0;
-  const PLAYER_TABS = ["dashboard", "playbook", "script"];
-  document.addEventListener("touchstart", (e) => {
-    _sx = e.touches[0].clientX;
-    _sy = e.touches[0].clientY;
-    _st = Date.now();
-  }, { passive: true });
-  document.addEventListener("touchend", (e) => {
-    if (!document.body.classList.contains("is-mobile-screen")) return;
-    if (document.body.getAttribute("data-auth-role") !== "player") return;
-    if (document.activeElement?.matches("input,textarea,select")) return;
-    if (document.querySelector("#playPresentationOverlay.is-open, .auth-login-shell")) return;
-    const dx = e.changedTouches[0].clientX - _sx;
-    const dy = e.changedTouches[0].clientY - _sy;
-    if (Math.abs(dx) < 55) return;
-    if (Math.abs(dy) > Math.abs(dx) * 0.75) return;
-    if (Date.now() - _st > 380) return;
-    const cur = typeof currentActiveTab !== "undefined" ? currentActiveTab : "";
-    const idx = PLAYER_TABS.indexOf(cur);
-    if (idx === -1) return;
-    if (dx < 0 && idx < PLAYER_TABS.length - 1) showTab(PLAYER_TABS[idx + 1]);
-    else if (dx > 0 && idx > 0) showTab(PLAYER_TABS[idx - 1]);
-  }, { passive: true });
-}());
+// Player tabs change only through the visible tab controls. Horizontal swipes
+// are reserved for Play Presentation, where the gesture directly maps to the
+// next or previous play and never competes with ordinary page scrolling.
 
 const PLAYER_BOOTSTRAP_TIMEOUT_MS = 2600;
 const PLAYER_BOOTSTRAP_STEPS = [

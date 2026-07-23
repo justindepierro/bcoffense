@@ -117,10 +117,14 @@ assert.doesNotMatch(
 const callSheetSmart = await source("js/callsheet-smart.js");
 const callSheetPickerRuntime = await source("js/callsheet-picker-runtime.js");
 const callSheetDisplay = await source("js/callsheet-display.js");
+const playPresentation = await source("js/play-presentation.js");
 assert.doesNotMatch(callSheetSmart, /function toggleScouting\(/, "the unused Call Sheet scouting alias stays retired");
 assert.doesNotMatch(callSheetPickerRuntime, /function closeCsSuggestOverlay\(/, "smart-suggestion dismissal belongs to the Smart Suggestions owner");
 assert.doesNotMatch(callSheetPickerRuntime, /function closeCsManagePresets\(/, "display-preset dismissal belongs to the Display owner");
 assert.match(callSheetSmart, /function closeCsSuggest\(\)/, "Smart Suggestions owns its direct close action without an overlay-suffix alias");
 assert.match(callSheetDisplay, /function closeCsManagePresets\(\)/, "Display presets own their direct close action");
+assert.doesNotMatch(appShell, /_initPlayerSwipeNav|PLAYER_TABS = \["dashboard", "playbook", "script"\]/, "mobile page swipes never change player tabs");
+assert.match(playPresentation, /function handlePlayPresentationTouchStart\(event\)/, "Swipe View retains its dedicated play-navigation touch handler");
+assert.match(playPresentation, /PLAY_PRESENTATION_SWIPE_MIN_DISTANCE/, "only Swipe View owns horizontal swipe thresholds");
 
 console.log("shell cleanup contract: runtime asset inventory and retired aliases passed");
