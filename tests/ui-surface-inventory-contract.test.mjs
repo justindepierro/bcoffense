@@ -203,6 +203,15 @@ assert.match(scriptShared, /function wireScriptOverlayDismiss\(overlay\)[\s\S]*?
 assert.match(scriptHealth, /openLayer\(overlay, \{[\s\S]*?id: "scriptShortcutsModal"[\s\S]*?scrollElement: overlay\.querySelector[\s\S]*?blocking: true[\s\S]*?onEscape:/, "Script shortcuts use the shared focus, safe-area, and Escape lifecycle");
 assert.match(scriptHealth, /closeLayer\("scriptShortcutsModal"/, "Script shortcuts release their layer state before their closing animation");
 
+const gamePlanSmart = await source("js/gameplan-smart.js");
+for (const [name, surfaceId] of [
+  ["Game Plan box matching", "gpBoxMatchingOverlay"],
+  ["Game Plan Smart Builder", "gpSmartBuilderOverlay"],
+]) {
+  assert.match(gamePlanSmart, new RegExp(`openLayer\\(overlay, \\{[\\s\\S]*?id: "${surfaceId}"[\\s\\S]*?scrollElement: overlay\\.querySelector[\\s\\S]*?blocking: true[\\s\\S]*?onEscape:`), `${name} uses the shared blocking-layer lifecycle`);
+  assert.match(gamePlanSmart, new RegExp(`closeLayer\\("${surfaceId}"`), `${name} releases the shared blocking-layer lifecycle before removal`);
+}
+
 for (const [name, toolbar] of Object.entries(WORKBENCH_TOOLBARS)) {
   const ownerSource = await source(toolbar.owner);
   assert.ok(ownerSource.includes(toolbar.marker), `${name} toolbar has an active declared owner`);

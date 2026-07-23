@@ -190,8 +190,10 @@ small, testable releases.
   Release v1356 brings the Script's personnel override, call-wording editor,
   period color picker, and keyboard-shortcut reference into that lifecycle;
   its legacy backdrop/Escape helper now releases an active layer before it
-  removes an overlay. Continue migrating the remaining non-discussion specialized
-  in small slices.
+  removes an overlay. Release v1357 brings Game Plan box matching and Smart
+  Builder into the same lifecycle, so changing context or closing either no
+  longer risks leaving background scroll/focus state behind. Continue migrating
+  the remaining non-discussion specialized modal families in small slices.
 - [x] **C-032 · Replace direct `scrollIntoView` where it can move the app
   shell.** Release v1348 routes Script, Playbook, Discussion, Notifications,
   Wristband, Tendencies, quiz, command palette, and mobile-coach jumps through

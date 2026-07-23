@@ -142,8 +142,9 @@ async function editGamePlanBoxMatching(boxId) {
     )
     .join("");
 
-  // Remove any existing instance
-  document.getElementById("gpBoxMatchingOverlay")?.remove();
+  // Close any existing instance through the shared layer lifecycle before
+  // creating a fresh editor for another box.
+  closeGamePlanBoxMatchingModal({ returnFocus: false });
 
   const overlay = document.createElement("div");
   overlay.className = "custom-modal-overlay visible";
@@ -226,13 +227,6 @@ async function editGamePlanBoxMatching(boxId) {
   `;
   overlay.appendChild(style);
 
-  if (typeof trapFocus === "function") trapFocus(overlay);
-
-  const close = () => {
-    overlay.classList.remove("visible");
-    setTimeout(() => overlay.remove(), 180);
-  };
-
   const collectFromUI = () => {
     const out = _gpEmptyCriteria();
     overlay.querySelectorAll("input[type=checkbox][data-meta-field]").forEach((el) => {
@@ -243,9 +237,10 @@ async function editGamePlanBoxMatching(boxId) {
     return out;
   };
 
-  overlay.querySelector("#gpMetaCancelBtn").addEventListener("click", close);
-  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
-  overlay.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); close(); } });
+  overlay.querySelector("#gpMetaCancelBtn").addEventListener("click", closeGamePlanBoxMatchingModal);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) closeGamePlanBoxMatchingModal();
+  });
 
   overlay.querySelector("#gpMetaClearBtn").addEventListener("click", () => {
     overlay.querySelectorAll("input[type=checkbox][data-meta-field]").forEach((el) => { el.checked = false; });
@@ -285,9 +280,26 @@ async function editGamePlanBoxMatching(boxId) {
       }
     });
     renderGamePlan();
-    close();
+    closeGamePlanBoxMatchingModal();
     showToast("Box matching rules saved.", { type: "success", duration: 1800 });
   });
+
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "gpBoxMatchingOverlay",
+      scrollElement: overlay.querySelector(".custom-modal") || overlay,
+      blocking: true,
+      onEscape: () => closeGamePlanBoxMatchingModal(),
+    });
+  }
+}
+
+function closeGamePlanBoxMatchingModal(options = {}) {
+  const overlay = document.getElementById("gpBoxMatchingOverlay");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer("gpBoxMatchingOverlay", options);
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.remove(), 180);
 }
 /* -------------------------------------------------------------------------
    Smart Fill (per box) — opens picker pre-filtered to box intent
@@ -1033,7 +1045,7 @@ function openSmartGamePlanBuilder() {
     showToast("Import a playbook before building a smart game plan.", { type: "warning" });
     return;
   }
-  document.getElementById("gpSmartBuilderOverlay")?.remove();
+  closeSmartGamePlanBuilder({ returnFocus: false });
   const recs = _gpBuildSmartPlanRecommendations();
   const totalCandidates = recs.groups.reduce((sum, group) => sum + group.candidates.length, 0);
   const overlay = document.createElement("div");
@@ -1062,21 +1074,23 @@ function openSmartGamePlanBuilder() {
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
   overlay.addEventListener("click", (event) => {
     if (event.target === overlay) closeSmartGamePlanBuilder();
   });
-  overlay.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      closeSmartGamePlanBuilder();
-    }
-  });
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "gpSmartBuilderOverlay",
+      scrollElement: overlay.querySelector(".custom-modal") || overlay,
+      blocking: true,
+      onEscape: () => closeSmartGamePlanBuilder(),
+    });
+  }
 }
 
-function closeSmartGamePlanBuilder() {
+function closeSmartGamePlanBuilder(options = {}) {
   const overlay = document.getElementById("gpSmartBuilderOverlay");
   if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer("gpSmartBuilderOverlay", options);
   overlay.classList.remove("visible");
   setTimeout(() => overlay.remove(), 180);
 }
