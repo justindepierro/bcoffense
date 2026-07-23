@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
 
-const [migration, policy, auth, middleware, accounts, accountAction, client, playersAdmin, authClient, shell, scriptPlayer, scriptRender, playbookRender, components, index, sw] = await Promise.all([
+const [migration, policy, auth, middleware, accounts, accountAction, client, playersAdmin, teamSettings, authClient, shell, scriptPlayer, scriptRender, playbookRender, components, index, sw] = await Promise.all([
   source("migrations/0023_staff_access.sql"),
   source("functions/_lib/staff-access.js"),
   source("functions/_lib/auth.js"),
@@ -14,6 +14,7 @@ const [migration, policy, auth, middleware, accounts, accountAction, client, pla
   source("functions/auth/players/[id].js"),
   source("js/coach-access.js"),
   source("js/players-admin.js"),
+  source("js/team-settings.js"),
   source("js/auth.js"),
   source("js/app-shell.js"),
   source("js/script-player.js"),
@@ -44,6 +45,10 @@ assert.match(client, /cache: "no-store"[\s\S]*?signal: controller\.signal/, "coa
 assert.match(client, /coachAccessDrafts\.clear\(\);[\s\S]*?coachAccessSelectedId = "";/, "opening coach access begins with fresh server permissions instead of stale unsaved grants");
 assert.match(playersAdmin, /id: "playersAdminOverlay"[\s\S]*?scrollElement:[\s\S]*?blocking: true[\s\S]*?onEscape:/, "player account links use the shared blocking-layer lifecycle");
 assert.match(playersAdmin, /cache: "no-store"[\s\S]*?signal: controller\.signal/, "player account links always read fresh data and cancel stale responses");
+assert.match(teamSettings, /function setTeamRosterFilter\(filter = "all"\)/, "roster health controls use one validated roster-filter path");
+assert.match(teamSettings, /data-action="openPlayersAdmin" data-arg="\$\{playerId\}"/, "each roster row carries its player context into account linking");
+assert.match(playersAdmin, /function renderFocusedRosterPlayerLink\(/, "player accounts can open directly on the roster player that needs a link");
+assert.match(playersAdmin, /function linkFocusedRosterPlayerAccount\(/, "focused roster links validate and persist through the same roster source of truth");
 const cloudSync = await source("js/cloud-sync.js");
 assert.match(cloudSync, /currentUser\.managedCoach === true/, "managed coaches hydrate from the canonical team workspace at sign-in");
 assert.match(index, /id="coachAccessOverlay"/, "coach access modal is included in the app shell");
@@ -59,4 +64,4 @@ assert.match(components, /auth-study-portal/, "legacy mobile coach controls are 
 assert.match(index, /id="mobileScriptCoachNow"[^>]*data-auth-admin-only="true"/, "unfinished live coach mode is reserved for admin");
 assert.match(index, /id="mobileCoachDock"[^>]*data-auth-admin-only="true"/, "mobile coach dock is reserved for admin");
 
-console.log("coach access contract: 28 assertions passed");
+console.log("coach access contract: 32 assertions passed");

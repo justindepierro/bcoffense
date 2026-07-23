@@ -4,6 +4,14 @@ let teamSettingsViewState = null;
 let teamPortalMotdNotifyTimer = null;
 let teamPortalMotdLastNotified = "";
 const teamRosterBrowseState = { query: "", filter: "all", editingPlayerId: "" };
+const TEAM_ROSTER_FILTERS = new Set([
+  "all",
+  "linked",
+  "unlinked",
+  "missing-position",
+  "skill",
+  "linemen",
+]);
 
 const TEAM_ROSTER_POSITION_OPTIONS = [
   { value: "QB", label: "QB" },
@@ -236,6 +244,17 @@ function getVisibleTeamRoster(roster = []) {
   });
 }
 
+function setTeamRosterFilter(filter = "all") {
+  const nextFilter = TEAM_ROSTER_FILTERS.has(String(filter || ""))
+    ? String(filter)
+    : "all";
+  teamRosterBrowseState.filter = nextFilter;
+  teamRosterBrowseState.editingPlayerId = "";
+  const filterInput = document.getElementById("teamRosterFilterInput");
+  if (filterInput) filterInput.value = nextFilter;
+  renderTeamRosterList();
+}
+
 function toggleTeamRosterPlayerEdit(playerId = "") {
   const nextId = String(playerId || "").trim();
   teamRosterBrowseState.editingPlayerId = teamRosterBrowseState.editingPlayerId === nextId ? "" : nextId;
@@ -259,7 +278,7 @@ function buildTeamRosterListMarkup(roster = []) {
         <span class="team-roster-cell team-roster-cell--num">${escapeHtml(player.number || "—")}</span>
         <div class="team-roster-player"><strong>${escapeHtml(player.name || "Unnamed player")}</strong><small>${escapeHtml(player.positionGroup || "Roster")}</small></div>
         <span class="team-roster-position-summary">${escapeHtml(position)}</span>
-        <button type="button" class="team-roster-account-link ${player.accountUsername ? "is-linked" : ""}" data-action="openPlayersAdmin" title="Manage ${escapeHtml(player.name)}'s portal account link"><span aria-hidden="true">${player.accountUsername ? "🔗" : "＋"}</span><span>${escapeHtml(player.accountUsername || "Link account")}</span></button>
+        <button type="button" class="team-roster-account-link ${player.accountUsername ? "is-linked" : ""}" data-action="openPlayersAdmin" data-arg="${playerId}" title="Manage ${escapeHtml(player.name)}'s portal account link"><span aria-hidden="true">${player.accountUsername ? "🔗" : "＋"}</span><span>${escapeHtml(player.accountUsername || "Link account")}</span></button>
         <div class="team-roster-tag-chips" aria-label="Current homework groups">${tags.map((tag) => `<span>#${escapeHtml(String(tag).replace(/^#/, ""))}</span>`).join("") || "<small>No groups</small>"}</div>
         <button type="button" class="btn btn-sm team-roster-edit-toggle" data-action="toggleTeamRosterPlayerEdit" data-arg="${playerId}" aria-expanded="${isEditing ? "true" : "false"}">${isEditing ? "Done" : "Edit"}</button>
         <div class="team-roster-editor"${isEditing ? "" : " hidden"}>
@@ -269,7 +288,7 @@ function buildTeamRosterListMarkup(roster = []) {
           <label><span>Secondary</span><select class="team-roster-cell" data-field="teamPlayerSecondaryPosition" data-player-id="${playerId}" aria-label="Secondary position for ${escapeHtml(player.name)}">${buildTeamRosterPositionOptions(player.secondaryPosition, "Secondary")}</select></label>
           <label><span>Group</span><select class="team-roster-cell" data-field="teamPlayerPositionGroup" data-player-id="${playerId}" aria-label="Position group for ${escapeHtml(player.name)}"><option value="" ${player.positionGroup ? "" : "selected"}>Role type</option><option value="skill" ${player.positionGroup === "skill" ? "selected" : ""}>Skill</option><option value="linemen" ${player.positionGroup === "linemen" ? "selected" : ""}>Linemen</option></select></label>
           <label class="team-roster-editor-tags"><span>Homework groups</span><input type="text" class="team-roster-cell" value="${escapeAttr(tags.map((tag) => `#${String(tag).replace(/^#/, "")}`).join(" "))}" data-field="teamPlayerTags" data-player-id="${playerId}" placeholder="#redzone #varsity" aria-label="Custom homework tags for ${escapeHtml(player.name)}" /></label>
-          <button type="button" class="btn btn-sm btn-outline" data-action="openPlayersAdmin">Manage portal link</button>
+          <button type="button" class="btn btn-sm btn-outline" data-action="openPlayersAdmin" data-arg="${playerId}">Manage portal link</button>
           <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamPlayer" data-player-id="${playerId}" aria-label="Remove ${escapeHtml(player.name)}">Remove player</button>
         </div>
       </div>`;
@@ -279,6 +298,8 @@ function buildTeamRosterListMarkup(roster = []) {
 function renderTeamRosterList() {
   const rosterContainer = document.getElementById("teamRosterList");
   if (!rosterContainer) return;
+  const filterInput = document.getElementById("teamRosterFilterInput");
+  if (filterInput) filterInput.value = teamRosterBrowseState.filter;
   rosterContainer.innerHTML = buildTeamRosterListMarkup(getTeamRoster());
 }
 
@@ -317,15 +338,15 @@ function buildTeamRosterHealthMarkup(roster) {
   const duplicateState = health.duplicateAccounts.length ? "danger" : "good";
   const positionState = health.missingPosition.length ? "warning" : "good";
   return `
-    <span class="team-roster-health-chip team-roster-health-chip--${linkedState}">
+    <button type="button" class="team-roster-health-chip team-roster-health-chip--action team-roster-health-chip--${linkedState}" data-action="setTeamRosterFilter" data-arg="${health.unlinked.length ? "unlinked" : "linked"}" aria-pressed="${teamRosterBrowseState.filter === (health.unlinked.length ? "unlinked" : "linked") ? "true" : "false"}" title="Show ${health.unlinked.length ? "players needing an account link" : "linked players"}">
       ${escapeHtml(`${health.linked}/${health.total} linked`)}
-    </span>
+    </button>
     <span class="team-roster-health-chip team-roster-health-chip--${duplicateState}">
       ${health.duplicateAccounts.length ? escapeHtml(`${health.duplicateAccounts.length} duplicate login${health.duplicateAccounts.length === 1 ? "" : "s"}`) : "Unique logins"}
     </span>
-    <span class="team-roster-health-chip team-roster-health-chip--${positionState}">
+    <button type="button" class="team-roster-health-chip team-roster-health-chip--action team-roster-health-chip--${positionState}" data-action="setTeamRosterFilter" data-arg="${health.missingPosition.length ? "missing-position" : "all"}" aria-pressed="${teamRosterBrowseState.filter === (health.missingPosition.length ? "missing-position" : "all") ? "true" : "false"}" title="Show ${health.missingPosition.length ? "players missing a position" : "all players"}">
       ${health.missingPosition.length ? escapeHtml(`${health.missingPosition.length} missing POS`) : "Positions set"}
-    </span>
+    </button>
     <span class="team-roster-health-copy">Link each portal account once so roster identity carries into player views, quizzes, and leaderboards.</span>
     <button type="button" class="team-roster-health-link" data-action="openPlayersAdmin">Manage player links</button>
   `;

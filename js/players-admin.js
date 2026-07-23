@@ -10,6 +10,7 @@
 
 let _paPlayers = [];
 let _paLoadController = null;
+let _paRosterFocusId = "";
 
 function normalizePlayerAccountEmail(value = "") {
   return String(value || "").trim().toLowerCase();
@@ -84,9 +85,10 @@ function renderPlayerAccountRosterLink(p, context) {
 
 // ── Open / close ──────────────────────────────────────────────────────────────
 
-function openPlayersAdmin() {
+function openPlayersAdmin(rosterPlayerId = "") {
   const overlay = document.getElementById("playersAdminOverlay");
   if (!overlay) return;
+  _paRosterFocusId = String(rosterPlayerId || "").trim();
   overlay.classList.add("visible");
   overlay.removeAttribute("inert");
   overlay.removeAttribute("aria-hidden");
@@ -152,6 +154,9 @@ function renderPlayersAdminList(players, container) {
   const linkContext = getPlayerAccountRosterLinkContext();
   const linkedAccounts = playerAccounts.filter((p) => linkContext.byAccount.has(normalizePlayerAccountEmail(p.email))).length;
   const exactMatches = getExactPlayerAccountRosterMatches(players, linkContext.roster);
+  const focusedRosterPlayer = linkContext.roster.find(
+    (player) => String(player.id || "") === _paRosterFocusId,
+  );
 
   const statsHtml = `
     <div class="pa-stats">
@@ -169,10 +174,41 @@ function renderPlayersAdminList(players, container) {
   setInnerHTML(
     container,
     `${statsHtml}
+    ${focusedRosterPlayer ? renderFocusedRosterPlayerLink(focusedRosterPlayer, players, linkContext) : ""}
     <p class="pa-linking-intro">Link each player portal login to one roster record. The roster remains the source of truth for personnel, while the account controls portal identity, quiz credit, and leaderboard names.</p>
     <div class="pa-list">${players.length ? '<div class="pa-list-head" aria-hidden="true"><span>Player account</span><span>Roster link</span><span>Access</span></div>' : ""}${listHtml}</div>
     ${renderInviteForm()}`,
   );
+}
+
+function renderFocusedRosterPlayerLink(rosterPlayer, players, context) {
+  const currentAccount = normalizePlayerAccountEmail(rosterPlayer.accountUsername);
+  const accountOptions = players
+    .filter((account) => account.role === "player" && normalizePlayerAccountEmail(account.email))
+    .map((account) => {
+      const accountEmail = normalizePlayerAccountEmail(account.email);
+      const linkedElsewhere = context.byAccount.get(accountEmail);
+      const unavailable = linkedElsewhere && linkedElsewhere.id !== rosterPlayer.id;
+      const status = account.status === "active" ? "" : ` — ${account.status}`;
+      const suffix = unavailable ? " — linked elsewhere" : status;
+      return `<option value="${escapeAttr(accountEmail)}"${accountEmail === currentAccount ? " selected" : ""}${unavailable ? " disabled" : ""}>${escapeHtml(`${account.displayName || accountEmail} (${accountEmail})${suffix}`)}</option>`;
+    })
+    .join("");
+  return `<section class="pa-roster-focus" aria-label="Roster account link focus">
+    <div>
+      <span class="pa-roster-focus__eyebrow">Roster link</span>
+      <strong>${escapeHtml(formatPlayerAccountRosterLabel(rosterPlayer))}</strong>
+      <small>${currentAccount ? `Currently linked to ${escapeHtml(currentAccount)}.` : "Choose a player portal account to link this roster player."}</small>
+    </div>
+    <label class="pa-roster-link">
+      <span>Player portal account</span>
+      <select data-onchange="linkFocusedRosterPlayerAccount" data-pass="event" data-roster-player-id="${escapeAttr(rosterPlayer.id)}" aria-label="Portal account for ${escapeHtml(rosterPlayer.name)}">
+        <option value="">Not linked to a portal account</option>
+        ${accountOptions}
+      </select>
+    </label>
+    <button type="button" class="btn btn-sm btn-outline" data-action="clearPlayersAdminRosterFocus">Done</button>
+  </section>`;
 }
 
 function renderPlayerRow(p, linkContext = getPlayerAccountRosterLinkContext()) {
@@ -256,6 +292,54 @@ function linkPlayerAccountToRoster(event) {
     type: "success",
     duration: 2600,
   });
+}
+
+function linkFocusedRosterPlayerAccount(event) {
+  const select = event?.target;
+  const rosterPlayerId = String(select?.dataset?.rosterPlayerId || "").trim();
+  const account = normalizePlayerAccountEmail(select?.value);
+  if (!select || !rosterPlayerId || typeof getTeamRoster !== "function" || typeof saveTeamRoster !== "function") return;
+
+  const roster = getTeamRoster();
+  const target = roster.find((player) => player.id === rosterPlayerId);
+  if (!target) return;
+  const selectedAccount = account
+    ? _paPlayers.find((player) => player.role === "player" && normalizePlayerAccountEmail(player.email) === account)
+    : null;
+  if (account && !selectedAccount) {
+    showToast("That player account is no longer available. Refresh the account list and try again.", {
+      type: "warning",
+      duration: 3600,
+    });
+    renderPlayersAdminList(_paPlayers, document.getElementById("playersAdminBody"));
+    return;
+  }
+  const alreadyLinked = account
+    ? roster.find((player) => normalizePlayerAccountEmail(player.accountUsername) === account && player.id !== rosterPlayerId)
+    : null;
+  if (alreadyLinked) {
+    showToast(`${account} is already linked to ${alreadyLinked.name}.`, { type: "warning", duration: 3600 });
+    renderPlayersAdminList(_paPlayers, document.getElementById("playersAdminBody"));
+    return;
+  }
+
+  if (normalizePlayerAccountEmail(target.accountUsername) === account) return;
+  target.accountUsername = account;
+  saveTeamRoster(roster);
+  if (document.getElementById("teamRosterList") && typeof renderTeamSettings === "function") {
+    renderTeamSettings();
+  }
+  renderPlayersAdminList(_paPlayers, document.getElementById("playersAdminBody"));
+  showToast(account ? `${target.name} is now linked to ${account}.` : `${target.name}'s portal link was removed.`, {
+    type: account ? "success" : "info",
+    duration: 2800,
+  });
+}
+
+function clearPlayersAdminRosterFocus() {
+  _paRosterFocusId = "";
+  const body = document.getElementById("playersAdminBody");
+  if (body) renderPlayersAdminList(_paPlayers, body);
 }
 
 async function autoLinkExactPlayerAccounts() {

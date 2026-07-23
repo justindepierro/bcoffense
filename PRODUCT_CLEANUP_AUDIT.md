@@ -86,7 +86,10 @@ small, testable releases.
   replaces the always-open roster form with a searchable, filterable Coach Grid
   list. Link health, account state, and homework groups are visible at a glance;
   bulk import/add tools stay collapsed and one player expands for editing only
-  when needed.
+  when needed. Release v1361 turns the roster health chips into direct filters
+  and carries the exact player context into Player Accounts, so a coach can
+  link the correct portal login without losing their place in a separate
+  account-management list.
 - [x] **C-012 · Consolidate overlay families.** Release v1295 moves the shared
   `Actions` hub and Player Playbook filter sheet onto the common layer helper:
   one scroll owner, backdrop/Escape dismissal, focus capture/return, and a
