@@ -53,7 +53,7 @@ function openWbQuickSearch() {
         return;
       }
       items.forEach((el, i) => el.classList.toggle("highlighted", i === idx));
-      if (items[idx]) items[idx].scrollIntoView({ block: "nearest" });
+      if (items[idx]) scrollElementWithinPanel(items[idx], { block: "nearest" });
     });
   }
 

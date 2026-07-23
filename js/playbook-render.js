@@ -1028,9 +1028,8 @@ function initPlaybookKeyboard() {
         selectPlaybookRow(bounded);
       }
       requestAnimationFrame(() => {
-        document
-          .querySelector(`#playbookTable tbody tr[data-idx="${bounded}"]`)
-          ?.scrollIntoView({ block: "nearest" });
+        const row = document.querySelector(`#playbookTable tbody tr[data-idx="${bounded}"]`);
+        if (row) scrollElementWithinPanel(row, { block: "nearest" });
       });
     };
 

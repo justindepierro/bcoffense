@@ -14,13 +14,29 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (relativePath) => readFile(new URL(relativePath, `file://${root}/`), "utf8");
 const sort = (items) => [...items].sort();
 
-const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, scriptQuizCss, jsEntries, cssEntries] = await Promise.all([
+const panelScrollSources = [
+  "js/app-command.js",
+  "js/app-notifications.js",
+  "js/play-discussion.js",
+  "js/playbook-render.js",
+  "js/script-add.js",
+  "js/script-player.js",
+  "js/script-quiz-foundation.js",
+  "js/script-render.js",
+  "js/tendencies.js",
+  "js/wristband-cell-popup.js",
+  "js/wristband-search.js",
+];
+
+const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, scriptQuizCss, appShell, panelScrollOwners, jsEntries, cssEntries] = await Promise.all([
   source("index.html"),
   source("sw.js"),
   source("js/playbook-identity.js"),
   source("js/playbook.js"),
   source("css/script.css"),
   source("css/script-quiz.css"),
+  source("js/app-shell.js"),
+  Promise.all(panelScrollSources.map(async (path) => ({ path, content: await source(path) }))),
   readdir(new URL("js/", `file://${root}/`)),
   readdir(new URL("css/", `file://${root}/`)),
 ]);
@@ -75,5 +91,36 @@ for (const selector of [
     `${selector} was a proven-unused readiness alias and stays retired`,
   );
 }
+
+assert.match(
+  appShell,
+  /function scrollElementWithinPanel\(el, opts = \{\}\)/,
+  "the app shell owns the one safe panel-scroll primitive",
+);
+for (const { path, content } of panelScrollOwners) {
+  assert.doesNotMatch(
+    content,
+    /\.scrollIntoView\(/,
+    `${path} must use scrollElementWithinPanel so it cannot move desktop app chrome`,
+  );
+  assert.match(
+    content,
+    /scrollElementWithinPanel\(/,
+    `${path} retains its scoped in-panel navigation behavior`,
+  );
+}
+assert.doesNotMatch(
+  appShell,
+  /activeCard\.scrollIntoView|row\?\.scrollIntoView/,
+  "app-shell keyboard and coach-mode navigation must use scoped panel scrolling",
+);
+const callSheetSmart = await source("js/callsheet-smart.js");
+const callSheetPickerRuntime = await source("js/callsheet-picker-runtime.js");
+const callSheetDisplay = await source("js/callsheet-display.js");
+assert.doesNotMatch(callSheetSmart, /function toggleScouting\(/, "the unused Call Sheet scouting alias stays retired");
+assert.doesNotMatch(callSheetPickerRuntime, /function closeCsSuggestOverlay\(/, "smart-suggestion dismissal belongs to the Smart Suggestions owner");
+assert.doesNotMatch(callSheetPickerRuntime, /function closeCsManagePresets\(/, "display-preset dismissal belongs to the Display owner");
+assert.match(callSheetSmart, /function closeCsSuggest\(\)/, "Smart Suggestions owns its direct close action without an overlay-suffix alias");
+assert.match(callSheetDisplay, /function closeCsManagePresets\(\)/, "Display presets own their direct close action");
 
 console.log("shell cleanup contract: runtime asset inventory and retired aliases passed");

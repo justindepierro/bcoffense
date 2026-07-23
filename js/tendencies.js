@@ -795,7 +795,7 @@ function handleTendenciesKeydown(e) {
 function highlightSelectedRow() {
   document.querySelectorAll(".td-table tbody tr").forEach((tr, i) => {
     tr.classList.toggle("td-row-selected", i === tdSelectedRow);
-    if (i === tdSelectedRow) tr.scrollIntoView({ block: "nearest" });
+    if (i === tdSelectedRow) scrollElementWithinPanel(tr, { block: "nearest" });
   });
 }
 

@@ -1,7 +1,7 @@
 // ============================================================
 // callsheet-smart.js — scouting overlay + smart suggestions
 //
-// Owns: `toggleScoutingOverlay`, `toggleScouting`, `buildScoutingBadge`,
+// Owns: `toggleScoutingOverlay`, `buildScoutingBadge`,
 // `buildDeadVsBadge`, `openSmartSuggestionsModal`, `addSuggestionToSheet`.
 //
 // Loaded after callsheet.js (depends on callSheet, callSheetSettings,
@@ -32,11 +32,6 @@ function toggleScoutingOverlay() {
   } else {
     showToast("🎯 Scouting overlay OFF");
   }
-}
-
-// Alias — overlay-close dispatcher strips "Overlay" suffix before calling
-function toggleScouting() {
-  toggleScoutingOverlay();
 }
 
 /**
@@ -178,13 +173,13 @@ function openSmartSuggestionsModal(categoryId) {
       <div class="modal-content cs-suggest-modal" role="dialog" aria-modal="true" aria-labelledby="csSuggestTitle">
         <div class="cs-suggest-header">
           <h3 id="csSuggestTitle">💡 Smart Suggestions — ${escapeHtml(catName)}</h3>
-          <button data-action="closeCsSuggestOverlay" class="modal-close-btn" aria-label="Close smart suggestions">✕</button>
+          <button data-action="closeCsSuggest" class="modal-close-btn" aria-label="Close smart suggestions">✕</button>
         </div>
         ${intelHtml}
         <div class="cs-suggest-list">${listHtml}</div>
         <div class="cs-suggest-footer">
           <span class="cs-suggest-legend">Score = preferred field match − dead-vs penalties</span>
-          <button data-action="closeCsSuggestOverlay" class="btn btn-secondary">Close</button>
+          <button data-action="closeCsSuggest" class="btn btn-secondary">Close</button>
         </div>
       </div>
     </div>
@@ -195,8 +190,12 @@ function openSmartSuggestionsModal(categoryId) {
   document
     .getElementById("csSuggestOverlay")
     ?.addEventListener("click", (e) => {
-      if (e.target.id === "csSuggestOverlay") closeCsSuggestOverlay();
+      if (e.target.id === "csSuggestOverlay") closeCsSuggest();
     });
+}
+
+function closeCsSuggest() {
+  document.getElementById("csSuggestOverlay")?.remove();
 }
 
 /**

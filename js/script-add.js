@@ -383,7 +383,7 @@ function flashScriptPlayAtIndex(scriptIndex) {
   if (!targetItem) return;
 
   targetItem.classList.add("just-added");
-  targetItem.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  scrollElementWithinPanel(targetItem, { block: "nearest", behavior: "smooth" });
   setTimeout(() => targetItem.classList.remove("just-added"), 950);
 }
 

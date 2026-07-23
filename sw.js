@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v1347";
+const CACHE_NAME = "bcoffense-v1348";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,

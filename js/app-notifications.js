@@ -704,7 +704,8 @@ function openDiscussionForPlayId(playId) {
       openPlayWorkflowPanel(match);
       // Scroll to discussion section inside the panel
       setTimeout(() => {
-        document.querySelector(".disc-body[data-disc-play-id]")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const discussion = document.querySelector(".disc-body[data-disc-play-id]");
+        if (discussion) scrollElementWithinPanel(discussion, { behavior: "smooth", block: "start" });
       }, 400);
     }, 300);
   }

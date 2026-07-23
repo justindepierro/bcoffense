@@ -695,7 +695,7 @@ function _setCommandPaletteActiveIndex(nextIndex) {
   const active = document.getElementById(`commandPaletteResult-${_commandPaletteActiveIndex}`);
   const input = document.getElementById("commandPaletteInput");
   if (input) input.setAttribute("aria-activedescendant", active?.id || "");
-  active?.scrollIntoView({ block: "nearest" });
+  if (active) scrollElementWithinPanel(active, { block: "nearest" });
 }
 
 function _runCommandPaletteItem(index = _commandPaletteActiveIndex) {
@@ -731,7 +731,7 @@ function _openCommandPlay(play) {
       const target =
         document.querySelector(`#playbookTable tr[data-idx="${filteredIndex}"]`) ||
         document.querySelector(`#pbCards .pb-card[data-idx="${filteredIndex}"]`);
-      target?.scrollIntoView({ block: "center", behavior: "smooth" });
+      if (target) scrollElementWithinPanel(target, { block: "center", behavior: "smooth" });
     });
   });
 }

@@ -2625,7 +2625,7 @@ function openCoachQuizRepairPlayEditor(masterIdxStr = "") {
         if (icon) icon.textContent = "▼";
       }
       const firstRule = document.getElementById("pe-respQ");
-      if (firstRule) firstRule.scrollIntoView({ block: "center" });
+      if (firstRule) scrollElementWithinPanel(firstRule, { block: "center" });
     });
   });
 }

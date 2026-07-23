@@ -1136,7 +1136,7 @@ async function submitDiscPost(arg, el) {
     if (optimisticNode) {
       optimisticNode.classList.add("disc-post--pending");
       list.appendChild(optimisticNode);
-      optimisticNode.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      scrollElementWithinPanel(optimisticNode, { behavior: "smooth", block: "nearest" });
     }
   }
   // Clear composer immediately for snappy feel
@@ -1435,7 +1435,7 @@ async function submitDiscReply(arg, el) {
     optimisticReplyNode.classList.add("disc-post--pending");
     repliesEl.querySelector(".disc-load-replies")?.remove();
     repliesEl.appendChild(optimisticReplyNode);
-    optimisticReplyNode.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    scrollElementWithinPanel(optimisticReplyNode, { behavior: "smooth", block: "nearest" });
   }
 
   // Close the reply composer immediately (clear text first to skip confirm)
@@ -3268,7 +3268,7 @@ function discAskCoachQuestion(playId, el) {
   if (textarea) {
     textarea.placeholder = "What's your question? (Ctrl+Enter to post)";
     textarea.focus();
-    textarea.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    scrollElementWithinPanel(textarea, { behavior: "smooth", block: "nearest" });
   }
 }
 
@@ -3312,7 +3312,7 @@ function _discApplyDeepLink(playId, bodyEl = null) {
   const targetEl = _discPostInScope(bodyEl || _discCurrentBodyForPlay(playId), _discDeepLinkPostId);
   if (!targetEl) return;
   targetEl.classList.add("disc-post--highlighted");
-  targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  scrollElementWithinPanel(targetEl, { behavior: "smooth", block: "center" });
   setTimeout(() => targetEl.classList.remove("disc-post--highlighted"), 4000);
   // Clear so we don't re-apply on subsequent renders
   _discDeepLinkPlayId = null;

@@ -491,6 +491,10 @@ function manageDisplayPresets() {
   document.body.appendChild(overlay);
 }
 
+function closeCsManagePresets() {
+  document.getElementById("csManagePresetsOverlay")?.remove();
+}
+
 function deleteDisplayPreset(idx) {
   const presets = storageManager.get(
     STORAGE_KEYS.CALLSHEET_DISPLAY_PRESETS,

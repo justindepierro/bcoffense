@@ -804,7 +804,7 @@ function initCellPopupKeyNav() {
       item.classList.toggle("highlighted", i === highlightedPlayIndex);
     });
     if (items[highlightedPlayIndex]) {
-      items[highlightedPlayIndex].scrollIntoView({ block: "nearest" });
+      scrollElementWithinPanel(items[highlightedPlayIndex], { block: "nearest" });
     }
   });
 }

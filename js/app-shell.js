@@ -963,7 +963,7 @@ document.addEventListener("keydown", (e) => {
       obRenderPlayList();
       obRenderSidebar();
       const activeCard = document.querySelector("#obPlayList .ob-card.active");
-      if (activeCard) activeCard.scrollIntoView({ block: "nearest" });
+      if (activeCard) scrollElementWithinPanel(activeCard, { block: "nearest" });
       return;
     }
   }
@@ -1778,13 +1778,15 @@ function _focusMobileCoachScriptRow() {
   updateMobileCoachScriptNow();
   requestAnimationFrame(() => {
     const row = document.querySelector(`#scriptPlays .script-item[data-idx="${currentIndex}"]`);
-    row?.scrollIntoView({
-      block: "center",
-      behavior:
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
-    });
+    if (row) {
+      scrollElementWithinPanel(row, {
+        block: "center",
+        behavior:
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+      });
+    }
   });
 }
 

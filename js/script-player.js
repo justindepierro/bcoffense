@@ -941,7 +941,7 @@ function openSavedScriptsWorkspace(opts = {}) {
       showToast("No saved scripts yet.", { duration: 2500, type: "info" });
       return;
     }
-    savedSection.scrollIntoView({ block: "start", behavior: "smooth" });
+    scrollElementWithinPanel(savedSection, { block: "start", behavior: "smooth" });
     if (drawerBody) drawerBody.scrollTop = savedSection.offsetTop;
     savedSection.classList.add("saved-scripts--spotlight");
     setTimeout(() => savedSection.classList.remove("saved-scripts--spotlight"), 1600);

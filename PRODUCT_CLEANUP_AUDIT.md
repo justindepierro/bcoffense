@@ -88,14 +88,16 @@ small, testable releases.
   completes this family with Diagram Health and Publish Media. The daily
   authoring, quiz/homework, and media workflows now share one layer contract
   without changing their underlying recovery or publishing behavior.
-- [~] **C-013 · Retire obsolete UI aliases after usage checks.** The first safe
-  slice removes the unused `setPlaybookCategoryCleanupHide` no-op and ten
+- [x] **C-013 · Retire obsolete UI aliases after usage checks.** The first safe
+  slice removed the unused `setPlaybookCategoryCleanupHide` no-op and ten
   readiness-only Script CSS aliases with zero remaining renderer, setting,
-  print, or delegated-action references. `shell-cleanup-contract.test.mjs`
-  now verifies each runtime script is loaded/cached exactly once, those aliases
-  cannot quietly return, and Playbook filter-chip listeners remain idempotent
-  across workspace rehydration. Keep data migrations separate from visual
-  cleanup; Call Sheet aliases still need their own usage audit.
+  print, or delegated-action references. Release v1348 completes the Call
+  Sheet usage audit: it removes the unused `toggleScouting` compatibility
+  alias, gives Smart Suggestions its direct close action, and moves Display
+  Presets' close action into its owning file. Semantic football-data
+  normalizers remain intentionally; they are not UI compatibility aliases.
+  `shell-cleanup-contract.test.mjs` prevents these ownership leaks from
+  returning.
 - [x] **C-014 · Reduce command-strip duplication.** Release v1294 applies one
   action hierarchy across the four daily workbenches. Script keeps `Library`,
   `Save`, and `Quiz`; Game Plan keeps `Filters` and `Build Plan`; Call Sheet
@@ -160,9 +162,13 @@ small, testable releases.
   v1302 adds Media Inventory and Archived Diagram Recovery coverage; and v1303
   adds Diagram Health and Publish Media. Continue migrating the remaining
   specialized modal families in small slices.
-- [ ] **C-032 · Replace direct `scrollIntoView` where it can move the app
-  shell.** Scope script/playbook jumps to their intended scroll container so
-  sticky headers and tabs stay aligned.
+- [x] **C-032 · Replace direct `scrollIntoView` where it can move the app
+  shell.** Release v1348 routes Script, Playbook, Discussion, Notifications,
+  Wristband, Tendencies, quiz, command palette, and mobile-coach jumps through
+  the shared `scrollElementWithinPanel` primitive. On desktop it only scrolls
+  the nearest real panel; on phone it retains native document scrolling. The
+  login keyboard visibility path remains intentionally native because its
+  overlay is the active viewport owner.
 - [ ] **C-033 · Add a UI inventory contract.** Every overlay, drawer, and
   toolbar gets a declared owner and approved pattern. New UI cannot add a fifth
   modal style or a second vertical scroll owner without an explicit exception.

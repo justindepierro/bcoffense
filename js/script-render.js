@@ -1005,7 +1005,7 @@ function jumpToPeriod(periodId) {
 
   const periodHeader = document.querySelector(`[data-separator-id="${periodId}"]`);
   if (periodHeader) {
-    periodHeader.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    scrollElementWithinPanel(periodHeader, { behavior: "smooth", block: "nearest" });
   }
 
   const jumpSelect = document.getElementById("jumpToPeriod");
@@ -1245,7 +1245,7 @@ function jumpToPlayInPlaybook(idxOrStr) {
   requestAnimationFrame(() => {
     if (typeof selectPlaybookRow === "function") selectPlaybookRow(fIdx);
     const row = document.querySelector(`#playbookTable tr[data-idx="${fIdx}"]`);
-    if (row) row.scrollIntoView({ block: "center", behavior: "smooth" });
+    if (row) scrollElementWithinPanel(row, { block: "center", behavior: "smooth" });
   });
 }
 
