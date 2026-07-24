@@ -326,12 +326,6 @@ function projectSignal(record) {
   };
 }
 
-function legacyClipSig(play) {
-  return [play?.formation, play?.play, play?.personnel, play?.type]
-    .map((value) => String(value == null ? "" : value).trim())
-    .join("|");
-}
-
 function dedupePlays(plays) {
   const seen = new Set();
   const out = [];
@@ -486,22 +480,12 @@ export async function buildPlayerRelease(backup, opts = {}) {
     .filter(Boolean)
     .slice(0, MAX_SIGNALS);
 
-  const allSourcePlays = sourcePlaybook.filter((play) => play && !play.isSeparator);
-  const legacyClipCounts = new Map();
-  allSourcePlays.forEach((play) => {
-    const sig = legacyClipSig(play);
-    if (sig) legacyClipCounts.set(sig, (legacyClipCounts.get(sig) || 0) + 1);
-  });
-
   const diagramMediaIds = [...new Set(playbook.map((play) => cleanString(play.mediaId, 512)).filter(Boolean))].sort();
+  // Player playback is authorized strictly by the same permanent media ID
+  // carried by the released play. Older display-derived clip keys are
+  // recovery input for the one-way migration only; releasing them would let
+  // an old manifest appear to belong to a renamed or copied play.
   const clipSigs = new Set(diagramMediaIds);
-  playbook.forEach((play) => {
-    // Old tag-keyed clip manifests are allowed only when the tag identifies
-    // exactly one play in the full source playbook. New clip uploads use the
-    // permanent media ID above.
-    const legacySig = legacyClipSig(play);
-    if (legacySig && legacyClipCounts.get(legacySig) === 1) clipSigs.add(legacySig);
-  });
   signals.forEach((record) => {
     if (record.clipCount > 0 && record.clipKey) clipSigs.add(record.clipKey);
   });

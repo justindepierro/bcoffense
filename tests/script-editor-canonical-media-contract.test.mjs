@@ -5,11 +5,15 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (relativePath) => readFile(new URL(relativePath, `file://${root}/`), "utf8");
 
-const [editor, images, gamePlan, callSheet, quizFoundation, quiz] = await Promise.all([
+const [editor, images, gamePlan, callSheet, scriptAdd, scriptShared, gamePlanIntegrations, clips, quizFoundation, quiz] = await Promise.all([
   source("js/playbook-editor.js"),
   source("js/play-images.js"),
   source("js/gameplan.js"),
   source("js/callsheet.js"),
+  source("js/script-add.js"),
+  source("js/script-shared.js"),
+  source("js/gameplan-integrations.js"),
+  source("js/play-clips.js"),
   source("js/script-quiz-foundation.js"),
   source("js/script-quiz.js"),
 ]);
@@ -43,6 +47,31 @@ assert.match(
   images,
   /function signaturesForPlay\(play\)[\s\S]*?const mediaId = typeof getPlayMediaId[\s\S]*?const candidates = \[[\s\S]*?mediaId,/,
   "shared image operations retain the canonical cloud media ID alongside legacy identifiers",
+);
+assert.match(
+  scriptAdd,
+  /function createScriptPlayFromPlaybook\(play\)[\s\S]*?mediaId: typeof getPlayMediaId/,
+  "script-copy fallback preserves the canonical media ID",
+);
+assert.match(
+  scriptShared,
+  /refreshLinkedScriptPlaysFromPlaybook\(sourcePlay\)[\s\S]*?mediaId: typeof getPlayMediaId/,
+  "script refresh fallback preserves the canonical media ID",
+);
+assert.match(
+  callSheet,
+  /function copyPlayForCallSheet\(play, overrides = \{\}\)[\s\S]*?mediaId: typeof getPlayMediaId/,
+  "call-sheet fallback preserves the canonical media ID",
+);
+assert.match(
+  gamePlanIntegrations,
+  /pushGamePlanToScript\(\)[\s\S]*?mediaId: typeof getPlayMediaId[\s\S]*?createScriptFromGamePlan\(\)[\s\S]*?mediaId: typeof getPlayMediaId/,
+  "game-plan-to-script fallbacks preserve the canonical media ID",
+);
+assert.match(
+  clips,
+  /function candidateSigs\(play\)[\s\S]*?getPlayMediaId\(play\)[\s\S]*?return out;[\s\S]*?function sigForPlay\(play\)[\s\S]*?function hasForPlay\(play\)[\s\S]*?const sig = sigForPlay\(play\)/,
+  "play-video runtime reads use the permanent media ID rather than historic display signatures",
 );
 assert.match(
   images,

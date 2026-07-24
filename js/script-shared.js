@@ -616,7 +616,14 @@ function refreshLinkedScriptPlaysFromPlaybook(sourcePlay) {
     const overrides = getScriptPlaybookRefreshOverrides(current);
     const refreshed = typeof copyPlayWithSourceIdentity === "function"
       ? copyPlayWithSourceIdentity(sourcePlay, overrides)
-      : { ...sourcePlay, ...overrides, playbookId: sourceId };
+      : {
+        ...sourcePlay,
+        ...overrides,
+        playbookId: sourceId,
+        mediaId: typeof getPlayMediaId === "function"
+          ? getPlayMediaId(sourcePlay)
+          : String(sourcePlay?.mediaId || "").trim(),
+      };
     Object.keys(current).forEach((key) => delete current[key]);
     Object.assign(current, refreshed);
   });

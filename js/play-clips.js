@@ -51,9 +51,11 @@
   let _legacyPlayMigrationPromise = null;
   const _manifestCache = new Map();
 
-  // Candidate keys are permanent-media-ID first. Tag/content-derived keys are
-  // historical fallbacks only; a player route accepts one only when the active
-  // release has proved that the legacy key identifies exactly one released play.
+  // Normal runtime reads use the permanent media ID exclusively. Historic
+  // display-derived keys are recovery evidence, not an alternate selector:
+  // using one in ordinary viewing can attach an old clip to the wrong copy of
+  // a play after an import or rename. The server-side migration owns the only
+  // supported legacy-to-canonical transfer.
   function candidateSigs(play) {
     if (!play) return [];
     const out = [];
@@ -66,19 +68,6 @@
     } else {
       push(play?.mediaId);
     }
-    if (typeof getPlayIdentityKey === "function") {
-      push(getPlayIdentityKey(play, "tag"));
-    }
-    if (
-      window.playImages &&
-      typeof window.playImages.signaturesForPlay === "function"
-    ) {
-      const sigs = window.playImages.signaturesForPlay(play);
-      if (Array.isArray(sigs)) sigs.forEach(push);
-    }
-    if (!out.length && typeof playSignature === "function") {
-      push(playSignature(play));
-    }
     return out;
   }
 
@@ -87,14 +76,11 @@
     return cands.length ? cands[0] : "";
   }
 
-  // The candidate that actually has clips per the cached index, else the
-  // canonical signature. Used when deleting so we target the right manifest.
+  // Deletes target the same permanent key used for upload and playback. A
+  // legacy manifest can be migrated or reviewed, but must never be selected
+  // merely because it happens to share an old display signature.
   function resolveStoredSig(play) {
     const cands = candidateSigs(play);
-    if (_indexSet) {
-      const found = cands.find((s) => _indexSet.has(s));
-      if (found) return found;
-    }
     return cands.length ? cands[0] : "";
   }
 
@@ -207,18 +193,15 @@
 
   function hasForPlay(play) {
     if (!_indexSet) return false;
-    return candidateSigs(play).some((s) => _indexSet.has(s));
+    const sig = sigForPlay(play);
+    return Boolean(sig && _indexSet.has(sig));
   }
 
   // Player-facing views must use the immutable media ID only. Historic
   // signature fallbacks remain useful for staff recovery, but can never be a
   // safe answer for a player filter because older play calls may share text.
   function hasCanonicalForPlay(play) {
-    if (!_indexSet) return false;
-    const mediaId = typeof getPlayMediaId === "function"
-      ? String(getPlayMediaId(play) || "").trim()
-      : String(play?.mediaId || "").trim();
-    return Boolean(mediaId && _indexSet.has(mediaId));
+    return hasForPlay(play);
   }
 
   function isIndexLoaded() {
@@ -465,10 +448,9 @@
     return promise;
   }
 
-  // Returns clips for a play, searching every candidate signature so clips
-  // stored under the canonical content key are found regardless of which device
-  // (coach/player) is viewing. Each clip is decorated with its resolved `sig`
-  // and a ready-to-use `url` for a <video> src.
+  // Returns clips for a play from its permanent media key. Each clip is
+  // decorated with the exact canonical `sig` and a ready-to-use player-safe
+  // URL. Historic manifests are handled by the one-way migration, not here.
   async function listForSig(sig, opts = {}) {
     const key = normalizeManifestSig(sig);
     if (!key) return [];

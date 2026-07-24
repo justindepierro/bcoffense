@@ -475,7 +475,15 @@ async function pushGamePlanToScript() {
           ? createScriptPlayFromGamePlan(p, { board, box: b })
           : (typeof copyPlayWithSourceIdentity === "function"
             ? copyPlayWithSourceIdentity(p, { _gpSource: true, id: Date.now() + Math.random() })
-            : { ...p, playbookId: p.playbookId || p.sourcePlayId || p.id || null, _gpSource: true, id: Date.now() + Math.random() }),
+            : {
+              ...p,
+              playbookId: p.playbookId || p.sourcePlayId || p.id || null,
+              mediaId: typeof getPlayMediaId === "function"
+                ? getPlayMediaId(p)
+                : String(p?.mediaId || "").trim(),
+              _gpSource: true,
+              id: Date.now() + Math.random(),
+            }),
       );
       pushed++;
     });
@@ -653,7 +661,15 @@ async function createScriptFromGamePlan() {
           ? createScriptPlayFromGamePlan(p, { board, box: b })
           : (typeof copyPlayWithSourceIdentity === "function"
             ? copyPlayWithSourceIdentity(p, { _gpSource: true, id: Date.now() + Math.random() })
-            : { ...p, playbookId: p.id || null, _gpSource: true, id: Date.now() + Math.random() }),
+            : {
+              ...p,
+              playbookId: p.id || null,
+              mediaId: typeof getPlayMediaId === "function"
+                ? getPlayMediaId(p)
+                : String(p?.mediaId || "").trim(),
+              _gpSource: true,
+              id: Date.now() + Math.random(),
+            }),
       );
       pushed++;
     });

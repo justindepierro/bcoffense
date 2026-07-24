@@ -15,6 +15,9 @@ function createScriptPlayFromPlaybook(play) {
     : {
       ...play,
       playbookId: play.playbookId || play.sourcePlayId || play.id || null,
+      mediaId: typeof getPlayMediaId === "function"
+        ? getPlayMediaId(play)
+        : String(play?.mediaId || "").trim(),
       ...scriptFields,
     };
 }

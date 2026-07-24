@@ -219,6 +219,9 @@ function copyPlayForCallSheet(play, overrides = {}) {
   return {
     ...play,
     playbookId: play?.playbookId || play?.sourcePlayId || play?.id || null,
+    mediaId: typeof getPlayMediaId === "function"
+      ? getPlayMediaId(play)
+      : String(play?.mediaId || "").trim(),
     ...callSheetFields,
   };
 }

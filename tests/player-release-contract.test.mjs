@@ -168,7 +168,7 @@ assert(!releaseAllowsDiagram(release, "play:hidden"), "rejects a hidden diagram 
 assert(releaseAllowsClip(release, "play:script-only"), "allows canonical permanent play-video IDs");
 assert(releaseAllowsClip(release, "signals/formation/rip"), "allows published signal clip IDs");
 assert(!releaseAllowsClip(release, "signals/formation/secret"), "rejects draft signal clip IDs");
-assert(!releaseAllowsClip(release, "Rip|Georgia|10|Run"), "does not allow an ambiguous legacy tag clip key");
+assert(!releaseAllowsClip(release, "Rip|Georgia|10|Run"), "does not allow legacy tag clip keys, even when their text is unique");
 
 if (failed) {
   console.error(`\n${failed} player-release contract assertion${failed === 1 ? "" : "s"} failed.`);
