@@ -39,8 +39,13 @@ assert.match(
 );
 assert.match(
   scriptExport,
-  /function _scriptPacketLivePreviewMarkup\(selectedScripts, options\)[\s\S]*?_scriptPacketDiagramCard\(entry, options\)[\s\S]*?Live page sample/,
+  /function _scriptPacketLivePreviewMarkup\(selectedScripts, options, state = \{\}\)[\s\S]*?_scriptPacketDiagramCard\(entry, options\)[\s\S]*?Live page sample/,
   "packet setup renders a live sample from the selected script's real play cards",
+);
+assert.match(
+  scriptExport,
+  /async function _warmScriptPacketMedia\(selectedScripts\)[\s\S]*?prefetchAll[\s\S]*?prefetchForPlays/,
+  "packet previews warm both local and canonical cloud media before declaring diagrams unavailable",
 );
 assert.match(
   scriptExport,

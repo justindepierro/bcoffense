@@ -1112,7 +1112,7 @@ function _scriptPacketOptionsFromOverlay(overlay, selectedDensity) {
   };
 }
 
-function _scriptPacketLivePreviewMarkup(selectedScripts, options) {
+function _scriptPacketLivePreviewMarkup(selectedScripts, options, state = {}) {
   const scriptData = selectedScripts[0];
   if (!scriptData) return "";
   const layout = _scriptPacketDiagramLayout(options);
@@ -1132,7 +1132,16 @@ function _scriptPacketLivePreviewMarkup(selectedScripts, options) {
     options.showCoaching ? "Coaching" : "",
     options.showNotes ? "Notes" : "",
   ].filter(Boolean);
-  const pageMarkup = options.includeDiagrams && sampleEntries.length
+  const pageMarkup = state.loading
+    ? `<section class="script-packet-page script-packet-live-preview-page script-packet-live-preview-empty">
+        ${_scriptPacketPageHeader(options.packetTitle, scriptData, "Sample page")}
+        <div class="script-packet-live-preview-empty-copy">
+          <strong>Checking attached diagrams…</strong>
+          <span>Loading the same approved cloud diagrams that the final packet will use.</span>
+        </div>
+        ${_scriptPacketPageFooter(scriptData, 1, 1, options)}
+      </section>`
+    : options.includeDiagrams && sampleEntries.length
     ? `<section class="script-packet-page script-packet-diagram-page script-packet-live-preview-page">
         ${_scriptPacketPageHeader(options.packetTitle, scriptData, `Diagrams 1/${pageCount}`)}
         <div class="script-packet-diagram-grid">
@@ -1162,6 +1171,25 @@ function _scriptPacketLivePreviewMarkup(selectedScripts, options) {
       </div>
     </div>
   </section>`;
+}
+
+function _scriptPacketPlayList(selectedScripts) {
+  return (Array.isArray(selectedScripts) ? selectedScripts : [])
+    .flatMap((record) => Array.isArray(record?.plays) ? record.plays : [])
+    .filter((play) => play && !play.isSeparator);
+}
+
+async function _warmScriptPacketMedia(selectedScripts) {
+  if (!window.playImages) return;
+  const playsForPacket = _scriptPacketPlayList(selectedScripts);
+  if (!playsForPacket.length) return;
+  // Saved scripts may arrive from another device without the author's blob
+  // cache. Warm both local IndexedDB and the canonical cloud media cache so
+  // packet preview and final print resolve the same exact diagram set.
+  await Promise.allSettled([
+    window.playImages.prefetchAll?.(),
+    window.playImages.prefetchForPlays?.(playsForPacket),
+  ]);
 }
 
 function _scriptPacketCanvasText(context, text, x, y, maxWidth, lineHeight, maxLines = 1) {
@@ -1196,6 +1224,7 @@ function _scriptPacketLoadPreviewImage(source) {
 }
 
 async function _saveScriptPacketSampleImage(selectedScripts, options) {
+  await _warmScriptPacketMedia(selectedScripts);
   const scriptData = selectedScripts[0];
   if (!scriptData) return;
   const layout = _scriptPacketDiagramLayout(options);
@@ -1392,11 +1421,13 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     let selectedDensity = o.diagramDensity || "large";
+    let previewMediaLoading = Boolean(o.includeDiagrams);
     const renderLivePreview = () => {
       const slot = overlay.querySelector("#scriptPacketLivePreview");
       if (slot) slot.innerHTML = _scriptPacketLivePreviewMarkup(
         selectedScripts,
         _scriptPacketOptionsFromOverlay(overlay, selectedDensity),
+        { loading: previewMediaLoading },
       );
     };
     const setDensity = (density) => {
@@ -1405,8 +1436,12 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
         const selected = button.dataset.packetDensity === density;
         button.classList.toggle("is-selected", selected);
         button.setAttribute("aria-pressed", String(selected));
-      });
+    });
+    renderLivePreview();
+    _warmScriptPacketMedia(selectedScripts).finally(() => {
+      previewMediaLoading = false;
       renderLivePreview();
+    });
     };
     overlay.querySelectorAll("[data-packet-density]").forEach((button) => {
       button.addEventListener("click", () => setDensity(button.dataset.packetDensity || "large"));
@@ -1724,7 +1759,7 @@ async function _renderScriptPacketAndPrint(selectedScripts) {
       "Practice Script Packet";
     if (options.includeDiagrams && window.playImages) {
       try {
-        await window.playImages.prefetchAll();
+        await _warmScriptPacketMedia(selectedScripts);
       } catch (_error) {
         showToast("Some play diagrams could not be loaded.", { type: "warning" });
       }
