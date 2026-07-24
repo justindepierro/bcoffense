@@ -4472,6 +4472,7 @@ function checkPlayerDiagramReadinessContracts() {
   const playImages = read("js/play-images.js");
   const storage = read("js/storage.js");
   const mediaInventory = read("js/media-inventory.js");
+  const featureLoader = read("js/feature-loader.js");
   const html = read("index.html");
   const sw = read("sw.js");
   const presentation = read("js/play-presentation.js");
@@ -4665,7 +4666,9 @@ function checkPlayerDiagramReadinessContracts() {
     !/Automatic Cloud Health/.test(mediaInventory) ||
     !/mediaUploadOutbox\?\.getHealth/.test(mediaInventory) ||
     !/data-action="openMediaInventoryReport"/.test(html) ||
-    !/"\.\/js\/media-inventory\.js"/.test(sw)
+    !/loadDeferredFeature\("media-inventory", "js\/media-inventory\.js\?v=1377"\)/.test(featureLoader) ||
+    !/"\.\/js\/feature-loader\.js"/.test(sw) ||
+    /"\.\/js\/media-inventory\.js"/.test(sw)
   ) {
     fail("media inventory report contract is incomplete");
   }
@@ -5854,7 +5857,7 @@ function checkGuideContracts() {
   const scripts = [...html.matchAll(/<script\b[^>]+src="(js\/[^"]+)"/g)]
     .map((match) => match[1].split("?")[0]);
   const loadOrderBlock = guide.match(
-    /All scripts use `defer`[\s\S]*?```\n([\s\S]*?)```/,
+    /The startup shell uses `defer`[\s\S]*?```\n([\s\S]*?)```/,
   );
   const documentedScripts = loadOrderBlock
     ? [...loadOrderBlock[1].matchAll(/^\d+\.\s+(js\/[^\s]+)/gm)].map((match) => match[1])

@@ -249,7 +249,6 @@ function printIsolatedArtifact(contentEl, options = {}) {
     <title>${escapeHtml(title)}</title>
     ${stylesheetLinks}
     <style>
-      ${dynamicPrintCss}
       @media print {
         @page { size: letter; margin: 0.25in; }
         html, body {
@@ -274,6 +273,9 @@ function printIsolatedArtifact(contentEl, options = {}) {
           scrollbar-gutter: auto !important;
         }
       }
+      /* This must come after the isolated fallback. A caller's selected
+         paper/orientation is authoritative for the native print dialog. */
+      ${dynamicPrintCss}
     </style>
   </head>
   <body class="print-script print-isolated-artifact ${escapeAttr(bodyClass)}">${clone.outerHTML}</body>
@@ -2657,44 +2659,58 @@ function setupPrintPageStyle(cssText) {
   return el;
 }
 
+function _printCleanFilenameToken(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[<>:"/\\|?*]+/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function getPrintArtifactContext() {
+  const gameWeek = typeof getGameWeek === "function" ? getGameWeek() : {};
+  return {
+    team: typeof getTeamName === "function" ? getTeamName() : "BCOffense",
+    opponent: gameWeek?.opponentName || "",
+    week: gameWeek?.weekLabel || "",
+  };
+}
+
+// Export naming is a core print concern, not a Print Studio UI concern. Keep
+// it available to every direct CSV/PDF/export path even when the studio panel
+// has not been loaded yet.
+function buildPrintStudioFilename(kind = "Material", customName = "", extension = "") {
+  const context = getPrintArtifactContext();
+  const seen = new Set();
+  const tokens = [
+    context.team || "BCOffense",
+    context.opponent ? `vs-${context.opponent}` : "",
+    context.week,
+    customName,
+    kind,
+    new Date().toISOString().slice(0, 10),
+  ]
+    .map(_printCleanFilenameToken)
+    .filter(Boolean)
+    .filter((token) => {
+      const key = token.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  const base = tokens.join("_") || "BCOffense";
+  const ext = _printCleanFilenameToken(extension).replace(/^\./, "");
+  return ext ? `${base}.${ext}` : base;
+}
+
+function getPrintStudioExportName(kind, customName, extension) {
+  return buildPrintStudioFilename(kind, customName, extension);
+}
+
 function setPrintTitle(type, customName) {
   const originalTitle = document.title;
-
-  if (typeof buildPrintStudioFilename === "function") {
-    document.title = buildPrintStudioFilename(type, customName);
-    return function restoreTitle() {
-      document.title = originalTitle;
-    };
-  }
-
-  // Build date/time stamp
-  const now = new Date();
-  const datePart = now
-    .toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    })
-    .replace(/\//g, "-");
-  const timePart = now
-    .toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    })
-    .replace(/:/g, "");
-
-  // Build filename parts
-  let parts = [type];
-  if (customName && customName.trim()) {
-    parts.push(customName.trim());
-  }
-  parts.push(datePart);
-  parts.push(timePart);
-
-  // Clean filename (remove characters not safe for filenames)
-  const title = parts.join(" - ").replace(/[<>:"\/|?*]/g, "_");
-  document.title = title;
+  document.title = buildPrintStudioFilename(type, customName);
 
   return function restoreTitle() {
     document.title = originalTitle;

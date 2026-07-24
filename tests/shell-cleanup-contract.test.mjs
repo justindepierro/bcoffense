@@ -1,9 +1,11 @@
 /**
  * Shell cleanup contract.
  *
- * The app uses global deferred scripts, so every runtime file must be loaded
- * once by index.html and pre-cached once by the service worker. This also
- * prevents proven-dead compatibility aliases from quietly returning.
+ * The app uses global deferred scripts plus an explicit inventory of deferred
+ * opt-in features. Every runtime file must belong to exactly one of those
+ * paths. Only the startup shell is pre-cached; a deferred feature is cached
+ * normally after first successful use. This also prevents proven-dead
+ * compatibility aliases from quietly returning.
  */
 
 import assert from "node:assert/strict";
@@ -44,14 +46,20 @@ const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, scri
 const shellScripts = [...indexHtml.matchAll(/src="(js\/[^"?]+\.js)(?:\?[^\"]*)?"/g)].map((match) => match[1]);
 const cachedScripts = [...serviceWorker.matchAll(/["']\.\/(js\/[^"']+\.js)["']/g)].map((match) => match[1]);
 const runtimeFiles = jsEntries.filter((name) => name.endsWith(".js")).map((name) => `js/${name}`);
+const deferredScripts = [...(await source("js/feature-loader.js")).matchAll(/loadDeferredFeature\("[^"]+", "(js\/[^"?]+\.js)(?:\?[^\"]*)?"\)/g)].map((match) => match[1]);
 const shellStyles = [...indexHtml.matchAll(/href="(css\/[^"?]+\.css)(?:\?[^\"]*)?"/g)].map((match) => match[1]);
 const cachedStyles = [...serviceWorker.matchAll(/["']\.\/(css\/[^"']+\.css)["']/g)].map((match) => match[1]);
 const runtimeStyles = cssEntries.filter((name) => name.endsWith(".css")).map((name) => `css/${name}`);
 
 assert.equal(new Set(shellScripts).size, shellScripts.length, "index.html loads each global runtime script once");
 assert.equal(new Set(cachedScripts).size, cachedScripts.length, "sw.js pre-caches each global runtime script once");
-assert.deepEqual(sort(shellScripts), sort(runtimeFiles), "every runtime JS file is loaded by the app shell");
-assert.deepEqual(sort(cachedScripts), sort(runtimeFiles), "every runtime JS file is cached by the service worker");
+assert.equal(new Set(deferredScripts).size, deferredScripts.length, "each deferred feature is registered once");
+assert.deepEqual(sort([...shellScripts, ...deferredScripts]), sort(runtimeFiles), "every runtime JS file belongs to either the startup shell or an explicit deferred feature");
+assert.deepEqual(sort(cachedScripts), sort(shellScripts), "the service worker pre-caches the complete startup shell only");
+for (const deferredScript of deferredScripts) {
+  assert.equal(shellScripts.includes(deferredScript), false, `${deferredScript} is not eagerly loaded by the startup shell`);
+  assert.equal(cachedScripts.includes(deferredScript), false, `${deferredScript} is not pre-cached before its first use`);
+}
 assert.equal(
   shellScripts.indexOf("js/script-quiz-foundation.js"),
   shellScripts.indexOf("js/script-quiz-state.js") + 1,

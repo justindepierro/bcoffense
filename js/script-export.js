@@ -1102,7 +1102,7 @@ function _scriptPacketLayoutChoices(selectedDensity = "large") {
 
 function _scriptPacketOptionsFromOverlay(overlay, selectedDensity) {
   return {
-    packetTitle: overlay.querySelector("#scriptPacketTitleModal").value.trim() || "Practice Script Diagram Packet",
+    packetTitle: overlay.querySelector("#scriptPacketTitleInput").value.trim() || "Practice Script Diagram Packet",
     paperSize: overlay.querySelector("#scriptPacketPaper").value || "letter",
     orientation: overlay.querySelector("#scriptPacketOrientation").value || "portrait",
     diagramDensity: selectedDensity,
@@ -1432,8 +1432,8 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
           <div class="script-packet-print-workbench">
           <div class="script-packet-print-form">
             <div class="script-packet-print-row script-packet-print-row--wide">
-              <label for="scriptPacketTitleModal">Packet title</label>
-              <input id="scriptPacketTitleModal" type="text" maxlength="120" value="${escapeAttr(o.packetTitle || "Practice Script Diagram Packet")}" />
+              <label for="scriptPacketTitleInput">Packet title</label>
+              <input id="scriptPacketTitleInput" type="text" maxlength="120" value="${escapeAttr(o.packetTitle || "Practice Script Diagram Packet")}" />
             </div>
             <fieldset class="script-packet-layout-picker">
               <legend>Choose a diagram layout</legend>
@@ -1509,7 +1509,7 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
     overlay.querySelectorAll("[data-packet-density]").forEach((button) => {
       button.addEventListener("click", () => setDensity(button.dataset.packetDensity || "large"));
     });
-    overlay.querySelectorAll("#scriptPacketTitleModal, #scriptPacketPaper, #scriptPacketOrientation, .script-packet-print-toggles input")
+    overlay.querySelectorAll("#scriptPacketTitleInput, #scriptPacketPaper, #scriptPacketOrientation, .script-packet-print-toggles input")
       .forEach((control) => {
         control.addEventListener("input", renderLivePreview);
         control.addEventListener("change", renderLivePreview);

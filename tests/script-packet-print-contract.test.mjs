@@ -18,6 +18,11 @@ assert.match(
   "the isolated print helper supports artifact-specific print mode classes",
 );
 assert.match(
+  utils,
+  /@page \{ size: letter; margin: 0\.25in; \}[\s\S]*?This must come after the isolated fallback[\s\S]*?\$\{dynamicPrintCss\}/,
+  "the selected print job style overrides the isolated frame's letter fallback",
+);
+assert.match(
   scriptExport,
   /function _renderScriptPacketAndPrint\(selectedScripts\)[\s\S]*?printIsolatedArtifact\(host, \{[\s\S]*?bodyClass: "script-packet-printing",[\s\S]*?onAfterPrint: finishPacket/,
   "packet printing uses the isolated artifact flow rather than the live app shell",

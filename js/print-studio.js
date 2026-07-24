@@ -29,57 +29,6 @@ function setPrintStudioSettings(nextSettings = {}) {
   return merged;
 }
 
-function _psCleanToken(value) {
-  return String(value || "")
-    .trim()
-    .replace(/[<>:"/\\|?*]+/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function _psToday() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function _psGameWeekParts() {
-  const gw = typeof getGameWeek === "function" ? getGameWeek() : {};
-  return {
-    team: typeof getTeamName === "function" ? getTeamName() : "BCOffense",
-    opponent: gw?.opponentName || "",
-    week: gw?.weekLabel || "",
-  };
-}
-
-function buildPrintStudioFilename(kind = "Material", customName = "", extension = "") {
-  const parts = _psGameWeekParts();
-  const seen = new Set();
-  const tokens = [
-    parts.team || "BCOffense",
-    parts.opponent ? `vs-${parts.opponent}` : "",
-    parts.week,
-    customName,
-    kind,
-    _psToday(),
-  ]
-    .map(_psCleanToken)
-    .filter(Boolean)
-    .filter((token) => {
-      const key = token.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-
-  const base = tokens.join("_") || "BCOffense";
-  const ext = _psCleanToken(extension).replace(/^\./, "");
-  return ext ? `${base}.${ext}` : base;
-}
-
-function getPrintStudioExportName(kind, customName, extension) {
-  return buildPrintStudioFilename(kind, customName, extension);
-}
-
 function _psWarningsStatus(warnings) {
   if (warnings.some((warning) => warning.level === "error")) return "error";
   if (warnings.length) return "warn";
@@ -418,7 +367,7 @@ function renderPrintStudio() {
   if (!body) return;
 
   const settings = getPrintStudioSettings();
-  const weekParts = _psGameWeekParts();
+  const weekParts = getPrintArtifactContext();
   const profile = {
     team: weekParts.team || "BCOffense",
     context: [weekParts.week, weekParts.opponent ? `vs ${weekParts.opponent}` : ""]

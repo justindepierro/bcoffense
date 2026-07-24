@@ -130,7 +130,7 @@ js/
   gameplan-print.js     ← Game plan print modal, print render, and one-page presets
   gameplan-integrations.js ← Game plan push to call sheet/script, dashboard send, plan compare
   gameplan-snapshots.js ← Game plan named snapshots and built-in/reusable templates
-  print-studio.js       ← Unified print/export hub, naming conventions, and print-safe checks
+  print-studio.js       ← Deferred Print Studio UI; core export naming lives in utils.js
   app-events.js         ← Central delegated event routing and DOM listeners
   app-shell.js          ← Theme, chrome, keyboard shortcuts, page-level runtime
   app-session.js        ← Dirty-state and draft-restore session helpers
@@ -152,76 +152,76 @@ CLOUDFLARE_AUTH.md      ← Cloudflare deployment and secret setup notes
 
 ## Script Load Order (Critical)
 
-All scripts use `defer` and load in this exact order from index.html:
+The startup shell uses `defer` and loads in this exact order from index.html. Explicit deferred features are registered in `js/feature-loader.js` and are intentionally excluded from first-load parsing and service-worker precaching.
 
 ```
 1.   js/utils.js
 2.   js/app-diagnostics.js
-3.   js/startup-orchestrator.js
-4.   js/history.js
-5.   js/dom-helpers.js
-6.   js/lz-string.min.js
-7.   js/storage.js
-8.   js/storage-ui.js
-9.   js/workspace-sync.js
-10.   js/media-upload-outbox.js
-11.   js/play-images.js
-12.   js/cloud-sync.js
-13.   js/staged-restore.js
-14.   js/auth.js
-15.   js/play-clips.js
-16.   js/signals.js
-17.   js/vision.js
-18.   js/team-settings.js
-19.   js/players-admin.js
-20.   js/coach-access.js
-21.   js/discussion-outbox.js
-22.   js/play-discussion.js
-23.   js/discussion-media.js
-24.   js/playbook.js
-25.   js/playbook-collections.js
-26.   js/playbook-print.js
-27.   js/playbook-editor.js
-28.   js/playbook-import.js
-29.   js/playbook-export.js
-30.   js/playbook-chrome.js
-31.   js/playbook-reports.js
-32.   js/playbook-reports-identity.js
-33.   js/playbook-state.js
-34.   js/playbook-filters.js
-35.   js/playbook-navigation.js
-36.   js/playbook-actions.js
-37.   js/playbook-render.js
-38.   js/playbook-sanitize.js
-39.   js/playbook-analytics.js
-40.   js/playbook-analytics-render.js
-41.   js/playbook-identity.js
-42.   js/script-state.js
-43.   js/script-shared.js
-44.   js/script-players.js
-45.   js/script-display-options.js
-46.   js/play-readiness.js
-47.   js/script-add.js
-48.   js/script-sort.js
-49.   js/script-export.js
-50.   js/script-available.js
-51.   js/script-selection.js
-52.   js/script-timeline.js
-53.   js/script-render.js
-54.   js/script-quiz-state.js
-55.   js/script-quiz-foundation.js
-56.   js/script-quiz.js
-57.   js/script-quiz-progress.js
-58.   js/script-quiz-leaderboard.js
-59.   js/player-quiz-sync.js
-60.   js/script-quiz-assignments.js
-61.   js/script-health.js
-62.   js/script-periods.js
-63.   js/script-period-sync.js
-64.   js/script-smart.js
-65.   js/script-storage.js
-66.   js/script-player.js
-67.   js/media-inventory.js
+3.   js/feature-loader.js
+4.   js/startup-orchestrator.js
+5.   js/history.js
+6.   js/dom-helpers.js
+7.   js/lz-string.min.js
+8.   js/storage.js
+9.   js/storage-ui.js
+10.   js/workspace-sync.js
+11.   js/media-upload-outbox.js
+12.   js/play-images.js
+13.   js/cloud-sync.js
+14.   js/staged-restore.js
+15.   js/auth.js
+16.   js/play-clips.js
+17.   js/signals.js
+18.   js/vision.js
+19.   js/team-settings.js
+20.   js/players-admin.js
+21.   js/coach-access.js
+22.   js/discussion-outbox.js
+23.   js/play-discussion.js
+24.   js/discussion-media.js
+25.   js/playbook.js
+26.   js/playbook-collections.js
+27.   js/playbook-print.js
+28.   js/playbook-editor.js
+29.   js/playbook-import.js
+30.   js/playbook-export.js
+31.   js/playbook-chrome.js
+32.   js/playbook-reports.js
+33.   js/playbook-reports-identity.js
+34.   js/playbook-state.js
+35.   js/playbook-filters.js
+36.   js/playbook-navigation.js
+37.   js/playbook-actions.js
+38.   js/playbook-render.js
+39.   js/playbook-sanitize.js
+40.   js/playbook-analytics.js
+41.   js/playbook-analytics-render.js
+42.   js/playbook-identity.js
+43.   js/script-state.js
+44.   js/script-shared.js
+45.   js/script-players.js
+46.   js/script-display-options.js
+47.   js/play-readiness.js
+48.   js/script-add.js
+49.   js/script-sort.js
+50.   js/script-export.js
+51.   js/script-available.js
+52.   js/script-selection.js
+53.   js/script-timeline.js
+54.   js/script-render.js
+55.   js/script-quiz-state.js
+56.   js/script-quiz-foundation.js
+57.   js/script-quiz.js
+58.   js/script-quiz-progress.js
+59.   js/script-quiz-leaderboard.js
+60.   js/player-quiz-sync.js
+61.   js/script-quiz-assignments.js
+62.   js/script-health.js
+63.   js/script-periods.js
+64.   js/script-period-sync.js
+65.   js/script-smart.js
+66.   js/script-storage.js
+67.   js/script-player.js
 68.   js/script-integrations.js
 69.   js/play-presentation.js
 70.   js/wristband.js
@@ -275,23 +275,22 @@ All scripts use `defer` and load in this exact order from index.html:
 118.   js/gameplan-print.js
 119.   js/gameplan-integrations.js
 120.   js/gameplan-snapshots.js
-121.   js/print-studio.js
-122.   js/script-events.js
-123.   js/anchored-menu.js
-124.   js/app-events.js
-125.   js/app-command.js
-126.   js/page-actions.js
-127.   js/app-notifications.js
-128.   js/push-notifications.js
-129.   js/player-portal.js
-130.   js/dashboard-questions.js
-131.   js/app-shell.js
-132.   js/app-session.js
-133.   js/app-navigation.js
-134.   js/app-module-init.js
-135.   js/app-bootstrap.js
-136.   js/app-init.js
-137.   js/app.js
+121.   js/script-events.js
+122.   js/anchored-menu.js
+123.   js/app-events.js
+124.   js/app-command.js
+125.   js/page-actions.js
+126.   js/app-notifications.js
+127.   js/push-notifications.js
+128.   js/player-portal.js
+129.   js/dashboard-questions.js
+130.   js/app-shell.js
+131.   js/app-session.js
+132.   js/app-navigation.js
+133.   js/app-module-init.js
+134.   js/app-bootstrap.js
+135.   js/app-init.js
+136.   js/app.js
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -414,6 +413,7 @@ window.openPlayClipViewer
 window.openPlayDiagramHealth
 window.openPlayDiagramHealthEdit
 window.openPlaybookSignalSelector
+window.openPrintStudio
 window.openPublishMediaModal
 window.openScriptClipViewer
 window.openScriptSignalSelector
