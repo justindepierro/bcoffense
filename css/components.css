@@ -4919,6 +4919,171 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   padding: 0.29in;
   box-sizing: border-box;
 }
+.print-preview-content--packet {
+  padding: 24px;
+  background: #475569;
+}
+.print-preview-content--packet > div {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: max-content;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.print-preview-content--packet .script-packet-page {
+  display: flex;
+  flex-direction: column;
+  width: var(--script-packet-page-width, 7.9in);
+  height: var(--script-packet-page-height, 10.4in);
+  box-sizing: border-box;
+  padding: 0;
+  overflow: hidden;
+  background: #fff;
+  color: #111;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .32);
+}
+.print-preview-content--packet .script-packet-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12pt;
+  padding-bottom: 4pt;
+  margin-bottom: 5pt;
+  border-bottom: 1.5pt solid #111;
+}
+.print-preview-content--packet .script-packet-page-header > div {
+  display: flex;
+  flex-direction: column;
+}
+.print-preview-content--packet .script-packet-page-team {
+  color: #555;
+  font-size: 6.5pt;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.print-preview-content--packet .script-packet-page-header strong {
+  color: #111;
+  font-size: 9pt;
+}
+.print-preview-content--packet .script-packet-page-context {
+  align-items: flex-end;
+  color: #555;
+  font-size: 6.5pt;
+  text-align: right;
+}
+.print-preview-content--packet .script-packet-diagram-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--script-packet-diagram-cols, 2), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--script-packet-diagram-rows, 4), minmax(0, 1fr));
+  gap: 5pt;
+  flex: 1;
+  min-height: 0;
+}
+.print-preview-content--packet .script-packet-diagram-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 3.5pt;
+  overflow: hidden;
+  border: .6pt solid #aaa;
+  border-radius: 2pt;
+  background: #fff;
+}
+.print-preview-content--packet .script-packet-diagrams-two .script-packet-diagram-card,
+.print-preview-content--packet .script-packet-diagrams-full .script-packet-diagram-card {
+  padding: 5pt;
+}
+.print-preview-content--packet .script-packet-diagram-kicker {
+  display: flex;
+  justify-content: space-between;
+  gap: 4pt;
+  color: #555;
+  font-size: 5.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.print-preview-content--packet .script-packet-diagram-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 68%;
+  min-height: 0;
+  margin: 1.5pt 0;
+  overflow: hidden;
+  background: #f7f7f7;
+}
+.print-preview-content--packet .script-packet-diagrams-large .script-packet-diagram-image {
+  flex-basis: 76%;
+}
+.print-preview-content--packet .script-packet-diagrams-two .script-packet-diagram-image {
+  flex-basis: 82%;
+}
+.print-preview-content--packet .script-packet-diagrams-full .script-packet-diagram-image {
+  flex-basis: 84%;
+}
+.print-preview-content--packet .script-packet-diagram-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.print-preview-content--packet .script-packet-diagram-info {
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 0;
+}
+.print-preview-content--packet .script-packet-diagram-call {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #111;
+  font-size: 8.5pt;
+  font-weight: 800;
+  line-height: 1.1;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.print-preview-content--packet .script-packet-diagram-detail {
+  display: grid;
+  grid-template-columns: 38pt minmax(0, 1fr);
+  gap: 3pt;
+  overflow: hidden;
+  color: #555;
+  font-size: 6.5pt;
+  line-height: 1.15;
+}
+.print-preview-content--packet .script-packet-diagram-detail strong {
+  overflow: hidden;
+  color: #555;
+  font-size: 5.5pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.print-preview-content--packet .script-packet-diagram-detail span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.print-preview-content--packet .script-packet-diagram-detail--warning strong,
+.print-preview-content--packet .script-packet-diagram-detail--warning span {
+  color: #b42318;
+}
+.print-preview-content--packet .script-packet-page-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 6pt;
+  padding-top: 3pt;
+  margin-top: 4pt;
+  border-top: .5pt solid #aaa;
+  color: #555;
+  font-size: 5.5pt;
+}
 /* Approximate print-script script-table styling inside the preview so
    the popup matches what will print (rules in print.css are @media print). */
 .print-preview-content .script-preview {

@@ -1080,6 +1080,20 @@ function _scriptPacketCountLabel(count, singular, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
+function _scriptPacketLayoutChoices(selectedDensity = "large") {
+  const choices = [
+    { value: "two", title: "2-up", detail: "Big diagrams · install / film" },
+    { value: "large", title: "4-up", detail: "Balanced · staff standard" },
+    { value: "compact", title: "8-up", detail: "Quick reference · most compact" },
+    { value: "full", title: "Full", detail: "One diagram per page" },
+  ];
+  return choices.map((choice) => `
+    <button type="button" class="script-packet-layout-choice${choice.value === selectedDensity ? " is-selected" : ""}"
+      data-packet-density="${choice.value}" aria-pressed="${choice.value === selectedDensity ? "true" : "false"}">
+      <strong>${choice.title}</strong><span>${choice.detail}</span>
+    </button>`).join("");
+}
+
 function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRecords()) {
   if (!selectedScripts.length) return Promise.resolve(false);
   const o = _scriptPacketPrintOptions;
@@ -1091,15 +1105,21 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
       <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="scriptPacketPrintTitle">
         <div class="custom-modal-header">
           <span class="custom-modal-icon">🗂️</span>
-          <h3 class="custom-modal-title" id="scriptPacketPrintTitle">Print Practice Script Packet</h3>
+          <h3 class="custom-modal-title" id="scriptPacketPrintTitle">Diagram packet</h3>
         </div>
         <div class="custom-modal-body">
-          <p class="script-packet-print-summary">${escapeHtml(_scriptPacketOptionSummary(selectedScripts))}</p>
+          <p class="script-packet-print-summary">${escapeHtml(_scriptPacketOptionSummary(selectedScripts))} · Play diagrams, names, and the details you choose.</p>
           <div class="script-packet-print-form">
             <div class="script-packet-print-row script-packet-print-row--wide">
               <label for="scriptPacketTitleModal">Packet title</label>
               <input id="scriptPacketTitleModal" type="text" maxlength="120" value="${escapeAttr(o.packetTitle || "Practice Script Diagram Packet")}" />
             </div>
+            <fieldset class="script-packet-layout-picker">
+              <legend>Choose a diagram layout</legend>
+              <div class="script-packet-layout-choices" role="group" aria-label="Diagram layout">
+                ${_scriptPacketLayoutChoices(o.diagramDensity || "large")}
+              </div>
+            </fieldset>
             <div class="script-packet-print-row">
               <label for="scriptPacketPaper">Paper</label>
               <select id="scriptPacketPaper">
@@ -1115,28 +1135,20 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
                 <option value="landscape" ${o.orientation === "landscape" ? "selected" : ""}>Landscape</option>
               </select>
             </div>
-            <div class="script-packet-print-row">
-              <label for="scriptPacketDiagramDensity">Diagram size</label>
-              <select id="scriptPacketDiagramDensity">
-                <option value="two" ${o.diagramDensity === "two" ? "selected" : ""}>Two-up — 2 diagrams per page</option>
-                <option value="large" ${o.diagramDensity === "large" ? "selected" : ""}>Four-up — 4 diagrams per page</option>
-                <option value="compact" ${o.diagramDensity === "compact" ? "selected" : ""}>Eight-up — 8 diagrams per page</option>
-                <option value="full" ${o.diagramDensity === "full" ? "selected" : ""}>Full page — 1 diagram per page</option>
-              </select>
-            </div>
             <div class="script-packet-print-row script-packet-print-toggles">
+              <span class="script-packet-options-label">Include</span>
               <label><input type="checkbox" id="scriptPacketIncludeTables" ${o.includeScriptTables ? "checked" : ""}> Include detailed script tables</label>
               <label><input type="checkbox" id="scriptPacketIncludeDiagrams" ${o.includeDiagrams ? "checked" : ""}> Include play diagram pages</label>
               <label><input type="checkbox" id="scriptPacketMissingImages" ${o.includeMissingImages ? "checked" : ""}> Include placeholder cards for plays without images</label>
-              <label><input type="checkbox" id="scriptPacketShowMeta" ${o.showMeta ? "checked" : ""}> Show formation, personnel, type, hash, and tempo</label>
-              <label><input type="checkbox" id="scriptPacketShowDefense" ${o.showDefense ? "checked" : ""}> Show front, coverage, stunt, blitz, and reps</label>
-              <label><input type="checkbox" id="scriptPacketShowCoaching" ${o.showCoaching ? "checked" : ""}> Show game-plan details (situation, key players, answers, hit chart, tags, and dead vs)</label>
-              <label><input type="checkbox" id="scriptPacketShowNotes" ${o.showNotes ? "checked" : ""}> Show play notes</label>
+              <label><input type="checkbox" id="scriptPacketShowMeta" ${o.showMeta ? "checked" : ""}> Light play information</label>
+              <label><input type="checkbox" id="scriptPacketShowDefense" ${o.showDefense ? "checked" : ""}> Defensive look and reps</label>
+              <label><input type="checkbox" id="scriptPacketShowCoaching" ${o.showCoaching ? "checked" : ""}> Game-plan coaching details</label>
+              <label><input type="checkbox" id="scriptPacketShowNotes" ${o.showNotes ? "checked" : ""}> Play notes</label>
               <label><input type="checkbox" id="scriptPacketNewPage" ${o.startScriptOnNewPage ? "checked" : ""}> Start each selected script on a new page</label>
               <label><input type="checkbox" id="scriptPacketFooter" ${o.showFooter ? "checked" : ""}> Show team, script, and page footer</label>
             </div>
           </div>
-          <p class="script-packet-print-hint">Use Large or Full Page diagrams when Chalk exports or clipped screenshots need more space. Only images attached in the Playbook can be printed.</p>
+          <p class="script-packet-print-hint">Four-up is the normal staff handout. Use two-up for install, eight-up for a fast call sheet, and Full when a diagram needs room. Only Playbook-attached diagrams print.</p>
         </div>
         <div class="custom-modal-actions">
           <button type="button" class="btn custom-modal-btn custom-modal-cancel" id="scriptPacketPrintCancel">Cancel</button>
@@ -1146,6 +1158,19 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
     document.body.appendChild(overlay);
     if (typeof trapFocus === "function") trapFocus(overlay);
     requestAnimationFrame(() => overlay.classList.add("visible"));
+
+    let selectedDensity = o.diagramDensity || "large";
+    const setDensity = (density) => {
+      selectedDensity = density;
+      overlay.querySelectorAll("[data-packet-density]").forEach((button) => {
+        const selected = button.dataset.packetDensity === density;
+        button.classList.toggle("is-selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      });
+    };
+    overlay.querySelectorAll("[data-packet-density]").forEach((button) => {
+      button.addEventListener("click", () => setDensity(button.dataset.packetDensity || "large"));
+    });
 
     const close = (confirmed) => {
       overlay.classList.remove("visible");
@@ -1159,7 +1184,7 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
         packetTitle: overlay.querySelector("#scriptPacketTitleModal").value.trim() || "Practice Script Diagram Packet",
         paperSize: overlay.querySelector("#scriptPacketPaper").value || "letter",
         orientation: overlay.querySelector("#scriptPacketOrientation").value || "portrait",
-        diagramDensity: overlay.querySelector("#scriptPacketDiagramDensity").value || "large",
+        diagramDensity: selectedDensity,
         includeScriptTables: overlay.querySelector("#scriptPacketIncludeTables").checked,
         includeDiagrams: overlay.querySelector("#scriptPacketIncludeDiagrams").checked,
         includeMissingImages: overlay.querySelector("#scriptPacketMissingImages").checked,

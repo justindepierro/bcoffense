@@ -4447,6 +4447,58 @@ body[data-auth-role="player"] .script-builder {
   flex-direction: column;
   gap: var(--space-sm);
 }
+.script-packet-layout-picker {
+  margin: 0;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+}
+.script-packet-layout-picker legend,
+.script-packet-options-label {
+  padding: 0 var(--space-2xs);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.script-packet-layout-choices {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+.script-packet-layout-choice {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  min-height: 68px;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+.script-packet-layout-choice:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+.script-packet-layout-choice.is-selected {
+  border-color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+  background: var(--color-primary-light);
+}
+.script-packet-layout-choice strong {
+  color: var(--color-primary-dark);
+  font-size: var(--font-size-sm);
+}
+.script-packet-layout-choice span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  line-height: 1.25;
+}
 .script-packet-print-row {
   display: grid;
   grid-template-columns: 140px minmax(0, 1fr);
@@ -4457,10 +4509,14 @@ body[data-auth-role="player"] .script-builder {
   width: 100%;
 }
 .script-packet-print-toggles {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
   padding-top: var(--space-sm);
   border-top: 1px dashed var(--color-border-light);
+}
+.script-packet-print-toggles .script-packet-options-label {
+  grid-column: 1 / -1;
+  padding: 0;
 }
 .script-packet-print-toggles label {
   display: flex;

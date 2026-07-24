@@ -126,6 +126,10 @@ function showPrintPreview(contentEl, onPrint, onCancel) {
     element.removeAttribute("id");
   });
 
+  if (previewClone.classList.contains("script-packet-print-root")) {
+    overlay.querySelector(".print-preview-content")?.classList.add("print-preview-content--packet");
+  }
+
   document.getElementById("ppContent").appendChild(previewClone);
   const cancel = () => {
     overlay.remove();

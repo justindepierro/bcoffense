@@ -6318,6 +6318,11 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  #script .script-packet-layout-choices,
+  #script .script-packet-print-toggles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   #script .script-packet-selection-summary {
     white-space: normal;
   }
