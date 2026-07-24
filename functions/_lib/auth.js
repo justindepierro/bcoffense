@@ -34,6 +34,9 @@ const USERS = {
 //   (bcIntegrityCheck in app-shell.js) degrades gracefully when blocked.
 // - style-src allows 'unsafe-inline' for inline style="" attrs + Google Fonts CSS.
 // - img/media allow data: and blob: for the favicon + IndexedDB object URLs.
+// - Cloudflare Web Analytics injects its integrity-protected beacon from its
+//   own static host. Allow only that exact host; automatic beacon delivery
+//   posts back through our existing same-origin connect-src.
 // - object-src 'none', base-uri 'self', frame-ancestors 'none' close the common
 //   injection bypasses. All app traffic is same-origin (connect-src 'self').
 const CONTENT_SECURITY_POLICY = [
@@ -42,7 +45,7 @@ const CONTENT_SECURITY_POLICY = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: blob:",
