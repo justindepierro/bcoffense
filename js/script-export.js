@@ -1164,6 +1164,164 @@ function _scriptPacketLivePreviewMarkup(selectedScripts, options) {
   </section>`;
 }
 
+function _scriptPacketCanvasText(context, text, x, y, maxWidth, lineHeight, maxLines = 1) {
+  const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return y;
+  let line = "";
+  let lines = 0;
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (context.measureText(candidate).width <= maxWidth || !line) {
+      line = candidate;
+      continue;
+    }
+    context.fillText(line, x, y);
+    lines += 1;
+    if (lines >= maxLines) return y + lineHeight;
+    y += lineHeight;
+    line = word;
+  }
+  if (line && lines < maxLines) context.fillText(line, x, y);
+  return y + lineHeight;
+}
+
+function _scriptPacketLoadPreviewImage(source) {
+  if (!source) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => resolve(null);
+    image.src = source;
+  });
+}
+
+async function _saveScriptPacketSampleImage(selectedScripts, options) {
+  const scriptData = selectedScripts[0];
+  if (!scriptData) return;
+  const layout = _scriptPacketDiagramLayout(options);
+  const dimensions = _scriptPacketPaperDimensions(options);
+  const allEntries = _scriptPacketPlayEntries(scriptData);
+  const entries = (options.includeMissingImages ? allEntries : allEntries.filter((entry) => entry.imageUrl))
+    .slice(0, layout.perPage);
+  if (!options.includeDiagrams || !entries.length) {
+    showToast("Turn on diagram pages and choose a script with a diagram to save a page image.", { type: "warning", duration: 3500 });
+    return;
+  }
+
+  const pageWidth = 1536;
+  const pageHeight = Math.round(pageWidth * ((dimensions.height - 0.6) / (dimensions.width - 0.6)));
+  const margin = 42;
+  const canvas = document.createElement("canvas");
+  canvas.width = pageWidth;
+  canvas.height = pageHeight;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Canvas is unavailable");
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, pageWidth, pageHeight);
+
+  context.fillStyle = "#475569";
+  context.font = "700 18px system-ui, sans-serif";
+  context.fillText(String(typeof getTeamName === "function" ? getTeamName() : "Practice Script").toUpperCase(), margin, margin);
+  context.fillStyle = "#111827";
+  context.font = "800 28px system-ui, sans-serif";
+  context.fillText(options.packetTitle, margin, margin + 32);
+  context.font = "600 17px system-ui, sans-serif";
+  context.textAlign = "right";
+  context.fillText(scriptData.name || "Practice script", pageWidth - margin, margin + 16);
+  context.fillStyle = "#64748b";
+  context.font = "600 14px system-ui, sans-serif";
+  context.fillText(`Diagram sample · ${layout.perPage}-up`, pageWidth - margin, margin + 38);
+  context.textAlign = "left";
+  context.fillStyle = "#111827";
+  context.fillRect(margin, margin + 52, pageWidth - margin * 2, 3);
+
+  const headerHeight = 78;
+  const footerHeight = options.showFooter ? 32 : 0;
+  const gap = 16;
+  const usableWidth = pageWidth - margin * 2;
+  const usableHeight = pageHeight - margin * 2 - headerHeight - footerHeight;
+  const cardWidth = (usableWidth - gap * (layout.cols - 1)) / layout.cols;
+  const cardHeight = (usableHeight - gap * (layout.rows - 1)) / layout.rows;
+  const imageResults = await Promise.all(entries.map((entry) => _scriptPacketLoadPreviewImage(entry.imageUrl)));
+
+  entries.forEach((entry, index) => {
+    const column = index % layout.cols;
+    const row = Math.floor(index / layout.cols);
+    const x = margin + column * (cardWidth + gap);
+    const y = margin + headerHeight + row * (cardHeight + gap);
+    const pad = Math.max(10, Math.round(cardWidth * .03));
+    context.fillStyle = "#ffffff";
+    context.strokeStyle = "#94a3b8";
+    context.lineWidth = 1.5;
+    context.fillRect(x, y, cardWidth, cardHeight);
+    context.strokeRect(x, y, cardWidth, cardHeight);
+    context.fillStyle = "#64748b";
+    context.font = "700 12px system-ui, sans-serif";
+    context.fillText(`${entry.period} · Play ${entry.periodPlayNumber}`, x + pad, y + pad + 10);
+
+    const infoHeight = options.showMeta || options.showDefense || options.showCoaching || options.showNotes
+      ? Math.min(cardHeight * .30, 150)
+      : Math.min(cardHeight * .16, 72);
+    const imageBox = { x: x + pad, y: y + pad + 22, width: cardWidth - pad * 2, height: Math.max(36, cardHeight - infoHeight - pad * 3 - 22) };
+    context.fillStyle = "#f8fafc";
+    context.fillRect(imageBox.x, imageBox.y, imageBox.width, imageBox.height);
+    const image = imageResults[index];
+    if (image) {
+      const scale = Math.min(imageBox.width / image.naturalWidth, imageBox.height / image.naturalHeight);
+      const width = image.naturalWidth * scale;
+      const height = image.naturalHeight * scale;
+      context.drawImage(image, imageBox.x + (imageBox.width - width) / 2, imageBox.y + (imageBox.height - height) / 2, width, height);
+    } else {
+      context.fillStyle = "#64748b";
+      context.font = "700 14px system-ui, sans-serif";
+      context.textAlign = "center";
+      context.fillText("No attached diagram", imageBox.x + imageBox.width / 2, imageBox.y + imageBox.height / 2);
+      context.textAlign = "left";
+    }
+
+    let textY = imageBox.y + imageBox.height + pad + 15;
+    context.fillStyle = "#111827";
+    context.font = "800 16px system-ui, sans-serif";
+    textY = _scriptPacketCanvasText(context, entry.play.play || "Play", x + pad, textY, cardWidth - pad * 2, 18, 2);
+    context.fillStyle = "#475569";
+    context.font = "600 12px system-ui, sans-serif";
+    if (options.showMeta) textY = _scriptPacketCanvasText(context, [entry.play.personnel, entry.play.formation, entry.play.type].filter(Boolean).join(" · "), x + pad, textY + 2, cardWidth - pad * 2, 14, 1);
+    if (options.showDefense) textY = _scriptPacketCanvasText(context, [entry.play.defFront && `Front ${entry.play.defFront}`, entry.play.defCoverage && `Cov ${entry.play.defCoverage}`, entry.play.defBlitz && `Blitz ${entry.play.defBlitz}`].filter(Boolean).join(" · "), x + pad, textY + 2, cardWidth - pad * 2, 14, 1);
+    if (options.showNotes) _scriptPacketCanvasText(context, entry.play.notes || "", x + pad, textY + 2, cardWidth - pad * 2, 14, 1);
+  });
+
+  if (options.showFooter) {
+    context.strokeStyle = "#94a3b8";
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(margin, pageHeight - margin - 18);
+    context.lineTo(pageWidth - margin, pageHeight - margin - 18);
+    context.stroke();
+    context.fillStyle = "#64748b";
+    context.font = "600 12px system-ui, sans-serif";
+    context.fillText(scriptData.name || "Practice script", margin, pageHeight - margin);
+    context.textAlign = "right";
+    context.fillText("Page sample · 1", pageWidth - margin, pageHeight - margin);
+    context.textAlign = "left";
+  }
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  if (!blob) throw new Error("Could not create the page image");
+  const filename = `${String(options.packetTitle || "practice-script-packet").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "practice-script-packet"}-sample.png`;
+  const file = new File([blob], filename, { type: "image/png" });
+  if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+    await navigator.share({ files: [file], title: options.packetTitle, text: "Practice script packet sample" });
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast("Saved the packet page image.", { type: "success" });
+}
+
 function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRecords()) {
   if (!selectedScripts.length) return Promise.resolve(false);
   const o = _scriptPacketPrintOptions;
@@ -1221,10 +1379,11 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
           </div>
           <div id="scriptPacketLivePreview" class="script-packet-live-preview-slot"></div>
           </div>
-          <p class="script-packet-print-hint">Four-up is the normal staff handout. Use two-up for install, eight-up for a fast call sheet, and Full when a diagram needs room. Only Playbook-attached diagrams print.</p>
+          <p class="script-packet-print-hint">Four-up is the normal staff handout. Use two-up for install, eight-up for a fast call sheet, and Full when a diagram needs room. On a phone, <strong>Save page image</strong> opens your share sheet; <strong>Build Preview</strong> is the path to Print / Save as PDF. Only Playbook-attached diagrams print.</p>
         </div>
         <div class="custom-modal-actions">
           <button type="button" class="btn custom-modal-btn custom-modal-cancel" id="scriptPacketPrintCancel">Cancel</button>
+          <button type="button" class="btn custom-modal-btn" id="scriptPacketSaveSample">Save page image</button>
           <button type="button" class="btn btn-primary custom-modal-btn" id="scriptPacketPrintConfirm">Build Preview</button>
         </div>
       </div>`;
@@ -1258,6 +1417,25 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
         control.addEventListener("change", renderLivePreview);
       });
     renderLivePreview();
+
+    overlay.querySelector("#scriptPacketSaveSample").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = "Preparing…";
+      try {
+        await _saveScriptPacketSampleImage(
+          selectedScripts,
+          _scriptPacketOptionsFromOverlay(overlay, selectedDensity),
+        );
+      } catch (error) {
+        if (error?.name !== "AbortError") {
+          showToast("Could not save the packet page image. Try Build Preview and use your device's print/share menu.", { type: "warning", duration: 4500 });
+        }
+      } finally {
+        button.disabled = false;
+        button.textContent = "Save page image";
+      }
+    });
 
     const close = (confirmed) => {
       overlay.classList.remove("visible");

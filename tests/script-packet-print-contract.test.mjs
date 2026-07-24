@@ -49,6 +49,11 @@ assert.match(
 );
 assert.match(
   scriptExport,
+  /async function _saveScriptPacketSampleImage\(selectedScripts, options\)[\s\S]*?new File\(\[blob\], filename, \{ type: "image\/png" \}\)[\s\S]*?navigator\.share/,
+  "coaches can save or share a real packet page image from a phone",
+);
+assert.match(
+  scriptExport,
   /if \(density === "two"\) return \{ perPage: 2, cols: 1, rows: 2 \}/,
   "the two-up selection maps to an actual two-card page layout",
 );

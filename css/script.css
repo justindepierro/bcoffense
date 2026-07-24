@@ -4761,8 +4761,15 @@ body[data-auth-role="player"] .script-builder {
 @media (max-width: 860px) {
   .script-packet-print-modal { max-width: min(680px, calc(100vw - 32px)); }
   .script-packet-print-workbench { grid-template-columns: 1fr; }
-  .script-packet-live-preview-stage { min-height: 280px; }
-  .script-packet-live-preview-scale { width: min(100%, 320px); }
+  .script-packet-live-preview-slot { order: -1; }
+  .script-packet-live-preview {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    box-shadow: 0 8px 14px rgba(15, 23, 42, .14);
+  }
+  .script-packet-live-preview-stage { min-height: 235px; }
+  .script-packet-live-preview-scale { width: min(100%, 245px); }
 }
 .full-day-list {
   max-height: 200px;
