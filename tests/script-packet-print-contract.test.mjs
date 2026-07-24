@@ -34,8 +34,18 @@ assert.match(
 );
 assert.match(
   scriptExport,
-  /data-packet-density="\$\{choice\.value\}"[\s\S]*?let selectedDensity = o\.diagramDensity[\s\S]*?diagramDensity: selectedDensity/,
+  /data-packet-density="\$\{choice\.value\}"[\s\S]*?function _scriptPacketOptionsFromOverlay\(overlay, selectedDensity\)[\s\S]*?diagramDensity: selectedDensity/,
   "the visual layout chooser persists the selected diagram density",
+);
+assert.match(
+  scriptExport,
+  /function _scriptPacketLivePreviewMarkup\(selectedScripts, options\)[\s\S]*?_scriptPacketDiagramCard\(entry, options\)[\s\S]*?Live page sample/,
+  "packet setup renders a live sample from the selected script's real play cards",
+);
+assert.match(
+  scriptExport,
+  /const renderLivePreview = \(\) => \{[\s\S]*?_scriptPacketOptionsFromOverlay\(overlay, selectedDensity\)[\s\S]*?control\.addEventListener\("change", renderLivePreview\)/,
+  "packet sample updates as the print options change",
 );
 assert.match(
   scriptExport,

@@ -1094,6 +1094,76 @@ function _scriptPacketLayoutChoices(selectedDensity = "large") {
     </button>`).join("");
 }
 
+function _scriptPacketOptionsFromOverlay(overlay, selectedDensity) {
+  return {
+    packetTitle: overlay.querySelector("#scriptPacketTitleModal").value.trim() || "Practice Script Diagram Packet",
+    paperSize: overlay.querySelector("#scriptPacketPaper").value || "letter",
+    orientation: overlay.querySelector("#scriptPacketOrientation").value || "portrait",
+    diagramDensity: selectedDensity,
+    includeScriptTables: overlay.querySelector("#scriptPacketIncludeTables").checked,
+    includeDiagrams: overlay.querySelector("#scriptPacketIncludeDiagrams").checked,
+    includeMissingImages: overlay.querySelector("#scriptPacketMissingImages").checked,
+    showMeta: overlay.querySelector("#scriptPacketShowMeta").checked,
+    showDefense: overlay.querySelector("#scriptPacketShowDefense").checked,
+    showCoaching: overlay.querySelector("#scriptPacketShowCoaching").checked,
+    showNotes: overlay.querySelector("#scriptPacketShowNotes").checked,
+    startScriptOnNewPage: overlay.querySelector("#scriptPacketNewPage").checked,
+    showFooter: overlay.querySelector("#scriptPacketFooter").checked,
+  };
+}
+
+function _scriptPacketLivePreviewMarkup(selectedScripts, options) {
+  const scriptData = selectedScripts[0];
+  if (!scriptData) return "";
+  const layout = _scriptPacketDiagramLayout(options);
+  const dimensions = _scriptPacketPaperDimensions(options);
+  const allEntries = _scriptPacketPlayEntries(scriptData);
+  const entries = options.includeMissingImages
+    ? allEntries
+    : allEntries.filter((entry) => entry.imageUrl);
+  const sampleEntries = entries.slice(0, layout.perPage);
+  const pageCount = Math.max(1, Math.ceil(entries.length / layout.perPage));
+  const ratio = (dimensions.width - 0.6) / (dimensions.height - 0.6);
+  const detailLabels = [
+    options.includeScriptTables ? "Script table" : "",
+    options.includeDiagrams ? "Diagram pages" : "",
+    options.showMeta ? "Play info" : "",
+    options.showDefense ? "Defense" : "",
+    options.showCoaching ? "Coaching" : "",
+    options.showNotes ? "Notes" : "",
+  ].filter(Boolean);
+  const pageMarkup = options.includeDiagrams && sampleEntries.length
+    ? `<section class="script-packet-page script-packet-diagram-page script-packet-live-preview-page">
+        ${_scriptPacketPageHeader(options.packetTitle, scriptData, `Diagrams 1/${pageCount}`)}
+        <div class="script-packet-diagram-grid">
+          ${sampleEntries.map((entry) => _scriptPacketDiagramCard(entry, options)).join("")}
+        </div>
+        ${_scriptPacketPageFooter(scriptData, 1, pageCount, options)}
+      </section>`
+    : `<section class="script-packet-page script-packet-live-preview-page script-packet-live-preview-empty">
+        ${_scriptPacketPageHeader(options.packetTitle, scriptData, "Sample page")}
+        <div class="script-packet-live-preview-empty-copy">
+          <strong>${options.includeDiagrams ? "No eligible diagram was found" : "Diagram pages are turned off"}</strong>
+          <span>${options.includeScriptTables ? "Detailed script tables will print before any diagram pages." : "Turn on diagram pages or detailed script tables to add printable content."}</span>
+        </div>
+        ${_scriptPacketPageFooter(scriptData, 1, 1, options)}
+      </section>`;
+  return `<section class="script-packet-live-preview" aria-live="polite">
+    <div class="script-packet-live-preview-heading">
+      <div><strong>Live page sample</strong><span>Updates as you change the packet.</span></div>
+      <span>${escapeHtml(`${options.paperSize} · ${options.orientation} · ${layout.perPage}-up`)}</span>
+    </div>
+    <div class="script-packet-live-preview-includes">${detailLabels.map((label) => `<span>${escapeHtml(label)}</span>`).join("") || "<span>No content selected</span>"}</div>
+    <div class="script-packet-live-preview-stage">
+      <div class="script-packet-live-preview-scale">
+        <div class="script-packet-live-preview-sheet script-packet-diagrams-${escapeAttr(options.diagramDensity || "large")}" style="--script-packet-preview-ratio:${ratio};--script-packet-diagram-cols:${layout.cols};--script-packet-diagram-rows:${layout.rows};">
+          ${pageMarkup}
+        </div>
+      </div>
+    </div>
+  </section>`;
+}
+
 function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRecords()) {
   if (!selectedScripts.length) return Promise.resolve(false);
   const o = _scriptPacketPrintOptions;
@@ -1102,13 +1172,14 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay";
     overlay.innerHTML = `
-      <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="scriptPacketPrintTitle">
+      <div class="custom-modal script-packet-print-modal" role="dialog" aria-modal="true" aria-labelledby="scriptPacketPrintTitle">
         <div class="custom-modal-header">
           <span class="custom-modal-icon">🗂️</span>
           <h3 class="custom-modal-title" id="scriptPacketPrintTitle">Diagram packet</h3>
         </div>
         <div class="custom-modal-body">
           <p class="script-packet-print-summary">${escapeHtml(_scriptPacketOptionSummary(selectedScripts))} · Play diagrams, names, and the details you choose.</p>
+          <div class="script-packet-print-workbench">
           <div class="script-packet-print-form">
             <div class="script-packet-print-row script-packet-print-row--wide">
               <label for="scriptPacketTitleModal">Packet title</label>
@@ -1148,6 +1219,8 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
               <label><input type="checkbox" id="scriptPacketFooter" ${o.showFooter ? "checked" : ""}> Show team, script, and page footer</label>
             </div>
           </div>
+          <div id="scriptPacketLivePreview" class="script-packet-live-preview-slot"></div>
+          </div>
           <p class="script-packet-print-hint">Four-up is the normal staff handout. Use two-up for install, eight-up for a fast call sheet, and Full when a diagram needs room. Only Playbook-attached diagrams print.</p>
         </div>
         <div class="custom-modal-actions">
@@ -1160,6 +1233,13 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     let selectedDensity = o.diagramDensity || "large";
+    const renderLivePreview = () => {
+      const slot = overlay.querySelector("#scriptPacketLivePreview");
+      if (slot) slot.innerHTML = _scriptPacketLivePreviewMarkup(
+        selectedScripts,
+        _scriptPacketOptionsFromOverlay(overlay, selectedDensity),
+      );
+    };
     const setDensity = (density) => {
       selectedDensity = density;
       overlay.querySelectorAll("[data-packet-density]").forEach((button) => {
@@ -1167,10 +1247,17 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
         button.classList.toggle("is-selected", selected);
         button.setAttribute("aria-pressed", String(selected));
       });
+      renderLivePreview();
     };
     overlay.querySelectorAll("[data-packet-density]").forEach((button) => {
       button.addEventListener("click", () => setDensity(button.dataset.packetDensity || "large"));
     });
+    overlay.querySelectorAll("#scriptPacketTitleModal, #scriptPacketPaper, #scriptPacketOrientation, .script-packet-print-toggles input")
+      .forEach((control) => {
+        control.addEventListener("input", renderLivePreview);
+        control.addEventListener("change", renderLivePreview);
+      });
+    renderLivePreview();
 
     const close = (confirmed) => {
       overlay.classList.remove("visible");
@@ -1180,21 +1267,7 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
 
     overlay.querySelector("#scriptPacketPrintCancel").addEventListener("click", () => close(false));
     overlay.querySelector("#scriptPacketPrintConfirm").addEventListener("click", () => {
-      _scriptPacketPrintOptions = {
-        packetTitle: overlay.querySelector("#scriptPacketTitleModal").value.trim() || "Practice Script Diagram Packet",
-        paperSize: overlay.querySelector("#scriptPacketPaper").value || "letter",
-        orientation: overlay.querySelector("#scriptPacketOrientation").value || "portrait",
-        diagramDensity: selectedDensity,
-        includeScriptTables: overlay.querySelector("#scriptPacketIncludeTables").checked,
-        includeDiagrams: overlay.querySelector("#scriptPacketIncludeDiagrams").checked,
-        includeMissingImages: overlay.querySelector("#scriptPacketMissingImages").checked,
-        showMeta: overlay.querySelector("#scriptPacketShowMeta").checked,
-        showDefense: overlay.querySelector("#scriptPacketShowDefense").checked,
-        showCoaching: overlay.querySelector("#scriptPacketShowCoaching").checked,
-        showNotes: overlay.querySelector("#scriptPacketShowNotes").checked,
-        startScriptOnNewPage: overlay.querySelector("#scriptPacketNewPage").checked,
-        showFooter: overlay.querySelector("#scriptPacketFooter").checked,
-      };
+      _scriptPacketPrintOptions = _scriptPacketOptionsFromOverlay(overlay, selectedDensity);
       close(true);
     });
     overlay.addEventListener("click", (event) => {
