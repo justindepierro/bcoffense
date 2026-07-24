@@ -2063,19 +2063,6 @@ function renderPlayerLeaderboardPage() {
   const syncLabel = syncMeta?.synced
     ? "Team synced"
     : "Local board";
-  const rosterPlayer = _getQuizRosterPlayerForCurrentUser();
-  const rosterPosition = typeof _getCurrentQuizRosterPositionKeys === "function"
-    ? _getCurrentQuizRosterPositionKeys().primary
-    : "";
-  const rosterPositionLabel = rosterPosition && typeof _getQuizPosition === "function"
-    ? _getQuizPosition(rosterPosition)?.label
-    : "";
-  const rosterQuizLabel = rosterPlayer && rosterPositionLabel
-    ? `Defaulting to your roster primary: ${rosterPositionLabel}.`
-    : "Choose a role in the quiz setup to tailor the questions.";
-  const launchModes = typeof _getPlayerQuizModes === "function"
-    ? _getPlayerQuizModes().filter((mode) => !mode.disabled).slice(0, 3)
-    : [];
   const recentHtml = recentAttempts.length
     ? recentAttempts.map((attempt) => `
         <div class="player-leaderboard-attempt${attempt.completed === false ? " is-partial" : ""}">
@@ -2092,32 +2079,9 @@ function renderPlayerLeaderboardPage() {
     <div class="player-leaderboard-shell">
       <section class="player-leaderboard-hero">
         <div>
-          <span class="player-leaderboard-kicker">Leaderboard</span>
+          <span class="player-leaderboard-kicker">Quiz progress</span>
           <h2>${isSeason ? "Season points and weekly pace" : "Quiz points and weekly standard"}</h2>
           <p>${isSeason ? "Track the whole season while still chasing the weekly standard." : `Get to ${settings.weeklyGoal} points this week. Game Plan quizzes count ${settings.gameplanWeight}x.`}</p>
-        </div>
-        <button type="button" class="player-leaderboard-start-quiz" data-action="openPlayerQuizHub" aria-label="Choose and start a quiz">
-          <span class="player-leaderboard-start-quiz__icon" aria-hidden="true">⚡</span>
-          <span><small>Ready to study?</small><strong>Choose a quiz</strong></span>
-          <span class="player-leaderboard-start-quiz__arrow" aria-hidden="true">→</span>
-        </button>
-      </section>
-      <section class="player-leaderboard-quiz-launcher" aria-label="Start a quiz">
-        <div class="player-leaderboard-quiz-launcher__intro">
-          <span>Quiz launcher</span>
-          <h3>Pick a study mode, then fine-tune it.</h3>
-          <p>${escapeHtml(rosterQuizLabel)}</p>
-        </div>
-        <div class="player-leaderboard-quiz-launcher__modes">
-          ${launchModes.map((mode) => `
-            <button type="button" data-action="openPlayerQuizHubWithMode" data-arg="${escapeAttr(mode.key)}">
-              <strong>${escapeHtml(mode.label)}</strong>
-              <small>${escapeHtml(mode.note)}</small>
-              <span>${escapeHtml(mode.time)}</span>
-            </button>`).join("")}
-          <button type="button" class="player-leaderboard-quiz-launcher__all" data-action="openPlayerQuizHub">
-            <strong>All quiz options</strong><small>Choose script, Game Plan, signals, and position.</small><span>→</span>
-          </button>
         </div>
       </section>
       ${draft ? _renderPlayerQuizResumeCard(draft, "page") : ""}
@@ -2192,6 +2156,40 @@ function renderPlayerLeaderboardPage() {
   `);
   const meterFill = page.querySelector(".player-leaderboard-meter-fill");
   if (meterFill) meterFill.style.width = `${goalPct}%`;
+}
+
+function _isPlayerQuizWorkspace() {
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  return user?.role === "player" || (user?.role === "coach" && user?.managedCoach === true);
+}
+
+function isQuizPageActive() {
+  return document.getElementById("quiz")?.classList.contains("active") === true;
+}
+
+function renderQuizPage() {
+  const page = document.getElementById("quizPage");
+  if (!page) return;
+  const playerWorkspace = _isPlayerQuizWorkspace();
+  page.classList.toggle("quiz-page--player", playerWorkspace);
+  page.classList.toggle("quiz-page--coach", !playerWorkspace);
+
+  if (playerWorkspace) {
+    const playerPage = document.getElementById("playerQuizPage");
+    const hub = document.getElementById("playerQuizHubOverlay");
+    if (playerPage && hub && hub.parentElement !== playerPage) playerPage.appendChild(hub);
+    if (hub) {
+      hub.classList.remove("hidden");
+      hub.setAttribute("role", "region");
+      hub.removeAttribute("aria-modal");
+      hub.setAttribute("aria-label", "Quiz setup");
+    }
+    _syncPlayerQuizPositionDefault();
+    _renderPlayerQuizHub();
+    renderPlayerLeaderboardPage();
+    return;
+  }
+  renderCoachQuizSetupPage();
 }
 
 function _quizUniquePlaysFromList(list) {
@@ -3690,7 +3688,7 @@ function coachSaveQuizSettings() {
   });
   renderCoachQuizSetupPage();
   _renderPlayerQuizHub();
-  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  if (isQuizPageActive()) renderQuizPage();
   showToast(`Quiz settings saved. Weekly goal is ${settings.weeklyGoal}; signal games unlock at ${signalSettings.minClipCount} clips.`, { type: "success" });
 }
 
@@ -3709,7 +3707,7 @@ async function coachResetQuizSettings() {
   _saveSignalGameSettings(SIGNAL_GAME_DEFAULT_SETTINGS);
   renderCoachQuizSetupPage();
   _renderPlayerQuizHub();
-  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  if (isQuizPageActive()) renderQuizPage();
   showToast("Quiz settings reset.", { type: "success" });
 }
 
@@ -3810,7 +3808,7 @@ async function coachAwardQuestionPoints(type = "question") {
   _savePlayerRewardEvents(events);
   _leaderboardSelectedPlayer = player;
   renderCoachQuizSetupPage();
-  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  if (isQuizPageActive()) renderQuizPage();
   showToast(`${player} earned ${points} points${points < requestedPoints ? " after cap" : ""}.`, { type: "success" });
 }
 
@@ -3924,7 +3922,7 @@ async function coachApproveQuizReward(rewardId = "") {
   _savePlayerRewardEvents(events);
   _leaderboardSelectedPlayer = _normalizeQuizPlayerName(reward.player);
   renderCoachQuizSetupPage();
-  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  if (isQuizPageActive()) renderQuizPage();
   showToast(`Approved ${approvedPoints} points for ${_normalizeQuizPlayerName(reward.player)}${approvedPoints < originalPoints ? " after cap" : ""}.`, { type: "success" });
 }
 
@@ -3949,7 +3947,7 @@ async function coachRevokeQuizReward(rewardId = "") {
   _savePlayerRewardEvents(events.filter((event) => String(event.id || "") !== String(rewardId || "")));
   _leaderboardSelectedPlayer = player;
   renderCoachQuizSetupPage();
-  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  if (isQuizPageActive()) renderQuizPage();
   showToast(`Reward removed for ${player}.`, { type: "success" });
 }
 
@@ -3985,7 +3983,7 @@ async function coachAwardHelmetSticker(stickerKey = "") {
   _savePlayerHelmetStickers(stickers);
   _leaderboardSelectedPlayer = player;
   renderCoachQuizSetupPage();
-  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  if (isQuizPageActive()) renderQuizPage();
   showToast(`${player} earned ${sticker.label}.`, { type: "success" });
 }
 
@@ -4010,7 +4008,7 @@ async function coachRevokeHelmetStickerAward(stickerId = "") {
   _savePlayerHelmetStickers(stickers.filter((event) => String(event.id || "") !== String(stickerId || "")));
   _leaderboardSelectedPlayer = player;
   renderCoachQuizSetupPage();
-  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  if (isQuizPageActive()) renderQuizPage();
   showToast(`${sticker.label || "Sticker"} removed for ${player}.`, { type: "success" });
 }
 

@@ -737,8 +737,7 @@ body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tab {
   body.app-ready:not(.is-mobile-screen)[data-active-tab="tendencies"] #mainApp,
   body.app-ready:not(.is-mobile-screen)[data-active-tab="gameplan"] #mainApp,
   body.app-ready:not(.is-mobile-screen)[data-active-tab="callsheet"] #mainApp,
-  body.app-ready:not(.is-mobile-screen)[data-active-tab="leaderboard"] #mainApp,
-  body.app-ready:not(.is-mobile-screen)[data-active-tab="quizsetup"] #mainApp,
+  body.app-ready:not(.is-mobile-screen)[data-active-tab="quiz"] #mainApp,
   body.app-ready:not(.is-mobile-screen)[data-active-tab="installation"]
     #mainApp,
   body.app-ready:not(.is-mobile-screen)[data-active-tab="identity"] #mainApp,
@@ -753,7 +752,7 @@ body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tab {
 body[data-auth-role="player"] #dashboard.panel,
 body[data-auth-role="player"] #playbook.panel,
 body[data-auth-role="player"] #script.panel,
-body[data-auth-role="player"] #leaderboard.panel {
+body[data-auth-role="player"] #quiz.panel {
   margin-top: 12px;
   border: 0;
   background: transparent;

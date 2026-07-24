@@ -12,9 +12,8 @@
       "installation",
       "identity",
       "offensebuilder",
-      "quizsetup",
+      "quiz",
       "dashboard",
-      "leaderboard",
     ],
     coach: [
       "playbook",
@@ -27,11 +26,10 @@
       "installation",
       "identity",
       "offensebuilder",
-      "quizsetup",
+      "quiz",
       "dashboard",
-      "leaderboard",
     ],
-    player: [...AUTH_CORE_PLAYER_TABS.player, "leaderboard"],
+    player: [...AUTH_CORE_PLAYER_TABS.player, "quiz"],
   };
 
   const AUTH_ROLE_DEFAULT_TAB = {
@@ -43,14 +41,14 @@
   // Managed coaches temporarily use the same focused material browser as
   // players. Additional coach-workspace tabs remain deliberately unavailable
   // until that authoring experience is ready to ship.
-  const STUDY_PORTAL_TABS = [...AUTH_CORE_PLAYER_TABS.player, "leaderboard"];
+  const STUDY_PORTAL_TABS = [...AUTH_CORE_PLAYER_TABS.player, "quiz"];
 
   // D1-backed coaches can study every coaching surface by default. Workspace
   // editing and staff-management capabilities remain explicit grants.
   const MANAGED_COACH_DEFAULT_PERMISSIONS = [
     "tab:dashboard", "tab:playbook", "tab:signals", "tab:script", "tab:wristband",
     "tab:tendencies", "tab:gameplan", "tab:callsheet", "tab:installation", "tab:identity",
-    "tab:offensebuilder", "tab:quizsetup", "tab:leaderboard",
+    "tab:offensebuilder", "tab:quiz",
     "feature:comments", "feature:questions",
   ];
   const MANAGED_COACH_ACTION_PERMISSIONS = {
@@ -592,7 +590,7 @@
       ["tab-signals", "Signals", "Signals"],
       ["tab-dashboard", "📊 Dashboard", "Home"],
       ["tab-script", "Practice Script Builder", "Practice"],
-      ["tab-leaderboard", "Leaderboard", "Leaderboard"],
+      ["tab-quiz", "Quiz", "Quiz"],
     ].forEach(([id, defaultLabel, playerLabel]) => {
       const tab = document.getElementById(id);
       if (!tab) return;

@@ -723,26 +723,14 @@ function _renderPlayerQuizHub() {
     signalStatusEl.hidden = !signalStatus.detail;
   }
 
-  if (document.getElementById("leaderboard")?.classList.contains("active")) {
-    renderPlayerLeaderboardPage();
+  if (typeof isQuizPageActive === "function" && isQuizPageActive()) {
+    renderQuizPage();
   }
 }
 
 function openPlayerQuizHub() {
-  _syncPlayerQuizPositionDefault();
-  _renderPlayerQuizHub();
-  const overlay = document.getElementById("playerQuizHubOverlay");
-  if (!overlay) return;
-  overlay.classList.remove("hidden");
-  if (typeof openLayer === "function") {
-    openLayer(overlay, {
-      id: "playerQuizHubOverlay",
-      scrollElement: "playerQuizHubPanel",
-      blocking: true,
-    });
-  } else if (typeof trapFocus === "function") {
-    trapFocus(overlay);
-  }
+  if (typeof showTab === "function") showTab("quiz");
+  else if (typeof renderQuizPage === "function") renderQuizPage();
 }
 
 // Leaderboard launchers use the same source/mode chooser as every other
@@ -754,13 +742,9 @@ function openPlayerQuizHubWithMode(modeKey = "") {
   openPlayerQuizHub();
 }
 
-function closePlayerQuizHub() {
-  const overlay = document.getElementById("playerQuizHubOverlay");
-  if (!overlay) return;
-  if (typeof closeLayer === "function") {
-    closeLayer(overlay);
-  }
-  overlay.classList.add("hidden");
+function closePlayerQuizHub(options = {}) {
+  if (options.keepQuizPage) return;
+  if (typeof showTab === "function") showTab("dashboard");
 }
 
 function setPlayerQuizPosition(key) {
@@ -810,7 +794,7 @@ function startPlayerQuizHubScript() {
     showToast("Use the Game Plan button for that challenge.", { type: "info" });
     return;
   }
-  closePlayerQuizHub();
+  closePlayerQuizHub({ keepQuizPage: true });
   _quizMode = mode?.key || "quick";
   if (typeof startPlayerScriptQuiz === "function") {
     startPlayerScriptQuiz(id || "", {
@@ -908,7 +892,7 @@ async function startPlayerQuizHubSignals() {
       "signal-heat": "Heat Check",
       "signal-full-call": "Full Play Call",
     };
-    closePlayerQuizHub();
+    closePlayerQuizHub({ keepQuizPage: true });
     _quizMode = signalMode;
     startScriptQuiz({
       items: quizItems,
@@ -1071,7 +1055,7 @@ function startPlayerQuizHubGamePlan() {
     showToast("Add plays to the Game Plan before starting this quiz.", { type: "warning" });
     return;
   }
-  closePlayerQuizHub();
+  closePlayerQuizHub({ keepQuizPage: true });
   _quizMode = _playerQuizSelectedMode === "gameplan" ? "gameplan" : "quick";
   startScriptQuiz({
     items: _prepareQuizItemsForMode(items, _quizMode),
@@ -2281,8 +2265,8 @@ function closeScriptQuiz() {
   }
   overlay.classList.add("hidden");
   _quizExitSummaryOpen = false;
-  if (document.getElementById("leaderboard")?.classList.contains("active")) {
-    renderPlayerLeaderboardPage();
+  if (typeof isQuizPageActive === "function" && isQuizPageActive()) {
+    renderQuizPage();
   }
 }
 
@@ -2876,8 +2860,8 @@ function saveAndCloseScriptQuiz() {
   _quizExitSummaryOpen = false;
   _setScriptQuizOverlayOpen(false);
   _renderPlayerQuizHub();
-  if (document.getElementById("leaderboard")?.classList.contains("active")) {
-    renderPlayerLeaderboardPage();
+  if (typeof isQuizPageActive === "function" && isQuizPageActive()) {
+    renderQuizPage();
   }
 }
 
@@ -2941,7 +2925,7 @@ function resumePlayerQuizDraft() {
   _quizTimeLimitMs = 0;
   _quizStartedAt = 0;
   _quizFinishedAt = 0;
-  closePlayerQuizHub();
+  closePlayerQuizHub({ keepQuizPage: true });
   _setScriptQuizOverlayOpen(true);
   renderScriptQuizPlay();
   return true;
@@ -2950,8 +2934,8 @@ function resumePlayerQuizDraft() {
 function discardPlayerQuizDraft() {
   _clearPlayerQuizDraft();
   _renderPlayerQuizHub();
-  if (document.getElementById("leaderboard")?.classList.contains("active")) {
-    renderPlayerLeaderboardPage();
+  if (typeof isQuizPageActive === "function" && isQuizPageActive()) {
+    renderQuizPage();
   }
   showToast("Saved quiz ended.", { type: "info" });
 }

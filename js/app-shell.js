@@ -2283,9 +2283,9 @@ function _refreshPlayerTeamSurfaces() {
   if (typeof renderPlayerLoadedScriptBar === "function") renderPlayerLoadedScriptBar();
   if (typeof requestRenderScript === "function") requestRenderScript();
   if (typeof _renderPlayerQuizHub === "function") _renderPlayerQuizHub();
-  if (document.getElementById("leaderboard")?.classList.contains("active") &&
-    typeof renderPlayerLeaderboardPage === "function") {
-    renderPlayerLeaderboardPage();
+  if (document.getElementById("quiz")?.classList.contains("active") &&
+    typeof renderQuizPage === "function") {
+    renderQuizPage();
   }
 }
 

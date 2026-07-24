@@ -474,15 +474,15 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
   }
 
   /* Five destinations fit comfortably on modern phones, but the full
-     “Leaderboard” label crowds a 320px viewport. Keep its accessible full
+     “Quiz” label crowds a 320px viewport. Keep its accessible full
      label in markup and use a compact visual label only at this narrow tier. */
   @media (max-width: 360px) {
-    body.is-mobile-screen[data-auth-role="player"] #tab-leaderboard {
+    body.is-mobile-screen[data-auth-role="player"] #tab-quiz {
       font-size: 0;
       padding-inline: 4px;
     }
 
-    body.is-mobile-screen[data-auth-role="player"] #tab-leaderboard::before {
+    body.is-mobile-screen[data-auth-role="player"] #tab-quiz::before {
       content: attr(data-player-phone-label);
       display: block;
       order: 2;
@@ -492,7 +492,7 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
       line-height: 1;
     }
 
-    body.is-mobile-screen[data-auth-role="player"] #tab-leaderboard .tab-icon {
+    body.is-mobile-screen[data-auth-role="player"] #tab-quiz .tab-icon {
       order: 1;
     }
   }

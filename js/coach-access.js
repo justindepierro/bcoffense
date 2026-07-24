@@ -10,7 +10,6 @@ const COACH_ACCESS_GROUPS = [
     ["tab:playbook", "Playbook", "Read the published playbook and diagrams."],
     ["tab:signals", "Signals", "Watch signal clips and study components."],
     ["tab:script", "Practice / swipe study", "Open current practice scripts and swipe view."],
-    ["tab:leaderboard", "Leaderboard", "See player quiz and study standings."],
     ["tab:wristband", "Wristband maker", "Open wristband materials without changing them."],
     ["tab:tendencies", "Opponent scout", "Read opponent scouting reports."],
     ["tab:gameplan", "Game plan", "Read the current game-plan board."],
@@ -18,7 +17,7 @@ const COACH_ACCESS_GROUPS = [
     ["tab:installation", "Installations", "Read install and teaching materials."],
     ["tab:identity", "Offensive identity", "Read the program’s identity materials."],
     ["tab:offensebuilder", "Offense builder", "Open the offense-building reference."],
-    ["tab:quizsetup", "Quiz setup", "Review team quiz sources and results."],
+    ["tab:quiz", "Quiz", "Review team quiz sources and results."],
   ]],
   ["Collaboration", [
     ["feature:comments", "Comments and discussion", "Post and reply in play discussions."],
@@ -37,7 +36,7 @@ const COACH_ACCESS_GROUPS = [
 const COACH_ACCESS_DEFAULTS = [
   "tab:dashboard", "tab:playbook", "tab:signals", "tab:script", "tab:wristband",
   "tab:tendencies", "tab:gameplan", "tab:callsheet", "tab:installation", "tab:identity",
-  "tab:offensebuilder", "tab:quizsetup", "tab:leaderboard",
+  "tab:offensebuilder", "tab:quiz",
   "feature:comments", "feature:questions",
 ];
 

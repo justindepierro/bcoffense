@@ -90,18 +90,23 @@ assert.match(
 );
 assert.match(
   quizFoundation,
-  /player-leaderboard-start-quiz[\s\S]*?player-leaderboard-quiz-launcher/,
-  "the leaderboard exposes a visible quiz launcher and roster-aware study default",
+  /function renderQuizPage\(\)[\s\S]*?playerQuizHubOverlay[\s\S]*?_renderPlayerQuizHub\(\)/,
+  "the Quiz page owns one shared player study configuration flow",
+);
+assert.match(
+  quiz,
+  /function _syncPlayerQuizPositionDefault\(\)[\s\S]*?_resolveQuizPositionKeysForMode\(_quizPositionMode\)/,
+  "the Quiz page preserves the roster-derived quiz position default",
 );
 assert.match(
   quizFoundation,
-  /const rosterPlayer = _getQuizRosterPlayerForCurrentUser\(\);[\s\S]*?Defaulting to your roster primary:/,
-  "the leaderboard explains the roster-derived quiz position before launch",
+  /function _getQuizRosterPlayerForCurrentUser\(/,
+  "the Quiz page keeps roster identity as the source of its position default",
 );
 assert.match(
   quiz,
   /function openPlayerQuizHubWithMode\(modeKey = ""\)[\s\S]*?openPlayerQuizHub\(\);/,
-  "leaderboard mode shortcuts open the single shared quiz configuration flow",
+  "Quiz shortcuts open the single shared quiz configuration flow",
 );
 
 console.log("script editor canonical media and leaderboard quiz launcher contracts passed");

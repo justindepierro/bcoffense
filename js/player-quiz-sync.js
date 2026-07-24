@@ -113,9 +113,8 @@
   }
 
   function rerenderLeaderboardSurfaces() {
-    const leaderboard = document.getElementById("leaderboard");
-    if (leaderboard?.classList.contains("active") && typeof renderPlayerLeaderboardPage === "function") {
-      renderPlayerLeaderboardPage();
+    if (typeof isQuizPageActive === "function" && isQuizPageActive() && typeof renderQuizPage === "function") {
+      renderQuizPage();
     }
     const coachSetup = document.getElementById("coachQuizSetupPage");
     if (coachSetup?.offsetParent !== null && typeof renderCoachQuizSetupPage === "function") {

@@ -1337,6 +1337,34 @@
   display: none;
 }
 
+/* The launcher is now part of the Quiz workspace.  The question session keeps
+   its own focused overlay; choosing a source never opens a second destination. */
+.quiz-page .player-quiz-hub-overlay {
+  position: static;
+  z-index: auto;
+  display: block;
+  padding: 0;
+  background: none;
+  backdrop-filter: none;
+}
+
+.quiz-page .player-quiz-hub-panel {
+  width: 100%;
+  max-height: none;
+  overflow: visible;
+  border-radius: var(--radius-lg);
+}
+
+.quiz-page .player-quiz-hub-body {
+  overflow: visible;
+}
+
+.quiz-page--player .coach-quiz-setup-page,
+.quiz-page--coach .player-quiz-page,
+.quiz-page--coach .player-leaderboard-page {
+  display: none;
+}
+
 .player-quiz-hub-panel {
   width: min(920px, 100%);
   max-height: calc(var(--app-vh, 1vh) * 92);

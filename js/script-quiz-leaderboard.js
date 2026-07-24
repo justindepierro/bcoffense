@@ -149,8 +149,8 @@ function _getSignalLeaderboardRowsForMode(summary, isSeason, mode = _signalLeade
 
 function setSignalLeaderboardMode(mode) {
   _signalLeaderboardMode = _getSignalLeaderboardConfig(mode).mode;
-  if (document.getElementById("leaderboard")?.classList.contains("active")) {
-    renderPlayerLeaderboardPage();
+  if (typeof isQuizPageActive === "function" && isQuizPageActive()) {
+    renderQuizPage();
   }
   if (document.getElementById("coachQuizSetupPage")?.offsetParent) {
     renderCoachQuizSetupPage();
