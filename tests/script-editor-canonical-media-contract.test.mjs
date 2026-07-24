@@ -36,6 +36,16 @@ assert.match(
 );
 assert.match(
   images,
+  /function displaySignaturesForPlay\(play\)[\s\S]*?const mediaId = typeof getPlayMediaId[\s\S]*?const exactCandidates = \[[\s\S]*?mediaId,/,
+  "display lookups include the canonical cloud media ID after a successful R2 download",
+);
+assert.match(
+  images,
+  /function signaturesForPlay\(play\)[\s\S]*?const mediaId = typeof getPlayMediaId[\s\S]*?const candidates = \[[\s\S]*?mediaId,/,
+  "shared image operations retain the canonical cloud media ID alongside legacy identifiers",
+);
+assert.match(
+  images,
   /async function pushRemote\(play, blob, options = \{\}\)[\s\S]*?await checkRemoteForPlay\(play, \{ fresh: true \}\);/,
   "explicit diagram uploads compare against the current cloud version before writing",
 );

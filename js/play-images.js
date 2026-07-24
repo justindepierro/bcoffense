@@ -457,7 +457,15 @@
   function signaturesForPlay(play) {
     if (!play || typeof playSignature !== "function") return [];
     const sourcePlay = _findSourcePlay(play);
+    // The cloud media ID is the canonical storage key. Keep it in the shared
+    // signature list as well as the legacy/source IDs so an image fetched from
+    // R2 can be found immediately by every caller (packet printing, playbook,
+    // editor, and presentation) instead of only by the fetch that loaded it.
+    const mediaId = typeof getPlayMediaId === "function"
+      ? getPlayMediaId(sourcePlay || play)
+      : String(sourcePlay?.mediaId || play?.mediaId || "").trim();
     const candidates = [
+      mediaId,
       play.playbookId,
       play.sourcePlayId,
       play.originalPlayId,
@@ -515,7 +523,15 @@
   function displaySignaturesForPlay(play) {
     if (!play || typeof playSignature !== "function") return [];
     const sourcePlay = _findSourcePlay(play);
+    // R2 downloads are cached by this exact key. Omitting it here meant a
+    // successful canonical download could still render as "No attached
+    // diagram" on a copied script row whose legacy IDs differed from the
+    // current playbook record.
+    const mediaId = typeof getPlayMediaId === "function"
+      ? getPlayMediaId(sourcePlay || play)
+      : String(sourcePlay?.mediaId || play?.mediaId || "").trim();
     const exactCandidates = [
+      mediaId,
       play.playbookId,
       play.sourcePlayId,
       play.originalPlayId,
