@@ -1011,6 +1011,10 @@ async function openScriptPacketBuilder() {
     packetTitle: `${currentScript.name || "Practice Script"} Diagram Packet`,
     includeScriptTables: false,
     includeDiagrams: true,
+    // A packet is a script handout, not a diagram-only report. Never let an
+    // older local preference silently drop plays that have not resolved a
+    // diagram yet.
+    includeMissingImages: true,
     showMeta: true,
     showDefense: false,
     showCoaching: false,
@@ -1053,7 +1057,9 @@ let _scriptPacketPrintOptions = {
   diagramDensity: "large",
   includeScriptTables: false,
   includeDiagrams: true,
-  includeMissingImages: false,
+  // Kept for backwards compatibility with saved option objects. Packet
+  // rendering deliberately includes every play regardless of this value.
+  includeMissingImages: true,
   showMeta: true,
   showDefense: true,
   showCoaching: true,
@@ -1102,7 +1108,9 @@ function _scriptPacketOptionsFromOverlay(overlay, selectedDensity) {
     diagramDensity: selectedDensity,
     includeScriptTables: overlay.querySelector("#scriptPacketIncludeTables").checked,
     includeDiagrams: overlay.querySelector("#scriptPacketIncludeDiagrams").checked,
-    includeMissingImages: overlay.querySelector("#scriptPacketMissingImages").checked,
+    // Packet integrity is an invariant: a play with no diagram receives a
+    // clearly marked card instead of quietly disappearing from the handout.
+    includeMissingImages: true,
     showMeta: overlay.querySelector("#scriptPacketShowMeta").checked,
     showDefense: overlay.querySelector("#scriptPacketShowDefense").checked,
     showCoaching: overlay.querySelector("#scriptPacketShowCoaching").checked,
@@ -1112,15 +1120,39 @@ function _scriptPacketOptionsFromOverlay(overlay, selectedDensity) {
   };
 }
 
+function _scriptPacketDiagramCoverage(selectedScripts) {
+  const entries = (Array.isArray(selectedScripts) ? selectedScripts : [])
+    .flatMap((record) => _scriptPacketPlayEntries(record));
+  const diagrams = entries.filter((entry) => Boolean(entry.imageUrl)).length;
+  return {
+    total: entries.length,
+    diagrams,
+    missing: Math.max(0, entries.length - diagrams),
+  };
+}
+
+function _scriptPacketCoverageMarkup(coverage) {
+  if (!coverage.total) return "<span>No script plays</span>";
+  const parts = [
+    `${coverage.total}/${coverage.total} plays accounted for`,
+    `${coverage.diagrams} diagram${coverage.diagrams === 1 ? "" : "s"} ready`,
+  ];
+  if (coverage.missing) {
+    parts.push(`${coverage.missing} marked diagram needed`);
+  }
+  return parts.map((part, index) => `<span class="${index === 2 ? "is-warning" : ""}">${escapeHtml(part)}</span>`).join("");
+}
+
 function _scriptPacketLivePreviewMarkup(selectedScripts, options, state = {}) {
   const scriptData = selectedScripts[0];
   if (!scriptData) return "";
   const layout = _scriptPacketDiagramLayout(options);
   const dimensions = _scriptPacketPaperDimensions(options);
   const allEntries = _scriptPacketPlayEntries(scriptData);
-  const entries = options.includeMissingImages
-    ? allEntries
-    : allEntries.filter((entry) => entry.imageUrl);
+  // Do not filter plays by media availability. A missing-diagram card is what
+  // makes a packet trustworthy when it is handed to staff.
+  const entries = allEntries;
+  const coverage = _scriptPacketDiagramCoverage([scriptData]);
   const sampleEntries = entries.slice(0, layout.perPage);
   const pageCount = Math.max(1, Math.ceil(entries.length / layout.perPage));
   const ratio = (dimensions.width - 0.6) / (dimensions.height - 0.6);
@@ -1163,6 +1195,7 @@ function _scriptPacketLivePreviewMarkup(selectedScripts, options, state = {}) {
       <span>${escapeHtml(`${options.paperSize} · ${options.orientation} · ${layout.perPage}-up`)}</span>
     </div>
     <div class="script-packet-live-preview-includes">${detailLabels.map((label) => `<span>${escapeHtml(label)}</span>`).join("") || "<span>No content selected</span>"}</div>
+    <div class="script-packet-live-preview-coverage">${_scriptPacketCoverageMarkup(coverage)}</div>
     <div class="script-packet-live-preview-stage">
       <div class="script-packet-live-preview-scale">
         <div class="script-packet-live-preview-sheet script-packet-diagrams-${escapeAttr(options.diagramDensity || "large")}" style="--script-packet-preview-ratio:${ratio};--script-packet-diagram-cols:${layout.cols};--script-packet-diagram-rows:${layout.rows};">
@@ -1230,10 +1263,9 @@ async function _saveScriptPacketSampleImage(selectedScripts, options) {
   const layout = _scriptPacketDiagramLayout(options);
   const dimensions = _scriptPacketPaperDimensions(options);
   const allEntries = _scriptPacketPlayEntries(scriptData);
-  const entries = (options.includeMissingImages ? allEntries : allEntries.filter((entry) => entry.imageUrl))
-    .slice(0, layout.perPage);
+  const entries = allEntries.slice(0, layout.perPage);
   if (!options.includeDiagrams || !entries.length) {
-    showToast("Turn on diagram pages and choose a script with a diagram to save a page image.", { type: "warning", duration: 3500 });
+    showToast("Turn on diagram pages and choose a script with at least one play to save a page image.", { type: "warning", duration: 3500 });
     return;
   }
 
@@ -1397,7 +1429,7 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
               <span class="script-packet-options-label">Include</span>
               <label><input type="checkbox" id="scriptPacketIncludeTables" ${o.includeScriptTables ? "checked" : ""}> Include detailed script tables</label>
               <label><input type="checkbox" id="scriptPacketIncludeDiagrams" ${o.includeDiagrams ? "checked" : ""}> Include play diagram pages</label>
-              <label><input type="checkbox" id="scriptPacketMissingImages" ${o.includeMissingImages ? "checked" : ""}> Include placeholder cards for plays without images</label>
+              <div class="script-packet-integrity-note"><strong>Every script play stays in the packet.</strong><span>Plays without a diagram get a clear “No attached diagram” card.</span></div>
               <label><input type="checkbox" id="scriptPacketShowMeta" ${o.showMeta ? "checked" : ""}> Light play information</label>
               <label><input type="checkbox" id="scriptPacketShowDefense" ${o.showDefense ? "checked" : ""}> Defensive look and reps</label>
               <label><input type="checkbox" id="scriptPacketShowCoaching" ${o.showCoaching ? "checked" : ""}> Game-plan coaching details</label>
@@ -1408,7 +1440,7 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
           </div>
           <div id="scriptPacketLivePreview" class="script-packet-live-preview-slot"></div>
           </div>
-          <p class="script-packet-print-hint">Four-up is the normal staff handout. Use two-up for install, eight-up for a fast call sheet, and Full when a diagram needs room. On a phone, <strong>Save page image</strong> opens your share sheet; <strong>Build Preview</strong> is the path to Print / Save as PDF. Only Playbook-attached diagrams print.</p>
+          <p class="script-packet-print-hint">Four-up is the normal staff handout. Use two-up for install, eight-up for a fast call sheet, and Full when a diagram needs room. On a phone, <strong>Save page image</strong> opens your share sheet; <strong>Build Preview</strong> is the path to Print / Save as PDF. Every script play is included; only Playbook-attached diagrams can render as an image.</p>
         </div>
         <div class="custom-modal-actions">
           <button type="button" class="btn custom-modal-btn custom-modal-cancel" id="scriptPacketPrintCancel">Cancel</button>
@@ -1671,9 +1703,9 @@ function _scriptPacketPageFooter(scriptData, pageNumber, pageCount, options) {
 
 function _scriptPacketDiagramPages(scriptData, packetTitle, options) {
   const allEntries = _scriptPacketPlayEntries(scriptData);
-  const entries = options.includeMissingImages
-    ? allEntries
-    : allEntries.filter((entry) => entry.imageUrl);
+  // Preserve the script order and every period's play count. Missing media is
+  // represented by the card renderer rather than removed from packet output.
+  const entries = allEntries;
   if (!entries.length) return "";
 
   const layout = _scriptPacketDiagramLayout(options);
@@ -1799,16 +1831,14 @@ async function _renderScriptPacketAndPrint(selectedScripts) {
       : "";
     if (options.includeDiagrams && !diagramHtml && tableHtml) {
       showToast(
-        options.includeMissingImages
-          ? "No script plays were available for diagram pages."
-          : "No attached play diagrams found. Printing the detailed script tables only.",
+        "No script plays were available for diagram pages.",
         { type: "warning", duration: 4000 },
       );
     }
 
     if (!tableHtml && !diagramHtml) {
       await showModal(
-        "This packet has no printable content. Include script tables, diagrams, or missing-image placeholders.",
+        "This packet has no printable content. Include script tables or diagram pages.",
         { title: "Practice Script Packet", icon: "🗂️" },
       );
       return;

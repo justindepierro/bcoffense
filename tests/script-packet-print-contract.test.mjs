@@ -29,6 +29,21 @@ assert.match(
 );
 assert.match(
   scriptExport,
+  /function _scriptPacketDiagramPages\(scriptData, packetTitle, options\)[\s\S]*?const entries = allEntries;/,
+  "diagram packet pages preserve every play rather than filtering unresolved diagrams",
+);
+assert.match(
+  scriptExport,
+  /function _scriptPacketDiagramCoverage\(selectedScripts\)[\s\S]*?plays accounted for[\s\S]*?marked diagram needed/,
+  "packet setup reports exactly how many script plays and diagrams are accounted for",
+);
+assert.match(
+  scriptExport,
+  /Every script play stays in the packet\.[\s\S]*?No attached diagram/,
+  "the packet UI explains that no-diagram plays remain visible instead of being dropped",
+);
+assert.match(
+  scriptExport,
   /function _scriptPacketLayoutChoices[\s\S]*?value: "two", title: "2-up"[\s\S]*?value: "large", title: "4-up"[\s\S]*?value: "compact", title: "8-up"/,
   "packet setup offers direct 2-up, 4-up, and 8-up diagram layouts",
 );
