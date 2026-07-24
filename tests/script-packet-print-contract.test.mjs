@@ -34,7 +34,7 @@ assert.match(
 );
 assert.match(
   scriptExport,
-  /function _scriptPacketDiagramCoverage\(selectedScripts\)[\s\S]*?plays accounted for[\s\S]*?marked diagram needed/,
+  /function _scriptPacketDiagramCoverage\(selectedScripts, state = \{\}\)[\s\S]*?plays accounted for[\s\S]*?marked diagram needed/,
   "packet setup reports exactly how many script plays and diagrams are accounted for",
 );
 assert.match(
@@ -59,8 +59,13 @@ assert.match(
 );
 assert.match(
   scriptExport,
-  /async function _warmScriptPacketMedia\(selectedScripts\)[\s\S]*?prefetchAll[\s\S]*?prefetchForPlays/,
-  "packet previews warm both local and canonical cloud media before declaring diagrams unavailable",
+  /async function _warmScriptPacketMedia\(selectedScripts\)[\s\S]*?await window\.playImages\.prefetchForPlays[\s\S]*?const backgroundWarm = window\.playImages\.prefetchAll/,
+  "packet previews resolve their own canonical cloud media before any background full-cache warm",
+);
+assert.match(
+  scriptExport,
+  /setPacketActionAvailability[\s\S]*?scriptPacketPrintConfirm"\)\.disabled = previewMediaLoading[\s\S]*?_warmScriptPacketMedia\(selectedScripts\)[\s\S]*?previewMediaLoading = false/,
+  "packet controls stay unavailable until the authoritative diagram lookup settles",
 );
 assert.match(
   scriptExport,

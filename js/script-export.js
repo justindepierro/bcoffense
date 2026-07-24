@@ -1120,14 +1120,36 @@ function _scriptPacketOptionsFromOverlay(overlay, selectedDensity) {
   };
 }
 
-function _scriptPacketDiagramCoverage(selectedScripts) {
+function _scriptPacketDiagramCoverage(selectedScripts, state = {}) {
   const entries = (Array.isArray(selectedScripts) ? selectedScripts : [])
     .flatMap((record) => _scriptPacketPlayEntries(record));
-  const diagrams = entries.filter((entry) => Boolean(entry.imageUrl)).length;
-  return {
+  const coverage = {
     total: entries.length,
-    diagrams,
-    missing: Math.max(0, entries.length - diagrams),
+    diagrams: 0,
+    missing: 0,
+    unavailable: 0,
+    checking: 0,
+  };
+  entries.forEach((entry) => {
+    if (entry.imageUrl) {
+      coverage.diagrams += 1;
+      return;
+    }
+    if (state.loading) {
+      coverage.checking += 1;
+      return;
+    }
+    const remote = window.playImages?.getCachedRemoteManifestForPlay?.(entry.play);
+    if (remote?.published) {
+      coverage.unavailable += 1;
+    } else if (remote?.status === "unpublished") {
+      coverage.missing += 1;
+    } else {
+      coverage.unavailable += 1;
+    }
+  });
+  return {
+    ...coverage,
   };
 }
 
@@ -1135,10 +1157,17 @@ function _scriptPacketCoverageMarkup(coverage) {
   if (!coverage.total) return "<span>No script plays</span>";
   const parts = [
     `${coverage.total}/${coverage.total} plays accounted for`,
-    `${coverage.diagrams} diagram${coverage.diagrams === 1 ? "" : "s"} ready`,
   ];
+  if (coverage.checking) {
+    parts.push(`Checking ${coverage.checking} diagram${coverage.checking === 1 ? "" : "s"}…`);
+  } else {
+    parts.push(`${coverage.diagrams} diagram${coverage.diagrams === 1 ? "" : "s"} ready`);
+  }
   if (coverage.missing) {
     parts.push(`${coverage.missing} marked diagram needed`);
+  }
+  if (coverage.unavailable) {
+    parts.push(`${coverage.unavailable} need a retry`);
   }
   return parts.map((part, index) => `<span class="${index === 2 ? "is-warning" : ""}">${escapeHtml(part)}</span>`).join("");
 }
@@ -1152,7 +1181,7 @@ function _scriptPacketLivePreviewMarkup(selectedScripts, options, state = {}) {
   // Do not filter plays by media availability. A missing-diagram card is what
   // makes a packet trustworthy when it is handed to staff.
   const entries = allEntries;
-  const coverage = _scriptPacketDiagramCoverage([scriptData]);
+  const coverage = _scriptPacketDiagramCoverage([scriptData], state);
   const sampleEntries = entries.slice(0, layout.perPage);
   const pageCount = Math.max(1, Math.ceil(entries.length / layout.perPage));
   const ratio = (dimensions.width - 0.6) / (dimensions.height - 0.6);
@@ -1216,13 +1245,15 @@ async function _warmScriptPacketMedia(selectedScripts) {
   if (!window.playImages) return;
   const playsForPacket = _scriptPacketPlayList(selectedScripts);
   if (!playsForPacket.length) return;
-  // Saved scripts may arrive from another device without the author's blob
-  // cache. Warm both local IndexedDB and the canonical cloud media cache so
-  // packet preview and final print resolve the same exact diagram set.
-  await Promise.allSettled([
-    window.playImages.prefetchAll?.(),
-    window.playImages.prefetchForPlays?.(playsForPacket),
-  ]);
+  // Resolve only this packet's media as the blocking path. Loading every
+  // archived IndexedDB blob delayed cold-device packet previews and made a
+  // subsequent layout change look like the operation that found diagrams.
+  const packetMedia = await window.playImages.prefetchForPlays?.(playsForPacket);
+  // A full local warm is useful for later navigation, but must never delay or
+  // affect the authoritative result for the packet currently being built.
+  const backgroundWarm = window.playImages.prefetchAll?.();
+  backgroundWarm?.catch(() => { /* packet media is already resolved */ });
+  return packetMedia;
 }
 
 function _scriptPacketCanvasText(context, text, x, y, maxWidth, lineHeight, maxLines = 1) {
@@ -1462,18 +1493,18 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
         { loading: previewMediaLoading },
       );
     };
+    const setPacketActionAvailability = () => {
+      overlay.querySelector("#scriptPacketPrintConfirm").disabled = previewMediaLoading;
+      overlay.querySelector("#scriptPacketSaveSample").disabled = previewMediaLoading;
+    };
     const setDensity = (density) => {
       selectedDensity = density;
       overlay.querySelectorAll("[data-packet-density]").forEach((button) => {
         const selected = button.dataset.packetDensity === density;
         button.classList.toggle("is-selected", selected);
         button.setAttribute("aria-pressed", String(selected));
-    });
-    renderLivePreview();
-    _warmScriptPacketMedia(selectedScripts).finally(() => {
-      previewMediaLoading = false;
+      });
       renderLivePreview();
-    });
     };
     overlay.querySelectorAll("[data-packet-density]").forEach((button) => {
       button.addEventListener("click", () => setDensity(button.dataset.packetDensity || "large"));
@@ -1484,6 +1515,14 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
         control.addEventListener("change", renderLivePreview);
       });
     renderLivePreview();
+    setPacketActionAvailability();
+    _warmScriptPacketMedia(selectedScripts)
+      .catch((error) => console.warn("Packet diagram warm failed:", error))
+      .finally(() => {
+        previewMediaLoading = false;
+        renderLivePreview();
+        setPacketActionAvailability();
+      });
 
     overlay.querySelector("#scriptPacketSaveSample").addEventListener("click", async (event) => {
       const button = event.currentTarget;

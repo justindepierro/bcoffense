@@ -1908,10 +1908,77 @@
 
   async function prefetchForPlays(playList) {
     const list = (Array.isArray(playList) ? playList : []).filter((play) => play && !play.isSeparator);
-    await _withConcurrency(list, 3, async (play) => {
-      const remote = await checkRemoteForPlay(play);
-      if (remote.published) await _fetchRemoteForPlay(play);
+    const uniquePlays = [...new Map(
+      list
+        .map((play) => [_remoteIdentityKey(play), play])
+        .filter(([identityKey]) => Boolean(identityKey)),
+    ).values()];
+    const result = {
+      requested: list.length,
+      unique: uniquePlays.length,
+      ready: 0,
+      local: 0,
+      remote: 0,
+      missing: 0,
+      failed: 0,
+    };
+    if (!uniquePlays.length) return result;
+
+    // Resolve authoritative availability in one bounded batch before fetching
+    // binaries. The old implementation performed a manifest request for every
+    // play, so a 30-play packet could finish at visibly different times and a
+    // redraw (such as changing 4-up to 2-up) appeared to "find" diagrams.
+    await checkRemoteForPlays(uniquePlays);
+
+    await _withConcurrency(uniquePlays, PREFETCH_CONCURRENCY, async (play) => {
+      const mediaId = _remoteIdentityKey(play);
+      const remote = getCachedRemoteManifestForPlay(play);
+      let localUrl = null;
+      // Check the current play's compatible local identities without falling
+      // through to a second one-at-a-time remote lookup.
+      for (const signature of displaySignaturesForPlay(play)) {
+        localUrl = await ensureUrl(signature);
+        if (localUrl) break;
+      }
+
+      try {
+        if (remote?.published) {
+          // R2 is canonical. Fetch the current immutable object even when a
+          // local cache exists so packet output reflects the latest diagram.
+          const remoteUrl = await _fetchRemoteForPlay(play);
+          if (remoteUrl) {
+            result.remote += 1;
+            result.ready += 1;
+            return;
+          }
+          if (localUrl) {
+            result.local += 1;
+            result.ready += 1;
+            return;
+          }
+          result.failed += 1;
+          return;
+        }
+        if (localUrl) {
+          result.local += 1;
+          result.ready += 1;
+          return;
+        }
+        if (remote?.status === "unpublished") {
+          result.missing += 1;
+        } else {
+          result.failed += 1;
+        }
+      } catch (_error) {
+        if (localUrl) {
+          result.local += 1;
+          result.ready += 1;
+        } else {
+          result.failed += 1;
+        }
+      }
     });
+    return result;
   }
 
   function _emitChange(sig) {
