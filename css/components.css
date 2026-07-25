@@ -569,6 +569,43 @@ body.app-layer-locked {
   display: grid;
   gap: 6px;
 }
+.auth-login-bootstrap {
+  display: none;
+  gap: 9px;
+  justify-items: center;
+  padding: 22px 12px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  line-height: 1.45;
+}
+.auth-login-bootstrap strong {
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+}
+.auth-login-bootstrap span:last-child {
+  max-width: 32ch;
+  font-size: var(--font-size-sm);
+}
+.auth-login-bootstrap__spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
+  border-top-color: var(--color-primary);
+  border-radius: var(--radius-round);
+  animation: authBootstrapSpin .78s linear infinite;
+}
+@keyframes authBootstrapSpin { to { transform: rotate(360deg); } }
+.auth-login-overlay.is-bootstrap-loading .auth-login-form-header,
+.auth-login-overlay.is-bootstrap-loading .auth-login-card > label,
+.auth-login-overlay.is-bootstrap-loading .auth-login-error,
+.auth-login-overlay.is-bootstrap-loading .auth-login-submit,
+.auth-login-overlay.is-bootstrap-loading .auth-login-help,
+.auth-login-overlay.is-bootstrap-loading .auth-login-legal-links {
+  display: none;
+}
+.auth-login-overlay.is-bootstrap-loading .auth-login-bootstrap {
+  display: grid;
+}
 .auth-login-kicker {
   color: var(--color-primary);
   font-size: var(--font-size-xs);

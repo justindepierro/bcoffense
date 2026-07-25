@@ -41,8 +41,8 @@ assert.match(
 );
 assert.match(
   authSource,
-  /const completeAuthenticatedLogin = async \(user, source\) => \{[\s\S]*?await autoPullLatestCloudBackup\(\{ timeoutMs: 14 \* 1000, bootstrap: true \}\);[\s\S]*?overlay\.remove\(\);[\s\S]*?applyRoleUi\(\);/,
-  "sign-in waits for the account-authorized workspace before opening the app",
+  /const completeAuthenticatedLogin = async \(user, source\) => \{[\s\S]*?overlay\.classList\.add\("is-bootstrap-loading"\);[\s\S]*?usernameEl\.disabled = true;[\s\S]*?await autoPullLatestCloudBackup\(\{ timeoutMs: 14 \* 1000, bootstrap: true \}\);[\s\S]*?overlay\.remove\(\);[\s\S]*?applyRoleUi\(\);/,
+  "sign-in locks into a loading state until the account-authorized workspace has been checked",
 );
 assert.match(
   serverAuthSource,
@@ -68,6 +68,11 @@ assert.match(
   componentStyles,
   /\.about-bcoffense-overlay\s*\{[\s\S]*?z-index:\s*calc\(var\(--z-skip-link\) \+ 1\);/,
   "About and Terms dialogs open above the signed-out login overlay",
+);
+assert.match(
+  componentStyles,
+  /\.auth-login-overlay\.is-bootstrap-loading \.auth-login-bootstrap\s*\{\s*display: grid;/,
+  "the authenticated workspace bootstrap has a dedicated loading view",
 );
 assert.match(
   authSource,

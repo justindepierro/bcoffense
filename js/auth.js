@@ -1032,6 +1032,11 @@
             <h3>Sign in to BCOffense</h3>
             <p>Your account determines the workspace and access available to you.</p>
           </div>
+          <div class="auth-login-bootstrap" aria-live="polite">
+            <span class="auth-login-bootstrap__spinner" aria-hidden="true"></span>
+            <strong id="authLoginBootstrapTitle">Preparing your team workspace</strong>
+            <span id="authLoginBootstrapDetail">Checking your authorized team data before opening the app.</span>
+          </div>
           <label>
             <span>Email or username</span>
             <input id="authUsername" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"
@@ -1112,12 +1117,23 @@
       // decides both the destination and the authorized data source. Keep the
       // login surface up until that source has been checked so a new/shared
       // browser cannot briefly open an empty local workspace.
-      setAuthLoginMessage(
-        user.role === "player"
-          ? "Loading your published practice plan..."
-          : "Loading the latest team workspace...",
-        true,
-      );
+      const loadingTitle = user.role === "player"
+        ? "Preparing your published practice plan"
+        : "Preparing your team workspace";
+      const loadingDetail = user.role === "player"
+        ? "Checking the latest coach-published practice before opening the player view."
+        : "Loading your authorized plays, scripts, media, game plans, and team settings.";
+      overlay.classList.add("is-bootstrap-loading");
+      overlay.setAttribute("aria-busy", "true");
+      usernameEl.disabled = true;
+      passwordEl.disabled = true;
+      toggleEl && (toggleEl.disabled = true);
+      submitEl && (submitEl.disabled = true);
+      const bootstrapTitle = overlay.querySelector("#authLoginBootstrapTitle");
+      const bootstrapDetail = overlay.querySelector("#authLoginBootstrapDetail");
+      if (bootstrapTitle) bootstrapTitle.textContent = loadingTitle;
+      if (bootstrapDetail) bootstrapDetail.textContent = loadingDetail;
+      setAuthLoginMessage(loadingDetail, true);
       if (user.role === "player") {
         storageManager?.preparePlayerDeviceForUser?.(user);
       }
