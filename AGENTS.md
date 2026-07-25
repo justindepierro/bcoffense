@@ -352,6 +352,7 @@ window.canEditUser
 window.canManageSettings
 window.closeAnchoredMenu
 window.closeAboutBCOffense
+window.closeBCOffenseTerms
 window.closeCloudSyncModal
 window.closeStagedRestoreModal
 window.closeLegacyDiagramRecoveryWizard
@@ -403,6 +404,7 @@ window.isAdminUser
 window.logoutAuth
 window.mediaUploadOutbox
 window.openAboutBCOffense
+window.openBCOffenseTerms
 window.openCloudSyncModal
 window.openStagedRestoreHistory
 window.openStagedRestorePreview

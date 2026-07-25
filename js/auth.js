@@ -585,6 +585,50 @@
     document.getElementById("aboutBCOffenseOverlay")?.remove();
   }
 
+  function closeBCOffenseTerms() {
+    document.getElementById("bcOffenseTermsOverlay")?.remove();
+  }
+
+  function openBCOffenseTerms() {
+    closeAboutBCOffense();
+    closeBCOffenseTerms();
+    const overlay = document.createElement("div");
+    overlay.id = "bcOffenseTermsOverlay";
+    overlay.className = "modal-overlay about-bcoffense-overlay";
+    overlay.dataset.action = "closeBCOffenseTermsOverlay";
+    overlay.innerHTML = `
+      <section class="modal-content modal-content-sm about-bcoffense-modal" role="dialog" aria-modal="true" aria-labelledby="bcOffenseTermsTitle">
+        <div class="modal-header">
+          <div>
+            <div class="about-bcoffense-kicker">Private team software</div>
+            <h2 id="bcOffenseTermsTitle">Terms of Use</h2>
+          </div>
+          <button type="button" class="modal-close" data-action="closeBCOffenseTerms" aria-label="Close Terms of Use">&times;</button>
+        </div>
+        <div class="about-bcoffense-body about-bcoffense-terms">
+          <p><strong>Effective: 2026.</strong> By accessing or using BCOffense, you agree to these Terms of Use.</p>
+          <h3>1. Authorized use</h3>
+          <p>BCOffense is a private workspace for Burke Catholic Football. Access is limited to people authorized by the team or the copyright owner, and only for legitimate team operations, coaching, player study, and related football activities.</p>
+          <h3>2. Accounts and security</h3>
+          <p>Keep your sign-in credentials private. Do not share accounts, attempt to access another user’s information, or bypass access controls. Report suspected unauthorized access promptly.</p>
+          <h3>3. Team data and media</h3>
+          <p>Practice plans, playbook information, player assignments, video, diagrams, signals, and related materials are confidential team materials. Use them only within the authorized team context and do not publish, forward, download for outside use, or disclose them without permission.</p>
+          <h3>4. Ownership and restrictions</h3>
+          <p>BCOffense and its original software, design, documentation, and content are protected by copyright and other applicable law. You may not copy, modify, reverse engineer, sell, sublicense, redistribute, or create a competing product from any part of BCOffense without prior written permission from Justin DePierro.</p>
+          <h3>5. Availability and changes</h3>
+          <p>BCOffense is provided for private team use. Features, access, and availability may change, be suspended, or be removed as needed for security, maintenance, or team operations.</p>
+          <h3>6. Questions</h3>
+          <p>For permission requests, access questions, or concerns about these terms, contact <a href="mailto:jdepierro@burkecatholic.org">jdepierro@burkecatholic.org</a>.</p>
+          <p class="about-bcoffense-legal-note">These Terms of Use describe the current private-use policy and are not a substitute for legal advice. Consider attorney review before offering BCOffense outside the team.</p>
+        </div>
+        <footer class="about-bcoffense-footer">© 2026 Justin DePierro. All rights reserved.</footer>
+      </section>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+    overlay.querySelector("[data-action='closeBCOffenseTerms']")?.focus();
+  }
+
   function openAboutBCOffense() {
     closeAboutBCOffense();
     const overlay = document.createElement("div");
@@ -616,6 +660,7 @@
             <span>This software is maintained for Burke Catholic Football. It is not offered for public sale, redistribution, copying, or reuse without written permission from the copyright holder.</span>
           </div>
           <p class="about-bcoffense-contact">Questions or permissions: <a href="mailto:jdepierro@burkecatholic.org">jdepierro@burkecatholic.org</a></p>
+          <button type="button" class="auth-login-about-btn" data-action="openBCOffenseTerms">Read Terms of Use</button>
         </div>
         <footer class="about-bcoffense-footer">© 2026 Justin DePierro. All rights reserved.</footer>
       </section>
@@ -1004,7 +1049,11 @@
           <div id="authLoginError" class="auth-login-error${opts.messageIsStatus ? " is-status" : ""}" aria-live="assertive" role="alert">${escapeHtml(message)}</div>
           <button type="submit" class="btn btn-primary auth-login-submit" id="authLoginSubmit">Sign In</button>
           <p class="auth-login-help">Need help? Ask a coach or staff member for your login.</p>
-          <button type="button" class="auth-login-about-btn" data-action="openAboutBCOffense">About BCOffense</button>
+          <div class="auth-login-legal-links">
+            <button type="button" class="auth-login-about-btn" data-action="openAboutBCOffense">About BCOffense</button>
+            <span aria-hidden="true">•</span>
+            <button type="button" class="auth-login-about-btn" data-action="openBCOffenseTerms">Terms of Use</button>
+          </div>
         </form>
       </div>
     `;
@@ -1373,4 +1422,6 @@
   window.applyRoleUi = applyRoleUi;
   window.openAboutBCOffense = openAboutBCOffense;
   window.closeAboutBCOffense = closeAboutBCOffense;
+  window.openBCOffenseTerms = openBCOffenseTerms;
+  window.closeBCOffenseTerms = closeBCOffenseTerms;
 })();

@@ -739,6 +739,14 @@ body.app-layer-locked {
   text-underline-offset: 3px;
   cursor: pointer;
 }
+.auth-login-legal-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-light);
+  font-size: var(--font-size-xs);
+}
 .about-bcoffense-modal {
   max-width: 620px;
 }
@@ -786,6 +794,16 @@ body.app-layer-locked {
 }
 .about-bcoffense-contact {
   font-size: var(--font-size-sm);
+}
+.about-bcoffense-terms {
+  max-height: min(62vh, 620px);
+  overflow: auto;
+}
+.about-bcoffense-legal-note {
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-light);
+  font-size: var(--font-size-xs);
 }
 .about-bcoffense-footer {
   padding: var(--space-md) var(--space-lg);

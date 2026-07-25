@@ -31,5 +31,10 @@ assert.match(
   /data-action="openAboutBCOffense"/,
   "the sign-in surface links to About BCOffense",
 );
+assert.match(
+  authSource,
+  /function openBCOffenseTerms\(\)[\s\S]*?Authorized use[\s\S]*?Accounts and security[\s\S]*?Team data and media[\s\S]*?Ownership and restrictions[\s\S]*?Availability and changes[\s\S]*?not a substitute for legal advice/,
+  "Terms of Use state the private-use rules and remain clear about their non-legal-advice scope",
+);
 
 console.log("auth login workspace contract passed");

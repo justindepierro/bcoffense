@@ -26,6 +26,7 @@ const APPROVED_SCROLL_OWNERS = new Set(["layer", "panel", "workspace", "document
 const UI_SURFACES = Object.freeze({
   aboutBCOffenseOverlay: { owner: "js/auth.js", pattern: "blocking-layer", scrollOwner: "layer" },
   authLoginOverlay: { owner: "js/auth.js", pattern: "blocking-layer", scrollOwner: "layer" },
+  bcOffenseTermsOverlay: { owner: "js/auth.js", pattern: "blocking-layer", scrollOwner: "layer" },
   callSheetPickerOverlay: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
   cellPopupOverlay: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
   cloudSavedScriptRecoveryOverlay: { owner: "js/script-storage.js", pattern: "blocking-layer", scrollOwner: "layer" },
