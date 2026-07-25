@@ -2045,40 +2045,40 @@ function renderGameWeekCommandCenter(gw, opponents) {
       <button class="btn btn-sm btn-secondary" data-action="startNewGameWeek">🏈 Start New Week</button>
       ${gw.opponentName ? `<button class="btn btn-sm" data-action="resumeCurrentWeek">↩ Resume Week</button>` : ""}
     </div>
-    <div class="dash-prep-checklist" aria-label="Game week prep checklist">
-      <div class="dash-prep-header">
+    <details class="dash-prep-checklist dash-command-disclosure" aria-label="Game week prep checklist"${openItems ? " open" : ""}>
+      <summary class="dash-prep-header">
         <div>
           <span class="dash-command-eyebrow">Prep Checklist</span>
           <h4>${openItems === 0 ? "All core prep is covered" : `${openItems} prep gap${openItems === 1 ? "" : "s"} open`}</h4>
         </div>
         <span class="dash-prep-count">${checklist.length - openItems}/${checklist.length}</span>
-      </div>
+      </summary>
       <div class="dash-prep-grid">
         ${checklistHtml}
       </div>
-    </div>
-    <div class="dash-action-queue" aria-label="Unfinished work and stale saved artifacts">
-      <div class="dash-action-header">
+    </details>
+    <details class="dash-action-queue dash-command-disclosure" aria-label="Unfinished work and stale saved artifacts"${activeQueueCount ? " open" : ""}>
+      <summary class="dash-action-header">
         <div>
           <span class="dash-command-eyebrow">Action Queue</span>
           <h4>${activeQueueCount === 0 ? "Saved work is current" : `${activeQueueCount} item${activeQueueCount === 1 ? "" : "s"} to review`}</h4>
         </div>
-      </div>
+      </summary>
       <div class="dash-action-list">
         ${queueHtml}
       </div>
-    </div>
-    <div class="dash-activity-feed" aria-label="Recent module activity">
-      <div class="dash-activity-header">
+    </details>
+    <details class="dash-activity-feed dash-command-disclosure" aria-label="Recent module activity">
+      <summary class="dash-activity-header">
         <span class="dash-command-eyebrow">Recent Activity</span>
         <h4>${activityFeed.length === 0 ? "No recent activity" : "Latest changes across modules"}</h4>
-      </div>
+      </summary>
       <ul class="dash-activity-list" role="list">
         ${activityFeed.length > 0
       ? activityHtml
       : `<li class="dash-activity-empty">Start working in any module — activity will appear here.</li>`}
       </ul>
-    </div>
+    </details>
     <div class="dash-weekly-focus" aria-label="Weekly notes and install priorities">
       <div class="dash-focus-header">
         <div>

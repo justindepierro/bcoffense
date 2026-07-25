@@ -1479,6 +1479,33 @@
   gap: var(--space-sm);
 }
 
+/* The first screen is intentionally about starting, not configuring.  Advanced
+   study choices stay one tap away without hiding any quiz capability. */
+.player-quiz-customize {
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.player-quiz-customize > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  cursor: pointer;
+  color: var(--color-text);
+  font-weight: 900;
+}
+
+.player-quiz-customize > summary::-webkit-details-marker { display: none; }
+.player-quiz-customize > summary::after { content: "⌄"; color: var(--color-text-muted); }
+.player-quiz-customize[open] > summary::after { transform: rotate(180deg); }
+.player-quiz-customize > summary small { color: var(--color-text-muted); font-weight: 700; }
+.player-quiz-customize__challenge { display: grid; gap: var(--space-sm); }
+
 .player-quiz-hub-section-head {
   display: flex;
   align-items: baseline;

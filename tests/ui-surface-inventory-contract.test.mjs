@@ -61,6 +61,7 @@ const UI_SURFACES = Object.freeze({
   loadWbToScriptModal: { owner: "js/script-export.js", pattern: "blocking-layer", scrollOwner: "layer" },
   loadWristbandModal: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
   mediaInventoryOverlay: { owner: "js/media-inventory.js", pattern: "blocking-layer", scrollOwner: "layer" },
+  mobilePrimaryMoreOverlay: { owner: "js/app-shell.js", pattern: "blocking-layer", scrollOwner: "layer" },
   notifDrawer: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
   obDetailPanel: { owner: "js/offensebuilder.js", pattern: "workspace-panel", scrollOwner: "workspace" },
   pageActionsSheet: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
