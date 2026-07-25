@@ -1234,7 +1234,9 @@ function openPlayerCurrentScriptPresentation(id = "") {
     showToast("Open a published practice before using Swipe View.", {
       type: "warning",
     });
-    if (typeof showTab === "function") showTab("script");
+    if (typeof showTab === "function") {
+      showTab(typeof canAccessTab === "function" && canAccessTab("dashboard") ? "dashboard" : "playbook");
+    }
     return false;
   }
 

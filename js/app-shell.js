@@ -780,13 +780,21 @@ function syncMobilePrimaryNav() {
 }
 
 function openMobilePrimaryMore() {
-  const tabs = document.querySelector("#mainApp > .tabs");
-  const utilities = document.querySelector(".tabs-utilities");
-  if (!tabs || !utilities) return;
-  tabs.classList.add("mobile-more-open");
-  utilities.classList.add("open");
-  const button = document.getElementById("utilitiesMenuBtn");
-  if (button) button.setAttribute("aria-expanded", "true");
+  closeMobilePrimaryMore();
+  const source = document.querySelector(".tabs-utilities-menu");
+  if (!source) return;
+  const overlay = document.createElement("div");
+  overlay.id = "mobilePrimaryMoreOverlay";
+  overlay.className = "mobile-primary-more-overlay";
+  overlay.dataset.action = "closeMobilePrimaryMoreOverlay";
+  overlay.innerHTML = `<section class="mobile-primary-more-sheet" role="dialog" aria-modal="true" aria-label="More tools"><div class="mobile-primary-more-handle"></div><div class="mobile-primary-more-title">More tools</div><div class="mobile-primary-more-list">${source.innerHTML}</div></section>`;
+  overlay.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+}
+
+function closeMobilePrimaryMore() {
+  document.getElementById("mobilePrimaryMoreOverlay")?.remove();
 }
 
 function queueMobileShellStateSync() {

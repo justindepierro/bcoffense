@@ -498,6 +498,9 @@ document.addEventListener("click", (e) => {
       traceAppAction("dispatch openPlayerCurrentScriptPresentation", el);
       openPlayerCurrentScriptPresentation(el.dataset.arg || "");
       return;
+    case "closeMobilePrimaryMoreOverlay":
+      if (e.target === el && typeof closeMobilePrimaryMore === "function") closeMobilePrimaryMore();
+      return;
     case "openScriptPresentation": {
       const idx = parseInt(el.dataset.idx, 10);
       traceAppAction("dispatch openScriptPresentation", el, { idx });

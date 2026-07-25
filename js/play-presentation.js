@@ -88,6 +88,11 @@ function restorePlayPresentationResume() {
     : getPlayPresentationItemsFromPlaybook();
   if (!items.length) {
     clearPlayPresentationResume();
+    const fallbackTab = typeof canAccessTab === "function" && canAccessTab("dashboard")
+      ? "dashboard"
+      : "playbook";
+    if (typeof showTab === "function") showTab(fallbackTab);
+    showToast("That swipe packet is no longer available. You are back at your workspace home.", { type: "warning" });
     return false;
   }
   const tab = String(snapshot.tab || "");

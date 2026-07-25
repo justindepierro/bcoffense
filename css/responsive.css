@@ -168,27 +168,6 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
   body.is-mobile-screen:not(.play-presentation-open) #mainApp > .tabs {
     display: none;
   }
-  body.is-mobile-screen:not(.play-presentation-open) #mainApp > .tabs.mobile-more-open {
-    position: fixed;
-    z-index: calc(var(--z-tab-bar) + 1);
-    inset: auto 8px calc(70px + env(safe-area-inset-bottom, 0px));
-    display: block;
-    overflow: visible;
-    padding: 0;
-    background: transparent;
-  }
-  body.is-mobile-screen:not(.play-presentation-open) #mainApp > .tabs.mobile-more-open > :not(.tabs-utilities) { display: none; }
-  body.is-mobile-screen:not(.play-presentation-open) #mainApp > .tabs.mobile-more-open .tabs-utilities { display: block; margin: 0; }
-  body.is-mobile-screen:not(.play-presentation-open) #mainApp > .tabs.mobile-more-open .tab-utilities { display: none; }
-  body.is-mobile-screen:not(.play-presentation-open) #mainApp > .tabs.mobile-more-open .tabs-utilities-menu {
-    position: static;
-    display: grid;
-    max-height: min(64vh, 520px);
-    overflow: auto;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-  }
   body.is-mobile-screen:not(.play-presentation-open) .mobile-primary-nav {
     position: fixed;
     z-index: var(--z-tab-bar);
@@ -218,6 +197,13 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
   .mobile-primary-nav button > span:first-child { font-size: 19px; line-height: 1; }
   .mobile-primary-nav button.active { color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 11%, transparent); }
   body.is-mobile-screen:not(.play-presentation-open) { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+  .mobile-primary-more-overlay { position: fixed; z-index: calc(var(--z-modal) + 1); inset: 0; display: flex; align-items: end; background: rgba(4, 14, 35, .42); opacity: 0; transition: opacity .16s ease; }
+  .mobile-primary-more-overlay.visible { opacity: 1; }
+  .mobile-primary-more-sheet { width: 100%; max-height: min(74vh, 620px); overflow: auto; padding: 8px 12px calc(16px + env(safe-area-inset-bottom, 0px)); border-radius: 22px 22px 0 0; background: var(--color-surface); box-shadow: 0 -14px 34px rgba(4, 14, 35, .28); }
+  .mobile-primary-more-handle { width: 42px; height: 4px; margin: 0 auto 10px; border-radius: 999px; background: var(--color-border-med); }
+  .mobile-primary-more-title { margin: 0 4px 8px; font-weight: 800; color: var(--color-text); }
+  .mobile-primary-more-list .tool-menu { position: static; display: block; min-width: 0; max-height: none; box-shadow: none; border: 0; padding: 0; background: transparent; }
+  .mobile-primary-more-list .tool-menu button { min-height: 48px; padding: 10px 12px; border-radius: var(--radius-md); }
 }
 
 /* Coach tab bar on mobile: scroll horizontally, show short labels.
