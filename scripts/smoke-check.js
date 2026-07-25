@@ -2401,6 +2401,8 @@ function checkPlayerPortalContracts() {
     !/function getPlayerHomePracticeStatus\(featuredScript, loadedScript, todayValue\)/.test(
       dashboardRender,
     ) ||
+    !/if \(featuredScript && !loadedScript\)/.test(dashboardRender) ||
+    !/Practice ready to review/.test(dashboardRender) ||
     !/Player Portal/.test(dashboardRender) ||
     !/loadPublishedPlayerScript/.test(dashboardRender) ||
     !/openPlayerCurrentScriptPresentation/.test(dashboardRender) ||

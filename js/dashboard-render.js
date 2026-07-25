@@ -1399,6 +1399,16 @@ function getPlayerHomePracticeStatus(featuredScript, loadedScript, todayValue) {
       body: "Load it once before practice so Swipe View, Quiz, and Questions start from the right script.",
     };
   }
+  // A published script remains a valid study surface after its calendar date.
+  // Do not tell a player that nothing is published while simultaneously
+  // offering that exact script as the dashboard's primary action.
+  if (featuredScript && !loadedScript) {
+    return {
+      tone: "ready",
+      title: "Practice ready to review",
+      body: "Your latest published practice is ready. Load it to use Swipe View, Quiz, and Questions from the same script.",
+    };
+  }
   if (loadedScript) {
     return {
       tone: "loaded",
