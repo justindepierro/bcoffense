@@ -2822,6 +2822,14 @@ async function discCopyQuestionLink(postId) {
 let _discDeepLinkPlayId = null;
 let _discDeepLinkPostId = null;
 
+// In-app notification routing uses the same scoped highlight contract as a
+// shared URL, without mutating browser history or leaking a stale target into
+// a later discussion surface.
+function setDiscussionDeepLink(playId, postId = "") {
+  _discDeepLinkPlayId = String(playId || "") || null;
+  _discDeepLinkPostId = String(postId || "") || null;
+}
+
 (function _discParseDeepLink() {
   try {
     const p = new URLSearchParams(window.location.search);

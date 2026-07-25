@@ -200,7 +200,11 @@ async function _loadNotifications(append = false) {
   }
 
   try {
-    const res = await fetch(`/api/notifications?limit=25&offset=${_notifOffset}`);
+    const res = await fetch(`/api/notifications?limit=25&offset=${_notifOffset}`, {
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "Failed to load");
@@ -455,7 +459,10 @@ async function openNotifDeepLink(arg) {
   closeNotifDrawer();
 
   if (deepLink === "script" || deepLink.startsWith("script:")) {
-    const scriptId = deepLink.includes(":") ? deepLink.slice(deepLink.indexOf(":") + 1) : "";
+    const rawScriptId = deepLink.includes(":") ? deepLink.slice(deepLink.indexOf(":") + 1) : "";
+    const scriptId = (() => {
+      try { return decodeURIComponent(rawScriptId); } catch (_) { return rawScriptId; }
+    })();
     // A notification can arrive while the device still has yesterday's
     // release. Refresh the narrow player projection before resolving the
     // script ID so the alert, library, and destination stay in lockstep.
@@ -463,7 +470,12 @@ async function openNotifDeepLink(arg) {
     if (authUser?.role === "player" && typeof refreshPlayerRelease === "function") {
       await refreshPlayerRelease({ force: true, navigate: false }).catch(() => null);
     }
-    if (scriptId && typeof loadPublishedPlayerScript === "function") {
+    if (scriptId && _isPlayerNotificationUser() && typeof presentPublishedPlayerScript === "function") {
+      // A player alert is an invitation to study, so open the exact released
+      // practice directly in Swipe View rather than leaving the player on a
+      // generic script landing page.
+      presentPublishedPlayerScript(scriptId);
+    } else if (scriptId && typeof loadPublishedPlayerScript === "function") {
       loadPublishedPlayerScript(scriptId);
     } else if (typeof showTab === "function") {
       showTab("script");
@@ -498,10 +510,23 @@ async function openNotifDeepLink(arg) {
     return;
   }
 
-  const playId = deepLink.startsWith("play:") ? deepLink.slice(5) : deepLink;
+  const discussionTarget = _parseNotificationDiscussionTarget(deepLink);
+  const playId = discussionTarget.playId;
   if (playId && typeof openDiscussionForPlayId === "function") {
-    openDiscussionForPlayId(playId);
+    openDiscussionForPlayId(playId, { postId: discussionTarget.postId });
   }
+}
+
+function _parseNotificationDiscussionTarget(deepLink) {
+  const raw = String(deepLink || "");
+  const value = raw.startsWith("play:") ? raw.slice(5) : raw;
+  const marker = value.indexOf("?post=");
+  const rawPlayId = marker >= 0 ? value.slice(0, marker) : value;
+  const rawPostId = marker >= 0 ? value.slice(marker + "?post=".length) : "";
+  const decode = (part) => {
+    try { return decodeURIComponent(part); } catch (_) { return part; }
+  };
+  return { playId: decode(rawPlayId), postId: decode(rawPostId) };
 }
 
 async function markAllNotifsRead() {
@@ -566,6 +591,17 @@ function _isStaffNotificationUser() {
 
 function _notificationPayloadForPublish(kind, details = {}) {
   const label = String(details.label || details.name || "").trim();
+  const scriptId = String(details.id || "").trim();
+  const isPublishedScript = kind === "scripts" && details.visibility !== "unpublished" && scriptId;
+  if (isPublishedScript) {
+    return {
+      type: "script_published",
+      title: "New practice ready",
+      body: label ? `${label} is ready to review.` : "A practice is ready to review.",
+      deepLink: `script:${encodeURIComponent(scriptId)}`,
+      tag: `script-published-${scriptId}`,
+    };
+  }
   if (["scripts", "quizzes", "diagrams", "clips", "signals"].includes(kind)) {
     const body = kind === "scripts"
       ? (label ? `${label} is ready to review.` : "A practice is ready to review.")
@@ -635,7 +671,16 @@ function _discussionPlayMatchesId(play, playId) {
   return [play.personnel, play.formation, play.play].map((value) => String(value || "")).join("::") === decoded;
 }
 
-function _openPlayerDiscussionForPlayId(playId) {
+async function _openPlayerDiscussionForPlayId(playId, opts = {}) {
+  // The notification can precede the release payload already held by this
+  // device. Resolve against the freshly checked player projection, never an
+  // arbitrary script that happened to be open before the phone slept.
+  if (typeof refreshPlayerRelease === "function") {
+    await refreshPlayerRelease({ force: true, navigate: false }).catch(() => null);
+  }
+  if (opts.postId && typeof setDiscussionDeepLink === "function") {
+    setDiscussionDeepLink(playId, opts.postId);
+  }
   const locateInLoadedScript = () => typeof script !== "undefined" && Array.isArray(script)
     ? script.findIndex((entry) => entry && !entry.isSeparator && _discussionPlayMatchesId(entry, playId))
     : -1;
@@ -669,11 +714,11 @@ function _openPlayerDiscussionForPlayId(playId) {
  * Called when a notification deep link targets a play ID. Players reopen the
  * exact published practice and thread; staff retain the richer editor flow.
  */
-function openDiscussionForPlayId(playId) {
+async function openDiscussionForPlayId(playId, opts = {}) {
   if (!playId) return;
 
   if (_isPlayerNotificationUser()) {
-    if (_openPlayerDiscussionForPlayId(playId)) return;
+    if (await _openPlayerDiscussionForPlayId(playId, opts)) return;
     // A practice may have been retired after an alert was delivered. The
     // player's question hub is the useful, non-destructive fallback.
     if (typeof openPlayerPortal === "function") openPlayerPortal();

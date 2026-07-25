@@ -195,6 +195,7 @@ export async function notifyTeamStaffOfPlayerPost(db, teamId, {
   authorName,
   postType = "comment",
   parentPostId = null,
+  postId = null,
   playId,
   playLabel = "",
   body = "",
@@ -229,7 +230,9 @@ export async function notifyTeamStaffOfPlayerPost(db, teamId, {
       type: `player_${kind}`,
       title: `${title}${context}`,
       body: message || null,
-      deepLink: `play:${playId}`,
+      // Include the durable post id so the recipient lands on the exact
+      // comment, not merely somewhere in a potentially busy play thread.
+      deepLink: `play:${encodeURIComponent(playId)}${postId ? `?post=${encodeURIComponent(postId)}` : ""}`,
     };
     // Several ordinary comments from the same player on the same play should
     // keep one fresh coach alert rather than turn the bell into a stack of

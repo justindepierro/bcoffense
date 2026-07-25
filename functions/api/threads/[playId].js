@@ -227,6 +227,7 @@ export async function onRequest(context) {
         authorName: session.label || session.username,
         postType,
         parentPostId,
+        postId: result.id,
         playId,
         playLabel: playSig,
         body: postBody,

@@ -83,7 +83,13 @@ assert.match(client, /function setNotifFilter\(filter = "all"\)/, "the mobile dr
 assert.match(client, /Promise\.all\(notifIds\.map/, "opening a grouped update acknowledges every collapsed receipt");
 assert.match(client, /closeNotifDrawer\(\);[\s\S]*if \(deepLink === "script"/, "opening an alert closes the mobile drawer before routing to its destination");
 assert.match(client, /openLayer\(drawer, \{[\s\S]*id: "notification-drawer"/, "the notification drawer uses the shared modal and scroll-lock contract");
-assert.match(client, /function _openPlayerDiscussionForPlayId\(playId\)[\s\S]*openPresentationDiscussion/, "player discussion alerts reopen the notified play in Swipe View instead of the coach editor");
+assert.match(client, /async function _openPlayerDiscussionForPlayId\(playId, opts = \{\}\)[\s\S]*refreshPlayerRelease\(\{ force: true, navigate: false \}\)[\s\S]*openPresentationDiscussion/, "player discussion alerts refresh the released practice, then reopen the notified play in Swipe View instead of the coach editor");
+assert.match(client, /function _parseNotificationDiscussionTarget\(deepLink\)/, "notification routing parses an exact discussion destination safely");
+assert.match(client, /type: "script_published"[\s\S]*deepLink: `script:\$\{encodeURIComponent\(scriptId\)\}`/, "published scripts carry their immutable script id into the player notification");
+assert.match(client, /presentPublishedPlayerScript\(scriptId\)/, "a player opens a published-script alert directly in Swipe View");
+assert.match(notifications, /postId = null,[\s\S]*deepLink: `play:\$\{encodeURIComponent\(playId\)\}\$\{postId \?/, "staff discussion alerts carry a post-specific, encoded deep link");
+assert.match(threadRoute, /postId: result\.id,[\s\S]*playId,/, "staff discussion alerts receive the durable post id after it is stored");
+assert.match(discussionClient, /function setDiscussionDeepLink\(playId, postId = ""\)/, "in-app alerts can highlight the exact post without mutating browser history");
 assert.match(notifications, /script_published: 24 \* 60 \* 60/, "script publish alerts coalesce for a full day");
 assert.match(notifications, /media_update: 24 \* 60 \* 60/, "media alerts coalesce for a full day");
 assert.match(notifications, /team_update: 20 \* 60/, "one player-facing team update coalesces a publish burst");
