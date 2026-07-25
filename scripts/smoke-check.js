@@ -4826,7 +4826,7 @@ function checkPlayerDiagramReadinessContracts() {
 
 function checkPlayerQuizSettingsContracts() {
   const scriptRender = read("js/script-render.js");
-  const scriptQuiz = `${read("js/script-quiz-state.js")}\n${read("js/script-quiz-foundation.js")}\n${read("js/script-quiz.js")}\n${read("js/script-quiz-progress.js")}\n${read("js/script-quiz-leaderboard.js")}`;
+  const scriptQuiz = `${read("js/script-quiz-state.js")}\n${read("js/script-quiz-foundation.js")}\n${read("js/script-quiz.js")}\n${read("js/script-quiz-media.js")}\n${read("js/script-quiz-progress.js")}\n${read("js/script-quiz-leaderboard.js")}`;
   const scriptCss = read("css/script.css");
   const quizSurface = `${scriptQuiz}\n${scriptCss}`;
 
@@ -5469,7 +5469,7 @@ function checkSignalPlayIntegrationContracts() {
   const clips = read("js/play-clips.js");
   const playbookRender = read("js/playbook-render.js");
   const scriptRender = read("js/script-render.js");
-  const scriptQuiz = `${read("js/script-quiz-state.js")}\n${read("js/script-quiz-foundation.js")}\n${read("js/script-quiz.js")}\n${read("js/script-quiz-progress.js")}\n${read("js/script-quiz-leaderboard.js")}`;
+  const scriptQuiz = `${read("js/script-quiz-state.js")}\n${read("js/script-quiz-foundation.js")}\n${read("js/script-quiz.js")}\n${read("js/script-quiz-media.js")}\n${read("js/script-quiz-progress.js")}\n${read("js/script-quiz-leaderboard.js")}`;
   const quizRuntime = `${scriptQuiz}\n${scriptRender}`;
   const presentation = read("js/play-presentation.js");
   const presentationCss = read("css/play-presentation.css");

@@ -70,6 +70,16 @@ assert.equal(
   shellScripts.indexOf("js/script-quiz-foundation.js") + 1,
   "player quiz runtime loads immediately after its foundation",
 );
+assert.equal(
+  shellScripts.indexOf("js/script-quiz-media.js"),
+  shellScripts.indexOf("js/script-quiz.js") + 1,
+  "quiz media preparation loads immediately after the player quiz runtime",
+);
+assert.equal(
+  shellScripts.indexOf("js/script-quiz-progress.js"),
+  shellScripts.indexOf("js/script-quiz-media.js") + 1,
+  "quiz progress loads after media preparation is ready",
+);
 assert.equal(new Set(shellStyles).size, shellStyles.length, "index.html loads each stylesheet once");
 assert.equal(new Set(cachedStyles).size, cachedStyles.length, "sw.js pre-caches each stylesheet once");
 assert.deepEqual(sort(shellStyles), sort(runtimeStyles), "every stylesheet is loaded by the app shell");

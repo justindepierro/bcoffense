@@ -83,6 +83,7 @@ js/
   script-*.js           ← Practice script runtime split by concern (state, add, render, storage, integrations, etc.)
   script-quiz-foundation.js ← Quiz settings, roster health, awards, and coach setup
   script-quiz.js        ← Player quiz runtime and question/answer flow
+  script-quiz-media.js  ← Quiz diagram warmup and signal-video preparation
   media-inventory.js    ← Cross-media inventory report for diagrams, clips, signals, and quiz readiness
   play-readiness.js     ← Coach-only play readiness scoring model, rep/action report storage, and script row widgets
   play-presentation.js  ← Shared landscape play presentation viewer
@@ -212,17 +213,18 @@ The startup shell uses `defer` and loads in this exact order from index.html. Ex
 55.   js/script-quiz-state.js
 56.   js/script-quiz-foundation.js
 57.   js/script-quiz.js
-58.   js/script-quiz-progress.js
-59.   js/script-quiz-leaderboard.js
-60.   js/player-quiz-sync.js
-61.   js/script-quiz-assignments.js
-62.   js/script-health.js
-63.   js/script-periods.js
-64.   js/script-period-sync.js
-65.   js/script-smart.js
-66.   js/script-storage.js
-67.   js/script-player.js
-68.   js/script-integrations.js
+58.   js/script-quiz-media.js
+59.   js/script-quiz-progress.js
+60.   js/script-quiz-leaderboard.js
+61.   js/player-quiz-sync.js
+62.   js/script-quiz-assignments.js
+63.   js/script-health.js
+64.   js/script-periods.js
+65.   js/script-period-sync.js
+66.   js/script-smart.js
+67.   js/script-storage.js
+68.   js/script-player.js
+69.   js/script-integrations.js
 69.   js/play-presentation.js
 70.   js/wristband.js
 71.   js/wristband-library.js

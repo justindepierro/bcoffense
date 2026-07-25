@@ -258,9 +258,10 @@ migration explicitly changes the media domain.
 
 ## Quiz Architecture
 
-The quiz engine lives in `js/script-quiz.js`, loaded immediately after
-`js/script-render.js`. Its progress data layer loads immediately afterward in
-`js/script-quiz-progress.js`. Together they own:
+The quiz engine lives in `js/script-quiz.js`, with diagram warmup and
+signal-video preparation isolated in `js/script-quiz-media.js`. Its progress
+data layer loads immediately afterward in `js/script-quiz-progress.js`.
+Together they own:
 
 - Quiz hub and mode cards.
 - Coach quiz setup, source readiness, and source preview.
