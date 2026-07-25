@@ -93,6 +93,7 @@
   let cloudAutoPushFirstQueuedAt = 0;
   let cloudAutoPushPending = false;
   let cloudAutoPushSaving = false;
+  let cloudAutoPushFlushPromise = null;
   let cloudAutoPushLastError = "";
   let cloudAutoPushRetryCount = 0;
   let cloudAutoPushSuppress = false;
@@ -2125,7 +2126,21 @@
     return true;
   }
 
-  async function flushCloudAutoPush() {
+  // A player-visible save can land while a normal coach autosave is already
+  // publishing. Join that canonical commit instead of returning false to the
+  // second caller; both receipts describe the same immutable release.
+  function flushCloudAutoPush() {
+    if (cloudAutoPushFlushPromise) return cloudAutoPushFlushPromise;
+    const run = flushCloudAutoPushInternal();
+    cloudAutoPushFlushPromise = run;
+    const clearInFlight = () => {
+      if (cloudAutoPushFlushPromise === run) cloudAutoPushFlushPromise = null;
+    };
+    run.then(clearInFlight, clearInFlight);
+    return run;
+  }
+
+  async function flushCloudAutoPushInternal() {
     if (cloudAutoPushSuppress || !cloudAutoPushPending || !canAutoPushCloudBackup()) {
       renderCloudSyncStatus();
       return false;

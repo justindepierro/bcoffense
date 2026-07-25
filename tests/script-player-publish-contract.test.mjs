@@ -61,6 +61,11 @@ assert.match(
 );
 assert.match(
   cloudSync,
+  /function flushCloudAutoPush\(\) \{[\s\S]*?if \(cloudAutoPushFlushPromise\) return cloudAutoPushFlushPromise;[\s\S]*?const run = flushCloudAutoPushInternal\(\);/,
+  "overlapping coach and player publish requests join one in-flight canonical commit",
+);
+assert.match(
+  cloudSync,
   /window\.completePlayerPublishJobs\(\{ label: "Player update ready" \}\)/,
   "player receipts complete only after the team workspace publishes",
 );
