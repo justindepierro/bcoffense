@@ -6,9 +6,13 @@ import {
   readStoredPlayerRelease,
 } from "../_lib/player-release.js";
 import { resolveSessionTeamId } from "../_lib/team-context.js";
+import { readCurrentPlayerReleasePointer } from "../_lib/workspace-revisions.js";
 
-function etagFor(release) {
-  return `\"${String(release?.release?.revision || "")}\"`;
+function etagFor(releaseOrRevision) {
+  const revision = typeof releaseOrRevision === "string"
+    ? releaseOrRevision
+    : releaseOrRevision?.release?.revision;
+  return `\"${String(revision || "")}\"`;
 }
 
 function playerReleaseHeaders(release) {
@@ -39,16 +43,25 @@ export async function onRequestGet(context) {
   }
 
   try {
+    // Most player refreshes are unchanged. Check the compact committed pointer
+    // before opening the immutable R2 release object, then return a tiny 304
+    // for an ETag match. This keeps a phone's frequent wake checks quick and
+    // avoids downloading and hashing the entire release merely to say current.
+    const pointer = await readCurrentPlayerReleasePointer(context.env, teamId);
+    if (!pointer?.playerReleaseRevision) {
+      return authJson({ ok: false, error: "No player release is available yet." }, { status: 404 });
+    }
+    const pointerEtag = etagFor(pointer.playerReleaseRevision);
+    if (context.request.headers.get("If-None-Match") === pointerEtag) {
+      return withSecurityHeaders(new Response(null, {
+        status: 304,
+        headers: playerReleaseHeaders(pointer.playerReleaseRevision),
+      }));
+    }
+
     const release = await loadRelease(context.env, teamId);
     if (!release) {
       return authJson({ ok: false, error: "No player release is available yet." }, { status: 404 });
-    }
-    const etag = etagFor(release);
-    if (context.request.headers.get("If-None-Match") === etag) {
-      return withSecurityHeaders(new Response(null, {
-        status: 304,
-        headers: playerReleaseHeaders(release),
-      }));
     }
     return authJson({ ok: true, release }, { headers: playerReleaseHeaders(release) });
   } catch (_err) {

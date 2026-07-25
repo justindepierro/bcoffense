@@ -3,6 +3,9 @@ import {
   releaseAllowsClip,
   releaseAllowsDiagram,
 } from "../functions/_lib/player-release.js";
+import { readFile } from "node:fs/promises";
+
+const playerReleaseRoute = await readFile(new URL("../functions/player/release.js", import.meta.url), "utf8");
 
 let passed = 0;
 let failed = 0;
@@ -169,6 +172,10 @@ assert(releaseAllowsClip(release, "play:script-only"), "allows canonical permane
 assert(releaseAllowsClip(release, "signals/formation/rip"), "allows published signal clip IDs");
 assert(!releaseAllowsClip(release, "signals/formation/secret"), "rejects draft signal clip IDs");
 assert(!releaseAllowsClip(release, "Rip|Georgia|10|Run"), "does not allow legacy tag clip keys, even when their text is unique");
+assert(
+  /readCurrentPlayerReleasePointer\(context\.env, teamId\)[\s\S]*?If-None-Match[\s\S]*?status: 304[\s\S]*?const release = await loadRelease/s.test(playerReleaseRoute),
+  "an unchanged player poll returns from the compact committed pointer before reading the release payload",
+);
 
 if (failed) {
   console.error(`\n${failed} player-release contract assertion${failed === 1 ? "" : "s"} failed.`);
