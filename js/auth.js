@@ -74,36 +74,6 @@
     publishTeamWorkspace: "feature:publish_team",
   };
 
-  const AUTH_LOGIN_ROLE_DETAILS = {
-    admin: {
-      label: "Admin",
-      eyebrow: "Full access",
-      title: "Admin workspace",
-      summary: "Manage playbook imports, cloud backups, staff tools, and every practice workflow.",
-      submit: "Enter Admin Workspace",
-    },
-    coach: {
-      label: "Coach",
-      eyebrow: "Practice tools",
-      title: "Coach workspace",
-      summary: "Build scripts, call sheets, wristbands, game plans, and player-ready practice views.",
-      submit: "Enter Coach Workspace",
-    },
-    player: {
-      label: "Player",
-      eyebrow: "View only",
-      title: "Player portal",
-      summary: "Open the published practice plan, playbook, wristband, and swipe view without staff controls.",
-      submit: "Enter Player Portal",
-    },
-  };
-
-  const AUTH_LOGIN_VARIANT_DEFAULT_ROLE = {
-    desktop: "admin",
-    tablet: "admin",
-    mobile: "player",
-  };
-
   function getAuthLoginVariant() {
     const width =
       window.innerWidth ||
@@ -123,10 +93,6 @@
       return "tablet";
     }
     return "desktop";
-  }
-
-  function getDefaultLoginRoleForVariant(variant) {
-    return AUTH_LOGIN_VARIANT_DEFAULT_ROLE[variant] || "admin";
   }
 
   const READ_ONLY_ALLOWED_ACTIONS = new Set([
@@ -432,10 +398,6 @@
       loginAt: new Date().toISOString(),
       expiresAt: "",
     });
-  }
-
-  function getLoginRoleDetails(role) {
-    return AUTH_LOGIN_ROLE_DETAILS[role] || AUTH_LOGIN_ROLE_DETAILS.admin;
   }
 
   function getAuthSessionStorageKey() {
@@ -939,17 +901,10 @@
         return (storageManager?.get?.(key, "") || "").trim() || "BCOffense";
       } catch (_e) { return "BCOffense"; }
     })();
-    const _urlRoleRaw = (() => {
-      try { return new URLSearchParams(window.location.search).get("role") || ""; } catch (_e) { return ""; }
-    })();
-    const _urlRole = AUTH_LOGIN_ROLE_DETAILS[_urlRoleRaw] ? _urlRoleRaw : null;
-    const _initialRoleName = _urlRole || getDefaultLoginRoleForVariant(_loginVariant);
-
     const overlay = document.createElement("div");
     overlay.id = "authLoginOverlay";
     overlay.className = `auth-login-overlay auth-login-overlay--${_loginVariant}`;
     overlay.dataset.loginVariant = _loginVariant;
-    const initialDetails = getLoginRoleDetails(_initialRoleName);
     overlay.innerHTML = `
       <div class="auth-login-shell" data-login-variant="${escapeAttr(_loginVariant)}">
         <section class="auth-login-hero" aria-label="Portal overview">
@@ -984,23 +939,14 @@
           </div>
           ${opts.statusMsg ? `<div class="auth-login-logout-msg">${escapeHtml(opts.statusMsg)}</div>` : ""}
           <div class="auth-login-form-header">
-            <div class="auth-login-kicker" id="authLoginRoleEyebrow">${escapeHtml(initialDetails.eyebrow)}</div>
+            <div class="auth-login-kicker">Secure team access</div>
             <h3>Sign in to BCOffense</h3>
-            <p id="authLoginRoleSummary">${escapeHtml(initialDetails.summary)}</p>
-          </div>
-          <div class="auth-login-role-picker" role="group" aria-label="Choose login role">
-            ${Object.entries(AUTH_LOGIN_ROLE_DETAILS).map(([role, details]) => `
-              <button type="button" class="auth-login-role-option${role === _initialRoleName ? " is-active" : ""}"
-                data-login-role="${role}" aria-pressed="${role === _initialRoleName ? "true" : "false"}">
-                <span>${escapeHtml(details.label)}</span>
-                <small>${escapeHtml(details.eyebrow)}</small>
-              </button>
-            `).join("")}
+            <p>Your account determines the workspace and access available to you.</p>
           </div>
           <label>
-            <span>Username</span>
+            <span>Email or username</span>
             <input id="authUsername" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"
-              enterkeyhint="next" data-auth-allow-input="true" value="${_initialRoleName === "admin" || _initialRoleName === "coach" ? escapeAttr(_initialRoleName) : ""}" required />
+              enterkeyhint="next" data-auth-allow-input="true" required />
           </label>
           <label>
             <span>Password</span>
@@ -1012,10 +958,8 @@
             </div>
           </label>
           <div id="authLoginError" class="auth-login-error${opts.messageIsStatus ? " is-status" : ""}" aria-live="assertive" role="alert">${escapeHtml(message)}</div>
-          <button type="submit" class="btn btn-primary auth-login-submit" id="authLoginSubmit">${escapeHtml(initialDetails.submit)}</button>
+          <button type="submit" class="btn btn-primary auth-login-submit" id="authLoginSubmit">Sign In</button>
           <p class="auth-login-help">Need help? Ask a coach or staff member for your login.</p>
-          <div class="auth-login-player-shortcut" aria-hidden="true"><span>or</span></div>
-          <button type="button" class="auth-login-player-btn" id="authPlayerShortcut">I'm a Player &rarr;</button>
         </form>
       </div>
     `;
@@ -1033,8 +977,6 @@
     const toggleEl = overlay.querySelector("#authPasswordToggle");
     const submitEl = overlay.querySelector("#authLoginSubmit");
     const formEl = overlay.querySelector("#authLoginForm");
-    const roleSummaryEl = overlay.querySelector("#authLoginRoleSummary");
-    const roleEyebrowEl = overlay.querySelector("#authLoginRoleEyebrow");
     const focusController =
       typeof AbortController === "function" ? new AbortController() : null;
     const focusSignal = focusController ? { signal: focusController.signal } : {};
@@ -1067,30 +1009,45 @@
       errorEl.classList.toggle("is-status", isStatus);
       ensureAuthFocusedControlVisible();
     };
-    const setSelectedLoginRole = (role, opts = {}) => {
-      const details = getLoginRoleDetails(role);
-      overlay.querySelectorAll("[data-login-role]").forEach((button) => {
-        const active = button.dataset.loginRole === role;
-        button.classList.toggle("is-active", active);
-        button.setAttribute("aria-pressed", active ? "true" : "false");
+    const completeAuthenticatedLogin = async (user, source) => {
+      currentAuthUser = user;
+      saveStoredAuthUser(user, source);
+      authReady = true;
+
+      // The signed-in account, not a role tab chosen before authentication,
+      // decides both the destination and the authorized data source. Keep the
+      // login surface up until that source has been checked so a new/shared
+      // browser cannot briefly open an empty local workspace.
+      setAuthLoginMessage(
+        user.role === "player"
+          ? "Loading your published practice plan..."
+          : "Loading the latest team workspace...",
+        true,
+      );
+      if (user.role === "player") {
+        storageManager?.preparePlayerDeviceForUser?.(user);
+      }
+      if (typeof autoPullLatestCloudBackup === "function") {
+        await autoPullLatestCloudBackup({ timeoutMs: 14 * 1000 });
+      }
+
+      await _animateOut();
+      cleanupLoginFocusTracking();
+      overlay.remove();
+      applyRoleUi();
+      if (typeof applyPendingRestoredStartupTab === "function") {
+        applyPendingRestoredStartupTab();
+      }
+      requestAnimationFrame(() => {
+        document.querySelector(".tab[aria-selected='true'], .tab.active, .tabs .tab")?.focus({ preventScroll: true });
       });
-      if (roleEyebrowEl) roleEyebrowEl.textContent = details.eyebrow;
-      if (roleSummaryEl) roleSummaryEl.textContent = details.summary;
-      if (submitEl) submitEl.textContent = details.submit;
-      if (opts.fillUsername && usernameEl) usernameEl.value = role;
+      if (currentAuthUser.role !== "player") {
+        showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
+      }
+      if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
     };
-
-    overlay.querySelectorAll("[data-login-role]").forEach((button) => {
-      button.addEventListener("click", () => {
-        setSelectedLoginRole(button.dataset.loginRole, { fillUsername: true });
-        passwordEl.focus();
-      });
-    });
-
     usernameEl.addEventListener("input", () => {
       setAuthLoginMessage("");
-      const role = usernameEl.value.trim().toLowerCase();
-      if (AUTH_LOGIN_ROLE_DETAILS[role]) setSelectedLoginRole(role);
     });
 
     passwordEl.addEventListener("input", () => {
@@ -1159,27 +1116,10 @@
           }
         }
 
-        currentAuthUser = resolvedUser;
-        saveStoredAuthUser(
+        await completeAuthenticatedLogin(
           resolvedUser,
           isLocalDevHost() && (!response.ok || !data.user) ? "local-dev" : "server-login",
         );
-        authReady = true;
-        await _animateOut();
-        cleanupLoginFocusTracking();
-        overlay.remove();
-        applyRoleUi();
-        if (typeof applyPendingRestoredStartupTab === "function") {
-          applyPendingRestoredStartupTab();
-        }
-        requestAnimationFrame(() => {
-          document.querySelector(".tab[aria-selected='true'], .tab.active, .tabs .tab")?.focus({ preventScroll: true });
-        });
-        if (currentAuthUser.role !== "player") {
-          showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
-        }
-        if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
-        scheduleCloudAutoPull();
       } catch (err) {
         try {
           const fallbackUser = tryLocalDevLogin(
@@ -1187,24 +1127,7 @@
             passwordEl.value,
           );
           if (fallbackUser) {
-            currentAuthUser = fallbackUser;
-            saveStoredAuthUser(fallbackUser, "local-dev");
-            authReady = true;
-            await _animateOut();
-            cleanupLoginFocusTracking();
-            overlay.remove();
-            applyRoleUi();
-            if (typeof applyPendingRestoredStartupTab === "function") {
-              applyPendingRestoredStartupTab();
-            }
-            requestAnimationFrame(() => {
-              document.querySelector(".tab[aria-selected='true'], .tab.active, .tabs .tab")?.focus({ preventScroll: true });
-            });
-            if (currentAuthUser.role !== "player") {
-              showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
-            }
-            if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
-            scheduleCloudAutoPull();
+            await completeAuthenticatedLogin(fallbackUser, "local-dev");
             return;
           }
         } catch (_fallbackErr) {
@@ -1219,10 +1142,6 @@
         passwordEl.focus();
       }
     });
-    overlay.querySelector("#authPlayerShortcut")?.addEventListener("click", () => {
-      setSelectedLoginRole("player", { fillUsername: true });
-      passwordEl.focus();
-    });
     overlay.addEventListener("focusin", ensureAuthFocusedControlVisible, focusSignal);
     window.visualViewport?.addEventListener("resize", syncAuthKeyboardState, {
       passive: true,
@@ -1233,12 +1152,7 @@
       ...focusSignal,
     });
     syncAuthKeyboardState();
-    if (_urlRole) {
-      setSelectedLoginRole(_urlRole, { fillUsername: true });
-      requestAnimationFrame(() => passwordEl.focus());
-    } else {
-      requestAnimationFrame(() => usernameEl.focus());
-    }
+    requestAnimationFrame(() => usernameEl.focus());
   }
 
   function ensureLoginOverlayVisible() {

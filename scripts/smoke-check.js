@@ -4046,7 +4046,10 @@ function checkStartupTabRestoreContracts() {
   }
 
   const authApplyCount = (auth.match(/applyPendingRestoredStartupTab\(\)/g) || []).length;
-  if (authApplyCount < 3) {
+  const loginCompletionOwnsRestore =
+    auth.includes("const completeAuthenticatedLogin = async") &&
+    auth.includes("await completeAuthenticatedLogin(");
+  if (authApplyCount < 2 || !loginCompletionOwnsRestore) {
     fail("auth does not apply pending restored tab after session and login paths");
   }
 

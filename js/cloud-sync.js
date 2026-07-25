@@ -2176,12 +2176,16 @@
   }
 
   async function autoPullLatestCloudBackup(opts = {}) {
-    if (sessionStorage.getItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY) === "1") return false;
-    sessionStorage.setItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY, "1");
-
     const currentUser =
       typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
     if (!currentUser) return false;
+
+    // Do not consume the once-per-tab workspace read before someone has
+    // authenticated. A signed-out shell is expected on a shared device; if it
+    // claimed this guard, the eventual login could be left on an empty local
+    // workspace with no canonical team read.
+    if (sessionStorage.getItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY) === "1") return false;
+    sessionStorage.setItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY, "1");
 
     // Players never fetch the raw recovery snapshot. Their bootstrap uses the
     // narrow server release even when this generic auto-pull hook runs first.
