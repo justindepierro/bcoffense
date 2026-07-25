@@ -351,6 +351,7 @@ window.canAccessTab
 window.canEditUser
 window.canManageSettings
 window.closeAnchoredMenu
+window.closeAboutBCOffense
 window.closeCloudSyncModal
 window.closeStagedRestoreModal
 window.closeLegacyDiagramRecoveryWizard
@@ -401,6 +402,7 @@ window.isActionAllowedForRole
 window.isAdminUser
 window.logoutAuth
 window.mediaUploadOutbox
+window.openAboutBCOffense
 window.openCloudSyncModal
 window.openStagedRestoreHistory
 window.openStagedRestorePreview

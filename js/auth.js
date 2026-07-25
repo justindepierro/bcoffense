@@ -581,6 +581,50 @@
     });
   }
 
+  function closeAboutBCOffense() {
+    document.getElementById("aboutBCOffenseOverlay")?.remove();
+  }
+
+  function openAboutBCOffense() {
+    closeAboutBCOffense();
+    const overlay = document.createElement("div");
+    overlay.id = "aboutBCOffenseOverlay";
+    overlay.className = "modal-overlay about-bcoffense-overlay";
+    overlay.dataset.action = "closeAboutBCOffenseOverlay";
+    overlay.innerHTML = `
+      <section class="modal-content modal-content-sm about-bcoffense-modal" role="dialog" aria-modal="true" aria-labelledby="aboutBCOffenseTitle">
+        <div class="modal-header">
+          <div>
+            <div class="about-bcoffense-kicker">Private team workspace</div>
+            <h2 id="aboutBCOffenseTitle">About BCOffense</h2>
+          </div>
+          <button type="button" class="modal-close" data-action="closeAboutBCOffense" aria-label="Close About BCOffense">&times;</button>
+        </div>
+        <div class="about-bcoffense-body">
+          <p>BCOffense is a private football operations workspace built for Burke Catholic Football.</p>
+          <p>It brings the team playbook, practice preparation, game planning, player study, and secure publishing workflow into one protected system.</p>
+          <h3>Built for</h3>
+          <ul>
+            <li>Playbook organization, diagrams, clips, and signals</li>
+            <li>Practice scripts, player assignments, wristbands, and call sheets</li>
+            <li>Game plans, opponent tendencies, and game-week preparation</li>
+            <li>Player-ready study materials, quizzes, and published practice plans</li>
+            <li>Secure team workspace sync, protected media, and recovery tools</li>
+          </ul>
+          <div class="about-bcoffense-notice">
+            <strong>Private use notice</strong>
+            <span>This software is maintained for Burke Catholic Football. It is not offered for public sale, redistribution, copying, or reuse without written permission from the copyright holder.</span>
+          </div>
+          <p class="about-bcoffense-contact">Questions or permissions: <a href="mailto:jdepierro@burkecatholic.org">jdepierro@burkecatholic.org</a></p>
+        </div>
+        <footer class="about-bcoffense-footer">© 2026 Justin DePierro. All rights reserved.</footer>
+      </section>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+    overlay.querySelector("[data-action='closeAboutBCOffense']")?.focus();
+  }
+
   function traceAuthBlocked(reason, el, extra = {}) {
     const actionEl = el instanceof Element ? el.closest("[data-action]") : null;
     const payload = {
@@ -960,6 +1004,7 @@
           <div id="authLoginError" class="auth-login-error${opts.messageIsStatus ? " is-status" : ""}" aria-live="assertive" role="alert">${escapeHtml(message)}</div>
           <button type="submit" class="btn btn-primary auth-login-submit" id="authLoginSubmit">Sign In</button>
           <p class="auth-login-help">Need help? Ask a coach or staff member for your login.</p>
+          <button type="button" class="auth-login-about-btn" data-action="openAboutBCOffense">About BCOffense</button>
         </form>
       </div>
     `;
@@ -1326,4 +1371,6 @@
   window.isActionAllowedForRole = isActionAllowedForRole;
   window.logoutAuth = logoutAuth;
   window.applyRoleUi = applyRoleUi;
+  window.openAboutBCOffense = openAboutBCOffense;
+  window.closeAboutBCOffense = closeAboutBCOffense;
 })();

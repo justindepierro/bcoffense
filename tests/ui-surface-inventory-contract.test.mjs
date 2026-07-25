@@ -24,6 +24,7 @@ const APPROVED_SCROLL_OWNERS = new Set(["layer", "panel", "workspace", "document
 // id: { owner, pattern, scrollOwner }
 // The owner is the only file permitted to create the named surface.
 const UI_SURFACES = Object.freeze({
+  aboutBCOffenseOverlay: { owner: "js/auth.js", pattern: "blocking-layer", scrollOwner: "layer" },
   authLoginOverlay: { owner: "js/auth.js", pattern: "blocking-layer", scrollOwner: "layer" },
   callSheetPickerOverlay: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
   cellPopupOverlay: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },

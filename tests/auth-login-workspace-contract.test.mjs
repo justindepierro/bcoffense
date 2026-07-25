@@ -21,5 +21,15 @@ assert.doesNotMatch(
   /data-login-role|authPlayerShortcut|AUTH_LOGIN_ROLE_DETAILS/,
   "the app sign-in surface does not ask people to choose their own role",
 );
+assert.match(
+  authSource,
+  /function openAboutBCOffense\(\)[\s\S]*?BCOffense is a private football operations workspace built for Burke Catholic Football\.[\s\S]*?jdepierro@burkecatholic\.org[\s\S]*?© 2026 Justin DePierro\. All rights reserved\./,
+  "About BCOffense keeps the private-use notice, copyright, and contact information together",
+);
+assert.match(
+  authSource,
+  /data-action="openAboutBCOffense"/,
+  "the sign-in surface links to About BCOffense",
+);
 
 console.log("auth login workspace contract passed");
