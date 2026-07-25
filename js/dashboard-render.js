@@ -251,6 +251,11 @@ function _dashRenderPlayerRefreshAction() {
   const releaseState = storageManager.get(STORAGE_KEYS.PLAYER_RELEASE_STATE, {});
   const latestCoachUpdate = state.result?.freshness?.data?.updatedAt ||
     releaseState?.updatedAt || state.result?.data?.updatedAt || "";
+  const releaseRevision = String(state.result?.revision || releaseState?.revision || "").trim();
+  const releaseScriptCount = Math.max(0, Number(state.result?.scriptCount ?? releaseState?.scriptCount ?? 0) || 0);
+  const releaseProof = releaseRevision
+    ? `Release ${releaseRevision.slice(0, 12)} · ${releaseScriptCount} ${releaseScriptCount === 1 ? "script" : "scripts"}. `
+    : "Latest coach release is loaded. ";
   const checkedAt = state.updatedAt || state.result?.finishedAt || "";
   const actionClass = installAction
     ? "player-home-refresh__actions"
@@ -266,7 +271,7 @@ function _dashRenderPlayerRefreshAction() {
       ? tone === "offline"
         ? "Your loaded practice still works. Reconnect when you want the newest alerts."
         : "Home and Practice still work. Retry when your connection is ready."
-      : `${latestCoachUpdate ? `Coach release loaded ${_dashFormatRelativeTime(latestCoachUpdate) || "recently"}. ` : "Latest coach release is loaded. "}${checkedAt ? `Checked ${_dashFormatRelativeTime(checkedAt) || "just now"}.` : "Check now before practice if you need to confirm."}`;
+      : `${releaseProof}${latestCoachUpdate ? `Published ${_dashFormatRelativeTime(latestCoachUpdate) || "recently"}. ` : ""}${checkedAt ? `Checked ${_dashFormatRelativeTime(checkedAt) || "just now"}.` : "Check now before practice if you need to confirm."}`;
   return `<section class="player-home-refresh player-home-refresh--${escapeAttr(tone)}" aria-label="Coach updates">
     <div class="player-home-refresh__copy">
       <strong>${escapeHtml(title)}</strong>

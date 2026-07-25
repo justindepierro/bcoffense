@@ -132,8 +132,8 @@ assert.match(
 );
 assert.match(
   dashboardRender,
-  /function _dashRenderPlayerRefreshAction\(\)[\s\S]*?Practice is current[\s\S]*?Coach release loaded[\s\S]*?data-action="refreshPlayerTeamApp"/,
-  "the player Home always shows release freshness and a deliberate update check, not only errors",
+  /function _dashRenderPlayerRefreshAction\(\)[\s\S]*?Release \$\{releaseRevision\.slice\(0, 12\)\}[\s\S]*?Practice is current[\s\S]*?data-action="refreshPlayerTeamApp"/,
+  "the player Home shows a confirmed release revision, script count, and deliberate update check—not only errors",
 );
 assert.match(
   presentation,
