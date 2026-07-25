@@ -202,6 +202,13 @@ body[data-auth-role="player"] .save-status {
   transition: opacity 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
 }
 
+/* Players receive published releases through the background refresh path.
+   The coach-facing workspace queue is not a player control surface; player
+   update state is expressed in the Home/Practice experience instead. */
+body[data-auth-role="player"] .workspace-sync-dock {
+  display: none !important;
+}
+
 .workspace-sync-dock__text {
   min-width: 0;
   overflow: hidden;

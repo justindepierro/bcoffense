@@ -104,5 +104,10 @@ assert.match(
   /function openBCOffenseTerms\(\)[\s\S]*?Authorized use[\s\S]*?Accounts and security[\s\S]*?Team data and media[\s\S]*?Ownership and restrictions[\s\S]*?Availability and changes[\s\S]*?not a substitute for legal advice/,
   "Terms of Use state the private-use rules and remain clear about their non-legal-advice scope",
 );
+assert.match(
+  authSource,
+  /const PLAYER_DATA_MANAGEMENT_ACTIONS = new Set\([\s\S]*?"exportPlaybookCSV"[\s\S]*?"showStorageInfo"[\s\S]*?"openCloudSyncModal"[\s\S]*?"retryWorkspaceSyncWork"[\s\S]*?if \(currentAuthUser\.role === "player" && PLAYER_DATA_MANAGEMENT_ACTIONS\.has\(action\)\) return false;/,
+  "players cannot invoke export, storage, recovery, or workspace-sync controls even when a stale menu node exists",
+);
 
 console.log("auth login workspace contract passed");

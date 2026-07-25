@@ -294,6 +294,27 @@
     "handleFileUpload",
   ]);
 
+  // Player devices consume a signed, read-only release. They never own the
+  // team workspace, so backup/export/storage controls must stay unavailable
+  // even if an old menu clone or a stale cached node is still present.
+  const PLAYER_DATA_MANAGEMENT_ACTIONS = new Set([
+    "exportPlaybookCSV",
+    "exportBackup",
+    "importBackup",
+    "exportCompleteBackup",
+    "importCompleteBackup",
+    "showStorageInfo",
+    "openCloudSyncModal",
+    "saveCloudSyncSettings",
+    "pushCloudBackup",
+    "pullCloudBackup",
+    "testCloudSyncConnection",
+    "syncPlayImagesToCloud",
+    "retryWorkspaceSyncWork",
+    "showUpload",
+    "handleFileUpload",
+  ]);
+
   const READ_ONLY_ALLOWED_PREFIXES = [
     "switch",
     "open",
@@ -712,6 +733,7 @@
 
   function isActionAllowedForRole(action) {
     if (!currentAuthUser) return false;
+    if (currentAuthUser.role === "player" && PLAYER_DATA_MANAGEMENT_ACTIONS.has(action)) return false;
     if (ADMIN_ONLY_ACTIONS.has(action)) return isAdminUser();
     if (isManagedCoachUser()) {
       const requiredPermission = MANAGED_COACH_ACTION_PERMISSIONS[action];
