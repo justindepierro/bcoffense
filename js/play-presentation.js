@@ -41,7 +41,7 @@ function capturePlayPresentationResume() {
   const owner = getPlayPresentationResumeOwner();
   if (!owner.username) return false;
   try {
-    sessionStorage.setItem(PLAY_PRESENTATION_RESUME_KEY, JSON.stringify({
+    const snapshot = {
       ...owner,
       tab: String(currentActiveTab || ""),
       source: playPresentationState.source === "script" ? "script" : "playbook",
@@ -54,7 +54,11 @@ function capturePlayPresentationResume() {
       index: Math.max(0, Number(playPresentationState.index) || 0),
       mode: String(playPresentationState.mode || "minimum"),
       savedAt: Date.now(),
-    }));
+    };
+    sessionStorage.setItem(PLAY_PRESENTATION_RESUME_KEY, JSON.stringify(snapshot));
+    if (typeof appDiagnostics !== "undefined") {
+      appDiagnostics.mark("player-swipe:resume-captured", { source: snapshot.source, scriptId: snapshot.scriptId });
+    }
     return true;
   } catch (_err) {
     return false;
@@ -124,6 +128,9 @@ function restorePlayPresentationResume() {
     { returnContext: tab ? { tab, scrollY: Number(window.scrollY || 0) } : null },
   );
   clearPlayPresentationResume();
+  if (typeof appDiagnostics !== "undefined") {
+    appDiagnostics.mark("player-swipe:resume-restored", { source, scriptId: snapshot.scriptId || "", opened });
+  }
   return opened;
 }
 

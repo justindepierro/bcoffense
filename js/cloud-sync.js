@@ -101,6 +101,12 @@
   // Hold the verified response and commit it immediately after the viewer
   // exits, so notification, Practice, and Swipe all describe one release.
   let pendingPlayerReleaseApply = null;
+
+  function tracePlayerRelease(phase, detail = {}) {
+    if (typeof appDiagnostics !== "undefined" && typeof appDiagnostics.mark === "function") {
+      appDiagnostics.mark(`player-release:${phase}`, detail);
+    }
+  }
   let teamForegroundRefreshPromise = null;
   let teamForegroundRefreshAt = 0;
   const cloudAutoPushDirtyKeys = new Set();
@@ -1328,6 +1334,11 @@
       "X-BC-Auth-Mode": "json",
     };
     if (!opts.force && canRevalidate) headers["If-None-Match"] = meta.etag;
+    tracePlayerRelease("request", {
+      force: Boolean(opts.force),
+      conditional: Boolean(headers["If-None-Match"]),
+      activeTab: String(typeof currentActiveTab !== "undefined" ? currentActiveTab || "" : ""),
+    });
     const response = await fetch("/player/release", {
       method: "GET",
       credentials: "same-origin",
@@ -1335,10 +1346,17 @@
       headers,
     });
     if (response.status === 304) {
+      tracePlayerRelease("current", { status: 304 });
       return { notModified: true, meta };
     }
     const data = await response.json().catch(() => ({}));
+    tracePlayerRelease("response", { status: response.status, ok: response.ok });
     if (!response.ok) {
+      if (response.status === 401) {
+        window.dispatchEvent(new CustomEvent("bc-auth-session-required", {
+          detail: { message: "Your secure session ended. Sign in to continue." },
+        }));
+      }
       const err = new Error(data.error || `Player release request failed with ${response.status}`);
       err.status = response.status;
       throw err;
@@ -1375,6 +1393,7 @@
     if (!storageManager || typeof storageManager.replacePlayerReleaseData !== "function") {
       throw new Error("This app version cannot safely apply the player release.");
     }
+    tracePlayerRelease("apply-start", { revision: String(release?.release?.revision || "") });
     const state = await storageManager.replacePlayerReleaseData(release);
     if (window.playImages) {
       if (typeof window.playImages.clearRemoteManifestCache === "function") {
@@ -1406,6 +1425,7 @@
     if (targetTab && typeof setWorkspaceSurface === "function") {
       setWorkspaceSurface("app", { initModules: false });
     }
+    tracePlayerRelease("apply-complete", { revision: String(state?.revision || ""), targetTab });
     return state;
   }
 
@@ -1949,6 +1969,7 @@
       const presentationOpen = document.getElementById("playPresentationOverlay")?.classList.contains("is-open");
       if (presentationOpen) {
         pendingPlayerReleaseApply = { release: fetched.release, etag: fetched.etag, opts: { ...opts } };
+        tracePlayerRelease("deferred", { revision: summary.revision, reason: "swipe-view-open" });
         document.dispatchEvent(new CustomEvent("player-release-deferred", {
           detail: { revision: summary.revision, updatedAt: summary.updatedAt },
         }));
@@ -1969,6 +1990,7 @@
       });
       return { ok: true, status: "refreshed", ...summary, message: "Ready" };
     } catch (err) {
+      tracePlayerRelease("error", { status: Number(err?.status || 0), message: err?.message || String(err) });
       if (err?.status === 404) {
         return { ok: false, status: "missing", message: "Try Again" };
       }
@@ -2629,6 +2651,7 @@
     const pending = pendingPlayerReleaseApply;
     if (!pending) return;
     pendingPlayerReleaseApply = null;
+    tracePlayerRelease("deferred-apply", { revision: String(pending.release?.release?.revision || "") });
     applyPlayerRelease(pending.release, pending.opts)
       .then(() => {
         const summary = playerReleaseSummary(pending.release);

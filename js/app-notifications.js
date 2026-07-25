@@ -456,6 +456,13 @@ async function openNotifDeepLink(arg) {
 
   if (deepLink === "script" || deepLink.startsWith("script:")) {
     const scriptId = deepLink.includes(":") ? deepLink.slice(deepLink.indexOf(":") + 1) : "";
+    // A notification can arrive while the device still has yesterday's
+    // release. Refresh the narrow player projection before resolving the
+    // script ID so the alert, library, and destination stay in lockstep.
+    const authUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    if (authUser?.role === "player" && typeof refreshPlayerRelease === "function") {
+      await refreshPlayerRelease({ force: true, navigate: false }).catch(() => null);
+    }
     if (scriptId && typeof loadPublishedPlayerScript === "function") {
       loadPublishedPlayerScript(scriptId);
     } else if (typeof showTab === "function") {

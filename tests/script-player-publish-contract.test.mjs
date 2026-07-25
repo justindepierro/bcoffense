@@ -5,12 +5,13 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (relativePath) => readFile(new URL(relativePath, `file://${root}/`), "utf8");
 
-const [scriptStorage, scriptPlayer, presentation, cloudSync, workspaceSync] = await Promise.all([
+const [scriptStorage, scriptPlayer, presentation, cloudSync, workspaceSync, notifications] = await Promise.all([
   source("js/script-storage.js"),
   source("js/script-player.js"),
   source("js/play-presentation.js"),
   source("js/cloud-sync.js"),
   source("js/workspace-sync.js"),
+  source("js/app-notifications.js"),
 ]);
 
 assert.match(
@@ -84,9 +85,29 @@ assert.match(
   "a new player release is deferred while Swipe View is open and applied only after the viewer closes",
 );
 assert.match(
+  cloudSync,
+  /if \(response\.status === 401\) \{[\s\S]*?bc-auth-session-required/,
+  "a player-release 401 enters the centralized secure-session recovery path instead of leaving a stale study shell",
+);
+assert.match(
   scriptPlayer,
   /function showPlayerPracticeLanding\(\)[\s\S]*?script-player-practice-landing/,
   "a player release refresh returns the Script route to the player Practice landing rather than coach workspace chrome",
+);
+assert.match(
+  scriptPlayer,
+  /const releaseConfirmed = publishResult !== false[\s\S]*?if \(releaseConfirmed && typeof notifyPlayersOfTeamUpdate === "function"\)/,
+  "player notifications are emitted only after a release is confirmed rather than merely queued",
+);
+assert.match(
+  notifications,
+  /authUser\?\.role === "player" && typeof refreshPlayerRelease === "function"[\s\S]*?await refreshPlayerRelease\(\{ force: true, navigate: false \}\)[\s\S]*?loadPublishedPlayerScript\(scriptId\)/,
+  "opening a player practice notification refreshes the release before resolving its script",
+);
+assert.match(
+  presentation,
+  /scriptId: playPresentationState\.source === "script"[\s\S]*?loadPublishedPlayerScript\(String\(snapshot\.scriptId\), \{ skipToast: true \}\)/,
+  "a suspended Swipe View carries its stable script ID and rebuilds it only from the fresh player release",
 );
 assert.match(
   workspaceSync,

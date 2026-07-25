@@ -396,7 +396,12 @@ async function recordPlayerPublishStatus(kind, details = {}, opts = {}) {
     });
   }
   if (typeof renderCoachPublishStatus === "function") renderCoachPublishStatus();
-  if (typeof notifyPlayersOfTeamUpdate === "function") {
+  // A player alert must describe a release that already committed. A queued
+  // background publish can legitimately take a moment, and announcing it
+  // first creates a notification whose Practice link cannot resolve yet.
+  const releaseConfirmed = publishResult !== false &&
+    (opts.awaitCompletion === true || typeof window.requestImmediateTeamPublish !== "function");
+  if (releaseConfirmed && typeof notifyPlayersOfTeamUpdate === "function") {
     notifyPlayersOfTeamUpdate(kind, details).catch(() => { });
   }
   return publishResult !== false;
