@@ -1122,7 +1122,7 @@
         storageManager?.preparePlayerDeviceForUser?.(user);
       }
       if (typeof autoPullLatestCloudBackup === "function") {
-        await autoPullLatestCloudBackup({ timeoutMs: 14 * 1000 });
+        await autoPullLatestCloudBackup({ timeoutMs: 14 * 1000, bootstrap: true });
       }
 
       await _animateOut();

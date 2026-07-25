@@ -693,6 +693,39 @@
     }
   }
 
+  async function hasLocalCoachWorkspaceContent() {
+    // Startup defaults and team setup information are not enough to block a
+    // canonical restore. The upload screen in particular can retain a roster
+    // or display preference even though it has none of the coach's actual
+    // football workspace. Only authored/operational content deserves the
+    // conservative "do not overwrite" path.
+    try {
+      const playbook = await storageManager.getPlaybook();
+      if (Array.isArray(playbook) && playbook.length > 0) return true;
+
+      const authoredKeys = [
+        STORAGE_KEYS.SAVED_SCRIPTS,
+        STORAGE_KEYS.SCRIPT_DRAFT,
+        STORAGE_KEYS.SAVED_WRISTBANDS,
+        STORAGE_KEYS.WRISTBAND_DRAFT,
+        STORAGE_KEYS.GAME_PLAN_BOARDS,
+        STORAGE_KEYS.GAME_PLAN_SNAPSHOTS,
+        STORAGE_KEYS.GAME_PLAN_TEMPLATES,
+        STORAGE_KEYS.DEFENSIVE_TENDENCIES,
+        STORAGE_KEYS.TENDENCIES_REPORTS,
+        STORAGE_KEYS.INSTALLATION,
+      ];
+      if (authoredKeys.some((key) => hasBackupValue(storageManager.get(key, null)))) {
+        return true;
+      }
+      return countBackupCallSheetPlays(storageManager.get(STORAGE_KEYS.CALL_SHEET, {})) > 0;
+    } catch (err) {
+      // If we cannot inspect existing authoring data safely, preserve it.
+      console.warn("Could not inspect local coach content before cloud auto-pull:", err);
+      return true;
+    }
+  }
+
   function hasKnownCanonicalWorkspaceRevision(settings = {}) {
     return Boolean(String(settings?.lastWorkspaceRevision || "").trim());
   }
@@ -2267,6 +2300,7 @@
 
       const settings = getCloudSyncSettings();
       const hasLocalWorkspace = await hasSubstantiveLocalTeamData();
+      const hasLocalCoachContent = await hasLocalCoachWorkspaceContent();
       const remoteMatchesKnownRevision = hasKnownCanonicalWorkspaceRevision(settings) &&
         remote.revision === settings.lastWorkspaceRevision;
 
@@ -2316,7 +2350,7 @@
       // the canonical head. Once a device has a known revision, however, it is
       // a managed team device and should automatically receive the newer team
       // revision instead of remaining stale until an admin opens Recovery.
-      if (shouldProtectUntrackedLocalWorkspace(settings, hasLocalWorkspace)) {
+      if (shouldProtectUntrackedLocalWorkspace(settings, hasLocalWorkspace) && hasLocalCoachContent) {
         saveCloudSyncSettingsObject({
           lastRemoteExportDate: remote.summary.exportDate,
           lastRemoteUpdatedAt: remote.updatedAt,

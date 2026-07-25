@@ -1,9 +1,16 @@
 # BCOffense
 
+> **Private and proprietary software.** BCOffense is maintained for Burke
+> Catholic Football and is not licensed for public use, copying, resale,
+> redistribution, or reuse without written permission from Justin DePierro.
+> See [TERMS.md](TERMS.md) and [LICENSE](LICENSE).
+
 BCOffense is a football practice-management PWA for playbooks, practice
 scripts, wristbands, call sheets, game plans, scouting, signals, player study,
 and quizzes. It is a vanilla HTML/CSS/JavaScript app deployed on Cloudflare
 Pages with Pages Functions for authentication and player-facing services.
+
+© 2026 Justin DePierro. All rights reserved.
 
 ## Season rollout status
 

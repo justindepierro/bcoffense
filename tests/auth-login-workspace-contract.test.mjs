@@ -12,8 +12,18 @@ assert.match(
   "a signed-out shell cannot consume the staff workspace pull guard",
 );
 assert.match(
+  cloudSource,
+  /async function hasLocalCoachWorkspaceContent\(\)[\s\S]*?STORAGE_KEYS\.SAVED_SCRIPTS[\s\S]*?STORAGE_KEYS\.GAME_PLAN_BOARDS[\s\S]*?countBackupCallSheetPlays/,
+  "only actual authored coach work, not setup residue, qualifies for the first-run overwrite safeguard",
+);
+assert.match(
+  cloudSource,
+  /shouldProtectUntrackedLocalWorkspace\(settings, hasLocalWorkspace\) && hasLocalCoachContent/,
+  "an empty upload shell applies the canonical workspace instead of being mistaken for competing work",
+);
+assert.match(
   authSource,
-  /const completeAuthenticatedLogin = async \(user, source\) => \{[\s\S]*?await autoPullLatestCloudBackup\(\{ timeoutMs: 14 \* 1000 \}\);[\s\S]*?overlay\.remove\(\);[\s\S]*?applyRoleUi\(\);/,
+  /const completeAuthenticatedLogin = async \(user, source\) => \{[\s\S]*?await autoPullLatestCloudBackup\(\{ timeoutMs: 14 \* 1000, bootstrap: true \}\);[\s\S]*?overlay\.remove\(\);[\s\S]*?applyRoleUi\(\);/,
   "sign-in waits for the account-authorized workspace before opening the app",
 );
 assert.doesNotMatch(
