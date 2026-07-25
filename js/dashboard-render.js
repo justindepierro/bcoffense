@@ -248,6 +248,10 @@ function _dashRenderPlayerRefreshAction() {
   const installAction = installState.available
     ? `<button type="button" class="player-home-refresh__install" data-action="installPlayerA2HS">${escapeHtml(installState.label || "Install app")}</button>`
     : "";
+  // A successful background check is routine state, not a dashboard task.
+  // Keep the explicit refresh control in the compact support section below,
+  // but reserve this visible notice for work, connection trouble, or install.
+  if (!busy && !needsRetry && !installAction) return "";
   const releaseState = storageManager.get(STORAGE_KEYS.PLAYER_RELEASE_STATE, {});
   const latestCoachUpdate = state.result?.freshness?.data?.updatedAt ||
     releaseState?.updatedAt || state.result?.data?.updatedAt || "";
@@ -1617,6 +1621,12 @@ function renderPlayerDashboardHome() {
       : "Practice will appear here when your coach publishes it.";
   const notificationStatus = getPlayerHomeNotificationStatus();
   const practiceStatus = getPlayerHomePracticeStatus(featuredScript, loadedScript, todayValue);
+  const practiceStateMarkup = practiceStatus.tone === "offline" || (!featuredScript && !loadedScript)
+    ? `<section class="player-home-state player-home-state--${escapeHtml(practiceStatus.tone)}" role="status" aria-live="polite">
+        <strong>${escapeHtml(practiceStatus.title)}</strong>
+        <span>${escapeHtml(practiceStatus.body)}</span>
+      </section>`
+    : "";
   // The compact delivery card below owns normal ready/checking/offline state.
   // Do not stack the old multi-step loader above it during routine refreshes.
   const freshnessMarkup = "";
@@ -1768,15 +1778,16 @@ function renderPlayerDashboardHome() {
         </div>` : ""}
       </div>
     </section>
-    <section class="player-home-state player-home-state--${escapeHtml(practiceStatus.tone)}" role="status" aria-live="polite">
-      <strong>${escapeHtml(practiceStatus.title)}</strong>
-      <span>${escapeHtml(practiceStatus.body)}</span>
-    </section>
+    ${practiceStateMarkup}
     ${freshnessMarkup}
     ${refreshMarkup}
     ${commandCenterMarkup}
     ${homeworkMarkup}
-    <section class="player-home-quick-actions" aria-label="Player quick actions">
+    <div class="player-home-section-heading">
+      <span>Study tools</span>
+      <small>Choose how you want to prepare</small>
+    </div>
+    <section class="player-home-quick-actions" aria-label="Player study tools">
       <button type="button" class="player-home-quick-action player-home-quick-action--film" ${swipeAction}>
         <span class="player-home-quick-icon"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
         <strong>Swipe View</strong>
@@ -1813,7 +1824,16 @@ function renderPlayerDashboardHome() {
             <small>Confirm today&#39;s practice</small>
           </button>`}
     </div>` : ""}
-    <div class="player-home-grid">
+    <details class="player-home-details">
+      <summary>
+        <span>
+          <strong>Practice details</strong>
+          <small>Snapshot, study targets, and update check</small>
+        </span>
+        <span class="player-home-details__chevron" aria-hidden="true">⌄</span>
+      </summary>
+      <div class="player-home-details__body">
+        <div class="player-home-grid player-home-grid--details">
       <article class="player-home-card player-home-card--feature">
         <span class="player-home-card__eyebrow">${escapeHtml(
           featuredScript?.date === todayValue ? "Script Snapshot" : "Published Snapshot",
@@ -1842,6 +1862,22 @@ function renderPlayerDashboardHome() {
           <div><strong>3</strong><span>${escapeHtml(focus.noteLabel)} from coach notes.</span></div>
         </div>
       </article>
+        </div>
+        <button type="button" class="player-home-details__refresh" data-action="refreshPlayerTeamApp">
+          Check for coach updates
+        </button>
+      </div>
+    </details>
+    <details class="player-home-details player-home-details--library">
+      <summary>
+        <span>
+          <strong>Practice library</strong>
+          <small>Recent scripts and your resume point</small>
+        </span>
+        <span class="player-home-details__chevron" aria-hidden="true">⌄</span>
+      </summary>
+      <div class="player-home-details__body">
+        <div class="player-home-grid player-home-grid--details">
       <article class="player-home-card player-home-card--recent">
         <span class="player-home-card__eyebrow">Recent Practices</span>
         <h3>Jump back in fast</h3>
@@ -1884,7 +1920,9 @@ function renderPlayerDashboardHome() {
     }
         </div>
       </article>
-    </div>
+        </div>
+      </div>
+    </details>
     <div class="player-notify-row">
       <button type="button" class="player-notify-btn player-notify-btn--${escapeHtml(notificationStatus.tone)}"
         data-action="openPlayerNotificationSettings" aria-label="${escapeHtml(notificationStatus.title)}">
