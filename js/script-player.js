@@ -702,24 +702,24 @@ function renderPlayerScriptLauncher() {
             ` : ""}
           </div>
           <div class="player-script-card__actions">
-            ${isCurrent
-          ? '<span class="player-script-card__loaded-label">Script Loaded</span>'
-          : `<button type="button" class="btn btn-sm" data-action="loadPublishedPlayerScript"
-                  data-arg="${scriptId}" title="Load this published script into the script tab">
-                  Open Script
-                </button>`}
-            <button type="button" class="btn btn-sm" data-action="startPlayerScriptQuiz"
-              data-arg="${scriptId}" title="Quiz yourself on this practice">
-              Quiz
+            <button type="button" class="btn btn-primary btn-sm player-script-card__primary-action"
+              ${isCurrent
+                ? 'data-action="openPlayerCurrentScriptPresentation"'
+                : 'data-action="loadPublishedPlayerScript"'}
+              data-arg="${scriptId}" title="${isCurrent ? "Resume this practice in Swipe View" : "Open this published practice"}">
+              ${isCurrent ? "Resume practice" : "Open practice"}
             </button>
-            <button type="button" class="btn btn-sm" data-action="openPlayerScriptChat"
-              data-arg="${scriptId}" title="Ask questions and chat about this practice">
-              💬 Chat
-            </button>
-            <button type="button" class="btn btn-primary btn-sm" data-action="openPlayerCurrentScriptPresentation"
-              data-arg="${scriptId}" title="Open this published script in swipe view">
-              Swipe View
-            </button>
+            <details class="player-script-card__options">
+              <summary>Study options <span aria-hidden="true">⌄</span></summary>
+              <div class="player-script-card__option-list">
+                <button type="button" class="btn btn-sm" data-action="startPlayerScriptQuiz"
+                  data-arg="${scriptId}" title="Quiz yourself on this practice">Quiz</button>
+                <button type="button" class="btn btn-sm" data-action="openPlayerScriptChat"
+                  data-arg="${scriptId}" title="Ask questions and chat about this practice">Chat</button>
+                <button type="button" class="btn btn-sm" data-action="openPlayerCurrentScriptPresentation"
+                  data-arg="${scriptId}" title="Open this published script in Swipe View">Swipe View</button>
+              </div>
+            </details>
           </div>
         </article>
       `;

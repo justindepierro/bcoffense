@@ -449,8 +449,8 @@ body[data-auth-role="player"]
   display: flex;
   position: relative;
   z-index: 2;
+  align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
   justify-content: flex-end;
   flex-shrink: 0;
 }
@@ -461,6 +461,67 @@ body[data-auth-role="player"]
   min-height: 44px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+
+.player-script-card__primary-action {
+  min-width: 130px;
+}
+
+.player-script-card__options {
+  position: relative;
+}
+
+.player-script-card__options > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  line-height: 1;
+  list-style: none;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+
+.player-script-card__options > summary::-webkit-details-marker {
+  display: none;
+}
+
+.player-script-card__options[open] > summary span {
+  transform: rotate(180deg);
+}
+
+.player-script-card__options > summary span {
+  font-size: 18px;
+  transition: transform var(--transition-fast);
+}
+
+.player-script-card__option-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 270px;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-md);
+}
+
+.player-script-card__option-list .btn {
+  min-height: 38px;
+  padding: 7px 8px;
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
 }
 
 .player-script-card__actions .btn[data-action="startPlayerQuiz"],
@@ -6171,14 +6232,30 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
 
   .player-script-card__actions {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
     justify-content: stretch;
   }
 
   .player-script-card__actions .btn {
-    width: 100%;
+    width: auto;
     white-space: normal;
     line-height: 1.15;
+  }
+
+  .player-script-card__options {
+    min-width: 0;
+  }
+
+  .player-script-card__options > summary {
+    width: 100%;
+  }
+
+  .player-script-card__options[open] {
+    grid-column: 1 / -1;
+  }
+
+  .player-script-card__option-list {
+    min-width: 0;
   }
 
   .script-item--detail,
