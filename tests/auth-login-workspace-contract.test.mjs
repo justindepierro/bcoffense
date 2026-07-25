@@ -8,6 +8,7 @@ const cloudSource = await readFile(new URL("js/cloud-sync.js", `file://${root}/`
 const componentStyles = await readFile(new URL("css/components.css", `file://${root}/`), "utf8");
 const utilsSource = await readFile(new URL("js/utils.js", `file://${root}/`), "utf8");
 const serverAuthSource = await readFile(new URL("functions/_lib/auth.js", `file://${root}/`), "utf8");
+const loginRouteSource = await readFile(new URL("functions/auth/login.js", `file://${root}/`), "utf8");
 
 assert.match(
   cloudSource,
@@ -68,6 +69,16 @@ assert.match(
   serverAuthSource,
   /<h2>Sign in to BCOffense<\/h2>[\s\S]*?Email or username[\s\S]*?<button type="submit">Sign In<\/button>[\s\S]*?About BCOffense[\s\S]*?Terms of Use/,
   "the server security gate uses the same login language and legal access as the in-app sign-in overlay",
+);
+assert.match(
+  loginRouteSource,
+  /if \(!db\) return \{ limited: false, available: false \};/,
+  "new logins do not silently bypass rate limiting when its store is unavailable",
+);
+assert.match(
+  loginRouteSource,
+  /catch \(_\) \{\s*return \{ limited: false, available: false \};[\s\S]*?if \(!rateLimit\.available\) \{[\s\S]*?temporarily unavailable[\s\S]*?503/,
+  "new logins fail closed when the durable rate-limit store is unavailable",
 );
 assert.doesNotMatch(
   authSource,

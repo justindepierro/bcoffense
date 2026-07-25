@@ -36,7 +36,10 @@ function getClientIp(request) {
 }
 
 async function checkRateLimit(db, ip, username) {
-  if (!db) return false;
+  // A login attempt is the one route where losing the rate-limit store must
+  // not silently remove brute-force protection. Existing sessions continue
+  // normally; only new sign-ins receive a short, explicit retry response.
+  if (!db) return { limited: false, available: false };
   const since = Math.floor(Date.now() / 1000) - RATE_WINDOW_SECONDS;
   try {
     const [ipRow, userRow] = await Promise.all([
@@ -45,12 +48,12 @@ async function checkRateLimit(db, ip, username) {
       db.prepare("SELECT COUNT(*) AS n FROM login_attempts WHERE username = ? AND attempted_at > ?")
         .bind(username.toLowerCase(), since).first(),
     ]);
-    if ((ipRow?.n || 0) >= RATE_MAX_IP) return true;
-    if ((userRow?.n || 0) >= RATE_MAX_USER) return true;
+    if ((ipRow?.n || 0) >= RATE_MAX_IP) return { limited: true, available: true };
+    if ((userRow?.n || 0) >= RATE_MAX_USER) return { limited: true, available: true };
   } catch (_) {
-    // If D1 check fails, allow the request (fail-open for availability)
+    return { limited: false, available: false };
   }
-  return false;
+  return { limited: false, available: true };
 }
 
 async function recordAttempt(db, ip, username, success) {
@@ -89,8 +92,11 @@ export async function onRequestPost(context) {
   }
 
   // ── IP + username rate limit ──────────────────────────────────────────────
-  const isRateLimited = await checkRateLimit(env.DB, ip, body.username || "");
-  if (isRateLimited) {
+  const rateLimit = await checkRateLimit(env.DB, ip, body.username || "");
+  if (!rateLimit.available) {
+    return loginFailure(request, "Sign-in protection is temporarily unavailable. Please try again shortly.", 503);
+  }
+  if (rateLimit.limited) {
     await recordAttempt(env.DB, ip, body.username || "", false);
     if (wantsJson(request)) {
       return withSecurityHeaders(
