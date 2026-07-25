@@ -66,8 +66,8 @@ assert.match(
 );
 assert.match(
   cloudSync,
-  /window\.completePlayerPublishJobs\(\{ label: "Player update ready" \}\)/,
-  "player receipts complete only after the team workspace publishes",
+  /const playerRelease = getPlayerReleaseReceipt\(result\.release\);[\s\S]*?recordPublishActivity\([\s\S]*?releaseRevision: playerRelease\.revision[\s\S]*?async function flushCloudAutoPushInternal\(\)[\s\S]*?window\.completePlayerPublishJobs\(\{ label: playerRelease\.label \}\)/,
+  "player receipts show the immutable Cloudflare release revision only after the team workspace publishes",
 );
 assert.match(
   cloudSync,
@@ -119,10 +119,10 @@ assert.match(
   /if \(publishResult === false && publishJobKey && typeof window\.failWorkspaceSyncJob === "function"\)[\s\S]*?retry: \(\) => recordPlayerPublishStatus\(kind, details, opts\)/,
   "a player publish receipt becomes a retryable error instead of spinning forever when Cloudflare does not confirm it",
 );
-assert.match(
+assert.doesNotMatch(
   scriptPlayer,
-  /result: publishResult === false \? "failed" : "success"/,
-  "player publish activity never records a failed Cloudflare handoff as success",
+  /recordPublishActivity\(/,
+  "a player publish request does not create a premature local success receipt before the canonical commit",
 );
 assert.match(
   notifications,

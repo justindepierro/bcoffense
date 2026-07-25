@@ -529,6 +529,12 @@ function renderTeamPublishLedgerSummary() {
   const domains = Array.isArray(latest.domains) && latest.domains.length
     ? latest.domains.join(", ")
     : latest.failedDomain || "workspace";
+  const releaseRevision = String(latest.releaseRevision || "").trim();
+  const releaseScripts = Math.max(0, Number(latest.releaseScriptCount || 0) || 0);
+  const releaseDiagrams = Math.max(0, Number(latest.releaseDiagramCount || 0) || 0);
+  const releaseLabel = releaseRevision
+    ? `${releaseRevision.slice(0, 12)} · ${releaseScripts} ${releaseScripts === 1 ? "script" : "scripts"}`
+    : "Not confirmed";
   section.hidden = false;
   section.innerHTML = `
     <div class="team-publish-ledger-card${failed ? " team-publish-ledger-card--failed" : ""}">
@@ -548,12 +554,12 @@ function renderTeamPublishLedgerSummary() {
           <span>Published by</span>
         </div>
         <div class="team-publish-ledger-item">
-          <strong>${escapeHtml(failed ? latest.failedDomain || "workspace" : "Ready")}</strong>
-          <span>${escapeHtml(failed ? "Failed domain" : "Player state")}</span>
+          <strong>${escapeHtml(failed ? latest.failedDomain || "workspace" : releaseLabel)}</strong>
+          <span>${escapeHtml(failed ? "Failed domain" : "Player release")}</span>
         </div>
         <div class="team-publish-ledger-item team-publish-ledger-item--wide">
-          <strong>${escapeHtml(domains)}</strong>
-          <span>Domains</span>
+          <strong>${escapeHtml(failed ? domains : `${domains}${releaseDiagrams ? ` · ${releaseDiagrams} diagrams` : ""}`)}</strong>
+          <span>${escapeHtml(failed ? "Domains" : "Published content")}</span>
         </div>
       </div>
       ${failed && latest.retryAction ? `<p class="team-publish-ledger-warning">${escapeHtml(latest.retryAction)}</p>` : ""}

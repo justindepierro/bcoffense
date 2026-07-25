@@ -394,25 +394,14 @@ async function recordPlayerPublishStatus(kind, details = {}, opts = {}) {
       retry: () => recordPlayerPublishStatus(kind, details, opts),
     });
   }
-  if (typeof window.recordPublishActivity === "function") {
-    window.recordPublishActivity({
-      id: `player-${kind}-${updatedAt}`,
-      versionId: `player-${kind}`,
-      timestamp: updatedAt,
-      result: publishResult === false ? "failed" : "success",
-      domains: [kind],
-      summary: publishResult === false
-        ? `${details.label || `Player ${kind} update`} needs a Cloudflare retry`
-        : (details.label || `Player ${kind} updated`),
-      size: 0,
-    });
-  }
+  // The canonical publish loop writes the activity entry only after the
+  // server returns its immutable release revision. Do not create a premature
+  // local “success” row here: this function may merely have queued the work.
   if (typeof renderCoachPublishStatus === "function") renderCoachPublishStatus();
   // A player alert must describe a release that already committed. A queued
   // background publish can legitimately take a moment, and announcing it
   // first creates a notification whose Practice link cannot resolve yet.
-  const releaseConfirmed = publishResult !== false &&
-    (opts.awaitCompletion === true || typeof window.requestImmediateTeamPublish !== "function");
+  const releaseConfirmed = publishResult !== false && opts.awaitCompletion === true;
   if (releaseConfirmed && typeof notifyPlayersOfTeamUpdate === "function") {
     notifyPlayersOfTeamUpdate(kind, details).catch(() => { });
   }

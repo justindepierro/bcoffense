@@ -232,6 +232,9 @@
       failedDomain: patch.failedDomain || "",
       retryAction: patch.retryAction || "",
       size: Number(patch.size || 0) || 0,
+      releaseRevision: String(patch.releaseRevision || ""),
+      releaseScriptCount: Math.max(0, Number(patch.releaseScriptCount || 0) || 0),
+      releaseDiagramCount: Math.max(0, Number(patch.releaseDiagramCount || 0) || 0),
     };
     const log = [entry, ...getPublishActivityLog()]
       .filter((item, index, arr) => arr.findIndex((candidate) => candidate.id === item.id) === index)
@@ -241,6 +244,21 @@
       renderTeamPublishLedgerSummary();
     }
     return entry;
+  }
+
+  function getPlayerReleaseReceipt(release = {}) {
+    const revision = String(release?.revision || "").trim();
+    const scriptCount = Math.max(0, Number(release?.scriptCount || 0) || 0);
+    const diagramCount = Math.max(0, Number(release?.diagramCount || 0) || 0);
+    const shortRevision = revision ? revision.slice(0, 12) : "confirmed";
+    const scriptLabel = `${scriptCount} ${scriptCount === 1 ? "script" : "scripts"}`;
+    return {
+      revision,
+      scriptCount,
+      diagramCount,
+      shortRevision,
+      label: `Player release ready · ${scriptLabel} · ${shortRevision}`,
+    };
   }
 
   function renderPublishActivityRows(limit = 4) {
@@ -1694,7 +1712,14 @@
           });
         }
       }
-      return { backup, summary, size: payloadSize, updatedAt: data.updatedAt || "", diagramSyncResult };
+      return {
+        backup,
+        summary,
+        size: payloadSize,
+        updatedAt: data.updatedAt || "",
+        release: data.release || null,
+        diagramSyncResult,
+      };
     } catch (err) {
       if (!skipActivityLog) {
         recordPublishActivity({
@@ -1734,6 +1759,7 @@
       });
       if (!silent) updateCloudSyncModalStatus("Checking player readiness...", "info");
       const readiness = await buildTeamPublishReadinessReport(result);
+      const playerRelease = getPlayerReleaseReceipt(result.release);
       const hasIssues = publishReadinessHasIssues(readiness);
       const domains = getPublishReadinessDomains(readiness);
       const failedItem = readiness.items.find((item) => item.status === "error") ||
@@ -1745,7 +1771,7 @@
         timestamp,
         result: hasIssues ? "partial" : "success",
         domains,
-        summary: formatPublishReadinessSummary(readiness),
+        summary: `${playerRelease.label}. ${formatPublishReadinessSummary(readiness)}`,
         failedDomain: hasIssues ? failedItem?.domain || "readiness" : "",
         // Readiness gaps are content to review (such as a historic play that
         // has no diagram), not failed transport work. Re-publishing cannot
@@ -1753,6 +1779,9 @@
         // a misleading Retry action in the workspace dock.
         retryAction: hasIssues ? "Review the Media Inventory and complete only the listed content gaps." : "",
         size: result.size,
+        releaseRevision: playerRelease.revision,
+        releaseScriptCount: playerRelease.scriptCount,
+        releaseDiagramCount: playerRelease.diagramCount,
       });
       cloudAutoPushLastError = "";
       cloudAutoPushRetryCount = 0;
@@ -2198,12 +2227,13 @@
         runningLabel: "Publishing team update...",
       });
       if (!result) throw new Error("Publish did not complete.");
+      const playerRelease = getPlayerReleaseReceipt(result.release);
       const moreChangesQueued = cloudAutoPushPending;
       cloudAutoPushLastError = "";
       cloudAutoPushRetryCount = 0;
       _cloudCompleteJob(cloudJobKey, { label: "Team update published" });
       if (typeof window.completePlayerPublishJobs === "function") {
-        window.completePlayerPublishJobs({ label: "Player update ready" });
+        window.completePlayerPublishJobs({ label: playerRelease.label });
       }
       if (!moreChangesQueued) {
         cloudAutoPushDirtyKeys.clear();
