@@ -57,6 +57,16 @@ assert.match(
 );
 assert.match(
   authSource,
+  /function installAuthFetchBoundary\(\)[\s\S]*?window\.fetch = async function authenticatedFetch[\s\S]*?response\?\.status === 401[\s\S]*?isProtectedSameOriginRequest\(input\)[\s\S]*?bc-auth-session-required/,
+  "every same-origin protected API response shares the secure-session recovery boundary",
+);
+assert.match(
+  authSource,
+  /\["\/admin\/", "\/api\/", "\/clips\/", "\/images\/", "\/media\/", "\/player\/", "\/sync\/", "\/workspace\/"\]/,
+  "the shared 401 boundary covers every authenticated application route family",
+);
+assert.match(
+  authSource,
   /await autoPullLatestCloudBackup[\s\S]*?applyRoleUi\(\)[\s\S]*?restorePlayPresentationResume\(\)/,
   "a successful sign-in restores swipe context only after the authorized workspace is ready",
 );

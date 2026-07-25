@@ -376,6 +376,7 @@ window.discussionOutbox
 window.ensurePlayImageUrl
 window.failPlayerPublishJobs
 window.failWorkspaceSyncJob
+window.fetch
 window.flushCloudAutoPush
 window.getCurrentAuthUser
 window.getCanonicalTeamWorkspaceKeys

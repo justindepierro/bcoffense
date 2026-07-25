@@ -359,6 +359,8 @@
     "[data-action], .tab, input, select, textarea, button, [data-auth-admin-only], [data-auth-edit-only], [data-auth-player-hide]";
   let authMutationFrame = 0;
   const pendingAuthRoots = new Set();
+  let authFetchBoundaryInstalled = false;
+  let authSessionRecoverySignaled = false;
 
   if (document.body) {
     document.body.classList.add("auth-locked");
@@ -370,6 +372,44 @@
     if (typeof resolveAuthReadyPromise === "function") {
       resolveAuthReadyPromise(currentAuthUser);
     }
+  }
+
+  function isProtectedSameOriginRequest(input) {
+    try {
+      const rawUrl = input instanceof Request ? input.url : input?.url || input;
+      const url = new URL(String(rawUrl || ""), window.location.href);
+      if (url.origin !== window.location.origin) return false;
+      return ["/admin/", "/api/", "/clips/", "/images/", "/media/", "/player/", "/sync/", "/workspace/"]
+        .some((prefix) => url.pathname.startsWith(prefix));
+    } catch (_err) {
+      return false;
+    }
+  }
+
+  // Every protected server route already validates the HttpOnly session cookie.
+  // This small boundary gives every caller the same deterministic response when
+  // that cookie expires, including older feature code that predates the shared
+  // media and player-release clients. Authentication endpoints themselves are
+  // intentionally excluded so an invalid login remains an inline form error.
+  function installAuthFetchBoundary() {
+    if (authFetchBoundaryInstalled || typeof window.fetch !== "function") return;
+    authFetchBoundaryInstalled = true;
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = async function authenticatedFetch(input, init) {
+      const response = await nativeFetch(input, init);
+      if (
+        response?.status === 401 &&
+        currentAuthUser &&
+        !authSessionRecoverySignaled &&
+        isProtectedSameOriginRequest(input)
+      ) {
+        authSessionRecoverySignaled = true;
+        window.dispatchEvent(new CustomEvent("bc-auth-session-required", {
+          detail: { message: "Your secure session ended. Sign in to continue." },
+        }));
+      }
+      return response;
+    };
   }
 
   function normalizeAuthUser(user) {
@@ -1137,6 +1177,7 @@
     };
     const completeAuthenticatedLogin = async (user, source) => {
       currentAuthUser = user;
+      authSessionRecoverySignaled = false;
       saveStoredAuthUser(user, source);
       authReady = true;
 
@@ -1461,6 +1502,7 @@
   document.addEventListener("submit", handleBlockedInteraction, true);
 
   document.addEventListener("DOMContentLoaded", () => {
+    installAuthFetchBoundary();
     // Item 39: hide auth loading skeleton once auth resolves
     const _authSkeleton = document.getElementById("authLoadingSkeleton");
     initServerAuth().finally(() => {
