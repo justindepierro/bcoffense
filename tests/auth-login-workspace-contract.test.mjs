@@ -56,6 +56,11 @@ assert.doesNotMatch(
 );
 assert.match(
   authSource,
+  /function scheduleCloudAutoPull\(\)[\s\S]*?currentAuthUser\.role === "player"[\s\S]*?queueStartupTask\("player-team-refresh"[\s\S]*?const runAutoPull = \(\) =>[\s\S]*?queueStartupTask\("cloud-auto-pull"/,
+  "post-paint freshness work stays deferred and cannot replace the blocking workspace bootstrap owner",
+);
+assert.match(
+  authSource,
   /function openAboutBCOffense\(\)[\s\S]*?BCOffense is a private football operations workspace built for Burke Catholic Football\.[\s\S]*?jdepierro@burkecatholic\.org[\s\S]*?© 2026 Justin DePierro\. All rights reserved\./,
   "About BCOffense keeps the private-use notice, copyright, and contact information together",
 );

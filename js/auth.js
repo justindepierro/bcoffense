@@ -943,6 +943,11 @@
     overlay.remove();
   }
 
+  // The blocking bootstrap owner is app-init (cold authenticated start) or
+  // completeAuthenticatedLogin (credentials entered in the app). This queue is
+  // deliberately post-paint only: it provides a quiet player-release freshness
+  // recheck and a guarded staff revalidation without competing with that first
+  // workspace decision.
   function scheduleCloudAutoPull() {
     if (!currentAuthUser) return;
     const queueStartupTask =
