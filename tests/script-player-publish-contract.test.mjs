@@ -79,6 +79,16 @@ assert.doesNotMatch(
   "player release refreshes cannot unconditionally displace a player to Dashboard",
 );
 assert.match(
+  cloudSync,
+  /let pendingPlayerReleaseApply = null;[\s\S]*?if \(presentationOpen\) \{[\s\S]*?pendingPlayerReleaseApply = \{ release: fetched\.release, etag: fetched\.etag[\s\S]*?document\.addEventListener\("play-presentation-closed"[\s\S]*?applyPlayerRelease\(pending\.release, pending\.opts\)/,
+  "a new player release is deferred while Swipe View is open and applied only after the viewer closes",
+);
+assert.match(
+  scriptPlayer,
+  /function showPlayerPracticeLanding\(\)[\s\S]*?script-player-practice-landing/,
+  "a player release refresh returns the Script route to the player Practice landing rather than coach workspace chrome",
+);
+assert.match(
   workspaceSync,
   /function completePlayerPublishJobs\(opts = \{\}\)/,
   "the shared sync queue can resolve all player publish receipts after one merged commit",

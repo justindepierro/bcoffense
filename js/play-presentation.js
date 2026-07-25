@@ -45,6 +45,12 @@ function capturePlayPresentationResume() {
       ...owner,
       tab: String(currentActiveTab || ""),
       source: playPresentationState.source === "script" ? "script" : "playbook",
+      // The list itself is rebuilt only from a freshly authorized release,
+      // but the stable published-script ID lets a suspended player resume the
+      // exact packet instead of falling back to a generic workspace page.
+      scriptId: playPresentationState.source === "script"
+        ? String(typeof activeScriptSaveId !== "undefined" ? activeScriptSaveId || "" : "")
+        : "",
       index: Math.max(0, Number(playPresentationState.index) || 0),
       mode: String(playPresentationState.mode || "minimum"),
       savedAt: Date.now(),
@@ -83,9 +89,13 @@ function restorePlayPresentationResume() {
   }
 
   const source = snapshot.source === "script" ? "script" : "playbook";
-  const items = source === "script"
+  let items = source === "script"
     ? getPlayPresentationItemsFromScript()
     : getPlayPresentationItemsFromPlaybook();
+  if (!items.length && source === "script" && snapshot.scriptId && typeof loadPublishedPlayerScript === "function") {
+    const restoredScript = loadPublishedPlayerScript(String(snapshot.scriptId), { skipToast: true });
+    if (restoredScript) items = getPlayPresentationItemsFromScript();
+  }
   if (!items.length) {
     clearPlayPresentationResume();
     const returnedToPractice = source === "script" && typeof showPlayerPracticeLanding === "function"
@@ -1673,6 +1683,9 @@ function closePlayPresentation(opts = {}) {
     playPresentationState.returnFocus.focus();
   }
   playPresentationState.returnFocus = null;
+  document.dispatchEvent(new CustomEvent("play-presentation-closed", {
+    detail: { source: playPresentationState.source },
+  }));
 }
 
 function closePlayPresentationOverlay() {

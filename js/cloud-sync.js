@@ -96,6 +96,11 @@
   let cloudAutoPushLastError = "";
   let cloudAutoPushRetryCount = 0;
   let cloudAutoPushSuppress = false;
+  // A player release replaces the complete read-only study dataset. Never do
+  // that destructive-in-memory swap while the player is inside Swipe View.
+  // Hold the verified response and commit it immediately after the viewer
+  // exits, so notification, Practice, and Swipe all describe one release.
+  let pendingPlayerReleaseApply = null;
   let teamForegroundRefreshPromise = null;
   let teamForegroundRefreshAt = 0;
   const cloudAutoPushDirtyKeys = new Set();
@@ -1395,6 +1400,9 @@
 
     const targetTab = getPlayerReleaseReloadTab(opts);
     await reloadAppFromStorage(targetTab ? { targetTab } : {});
+    if (targetTab === "script" && typeof showPlayerPracticeLanding === "function") {
+      showPlayerPracticeLanding();
+    }
     if (targetTab && typeof setWorkspaceSurface === "function") {
       setWorkspaceSurface("app", { initModules: false });
     }
@@ -1937,8 +1945,22 @@
         return { ok: true, status: "current", ...summary, message: "Ready" };
       }
 
-      await applyPlayerRelease(fetched.release, opts);
       const summary = playerReleaseSummary(fetched.release);
+      const presentationOpen = document.getElementById("playPresentationOverlay")?.classList.contains("is-open");
+      if (presentationOpen) {
+        pendingPlayerReleaseApply = { release: fetched.release, etag: fetched.etag, opts: { ...opts } };
+        document.dispatchEvent(new CustomEvent("player-release-deferred", {
+          detail: { revision: summary.revision, updatedAt: summary.updatedAt },
+        }));
+        return {
+          ok: true,
+          status: "deferred",
+          ...summary,
+          message: "New practice will load after Swipe View closes.",
+        };
+      }
+
+      await applyPlayerRelease(fetched.release, opts);
       savePlayerReleaseSessionMeta({
         etag: fetched.etag,
         revision: summary.revision,
@@ -2601,6 +2623,26 @@
     if (!revision || revision === getCloudSyncSettings().lastWorkspaceRevision) return;
     if (hasLocalTeamEditInProgress()) return;
     refreshTeamWorkspaceOnForeground({ force: true, quiet: true });
+  });
+
+  document.addEventListener("play-presentation-closed", () => {
+    const pending = pendingPlayerReleaseApply;
+    if (!pending) return;
+    pendingPlayerReleaseApply = null;
+    applyPlayerRelease(pending.release, pending.opts)
+      .then(() => {
+        const summary = playerReleaseSummary(pending.release);
+        savePlayerReleaseSessionMeta({
+          etag: pending.etag,
+          revision: summary.revision,
+          updatedAt: summary.updatedAt,
+          teamId: summary.teamId,
+        });
+        if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
+      })
+      .catch((err) => {
+        console.warn("Deferred player release apply failed:", err);
+      });
   });
 
   document.addEventListener("visibilitychange", () => {
