@@ -2336,7 +2336,7 @@
         // without restoring it. Do not let that marker strand an otherwise
         // empty coach device on the upload screen. Revision identity—not a
         // timestamp rounded by different devices—is the authoritative test.
-        if (!hasLocalWorkspace) {
+        if (!hasLocalCoachContent) {
           const restored = await restoreCloudBackup(remote, {
             auto: true,
             confirm: false,

@@ -1281,13 +1281,32 @@
 
   async function logoutAuth() {
     try {
-      await fetch("/auth/logout", {
+      const response = await fetch("/auth/logout", {
         method: "POST",
         credentials: "same-origin",
-        headers: { "X-BC-Auth-Mode": "json" },
+        cache: "no-store",
+        headers: { "X-BC-Auth-Mode": "json", Accept: "application/json" },
       });
-    } catch (_err) {
-      // Continue with local lockout even if the network is unavailable.
+      if (!response.ok) {
+        throw new Error("The secure sign-out request was not accepted.");
+      }
+      // Confirm the cookie has actually been cleared before leaving the
+      // workspace. A visual-only lock is not a logout, especially on a shared
+      // coach device.
+      const verification = await fetch("/auth/me", {
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+      });
+      if (verification.status !== 401) {
+        throw new Error("Could not confirm secure sign-out. Please try again.");
+      }
+    } catch (err) {
+      showToast(err?.message || "Could not securely sign out. Check your connection and try again.", {
+        type: "error",
+        persistent: true,
+      });
+      return false;
     }
     currentAuthUser = null;
     clearStoredAuthUser();
@@ -1296,7 +1315,11 @@
       resetCloudSyncAutoPull();
     }
     applyRoleUi();
-    showLoginOverlay("", { statusMsg: "Signed out." });
+    showLoginOverlay("", {
+      statusMsg: "Signed out. Team data remains safely locked on this device until an authorized sign-in.",
+      messageIsStatus: true,
+    });
+    return true;
   }
 
   // Protected API clients dispatch this event when the server has definitively

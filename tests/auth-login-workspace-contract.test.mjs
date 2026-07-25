@@ -31,6 +31,11 @@ assert.match(
 );
 assert.match(
   cloudSource,
+  /if \(remoteMatchesKnownRevision\) \{[\s\S]*?if \(!hasLocalCoachContent\) \{[\s\S]*?restoreCloudBackup\(remote/,
+  "known remote revisions still rehydrate a default-only or empty local shell",
+);
+assert.match(
+  cloudSource,
   /Newer team workspace found\.[\s\S]*?persistent: true,[\s\S]*?actionLabel: canReviewWorkspace \? "Review options"/,
   "a protected local workspace explains the safety decision and stays available for review",
 );
@@ -43,6 +48,11 @@ assert.match(
   authSource,
   /const completeAuthenticatedLogin = async \(user, source\) => \{[\s\S]*?overlay\.classList\.add\("is-bootstrap-loading"\);[\s\S]*?usernameEl\.disabled = true;[\s\S]*?await autoPullLatestCloudBackup\(\{ timeoutMs: 14 \* 1000, bootstrap: true \}\);[\s\S]*?overlay\.remove\(\);[\s\S]*?applyRoleUi\(\);/,
   "sign-in locks into a loading state until the account-authorized workspace has been checked",
+);
+assert.match(
+  authSource,
+  /async function logoutAuth\(\) \{[\s\S]*?fetch\("\/auth\/logout"[\s\S]*?cache: "no-store"[\s\S]*?fetch\("\/auth\/me"[\s\S]*?verification\.status !== 401[\s\S]*?Could not confirm secure sign-out[\s\S]*?return false;[\s\S]*?currentAuthUser = null/,
+  "logout only clears the local identity after the server confirms the session cookie is gone",
 );
 assert.match(
   serverAuthSource,
