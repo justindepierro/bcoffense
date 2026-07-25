@@ -76,6 +76,16 @@ assert.match(
 );
 assert.match(
   cloudSync,
+  /PLAYER_RELEASE_REQUEST_TIMEOUT_MS = 12 \* 1000[\s\S]*?controller\.abort\(\)[\s\S]*?signal: controller\?\.signal[\s\S]*?PLAYER_RELEASE_TIMEOUT/s,
+  "a suspended mobile release request is aborted and can recover on the next foreground check",
+);
+assert.match(
+  cloudSync,
+  /document\.addEventListener\("visibilitychange"[\s\S]*?force: currentUser\?\.role === "player"[\s\S]*?window\.addEventListener\("pageshow", \(event\) => \{[\s\S]*?if \(!event\.persisted\) return;[\s\S]*?refreshTeamWorkspaceOnForeground\(\{ force: true, quiet: true \}\)/s,
+  "a player revalidates immediately after returning from a locked or BFCache-resumed mobile app",
+);
+assert.match(
+  cloudSync,
   /function getPlayerReleaseReloadTab\(opts = \{\}\)[\s\S]*?const activeTab = String\([\s\S]*?return activeTab;[\s\S]*?return "dashboard";/,
   "a new player release preserves the current allowed study tab instead of forcing Dashboard",
 );

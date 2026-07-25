@@ -29,6 +29,10 @@
   // small ETag-backed release more often than the staff workspace so a coach
   // save becomes visible without teaching players to refresh or reopen.
   const PLAYER_RELEASE_REFRESH_INTERVAL_MS = 45 * 1000;
+  // Mobile browsers can leave a fetch pending while the app is backgrounded
+  // or its radio changes networks. A stuck release read must never block the
+  // next foreground check indefinitely.
+  const PLAYER_RELEASE_REQUEST_TIMEOUT_MS = 12 * 1000;
   const WORKSPACE_REVISION_REQUEST_TIMEOUT_MS = 30 * 1000;
   const TEAM_WORKSPACE_LEASE_WAIT_MS = 12 * 1000;
   const TEAM_WORKSPACE_LEASE_RETRY_MS = 1200;
@@ -1340,12 +1344,32 @@
       conditional: Boolean(headers["If-None-Match"]),
       activeTab: String(typeof currentActiveTab !== "undefined" ? currentActiveTab || "" : ""),
     });
-    const response = await fetch("/player/release", {
-      method: "GET",
-      credentials: "same-origin",
-      cache: "no-store",
-      headers,
-    });
+    const controller = typeof AbortController === "function" ? new AbortController() : null;
+    let timedOut = false;
+    const timeoutId = controller ? window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, PLAYER_RELEASE_REQUEST_TIMEOUT_MS) : 0;
+    let response;
+    try {
+      response = await fetch("/player/release", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers,
+        signal: controller?.signal,
+      });
+    } catch (err) {
+      if (timedOut) {
+        const timeoutError = new Error("Player update check timed out. It will retry when the app is active.");
+        timeoutError.code = "PLAYER_RELEASE_TIMEOUT";
+        tracePlayerRelease("timeout", { timeoutMs: PLAYER_RELEASE_REQUEST_TIMEOUT_MS });
+        throw timeoutError;
+      }
+      throw err;
+    } finally {
+      if (timeoutId) window.clearTimeout(timeoutId);
+    }
     if (response.status === 304) {
       tracePlayerRelease("current", { status: 304 });
       return { notModified: true, meta };
@@ -2688,12 +2712,28 @@
       flushCloudAutoPush();
     }
     if (document.visibilityState === "visible") {
-      refreshTeamWorkspaceOnForeground({ quiet: true });
+      const currentUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+      // A player returning from a locked phone needs the coach's most recent
+      // release now. This is an ETag probe, so an unchanged release is a
+      // small 304 response rather than a full download.
+      refreshTeamWorkspaceOnForeground({ force: currentUser?.role === "player", quiet: true });
     }
   });
 
   window.addEventListener("focus", () => {
-    refreshTeamWorkspaceOnForeground({ quiet: true });
+    const currentUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    refreshTeamWorkspaceOnForeground({ force: currentUser?.role === "player", quiet: true });
+  });
+
+  // iOS commonly resumes an installed web app through the BFCache path,
+  // where pageshow is the reliable resume signal. Revalidate immediately;
+  // the same shared foreground promise coalesces this with focus/visibility.
+  window.addEventListener("pageshow", (event) => {
+    if (!event.persisted) return;
+    const currentUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    if (currentUser?.role === "player") {
+      refreshTeamWorkspaceOnForeground({ force: true, quiet: true });
+    }
   });
 
   window.setInterval(() => {
