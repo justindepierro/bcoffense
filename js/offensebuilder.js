@@ -490,6 +490,9 @@ function obRenderPlayList() {
 
   let entries = obGetFilteredPlays();
   const ratings = obLoadRatings();
+  const conceptKeysLower = new Set(
+    Array.from(_obConceptMap.keys(), (key) => String(key).toLowerCase()),
+  );
 
   if (entries.length === 0) {
     listEl.innerHTML =
@@ -509,10 +512,7 @@ function obRenderPlayList() {
     const hasGap =
       entry.constraints.size > 0 &&
       Array.from(entry.constraints).some(function (c) {
-        const cLow = c.toLowerCase();
-        return !Array.from(_obConceptMap.keys()).some(function (k) {
-          return k.toLowerCase() === cLow;
-        });
+        return !conceptKeysLower.has(c.toLowerCase());
       });
 
     html +=

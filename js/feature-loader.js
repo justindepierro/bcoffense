@@ -32,7 +32,7 @@ function loadDeferredFeature(name, src) {
 
 async function openDeferredMediaInventory() {
   try {
-    await loadDeferredFeature("media-inventory", "js/media-inventory.js?v=1381");
+    await loadDeferredFeature("media-inventory", "js/media-inventory.js?v=1382");
     if (typeof window.openMediaInventoryReport !== "function" || window.openMediaInventoryReport === openDeferredMediaInventory) {
       throw new Error("Media Inventory did not finish starting.");
     }
@@ -48,7 +48,7 @@ async function openDeferredMediaInventory() {
 
 async function openDeferredPrintStudio() {
   try {
-    await loadDeferredFeature("print-studio", "js/print-studio.js?v=1381");
+    await loadDeferredFeature("print-studio", "js/print-studio.js?v=1382");
     if (typeof window.openPrintStudio !== "function" || window.openPrintStudio === openDeferredPrintStudio) {
       throw new Error("Print Studio did not finish starting.");
     }

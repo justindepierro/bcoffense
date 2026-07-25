@@ -20,5 +20,19 @@ assert.match(
   /filterSelect\.addEventListener\("change", function \(\) \{[\s\S]*?obRenderPlayList\(\)/,
   "select filters remain immediate",
 );
+assert.match(
+  source,
+  /function obRenderPlayList\(\)[\s\S]*?const conceptKeysLower = new Set\([\s\S]*?Array\.from\(_obConceptMap\.keys\(\), \(key\) => String\(key\)\.toLowerCase\(\)\)[\s\S]*?conceptKeysLower\.has\(c\.toLowerCase\(\)\)/,
+  "Offense Builder computes one normalized concept lookup for its gap badges",
+);
+const playListSource = source.slice(
+  source.indexOf("function obRenderPlayList"),
+  source.indexOf("function obRenderStarPicker"),
+);
+assert.doesNotMatch(
+  playListSource,
+  /Array\.from\(_obConceptMap\.keys\(\)\)\.some/,
+  "gap badges do not rescan concept keys once per constraint",
+);
 
 console.log("Offense Builder search debounce contract passed");
