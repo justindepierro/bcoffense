@@ -758,6 +758,28 @@
     return typeof raw === "string" ? safeJSONParse(raw, fallback) : raw;
   }
 
+  function countBackupPlaybookPlays(backup) {
+    const plays = parseBackupField(backup, STORAGE_KEYS.PLAYBOOK, []);
+    return Array.isArray(plays) ? plays.length : 0;
+  }
+
+  function preventEmptyPlaybookOverwrite(localBackup, remoteBackup, opts = {}) {
+    const localPlayCount = countBackupPlaybookPlays(localBackup);
+    const remotePlayCount = countBackupPlaybookPlays(remoteBackup);
+    // A blank browser can carry enough settings and scripts to look valid to
+    // a generic backup writer. It must never erase a loaded team playbook.
+    // There is intentionally no ordinary "publish empty playbook" path; a
+    // real reset needs an explicit recovery/admin workflow.
+    if (remotePlayCount > 0 && localPlayCount === 0 && opts.allowEmptyPlaybookReplace !== true) {
+      const err = new Error(
+        `Publish paused: this device has no loaded playbook, while the team workspace has ${remotePlayCount} plays. Reload the team workspace before publishing.`,
+      );
+      err.code = "BC_EMPTY_PLAYBOOK_OVERWRITE_BLOCKED";
+      err.remotePlayCount = remotePlayCount;
+      throw err;
+    }
+  }
+
   // Saved scripts are independently named artifacts inside the larger
   // workspace document. A complete workspace upload from a device that has
   // not yet hydrated its Script Library must never make a newer server script
@@ -1523,6 +1545,7 @@
       // edit its own work without silently erasing newer saved scripts.
       const remoteBeforePush = await fetchCanonicalWorkspace({ allowMissing: true });
       if (remoteBeforePush?.backup) {
+        preventEmptyPlaybookOverwrite(backup, remoteBeforePush.backup, opts);
         backup = opts.auto
           ? rebaseCanonicalWorkspaceForAutoPush(backup, remoteBeforePush.backup, cloudAutoPushDirtyKeys)
           : mergeCanonicalSavedScripts(backup, remoteBeforePush.backup);

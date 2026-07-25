@@ -26,6 +26,11 @@ assert.match(source, /readCurrentWorkspacePointer\(context\.env, principal\.team
 assert.match(source, /If-None-Match/, "workspace reads honor ETags for no-body freshness responses");
 assert.match(cloudSync, /function rebaseCanonicalWorkspaceForAutoPush/, "automatic saves rebase onto the newest team workspace instead of pushing a stale full browser snapshot");
 assert.match(cloudSync, /opts\.auto[\s\S]*rebaseCanonicalWorkspaceForAutoPush/, "only background saves use key-scoped rebasing while deliberate recovery retains its existing behavior");
+assert.match(
+  cloudSync,
+  /function preventEmptyPlaybookOverwrite\(localBackup, remoteBackup, opts = \{\}\)[\s\S]*?remotePlayCount > 0 && localPlayCount === 0[\s\S]*?BC_EMPTY_PLAYBOOK_OVERWRITE_BLOCKED[\s\S]*?preventEmptyPlaybookOverwrite\(backup, remoteBeforePush\.backup, opts\);/,
+  "a blank device cannot publish over a populated canonical playbook",
+);
 assert.match(cloudSync, /CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS/, "revision conflicts retry promptly after reloading the current head");
 assert.match(cloudSync, /function refreshTeamWorkspaceOnForeground/, "open devices perform lightweight foreground freshness checks");
 assert.match(cloudSync, /function shouldProtectUntrackedLocalWorkspace/, "only browser-only untracked work is protected from automatic replacement");
@@ -51,4 +56,4 @@ assert.match(appShell, /function setStartupLoadingHold/, "the shared startup loa
 assert.match(appShell, /!isStartupLoadingHeld\(\)/, "the generic startup fallback cannot dismiss an authoritative workspace load");
 assert.match(cloudSync, /err\.code !== "BC_WORKSPACE_TIMEOUT"/, "a startup workspace timeout exits quietly so a device can show its saved workspace");
 
-console.log("workspace revision route and live-sync contract: 38 assertions passed");
+console.log("workspace revision route and live-sync contract: 39 assertions passed");
