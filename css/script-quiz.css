@@ -5258,11 +5258,78 @@
     padding: var(--space-md);
   }
 
-  .player-quiz-scoreboard,
   .player-quiz-mode-grid,
   .player-quiz-source-grid,
   .player-leaderboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Keep the weekly numbers as a compact score strip, then make quiz sources
+     read as a guided list rather than three tall dashboard cards. */
+  .player-quiz-scoreboard {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .player-quiz-scoreboard > div {
+    min-width: 0;
+    padding: 9px 8px;
+    border-top-width: 3px;
+    box-shadow: none;
+  }
+
+  .player-quiz-scoreboard strong {
+    font-size: var(--font-size-base);
+  }
+
+  .player-quiz-scoreboard span,
+  .player-quiz-scoreboard small {
+    font-size: 10px;
+    overflow-wrap: anywhere;
+  }
+
+  .player-quiz-source-grid {
+    gap: 8px;
+  }
+
+  .player-quiz-source-card {
+    min-height: 0;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: start;
+    gap: 8px 10px;
+    padding: 12px;
+    border-top-width: 3px;
+    border-radius: 14px;
+    box-shadow: none;
+  }
+
+  .player-quiz-source-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    font-size: 1.2rem;
+  }
+
+  .player-quiz-source-card > div:first-of-type {
+    min-width: 0;
+  }
+
+  .player-quiz-source-card h4 {
+    font-size: var(--font-size-base);
+  }
+
+  .player-quiz-source-card p {
+    margin-top: 2px;
+    font-size: var(--font-size-xs);
+  }
+
+  .player-quiz-source-card > :not(.player-quiz-source-icon):not(div:first-of-type) {
+    grid-column: 1 / -1;
+  }
+
+  .player-quiz-source-card > .btn {
+    width: 100%;
+    min-height: 42px;
   }
 
   .player-quiz-mode-grid {
