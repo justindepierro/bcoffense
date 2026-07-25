@@ -1153,6 +1153,12 @@
       if (typeof applyPendingRestoredStartupTab === "function") {
         applyPendingRestoredStartupTab();
       }
+      // A mobile browser may have suspended Swipe View and lost its secure
+      // cookie. Reopen the same authorized packet only after the fresh
+      // workspace check and successful sign-in have completed.
+      if (typeof restorePlayPresentationResume === "function") {
+        restorePlayPresentationResume();
+      }
       requestAnimationFrame(() => {
         document.querySelector(".tab[aria-selected='true'], .tab.active, .tabs .tab")?.focus({ preventScroll: true });
       });
@@ -1309,6 +1315,9 @@
       return false;
     }
     currentAuthUser = null;
+    if (typeof clearPlayPresentationResume === "function") {
+      clearPlayPresentationResume();
+    }
     clearStoredAuthUser();
     authReady = true;
     if (typeof resetCloudSyncAutoPull === "function") {
@@ -1328,6 +1337,9 @@
   // media, notification, and leaderboard requests.
   function handleExpiredServerSession(message = "Your secure session ended. Sign in to continue.") {
     if (!authReady || (!currentAuthUser && document.getElementById("authLoginOverlay"))) return;
+    if (typeof capturePlayPresentationResume === "function") {
+      capturePlayPresentationResume();
+    }
     currentAuthUser = null;
     clearStoredAuthUser();
     if (typeof resetCloudSyncAutoPull === "function") {

@@ -7,6 +7,7 @@ const PLAY_PRESENTATION_MAX_RENDER_EDGE = 4096;
 const PLAY_PRESENTATION_SWIPE_MIN_DISTANCE = 44;
 const PLAY_PRESENTATION_SWIPE_MAX_MS = 900;
 const PLAY_PRESENTATION_ROTATE_OVERFLOW = 24;
+const PLAY_PRESENTATION_RESUME_KEY = "bc.play-presentation-resume/v1";
 
 let playPresentationState = {
   source: "playbook",
@@ -20,6 +21,89 @@ let playPresentationState = {
   returnFocus: null,
   returnContext: null,
 };
+
+function getPlayPresentationResumeOwner() {
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  return {
+    username: String(user?.username || "").trim(),
+    teamId: String(user?.teamId || "").trim(),
+  };
+}
+
+// A phone can suspend the browser while the swipe viewer is open, then learn
+// that its secure cookie expired when a media request resumes. Preserve only
+// a small, owner-bound route snapshot before the auth shell takes over. The
+// presentation list is rebuilt from freshly authorized workspace data after
+// sign-in; no play data is persisted as a resume shortcut.
+function capturePlayPresentationResume() {
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (!overlay?.classList.contains("is-open") || !playPresentationState.items.length) return false;
+  const owner = getPlayPresentationResumeOwner();
+  if (!owner.username) return false;
+  try {
+    sessionStorage.setItem(PLAY_PRESENTATION_RESUME_KEY, JSON.stringify({
+      ...owner,
+      tab: String(currentActiveTab || ""),
+      source: playPresentationState.source === "script" ? "script" : "playbook",
+      index: Math.max(0, Number(playPresentationState.index) || 0),
+      mode: String(playPresentationState.mode || "minimum"),
+      savedAt: Date.now(),
+    }));
+    return true;
+  } catch (_err) {
+    return false;
+  }
+}
+
+function clearPlayPresentationResume() {
+  try {
+    sessionStorage.removeItem(PLAY_PRESENTATION_RESUME_KEY);
+  } catch (_err) {
+    // Session storage is an optional convenience only.
+  }
+}
+
+function restorePlayPresentationResume() {
+  let snapshot = null;
+  try {
+    snapshot = JSON.parse(sessionStorage.getItem(PLAY_PRESENTATION_RESUME_KEY) || "null");
+  } catch (_err) {
+    clearPlayPresentationResume();
+    return false;
+  }
+  if (!snapshot || typeof snapshot !== "object") return false;
+
+  const owner = getPlayPresentationResumeOwner();
+  const matchesOwner = owner.username && owner.username === String(snapshot.username || "") &&
+    owner.teamId === String(snapshot.teamId || "");
+  const isFresh = Date.now() - Number(snapshot.savedAt || 0) < 30 * 60 * 1000;
+  if (!matchesOwner || !isFresh) {
+    clearPlayPresentationResume();
+    return false;
+  }
+
+  const source = snapshot.source === "script" ? "script" : "playbook";
+  const items = source === "script"
+    ? getPlayPresentationItemsFromScript()
+    : getPlayPresentationItemsFromPlaybook();
+  if (!items.length) {
+    clearPlayPresentationResume();
+    return false;
+  }
+  const tab = String(snapshot.tab || "");
+  if (tab && typeof canAccessTab === "function" && canAccessTab(tab) && typeof showTab === "function") {
+    showTab(tab);
+  }
+  if (PLAY_PRESENTATION_MODES.has(snapshot.mode)) playPresentationState.mode = snapshot.mode;
+  const opened = openPlayPresentation(
+    items,
+    Math.min(Math.max(0, Number(snapshot.index) || 0), items.length - 1),
+    source,
+    { returnContext: tab ? { tab, scrollY: Number(window.scrollY || 0) } : null },
+  );
+  clearPlayPresentationResume();
+  return opened;
+}
 
 let playPresentationDiagramResizeObserver = null;
 let playPresentationDiagramResizeFrame = 0;

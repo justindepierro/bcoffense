@@ -51,6 +51,16 @@ assert.match(
 );
 assert.match(
   authSource,
+  /function handleExpiredServerSession[\s\S]*?capturePlayPresentationResume\(\)[\s\S]*?currentAuthUser = null/,
+  "an expired session preserves an open mobile swipe context before locking the app",
+);
+assert.match(
+  authSource,
+  /await autoPullLatestCloudBackup[\s\S]*?applyRoleUi\(\)[\s\S]*?restorePlayPresentationResume\(\)/,
+  "a successful sign-in restores swipe context only after the authorized workspace is ready",
+);
+assert.match(
+  authSource,
   /async function logoutAuth\(\) \{[\s\S]*?fetch\("\/auth\/logout"[\s\S]*?cache: "no-store"[\s\S]*?fetch\("\/auth\/me"[\s\S]*?verification\.status !== 401[\s\S]*?Could not confirm secure sign-out[\s\S]*?return false;[\s\S]*?currentAuthUser = null/,
   "logout only clears the local identity after the server confirms the session cookie is gone",
 );
