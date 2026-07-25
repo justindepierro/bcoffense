@@ -55,7 +55,9 @@ function showTab(tabName) {
   if (typeof closePlayPresentation === "function") {
     const overlay = document.getElementById("playPresentationOverlay");
     if (overlay?.classList.contains("is-open")) {
-      closePlayPresentation();
+      // The user chose a new destination. Do not let the presentation's
+      // player-only return route override this deliberate tab change.
+      closePlayPresentation({ preserveDestination: true });
     }
   }
 

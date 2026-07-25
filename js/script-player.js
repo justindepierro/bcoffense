@@ -616,8 +616,6 @@ function renderPlayerScriptLauncher() {
   const list = document.getElementById("playerScriptLauncherList");
   if (!section || !list) return;
 
-  const currentUser =
-    typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
   const isStudyPortal = _isScriptStudyPortalUser();
   if (!isStudyPortal) {
     section.hidden = true;
@@ -629,16 +627,12 @@ function renderPlayerScriptLauncher() {
   const currentName = document.getElementById("scriptName")?.value || "";
   const currentDate = document.getElementById("scriptDate")?.value || "";
   const todayValue = new Date().toISOString().slice(0, 10);
-  const hasLoadedPlayerScript = Array.isArray(script)
-    ? script.some((entry) => entry && !entry.isSeparator)
-    : false;
   const headerTitle = section.querySelector(".player-script-launcher-header h4");
   if (headerTitle) {
-    headerTitle.textContent = hasLoadedPlayerScript
-      ? "Other Team Practice Scripts"
-      : currentUser?.managedCoach
-        ? "Team Practice Scripts"
-        : "Player Practice Scripts";
+    // A player always returns to one Practice destination. Calling the rest
+    // of the list "other" scripts made the normal resume path feel like an
+    // unrelated workspace after leaving Swipe View.
+    headerTitle.textContent = "Practice scripts";
   }
 
   if (publishedScripts.length === 0) {
@@ -658,14 +652,7 @@ function renderPlayerScriptLauncher() {
         currentName === savedScript.name &&
         currentDate === (savedScript.date || "");
       return { savedScript, stats, isCurrent };
-    })
-    .filter((entry) => !hasLoadedPlayerScript || !entry.isCurrent);
-
-  if (hasLoadedPlayerScript && visibleScripts.length === 0) {
-    section.hidden = true;
-    list.innerHTML = "";
-    return;
-  }
+    });
 
   section.hidden = false;
 
@@ -725,6 +712,21 @@ function renderPlayerScriptLauncher() {
       `;
     })
     .join("");
+}
+
+// Player practice is a stable landing surface, never the coach Script
+// workbench that happens to sit behind an active packet. Keep the loaded data
+// in memory so Resume remains instant, but hide the editable workspace when a
+// player exits Swipe View or returns from a suspended phone session.
+function showPlayerPracticeLanding() {
+  if (!_isScriptStudyPortalUser()) return false;
+  const scriptPanel = document.getElementById("script");
+  if (!scriptPanel) return false;
+  scriptPanel.classList.add("script-player-practice-landing");
+  if (typeof renderPlayerScriptLauncher === "function") renderPlayerScriptLauncher();
+  if (typeof renderPlayerLoadedScriptBar === "function") renderPlayerLoadedScriptBar();
+  if (typeof showTab === "function" && currentActiveTab !== "script") showTab("script");
+  return true;
 }
 
 function openPlayerScriptChat(id = "") {
@@ -1096,6 +1098,10 @@ function loadPublishedPlayerScript(id, opts = {}) {
     }
     return null;
   }
+
+  // Opening a practice intentionally leaves the player landing surface; the
+  // loaded packet still remains role-restricted and cannot expose coach UI.
+  document.getElementById("script")?.classList.remove("script-player-practice-landing");
 
   if (typeof showTab === "function") {
     showTab("script");

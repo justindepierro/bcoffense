@@ -340,6 +340,37 @@ body[data-auth-role="player"] #script.script-player-awaiting-load #scriptPlays {
   display: none !important;
 }
 
+/* A player exits Swipe View back to the Practice library, not to the coach
+   grid hidden underneath a loaded packet. The packet remains in memory for a
+   fast resume, while this class makes the return route unmistakable. */
+body[data-auth-role="player"] #script.script-player-practice-landing .script-section-head,
+body[data-auth-role="player"] #script.script-player-practice-landing .script-stats-bar,
+body[data-auth-role="player"] #script.script-player-practice-landing #scriptTimeline,
+body[data-auth-role="player"] #script.script-player-practice-landing #scriptPlays,
+body[data-auth-role="player"] #script.script-player-practice-landing .player-script-now {
+  display: none !important;
+}
+
+body[data-auth-role="player"] #script.script-player-practice-landing .script-list {
+  gap: 10px;
+}
+
+body[data-auth-role="player"] #script.script-player-practice-landing .player-script-launcher {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body[data-auth-role="player"] #script.script-player-practice-landing .player-script-launcher-header {
+  padding: 2px 2px 8px;
+}
+
+body[data-auth-role="player"] #script.script-player-practice-landing .player-script-launcher-header p {
+  margin-top: 3px;
+}
+
 body[data-auth-role="player"] #script.script-player-awaiting-load .script-list {
   gap: 12px;
 }
@@ -5265,7 +5296,7 @@ body[data-auth-role="player"] #script .script-tools-drawer {
   }
 
   /* Shrink card padding on mobile player script cards */
-  .player-script-card {
+.player-script-card {
     flex-wrap: wrap;
     gap: 10px;
     padding: 10px 12px;
@@ -5276,6 +5307,11 @@ body[data-auth-role="player"] #script .script-tools-drawer {
     width: 100%;
     justify-content: flex-start;
   }
+}
+
+body[data-auth-role="player"] #script.script-player-practice-landing .player-script-card {
+  border-radius: 14px;
+  box-shadow: none;
 }
 
 /* Tablet tier: the Script keeps its desktop grid, but its command surfaces

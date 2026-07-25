@@ -88,11 +88,18 @@ function restorePlayPresentationResume() {
     : getPlayPresentationItemsFromPlaybook();
   if (!items.length) {
     clearPlayPresentationResume();
-    const fallbackTab = typeof canAccessTab === "function" && canAccessTab("dashboard")
-      ? "dashboard"
-      : "playbook";
-    if (typeof showTab === "function") showTab(fallbackTab);
-    showToast("That swipe packet is no longer available. You are back at your workspace home.", { type: "warning" });
+    const returnedToPractice = source === "script" && typeof showPlayerPracticeLanding === "function"
+      ? showPlayerPracticeLanding()
+      : false;
+    if (!returnedToPractice) {
+      const fallbackTab = typeof canAccessTab === "function" && canAccessTab("dashboard")
+        ? "dashboard"
+        : "playbook";
+      if (typeof showTab === "function") showTab(fallbackTab);
+    }
+    showToast(returnedToPractice
+      ? "That practice is no longer available. Choose another published practice."
+      : "That swipe packet is no longer available. You are back at your workspace home.", { type: "warning" });
     return false;
   }
   const tab = String(snapshot.tab || "");
@@ -1620,7 +1627,7 @@ function openPlayPresentation(items, startIndex, source, options = {}) {
   return overlayVisible;
 }
 
-function closePlayPresentation() {
+function closePlayPresentation(opts = {}) {
   const overlay = document.getElementById("playPresentationOverlay");
   if (!overlay) return;
   stopPlayPresentationAutoAdvance();
@@ -1652,7 +1659,11 @@ function closePlayPresentation() {
   }
   const returnContext = playPresentationState.returnContext;
   playPresentationState.returnContext = null;
-  if (returnContext?.tab && typeof showTab === "function" && currentActiveTab !== returnContext.tab) {
+  const shouldReturnPlayerToPractice = !opts.preserveDestination &&
+    playPresentationState.source === "script" &&
+    typeof showPlayerPracticeLanding === "function" &&
+    showPlayerPracticeLanding();
+  if (!shouldReturnPlayerToPractice && returnContext?.tab && typeof showTab === "function" && currentActiveTab !== returnContext.tab) {
     showTab(returnContext.tab);
     if (Number.isFinite(returnContext.scrollY)) {
       requestAnimationFrame(() => window.scrollTo({ top: returnContext.scrollY, behavior: "auto" }));
