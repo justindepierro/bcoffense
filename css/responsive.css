@@ -197,13 +197,19 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
   .mobile-primary-nav button > span:first-child { font-size: 19px; line-height: 1; }
   .mobile-primary-nav button.active { color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 11%, transparent); }
   body.is-mobile-screen:not(.play-presentation-open) { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
-  .mobile-primary-more-overlay { position: fixed; z-index: calc(var(--z-modal) + 1); inset: 0; display: flex; align-items: end; background: rgba(4, 14, 35, .42); opacity: 0; transition: opacity .16s ease; }
+  .mobile-primary-more-overlay { position: fixed; z-index: calc(var(--z-modal) + 1); inset: 0; display: flex; align-items: end; background: color-mix(in srgb, var(--color-primary-dark) 76%, transparent); opacity: 0; transition: opacity .16s ease; backdrop-filter: blur(5px); }
   .mobile-primary-more-overlay.visible { opacity: 1; }
-  .mobile-primary-more-sheet { width: 100%; max-height: min(74vh, 620px); overflow: auto; padding: 8px 12px calc(16px + env(safe-area-inset-bottom, 0px)); border-radius: 22px 22px 0 0; background: var(--color-surface); box-shadow: 0 -14px 34px rgba(4, 14, 35, .28); }
-  .mobile-primary-more-handle { width: 42px; height: 4px; margin: 0 auto 10px; border-radius: 999px; background: var(--color-border-med); }
-  .mobile-primary-more-title { margin: 0 4px 8px; font-weight: 800; color: var(--color-text); }
-  .mobile-primary-more-list .tool-menu { position: static; display: block; min-width: 0; max-height: none; box-shadow: none; border: 0; padding: 0; background: transparent; }
-  .mobile-primary-more-list .tool-menu button { min-height: 48px; padding: 10px 12px; border-radius: var(--radius-md); }
+  .mobile-primary-more-sheet { width: 100%; max-height: min(76vh, 640px); overflow: auto; padding: 8px 14px calc(18px + env(safe-area-inset-bottom, 0px)); border: 1px solid color-mix(in srgb, var(--color-primary) 20%, var(--color-border-light)); border-bottom: 0; border-radius: 26px 26px 0 0; background: linear-gradient(165deg, var(--color-surface-raised), var(--color-surface) 34%); box-shadow: 0 -22px 54px color-mix(in srgb, var(--color-primary-dark) 34%, transparent); }
+  .mobile-primary-more-handle { width: 44px; height: 4px; margin: 0 auto 14px; border-radius: 999px; background: color-mix(in srgb, var(--color-text-muted) 38%, transparent); }
+  .mobile-primary-more-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); padding: 0 2px; }
+  .mobile-primary-more-header span { color: var(--color-primary); font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+  .mobile-primary-more-header h2 { margin: 2px 0 0; color: var(--color-text); font-size: 24px; line-height: 1; }
+  .mobile-primary-more-close { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--color-border-light); border-radius: 50%; background: var(--color-bg-light); color: var(--color-text); font: inherit; font-size: 24px; line-height: 1; }
+  .mobile-primary-more-intro { margin: 9px 2px 14px; color: var(--color-text-secondary); font-size: var(--font-size-sm); font-weight: 650; }
+  .mobile-primary-more-list .tool-menu { position: static; display: grid; min-width: 0; max-height: none; gap: 6px; box-shadow: none; border: 0; padding: 0; background: transparent; }
+  .mobile-primary-more-list .tool-menu button { min-height: 54px; padding: 12px 14px; border: 1px solid var(--color-border-light); border-radius: 14px; background: var(--color-bg-light); color: var(--color-text); font-weight: 800; }
+  .mobile-primary-more-list .tool-menu .tool-divider { height: 1px; margin: 5px 2px; background: var(--color-border-light); }
+  .mobile-primary-more-list .tool-menu button.tool-menu-danger { color: var(--color-danger); background: color-mix(in srgb, var(--color-danger-light) 44%, var(--color-surface)); }
 }
 
 /* Coach tab bar on mobile: scroll horizontally, show short labels.

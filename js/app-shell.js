@@ -787,7 +787,7 @@ function openMobilePrimaryMore() {
   overlay.id = "mobilePrimaryMoreOverlay";
   overlay.className = "mobile-primary-more-overlay";
   overlay.dataset.action = "closeMobilePrimaryMoreOverlay";
-  overlay.innerHTML = `<section class="mobile-primary-more-sheet" role="dialog" aria-modal="true" aria-label="More tools"><div class="mobile-primary-more-handle"></div><div class="mobile-primary-more-title">More tools</div><div class="mobile-primary-more-list">${source.innerHTML}</div></section>`;
+  overlay.innerHTML = `<section class="mobile-primary-more-sheet" role="dialog" aria-modal="true" aria-label="More tools"><div class="mobile-primary-more-handle"></div><header class="mobile-primary-more-header"><div><span>Workspace</span><h2>More</h2></div><button type="button" class="mobile-primary-more-close" data-action="closeMobilePrimaryMore" aria-label="Close more tools">×</button></header><p class="mobile-primary-more-intro">Tools, settings, and account options.</p><div class="mobile-primary-more-list">${source.innerHTML}</div></section>`;
   overlay.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
   document.body.appendChild(overlay);
   requestAnimationFrame(() => overlay.classList.add("visible"));

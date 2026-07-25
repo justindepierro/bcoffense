@@ -890,6 +890,133 @@
   --player-card-tint: var(--color-success-light);
 }
 
+/* Player Home hierarchy: a phone should read as one primary task followed by
+   supporting information, not a parade of equally loud cards. */
+body.is-phone-screen[data-auth-role="player"] .player-home-hero {
+  border-color: color-mix(in srgb, var(--color-primary) 44%, var(--color-border-light));
+  background: var(--gradient-dark);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--color-primary-dark) 22%, transparent);
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-hero h2,
+body.is-phone-screen[data-auth-role="player"] .player-home-hero p,
+body.is-phone-screen[data-auth-role="player"] .player-home-eyebrow {
+  color: var(--color-text-inverse);
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-eyebrow {
+  opacity: .74;
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-today-card {
+  border-color: color-mix(in srgb, var(--color-text-inverse) 24%, transparent);
+  background: color-mix(in srgb, var(--color-primary-dark) 42%, transparent);
+  box-shadow: none;
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-today-card span,
+body.is-phone-screen[data-auth-role="player"] .player-home-today-card strong,
+body.is-phone-screen[data-auth-role="player"] .player-home-today-card p,
+body.is-phone-screen[data-auth-role="player"] .player-home-today-metrics b,
+body.is-phone-screen[data-auth-role="player"] .player-home-today-metrics span {
+  color: var(--color-text-inverse);
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-today-metrics span {
+  border-color: color-mix(in srgb, var(--color-text-inverse) 18%, transparent);
+  background: color-mix(in srgb, var(--color-primary-dark) 46%, transparent);
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-state {
+  padding: 11px 12px;
+  border-radius: 12px;
+  border-left-width: 4px;
+  box-shadow: none;
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-command__next {
+  border: 0;
+  border-radius: 16px;
+  background: var(--gradient-dark);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--color-primary-dark) 18%, transparent);
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-command__next h3,
+body.is-phone-screen[data-auth-role="player"] .player-home-command__next p,
+body.is-phone-screen[data-auth-role="player"] .player-home-command__next .player-home-card__eyebrow {
+  color: var(--color-text-inverse);
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-command__next p,
+body.is-phone-screen[data-auth-role="player"] .player-home-command__next .player-home-card__eyebrow {
+  opacity: .8;
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-command__cta {
+  border-color: transparent;
+  background: var(--color-text-inverse);
+  color: var(--color-primary-dark);
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-command__status {
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-quick-action {
+  min-height: 58px;
+  border-radius: 14px;
+  background: var(--color-surface-raised);
+  box-shadow: none;
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-grid {
+  gap: 14px;
+  margin-top: 4px;
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-card {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: none;
+}
+
+body.is-phone-screen[data-auth-role="player"] .player-home-card::before {
+  width: 4px;
+}
+
+/* Dark mode is token-led so the same hierarchy carries through every player
+   surface rather than becoming a low-contrast gray copy of light mode. */
+[data-theme="dark"] .player-home-hero {
+  background: var(--gradient-dark);
+  border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-border-light));
+}
+
+[data-theme="dark"] .player-home-hero h2,
+[data-theme="dark"] .player-home-hero p,
+[data-theme="dark"] .player-home-eyebrow {
+  color: var(--color-text-inverse);
+}
+
+[data-theme="dark"] .player-home-today-card,
+[data-theme="dark"] .player-home-command__status,
+[data-theme="dark"] .player-home-card,
+[data-theme="dark"] .player-home-quick-action {
+  background: var(--color-surface-raised);
+}
+
+[data-theme="dark"] .player-home-command__next {
+  background: linear-gradient(145deg, var(--color-primary-dark), #18366a);
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border-light));
+}
+
+[data-theme="dark"] .player-home-command__next h3,
+[data-theme="dark"] .player-home-command__next p,
+[data-theme="dark"] .player-home-command__next .player-home-card__eyebrow {
+  color: var(--color-text-inverse);
+}
+
 .player-home-stat-row {
   display: flex;
   flex-wrap: wrap;
