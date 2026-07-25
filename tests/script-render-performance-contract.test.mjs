@@ -26,6 +26,7 @@ assert.match(
 );
 
 const playerSource = await readFile(new URL("js/script-players.js", `file://${root}/`), "utf8");
+const availableSource = await readFile(new URL("js/script-available.js", `file://${root}/`), "utf8");
 assert.match(
   source,
   /const scriptPlayerRenderCache = \{[\s\S]*?playerOptionMarkupBySelectedId: new Map\(\),[\s\S]*?playerDisplayById: new Map\(\),/,
@@ -40,6 +41,16 @@ assert.match(
   playerSource,
   /function buildScriptPlayerAssignmentGrid\(play, index, playLabel, opts = \{\}, renderCache = null\)[\s\S]*?playerOptionMarkupBySelectedId[\s\S]*?playerDisplayById[\s\S]*?getPlayerOptionMarkup\(assignments\[slot\.key\] \|\| ""\)/,
   "lineup rendering reuses roster option and player-label markup only within the current render",
+);
+assert.match(
+  availableSource,
+  /function scoreScriptPlaySearchQuery\(play, query\)[\s\S]*?function scoreScriptPlaySearch\(play, search\) \{[\s\S]*?scoreScriptPlaySearchQuery\(play, parseScriptSearchQuery\(search\)\)/,
+  "the public Script search scorer retains its search-string behavior",
+);
+assert.match(
+  availableSource,
+  /function renderAvailablePlays\(\)[\s\S]*?const searchQuery = search \? parseScriptSearchQuery\(search\) : null;[\s\S]*?const searchScore = searchQuery[\s\S]*?scoreScriptPlaySearchQuery\(play, searchQuery\)/,
+  "available-play filtering parses one search query per render instead of once per play",
 );
 
 console.log("Script render profiling contract passed");

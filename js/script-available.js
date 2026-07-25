@@ -395,8 +395,7 @@ function scoreScriptSearchField(value, tokens, queryTokens) {
   return score;
 }
 
-function scoreScriptPlaySearch(play, search) {
-  const query = parseScriptSearchQuery(search);
+function scoreScriptPlaySearchQuery(play, query) {
   if (!query.phrase && !query.qualifiers.length) return 0;
   const haystack = buildScriptSearchHaystack(play);
   let score = 0;
@@ -438,6 +437,10 @@ function scoreScriptPlaySearch(play, search) {
   }
 
   return score;
+}
+
+function scoreScriptPlaySearch(play, search) {
+  return scoreScriptPlaySearchQuery(play, parseScriptSearchQuery(search));
 }
 
 function playMatchesScriptSearch(play, search) {
@@ -498,6 +501,7 @@ function renderAvailablePlays() {
     document.getElementById("scriptGamePlanFilter")?.checked || false;
   const jvOnly =
     document.getElementById("scriptJvFilter")?.checked || false;
+  const searchQuery = search ? parseScriptSearchQuery(search) : null;
   normalizeSelectedAvailablePlays();
 
   const matchesFilter = (value, selectedArr) => {
@@ -527,7 +531,9 @@ function renderAvailablePlays() {
     if (!matchesFilter(play.personnel, scriptSelectedPersonnel)) continue;
     if (formation && play.formation !== formation) continue;
     if (basePlay && play.basePlay !== basePlay) continue;
-    const searchScore = scoreScriptPlaySearch(play, search);
+    const searchScore = searchQuery
+      ? scoreScriptPlaySearchQuery(play, searchQuery)
+      : 0;
     if (searchScore === null) continue;
     if (gamePlanOnly) {
       if (typeof isPlayInGamePlanBoard !== "function") continue;

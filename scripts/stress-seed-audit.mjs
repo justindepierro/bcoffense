@@ -801,10 +801,14 @@ async function collectScriptPerformance(page, viewport, opts) {
       if (typeof updateActiveFilterCount === "function") updateActiveFilterCount();
       const startedAt = performance.now();
       renderAvailablePlays();
+      const renderMs = performance.now() - startedAt;
+      const frameStartedAt = performance.now();
       await waitFrames(1);
       return {
         label,
         durationMs: round(performance.now() - startedAt),
+        renderMs: round(renderMs),
+        frameWaitMs: round(performance.now() - frameStartedAt),
         ...availableSnapshot(),
       };
     };
