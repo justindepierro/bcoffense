@@ -5,13 +5,14 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (relativePath) => readFile(new URL(relativePath, `file://${root}/`), "utf8");
 
-const [scriptStorage, scriptPlayer, presentation, cloudSync, workspaceSync, notifications] = await Promise.all([
+const [scriptStorage, scriptPlayer, presentation, cloudSync, workspaceSync, notifications, dashboardRender] = await Promise.all([
   source("js/script-storage.js"),
   source("js/script-player.js"),
   source("js/play-presentation.js"),
   source("js/cloud-sync.js"),
   source("js/workspace-sync.js"),
   source("js/app-notifications.js"),
+  source("js/dashboard-render.js"),
 ]);
 
 assert.match(
@@ -128,6 +129,11 @@ assert.match(
   notifications,
   /authUser\?\.role === "player" && typeof refreshPlayerRelease === "function"[\s\S]*?await refreshPlayerRelease\(\{ force: true, navigate: false \}\)[\s\S]*?loadPublishedPlayerScript\(scriptId\)/,
   "opening a player practice notification refreshes the release before resolving its script",
+);
+assert.match(
+  dashboardRender,
+  /function _dashRenderPlayerRefreshAction\(\)[\s\S]*?Practice is current[\s\S]*?Coach release loaded[\s\S]*?data-action="refreshPlayerTeamApp"/,
+  "the player Home always shows release freshness and a deliberate update check, not only errors",
 );
 assert.match(
   presentation,

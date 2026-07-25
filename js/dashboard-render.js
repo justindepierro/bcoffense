@@ -248,10 +248,6 @@ function _dashRenderPlayerRefreshAction() {
   const installAction = installState.available
     ? `<button type="button" class="player-home-refresh__install" data-action="installPlayerA2HS">${escapeHtml(installState.label || "Install app")}</button>`
     : "";
-  // A successful background check is routine state, not a dashboard task.
-  // Keep the explicit refresh control in the compact support section below,
-  // but reserve this visible notice for work, connection trouble, or install.
-  if (!busy && !needsRetry && !installAction) return "";
   const releaseState = storageManager.get(STORAGE_KEYS.PLAYER_RELEASE_STATE, {});
   const latestCoachUpdate = state.result?.freshness?.data?.updatedAt ||
     releaseState?.updatedAt || state.result?.data?.updatedAt || "";
@@ -263,14 +259,14 @@ function _dashRenderPlayerRefreshAction() {
     ? "Checking for coach updates"
     : needsRetry
       ? tone === "offline" ? "Updates wait for connection" : "Update check paused"
-      : "Practice is up to date";
+      : "Practice is current";
   const body = busy
     ? "Refreshing your latest practice and quiz state."
     : needsRetry
       ? tone === "offline"
         ? "Your loaded practice still works. Reconnect when you want the newest alerts."
         : "Home and Practice still work. Retry when your connection is ready."
-      : `${latestCoachUpdate ? `Coach update ${_dashFormatRelativeTime(latestCoachUpdate) || "ready"}. ` : "Latest coach release is loaded. "}${checkedAt ? `Checked ${_dashFormatRelativeTime(checkedAt) || "just now"}.` : ""}`;
+      : `${latestCoachUpdate ? `Coach release loaded ${_dashFormatRelativeTime(latestCoachUpdate) || "recently"}. ` : "Latest coach release is loaded. "}${checkedAt ? `Checked ${_dashFormatRelativeTime(checkedAt) || "just now"}.` : "Check now before practice if you need to confirm."}`;
   return `<section class="player-home-refresh player-home-refresh--${escapeAttr(tone)}" aria-label="Coach updates">
     <div class="player-home-refresh__copy">
       <strong>${escapeHtml(title)}</strong>
