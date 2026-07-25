@@ -50,6 +50,7 @@ function showTab(tabName) {
     if (typeof canAccessTab === "function" && !canAccessTab(tabName)) return;
   }
   document.querySelector("#mainApp > .tabs")?.classList.remove("mobile-more-open");
+  if (typeof closeMobilePrimaryMore === "function") closeMobilePrimaryMore();
 
   // Close presentation overlay when switching tabs
   if (typeof closePlayPresentation === "function") {

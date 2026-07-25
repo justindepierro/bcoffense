@@ -787,18 +787,42 @@ function openMobilePrimaryMore() {
   overlay.id = "mobilePrimaryMoreOverlay";
   overlay.className = "mobile-primary-more-overlay";
   overlay.dataset.action = "closeMobilePrimaryMoreOverlay";
-  overlay.innerHTML = `<section class="mobile-primary-more-sheet" role="dialog" aria-modal="true" aria-label="More tools"><div class="mobile-primary-more-handle"></div><header class="mobile-primary-more-header"><div><span>Workspace</span><h2>More</h2></div><button type="button" class="mobile-primary-more-close" data-action="closeMobilePrimaryMore" aria-label="Close more tools">×</button></header><p class="mobile-primary-more-intro">Tools, settings, and account options.</p><div class="mobile-primary-more-list">${source.innerHTML}</div></section>`;
+  overlay.innerHTML = `<section class="mobile-primary-more-sheet" role="dialog" aria-modal="true" aria-label="More tools" tabindex="-1"><div class="mobile-primary-more-handle"></div><header class="mobile-primary-more-header"><div><span>Workspace</span><h2>More</h2></div><button type="button" class="mobile-primary-more-close" data-action="closeMobilePrimaryMore" aria-label="Close more tools">×</button></header><p class="mobile-primary-more-intro">Tools, settings, and account options.</p><div class="mobile-primary-more-list">${source.innerHTML}</div></section>`;
   overlay.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
   document.body.appendChild(overlay);
   // The sheet is a cloned navigation surface. Re-run the role projection so
   // an old cached utility entry can never flash a coach/admin data control
   // inside the player-facing More menu.
   if (typeof applyRoleUi === "function") applyRoleUi();
-  requestAnimationFrame(() => overlay.classList.add("visible"));
+  const sheet = overlay.querySelector(".mobile-primary-more-sheet");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "mobile-primary-more",
+      scrollElement: sheet,
+      safeArea: true,
+      blocking: true,
+    });
+  }
+  // A tool opened from More must not leave an invisible, scroll-blocking
+  // clone behind it. Tab navigation closes synchronously; modal tools close
+  // after their delegated action has safely started.
+  overlay.addEventListener("click", (event) => {
+    const action = event.target?.closest?.("[data-action]")?.dataset?.action || "";
+    if (action && action !== "closeMobilePrimaryMore" && action !== "closeMobilePrimaryMoreOverlay") {
+      requestAnimationFrame(closeMobilePrimaryMore);
+    }
+  });
+  requestAnimationFrame(() => {
+    overlay.classList.add("visible");
+    sheet?.focus({ preventScroll: true });
+  });
 }
 
 function closeMobilePrimaryMore() {
-  document.getElementById("mobilePrimaryMoreOverlay")?.remove();
+  const overlay = document.getElementById("mobilePrimaryMoreOverlay");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer("mobile-primary-more");
+  overlay.remove();
 }
 
 function queueMobileShellStateSync() {

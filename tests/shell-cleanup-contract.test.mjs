@@ -91,6 +91,16 @@ assert.match(
   /group\.dataset\.chipListenerBound === "true"/,
   "playbook filter-chip listeners remain idempotent across workspace hydration",
 );
+assert.match(
+  appShell,
+  /function openMobilePrimaryMore\(\)[\s\S]*?openLayer\(overlay, \{[\s\S]*?id: "mobile-primary-more"[\s\S]*?blocking: true[\s\S]*?sheet\?\.focus/,
+  "the phone More sheet owns one blocking layer with a visible focus target",
+);
+assert.match(
+  appShell,
+  /function closeMobilePrimaryMore\(\)[\s\S]*?closeLayer\("mobile-primary-more"\)[\s\S]*?overlay\.remove\(\)/,
+  "closing phone More releases shared scroll and focus ownership before removing the sheet",
+);
 for (const selector of [
   "play-readiness-badge--trusted",
   "play-readiness-badge--ready",
