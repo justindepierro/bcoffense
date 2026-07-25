@@ -723,9 +723,9 @@ function _renderPlayerQuizHub() {
     signalStatusEl.hidden = !signalStatus.detail;
   }
 
-  if (typeof isQuizPageActive === "function" && isQuizPageActive()) {
-    renderQuizPage();
-  }
+  // This function owns refreshes inside the existing hub. Re-entering the page
+  // renderer from here calls this function again and can lock the Quiz tab in
+  // a recursive render loop.
 }
 
 function openPlayerQuizHub() {

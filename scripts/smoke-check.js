@@ -4868,6 +4868,11 @@ function checkPlayerQuizSettingsContracts() {
   const scriptCss = read("css/script.css");
   const scriptQuizCss = read("css/script-quiz.css");
   const quizSurface = `${scriptQuiz}\n${scriptCss}\n${scriptQuizCss}`;
+  const playerQuizHubRenderer = scriptQuiz.match(/function _renderPlayerQuizHub\(\)[\s\S]*?(?=function openPlayerQuizHub\()/)?.[0] || "";
+
+  if (/renderQuizPage\(\)/.test(playerQuizHubRenderer)) {
+    fail("player quiz hub re-enters the page renderer and can recurse indefinitely");
+  }
 
   [
     "PLAYER_QUIZ_TIER_DEFAULTS",
