@@ -414,6 +414,7 @@ textarea:focus {
 
 /* ============ Dark Mode ============ */
 [data-theme="dark"] {
+  color-scheme: dark;
   --color-primary: #79a2ff;
   --color-primary-hover: #9ab9ff;
   --color-primary-dark: #0b1324;
@@ -463,6 +464,7 @@ textarea:focus {
   --color-structure-light: #1a315c;
   --gradient-dark: linear-gradient(145deg, #0b1324 0%, #152b53 100%);
   --gradient-stats: linear-gradient(145deg, #15264a 0%, #263b64 100%);
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 24%);
   --color-navy-alpha-03: rgba(200, 210, 230, 0.03);
   --color-navy-alpha-06: rgba(200, 210, 230, 0.06);
   --color-navy-alpha-08: rgba(200, 210, 230, 0.08);
@@ -479,6 +481,22 @@ textarea:focus {
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+/* Native form controls, shared surfaces, and browser color treatment must
+   follow the same dark palette. This prevents bright selects/scrollbars from
+   puncturing an otherwise dark workspace. */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  color: var(--color-text);
+  background-color: var(--color-bg-input);
+  border-color: var(--color-border-input);
+}
+
+[data-theme="dark"] ::selection {
+  color: var(--color-text-inverse);
+  background: color-mix(in srgb, var(--color-primary) 55%, transparent);
 }
 [data-theme="dark"] img,
 [data-theme="dark"] .app-logo {

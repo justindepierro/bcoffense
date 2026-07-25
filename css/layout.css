@@ -706,6 +706,26 @@ body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tab {
   will-change: opacity;
 }
 
+[data-theme="dark"] .tabs {
+  background: var(--color-surface-muted);
+  border-bottom-color: var(--color-border-light);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 28%);
+}
+
+[data-theme="dark"] .tabs::after {
+  background: linear-gradient(to right, transparent, var(--color-surface-muted) 80%);
+}
+
+[data-theme="dark"] .tab.active {
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .panel {
+  background: var(--color-surface);
+  border-color: var(--color-border-light);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 22%);
+}
+
 /* Desktop shell: header + tabs pinned to the top, each panel owns its own
    scroll. The body becomes a fixed-height flex column so #mainApp can bound
    its children instead of the tab bar floating away from the header.
