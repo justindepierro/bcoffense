@@ -384,14 +384,26 @@ async function recordPlayerPublishStatus(kind, details = {}, opts = {}) {
       publishResult = false;
     }
   }
+  // A player receipt cannot remain "running" if Cloudflare did not accept or
+  // finish the canonical workspace commit. Leaving it green forever makes the
+  // coach believe a phone should already have the update when it cannot.
+  if (publishResult === false && publishJobKey && typeof window.failWorkspaceSyncJob === "function") {
+    const error = new Error("Cloudflare did not confirm the player update. It is saved locally and needs a retry.");
+    window.failWorkspaceSyncJob(publishJobKey, error, {
+      label: "Player update needs attention",
+      retry: () => recordPlayerPublishStatus(kind, details, opts),
+    });
+  }
   if (typeof window.recordPublishActivity === "function") {
     window.recordPublishActivity({
       id: `player-${kind}-${updatedAt}`,
       versionId: `player-${kind}`,
       timestamp: updatedAt,
-      result: "success",
+      result: publishResult === false ? "failed" : "success",
       domains: [kind],
-      summary: details.label || `Player ${kind} updated`,
+      summary: publishResult === false
+        ? `${details.label || `Player ${kind} update`} needs a Cloudflare retry`
+        : (details.label || `Player ${kind} updated`),
       size: 0,
     });
   }

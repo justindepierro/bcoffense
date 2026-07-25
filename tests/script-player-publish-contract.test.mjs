@@ -100,6 +100,16 @@ assert.match(
   "player notifications are emitted only after a release is confirmed rather than merely queued",
 );
 assert.match(
+  scriptPlayer,
+  /if \(publishResult === false && publishJobKey && typeof window\.failWorkspaceSyncJob === "function"\)[\s\S]*?retry: \(\) => recordPlayerPublishStatus\(kind, details, opts\)/,
+  "a player publish receipt becomes a retryable error instead of spinning forever when Cloudflare does not confirm it",
+);
+assert.match(
+  scriptPlayer,
+  /result: publishResult === false \? "failed" : "success"/,
+  "player publish activity never records a failed Cloudflare handoff as success",
+);
+assert.match(
   notifications,
   /authUser\?\.role === "player" && typeof refreshPlayerRelease === "function"[\s\S]*?await refreshPlayerRelease\(\{ force: true, navigate: false \}\)[\s\S]*?loadPublishedPlayerScript\(scriptId\)/,
   "opening a player practice notification refreshes the release before resolving its script",
