@@ -21,6 +21,7 @@ let playPresentationState = {
   returnFocus: null,
   returnContext: null,
 };
+let playPresentationResumeRestorePromise = null;
 
 function getPlayPresentationResumeOwner() {
   const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
@@ -132,6 +133,26 @@ function restorePlayPresentationResume() {
     appDiagnostics.mark("player-swipe:resume-restored", { source, scriptId: snapshot.scriptId || "", opened });
   }
   return opened;
+}
+
+async function restorePlayPresentationAfterMobileWake() {
+  if (playPresentationResumeRestorePromise) return playPresentationResumeRestorePromise;
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (overlay?.classList.contains("is-open")) return false;
+  const currentUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  if (currentUser?.role !== "player") return false;
+
+  playPresentationResumeRestorePromise = (async () => {
+    // Rebuild from the current authorized release after a phone wake; never
+    // reopen a suspended in-memory script that could now be stale or revoked.
+    if (typeof refreshPlayerRelease === "function") {
+      await refreshPlayerRelease({ force: true, navigate: false }).catch(() => null);
+    }
+    return restorePlayPresentationResume();
+  })().finally(() => {
+    playPresentationResumeRestorePromise = null;
+  });
+  return playPresentationResumeRestorePromise;
 }
 
 let playPresentationDiagramResizeObserver = null;
@@ -1647,6 +1668,9 @@ function openPlayPresentation(items, startIndex, source, options = {}) {
 function closePlayPresentation(opts = {}) {
   const overlay = document.getElementById("playPresentationOverlay");
   if (!overlay) return;
+  // A deliberate close or tab change must never resurrect Swipe View after a
+  // later phone wake. Resume snapshots exist only for an interrupted session.
+  clearPlayPresentationResume();
   stopPlayPresentationAutoAdvance();
   closePlayPresentationSetup();
   setPlayPresentationCleanView(false);
@@ -2905,6 +2929,15 @@ document.addEventListener("pointerdown", handlePlayPresentationPointerActivity, 
   passive: true,
 });
 document.addEventListener("visibilitychange", handlePlayPresentationWakeVisibility);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") capturePlayPresentationResume();
+  if (document.visibilityState === "visible") restorePlayPresentationAfterMobileWake();
+});
+window.addEventListener("pagehide", () => capturePlayPresentationResume(), { passive: true });
+window.addEventListener("freeze", () => capturePlayPresentationResume(), { passive: true });
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) restorePlayPresentationAfterMobileWake();
+}, { passive: true });
 document.addEventListener("touchstart", handlePlayPresentationTouchStart, {
   passive: true,
 });

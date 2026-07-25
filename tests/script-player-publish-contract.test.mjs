@@ -141,6 +141,21 @@ assert.match(
   "a suspended Swipe View carries its stable script ID and rebuilds it only from the fresh player release",
 );
 assert.match(
+  presentation,
+  /document\.addEventListener\("visibilitychange", \(\) => \{[\s\S]*?document\.visibilityState === "hidden"\) capturePlayPresentationResume\(\);[\s\S]*?document\.visibilityState === "visible"\) restorePlayPresentationAfterMobileWake\(\);[\s\S]*?window\.addEventListener\("pagehide"[\s\S]*?window\.addEventListener\("pageshow"/,
+  "Swipe View captures its exact resume route on mobile backgrounding and restores it on BFCache wake",
+);
+assert.match(
+  presentation,
+  /async function restorePlayPresentationAfterMobileWake\(\)[\s\S]*?await refreshPlayerRelease\(\{ force: true, navigate: false \}\)[\s\S]*?return restorePlayPresentationResume\(\);/,
+  "mobile resume refreshes the authorized player release before rebuilding Swipe View",
+);
+assert.match(
+  presentation,
+  /function closePlayPresentation\(opts = \{\}\) \{[\s\S]*?clearPlayPresentationResume\(\);/,
+  "a deliberate Swipe View close clears the recovery route so it cannot reopen later",
+);
+assert.match(
   workspaceSync,
   /function completePlayerPublishJobs\(opts = \{\}\)/,
   "the shared sync queue can resolve all player publish receipts after one merged commit",
