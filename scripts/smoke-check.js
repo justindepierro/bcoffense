@@ -5063,6 +5063,18 @@ function checkScrollOwnershipContract() {
 
 function checkServiceWorkerCachePolicy() {
   const serviceWorker = read("sw.js");
+  const headers = read("_headers");
+  const index = read("index.html");
+  const deployScript = read("scripts/deploy-cloudflare.sh");
+  if (!/\/sw\.js\s*\n\s*Cache-Control:\s*no-store, max-age=0/.test(headers)) {
+    fail("service worker must bypass HTTP caching so mobile update checks can see a new deployment");
+  }
+  if (!/\.register\("\.\/sw\.js", \{ updateViaCache: "none" \}\)/.test(index)) {
+    fail("service worker registration must bypass browser HTTP cache during update checks");
+  }
+  if (!/\b_headers\b/.test(deployScript)) {
+    fail("Cloudflare deployment must include the service-worker cache headers");
+  }
   const source = extractFunctionSource(serviceWorker, "isCacheableResponse");
   if (!source) {
     fail("isCacheableResponse function not found");

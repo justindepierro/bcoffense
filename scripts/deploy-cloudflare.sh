@@ -20,7 +20,7 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "$tmpdir/public"
-rsync -a index.html manifest.json sw.js offline.html _routes.json css js icons functions "$tmpdir/public/"
+rsync -a index.html manifest.json sw.js offline.html _routes.json _headers css js icons functions "$tmpdir/public/"
 
 # These placeholders overwrite any previously cached root-level files from
 # accidental root deployments.
