@@ -519,6 +519,40 @@ export function renderLoginPage(opts = {}) {
       font-size: 12px;
       text-align: center;
     }
+    .legal-links {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      color: #64748b;
+      font-size: 12px;
+    }
+    .legal-links button {
+      min-height: auto;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: #64748b;
+      font: inherit;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+    dialog {
+      width: min(620px, calc(100vw - 32px));
+      max-height: min(720px, calc(100vh - 32px));
+      overflow: auto;
+      border: 0;
+      border-radius: 18px;
+      padding: 0;
+      color: var(--ink);
+      box-shadow: 0 24px 80px rgb(4 10 28 / .42);
+    }
+    dialog::backdrop { background: rgb(4 10 28 / .64); }
+    .legal-dialog__body { padding: 24px; line-height: 1.55; }
+    .legal-dialog__body h2, .legal-dialog__body h3 { margin: 0 0 12px; }
+    .legal-dialog__body h3 { margin-top: 20px; font-size: 16px; }
+    .legal-dialog__body p, .legal-dialog__body ul { margin: 0 0 12px; }
+    .legal-dialog__close { width: 100%; border-radius: 0; }
     @media (max-width: 1024px) {
       body { align-items: center; }
       .shell {
@@ -556,11 +590,25 @@ export function renderLoginPage(opts = {}) {
 </head>
 <body>
   <main class="shell login-shell">
+    <form method="post" action="/auth/login?next=${encodedNext}" autocomplete="on">
+      <div class="brand">BCOffense</div>
+      <div>
+        <div class="kicker">Secure team access</div>
+        <h2>Sign in to BCOffense</h2>
+        <p>Your account determines the workspace and access available to you.</p>
+      </div>
+      <label>Email or username <input name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus /></label>
+      <label>Password <input name="password" type="password" autocomplete="current-password" required /></label>
+      <div class="error" role="alert">${escapedMessage}</div>
+      <button type="submit">Sign In</button>
+      <div class="help">Need help? Ask a coach or staff member for your login.</div>
+      <div class="legal-links"><button type="button" data-legal-dialog="about">About BCOffense</button><span aria-hidden="true">•</span><button type="button" data-legal-dialog="terms">Terms of Use</button></div>
+    </form>
     <section class="hero" aria-label="Portal overview">
       <div class="brand">BCOffense</div>
       <div class="kicker">Secure staff and player access</div>
       <h1>Team workspace</h1>
-      <p>Sign in once to open scripts, wristbands, game plans, call sheets, and player-safe practice views.</p>
+      <p>One secure sign-in for staff tools, player practice views, scripts, wristbands, and game-day planning.</p>
       <div class="chips" aria-label="Portal roles">
         <span class="chip">Admin</span>
         <span class="chip">Coach</span>
@@ -573,24 +621,21 @@ export function renderLoginPage(opts = {}) {
         </div>
         <div class="highlight">
           <strong>Practice operations</strong>
-          <span>Move directly into the football workspace after login.</span>
+          <span>Jump into scripts, wristbands, game plans, and call sheets after login.</span>
+        </div>
+        <div class="highlight">
+          <strong>Player-safe mode</strong>
+          <span>Players see the published plan and swipe view without edit controls.</span>
         </div>
       </div>
     </section>
-    <form method="post" action="/auth/login?next=${encodedNext}" autocomplete="on">
-      <div class="brand">BCOffense</div>
-      <div>
-        <div class="kicker">Sign in to your portal</div>
-        <h2>Team Login</h2>
-        <p>Use your team username and password.</p>
-      </div>
-      <label>Username <input name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus /></label>
-      <label>Password <input name="password" type="password" autocomplete="current-password" required /></label>
-      <div class="error" role="alert">${escapedMessage}</div>
-      <button type="submit">Continue</button>
-      <div class="help">Need help? Ask a coach or staff member for your login.</div>
-    </form>
   </main>
+  <dialog id="aboutDialog"><div class="legal-dialog__body"><h2>About BCOffense</h2><p>BCOffense is a private football operations workspace built for Burke Catholic Football.</p><p>It brings the team playbook, practice preparation, game planning, player study, and secure publishing workflow into one protected system.</p><h3>Private use notice</h3><p>This software is maintained for Burke Catholic Football. It is not offered for public sale, redistribution, copying, or reuse without written permission from the copyright holder.</p><p>Questions or permissions: <a href="mailto:jdepierro@burkecatholic.org">jdepierro@burkecatholic.org</a></p><p>© 2026 Justin DePierro. All rights reserved.</p></div><button class="legal-dialog__close" type="button" data-close-legal>Close</button></dialog>
+  <dialog id="termsDialog"><div class="legal-dialog__body"><h2>Terms of Use</h2><p><strong>Effective: 2026.</strong> By accessing or using BCOffense, you agree to these Terms of Use.</p><h3>Authorized use</h3><p>Access is limited to people authorized by Burke Catholic Football or the copyright owner, and only for legitimate team operations, coaching, player study, and related football activities.</p><h3>Accounts and security</h3><p>Keep sign-in credentials private. Do not share accounts, access another user’s information, or bypass access controls.</p><h3>Team data and media</h3><p>Team information, playbook material, diagrams, video, and player data are confidential and may be used only for authorized team purposes.</p><h3>Ownership and restrictions</h3><p>BCOffense and its original software, design, documentation, and content are protected by copyright and other applicable law. You may not copy, modify, reverse engineer, sell, sublicense, redistribute, or create a competing product from any part of BCOffense without prior written permission from Justin DePierro.</p><h3>Availability and changes</h3><p>Features, access, and availability may change, be suspended, or be removed as needed for security, maintenance, or team operations.</p><p>Questions: <a href="mailto:jdepierro@burkecatholic.org">jdepierro@burkecatholic.org</a></p><p>© 2026 Justin DePierro. All rights reserved.</p></div><button class="legal-dialog__close" type="button" data-close-legal>Close</button></dialog>
+  <script>
+    document.querySelectorAll("[data-legal-dialog]").forEach((button) => button.addEventListener("click", () => document.getElementById(button.dataset.legalDialog + "Dialog")?.showModal()));
+    document.querySelectorAll("[data-close-legal]").forEach((button) => button.addEventListener("click", () => button.closest("dialog")?.close()));
+  </script>
 </body>
 </html>`,
       {

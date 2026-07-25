@@ -7,6 +7,7 @@ const authSource = await readFile(new URL("js/auth.js", `file://${root}/`), "utf
 const cloudSource = await readFile(new URL("js/cloud-sync.js", `file://${root}/`), "utf8");
 const componentStyles = await readFile(new URL("css/components.css", `file://${root}/`), "utf8");
 const utilsSource = await readFile(new URL("js/utils.js", `file://${root}/`), "utf8");
+const serverAuthSource = await readFile(new URL("functions/_lib/auth.js", `file://${root}/`), "utf8");
 
 assert.match(
   cloudSource,
@@ -42,6 +43,11 @@ assert.match(
   authSource,
   /const completeAuthenticatedLogin = async \(user, source\) => \{[\s\S]*?await autoPullLatestCloudBackup\(\{ timeoutMs: 14 \* 1000, bootstrap: true \}\);[\s\S]*?overlay\.remove\(\);[\s\S]*?applyRoleUi\(\);/,
   "sign-in waits for the account-authorized workspace before opening the app",
+);
+assert.match(
+  serverAuthSource,
+  /<h2>Sign in to BCOffense<\/h2>[\s\S]*?Email or username[\s\S]*?<button type="submit">Sign In<\/button>[\s\S]*?About BCOffense[\s\S]*?Terms of Use/,
+  "the server security gate uses the same login language and legal access as the in-app sign-in overlay",
 );
 assert.doesNotMatch(
   authSource,
