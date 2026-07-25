@@ -4864,7 +4864,8 @@ function checkPlayerQuizSettingsContracts() {
   const scriptRender = read("js/script-render.js");
   const scriptQuiz = `${read("js/script-quiz-state.js")}\n${read("js/script-quiz-foundation.js")}\n${read("js/script-quiz.js")}\n${read("js/script-quiz-media.js")}\n${read("js/script-quiz-progress.js")}\n${read("js/script-quiz-leaderboard.js")}`;
   const scriptCss = read("css/script.css");
-  const quizSurface = `${scriptQuiz}\n${scriptCss}`;
+  const scriptQuizCss = read("css/script-quiz.css");
+  const quizSurface = `${scriptQuiz}\n${scriptCss}\n${scriptQuizCss}`;
 
   [
     "PLAYER_QUIZ_TIER_DEFAULTS",
