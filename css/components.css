@@ -750,6 +750,11 @@ body.app-layer-locked {
 .about-bcoffense-modal {
   max-width: 620px;
 }
+.about-bcoffense-overlay {
+  /* The legal links are available before authentication, so their dialog must
+     sit above the signed-out access gate rather than behind it. */
+  z-index: calc(var(--z-skip-link) + 1);
+}
 .about-bcoffense-kicker {
   margin-bottom: 3px;
   color: var(--color-primary);

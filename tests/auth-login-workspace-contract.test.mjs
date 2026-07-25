@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const authSource = await readFile(new URL("js/auth.js", `file://${root}/`), "utf8");
 const cloudSource = await readFile(new URL("js/cloud-sync.js", `file://${root}/`), "utf8");
+const componentStyles = await readFile(new URL("css/components.css", `file://${root}/`), "utf8");
 
 assert.match(
   cloudSource,
@@ -45,6 +46,11 @@ assert.match(
   authSource,
   /data-action="openAboutBCOffense"/,
   "the sign-in surface links to About BCOffense",
+);
+assert.match(
+  componentStyles,
+  /\.about-bcoffense-overlay\s*\{[\s\S]*?z-index:\s*calc\(var\(--z-skip-link\) \+ 1\);/,
+  "About and Terms dialogs open above the signed-out login overlay",
 );
 assert.match(
   authSource,
