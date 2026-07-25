@@ -20,5 +20,10 @@ assert.doesNotMatch(
   /script-src[^\n]*\*/,
   "the script policy does not broaden to a wildcard source",
 );
+assert.match(
+  auth,
+  /PUBLIC_PATHS = new Set\(\["\/manifest\.json", "\/sw\.js", "\/offline", "\/offline\.html"\]\)/,
+  "the offline redirect and its offline document both bypass the auth gate",
+);
 
 console.log("security headers contract: Cloudflare beacon allowlist is narrow");

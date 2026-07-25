@@ -173,7 +173,9 @@ function wantsJson(request) {
   );
 }
 
-const PUBLIC_PATHS = new Set(["/manifest.json", "/sw.js", "/offline.html"]);
+// Cloudflare Pages redirects `/offline` to `/offline.html`; both names must
+// remain public or the redirect turns an offline recovery route into a 401.
+const PUBLIC_PATHS = new Set(["/manifest.json", "/sw.js", "/offline", "/offline.html"]);
 
 export function isAuthRoute(pathname) {
   if (pathname === "/auth/login" || pathname === "/auth/logout" || pathname === "/auth/me") return true;
