@@ -27,6 +27,16 @@ function openWbQuickSearch() {
         renderQuickSearchResults(e.target.value);
       }, 80));
 
+    const results = document.getElementById("wbQuickSearchResults");
+    results.addEventListener("click", (event) => {
+      const item = event.target.closest(".wb-quicksearch-item[data-play-idx]");
+      if (!item || !results.contains(item)) return;
+      const playIdx = parseInt(item.dataset.playIdx, 10);
+      if (!Number.isInteger(playIdx) || playIdx < 0) return;
+      addPlayToNextEmpty(playIdx);
+      closeWbQuickSearch();
+    });
+
     overlay.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         closeWbQuickSearch();
@@ -109,13 +119,6 @@ function renderQuickSearchResults(query) {
     })
     .join("");
 
-  results.querySelectorAll(".wb-quicksearch-item").forEach((item) => {
-    item.addEventListener("click", () => {
-      const playIdx = parseInt(item.dataset.playIdx, 10);
-      addPlayToNextEmpty(playIdx);
-      closeWbQuickSearch();
-    });
-  });
 }
 
 function toggleWbFavorite(playIndex) {
