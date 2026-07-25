@@ -2966,6 +2966,31 @@ input.smart-input-sm[type="number"] {
 .toast.toast-info {
   background: var(--color-info);
 }
+.toast.toast-persistent {
+  max-width: min(620px, calc(100vw - 32px));
+  padding-right: 42px;
+  cursor: default;
+}
+.toast.toast-persistent::after {
+  display: none;
+}
+.toast-dismiss {
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  border: 0;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: currentColor;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.toast-dismiss:hover,
+.toast-dismiss:focus-visible {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
 
 body.is-mobile-screen .toast {
   bottom: calc(

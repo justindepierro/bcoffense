@@ -379,6 +379,7 @@ function vibrateHaptic(pattern) {
  *   Options: {
  *     duration: 2000,
  *     type: 'success'|'error'|'warning'|'info',
+ *     persistent: false, // requires an explicit dismissal
  *     actionLabel: 'Reload',
  *     action: 'reloadPage'
  *   }
@@ -388,6 +389,7 @@ function showToast(message, durationOrOpts = 2000) {
   let type = null;
   let actionLabel = "";
   let action = "";
+  let persistent = false;
 
   if (typeof durationOrOpts === "object") {
     duration = durationOrOpts.duration || 2000;
@@ -396,16 +398,23 @@ function showToast(message, durationOrOpts = 2000) {
     action = typeof durationOrOpts.action === "function"
       ? durationOrOpts.action
       : String(durationOrOpts.action || "");
+    persistent = durationOrOpts.persistent === true;
   } else {
     duration = durationOrOpts;
   }
 
-  // Remove existing toast
+  // A message that asks the coach to make a safety decision must remain
+  // readable. Routine confirmations should not erase it before they can act.
   const existing = document.querySelector(".toast");
+  if (existing?.dataset.persistent === "true" && !persistent) return existing;
   if (existing) existing.remove();
 
   const toast = document.createElement("div");
   toast.className = "toast";
+  if (persistent) {
+    toast.classList.add("toast-persistent");
+    toast.dataset.persistent = "true";
+  }
   if (type) toast.classList.add("toast-" + type);
   if (type === "error" && typeof vibrateHaptic === "function") vibrateHaptic([8, 40, 8]);
 
@@ -426,6 +435,18 @@ function showToast(message, durationOrOpts = 2000) {
     actionButton.textContent = actionLabel;
     toast.append(" ", actionButton);
   }
+  if (persistent) {
+    const dismissButton = document.createElement("button");
+    dismissButton.type = "button";
+    dismissButton.className = "toast-dismiss";
+    dismissButton.setAttribute("aria-label", "Dismiss notification");
+    dismissButton.textContent = "×";
+    dismissButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toast.remove();
+    });
+    toast.append(" ", dismissButton);
+  }
   document.body.appendChild(toast);
 
   // Announce to screen readers via live region
@@ -436,21 +457,25 @@ function showToast(message, durationOrOpts = 2000) {
 
   // Trigger animation
   toast.style.setProperty("--toast-duration", duration + "ms");
-  toast.addEventListener(
-    "click",
-    () => {
-      toast.classList.remove("show");
-      setTimeout(() => toast.remove(), 300);
-    },
-    { once: true },
-  );
+  if (!persistent) {
+    toast.addEventListener(
+      "click",
+      () => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 300);
+      },
+      { once: true },
+    );
+  }
   setTimeout(() => toast.classList.add("show"), 10);
 
   // Remove after duration
-  setTimeout(() => {
-    toast.classList.remove("show");
-    setTimeout(() => toast.remove(), 300);
-  }, duration);
+  if (!persistent) {
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 300);
+    }, duration);
+  }
 }
 
 /**

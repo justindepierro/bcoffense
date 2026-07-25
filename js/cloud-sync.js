@@ -2383,9 +2383,17 @@
           lastRemoteUpdatedAt: remote.updatedAt,
           lastRemoteSize: remote.size,
         });
+        const canReviewWorkspace = userCanOpenRecoveryTools();
         showToast(
-          "A newer team workspace is available. Review it before replacing this device's local work.",
-          { type: "info", duration: 6000 },
+          canReviewWorkspace
+            ? "Newer team workspace found. This device has unsynced coach work, so BCOffense kept it safe. Review options before replacing anything."
+            : "Newer team workspace found. This device has unsynced coach work, so BCOffense kept it safe. Ask an administrator before replacing anything.",
+          {
+            type: "warning",
+            persistent: true,
+            actionLabel: canReviewWorkspace ? "Review options" : "",
+            action: canReviewWorkspace ? "openCloudSyncModal" : "",
+          },
         );
         return false;
       }

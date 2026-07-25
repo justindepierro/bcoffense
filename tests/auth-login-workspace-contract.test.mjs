@@ -6,6 +6,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const authSource = await readFile(new URL("js/auth.js", `file://${root}/`), "utf8");
 const cloudSource = await readFile(new URL("js/cloud-sync.js", `file://${root}/`), "utf8");
 const componentStyles = await readFile(new URL("css/components.css", `file://${root}/`), "utf8");
+const utilsSource = await readFile(new URL("js/utils.js", `file://${root}/`), "utf8");
 
 assert.match(
   cloudSource,
@@ -26,6 +27,16 @@ assert.match(
   cloudSource,
   /shouldProtectUntrackedLocalWorkspace\(settings, hasLocalWorkspace\) && hasLocalCoachContent/,
   "an empty upload shell applies the canonical workspace instead of being mistaken for competing work",
+);
+assert.match(
+  cloudSource,
+  /Newer team workspace found\.[\s\S]*?persistent: true,[\s\S]*?actionLabel: canReviewWorkspace \? "Review options"/,
+  "a protected local workspace explains the safety decision and stays available for review",
+);
+assert.match(
+  utilsSource,
+  /persistent = durationOrOpts\.persistent === true;[\s\S]*?existing\?\.dataset\.persistent === "true" && !persistent[\s\S]*?if \(!persistent\) \{/,
+  "a persistent safety notice cannot expire or be replaced by routine toast noise",
 );
 assert.match(
   authSource,
