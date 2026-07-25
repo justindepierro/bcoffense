@@ -615,7 +615,7 @@ function renderScriptPrintPreviewRow(play, playNumber, fullCall, playerSummary, 
       </div>`;
 }
 
-function renderScriptPlayRow(play, index, playNumber, renderContext) {
+function renderScriptPlayRow(play, index, playNumber, renderContext, profile = null) {
   const {
     opts,
     callOptions,
@@ -625,6 +625,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
     getCachedHashOptions,
     getCachedWristbandNumber,
     getCachedPlayerSummary,
+    scriptPlayerRenderCache,
     defenseDatalistState,
     selectedIndexSet,
     playbookSigSet,
@@ -635,9 +636,12 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
   const playLabel = getCachedSummaryText(play);
   const shouldRenderAssignmentGrid = !opts.hidePersonnel && !play.scriptHidePersonnel;
   const playerSummary = showPrintPreview ? getCachedPlayerSummary(play) : "";
+  const playerAssignmentStartedAt = profile ? performance.now() : 0;
   const playerPersonnelMarkup = shouldRenderAssignmentGrid
-    ? buildScriptPlayerAssignmentGrid(play, index, playLabel, opts)
+    ? buildScriptPlayerAssignmentGrid(play, index, playLabel, opts, scriptPlayerRenderCache)
     : "";
+  if (profile) profile.playerAssignmentMarkupMs += performance.now() - playerAssignmentStartedAt;
+  const readinessStartedAt = profile ? performance.now() : 0;
   const readinessSummary =
     typeof getPlayReadinessSummary === "function" &&
       typeof isPlayReadinessCoachRole === "function" &&
@@ -660,6 +664,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
         scriptIdx: index,
       })
       : "";
+  if (profile) profile.readinessMarkupMs += performance.now() - readinessStartedAt;
   const sourceStatusBadge =
     !opts.printStyle && typeof renderPlaySourceStatusBadge === "function"
       ? renderPlaySourceStatusBadge(play)
@@ -810,7 +815,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
   `;
 }
 
-function renderScriptRows(renderContext) {
+function renderScriptRows(renderContext, profile = null) {
   let playNumber = 0;
   let skipPlays = false;
   let currentSeparator = null;
@@ -820,16 +825,22 @@ function renderScriptRows(renderContext) {
       if (play.isSeparator) {
         currentSeparator = play;
         skipPlays = collapsedPeriods.has(play.id);
-        return renderScriptPeriodHeader(play, index, renderContext);
+        const headerStartedAt = profile ? performance.now() : 0;
+        const header = renderScriptPeriodHeader(play, index, renderContext);
+        if (profile) profile.periodHeaderMarkupMs += performance.now() - headerStartedAt;
+        return header;
       }
 
       if (skipPlays) return "";
 
       playNumber += 1;
-      return renderScriptPlayRow(play, index, playNumber, {
+      const rowStartedAt = profile ? performance.now() : 0;
+      const row = renderScriptPlayRow(play, index, playNumber, {
         ...renderContext,
         callOptions: getPeriodCallDisplayOptions(currentSeparator, renderContext.opts),
-      });
+      }, profile);
+      if (profile) profile.playRowMarkupMs += performance.now() - rowStartedAt;
+      return row;
     })
     .join("");
 }
@@ -872,6 +883,10 @@ function createScriptRenderContext(opts, showPrintPreview) {
   const playerSummaryCache = new Map();
   const hashOptionsCache = new Map();
   const wristbandNumberCache = new Map();
+  const scriptPlayerRenderCache = {
+    playerOptionMarkupBySelectedId: new Map(),
+    playerDisplayById: new Map(),
+  };
   const playerSummaryContext = {
     slotCache: new Map(),
     baseAssignmentCache: new Map(),
@@ -888,6 +903,7 @@ function createScriptRenderContext(opts, showPrintPreview) {
     showPrintPreview,
     selectedIndexSet,
     playbookSigSet,
+    scriptPlayerRenderCache,
     defenseDatalistState,
     periodStatsBySeparatorIndex,
     renderSummary,
@@ -946,7 +962,7 @@ function createScriptRenderContext(opts, showPrintPreview) {
   };
 }
 
-function renderScriptContent(container, renderContext) {
+function renderScriptContent(container, renderContext, profile = null) {
   const hasPlays = renderContext.renderSummary.hasPlays;
   const playerRole = isPlayerScriptRole();
   const scriptPanel = document.getElementById("script");
@@ -973,11 +989,16 @@ function renderScriptContent(container, renderContext) {
     return;
   }
 
-  container.classList.remove("empty");
-  container.innerHTML =
+  const markupStartedAt = profile ? performance.now() : 0;
+  const markup =
     (playerRole ? "" : renderContext.defenseDatalistState.html) +
     (playerRole ? "" : renderScriptColumnHeaders()) +
-    renderScriptRows(renderContext);
+    renderScriptRows(renderContext, profile);
+  if (profile) profile.contentMarkupMs = performance.now() - markupStartedAt;
+  const domStartedAt = profile ? performance.now() : 0;
+  container.classList.remove("empty");
+  container.innerHTML = markup;
+  if (profile) profile.contentDomMs = performance.now() - domStartedAt;
 }
 
 function updateJumpToPeriodOptions(renderSummary) {
@@ -1138,6 +1159,12 @@ function summarizeScriptRenderProfileSamples(samples) {
     "totalMs",
     "contextMs",
     "contentMs",
+    "contentMarkupMs",
+    "contentDomMs",
+    "playRowMarkupMs",
+    "periodHeaderMarkupMs",
+    "playerAssignmentMarkupMs",
+    "readinessMarkupMs",
     "bulkUiMs",
     "statsMs",
     "jumpMenuMs",
@@ -1268,6 +1295,10 @@ function renderScript() {
         startedAt: performance.now(),
         playCount,
         periodCount,
+        playRowMarkupMs: 0,
+        periodHeaderMarkupMs: 0,
+        playerAssignmentMarkupMs: 0,
+        readinessMarkupMs: 0,
       }
       : null;
     const opts = getScriptDisplayOptions();
@@ -1282,7 +1313,7 @@ function renderScript() {
       stageStart = performance.now();
     }
 
-    renderScriptContent(container, renderContext);
+    renderScriptContent(container, renderContext, profile);
     if (profile) {
       profile.contentMs = performance.now() - stageStart;
       stageStart = performance.now();

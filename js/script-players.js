@@ -292,7 +292,7 @@ function buildScriptSubPackagePicker(play, index, playLabel) {
   `;
 }
 
-function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
+function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}, renderCache = null) {
   if ((opts && opts.hidePersonnel) || play?.scriptHidePersonnel) return "";
   const assignments = getScriptPlayerAssignments(play);
   const depthChart = getScriptPlayerDepthChart(play);
@@ -307,6 +307,24 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
   const selectedSubPackage = getApplicableTeamSwapGroups(play?.personnel).find(
     (group) => group.id === selectedSubPackageId,
   );
+  const getPlayerOptionMarkup = (selectedId) => {
+    const cache = renderCache?.playerOptionMarkupBySelectedId;
+    const cacheKey = String(selectedId || "");
+    if (!cache) return buildTeamPlayerOptionMarkup(selectedId);
+    if (!cache.has(cacheKey)) {
+      cache.set(cacheKey, buildTeamPlayerOptionMarkup(selectedId));
+    }
+    return cache.get(cacheKey);
+  };
+  const getPlayerDisplay = (playerId) => {
+    const cache = renderCache?.playerDisplayById;
+    const cacheKey = String(playerId || "");
+    if (!cache) return getTeamPlayerSelectionDisplay(playerId);
+    if (!cache.has(cacheKey)) {
+      cache.set(cacheKey, getTeamPlayerSelectionDisplay(playerId));
+    }
+    return cache.get(cacheKey);
+  };
   const slotMap = new Map(
     getTeamAssignmentSlots(play?.personnel).map((slot) => [slot.key, slot]),
   );
@@ -335,7 +353,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
               ${isScriptPlayerSlotPromoted(play, slot.key) ? '<span class="script-player-slot-role">Promoted</span>' : ""}
             </div>
             <select class="script-player-slot-select" data-field="playerAssignment" data-slot="${slot.key}" data-idx="${index}" aria-label="${escapeHtml(playLabel)} ${slot.label} player">
-              ${buildTeamPlayerOptionMarkup(assignments[slot.key] || "")}
+              ${getPlayerOptionMarkup(assignments[slot.key] || "")}
             </select>
             ${(() => {
         const slotDepth = getTeamDepthChartForSlot(depthChart, slot.key);
@@ -343,7 +361,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
         const promoted = isScriptPlayerSlotPromoted(play, slot.key);
         const backupIds = slotDepth.filter((playerId) => playerId && playerId !== starterId);
         const currentStarterMarkup = promoted
-          ? `<div class="script-player-current-pill"><span class="script-player-current-pill-label">Live</span><span class="script-player-current-pill-name">${escapeHtml(getTeamPlayerSelectionDisplay(starterId))}</span></div>`
+          ? `<div class="script-player-current-pill"><span class="script-player-current-pill-label">Live</span><span class="script-player-current-pill-name">${escapeHtml(getPlayerDisplay(starterId))}</span></div>`
           : "";
         if (!backupIds.length) {
           return `${currentStarterMarkup}<span class="script-player-slot-empty">No subs set</span>`;
@@ -354,7 +372,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
                   ${backupIds.map((playerId, depthIndex) => `
                     <button type="button" class="script-player-depth-chip" data-action="promoteScriptDepthPlayer" data-idx="${index}" data-slot="${slot.key}" data-player-id="${escapeAttr(playerId)}" aria-label="Promote ${escapeHtml(getTeamPlayerSelectionDisplay(playerId))} to ${slot.label} starter on ${escapeHtml(playLabel)}">
                       <span class="script-player-depth-chip-role">S${depthIndex + 1}</span>
-                      <span class="script-player-depth-chip-name">${escapeHtml(getTeamPlayerSelectionDisplay(playerId))}</span>
+                      <span class="script-player-depth-chip-name">${escapeHtml(getPlayerDisplay(playerId))}</span>
                     </button>
                   `).join("")}
                 </div>
