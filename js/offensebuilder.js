@@ -301,6 +301,11 @@ let obActivePlayName = null;
 let obSearchTerm = "";
 let obFilterType = ""; // "" | "run" | "pass"
 let obShowRatedOnly = false;
+const OB_SEARCH_DEBOUNCE_MS = 120;
+const debouncedObSearchRender = debounce((value) => {
+  obSearchTerm = String(value || "");
+  obRenderPlayList();
+}, OB_SEARCH_DEBOUNCE_MS);
 
 // Cached maps (rebuilt on init)
 let _obPlayMap = null;
@@ -450,8 +455,7 @@ function renderOffenseBuilder() {
 
     if (searchInput) {
       searchInput.addEventListener("input", function () {
-        obSearchTerm = this.value;
-        obRenderPlayList();
+        debouncedObSearchRender(this.value);
       });
     }
     if (filterSelect) {
