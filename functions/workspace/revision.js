@@ -91,6 +91,50 @@ function readJson(value, fallback) {
   try { return JSON.parse(value); } catch (_err) { return fallback; }
 }
 
+function collectionSize(value) {
+  if (Array.isArray(value)) return value.length;
+  if (value && typeof value === "object") return Object.keys(value).length;
+  return 0;
+}
+
+function callSheetPlayCount(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return 0;
+  return Object.values(value).reduce((count, category) => count +
+    (Array.isArray(category?.left) ? category.left.length : 0) +
+    (Array.isArray(category?.right) ? category.right.length : 0), 0);
+}
+
+// These are independent coach-authored collections. A normal workspace write
+// may update them, but it may never make a populated collection disappear.
+// Clearing an entire collection is a deliberate recovery/admin operation,
+// not an outcome we accept from an old, blank, or half-hydrated browser.
+export function getWorkspaceSafetySummary(workspace) {
+  return {
+    playbook: collectionSize(readJson(workspace?.playbook, [])),
+    savedScripts: collectionSize(readJson(workspace?.savedScripts, [])),
+    savedWristbands: collectionSize(readJson(workspace?.savedWristbands, [])),
+    callSheetPlays: callSheetPlayCount(readJson(workspace?.callSheet, {})),
+    gamePlanBoards: collectionSize(readJson(workspace?.gamePlanBoards, {})),
+  };
+}
+
+export function validateWorkspaceReplacement(currentWorkspace, nextWorkspace) {
+  const current = getWorkspaceSafetySummary(currentWorkspace);
+  const next = getWorkspaceSafetySummary(nextWorkspace);
+  const protectedCollections = Object.entries(current)
+    .filter(([key, count]) => count > 0 && next[key] === 0)
+    .map(([key]) => key);
+  if (!protectedCollections.length) return { ok: true, current, next, protectedCollections: [] };
+  return {
+    ok: false,
+    code: "BC_DESTRUCTIVE_WORKSPACE_REPLACEMENT_BLOCKED",
+    current,
+    next,
+    protectedCollections,
+    error: `Publish blocked: this device would erase populated team data (${protectedCollections.join(", ")}). Reload the team workspace before saving.`,
+  };
+}
+
 export function sanitizeTeamWorkspace(workspace) {
   if (!workspace || typeof workspace !== "object" || Array.isArray(workspace)) {
     return { ok: false, error: "Workspace must be a JSON object.", workspace: null, omittedKeys: [] };
@@ -268,6 +312,54 @@ async function putWorkspace(context) {
   }
   if (!current && expected.value) {
     return workspaceError("This device has an outdated workspace revision. Refresh before saving.", 409, { current: null });
+  }
+
+  // Compare against the authoritative immutable payload, not just the D1
+  // pointer. This is a server-side backstop for every browser build: even a
+  // stale app that sends a syntactically valid snapshot cannot replace a
+  // populated team collection with an empty one.
+  if (current) {
+    let currentWorkspace = null;
+    try {
+      const currentRevision = await readCurrentWorkspaceRevision(context.env, context.env.CLIPS, principal.teamId);
+      if (!currentRevision.pointer || currentRevision.pointer.workspaceRevision !== current.workspaceRevision || !currentRevision.metadata || !currentRevision.payload) {
+        return workspaceError("The current team workspace changed while this save was being checked. Refresh before saving.", 409, {
+          current: pointerSummary(currentRevision.pointer || current),
+        });
+      }
+      const currentText = await currentRevision.payload.text();
+      if (await sha256Hex(currentText) !== String(currentRevision.metadata.checksum || "").toLowerCase()) {
+        return workspaceError("The current canonical workspace failed its integrity check. Use admin recovery tools.", 502);
+      }
+      currentWorkspace = JSON.parse(currentText);
+      const currentNormalized = sanitizeTeamWorkspace(currentWorkspace);
+      if (!currentNormalized.ok) {
+        return workspaceError("The current canonical workspace is invalid. Use admin recovery tools.", 502);
+      }
+      currentWorkspace = currentNormalized.workspace;
+    } catch (_err) {
+      // If the authoritative baseline cannot be read, fail closed. Writing a
+      // replacement without it would reopen the exact data-loss path this
+      // route is designed to prevent.
+      return workspaceError("The current canonical workspace could not be verified. Retry safely.", 502);
+    }
+
+    const replacementCheck = validateWorkspaceReplacement(currentWorkspace, workspace);
+    if (!replacementCheck.ok) {
+      console.warn("Blocked destructive canonical workspace replacement", {
+        teamId: principal.teamId,
+        actorId: principal.session.d1UserId || null,
+        expectedWorkspaceRevision: expected.value,
+        protectedCollections: replacementCheck.protectedCollections,
+        current: replacementCheck.current,
+        next: replacementCheck.next,
+      });
+      return workspaceError(replacementCheck.error, 409, {
+        code: replacementCheck.code,
+        protectedCollections: replacementCheck.protectedCollections,
+        current: pointerSummary(current),
+      });
+    }
   }
 
   const updatedAt = new Date().toISOString();

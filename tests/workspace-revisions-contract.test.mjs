@@ -7,6 +7,10 @@ import {
   sha256Hex,
   workspaceRevisionR2Key,
 } from "../functions/_lib/workspace-revisions.js";
+import {
+  getWorkspaceSafetySummary,
+  validateWorkspaceReplacement,
+} from "../functions/workspace/revision.js";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
@@ -115,6 +119,36 @@ assert(
 );
 assert(normalizeExpectedWorkspaceRevision("") === "", "supports an empty expected revision for the first commit");
 assert(requireWorkspaceRevision(workspaceHash) === workspaceHash, "accepts a canonical SHA-256 revision");
+const populatedWorkspace = {
+  playbook: JSON.stringify([{ id: "play-1" }]),
+  savedScripts: JSON.stringify([{ id: "script-1" }]),
+  savedWristbands: JSON.stringify([{ id: "wristband-1" }]),
+  callSheet: JSON.stringify({ calls: { left: [{ id: "play-1" }], right: [] } }),
+  gamePlanBoards: JSON.stringify({ Opponent: { assignments: {} } }),
+};
+const blankWorkspace = {
+  playbook: JSON.stringify([]),
+  savedScripts: JSON.stringify([]),
+  savedWristbands: JSON.stringify([]),
+  callSheet: JSON.stringify({}),
+  gamePlanBoards: JSON.stringify({}),
+};
+assert(
+  getWorkspaceSafetySummary(populatedWorkspace).playbook === 1
+    && getWorkspaceSafetySummary(populatedWorkspace).callSheetPlays === 1,
+  "derives safety counts from serialized canonical workspace fields",
+);
+const destructiveReplacement = validateWorkspaceReplacement(populatedWorkspace, blankWorkspace);
+assert(
+  !destructiveReplacement.ok
+    && destructiveReplacement.code === "BC_DESTRUCTIVE_WORKSPACE_REPLACEMENT_BLOCKED"
+    && destructiveReplacement.protectedCollections.length === 5,
+  "rejects a valid-looking empty replacement before the canonical head can move",
+);
+assert(
+  validateWorkspaceReplacement(populatedWorkspace, { ...populatedWorkspace, playbook: JSON.stringify([{ id: "play-2" }]) }).ok,
+  "permits ordinary non-destructive workspace updates",
+);
 try {
   workspaceRevisionR2Key("../other-team", workspaceHash);
   assert(false, "rejects unsafe team identifiers");

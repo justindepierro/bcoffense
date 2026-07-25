@@ -764,18 +764,31 @@
   }
 
   function preventEmptyPlaybookOverwrite(localBackup, remoteBackup, opts = {}) {
-    const localPlayCount = countBackupPlaybookPlays(localBackup);
-    const remotePlayCount = countBackupPlaybookPlays(remoteBackup);
-    // A blank browser can carry enough settings and scripts to look valid to
-    // a generic backup writer. It must never erase a loaded team playbook.
-    // There is intentionally no ordinary "publish empty playbook" path; a
-    // real reset needs an explicit recovery/admin workflow.
-    if (remotePlayCount > 0 && localPlayCount === 0 && opts.allowEmptyPlaybookReplace !== true) {
+    const local = {
+      playbook: countBackupPlaybookPlays(localBackup),
+      savedScripts: countBackupCollection(parseBackupField(localBackup, STORAGE_KEYS.SAVED_SCRIPTS, [])),
+      savedWristbands: countBackupCollection(parseBackupField(localBackup, STORAGE_KEYS.SAVED_WRISTBANDS, [])),
+      callSheetPlays: countBackupCallSheetPlays(parseBackupField(localBackup, STORAGE_KEYS.CALL_SHEET, {})),
+      gamePlanBoards: countBackupCollection(parseBackupField(localBackup, STORAGE_KEYS.GAME_PLAN_BOARDS, {})),
+    };
+    const remote = {
+      playbook: countBackupPlaybookPlays(remoteBackup),
+      savedScripts: countBackupCollection(parseBackupField(remoteBackup, STORAGE_KEYS.SAVED_SCRIPTS, [])),
+      savedWristbands: countBackupCollection(parseBackupField(remoteBackup, STORAGE_KEYS.SAVED_WRISTBANDS, [])),
+      callSheetPlays: countBackupCallSheetPlays(parseBackupField(remoteBackup, STORAGE_KEYS.CALL_SHEET, {})),
+      gamePlanBoards: countBackupCollection(parseBackupField(remoteBackup, STORAGE_KEYS.GAME_PLAN_BOARDS, {})),
+    };
+    // A blank or half-hydrated browser can carry settings that make it look
+    // structurally valid. It must never erase an independently authored team
+    // collection. The Worker repeats this invariant so old cached clients
+    // cannot bypass it.
+    const protectedCollections = Object.keys(remote).filter((key) => remote[key] > 0 && local[key] === 0);
+    if (protectedCollections.length && opts.allowDestructiveWorkspaceReplace !== true) {
       const err = new Error(
-        `Publish paused: this device has no loaded playbook, while the team workspace has ${remotePlayCount} plays. Reload the team workspace before publishing.`,
+        `Publish paused: this device is missing team data (${protectedCollections.join(", ")}). Reload the team workspace before publishing.`,
       );
-      err.code = "BC_EMPTY_PLAYBOOK_OVERWRITE_BLOCKED";
-      err.remotePlayCount = remotePlayCount;
+      err.code = "BC_DESTRUCTIVE_WORKSPACE_REPLACEMENT_BLOCKED";
+      err.protectedCollections = protectedCollections;
       throw err;
     }
   }
