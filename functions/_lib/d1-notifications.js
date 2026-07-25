@@ -24,6 +24,11 @@ const TEAM_UPDATE_DEDUPE_WINDOWS = Object.freeze({
 const STAFF_NOTIFICATION_ROLES = Object.freeze(["admin", "coach", "assistant", "assistant_coach"]);
 const DISCUSSION_COMMENT_DEDUPE_SECONDS = 15 * 60;
 
+function pushUrlForDeepLink(deepLink) {
+  const target = String(deepLink || "").trim();
+  return target ? `/?push=${encodeURIComponent(target)}` : "/";
+}
+
 /**
  * Return the D1 identity that owns an in-app notification feed.
  *
@@ -171,7 +176,8 @@ export async function notifyTeamPlayers(db, teamId, notification = {}, env = nul
       const result = await sendPushToUser(env, db, row.id, {
         title: String(notification.title).slice(0, 160),
         body: body || "",
-        url: "/",
+        url: pushUrlForDeepLink(deepLink),
+        deepLink,
         tag: notification.tag || `${notification.type}-${deepLink || "team"}`,
       }).catch(() => null);
       if (result) {
@@ -199,7 +205,7 @@ export async function notifyTeamStaffOfPlayerPost(db, teamId, {
   playId,
   playLabel = "",
   body = "",
-} = {}) {
+} = {}, env = null) {
   const cleanTeamId = String(teamId || "").trim();
   if (!cleanTeamId || !authorId || !playId) return { recipients: 0 };
 
@@ -242,6 +248,15 @@ export async function notifyTeamStaffOfPlayerPost(db, teamId, {
       await createOrRefreshDiscussionCommentNotification(db, notification);
     } else {
       await createNotification(db, notification);
+    }
+    if (env) {
+      sendPushToUser(env, db, row.id, {
+        title: notification.title,
+        body: notification.body || "",
+        url: pushUrlForDeepLink(notification.deepLink),
+        deepLink: notification.deepLink,
+        tag: `discussion-${kind}-${playId}`,
+      }).catch(() => { });
     }
     recipients += 1;
   }
@@ -307,7 +322,8 @@ export async function notifyOnCoachPost(db, threadId, coachId, coachName, playId
       sendPushToUser(env, db, row.author_id, {
         title: `${coachName} replied`,
         body: truncBody,
-        url: "/",
+        url: pushUrlForDeepLink(playId),
+        deepLink: playId,
         tag: `coach-reply-${playId}`,
       }).catch(() => { });
     }
@@ -339,7 +355,8 @@ export async function notifyOnQuestionResolved(db, postId, resolverName, playId,
     sendPushToUser(env, db, post.author_id, {
       title: `${resolverName} resolved your question ✅`,
       body: String(post.body || "").slice(0, 100),
-      url: "/",
+      url: pushUrlForDeepLink(playId),
+      deepLink: playId,
       tag: `resolved-${postId}`,
     }).catch(() => { });
   }
@@ -436,7 +453,8 @@ export async function notifyOnReply(db, parentPostId, replyAuthorId, replyAuthor
     sendPushToUser(env, db, post.author_id, {
       title,
       body: truncBody,
-      url: "/",
+      url: pushUrlForDeepLink(playId),
+      deepLink: playId,
       tag: `${notificationType}-${parentPostId}`,
     }).catch(() => { });
   }
@@ -490,7 +508,8 @@ export async function notifyOnOfficialAnswer(db, questionPostId, coachName, play
       sendPushToUser(env, db, userId, {
         title,
         body,
-        url: "/",
+        url: pushUrlForDeepLink(playId),
+        deepLink: playId,
         tag: `official-answer-${questionPostId}`,
       }).catch(() => { });
     }
@@ -533,7 +552,8 @@ export async function notifyOnVisualReply(db, parentPostId, coachName, playId, e
       sendPushToUser(env, db, userId, {
         title,
         body,
-        url: "/",
+        url: pushUrlForDeepLink(playId),
+        deepLink: playId,
         tag: `visual-reply-${parentPostId}`,
       }).catch(() => { });
     }

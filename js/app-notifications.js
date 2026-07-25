@@ -17,6 +17,8 @@ let _notifLastError = "";
 let _notifLastUnread = 0;
 let _notifItems = [];
 let _notifFilter = "all";
+let _pushDeepLinkRoutingBound = false;
+let _pendingPushDeepLink = "";
 const _notifRecentBroadcasts = new Map();
 const NOTIF_POLL_INTERVAL_MS = 60_000; // 60 s
 const NOTIF_BROADCAST_DEDUPE_MS = 45_000;
@@ -35,6 +37,7 @@ function initNotifications(opts = {}) {
   }
   _notifInitialized = true;
   if (!opts.deferFirstPoll) _pollUnreadCount();
+  initPushDeepLinkRouting();
   clearInterval(_notifPollInterval);
   _notifPollInterval = setInterval(_pollUnreadCount, NOTIF_POLL_INTERVAL_MS);
 
@@ -47,6 +50,45 @@ function initNotifications(opts = {}) {
       _notifPollInterval = setInterval(_pollUnreadCount, NOTIF_POLL_INTERVAL_MS);
     }
   });
+}
+
+function initPushDeepLinkRouting() {
+  if (_pushDeepLinkRoutingBound) return;
+  _pushDeepLinkRoutingBound = true;
+
+  const route = (deepLink) => {
+    const target = String(deepLink || "").trim();
+    if (!target) return;
+    _pendingPushDeepLink = target;
+    _consumePendingPushDeepLink();
+  };
+
+  try {
+    const url = new URL(window.location.href);
+    const deepLink = url.searchParams.get("push") || "";
+    if (deepLink) {
+      url.searchParams.delete("push");
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+      route(deepLink);
+    }
+  } catch (_) { /* A malformed address must never block the app shell. */ }
+
+  navigator.serviceWorker?.addEventListener("message", (event) => {
+    if (event.data?.type === "PUSH_NOTIFICATION_CLICK") route(event.data.deepLink);
+  });
+}
+
+async function _consumePendingPushDeepLink() {
+  const deepLink = _pendingPushDeepLink;
+  if (!deepLink) return;
+  const user = typeof whenAuthReady === "function"
+    ? await whenAuthReady()
+    : (typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null);
+  if (!user) return;
+  _pendingPushDeepLink = "";
+  // Reuse the normal, role-restricted notification router. There is no inbox
+  // record to mark read here; the next inbox refresh reconciles that state.
+  await openNotifDeepLink(`::${deepLink}`);
 }
 
 // ── Badge ─────────────────────────────────────────────────────────────────────

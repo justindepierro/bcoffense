@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v1422";
+const CACHE_NAME = "bcoffense-v1423";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -62,7 +62,17 @@ function cachePut(request, response) {
     .catch(() => { });
 }
 
-// Item 47: Web Push scaffolding (Phase 2 — requires VAPID keys + server endpoint)
+function safePushTarget(rawUrl) {
+  try {
+    const url = new URL(rawUrl || "/", self.location.origin);
+    return url.origin === self.location.origin ? url.href : `${self.location.origin}/`;
+  } catch (_) {
+    return `${self.location.origin}/`;
+  }
+}
+
+// Web Push: preserve a server-authorized in-app destination from the encrypted
+// payload through both a cold app launch and an already-open app window.
 self.addEventListener("push", (event) => {
   if (!event.data) return;
   let payload;
@@ -72,20 +82,24 @@ self.addEventListener("push", (event) => {
     body: payload.body || "New practice update from your coach.",
     icon: "./icons/icon-192.png",
     badge: "./icons/icon-192.png",
-    tag: "practice-update",
+    tag: payload.tag || "practice-update",
     renotify: true,
-    data: { url: payload.url || "/" },
+    data: { url: safePushTarget(payload.url), deepLink: String(payload.deepLink || "") },
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/";
+  const url = safePushTarget(event.notification.data?.url);
+  const deepLink = String(event.notification.data?.deepLink || "");
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
       for (const client of windowClients) {
-        if (client.url.includes(url) && "focus" in client) return client.focus();
+        if (new URL(client.url).origin === self.location.origin && "focus" in client) {
+          client.postMessage({ type: "PUSH_NOTIFICATION_CLICK", deepLink });
+          return client.focus();
+        }
       }
       return clients.openWindow(url);
     }),

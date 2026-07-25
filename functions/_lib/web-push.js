@@ -197,7 +197,7 @@ async function createVapidJwt(privateKeyB64u, endpoint, subject) {
  *
  * @param {object} env - Cloudflare env (VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY, VAPID_SUBJECT)
  * @param {{ endpoint: string, p256dh: string, auth: string }} subscription
- * @param {{ title: string, body: string, url?: string, tag?: string }} notification
+ * @param {{ title: string, body: string, url?: string, deepLink?: string, tag?: string }} notification
  * @returns {Promise<{ ok: boolean, gone: boolean }>}
  *   gone=true when endpoint is permanently invalid (410/404) — caller should delete it.
  */
@@ -218,6 +218,7 @@ export async function sendWebPush(env, subscription, notification) {
       title: notification.title || "BCOffense",
       body: notification.body || "",
       url: notification.url || "/",
+      deepLink: notification.deepLink || "",
       tag: notification.tag || "bcoffense",
       badge: notification.badge || "./icons/icon-192.png",
     });

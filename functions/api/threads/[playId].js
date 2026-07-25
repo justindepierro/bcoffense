@@ -231,7 +231,7 @@ export async function onRequest(context) {
         playId,
         playLabel: playSig,
         body: postBody,
-      }).catch((err) => console.error("[discussion] staff notification failed", err));
+      }, env).catch((err) => console.error("[discussion] staff notification failed", err));
     }
 
     // A coach's top-level note is relevant to players already participating
