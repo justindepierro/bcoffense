@@ -207,7 +207,7 @@ body.play-presentation-open .quick-tools {
   background:
     radial-gradient(
       circle at top left,
-      rgb(255 255 255 / 72%),
+      color-mix(in srgb, var(--color-surface-raised) 78%, transparent),
       transparent 28rem
     ),
     var(--color-bg-body);

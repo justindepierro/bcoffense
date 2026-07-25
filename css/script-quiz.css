@@ -2322,7 +2322,7 @@
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  border: 2px solid color-mix(in srgb, var(--color-warning) 76%, white);
+  border: 2px solid color-mix(in srgb, var(--color-warning) 76%, var(--color-surface));
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, #fff7d5, #f7c948);
   color: #17213a;
@@ -2355,7 +2355,7 @@
   padding: var(--space-md);
   border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-border-light));
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 8%, white), var(--color-surface));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 8%, var(--color-surface-raised)), var(--color-surface));
   box-shadow: var(--shadow-xs);
 }
 
@@ -2393,8 +2393,20 @@
 .player-leaderboard-quiz-launcher__all { background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface)) !important; }
 
 .player-leaderboard-kicker {
-  background: color-mix(in srgb, var(--color-warning) 82%, white);
+  background: color-mix(in srgb, var(--color-warning) 82%, var(--color-surface));
   color: var(--color-text);
+}
+
+[data-theme="dark"] .player-leaderboard-start-quiz {
+  border-color: color-mix(in srgb, var(--color-warning) 58%, var(--color-border-light));
+  background: linear-gradient(135deg, #5a4214, #8b641b);
+  color: var(--color-text-inverse);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 28%);
+}
+
+[data-theme="dark"] .player-leaderboard-start-quiz:hover,
+[data-theme="dark"] .player-leaderboard-start-quiz:focus-visible {
+  outline-color: color-mix(in srgb, var(--color-warning) 62%, var(--color-surface));
 }
 
 .player-leaderboard-view-toggle {
