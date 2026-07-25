@@ -4,7 +4,7 @@
   // Version this guard whenever startup recovery semantics change. A previous
   // build set the old guard before its request and retained it after a 502,
   // which left that tab permanently unable to retry the canonical workspace.
-  const CLOUD_SYNC_AUTO_PULL_SESSION_KEY = "_bcCloudSyncAutoPullCheckedV2";
+  const CLOUD_SYNC_AUTO_PULL_SESSION_KEY = "_bcCloudSyncAutoPullCheckedV3";
   const CLOUD_SYNC_AUTO_PULL_APPLIED_KEY = "_bcCloudSyncAutoPullApplied";
   const CLOUD_SYNC_PULL_SUMMARY_KEY = "_bcCloudSyncLastPullSummary";
   const PLAYER_RELEASE_ETAG_KEY = "_bcPlayerReleaseEtag";
@@ -715,7 +715,7 @@
         STORAGE_KEYS.TENDENCIES_REPORTS,
         STORAGE_KEYS.INSTALLATION,
       ];
-      if (authoredKeys.some((key) => hasBackupValue(storageManager.get(key, null)))) {
+      if (authoredKeys.some((key) => hasAuthoredCoachValue(key, storageManager.get(key, null)))) {
         return true;
       }
       return countBackupCallSheetPlays(storageManager.get(STORAGE_KEYS.CALL_SHEET, {})) > 0;
@@ -896,6 +896,26 @@
     if (Array.isArray(value)) return value.length > 0;
     if (value && typeof value === "object") return Object.keys(value).length > 0;
     return value !== undefined && value !== null && value !== "";
+  }
+
+  function hasAuthoredCoachValue(key, value) {
+    if (key === STORAGE_KEYS.SCRIPT_DRAFT) {
+      return Array.isArray(value?.plays) && value.plays.some((item) => !item?.isSeparator);
+    }
+    if (key === STORAGE_KEYS.WRISTBAND_DRAFT) {
+      return Array.isArray(value?.cards) && value.cards.some((card) =>
+        Array.isArray(card?.data) && card.data.some((play) => play !== null && play !== undefined),
+      );
+    }
+    if (key === STORAGE_KEYS.GAME_PLAN_BOARDS) {
+      return Object.values(value || {}).some((board) =>
+        Object.values(board?.assignments || {}).some((plays) => Array.isArray(plays) && plays.length > 0),
+      );
+    }
+    if (key === STORAGE_KEYS.INSTALLATION) {
+      return Object.values(value?.installed || {}).some((plays) => Array.isArray(plays) && plays.length > 0);
+    }
+    return hasBackupValue(value);
   }
 
   function buildTeamWorkspacePullSummary(remote, opts = {}) {
@@ -2217,6 +2237,13 @@
     // authenticated. A signed-out shell is expected on a shared device; if it
     // claimed this guard, the eventual login could be left on an empty local
     // workspace with no canonical team read.
+    // A newly completed login must make its own decision. It can follow a
+    // shell-start check in this same tab, but it must never inherit that
+    // check's conclusion (especially on a browser that first opened signed
+    // out or with an empty, default-only workspace).
+    if (opts.bootstrap === true) {
+      sessionStorage.removeItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY);
+    }
     if (sessionStorage.getItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY) === "1") return false;
     sessionStorage.setItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY, "1");
 

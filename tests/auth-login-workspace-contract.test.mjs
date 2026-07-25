@@ -8,13 +8,18 @@ const cloudSource = await readFile(new URL("js/cloud-sync.js", `file://${root}/`
 
 assert.match(
   cloudSource,
-  /async function autoPullLatestCloudBackup\(opts = \{\}\) \{[\s\S]*?const currentUser =[\s\S]*?if \(!currentUser\) return false;[\s\S]*?if \(sessionStorage\.getItem\(CLOUD_SYNC_AUTO_PULL_SESSION_KEY\) === "1"\) return false;[\s\S]*?sessionStorage\.setItem\(CLOUD_SYNC_AUTO_PULL_SESSION_KEY, "1"\);/,
-  "a signed-out shell cannot consume the staff workspace pull guard",
+  /async function autoPullLatestCloudBackup\(opts = \{\}\) \{[\s\S]*?const currentUser =[\s\S]*?if \(!currentUser\) return false;[\s\S]*?if \(opts\.bootstrap === true\) \{[\s\S]*?sessionStorage\.removeItem\(CLOUD_SYNC_AUTO_PULL_SESSION_KEY\);[\s\S]*?if \(sessionStorage\.getItem\(CLOUD_SYNC_AUTO_PULL_SESSION_KEY\) === "1"\) return false;[\s\S]*?sessionStorage\.setItem\(CLOUD_SYNC_AUTO_PULL_SESSION_KEY, "1"\);/,
+  "a completed sign-in always receives a fresh workspace bootstrap decision",
 );
 assert.match(
   cloudSource,
-  /async function hasLocalCoachWorkspaceContent\(\)[\s\S]*?STORAGE_KEYS\.SAVED_SCRIPTS[\s\S]*?STORAGE_KEYS\.GAME_PLAN_BOARDS[\s\S]*?countBackupCallSheetPlays/,
-  "only actual authored coach work, not setup residue, qualifies for the first-run overwrite safeguard",
+  /async function hasLocalCoachWorkspaceContent\(\)[\s\S]*?STORAGE_KEYS\.SAVED_SCRIPTS[\s\S]*?hasAuthoredCoachValue\(key, storageManager\.get\(key, null\)\)/,
+  "only actual authored coach work, not empty drafts or default game-plan boards, qualifies for the first-run overwrite safeguard",
+);
+assert.match(
+  cloudSource,
+  /function hasAuthoredCoachValue\(key, value\)[\s\S]*?STORAGE_KEYS\.SCRIPT_DRAFT[\s\S]*?STORAGE_KEYS\.GAME_PLAN_BOARDS[\s\S]*?board\?\.assignments/,
+  "drafts and boards are inspected for plays before they can block a canonical restore",
 );
 assert.match(
   cloudSource,
