@@ -758,6 +758,35 @@ function syncMobileShellState() {
   queueMobileOverflowTrace();
   if (typeof updateMobileCoachDock === "function") updateMobileCoachDock();
   if (typeof applyMobileCoachLockUi === "function") applyMobileCoachLockUi();
+  if (typeof syncMobilePrimaryNav === "function") syncMobilePrimaryNav();
+}
+
+function syncMobilePrimaryNav() {
+  const nav = document.getElementById("mobilePrimaryNav");
+  if (!nav) return;
+  const isPhone = document.body?.classList.contains("shell-phone");
+  const isPresentation = document.body?.classList.contains("play-presentation-open");
+  nav.hidden = !isPhone || isPresentation;
+  if (nav.hidden) return;
+  const activeTab = document.body?.dataset.activeTab || "";
+  nav.querySelectorAll("[data-mobile-tab]").forEach((button) => {
+    const tab = button.dataset.mobileTab;
+    const allowed = typeof canAccessTab !== "function" || canAccessTab(tab);
+    button.hidden = !allowed;
+    button.classList.toggle("active", tab === activeTab);
+    button.setAttribute("aria-current", tab === activeTab ? "page" : "false");
+  });
+  nav.querySelector("[data-mobile-more]")?.classList.toggle("active", !["dashboard", "script", "playbook"].includes(activeTab));
+}
+
+function openMobilePrimaryMore() {
+  const tabs = document.querySelector("#mainApp > .tabs");
+  const utilities = document.querySelector(".tabs-utilities");
+  if (!tabs || !utilities) return;
+  tabs.classList.add("mobile-more-open");
+  utilities.classList.add("open");
+  const button = document.getElementById("utilitiesMenuBtn");
+  if (button) button.setAttribute("aria-expanded", "true");
 }
 
 function queueMobileShellStateSync() {

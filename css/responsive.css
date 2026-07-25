@@ -162,6 +162,64 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
   display: none;
 }
 
+.mobile-primary-nav { display: none; }
+
+@media (max-width: 560px) {
+  body.is-mobile-screen:not(.play-presentation-open) #mainApp > .tabs {
+    display: none;
+  }
+  body.is-mobile-screen:not(.play-presentation-open) #mainApp > .tabs.mobile-more-open {
+    position: fixed;
+    z-index: calc(var(--z-tab-bar) + 1);
+    inset: auto 8px calc(70px + env(safe-area-inset-bottom, 0px));
+    display: block;
+    overflow: visible;
+    padding: 0;
+    background: transparent;
+  }
+  body.is-mobile-screen:not(.play-presentation-open) #mainApp > .tabs.mobile-more-open > :not(.tabs-utilities) { display: none; }
+  body.is-mobile-screen:not(.play-presentation-open) #mainApp > .tabs.mobile-more-open .tabs-utilities { display: block; margin: 0; }
+  body.is-mobile-screen:not(.play-presentation-open) #mainApp > .tabs.mobile-more-open .tab-utilities { display: none; }
+  body.is-mobile-screen:not(.play-presentation-open) #mainApp > .tabs.mobile-more-open .tabs-utilities-menu {
+    position: static;
+    display: grid;
+    max-height: min(64vh, 520px);
+    overflow: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+  }
+  body.is-mobile-screen:not(.play-presentation-open) .mobile-primary-nav {
+    position: fixed;
+    z-index: var(--z-tab-bar);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    min-height: calc(62px + env(safe-area-inset-bottom, 0px));
+    padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+    background: color-mix(in srgb, var(--color-surface) 96%, transparent);
+    border-top: 1px solid var(--color-border);
+    box-shadow: 0 -8px 22px rgba(7, 20, 51, .12);
+  }
+  .mobile-primary-nav button {
+    display: grid;
+    place-items: center;
+    gap: 2px;
+    min-height: 48px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .mobile-primary-nav button > span:first-child { font-size: 19px; line-height: 1; }
+  .mobile-primary-nav button.active { color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 11%, transparent); }
+  body.is-mobile-screen:not(.play-presentation-open) { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* Coach tab bar on mobile: scroll horizontally, show short labels.
    Intentionally does NOT require body.is-mobile-screen so it applies purely
    from the media query before the JS class is set. Player portal is excluded

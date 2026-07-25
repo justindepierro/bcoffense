@@ -49,6 +49,7 @@ function showTab(tabName) {
     tabName = typeof getDefaultAuthTab === "function" ? getDefaultAuthTab() : "playbook";
     if (typeof canAccessTab === "function" && !canAccessTab(tabName)) return;
   }
+  document.querySelector("#mainApp > .tabs")?.classList.remove("mobile-more-open");
 
   // Close presentation overlay when switching tabs
   if (typeof closePlayPresentation === "function") {
@@ -60,6 +61,7 @@ function showTab(tabName) {
 
   currentActiveTab = tabName;
   if (document.body) document.body.dataset.activeTab = tabName;
+  if (typeof syncMobilePrimaryNav === "function") syncMobilePrimaryNav();
 
   document
     .querySelectorAll(".panel")
