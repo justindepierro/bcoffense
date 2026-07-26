@@ -982,9 +982,12 @@ function checkPersonnelMarkerContracts() {
 
   if (
     !/meat:\s*"🥩"/.test(utils) ||
+    !/irish:\s*"☘️"/.test(utils) ||
+    !/sky:\s*"🌤️"/.test(utils) ||
+    !/gold:\s*"🏅"/.test(utils) ||
     !/function getPersonnelEmoji\(personnel, useSquares = false\)/.test(utils)
   ) {
-    fail("shared personnel emoji markers do not include Meat steak");
+    fail("shared personnel emoji markers do not include the active package markers");
   }
   if (
     !/meat:\s*"🥩"/.test(callsheet) ||
@@ -1006,8 +1009,8 @@ function checkPersonnelMarkerContracts() {
   ) {
     fail("Meat personnel marker is not wired through wristband, script, and game plan calls");
   }
-  if (!/Meat uses\s*🥩/.test(html) || !/Meat uses steak/.test(help)) {
-    fail("personnel marker help copy does not document Meat steak");
+  if (!/Irish\s*☘️/.test(html) || !/Sky\s*🌤️/.test(html) || !/Gold\s*🏅/.test(html) || !/Irish\s*☘️/.test(help)) {
+    fail("personnel marker help copy does not document the active package markers");
   }
 
   console.log("personnel marker contracts ok");

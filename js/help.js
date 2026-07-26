@@ -411,7 +411,7 @@ function getHelpDataForTab(tab) {
             },
             {
               key: "🔵 / ⚓ / 🥩 Personnel Marker",
-              desc: "Show personnel shorthand in each play call; Navy uses the anchor and Meat uses steak",
+              desc: "Show personnel shorthand in each play call; Navy ⚓, Meat 🥩, Star ⭐, Irish ☘️, Sky 🌤️, and Gold 🏅 each keep their own marker",
             },
             { key: "💾", desc: "Save current display as custom preset" },
           ],

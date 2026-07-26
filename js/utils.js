@@ -1286,6 +1286,9 @@ function getPersonnelEmoji(personnel, useSquares = false) {
     navy: "⚓",
     meat: "🥩",
     star: "⭐",
+    irish: "☘️",
+    sky: "🌤️",
+    gold: "🏅",
   };
 
   const squareMap = {
@@ -1301,6 +1304,9 @@ function getPersonnelEmoji(personnel, useSquares = false) {
     navy: "⚓",
     meat: "🥩",
     star: "⭐",
+    irish: "☘️",
+    sky: "🌤️",
+    gold: "🏅",
   };
 
   const map = useSquares ? squareMap : circleMap;
