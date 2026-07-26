@@ -101,6 +101,16 @@ assert.match(
   /function closeMobilePrimaryMore\(\)[\s\S]*?closeLayer\("mobile-primary-more"\)[\s\S]*?overlay\.remove\(\)/,
   "closing phone More releases shared scroll and focus ownership before removing the sheet",
 );
+assert.match(
+  indexHtml,
+  /data-action="showStorageInfo" data-auth-player-hide="true"/,
+  "player accounts cannot reach storage or sync controls through the cloned phone More menu",
+);
+assert.match(
+  indexHtml,
+  /data-action="openPrintStudio" data-auth-player-hide="true"/,
+  "the More menu preserves the player-safe print restriction used by the header",
+);
 for (const selector of [
   "play-readiness-badge--trusted",
   "play-readiness-badge--ready",
