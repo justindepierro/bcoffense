@@ -2395,11 +2395,30 @@ body.app-ready:not(.is-mobile-screen)
   width: 100%;
 }
 
+.wb-type-choice-intro {
+  display: grid;
+  gap: 4px;
+}
+
 .wb-type-choice-title {
   font-size: var(--font-size-xl);
   font-weight: 700;
   color: var(--color-text);
   margin-bottom: var(--space-lg);
+}
+
+.wb-type-choice-copy {
+  margin: 0 0 var(--space-md);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.wb-landing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin: 0 0 var(--space-lg);
 }
 
 .wb-type-choice-options {
@@ -3778,6 +3797,17 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
     margin: 0;
     font-size: var(--font-size-md);
     line-height: 1.2;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-type-choice-copy {
+    margin: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-landing-actions {
+    grid-column: 2;
+    justify-content: flex-start;
+    gap: var(--coach-grid-gap);
+    margin: 0;
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-type-choice-options {

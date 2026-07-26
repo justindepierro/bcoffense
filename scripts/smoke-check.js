@@ -3341,6 +3341,15 @@ function checkWristbandWorkspaceContracts() {
     fail("wristband print preview or one-per-page execution is incomplete");
   }
   if (
+    !/id="wbTypeChoice"/.test(html) ||
+    !/data-action="openSavedWristbandManager"/.test(html) ||
+    !/data-action="openWristbandTemplatesMenu"/.test(html) ||
+    !/class="wb-landing-actions"/.test(html) ||
+    !/\.wb-landing-actions/.test(css)
+  ) {
+    fail("wristband landing actions do not provide saved-wristband access before format selection");
+  }
+  if (
     !/#wristband\.wb-mobile-view-builder \.wristband-plays/.test(css) ||
     !/#wristband\.wb-mobile-view-library \.wristband-preview/.test(css) ||
     !/body\.shell-phone #wristband \.wristband-grid\.wb-phone-editor-grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(
