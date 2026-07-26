@@ -14,6 +14,7 @@ const [scriptStorage, scriptPlayer, presentation, cloudSync, workspaceSync, noti
   source("js/app-notifications.js"),
   source("js/dashboard-render.js"),
 ]);
+const scriptQuiz = await source("js/script-quiz.js");
 
 assert.match(
   scriptStorage,
@@ -94,6 +95,21 @@ assert.match(
   dashboardRender,
   /const practiceAction = featuredScript[\s\S]*?: 'data-action="refreshPlayerTeamApp"';[\s\S]*?Check for Practice/,
   "an empty player release refreshes safely instead of routing into an empty practice workspace",
+);
+assert.match(
+  scriptQuiz,
+  /key: "diagram-flash"[\s\S]*?label: "Diagram Flash Cards"[\s\S]*?disabled: !hasDiagram/,
+  "players can choose a diagram-only flashcard mode only when released script diagrams exist",
+);
+assert.match(
+  scriptQuiz,
+  /if \(_quizMode === "diagram-flash"\)[\s\S]*?type: "diagram_flash"[\s\S]*?prompt: "Name this play, then flip to check\."/,
+  "diagram flashcards use a self-check flip rather than inventing a scored answer",
+);
+assert.match(
+  scriptQuiz,
+  /Flip the card to check the call first\.[\s\S]*?question\.type === "diagram_flash" && !_quizRevealed/,
+  "a flashcard must be flipped before the player can advance past it",
 );
 assert.match(
   cloudSync,

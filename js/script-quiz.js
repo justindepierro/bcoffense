@@ -323,6 +323,14 @@ function _getPlayerQuizModes(context = {}) {
       disabled: !scriptItems.length,
     },
     {
+      key: "diagram-flash",
+      label: "Diagram Flash Cards",
+      time: hasDiagram ? "Flip" : "Needs diagrams",
+      note: hasDiagram ? "See the redacted diagram, name the call, then flip to check yourself." : "Add diagrams to this script to unlock flash cards.",
+      source: "script",
+      disabled: !hasDiagram,
+    },
+    {
       key: "job",
       label: "Know Your Job",
       time: hasRules ? "Rules" : "Fallback",
@@ -483,7 +491,7 @@ function toggleSignalGameCategory(categoryId) {
 function _prepareQuizItemsForMode(items, modeKey = _quizMode) {
   const normalized = _normalizeQuizItems(items);
   const mode = String(modeKey || "quick");
-  if (mode === "diagram") {
+  if (mode === "diagram" || mode === "diagram-flash") {
     const withDiagrams = normalized.filter(_quizItemHasDiagram);
     return (withDiagrams.length ? withDiagrams : normalized).slice(0, 8);
   }
@@ -1584,7 +1592,7 @@ function _buildQuizQuestion(item) {
     : null;
   const canAskRules = enabledTypes.has("responsibility") && positionRule;
   const canAskRuleToPlay = enabledTypes.has("play_from_rule") && positionRule;
-  const canAskVisual = enabledTypes.has("diagram") && diagramUrl;
+  const canAskVisual = (_quizMode === "diagram-flash" || enabledTypes.has("diagram")) && diagramUrl;
   const canAskSignal = Boolean(signalRecord);
   const canAskRecognition = enabledTypes.has("call");
   const ruleQuestion = canAskRules ? {
@@ -1604,6 +1612,21 @@ function _buildQuizQuestion(item) {
     rule: positionRule,
     position,
   } : null;
+  // Flash cards are recognition reps, not scored guesses: players name the
+  // redacted diagram mentally, then flip to the exact practice-script call.
+  if (_quizMode === "diagram-flash") {
+    return canAskVisual
+      ? {
+        type: "diagram_flash",
+        prompt: "Name this play, then flip to check.",
+        detailLabel: "",
+        detailValue: "",
+        diagramUrl,
+        rule: positionRule,
+        position,
+      }
+      : _buildQuizStudyCardQuestion(item, position, "diagram-required");
+  }
   const ruleToPlayQuestion = canAskRuleToPlay ? {
     type: "play_from_rule",
     prompt: `Which play has this ${positionLabel} rule?`,
@@ -2135,6 +2158,10 @@ function revealScriptQuizAnswer() {
 function nextScriptQuizPlay() {
   if (isScriptQuizAwaitingAnswer()) {
     showToast("Pick an answer first.", { type: "warning" });
+    return;
+  }
+  if (_quizCurrentQuestion?.type === "diagram_flash" && !_quizRevealed) {
+    showToast("Flip the card to check the call first.", { type: "info" });
     return;
   }
   if (_quizIndex >= _quizPlays.length - 1) {
@@ -2908,7 +2935,7 @@ function renderScriptQuizPlay() {
   const nextBtn = document.getElementById("scriptQuizNextBtn");
   if (prevBtn) prevBtn.disabled = _quizIndex === 0 || _isSignalAutoAdvanceMode();
   if (nextBtn) {
-    nextBtn.disabled = _isSignalAutoAdvanceMode() || (gameMode && !answer);
+    nextBtn.disabled = _isSignalAutoAdvanceMode() || (gameMode && !answer) || (question.type === "diagram_flash" && !_quizRevealed);
     nextBtn.textContent = _isSignalBattleMode()
       ? (battleLocked ? "Watch" : "Battle")
       : _isSignalHeatCheckMode()
@@ -2942,7 +2969,7 @@ function renderScriptQuizPlay() {
   const weightLabel = _quizSourceWeight === 1 ? "1.0x" : `${_quizSourceWeight}x`;
   const question = _quizCurrentQuestion || _buildQuizQuestion(item);
   const detailValue = _quizCleanText(question.detailValue);
-  const diagramPromptHtml = ["diagram", "diagram_formation", "study_card"].includes(question.type)
+  const diagramPromptHtml = ["diagram", "diagram_formation", "diagram_flash", "study_card"].includes(question.type)
     ? _renderQuizRedactedDiagram(play, question.diagramUrl)
     : "";
   const signalPromptHtml = question.type === "signal" && question.signalClipUrl

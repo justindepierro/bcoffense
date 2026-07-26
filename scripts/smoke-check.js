@@ -4969,7 +4969,7 @@ function checkPlayerQuizSettingsContracts() {
   if (
     !/candidates\.push\(diagramQuestion, diagramFormationQuestion, formationQuestion, signalQuestion, typeQuestion, callQuestion/.test(scriptQuiz) ||
     !/candidates\.push\(ruleQuestion, ruleToPlayQuestion, signalQuestion/.test(scriptQuiz) ||
-    !/\["diagram", "diagram_formation", "study_card"\]\.includes\(question\.type\)/.test(scriptQuiz) ||
+    !/\["diagram", "diagram_formation", "diagram_flash", "study_card"\]\.includes\(question\.type\)/.test(scriptQuiz) ||
     !/function _quizQuestionDistractorItems\(item, question\)[\s\S]*?formation_to_play/.test(scriptQuiz) ||
     !/function _quizQuestionDistractorItems\(item, question\)[\s\S]*?question\?\.type === "signal"/.test(scriptQuiz)
   ) {
