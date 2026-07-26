@@ -277,6 +277,7 @@ function renderWristbandGrid() {
       extraPersonnel: custom?.extraPersonnel || "",
       preShift: getCustomPreShiftValues(custom),
       componentOrder: custom?.componentOrder || [],
+      customWriteIn: custom?.customWriteIn || "",
     });
     if (variants.has(variantKey)) return variants.get(variantKey);
     const rendered = renderWristbandCellCall(play, custom, opts);
@@ -322,9 +323,7 @@ function renderWristbandGrid() {
       const sourceStatusBadge = play && typeof renderPlaySourceStatusBadge === "function"
         ? renderPlaySourceStatusBadge(play, { compact: true, className: "wb-source-status-badge" })
         : "";
-      const writeInHtml = custom.customWriteIn
-        ? `<span class="cell-write-in">${escapeHtml(custom.customWriteIn)}</span>`
-        : "";
+      const writeInHtml = renderWristbandCellWriteIn(custom, { forceStandalone: !play });
       const rowClass = play ? "filled" : "empty";
       html += `
         <div class="wristband-cell wb-phone-editor-row ${rowClass}" style="${style}"
@@ -406,9 +405,7 @@ function renderWristbandGrid() {
 
     if (oddPlay) {
       const oddCellHtml = getCachedDisplay(oddPlay, oddCustom);
-      const oddWriteInHtml = oddCustom.customWriteIn
-        ? `<span class="cell-write-in">${escapeHtml(oddCustom.customWriteIn)}</span>`
-        : "";
+      const oddWriteInHtml = renderWristbandCellWriteIn(oddCustom);
       const oddCsDot = _wbCsDot(oddPlay);
       const oddSourceStatusBadge = typeof renderPlaySourceStatusBadge === "function"
         ? renderPlaySourceStatusBadge(oddPlay, { compact: true, className: "wb-source-status-badge" })
@@ -428,16 +425,14 @@ function renderWristbandGrid() {
       html += `<div class="wristband-cell" style="${oddStyle}" role="gridcell" tabindex="0"
                     aria-label="${escapeHtml(getWristbandCellAriaLabel(null, oddNum))}"
                     data-drag="wbCell" data-cell-idx="${oddIndex}"
-                    data-card="${currentCardIndex}"></div>`;
+                    data-card="${currentCardIndex}">${renderWristbandCellWriteIn(oddCustom, { forceStandalone: true })}</div>`;
     }
 
     html += `<div class="wristband-cell num-cell" role="rowheader" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
 
     if (evenPlay) {
       const evenCellHtml = getCachedDisplay(evenPlay, evenCustom);
-      const evenWriteInHtml = evenCustom.customWriteIn
-        ? `<span class="cell-write-in">${escapeHtml(evenCustom.customWriteIn)}</span>`
-        : "";
+      const evenWriteInHtml = renderWristbandCellWriteIn(evenCustom);
       const evenCsDot = _wbCsDot(evenPlay);
       const evenSourceStatusBadge = typeof renderPlaySourceStatusBadge === "function"
         ? renderPlaySourceStatusBadge(evenPlay, { compact: true, className: "wb-source-status-badge" })
@@ -457,7 +452,7 @@ function renderWristbandGrid() {
       html += `<div class="wristband-cell" style="${evenStyle}" role="gridcell" tabindex="0"
                     aria-label="${escapeHtml(getWristbandCellAriaLabel(null, evenNum))}"
                     data-drag="wbCell" data-cell-idx="${evenIndex}"
-                    data-card="${currentCardIndex}"></div>`;
+                    data-card="${currentCardIndex}">${renderWristbandCellWriteIn(evenCustom, { forceStandalone: true })}</div>`;
     }
   }
 

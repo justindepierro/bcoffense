@@ -126,6 +126,7 @@ function _executeClassicWristbandPrint(cardIndexes, layoutMode = "sheet", profil
         extraPersonnel: custom?.extraPersonnel || "",
         preShift: getCustomPreShiftValues(custom),
         componentOrder: custom?.componentOrder || [],
+        customWriteIn: custom?.customWriteIn || "",
       });
       if (variants.has(variantKey)) return variants.get(variantKey);
       const rendered = renderWristbandCellCall(play, custom, opts);
@@ -192,11 +193,15 @@ function _executeClassicWristbandPrint(cardIndexes, layoutMode = "sheet", profil
         const evenNumFg = evenBg ? (isColorDark(evenBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
         html += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
         const oddDisplay = oddPlay ? getPrintDisplay(oddPlay, oddCustom) : "";
-        const oddCellInner = oddPlay ? oddDisplay : "";
+        const oddCellInner = oddPlay
+          ? `${oddDisplay}${renderWristbandCellWriteIn(oddCustom)}`
+          : renderWristbandCellWriteIn(oddCustom, { forceStandalone: true });
         html += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddCellInner}</span></div>`;
         html += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
         const evenDisplay = evenPlay ? getPrintDisplay(evenPlay, evenCustom) : "";
-        const evenCellInner = evenPlay ? evenDisplay : "";
+        const evenCellInner = evenPlay
+          ? `${evenDisplay}${renderWristbandCellWriteIn(evenCustom)}`
+          : renderWristbandCellWriteIn(evenCustom, { forceStandalone: true });
         html += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenCellInner}</span></div>`;
       }
 

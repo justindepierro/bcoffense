@@ -470,6 +470,7 @@ function openWbComponentReorder() {
     preShift: pendingPreShift.join("; "),
     formationTags: pendingFormationTags,
     backTags: pendingBackTags,
+    customWriteIn: document.getElementById("cellCustomWriteIn")?.value.trim() || pendingCustomWriteIn,
   };
   const tokens = buildWristbandCellTokens(play, livePending, getWristbandDisplayOptions());
   // Determine current order: stored componentOrder if any, else canonical.
@@ -504,7 +505,7 @@ function openWbComponentReorder() {
         .map((label) => idsByLabel.get(label))
         .filter((id) => typeof id === "string" && WB_CELL_TOKEN_LABELS[id]);
       pendingComponentOrder = newOrder;
-      showToast("Component order updated", { type: "success" });
+      showToast("Component order ready — select Apply to save this cell", { type: "success" });
     },
     onClear: () => {
       pendingComponentOrder = [];
@@ -578,6 +579,7 @@ async function applyWbComponentOrderToAll() {
           formationTags: Array.isArray(existing.formationTags) ? [...existing.formationTags] : [],
           backTags: Array.isArray(existing.backTags) ? [...existing.backTags] : [],
           componentOrder: isClearing ? [] : [...order],
+          customWriteIn: existing.customWriteIn || "",
           playerRuleSources: normalizePlayerRuleSources(
             existing.playerRuleSources,
           ),
@@ -603,6 +605,11 @@ function applyCellStyle() {
   if (cardIdx === null || cellIdx === null) return;
 
   const key = `${cardIdx}-${cellIdx}`;
+  // Apply is a save action. Commit any values still being typed so users do
+  // not have to discover that the small + button (or Enter) was required.
+  addWbPendingPreShift();
+  addWbPendingFormationTag();
+  addWbPendingBackTag();
   const markers = [...pendingMarkers];
   const markerPlacement = pendingMarkerPlacement;
   const extraPersonnel = document

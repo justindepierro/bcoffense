@@ -559,6 +559,7 @@ const WB_CELL_TOKEN_IDS = [
   "play",
   "play-tag-1",
   "play-tag-2",
+  "write-in",
   "cadence-post",
   "line-call",
 ];
@@ -582,6 +583,7 @@ const WB_CELL_TOKEN_LABELS = {
   "play": "Play",
   "play-tag-1": "Play Tag 1",
   "play-tag-2": "Play Tag 2",
+  "write-in": "Custom Write-In",
   "cadence-post": "Cadence (end)",
   "line-call": "Line Call",
 };
@@ -698,6 +700,9 @@ function buildWristbandCellTokens(play, custom = {}, opts = {}) {
       : "",
     "play-tag-1": txt(play?.playTag1),
     "play-tag-2": txt(play?.playTag2),
+    "write-in": custom?.customWriteIn
+      ? `<span class="cell-write-in">${escapeHtml(String(custom.customWriteIn).trim())}</span>`
+      : "",
     "cadence-post": cadencePostText,
     "line-call": lineCallHtml,
   };
@@ -743,6 +748,15 @@ function composeWristbandCellHtml(play, custom = {}, opts = {}) {
     if (html) parts.push(html);
   });
   return parts.join(" ").trim();
+}
+
+function isWristbandWriteInInComponentOrder(custom = {}) {
+  return Array.isArray(custom?.componentOrder) && custom.componentOrder.includes("write-in");
+}
+
+function renderWristbandCellWriteIn(custom = {}, { forceStandalone = false } = {}) {
+  if (!custom?.customWriteIn || (!forceStandalone && isWristbandWriteInInComponentOrder(custom))) return "";
+  return `<span class="cell-write-in">${escapeHtml(String(custom.customWriteIn).trim())}</span>`;
 }
 // ---------- end token system ----------
 

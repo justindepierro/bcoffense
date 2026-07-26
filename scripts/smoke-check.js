@@ -3379,6 +3379,7 @@ function checkPlayerWristbandRuleOverrides() {
   const playerRuntime = read("js/wristband-export.js");
   const chrome = read("js/wristband-chrome.js");
   const popup = read("js/wristband-cell-popup.js");
+  const wristbandRender = read("js/wristband-render.js");
   const html = read("index.html");
   const css = read("css/wristband.css");
 
@@ -3405,6 +3406,17 @@ function checkPlayerWristbandRuleOverrides() {
     !/pendingPlayerAssignmentOverrides/.test(popup)
   ) {
     fail("cell popup edits can discard player wristband rule overrides");
+  }
+  if (
+    !/"write-in"/.test(wristband) ||
+    !/function renderWristbandCellWriteIn\(/.test(wristband) ||
+    !/addWbPendingPreShift\(\);[\s\S]*?addWbPendingFormationTag\(\);[\s\S]*?addWbPendingBackTag\(\);/.test(popup) ||
+    !/customWriteIn:\s*existing\.customWriteIn/.test(popup) ||
+    !/renderWristbandCellWriteIn\(oddCustom, \{ forceStandalone: true \}\)/.test(wristbandRender) ||
+    !/renderWristbandCellWriteIn\(evenCustom, \{ forceStandalone: true \}\)/.test(wristbandRender) ||
+    !/customWriteIn:\s*custom\?\.customWriteIn/.test(playerRuntime)
+  ) {
+    fail("wristband custom cell fields or component ordering are not fully wired through save, render, and print");
   }
   if (
     !/data-action="printOnePlayerCard"/.test(html) ||
