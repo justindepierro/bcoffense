@@ -30,7 +30,7 @@ const panelScrollSources = [
   "js/wristband-search.js",
 ];
 
-const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, scriptQuizCss, appShell, panelScrollOwners, jsEntries, cssEntries] = await Promise.all([
+const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, scriptQuizCss, appShell, playerPlaybookFilters, panelScrollOwners, jsEntries, cssEntries] = await Promise.all([
   source("index.html"),
   source("sw.js"),
   source("js/playbook-identity.js"),
@@ -38,6 +38,7 @@ const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, scri
   source("css/script.css"),
   source("css/script-quiz.css"),
   source("js/app-shell.js"),
+  source("js/playbook-filters.js"),
   Promise.all(panelScrollSources.map(async (path) => ({ path, content: await source(path) }))),
   readdir(new URL("js/", `file://${root}/`)),
   readdir(new URL("css/", `file://${root}/`)),
@@ -110,6 +111,11 @@ assert.match(
   indexHtml,
   /data-action="openPrintStudio" data-auth-player-hide="true"/,
   "the More menu preserves the player-safe print restriction used by the header",
+);
+assert.match(
+  playerPlaybookFilters,
+  /id: "player-playbook-filters"[\s\S]*?blocking: true,[\s\S]*?onEscape: \(\) => closePlayerPlaybookFilters\(\)/,
+  "the player filter overlay owns a blocking layer and has one explicit Escape close path",
 );
 for (const selector of [
   "play-readiness-badge--trusted",

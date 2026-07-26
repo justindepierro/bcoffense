@@ -642,6 +642,8 @@ function openPlayerPlaybookFilters(focusKey = "") {
     openLayer(overlay, {
       id: "player-playbook-filters",
       scrollElement: overlay.querySelector(".pb-player-filter-body"),
+      blocking: true,
+      onEscape: () => closePlayerPlaybookFilters(),
     });
   } else if (typeof trapFocus === "function") {
     trapFocus(overlay);
