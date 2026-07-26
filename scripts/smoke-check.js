@@ -3369,6 +3369,13 @@ function checkWristbandWorkspaceContracts() {
     fail("wristband zoom controls are not grouped into a clear compact control");
   }
   if (
+    !/wb-print-preview-classic-card \.wristband-cell/.test(css) ||
+    !/font-size:\s*6\.2pt/.test(css) ||
+    !/\.wristband-print \.wristband-cell[\s\S]*?font-size:\s*6\.2pt/.test(printCss)
+  ) {
+    fail("classic wristband preview and print typography are not kept compact and consistent");
+  }
+  if (
     !/#wristband\.wb-mobile-view-builder \.wristband-plays/.test(css) ||
     !/#wristband\.wb-mobile-view-library \.wristband-preview/.test(css) ||
     !/body\.shell-phone #wristband \.wristband-grid\.wb-phone-editor-grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(

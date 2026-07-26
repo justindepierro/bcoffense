@@ -147,9 +147,9 @@
   .wristband-print .wristband-cell {
     min-width: 0 !important;
     font-family: var(--font-sans) !important;
-    font-size: 7pt !important;
+    font-size: 6.2pt !important;
     line-height: 1 !important;
-    padding: 0 0.03in !important;
+    padding: 0 0.025in !important;
     border: 0.25pt solid var(--wristband-print-grid) !important;
     display: flex !important;
     align-items: center !important;
@@ -157,7 +157,7 @@
     overflow: hidden !important;
   }
   .wristband-print .wristband-cell.num-cell {
-    font-size: 7pt !important;
+    font-size: 6.2pt !important;
     font-weight: 800 !important;
     padding: 0 !important;
     justify-content: center !important;
@@ -165,9 +165,9 @@
   .wristband-print .cell-play {
     min-width: 0 !important;
     max-width: 100% !important;
-    font-size: 7pt !important;
+    font-size: 6.2pt !important;
     line-height: 1 !important;
-    gap: 0.02in !important;
+    gap: 0.01in !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;

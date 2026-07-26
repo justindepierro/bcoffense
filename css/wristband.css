@@ -808,6 +808,28 @@ body.app-ready:not(.is-mobile-screen)
   transform: scale(0.78);
 }
 
+/* Classic cards fit forty calls into a very small physical card. Keep the
+   preview faithful to print: compact enough for longer calls, but above the
+   point where it becomes hard to read on a real wristband. */
+.wb-print-preview-canvas .wb-print-preview-classic-card .wristband-cell,
+.wb-print-preview-canvas .wb-print-preview-classic-card .cell-play {
+  font-size: 6.2pt;
+  line-height: 1;
+}
+
+.wb-print-preview-canvas .wb-print-preview-classic-card .wristband-cell {
+  padding: 0 0.025in;
+}
+
+.wb-print-preview-canvas .wb-print-preview-classic-card .wristband-cell.num-cell {
+  font-size: 6.2pt;
+  padding: 0;
+}
+
+.wb-print-preview-canvas .wb-print-preview-classic-card .cell-play {
+  gap: 0.01in;
+}
+
 .wb-print-preview-canvas[data-wb-print-size="flag"]
   .wristband-card.wb-print-preview-classic-card {
   transform: scale(0.82);
