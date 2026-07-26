@@ -633,12 +633,14 @@ function buildWristbandCellTokens(play, custom = {}, opts = {}) {
 
   // Extra personnel
   let extraPersonnelHtml = "";
-  if (custom?.extraPersonnel) {
-    const tag = String(custom.extraPersonnel).trim();
-    if (tag) {
-      const emoji = showEmoji ? getPersonnelEmoji(tag, useSquares) : "";
-      extraPersonnelHtml = emoji || escapeHtml(tag);
-    }
+  const extraPersonnelValues = getCustomExtraPersonnelValues(custom);
+  if (extraPersonnelValues.length) {
+    extraPersonnelHtml = extraPersonnelValues
+      .map((tag) => {
+        const emoji = showEmoji ? getPersonnelEmoji(tag, useSquares) : "";
+        return emoji || escapeHtml(tag);
+      })
+      .join(" ");
   }
 
   // Pre-shift
@@ -760,24 +762,35 @@ function renderWristbandCellWriteIn(custom = {}, { forceStandalone = false } = {
 }
 // ---------- end token system ----------
 
+// Keep existing string-backed cards compatible while allowing the editor to
+// manage several extra personnel labels on one cell.
+function getCustomExtraPersonnelValues(custom = {}) {
+  const source = Array.isArray(custom?.extraPersonnel)
+    ? custom.extraPersonnel
+    : String(custom?.extraPersonnel || "").split(/[;,]/);
+  return [...new Set(source.map((value) => String(value || "").trim()).filter(Boolean))];
+}
+
 /** Get custom extra personnel prefix for a wristband cell */
 function getCustomPersonnelPrefix(custom, opts, play) {
-  if (!custom || !custom.extraPersonnel) return "";
-  const tag = String(custom.extraPersonnel).trim();
-  if (!tag) return "";
+  const tags = getCustomExtraPersonnelValues(custom);
+  if (!tags.length) return "";
   if (opts.showEmoji) {
     // Emoji mode: composeWristbandCellDisplay slots this right after the
     // play's personnel emoji, so they render side-by-side already.
-    const emoji = getPersonnelEmoji(tag, opts.useSquares);
-    return emoji ? `${emoji} ` : `${escapeHtml(tag)} `;
+    return tags.map((tag) => {
+      const emoji = getPersonnelEmoji(tag, opts.useSquares);
+      return emoji || escapeHtml(tag);
+    }).join(" ") + " ";
   }
   // Text-only mode: getFullCall doesn't render the play's own personnel, so
   // an extra-personnel value would otherwise float alone before the
   // formation. Show both numbers grouped together (e.g. "11 10 Rex Snug…").
   const playPersonnel = String(play?.personnel || "").trim();
+  const tagText = tags.map((tag) => escapeHtml(tag)).join(" ");
   return playPersonnel
-    ? `${escapeHtml(playPersonnel)} ${escapeHtml(tag)} `
-    : `${escapeHtml(tag)} `;
+    ? `${escapeHtml(playPersonnel)} ${tagText} `
+    : `${tagText} `;
 }
 
 function normalizeCustomTagDisplayMode(mode) {
@@ -1242,7 +1255,7 @@ function buildWristbandCellCustomization(custom = {}) {
         : getCellMarkerValues(custom),
     ),
     markerPlacement: custom.markerPlacement || "prefix",
-    extraPersonnel: String(custom.extraPersonnel || "").trim(),
+    extraPersonnel: getCustomExtraPersonnelValues(custom).join("; "),
     preShift: uniqueStrings(getCustomPreShiftValues(custom)).join("; "),
     formationTags: uniqueTagEntries(getCustomFormationTagEntries(custom)),
     backTags: uniqueTagEntries(getCustomBackTagEntries(custom)),

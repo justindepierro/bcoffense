@@ -4,7 +4,7 @@ let pendingTextColor = UI_COLORS.textBlack;
 let pendingPlaySelection = null;
 let pendingMarkers = [];
 let pendingMarkerPlacement = "prefix";
-let pendingExtraPersonnel = "";
+let pendingExtraPersonnel = [];
 let pendingPreShift = [];
 let pendingFormationTags = [];
 let pendingBackTags = [];
@@ -55,6 +55,50 @@ function initWbPreShiftInput() {
     if (event.key !== "Enter") return;
     event.preventDefault();
     addWbPendingPreShift();
+  });
+}
+
+function renderPendingExtraPersonnelList() {
+  renderPendingParenList(
+    "cellExtraPersonnelList",
+    pendingExtraPersonnel,
+    "removeWbPendingExtraPersonnel",
+    "No extra personnel added",
+  );
+}
+
+function addWbPendingExtraPersonnel(value) {
+  const input = document.getElementById("cellExtraPersonnelInput");
+  const additions = String(value || input?.value || "")
+    .split(/[;,]/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  if (!additions.length) return;
+  additions.forEach((entry) => {
+    if (!pendingExtraPersonnel.includes(entry)) pendingExtraPersonnel.push(entry);
+  });
+  if (input) {
+    input.value = "";
+    input.focus();
+  }
+  renderPendingExtraPersonnelList();
+}
+
+function removeWbPendingExtraPersonnel(index) {
+  const parsedIndex = parseInt(index, 10);
+  if (!Number.isInteger(parsedIndex) || parsedIndex < 0) return;
+  pendingExtraPersonnel = pendingExtraPersonnel.filter((_, idx) => idx !== parsedIndex);
+  renderPendingExtraPersonnelList();
+}
+
+function initWbExtraPersonnelInput() {
+  const input = document.getElementById("cellExtraPersonnelInput");
+  if (!input || input.dataset.bound === "true") return;
+  input.dataset.bound = "true";
+  input.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    addWbPendingExtraPersonnel();
   });
 }
 
@@ -192,7 +236,7 @@ function resetWristbandCellPopupPendingState() {
   pendingPlaySelection = null;
   pendingMarkers = [];
   pendingMarkerPlacement = "prefix";
-  pendingExtraPersonnel = "";
+  pendingExtraPersonnel = [];
   pendingPreShift = [];
   pendingFormationTags = [];
   pendingBackTags = [];
@@ -211,7 +255,7 @@ function setWristbandCellPopupPendingState(currentPlay, existing = {}) {
     existing,
     getWristbandDisplayOptions(),
   );
-  pendingExtraPersonnel = existing.extraPersonnel || "";
+  pendingExtraPersonnel = getCustomExtraPersonnelValues(existing);
   pendingPreShift = getCustomPreShiftValues(existing);
   pendingFormationTags = getCustomFormationTagEntries(existing);
   pendingBackTags = getCustomBackTagEntries(existing);
@@ -237,7 +281,7 @@ function getWristbandPendingCellCustomization() {
       textColor: pendingTextColor,
       markers: pendingMarkers,
       markerPlacement: pendingMarkerPlacement,
-      extraPersonnel: pendingExtraPersonnel,
+      extraPersonnel: pendingExtraPersonnel.join("; "),
       preShift: pendingPreShift.join("; "),
       formationTags: pendingFormationTags,
       backTags: pendingBackTags,
@@ -310,7 +354,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
   updateCellMarkerSelection(pendingMarkers);
   updateCellMarkerPlacementSelection(pendingMarkerPlacement);
   document.getElementById("cellCustomWriteIn").value = pendingCustomWriteIn;
-  document.getElementById("cellExtraPersonnel").value = pendingExtraPersonnel;
+  document.getElementById("cellExtraPersonnelInput").value = "";
   document.getElementById("cellPreShiftInput").value = "";
   document.getElementById("cellFormationTagInput").value = "";
   document.getElementById("cellBackTagInput").value = "";
@@ -319,8 +363,10 @@ function openCellPopup(cardIdx, cellIdx, event) {
   populateWbFormationTagDatalist();
   populateWbBackTagDatalist();
   initWbPreShiftInput();
+  initWbExtraPersonnelInput();
   initWbFormationTagInput();
   initWbBackTagInput();
+  renderPendingExtraPersonnelList();
   renderPendingPreShiftList();
   renderPendingFormationTagList();
   renderPendingBackTagList();
@@ -466,7 +512,7 @@ function openWbComponentReorder() {
     textColor: pendingTextColor,
     markers: pendingMarkers,
     markerPlacement: pendingMarkerPlacement,
-    extraPersonnel: pendingExtraPersonnel,
+    extraPersonnel: pendingExtraPersonnel.join("; "),
     preShift: pendingPreShift.join("; "),
     formationTags: pendingFormationTags,
     backTags: pendingBackTags,
@@ -608,13 +654,12 @@ function applyCellStyle() {
   // Apply is a save action. Commit any values still being typed so users do
   // not have to discover that the small + button (or Enter) was required.
   addWbPendingPreShift();
+  addWbPendingExtraPersonnel();
   addWbPendingFormationTag();
   addWbPendingBackTag();
   const markers = [...pendingMarkers];
   const markerPlacement = pendingMarkerPlacement;
-  const extraPersonnel = document
-    .getElementById("cellExtraPersonnel")
-    .value.trim();
+  const extraPersonnel = pendingExtraPersonnel.join("; ");
   const customWriteIn = document
     .getElementById("cellCustomWriteIn")
     .value.trim();
