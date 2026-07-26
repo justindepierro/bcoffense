@@ -207,6 +207,11 @@ assert.match(
   "the player Home shows a confirmed release revision, script count, and deliberate update check—not only errors",
 );
 assert.match(
+  dashboardRender,
+  /const waitingForPractice = state\.result\?\.data\?\.status === "waiting";[\s\S]*?if \(!busy && !needsRetry && !waitingForPractice\) return "";/,
+  "a healthy player refresh does not add a redundant full-width Home card, while loading and recovery states remain actionable",
+);
+assert.match(
   presentation,
   /scriptId: playPresentationState\.source === "script"[\s\S]*?loadPublishedPlayerScript\(String\(snapshot\.scriptId\), \{ skipToast: true \}\)/,
   "a suspended Swipe View carries its stable script ID and rebuilds it only from the fresh player release",

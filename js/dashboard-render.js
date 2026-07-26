@@ -242,6 +242,11 @@ function _dashRenderPlayerRefreshAction() {
   const busy = Boolean(state.busy);
   const needsRetry = tone === "warn" || tone === "offline";
   const waitingForPractice = state.result?.data?.status === "waiting";
+  // A successful background refresh is proof, not a task. The command center
+  // already shows the daily practice state, while Practice details retains a
+  // deliberate manual check. Reserve this full-width card for something the
+  // player actually needs to act on.
+  if (!busy && !needsRetry && !waitingForPractice) return "";
   const installState =
     typeof getPlayerA2HSActionState === "function"
       ? getPlayerA2HSActionState()
