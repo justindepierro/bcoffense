@@ -194,7 +194,7 @@ function _renderQuestion(q) {
     ${replyHtml}
     <div class="pport-item-foot">
       <span class="pport-date">Asked ${escapeHtml(date)}</span>
-      <button class="btn btn-xs pport-view-btn" data-action="pportOpenDiscussion" data-arg="${escapeHtml(q.playId)}">View Discussion →</button>
+      <button class="btn btn-xs pport-view-btn" data-action="pportOpenDiscussion" data-arg="${escapeHtml(encodeURIComponent(q.playId || ""))}::${escapeHtml(encodeURIComponent(q.postId || ""))}">View Discussion →</button>
     </div>
   </li>`;
 }
@@ -217,10 +217,22 @@ function _resolvePlayLabel(playId) {
 
 // ── Open play discussion ──────────────────────────────────────────────────────
 
-function pportOpenDiscussion(playId) {
+function pportOpenDiscussion(arg) {
+  const separator = String(arg || "").indexOf("::");
+  const rawPlayId = separator >= 0 ? arg.slice(0, separator) : arg;
+  const rawPostId = separator >= 0 ? arg.slice(separator + 2) : "";
+  const decode = (value) => {
+    try { return decodeURIComponent(value || ""); } catch (_) { return value || ""; }
+  };
+  const playId = decode(rawPlayId);
+  const postId = decode(rawPostId);
+  if (!playId) return;
   closePlayerPortal();
   if (typeof openDiscussionForPlayId === "function") {
-    openDiscussionForPlayId(playId);
+    // The portal already has the question post ID. Preserve it so the shared
+    // player router can scroll and highlight this exact question, rather than
+    // merely opening a long discussion on the same play.
+    openDiscussionForPlayId(playId, { postId });
   } else if (typeof openPlayPresentation === "function") {
     // fallback: open the presentation for the play and show discussion
     openPlayPresentation(playId);

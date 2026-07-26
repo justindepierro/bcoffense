@@ -16,6 +16,7 @@ const [scriptStorage, scriptPlayer, presentation, cloudSync, workspaceSync, noti
 ]);
 const scriptQuiz = await source("js/script-quiz.js");
 const playbookRender = await source("js/playbook-render.js");
+const playerPortal = await source("js/player-portal.js");
 
 assert.match(
   scriptStorage,
@@ -236,6 +237,11 @@ assert.match(
   notifications,
   /const order = \["practice", "quiz", "questions", "updates"\];[\s\S]*?notif-section-label/,
   "player notifications are grouped into study-oriented sections without changing the staff inbox",
+);
+assert.match(
+  playerPortal,
+  /encodeURIComponent\(q\.playId \|\| ""\).*encodeURIComponent\(q\.postId \|\| ""\)[\s\S]*?function pportOpenDiscussion\(arg\)[\s\S]*?openDiscussionForPlayId\(playId, \{ postId \}\)/,
+  "My Questions preserves the exact question post when reopening a player discussion",
 );
 assert.match(
   dashboardRender,
