@@ -667,6 +667,7 @@ function getPersonnelCode(personnel) {
     white: "WH",
     navy: "⚓",
     meat: "🥩",
+    marc: "☠️",
     star: "ST",
   };
   return codes[p] || personnel.substring(0, 2).toUpperCase();

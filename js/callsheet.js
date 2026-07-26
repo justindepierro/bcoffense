@@ -6,10 +6,12 @@ const CALLSHEET_PLAYER_AUTOFILL_MIN = 6;
 const CALLSHEET_PERSONNEL_MARKERS = {
   navy: "⚓",
   meat: "🥩",
+  marc: "☠️",
 };
 const CALLSHEET_PERSONNEL_COLORS = {
   navy: "#192a51",
   meat: "#7f1d1d",
+  marc: "#475569",
 };
 
 function getDefaultCallSheetCategoryOrder() {
