@@ -3341,6 +3341,13 @@ function checkWristbandWorkspaceContracts() {
     fail("wristband print preview or one-per-page execution is incomplete");
   }
   if (
+    !/async function switchWristbandFormat\(\)/.test(chrome) ||
+    !/Hidden rows remain saved/.test(chrome) ||
+    !/switchWristbandFormat/.test(read("js/page-actions.js"))
+  ) {
+    fail("wristband format switching does not preserve and explain player-only hidden rows");
+  }
+  if (
     !/id="wbTypeChoice"/.test(html) ||
     !/data-action="openSavedWristbandManager"/.test(html) ||
     !/data-action="openWristbandTemplatesMenu"/.test(html) ||

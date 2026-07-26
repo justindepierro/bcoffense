@@ -136,7 +136,7 @@ function startClassicWristband() {
   }
 }
 
-function startPlayerWristband() {
+function startPlayerWristband(opts = {}) {
   if (typeof traceWristbandAction === "function") {
     traceWristbandAction("player start", { action: "startPlayerWristband" });
   }
@@ -145,7 +145,7 @@ function startPlayerWristband() {
       sum + (card.data || []).slice(WB_ROWS, CELLS_PER_CARD).filter(Boolean).length,
     0,
   );
-  if (hiddenPlayCount > 0) {
+  if (hiddenPlayCount > 0 && !opts.suppressHiddenWarning) {
     showToast(
       `${hiddenPlayCount} play${hiddenPlayCount === 1 ? "" : "s"} in cells 21-40 will be hidden in Player mode but remain saved.`,
       { type: "warning", duration: 6000 },
@@ -166,6 +166,46 @@ function startPlayerWristband() {
       hiddenPlayCount,
     });
   }
+}
+
+async function switchWristbandFormat() {
+  if (!wristbandType) {
+    showWbTypeChoice();
+    return;
+  }
+
+  const switchingToPlayer = wristbandType === "classic";
+  const hiddenPlayCount = switchingToPlayer
+    ? wristbandCards.reduce(
+      (sum, card) => sum + (card.data || []).slice(WB_ROWS, CELLS_PER_CARD).filter(Boolean).length,
+      0,
+    )
+    : 0;
+
+  if (switchingToPlayer && hiddenPlayCount > 0) {
+    const ok = await showConfirm(
+      `<p>Player format displays the first <strong>${WB_ROWS}</strong> cells on each card.</p><p><strong>${hiddenPlayCount}</strong> play${hiddenPlayCount === 1 ? "" : "s"} in cells 21–40 will remain safely saved and reappear when you switch back to Classic.</p>`,
+      {
+        title: "Switch to Player Format?",
+        icon: "🃏",
+        confirmText: "Switch Format",
+      },
+    );
+    if (!ok) return;
+  }
+
+  saveWristbandState();
+  if (switchingToPlayer) {
+    startPlayerWristband({ suppressHiddenWarning: true });
+  } else {
+    startClassicWristband();
+  }
+  showToast(
+    switchingToPlayer
+      ? "Switched to Player format. Hidden rows remain saved."
+      : "Switched to Classic format. All 40 cells are available.",
+    { type: "success" },
+  );
 }
 
 function openPlayerCardPrint() {
