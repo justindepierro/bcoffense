@@ -2472,7 +2472,7 @@ function _finishPlayerBootstrapState(result, opts = {}) {
   result.status = ok ? (result.status || "ready") : (result.status || "needs-retry");
   result.finishedAt = new Date().toISOString();
   _setPlayerTeamRefreshState({
-    tone: ok ? "ready" : "warn",
+    tone: ok ? "ready" : result.status === "offline" ? "offline" : "warn",
     title,
     body: title,
     updatedAt: result.finishedAt,
@@ -2643,7 +2643,7 @@ async function runPlayerTeamBootstrap(opts = {}) {
 
     const dataOk = !result.data || result.data.ok;
     const shellOk = !result.app || result.app.status === "current" || result.app.status === "unsupported";
-    result.status = dataOk && shellOk && result.data?.status !== "missing" ? "ready" : "needs-retry";
+    result.status = dataOk && shellOk ? "ready" : "needs-retry";
     return _finishPlayerBootstrapState(result, { stateOpts });
   } catch (err) {
     _refreshPlayerTeamSurfaces();

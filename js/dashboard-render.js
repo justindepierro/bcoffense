@@ -241,6 +241,7 @@ function _dashRenderPlayerRefreshAction() {
   const tone = state.tone || "idle";
   const busy = Boolean(state.busy);
   const needsRetry = tone === "warn" || tone === "offline";
+  const waitingForPractice = state.result?.data?.status === "waiting";
   const installState =
     typeof getPlayerA2HSActionState === "function"
       ? getPlayerA2HSActionState()
@@ -262,11 +263,15 @@ function _dashRenderPlayerRefreshAction() {
     : "player-home-refresh__actions player-home-refresh__actions--single";
   const title = busy
     ? "Checking for coach updates"
+    : waitingForPractice
+      ? "Waiting for coach to publish"
     : needsRetry
       ? tone === "offline" ? "Updates wait for connection" : "Update check paused"
       : "Practice is current";
   const body = busy
     ? "Refreshing your latest practice and quiz state."
+    : waitingForPractice
+      ? "No practice is published to your team yet. Check again after your coach posts it."
     : needsRetry
       ? tone === "offline"
         ? "Your loaded practice still works. Reconnect when you want the newest alerts."
@@ -1610,12 +1615,12 @@ function renderPlayerDashboardHome() {
   const featuredScriptId = featuredScript ? escapeHtml(String(featuredScript.id)) : "";
   const practiceAction = featuredScript
     ? `data-action="loadPublishedPlayerScript" data-arg="${featuredScriptId}"`
-    : 'data-action="showTab" data-arg="script"';
+    : 'data-action="refreshPlayerTeamApp"';
   const swipeAction = loadedScript
     ? 'data-action="openPlayerCurrentScriptPresentation"'
     : featuredScript
       ? `data-action="openPlayerCurrentScriptPresentation" data-arg="${featuredScriptId}"`
-      : 'data-action="showTab" data-arg="script"';
+      : 'data-action="refreshPlayerTeamApp"';
   const playbookAction = 'data-action="showTab" data-arg="playbook"';
   const quizAction = 'data-action="openPlayerQuizHub"';
   const questionsAction = 'data-action="openPlayerPortal"';
@@ -1909,9 +1914,14 @@ function renderPlayerDashboardHome() {
       : ""
     }
         <div class="player-home-card__actions">
-          <button type="button" class="btn btn-secondary player-home-action" data-action="showTab" data-arg="script">
+          ${loadedScript || featuredScript
+      ? `<button type="button" class="btn btn-secondary player-home-action" data-action="showTab" data-arg="script">
             Open Practice Tab
-          </button>
+          </button>`
+      : `<button type="button" class="btn btn-secondary player-home-action" data-action="refreshPlayerTeamApp">
+            Check for Practice
+          </button>`
+    }
           <button type="button" class="btn btn-secondary player-home-action" data-action="showTab" data-arg="playbook">
             Open Playbook
           </button>

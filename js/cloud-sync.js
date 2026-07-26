@@ -2046,7 +2046,11 @@
     } catch (err) {
       tracePlayerRelease("error", { status: Number(err?.status || 0), message: err?.message || String(err) });
       if (err?.status === 404) {
-        return { ok: false, status: "missing", message: "Try Again" };
+        // A team with no published release is an ordinary pre-practice state,
+        // not a sync failure. Keeping it distinct prevents Player Home from
+        // showing a misleading retry warning or routing the player into an
+        // empty practice workspace.
+        return { ok: true, status: "waiting", message: "No practice published yet" };
       }
       throw err;
     }

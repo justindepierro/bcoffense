@@ -82,6 +82,21 @@ assert.match(
 );
 assert.match(
   cloudSync,
+  /err\?\.status === 404[\s\S]*?return \{ ok: true, status: "waiting", message: "No practice published yet" \}/,
+  "a team without a published release is a normal waiting state, not a failed player sync",
+);
+assert.match(
+  dashboardRender,
+  /const waitingForPractice = state\.result\?\.data\?\.status === "waiting"[\s\S]*?Waiting for coach to publish[\s\S]*?No practice is published to your team yet/,
+  "Player Home gives the no-practice state a clear, non-error explanation",
+);
+assert.match(
+  dashboardRender,
+  /const practiceAction = featuredScript[\s\S]*?: 'data-action="refreshPlayerTeamApp"';[\s\S]*?Check for Practice/,
+  "an empty player release refreshes safely instead of routing into an empty practice workspace",
+);
+assert.match(
+  cloudSync,
   /PLAYER_RELEASE_REQUEST_TIMEOUT_MS = 12 \* 1000[\s\S]*?controller\.abort\(\)[\s\S]*?signal: controller\?\.signal[\s\S]*?PLAYER_RELEASE_TIMEOUT/s,
   "a suspended mobile release request is aborted and can recover on the next foreground check",
 );
