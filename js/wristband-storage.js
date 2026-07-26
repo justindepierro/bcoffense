@@ -69,7 +69,13 @@ function hydrateWristbandState(source, opts = {}) {
     wristbandCards = [{ name: "Card 1", data: Array(CELLS_PER_CARD).fill(null) }];
   }
 
-  cellCustomizations = source?.cellStyles ? safeDeepClone(source.cellStyles) : {};
+  // Saved, imported, and draft records all cross this boundary. Normalize
+  // here so legacy or malformed records cannot bypass the live editor's
+  // validation, duplicate component output, or attach to a missing cell.
+  cellCustomizations = normalizeWristbandCellCustomizations(
+    source?.cellStyles,
+    wristbandCards,
+  );
   wbFavorites = normalizeWbFavorites(
     opts.preserveFavorites
       ? storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, [])

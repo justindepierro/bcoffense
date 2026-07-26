@@ -1222,30 +1222,31 @@ function mutateWristbandState(mutate, opts = {}) {
 }
 
 function buildWristbandCellCustomization(custom = {}) {
+  const uniqueStrings = (values) => [...new Set(values.filter(Boolean))];
+  const uniqueTagEntries = (values) => {
+    const seen = new Set();
+    return values.filter((entry) => {
+      const key = `${entry.value}\u0000${entry.display}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+  const hasCustomOrder = Array.isArray(custom.componentOrder) && custom.componentOrder.length > 0;
   const normalized = {
     bgColor: custom.bgColor || "",
     textColor: custom.textColor || UI_COLORS.textBlack,
-    markers: Array.isArray(custom.markers)
-      ? custom.markers.filter(Boolean)
-      : [],
+    markers: uniqueStrings(
+      Array.isArray(custom.markers)
+        ? custom.markers.map((marker) => String(marker || "").trim())
+        : getCellMarkerValues(custom),
+    ),
     markerPlacement: custom.markerPlacement || "prefix",
     extraPersonnel: String(custom.extraPersonnel || "").trim(),
-    preShift: String(custom.preShift || "").trim(),
-    formationTags: Array.isArray(custom.formationTags)
-      ? custom.formationTags
-        .map((entry) => normalizeCustomTagEntry(entry))
-        .filter(Boolean)
-      : [],
-    backTags: Array.isArray(custom.backTags)
-      ? custom.backTags
-        .map((entry) => normalizeCustomTagEntry(entry))
-        .filter(Boolean)
-      : [],
-    componentOrder: Array.isArray(custom.componentOrder)
-      ? custom.componentOrder.filter(
-        (id) => typeof id === "string" && WB_CELL_TOKEN_LABELS[id],
-      )
-      : [],
+    preShift: uniqueStrings(getCustomPreShiftValues(custom)).join("; "),
+    formationTags: uniqueTagEntries(getCustomFormationTagEntries(custom)),
+    backTags: uniqueTagEntries(getCustomBackTagEntries(custom)),
+    componentOrder: hasCustomOrder ? normalizeWbComponentOrder(custom.componentOrder) : [],
     customWriteIn: String(custom.customWriteIn || "").trim(),
     playerRuleSources: normalizePlayerRuleSources(custom.playerRuleSources),
     playerAssignmentOverrides: normalizePlayerAssignmentOverrides(
@@ -1267,6 +1268,23 @@ function buildWristbandCellCustomization(custom = {}) {
     Object.keys(normalized.playerAssignmentOverrides).length > 0;
 
   return hasValue ? normalized : null;
+}
+
+function normalizeWristbandCellCustomizations(source, cards = wristbandCards) {
+  if (!source || typeof source !== "object" || Array.isArray(source)) return {};
+  const cellCount = getActiveWristbandCellCount();
+  const normalized = {};
+  Object.entries(source).forEach(([key, custom]) => {
+    const match = /^(\d+)-(\d+)$/.exec(String(key));
+    if (!match) return;
+    const cardIdx = Number(match[1]);
+    const cellIdx = Number(match[2]);
+    if (!Number.isInteger(cardIdx) || !Number.isInteger(cellIdx)) return;
+    if (!Array.isArray(cards?.[cardIdx]?.data) || cellIdx < 0 || cellIdx >= cellCount) return;
+    const next = buildWristbandCellCustomization(custom);
+    if (next) normalized[getWristbandCellCustomizationKey(cardIdx, cellIdx)] = next;
+  });
+  return normalized;
 }
 
 function setWristbandCellCustomization(key, custom) {

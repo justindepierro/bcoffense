@@ -3414,9 +3414,15 @@ function checkPlayerWristbandRuleOverrides() {
     !/customWriteIn:\s*existing\.customWriteIn/.test(popup) ||
     !/renderWristbandCellWriteIn\(oddCustom, \{ forceStandalone: true \}\)/.test(wristbandRender) ||
     !/renderWristbandCellWriteIn\(evenCustom, \{ forceStandalone: true \}\)/.test(wristbandRender) ||
-    !/customWriteIn:\s*custom\?\.customWriteIn/.test(playerRuntime)
+    !/customWriteIn:\s*custom\?\.customWriteIn/.test(playerRuntime) ||
+    !/function normalizeWristbandCellCustomizations\(/.test(wristband) ||
+    !/normalizeWbComponentOrder\(custom\.componentOrder\)/.test(wristband) ||
+    !/uniqueStrings\(getCustomPreShiftValues\(custom\)\)/.test(wristband) ||
+    !/cellCustomizations = normalizeWristbandCellCustomizations\(/.test(
+      read("js/wristband-storage.js"),
+    )
   ) {
-    fail("wristband custom cell fields or component ordering are not fully wired through save, render, and print");
+    fail("wristband custom cell fields or component ordering are not fully normalized through save, render, and print");
   }
   if (
     !/data-action="printOnePlayerCard"/.test(html) ||
