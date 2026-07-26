@@ -742,7 +742,13 @@ function renderPlayerScriptLauncher() {
     </section>
     ${archivedScripts.length ? `
       <details class="player-practice-archive">
-        <summary>Previous practices <span>${archivedScripts.length}</span></summary>
+        <summary>
+          <span>
+            <strong>Previous practices</strong>
+            <small>${escapeHtml(archivedScripts[0].savedScript.name || "Published practice")}${archivedScripts.length > 1 ? ` + ${archivedScripts.length - 1} more` : ""}</small>
+          </span>
+          <span>${archivedScripts.length}</span>
+        </summary>
         <div class="player-practice-archive__list">
           ${archivedScripts.map((entry) => renderScriptCard(entry)).join("")}
         </div>

@@ -458,7 +458,26 @@ body[data-auth-role="player"]
   transform: rotate(180deg);
 }
 
-.player-practice-archive > summary span {
+.player-practice-archive > summary > span:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.player-practice-archive > summary > span:first-child strong {
+  color: var(--color-text-secondary);
+}
+
+.player-practice-archive > summary > span:first-child small {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-practice-archive > summary > span:last-child {
   margin-left: auto;
   min-width: 22px;
   padding: 2px 7px;

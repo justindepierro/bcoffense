@@ -1245,9 +1245,18 @@ function getPlayPresentationPlayLabel(play) {
 // It stays pinned above the portrait scroll surface, so a player can always
 // identify the play without returning to the body content.
 function getPlayPresentationHeaderTitle(item) {
-  return getPlayPresentationPlayLabel(
-    getPlayPresentationDisplayPlay(item?.play),
-  );
+  const displayPlay = getPlayPresentationDisplayPlay(item?.play);
+  // Script rows can add formation tags, shift/motion, custom call text, and
+  // other per-practice overrides. Reuse that same text contract in the pinned
+  // player header instead of reducing the call to formation/protection/play.
+  if (
+    playPresentationState.source === "script" &&
+    typeof getScriptPlaySummaryText === "function"
+  ) {
+    const scriptTitle = String(getScriptPlaySummaryText(item?.play) || "").trim();
+    if (scriptTitle) return scriptTitle;
+  }
+  return getPlayPresentationPlayLabel(displayPlay);
 }
 
 // The pinned Swipe header needs to answer both questions a player has while

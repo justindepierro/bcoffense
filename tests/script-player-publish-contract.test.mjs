@@ -163,6 +163,11 @@ assert.match(
 );
 assert.match(
   scriptPlayer,
+  /Previous practices[\s\S]*?archivedScripts\[0\]\.savedScript\.name[\s\S]*?\+ \$\{archivedScripts\.length - 1\} more/,
+  "the collapsed player practice archive identifies the next available practice by name instead of making older scripts appear missing",
+);
+assert.match(
+  scriptPlayer,
   /data-action="openPlayerCurrentScriptPresentation" data-arg="\$\{scriptId\}"[\s\S]*?Open Swipe View/,
   "the featured player practice opens directly into Swipe View instead of the coach Script workbench",
 );
@@ -175,6 +180,11 @@ assert.match(
   presentation,
   /function getPlayPresentationSourceLabel\(item\)[\s\S]*?document\.getElementById\("scriptName"\)[\s\S]*?return `\$\{scriptName\} · \$\{period\}`;[\s\S]*?sourceLabel\.textContent = getPlayPresentationSourceLabel\(item\)/,
   "Swipe View keeps the published practice-script name in its pinned header rather than showing only a period",
+);
+assert.match(
+  presentation,
+  /function getPlayPresentationHeaderTitle\(item\)[\s\S]*?playPresentationState\.source === "script"[\s\S]*?getScriptPlaySummaryText\(item\?\.play\)/,
+  "the player Swipe header uses the script call summary so tags, shifts, motions, and script-specific call text are preserved",
 );
 assert.match(
   presentation,
