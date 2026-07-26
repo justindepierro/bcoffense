@@ -23,12 +23,13 @@ function _showWbCellContextMenu(e, cardIdx, cellIdx) {
   // Always show color shortcuts so users can tint a cell in one right-click.
   const QUICK_COLORS = [
     { label: "⬜ Clear color", color: "" },
-    { label: "🟡 Yellow", color: "#ffeb3b" },
-    { label: "🟠 Orange", color: "#ff9800" },
-    { label: "🔴 Red", color: "#f44336" },
-    { label: "🟢 Green", color: "#4caf50" },
-    { label: "🔵 Blue", color: "#2196f3" },
-    { label: "🟣 Purple", color: "#9c27b0" },
+    { label: "🟡 Butter", color: "#fef3c7" },
+    { label: "🟠 Peach", color: "#fde2d5" },
+    { label: "🌸 Rose", color: "#fce7f3" },
+    { label: "🟢 Mint", color: "#dcfce7" },
+    { label: "🔵 Sky", color: "#dbeafe" },
+    { label: "🟣 Lavender", color: "#ede9fe" },
+    { label: "⬜ Mist", color: "#e2e8f0" },
   ];
   QUICK_COLORS.forEach(({ label, color }) => {
     menuItems.push({
