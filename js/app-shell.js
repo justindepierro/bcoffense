@@ -801,6 +801,7 @@ function openMobilePrimaryMore() {
       scrollElement: sheet,
       safeArea: true,
       blocking: true,
+      onEscape: () => closeMobilePrimaryMore(),
     });
   }
   // A tool opened from More must not leave an invisible, scroll-blocking

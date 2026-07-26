@@ -31,6 +31,7 @@ function openPlayerPortal() {
       id: "playerPortalOverlay",
       scrollElement: "playerPortalBody",
       blocking: true,
+      onEscape: () => closePlayerPortal(),
     });
   }
   _pportOffset = 0;

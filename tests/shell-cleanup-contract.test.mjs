@@ -30,7 +30,7 @@ const panelScrollSources = [
   "js/wristband-search.js",
 ];
 
-const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, scriptQuizCss, appShell, playerPlaybookFilters, panelScrollOwners, jsEntries, cssEntries] = await Promise.all([
+const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, scriptQuizCss, appShell, playerPlaybookFilters, appNotifications, playerPortal, panelScrollOwners, jsEntries, cssEntries] = await Promise.all([
   source("index.html"),
   source("sw.js"),
   source("js/playbook-identity.js"),
@@ -39,6 +39,8 @@ const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, scri
   source("css/script-quiz.css"),
   source("js/app-shell.js"),
   source("js/playbook-filters.js"),
+  source("js/app-notifications.js"),
+  source("js/player-portal.js"),
   Promise.all(panelScrollSources.map(async (path) => ({ path, content: await source(path) }))),
   readdir(new URL("js/", `file://${root}/`)),
   readdir(new URL("css/", `file://${root}/`)),
@@ -117,6 +119,17 @@ assert.match(
   /id: "player-playbook-filters"[\s\S]*?blocking: true,[\s\S]*?onEscape: \(\) => closePlayerPlaybookFilters\(\)/,
   "the player filter overlay owns a blocking layer and has one explicit Escape close path",
 );
+for (const [source, layerId, closeCall] of [
+  [appShell, "mobile-primary-more", "closeMobilePrimaryMore"],
+  [appNotifications, "notification-drawer", "closeNotifDrawer"],
+  [playerPortal, "playerPortalOverlay", "closePlayerPortal"],
+]) {
+  assert.match(
+    source,
+    new RegExp(`id: "${layerId}"[\\s\\S]*?blocking: true,[\\s\\S]*?onEscape: \\(\\) => ${closeCall}\\(\\)`),
+    `${layerId} has an explicit, local Escape dismissal path`,
+  );
+}
 for (const selector of [
   "play-readiness-badge--trusted",
   "play-readiness-badge--ready",

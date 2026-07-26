@@ -180,6 +180,7 @@ async function openNotifDrawer() {
       scrollElement: "notifDrawerBody",
       safeArea: false,
       blocking: true,
+      onEscape: () => closeNotifDrawer(),
     });
   }
   document.getElementById("notifBellBtn")?.setAttribute("aria-expanded", "true");
