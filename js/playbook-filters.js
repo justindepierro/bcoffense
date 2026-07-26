@@ -334,9 +334,20 @@ function filterPlays() {
   if (hasClipFilter) _warmPlaybookClipFilterIndex();
   const checkingClipFilter = hasClipFilter && _isPlaybookClipFilterChecking();
   const gameWeek = getGameWeek();
-  const taggedForOpponent = gamePlanOnly && gameWeek.opponentName && typeof getGamePlanTags === "function"
-    ? new Set((getGamePlanTags()[gameWeek.opponentName] || []))
-    : null;
+  // "Current Game Plan" must reflect the live board a coach just saved or
+  // edited. Older builds checked only dashboard tag selections, which made a
+  // populated Game Plan look empty from the Playbook. Keep tags as the
+  // fallback for plans deliberately loaded from a saved snapshot.
+  const boardGamePlanSigs = gamePlanOnly && typeof getGamePlanBoardSignatures === "function"
+    ? getGamePlanBoardSignatures()
+    : new Set();
+  const gamePlanKey = gameWeek.opponentName || "__unassigned__";
+  const taggedForOpponent = gamePlanOnly && typeof getGamePlanTags === "function"
+    ? new Set((getGamePlanTags()[gamePlanKey] || []))
+    : new Set();
+  const gamePlanFilterSigs = boardGamePlanSigs.size > 0
+    ? boardGamePlanSigs
+    : taggedForOpponent;
   const jvFlagged = jvOnly && typeof _gpFlaggedSigs === "function"
     ? _gpFlaggedSigs("jv")
     : null;
@@ -351,9 +362,10 @@ function filterPlays() {
       return false;
     }
     const meta = runtimeIndex && runtimeIndex.byPlay ? runtimeIndex.byPlay.get(play) : null;
-    if (taggedForOpponent) {
-      const tagSig = meta ? meta.tagSig : playSignature(play);
-      if (!taggedForOpponent.has(tagSig)) return false;
+    if (gamePlanOnly) {
+      if (!gamePlanFilterSigs.size) return false;
+      const gpSig = meta ? meta.gpSig : (typeof _gpPlaySignature === "function" ? _gpPlaySignature(play) : playSignature(play));
+      if (!gamePlanFilterSigs.has(gpSig)) return false;
     }
     if (jvOnly) {
       if (!jvFlagged || typeof _gpPlaySignature !== "function") return false;

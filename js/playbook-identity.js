@@ -139,15 +139,18 @@ function _catCleanupScopeEntries() {
       source = filteredPlays;
     }
   } else if (_catCleanupScope === "gameplan") {
-    const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
-    const opp = gw && gw.opponentName ? gw.opponentName : "";
-    if (opp && typeof getGamePlanTags === "function" && typeof playSignature === "function") {
+    const boardSigs = typeof getGamePlanBoardSignatures === "function"
+      ? getGamePlanBoardSignatures()
+      : new Set();
+    if (boardSigs.size && typeof _gpPlaySignature === "function") {
+      source = plays.filter((p) => boardSigs.has(_gpPlaySignature(p)));
+    } else if (typeof getGamePlanTags === "function" && typeof playSignature === "function") {
+      const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+      const key = gw?.opponentName || "__unassigned__";
       const tags = getGamePlanTags() || {};
-      const sigs = new Set(tags[opp] || []);
+      const sigs = new Set(tags[key] || []);
       source = plays.filter((p) => sigs.has(playSignature(p)));
-    } else {
-      source = [];
-    }
+    } else source = [];
   }
   return source
     .map((play) => ({ play, masterIdx: plays.indexOf(play) }))
@@ -354,15 +357,6 @@ function setPlaybookCategoryCleanupScope(scope) {
     if (!hasFilter) {
       showToast("No filtered plays — switching to All plays", { duration: 1800, type: "info" });
       scope = "all";
-    }
-  } else if (scope === "gameplan") {
-    const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
-    if (!gw || !gw.opponentName) {
-      showToast("No active opponent — pick one on the dashboard first", { duration: 2200, type: "warning" });
-      const overlay = document.getElementById("playbookCatCleanupOverlay");
-      const prev = overlay?.querySelector(`input[name=catCleanupScope][value="${_catCleanupScope}"]`);
-      if (prev) prev.checked = true;
-      return;
     }
   }
   _catCleanupScope = scope;
@@ -611,7 +605,7 @@ function _renderCatCleanupList() {
   if (entries.length === 0) {
     const hint =
       _catCleanupScope === "filtered" ? "No plays match the playbook's current filter."
-        : _catCleanupScope === "gameplan" ? "No plays are tagged for the active opponent yet."
+        : _catCleanupScope === "gameplan" ? "No plays are on the active Game Plan board yet."
           : "No plays in the playbook.";
     listEl.innerHTML = `<div class="cat-cleanup-empty">${escapeHtml(hint)}</div>`;
     return;

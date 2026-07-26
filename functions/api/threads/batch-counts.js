@@ -49,7 +49,10 @@ export async function onRequestGet(context) {
 
   const counts = {};
   for (const row of rows.results || []) {
-    counts[row.play_id] = {
+    // Client-side play IDs are path-encoded so the same value can safely be
+    // used for a thread route and a DOM data attribute. Return that stable
+    // identity after decoding the query once on the server.
+    counts[encodeURIComponent(row.play_id)] = {
       total: row.total || 0,
       openQuestions: row.open_questions || 0,
     };

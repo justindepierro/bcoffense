@@ -40,17 +40,25 @@ async function _discFetchBatchCounts(playIds) {
   const ids = [...new Set((playIds || []).map((id) => String(id || "").trim()).filter(Boolean))];
   if (!ids.length) return {};
 
-  const params = ids.map((id) => encodeURIComponent(id)).join(",");
-  const res = await fetch(`/api/threads/batch-counts?plays=${params}`, {
-    credentials: "same-origin",
-    cache: "no-store",
-    headers: { Accept: "application/json" },
-  });
-  // A session may expire in another tab. Counts are progressive enhancement,
-  // so leave the badges quiet until the next authenticated render.
-  if (res.status === 401 || !res.ok) return null;
-  const data = await res.json();
-  return data.ok ? (data.counts || {}) : null;
+  // IDs are already path-encoded by getPlayThreadId. Re-encoding them made
+  // giant Game Plan requests both incorrect and large enough to trip a Pages
+  // 500. Keep each query modest and combine the optional badge results.
+  const counts = {};
+  const BATCH_SIZE = 40;
+  for (let index = 0; index < ids.length; index += BATCH_SIZE) {
+    const params = ids.slice(index, index + BATCH_SIZE).join(",");
+    const res = await fetch(`/api/threads/batch-counts?plays=${params}`, {
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    // A session may expire in another tab. Counts are progressive enhancement,
+    // so leave the badges quiet until the next authenticated render.
+    if (res.status === 401 || !res.ok) return null;
+    const data = await res.json();
+    if (data.ok) Object.assign(counts, data.counts || {});
+  }
+  return counts;
 }
 
 function _discIsStaff() {
