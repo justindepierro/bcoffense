@@ -15,6 +15,7 @@ const [scriptStorage, scriptPlayer, presentation, cloudSync, workspaceSync, noti
   source("js/dashboard-render.js"),
 ]);
 const scriptQuiz = await source("js/script-quiz.js");
+const playbookRender = await source("js/playbook-render.js");
 
 assert.match(
   scriptStorage,
@@ -190,6 +191,16 @@ assert.match(
   presentation,
   /class="pp-player-navigation"[\s\S]*?Play \$\{playNumber\} of \$\{playCount\}[\s\S]*?data-action="movePlayPresentation"[\s\S]*?data-action="closePlayPresentation"[\s\S]*?Return to Practice/,
   "player Swipe View provides visible practice progress, bounded navigation, and the canonical safe return action",
+);
+assert.match(
+  playbookRender,
+  /const playerCardCall = isStudyPortal && typeof getFullCall === "function"[\s\S]*?getFullCall\(play, \{ showEmoji: false, showLineCall: false \}\)[\s\S]*?pb-card-play--study/,
+  "player Playbook cards preserve the full call—including tags and motion—before opening Swipe View",
+);
+assert.match(
+  playbookRender,
+  /data-action="openPlaybookPresentation"[\s\S]*?Swipe View/,
+  "the primary player Playbook action is labeled as the destination players actually enter",
 );
 assert.match(
   scriptPlayer,

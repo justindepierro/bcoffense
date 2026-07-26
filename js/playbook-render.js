@@ -419,13 +419,25 @@ function renderPlaybook() {
           isStudyPortal ? _renderPlayerPlaybookCardMedia(item) : "";
         const playerCardNote =
           isStudyPortal ? _renderPlayerPlaybookCardNote(play) : "";
+        // Player cards are study surfaces, not compact coach-table rows. Use
+        // the complete call so formation tags, shifts, motions, protection,
+        // and call tags are visible before a player opens Swipe View.
+        const playerCardCall = isStudyPortal && typeof getFullCall === "function"
+          ? getFullCall(play, { showEmoji: false, showLineCall: false })
+          : "";
+        const playerCardSub = isStudyPortal
+          ? [play.type, play.personnel, play.oneWord]
+            .filter(Boolean)
+            .map((value) => highlight(value))
+            .join(" · ")
+          : `${highlight(play.type)}${play.motion ? " · " + highlight(play.motion) : ""}${play.back ? " · " + highlight(play.back) : ""}`;
         return `
           <div class="pb-card${wbClass}${gpClass}${hiddenClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-arg="${idx}" data-preview="${idx}"
                tabindex="0" role="button"
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
             ${playerCardMedia}
-            <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge}${cardClipBadge}${cardSignalBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}</div>
-            <div class="pb-card-sub">${highlight(play.type)}${play.motion ? " · " + highlight(play.motion) : ""}${play.back ? " · " + highlight(play.back) : ""}</div>
+            <div class="pb-card-play${isStudyPortal ? " pb-card-play--study" : ""}">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge}${cardClipBadge}${cardSignalBadge} ${playerCardCall || `${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}`}${item.picturePill}</div>
+            <div class="pb-card-sub">${playerCardSub}</div>
             <div class="pb-card-study-row">${studyBadges}</div>
             ${playerCardNote}
             ${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}
@@ -575,7 +587,7 @@ function _renderPlayerPlaybookCardActions(item) {
     : "";
   return `
     <div class="pb-card-actions" aria-label="Player study actions">
-      <button type="button" class="pb-card-action pb-card-action--study" data-action="openPlaybookPresentation" data-arg="${item.idx}" aria-label="Study ${escapeHtml(playLabel)}">Study</button>
+      <button type="button" class="pb-card-action pb-card-action--study" data-action="openPlaybookPresentation" data-arg="${item.idx}" aria-label="Open ${escapeHtml(playLabel)} in Swipe View">Swipe View</button>
       ${askButton}
       ${filmButton}
       ${signalButton}
