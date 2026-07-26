@@ -22,6 +22,11 @@
   const CLOUD_AUTO_PUSH_RETRY_MS = 60 * 1000;
   const CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS = 1500;
   const CLOUD_AUTO_PUSH_TIMEOUT_RETRY_MS = 4000;
+  // A short-lived Pages/D1/R2 availability response is different from a
+  // failed publish: the local edit remains durable and the server has not
+  // accepted a revision. Retry it promptly so a coach posting practice media
+  // does not stare at a one-minute false stall.
+  const CLOUD_AUTO_PUSH_SERVER_RETRY_MS = 5000;
   const CLOUD_AUTO_PUSH_MAX_RETRIES = 3;
   const TEAM_FOREGROUND_REFRESH_MIN_MS = 20 * 1000;
   const TEAM_FOREGROUND_REFRESH_INTERVAL_MS = 3 * 60 * 1000;
@@ -2280,6 +2285,8 @@
             ? CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS
             : err?.code === "BC_WORKSPACE_TIMEOUT"
               ? CLOUD_AUTO_PUSH_TIMEOUT_RETRY_MS
+              : Number(err?.status) >= 500 && Number(err?.status) < 600
+                ? CLOUD_AUTO_PUSH_SERVER_RETRY_MS
               : CLOUD_AUTO_PUSH_RETRY_MS,
         );
       } else {

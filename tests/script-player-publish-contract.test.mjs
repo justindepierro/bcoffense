@@ -130,6 +130,11 @@ assert.match(
 );
 assert.match(
   cloudSync,
+  /CLOUD_AUTO_PUSH_SERVER_RETRY_MS = 5000[\s\S]*?Number\(err\?\.status\) >= 500[\s\S]*?CLOUD_AUTO_PUSH_SERVER_RETRY_MS/,
+  "a transient Cloudflare service failure retries a queued team publish promptly while local data stays protected",
+);
+assert.match(
+  cloudSync,
   /document\.addEventListener\("visibilitychange"[\s\S]*?force: currentUser\?\.role === "player"[\s\S]*?window\.addEventListener\("pageshow", \(event\) => \{[\s\S]*?if \(!event\.persisted\) return;[\s\S]*?refreshTeamWorkspaceOnForeground\(\{ force: true, quiet: true \}\)/s,
   "a player revalidates immediately after returning from a locked or BFCache-resumed mobile app",
 );
