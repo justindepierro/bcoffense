@@ -696,12 +696,19 @@ function _notificationPayloadForPublish(kind, details = {}) {
       tag: `script-published-${scriptId}`,
     };
   }
-  if (["scripts", "quizzes", "diagrams", "clips", "signals"].includes(kind)) {
+  if (kind === "quizzes") {
+    return {
+      type: "new_quiz",
+      title: "New quiz ready",
+      body: label || "New quiz work is ready to start.",
+      deepLink: "quiz",
+      tag: "team-quiz-update",
+    };
+  }
+  if (["scripts", "diagrams", "clips", "signals"].includes(kind)) {
     const body = kind === "scripts"
       ? (label ? `${label} is ready to review.` : "A practice is ready to review.")
-      : kind === "quizzes"
-        ? (label || "New quiz work is ready in Player Home.")
-        : (label || "Practice media updated — new diagrams, videos, or signals are ready.");
+      : (label || "Practice media updated — new diagrams, videos, or signals are ready.");
     return {
       type: "team_update",
       title: "Team practice updated",

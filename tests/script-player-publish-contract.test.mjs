@@ -239,6 +239,11 @@ assert.match(
   "player notifications are grouped into study-oriented sections without changing the staff inbox",
 );
 assert.match(
+  notifications,
+  /if \(kind === "quizzes"\) \{[\s\S]*?type: "new_quiz",[\s\S]*?deepLink: "quiz",/,
+  "a published quiz notification routes directly to the player Quiz center instead of generic Home",
+);
+assert.match(
   playerPortal,
   /encodeURIComponent\(q\.playId \|\| ""\).*encodeURIComponent\(q\.postId \|\| ""\)[\s\S]*?function pportOpenDiscussion\(arg\)[\s\S]*?openDiscussionForPlayId\(playId, \{ postId \}\)/,
   "My Questions preserves the exact question post when reopening a player discussion",
