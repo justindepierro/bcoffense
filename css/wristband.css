@@ -139,6 +139,7 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   box-shadow: var(--shadow-xs);
 }
 .wristband-preview {
+  container-type: inline-size;
   min-width: 0;
 }
 
@@ -3828,7 +3829,7 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-type-choice-dialog {
     display: grid;
-    grid-template-columns: minmax(150px, max-content) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) max-content;
     align-items: center;
     gap: var(--coach-grid-gap);
     max-width: none;
@@ -3848,15 +3849,41 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-landing-actions {
     grid-column: 2;
     justify-content: flex-start;
+    flex-wrap: nowrap;
     gap: var(--coach-grid-gap);
     margin: 0;
   }
 
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-landing-more-btn {
+    min-width: var(--coach-grid-control-height);
+    padding-inline: 7px;
+  }
+
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-type-choice-options {
     display: grid;
+    grid-column: 1 / -1;
     grid-template-columns: repeat(2, minmax(190px, 1fr));
     gap: var(--coach-grid-gap);
     justify-content: stretch;
+  }
+
+  @container (max-width: 720px) {
+    #wristband .wb-type-choice-dialog {
+      grid-template-columns: 1fr;
+    }
+
+    #wristband .wb-landing-actions,
+    #wristband .wb-type-choice-options {
+      grid-column: 1;
+    }
+
+    #wristband .wb-landing-actions {
+      flex-wrap: wrap;
+    }
+
+    #wristband .wb-type-choice-options {
+      grid-template-columns: 1fr;
+    }
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-type-card {

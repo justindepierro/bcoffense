@@ -58,6 +58,7 @@ function syncWristbandModeSurface(mode = wristbandType || "") {
   const toolbar = document.querySelector(".wb-cmd-bar");
   const stats = document.querySelector(".wb-stats-bar");
   const cardTabs = document.querySelector(".card-tabs");
+  const cardControls = document.querySelector(".wb-card-controls");
   const card = document.getElementById("wristbandCard");
   const grid = document.getElementById("wristbandGrid");
   const playerBar = document.getElementById("pcModeBar");
@@ -80,6 +81,9 @@ function syncWristbandModeSurface(mode = wristbandType || "") {
   // its 1-card / 40-empty totals before the coach has selected a format.
   stats?.classList.toggle("wb-hidden", !hasMode);
   cardTabs?.classList.toggle("wb-hidden", !hasMode);
+  // Zoom and card tabs are meaningful only after a format is active. Keeping
+  // them visible on the landing screen creates a detached control row.
+  cardControls?.classList.toggle("wb-hidden", !hasMode);
   card?.classList.toggle("wb-hidden", !hasMode);
   playerBar?.classList.toggle("visible", isPlayer);
   playerBar?.setAttribute("aria-hidden", isPlayer ? "false" : "true");

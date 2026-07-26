@@ -3345,7 +3345,11 @@ function checkWristbandWorkspaceContracts() {
     !/data-action="openSavedWristbandManager"/.test(html) ||
     !/data-action="openWristbandTemplatesMenu"/.test(html) ||
     !/class="wb-landing-actions"/.test(html) ||
-    !/\.wb-landing-actions/.test(css)
+    !/\.wb-landing-actions/.test(css) ||
+    !/cardControls\?\.classList\.toggle\("wb-hidden", !hasMode\)/.test(
+      read("js/wristband-chrome.js"),
+    ) ||
+    !/grid-column:\s*1 \/ -1/.test(css)
   ) {
     fail("wristband landing actions do not provide saved-wristband access before format selection");
   }
