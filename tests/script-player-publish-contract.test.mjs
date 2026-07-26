@@ -117,6 +117,11 @@ assert.match(
   "flashcards do not leak the call through hidden accessibility copy and label their reveal action clearly",
 );
 assert.match(
+  scriptQuiz,
+  /function _getPlayerQuizRecommendation[\s\S]*?diagram-flash[\s\S]*?function startRecommendedPlayerQuiz\(\)/,
+  "the player Quiz center recommends a diagram flashcard rep when the selected released practice supports it",
+);
+assert.match(
   cloudSync,
   /PLAYER_RELEASE_REQUEST_TIMEOUT_MS = 12 \* 1000[\s\S]*?controller\.abort\(\)[\s\S]*?signal: controller\?\.signal[\s\S]*?PLAYER_RELEASE_TIMEOUT/s,
   "a suspended mobile release request is aborted and can recover on the next foreground check",

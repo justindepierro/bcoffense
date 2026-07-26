@@ -406,7 +406,13 @@ function _renderPlayerQuizModeCards() {
   if (!modes.some((mode) => mode.key === _playerQuizSelectedMode && !mode.disabled)) {
     _playerQuizSelectedMode = modes.find((mode) => !mode.disabled)?.key || "quick";
   }
-  return modes.map((mode) => `
+  const visibleModes = modes
+    .filter((mode) => !mode.disabled)
+    .sort((a, b) => {
+      const priority = (mode) => mode.key === "diagram-flash" ? -1 : 0;
+      return priority(a) - priority(b);
+    });
+  return visibleModes.map((mode) => `
     <button type="button"
       class="player-quiz-mode-card${mode.key === _playerQuizSelectedMode ? " is-selected" : ""}${mode.disabled ? " is-disabled" : ""}"
       data-action="setPlayerQuizMode"
@@ -418,6 +424,37 @@ function _renderPlayerQuizModeCards() {
       <small>${escapeHtml(mode.note)}</small>
     </button>
   `).join("");
+}
+
+function _getPlayerQuizRecommendation(options = _getPlayerQuizScriptOptions()) {
+  const selected = options.find((option) => option.id === _playerQuizSelectedScriptId && option.playerSelectable) ||
+    options.find((option) => option.playerSelectable) || null;
+  if (!selected) return null;
+  const modes = _getPlayerQuizModes({ scriptSource: _getPlayerQuizSelectedScriptRecord() });
+  const flash = modes.find((mode) => mode.key === "diagram-flash" && !mode.disabled);
+  const quick = modes.find((mode) => mode.key === "quick" && !mode.disabled);
+  const mode = flash || quick;
+  if (!mode) return null;
+  return {
+    script: selected,
+    mode,
+    title: flash ? "Best next rep: Diagram Flash Cards" : "Best next rep: Quick Hits",
+    detail: flash
+      ? `${selected.name} has ${Number(selected.quizStats?.diagrams || 0)} diagrams ready to study.`
+      : `${selected.name} is ready for a fast five-play check.`,
+    actionLabel: flash ? "Start Flash Cards" : "Start Quick Hits",
+  };
+}
+
+function startRecommendedPlayerQuiz() {
+  const recommendation = _getPlayerQuizRecommendation();
+  if (!recommendation) {
+    showToast("Coach has not opened a practice quiz yet.", { type: "info" });
+    return;
+  }
+  _playerQuizSelectedScriptId = recommendation.script.id;
+  _playerQuizSelectedMode = recommendation.mode.key;
+  startPlayerQuizHubScript();
 }
 
 function _renderSignalGameCategorySelector(status = _getSignalQuizStatus()) {
@@ -680,6 +717,19 @@ function _renderPlayerQuizHub() {
   }
   if (scriptPicker) {
     scriptPicker.innerHTML = _renderPlayerQuizScriptPicker(_getPlayerQuizScriptOptions());
+  }
+  const recommendationEl = document.getElementById("playerQuizRecommended");
+  if (recommendationEl) {
+    const recommendation = _getPlayerQuizRecommendation(_getPlayerQuizScriptOptions());
+    recommendationEl.hidden = !recommendation;
+    recommendationEl.innerHTML = recommendation ? `
+      <div class="player-quiz-recommended__copy">
+        <span>Today’s study</span>
+        <strong>${escapeHtml(recommendation.title)}</strong>
+        <small>${escapeHtml(recommendation.detail)}</small>
+      </div>
+      <button type="button" class="btn btn-primary" data-action="startRecommendedPlayerQuiz">${escapeHtml(recommendation.actionLabel)}</button>
+    ` : "";
   }
 
   const weakSlot = document.getElementById("playerQuizWeakAreaSlot");

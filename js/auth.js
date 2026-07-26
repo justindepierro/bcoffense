@@ -204,6 +204,7 @@
     "toggleSignalGameCategory",
     "setPlayerQuizScriptSource",
     "startPlayerQuizHubScript",
+    "startRecommendedPlayerQuiz",
     "startPlayerQuizHubGamePlan",
     "startPlayerQuizHubSignals",
     "startPlayerScriptQuiz",
