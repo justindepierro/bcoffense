@@ -660,64 +660,95 @@ function renderPlayerScriptLauncher() {
       return { savedScript, stats, isCurrent };
     });
 
-  section.hidden = false;
+  // A player should have one obvious place to start. Prefer the packet already
+  // loaded on this device, then the team's selected/default release. The rest
+  // remain available as a quiet archive instead of competing with today's work.
+  const defaultScript = getDefaultPlayerPublishedScript();
+  const featuredScript =
+    visibleScripts.find((entry) => entry.isCurrent) ||
+    visibleScripts.find(
+      (entry) => String(entry.savedScript.id) === String(defaultScript?.id || ""),
+    ) ||
+    visibleScripts[0];
+  const archivedScripts = visibleScripts.filter(
+    (entry) => entry !== featuredScript,
+  );
 
-  list.innerHTML = visibleScripts
-    .map(({ savedScript, stats, isCurrent }) => {
-      const eyebrow = savedScript.date === todayValue ? "Today" : "Published Script";
-      const scriptId = escapeHtml(String(savedScript.id));
-      const quizProgress = typeof getPlayerQuizScriptProgress === "function"
-        ? getPlayerQuizScriptProgress(savedScript.id, savedScript.name, stats.playCount)
-        : null;
-      const quizProgressText = quizProgress
-        ? `${quizProgress.icon ? `${quizProgress.icon} ` : ""}${quizProgress.points ? `${quizProgress.label} · ${quizProgress.points} pts` : quizProgress.label}`
-        : "";
+  const renderScriptCard = ({ savedScript, stats, isCurrent }, options = {}) => {
+    const featured = Boolean(options.featured);
+    const eyebrow = featured
+      ? (isCurrent ? "Current practice" : "Latest practice")
+      : (savedScript.date === todayValue ? "Today" : "Published Script");
+    const scriptId = escapeHtml(String(savedScript.id));
+    const quizProgress = typeof getPlayerQuizScriptProgress === "function"
+      ? getPlayerQuizScriptProgress(savedScript.id, savedScript.name, stats.playCount)
+      : null;
+    const quizProgressText = quizProgress
+      ? `${quizProgress.icon ? `${quizProgress.icon} ` : ""}${quizProgress.points ? `${quizProgress.label} · ${quizProgress.points} pts` : quizProgress.label}`
+      : "";
 
-      return `
-        <article class="player-script-card${isCurrent ? " is-current" : ""}">
-          <div class="player-script-card__body">
-            <div class="player-script-card__eyebrow">${escapeHtml(eyebrow)}</div>
-            <div class="player-script-card__title-row">
-              <div class="player-script-card__title">${escapeHtml(savedScript.name)}</div>
-              ${isCurrent ? '<span class="player-script-card__badge">Loaded</span>' : ""}
-            </div>
-            <div class="player-script-card__meta">
-              <span>${escapeHtml(stats.dateStr)}</span>
-              <span>${stats.playCount} plays</span>
-              <span>${stats.totalReps} reps</span>
-              ${stats.periodCount > 0 ? `<span>${stats.periodCount} periods</span>` : ""}
-            </div>
-            ${quizProgress ? `
-              <div class="player-script-card__quiz-progress">
-                <span class="player-quiz-progress-badge${quizProgress.icon ? " has-icon" : ""}">${escapeHtml(quizProgressText)}</span>
-                ${quizProgress.latest ? `<span>${quizProgress.answered}/${quizProgress.total || stats.playCount} questions</span>` : `<span>Start here for first score</span>`}
-              </div>
-            ` : ""}
+    return `
+      <article class="player-script-card${featured ? " player-script-card--featured" : ""}${isCurrent ? " is-current" : ""}">
+        <div class="player-script-card__body">
+          <div class="player-script-card__eyebrow">${escapeHtml(eyebrow)}</div>
+          <div class="player-script-card__title-row">
+            <div class="player-script-card__title">${escapeHtml(savedScript.name)}</div>
+            ${isCurrent ? '<span class="player-script-card__badge">Ready</span>' : ""}
           </div>
-          <div class="player-script-card__actions">
-            <button type="button" class="btn btn-primary btn-sm player-script-card__primary-action"
-              ${isCurrent
-                ? 'data-action="openPlayerCurrentScriptPresentation"'
-                : 'data-action="loadPublishedPlayerScript"'}
-              data-arg="${scriptId}" title="${isCurrent ? "Resume this practice in Swipe View" : "Open this published practice"}">
-              ${isCurrent ? "Resume practice" : "Open practice"}
-            </button>
+          <div class="player-script-card__meta">
+            <span>${escapeHtml(stats.dateStr)}</span>
+            <span>${stats.playCount} plays</span>
+            <span>${stats.totalReps} reps</span>
+            ${stats.periodCount > 0 ? `<span>${stats.periodCount} periods</span>` : ""}
+          </div>
+          ${quizProgress ? `
+            <div class="player-script-card__quiz-progress">
+              <span class="player-quiz-progress-badge${quizProgress.icon ? " has-icon" : ""}">${escapeHtml(quizProgressText)}</span>
+              ${quizProgress.latest ? `<span>${quizProgress.answered}/${quizProgress.total || stats.playCount} questions</span>` : ""}
+            </div>
+          ` : ""}
+        </div>
+        <div class="player-script-card__actions">
+          <button type="button" class="btn btn-primary btn-sm player-script-card__primary-action"
+            data-action="openPlayerCurrentScriptPresentation" data-arg="${scriptId}"
+            title="Open this published practice in Swipe View">
+            ${featured ? "Open Swipe View" : "Open practice"}
+          </button>
+          ${featured ? `
+            <button type="button" class="btn btn-secondary btn-sm" data-action="startPlayerScriptQuiz"
+              data-arg="${scriptId}" title="Quiz yourself on this practice">Quiz</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="openPlayerScriptChat"
+              data-arg="${scriptId}" title="Ask questions about this practice">Questions</button>
+          ` : `
             <details class="player-script-card__options">
               <summary>Study options <span aria-hidden="true">⌄</span></summary>
               <div class="player-script-card__option-list">
                 <button type="button" class="btn btn-sm" data-action="startPlayerScriptQuiz"
                   data-arg="${scriptId}" title="Quiz yourself on this practice">Quiz</button>
                 <button type="button" class="btn btn-sm" data-action="openPlayerScriptChat"
-                  data-arg="${scriptId}" title="Ask questions and chat about this practice">Chat</button>
-                <button type="button" class="btn btn-sm" data-action="openPlayerCurrentScriptPresentation"
-                  data-arg="${scriptId}" title="Open this published script in Swipe View">Swipe View</button>
+                  data-arg="${scriptId}" title="Ask questions about this practice">Questions</button>
               </div>
             </details>
-          </div>
-        </article>
-      `;
-    })
-    .join("");
+          `}
+        </div>
+      </article>
+    `;
+  };
+
+  section.hidden = false;
+  list.innerHTML = `
+    <section class="player-practice-current" aria-label="Current practice">
+      ${renderScriptCard(featuredScript, { featured: true })}
+    </section>
+    ${archivedScripts.length ? `
+      <details class="player-practice-archive">
+        <summary>Previous practices <span>${archivedScripts.length}</span></summary>
+        <div class="player-practice-archive__list">
+          ${archivedScripts.map((entry) => renderScriptCard(entry)).join("")}
+        </div>
+      </details>
+    ` : ""}
+  `;
 }
 
 // Player practice is a stable landing surface, never the coach Script

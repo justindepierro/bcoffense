@@ -158,6 +158,21 @@ assert.match(
 );
 assert.match(
   scriptPlayer,
+  /const defaultScript = getDefaultPlayerPublishedScript\(\);[\s\S]*?const featuredScript =[\s\S]*?const archivedScripts = visibleScripts\.filter[\s\S]*?player-practice-archive/,
+  "the player Practice route promotes one current packet and keeps prior releases in a secondary archive",
+);
+assert.match(
+  scriptPlayer,
+  /data-action="openPlayerCurrentScriptPresentation" data-arg="\$\{scriptId\}"[\s\S]*?Open Swipe View/,
+  "the featured player practice opens directly into Swipe View instead of the coach Script workbench",
+);
+assert.match(
+  presentation,
+  /const shouldReturnPlayerToPractice =[\s\S]*?showPlayerPracticeLanding\(\)/,
+  "closing Swipe View returns a player to the dedicated Practice route",
+);
+assert.match(
+  scriptPlayer,
   /const releaseConfirmed = publishResult !== false[\s\S]*?if \(releaseConfirmed && typeof notifyPlayersOfTeamUpdate === "function"\)/,
   "player notifications are emitted only after a release is confirmed rather than merely queued",
 );

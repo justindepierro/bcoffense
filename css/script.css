@@ -230,7 +230,7 @@
 
 .player-script-launcher-list {
   display: grid;
-  gap: 8px;
+  gap: 12px;
   min-height: 0;
   overflow: visible;
   overscroll-behavior: contain;
@@ -404,6 +404,75 @@ body[data-auth-role="player"]
     var(--color-surface) 56%
   );
   box-shadow: var(--shadow-sm);
+}
+
+/* The player Practice destination has a single deliberate start point. Older
+   releases live behind a lightweight disclosure so they remain useful without
+   reading as a competing dashboard of cards. */
+.player-practice-current {
+  min-width: 0;
+}
+
+.player-script-card--featured {
+  padding: 16px;
+  border-left-width: 5px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 12%, var(--color-surface)), var(--color-surface) 68%);
+}
+
+.player-script-card--featured .player-script-card__title {
+  font-size: var(--font-size-lg);
+}
+
+.player-practice-archive {
+  border-top: 1px solid var(--color-border-light);
+  padding-top: 4px;
+}
+
+.player-practice-archive > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 0 4px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  list-style: none;
+}
+
+.player-practice-archive > summary::-webkit-details-marker {
+  display: none;
+}
+
+.player-practice-archive > summary::after {
+  content: "⌄";
+  margin-left: 8px;
+  color: var(--color-text-muted);
+  font-size: 18px;
+  transition: transform var(--transition-fast);
+}
+
+.player-practice-archive[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.player-practice-archive > summary span {
+  margin-left: auto;
+  min-width: 22px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  font-size: var(--font-size-2xs);
+  text-align: center;
+}
+
+.player-practice-archive__list {
+  display: grid;
+  gap: 8px;
+  padding: 4px 0 2px;
 }
 
 .player-script-card__body {
@@ -5306,6 +5375,15 @@ body[data-auth-role="player"] #script .script-tools-drawer {
   .player-script-card__actions {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .player-script-card--featured .player-script-card__actions {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .player-script-card--featured .player-script-card__actions .btn:not(.player-script-card__primary-action) {
+    min-width: 42px;
+    padding-inline: 10px;
   }
 }
 
