@@ -101,6 +101,7 @@ body.play-presentation-open .quick-tools {
 .pp-source {
   grid-area: source;
   overflow: hidden;
+  color: rgb(255 255 255 / 72%);
   font-size: var(--font-size-sm);
   font-weight: 900;
   letter-spacing: 0.01em;
@@ -124,10 +125,11 @@ body.play-presentation-open .quick-tools {
   grid-area: title;
   min-width: 0;
   overflow: hidden;
-  color: rgb(255 255 255 / 88%);
-  font-size: var(--font-size-xs);
-  font-weight: 800;
-  line-height: 1.2;
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-base);
+  font-weight: 950;
+  letter-spacing: 0.01em;
+  line-height: 1.16;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -3002,7 +3004,10 @@ body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-source {
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen
   .pp-header-play-title {
-  display: none;
+  display: block;
+  color: rgb(255 255 255 / 94%);
+  font-size: 0.68rem;
+  font-weight: 900;
 }
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-counter {

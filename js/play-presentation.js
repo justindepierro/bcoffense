@@ -1250,6 +1250,18 @@ function getPlayPresentationHeaderTitle(item) {
   );
 }
 
+// The pinned Swipe header needs to answer both questions a player has while
+// moving quickly through a script: "which practice am I in?" and "which call
+// is this?"  The period remains useful context, but it is never a substitute
+// for the actual published script name.
+function getPlayPresentationSourceLabel(item) {
+  if (playPresentationState.source !== "script") return "Playbook";
+  const scriptName = String(document.getElementById("scriptName")?.value || "").trim();
+  const period = String(item?.context || "").trim();
+  if (scriptName && period) return `${scriptName} · ${period}`;
+  return scriptName || period || "Practice Script";
+}
+
 // A practice script can carry visual-only call adjustments (including a
 // personnel color override).  Presentation must honor those adjustments for
 // coaches and players, but the original play remains the media identity for
@@ -2777,10 +2789,7 @@ function renderPlayPresentation() {
   const previous = document.getElementById("playPresentationPrev");
   const next = document.getElementById("playPresentationNext");
   if (sourceLabel) {
-    sourceLabel.textContent =
-      playPresentationState.source === "script"
-        ? item.context || "Practice Script"
-        : "Playbook";
+    sourceLabel.textContent = getPlayPresentationSourceLabel(item);
   }
   if (counter) {
     counter.textContent = `${playPresentationState.index + 1} / ${playPresentationState.items.length}`;

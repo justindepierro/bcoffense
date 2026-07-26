@@ -172,6 +172,11 @@ assert.match(
   "closing Swipe View returns a player to the dedicated Practice route",
 );
 assert.match(
+  presentation,
+  /function getPlayPresentationSourceLabel\(item\)[\s\S]*?document\.getElementById\("scriptName"\)[\s\S]*?return `\$\{scriptName\} · \$\{period\}`;[\s\S]*?sourceLabel\.textContent = getPlayPresentationSourceLabel\(item\)/,
+  "Swipe View keeps the published practice-script name in its pinned header rather than showing only a period",
+);
+assert.match(
   scriptPlayer,
   /const releaseConfirmed = publishResult !== false[\s\S]*?if \(releaseConfirmed && typeof notifyPlayersOfTeamUpdate === "function"\)/,
   "player notifications are emitted only after a release is confirmed rather than merely queued",
