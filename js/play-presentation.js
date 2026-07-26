@@ -2434,6 +2434,13 @@ function getPlayPresentationPlayerMarkup(item) {
   const ruleStatusCopy = assignment
     ? `Showing ${selected.label} rule`
     : `No ${selected.label} rule entered`;
+  const playNumber = playPresentationState.index + 1;
+  const playCount = playPresentationState.items.length;
+  const atFirstPlay = playPresentationState.index === 0;
+  const atLastPlay = playPresentationState.index >= playCount - 1;
+  const progressPercent = playCount > 1
+    ? Math.round(((playNumber - 1) / (playCount - 1)) * 100)
+    : 100;
 
   return `
     <div class="pp-layout pp-layout-player">
@@ -2466,6 +2473,24 @@ function getPlayPresentationPlayerMarkup(item) {
     boldShifts: true,
     italicMotions: true,
   })}</div>
+        <section class="pp-player-navigation" aria-label="Practice navigation">
+          <div class="pp-player-progress-copy">
+            <span>Practice progress</span>
+            <strong>Play ${playNumber} of ${playCount}</strong>
+          </div>
+          <div class="pp-player-progress-track" role="progressbar" aria-label="Practice progress"
+            aria-valuemin="1" aria-valuemax="${playCount}" aria-valuenow="${playNumber}">
+            <span style="width: ${progressPercent}%"></span>
+          </div>
+          <div class="pp-player-navigation-actions">
+            <button type="button" class="btn btn-secondary pp-player-nav-btn" data-action="movePlayPresentation"
+              data-arg="-1" ${atFirstPlay ? "disabled" : ""} aria-label="Previous play">Previous</button>
+            <button type="button" class="btn btn-ghost pp-player-return-btn" data-action="closePlayPresentation"
+              aria-label="Return to Practice">Practice</button>
+            <button type="button" class="btn btn-primary pp-player-nav-btn" data-action="movePlayPresentation"
+              data-arg="1" aria-label="${atLastPlay ? "Start this practice over" : "Next play"}">${atLastPlay ? "Start over" : "Next"}</button>
+          </div>
+        </section>
         ${playerChips.length
       ? `<div class="pp-player-chips">${playerChips
         .map((chip) => `<span>${escapeHtml(chip)}</span>`)

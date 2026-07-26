@@ -177,6 +177,11 @@ assert.match(
   "Swipe View keeps the published practice-script name in its pinned header rather than showing only a period",
 );
 assert.match(
+  presentation,
+  /class="pp-player-navigation"[\s\S]*?Play \$\{playNumber\} of \$\{playCount\}[\s\S]*?data-action="movePlayPresentation"[\s\S]*?data-action="closePlayPresentation"[\s\S]*?Return to Practice/,
+  "player Swipe View provides visible practice progress, bounded navigation, and the canonical safe return action",
+);
+assert.match(
   scriptPlayer,
   /const releaseConfirmed = publishResult !== false[\s\S]*?if \(releaseConfirmed && typeof notifyPlayersOfTeamUpdate === "function"\)/,
   "player notifications are emitted only after a release is confirmed rather than merely queued",

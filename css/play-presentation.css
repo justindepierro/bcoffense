@@ -765,6 +765,76 @@ body.play-presentation-open .quick-tools {
   white-space: normal;
 }
 
+/* Player Swipe is a bounded practice packet, so its progress and escape route
+   live beside the call—not in distant presentation chrome. These controls
+   reuse the canonical navigation and close actions. */
+.pp-player-navigation {
+  display: grid;
+  grid-template-columns: auto minmax(84px, 1fr);
+  gap: 7px 12px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
+}
+
+.pp-player-progress-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pp-player-progress-copy span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.pp-player-progress-copy strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+}
+
+.pp-player-progress-track {
+  align-self: center;
+  height: 7px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-primary) 16%, var(--color-surface-muted));
+}
+
+.pp-player-progress-track span {
+  display: block;
+  height: 100%;
+  min-width: 7px;
+  border-radius: inherit;
+  background: var(--color-primary);
+  transition: width var(--transition-fast);
+}
+
+.pp-player-navigation-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 7px;
+}
+
+.pp-player-nav-btn,
+.pp-player-return-btn {
+  min-height: 46px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pp-player-return-btn {
+  min-width: 76px;
+  padding-inline: 10px;
+  color: var(--color-text-secondary);
+}
+
 .pp-player-chips {
   display: flex;
   gap: 6px;
@@ -3391,6 +3461,7 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   font-size: var(--font-size-lg);
   line-height: 1.18;
 }
+
 
 body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   .pp-player-rule {
