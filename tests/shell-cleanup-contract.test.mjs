@@ -115,6 +115,16 @@ assert.match(
   "the More menu preserves the player-safe print restriction used by the header",
 );
 assert.match(
+  indexHtml,
+  /data-mobile-player-quiz="true" data-action="showTab" data-arg="quiz"/,
+  "the phone player nav exposes Quiz directly instead of requiring a broader More menu",
+);
+assert.match(
+  appShell,
+  /const isPlayer = document\.body\?\.dataset\?\.authRole === "player";[\s\S]*?playerQuiz\.hidden = !isPlayer;[\s\S]*?more\.hidden = isPlayer;/,
+  "the mobile shell swaps staff More for the player-only Quiz destination by role",
+);
+assert.match(
   playerPlaybookFilters,
   /id: "player-playbook-filters"[\s\S]*?blocking: true,[\s\S]*?onEscape: \(\) => closePlayerPlaybookFilters\(\)/,
   "the player filter overlay owns a blocking layer and has one explicit Escape close path",

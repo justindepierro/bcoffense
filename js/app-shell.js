@@ -769,6 +769,7 @@ function syncMobilePrimaryNav() {
   nav.hidden = !isPhone || isPresentation;
   if (nav.hidden) return;
   const activeTab = document.body?.dataset.activeTab || "";
+  const isPlayer = document.body?.dataset?.authRole === "player";
   nav.querySelectorAll("[data-mobile-tab]").forEach((button) => {
     const tab = button.dataset.mobileTab;
     const allowed = typeof canAccessTab !== "function" || canAccessTab(tab);
@@ -776,7 +777,17 @@ function syncMobilePrimaryNav() {
     button.classList.toggle("active", tab === activeTab);
     button.setAttribute("aria-current", tab === activeTab ? "page" : "false");
   });
-  nav.querySelector("[data-mobile-more]")?.classList.toggle("active", !["dashboard", "script", "playbook"].includes(activeTab));
+  const playerQuiz = nav.querySelector("[data-mobile-player-quiz]");
+  if (playerQuiz) {
+    playerQuiz.hidden = !isPlayer;
+    playerQuiz.classList.toggle("active", isPlayer && activeTab === "quiz");
+    playerQuiz.setAttribute("aria-current", isPlayer && activeTab === "quiz" ? "page" : "false");
+  }
+  const more = nav.querySelector("[data-mobile-more]");
+  if (more) {
+    more.hidden = isPlayer;
+    more.classList.toggle("active", !isPlayer && !["dashboard", "script", "playbook"].includes(activeTab));
+  }
 }
 
 function openMobilePrimaryMore() {
