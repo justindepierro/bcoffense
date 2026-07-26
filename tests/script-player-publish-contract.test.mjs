@@ -223,6 +223,21 @@ assert.match(
   "opening a player practice notification refreshes the release before resolving its script",
 );
 assert.match(
+  notifications,
+  /function _syncNotifDrawerRoleLabels\(\)[\s\S]*?\[\["inbox", "Questions", "questions"\], \["conversation", "Quiz", "quiz"\], \["practice", "Practice", "practice"\]\]/,
+  "the player notification drawer replaces staff-only filters with Questions, Quiz, and Practice",
+);
+assert.match(
+  notifications,
+  /function _notifDestination\(item\)[\s\S]*?return "Open practice";[\s\S]*?return "Open quiz";[\s\S]*?return "Open question";/,
+  "each player notification tells the player whether it opens a practice, quiz, or exact question thread",
+);
+assert.match(
+  notifications,
+  /const order = \["practice", "quiz", "questions", "updates"\];[\s\S]*?notif-section-label/,
+  "player notifications are grouped into study-oriented sections without changing the staff inbox",
+);
+assert.match(
   dashboardRender,
   /function _dashRenderPlayerRefreshAction\(\)[\s\S]*?Release \$\{releaseRevision\.slice\(0, 12\)\}[\s\S]*?Practice is current[\s\S]*?data-action="refreshPlayerTeamApp"/,
   "the player Home shows a confirmed release revision, script count, and deliberate update check—not only errors",

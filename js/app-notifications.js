@@ -166,6 +166,7 @@ async function openNotifDrawer() {
   _notifOffset = 0;
   _notifItems = [];
   _notifFilter = "all";
+  _syncNotifDrawerRoleLabels();
   _syncNotifFilterButtons();
   if (backdrop) backdrop.hidden = false;
   drawer.classList.add("is-open");
@@ -363,6 +364,12 @@ function _notifNeedsStaffReply(item) {
 }
 
 function _notifBucket(item) {
+  if (_isPlayerNotificationUser()) {
+    if (item?.type === "new_quiz" || item?.type === "quiz_homework" || String(item?.deepLink || "").startsWith("quiz")) return "quiz";
+    if (_NOTIF_CONVERSATION_TYPES.has(item?.type) || String(item?.deepLink || "").startsWith("play:")) return "questions";
+    if (item?.type === "script_published" || String(item?.deepLink || "").startsWith("script")) return "practice";
+    return "updates";
+  }
   if (item?.inboxGroup) return "inbox";
   if (_NOTIF_CONVERSATION_TYPES.has(item?.type)) return "conversation";
   if (_NOTIF_PRACTICE_TYPES.has(item?.type)) return "practice";
@@ -406,6 +413,33 @@ function _syncNotifFilterButtons() {
   });
 }
 
+function _syncNotifDrawerRoleLabels() {
+  const player = _isPlayerNotificationUser();
+  const labels = player
+    ? [["inbox", "Questions", "questions"], ["conversation", "Quiz", "quiz"], ["practice", "Practice", "practice"]]
+    : [["inbox", "Coach inbox", "inbox"], ["conversation", "Messages", "conversation"], ["practice", "Practice", "practice"]];
+  labels.forEach(([slot, label, filter]) => {
+    const button = document.querySelector(`.notif-filter-btn[data-slot="${slot}"]`);
+    if (!button) return;
+    button.textContent = label;
+    button.dataset.arg = filter;
+  });
+}
+
+function _notifDestination(item) {
+  const deepLink = String(item?.deepLink || "");
+  if (deepLink.startsWith("script") || item?.type === "script_published") return "Open practice";
+  if (deepLink.startsWith("quiz") || item?.type === "new_quiz" || item?.type === "quiz_homework") return "Open quiz";
+  if (deepLink.startsWith("play:") || _NOTIF_CONVERSATION_TYPES.has(item?.type)) return "Open question";
+  if (deepLink === "dashboard") return "Open Player Home";
+  if (deepLink === "questions") return "Open questions";
+  return "Open update";
+}
+
+function _notifSectionLabel(bucket) {
+  return ({ practice: "Practice", quiz: "Quiz", questions: "Questions", updates: "Team updates" })[bucket] || "Updates";
+}
+
 function _renderNotificationList(listEl = document.getElementById("notifList")) {
   if (!listEl) return;
   const notifications = _notifGroupItems(_notifItems)
@@ -427,7 +461,20 @@ function _renderNotificationList(listEl = document.getElementById("notifList")) 
     });
     return;
   }
-  listEl.innerHTML = notifications.map(_notifItemHtml).join("");
+  if (!_isPlayerNotificationUser()) {
+    listEl.innerHTML = notifications.map(_notifItemHtml).join("");
+    return;
+  }
+  const groups = new Map();
+  notifications.forEach((item) => {
+    const bucket = _notifBucket(item);
+    if (!groups.has(bucket)) groups.set(bucket, []);
+    groups.get(bucket).push(item);
+  });
+  const order = ["practice", "quiz", "questions", "updates"];
+  listEl.innerHTML = order.filter((bucket) => groups.has(bucket)).map((bucket) =>
+    `<li class="notif-section-label" aria-hidden="true">${_notifSectionLabel(bucket)}</li>${groups.get(bucket).map(_notifItemHtml).join("")}`,
+  ).join("");
 }
 
 function _notifStateHtml({ icon, title, body, action = "", actionArg = "", actionLabel = "", tone = "" }) {
@@ -472,6 +519,7 @@ function _notifItemHtml(n) {
     `<div class="notif-item-title">${escapeHtml(n.title)}</div>` +
     (n.body ? `<div class="notif-item-body">${escapeHtml(n.body)}</div>` : "") +
     groupLabel +
+    (n.deepLink ? `<div class="notif-item-destination">${escapeHtml(_notifDestination(n))}<span aria-hidden="true">→</span></div>` : "") +
     `<div class="notif-item-time">${escapeHtml(_notifRelTime(n.createdAt))}</div>` +
     `</div>` +
     (n.read ? "" : `<span class="notif-unread-dot" aria-hidden="true"></span>`) +
@@ -607,7 +655,10 @@ function retryNotifs() {
 }
 
 function setNotifFilter(filter = "all") {
-  _notifFilter = ["all", "inbox", "conversation", "practice"].includes(filter) ? filter : "all";
+  const allowed = _isPlayerNotificationUser()
+    ? ["all", "questions", "quiz", "practice"]
+    : ["all", "inbox", "conversation", "practice"];
+  _notifFilter = allowed.includes(filter) ? filter : "all";
   _syncNotifFilterButtons();
   _renderNotificationList();
 }
