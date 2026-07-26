@@ -224,6 +224,9 @@ function showTab(tabName) {
     if (gw.opponentIndex === null) return;
     if (!gw.lastTabs || typeof gw.lastTabs !== "object") gw.lastTabs = {};
     gw.lastTabs[String(gw.opponentIndex)] = tabName;
-    storageManager.set(STORAGE_KEYS.GAME_WEEK, gw);
+    // The remembered tab is a device-only convenience. GAME_WEEK also holds
+    // shared coach data, so this local navigation preference must never queue
+    // a multi-megabyte workspace publish by itself.
+    storageManager.set(STORAGE_KEYS.GAME_WEEK, gw, { skipCloudAutoPush: true });
   }, 600);
 }

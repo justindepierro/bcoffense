@@ -17,6 +17,8 @@ const [scriptStorage, scriptPlayer, presentation, cloudSync, workspaceSync, noti
 const scriptQuiz = await source("js/script-quiz.js");
 const playbookRender = await source("js/playbook-render.js");
 const playerPortal = await source("js/player-portal.js");
+const appNavigation = await source("js/app-navigation.js");
+const storage = await source("js/storage.js");
 
 assert.match(
   scriptStorage,
@@ -252,6 +254,16 @@ assert.match(
   playerPortal,
   /encodeURIComponent\(q\.playId \|\| ""\).*encodeURIComponent\(q\.postId \|\| ""\)[\s\S]*?function pportOpenDiscussion\(arg\)[\s\S]*?openDiscussionForPlayId\(playId, \{ postId \}\)/,
   "My Questions preserves the exact question post when reopening a player discussion",
+);
+assert.match(
+  storage,
+  /set\(key, value, options = \{\}\)[\s\S]*?options\?\.skipCloudAutoPush !== true[\s\S]*?queueCloudAutoPush\(key, "set"\)/,
+  "storage supports persisting device-only preferences without queueing a team publish",
+);
+assert.match(
+  appNavigation,
+  /GAME_WEEK, gw, \{ skipCloudAutoPush: true \}/,
+  "switching tabs does not publish the shared game-week workspace merely to remember a local tab",
 );
 assert.match(
   dashboardRender,

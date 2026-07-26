@@ -780,7 +780,7 @@ const storageManager = {
     }
   },
 
-  set(key, value) {
+  set(key, value, options = {}) {
     try {
       const serialized = _lzsCompress(JSON.stringify(value));
       const storageKey = _localStorageKeyFor(key);
@@ -794,7 +794,13 @@ const storageManager = {
         typeof window !== "undefined" &&
         typeof window.queueCloudAutoPush === "function"
       ) {
-        window.queueCloudAutoPush(key, "set");
+        // Some values share a record with team data while carrying a small
+        // device-only view preference (for example, an opponent's last open
+        // tab). Persist that preference locally without turning a navigation
+        // click into a full canonical workspace publish.
+        if (options?.skipCloudAutoPush !== true) {
+          window.queueCloudAutoPush(key, "set");
+        }
       }
       return true;
     } catch (e) {
