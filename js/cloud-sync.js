@@ -24,9 +24,10 @@
   const CLOUD_AUTO_PUSH_TIMEOUT_RETRY_MS = 4000;
   // A short-lived Pages/D1/R2 availability response is different from a
   // failed publish: the local edit remains durable and the server has not
-  // accepted a revision. Retry it promptly so a coach posting practice media
-  // does not stare at a one-minute false stall.
-  const CLOUD_AUTO_PUSH_SERVER_RETRY_MS = 5000;
+  // accepted a revision. Back off rather than hammering a service that has
+  // explicitly reported itself unavailable; the dock remains clear that the
+  // work is safely local while the bounded retries run.
+  const CLOUD_AUTO_PUSH_SERVER_RETRY_MS = 15 * 1000;
   const CLOUD_AUTO_PUSH_MAX_RETRIES = 3;
   const TEAM_FOREGROUND_REFRESH_MIN_MS = 20 * 1000;
   const TEAM_FOREGROUND_REFRESH_INTERVAL_MS = 3 * 60 * 1000;
@@ -2128,6 +2129,13 @@
     }, Math.max(500, delay));
   }
 
+  function getCloudServerRetryDelay(err, retryCount) {
+    const hintedSeconds = Math.max(0, Number(err?.data?.retryAfterSeconds || 0) || 0);
+    const hintedDelay = hintedSeconds ? hintedSeconds * 1000 : CLOUD_AUTO_PUSH_SERVER_RETRY_MS;
+    const exponent = Math.max(0, Math.min(CLOUD_AUTO_PUSH_MAX_RETRIES - 1, Number(retryCount || 1) - 1));
+    return Math.min(60 * 1000, hintedDelay * (2 ** exponent));
+  }
+
   function queueCloudAutoPush(key, reason = "change") {
     if (cloudAutoPushSuppress) return false;
     if (
@@ -2286,8 +2294,8 @@
             : err?.code === "BC_WORKSPACE_TIMEOUT"
               ? CLOUD_AUTO_PUSH_TIMEOUT_RETRY_MS
               : Number(err?.status) >= 500 && Number(err?.status) < 600
-                ? CLOUD_AUTO_PUSH_SERVER_RETRY_MS
-              : CLOUD_AUTO_PUSH_RETRY_MS,
+                ? getCloudServerRetryDelay(err, cloudAutoPushRetryCount)
+                : CLOUD_AUTO_PUSH_RETRY_MS,
         );
       } else {
         _cloudFailJob(cloudJobKey, err, { label: "Publish needs attention — saved on this device" });

@@ -5,6 +5,13 @@
 // team cannot accidentally inherit another team's media or player release.
 
 const PRIMARY_TEAM_SETTING = "primary_team_id";
+// Static staff accounts do not carry a team ID in their signed cookie. Reading
+// the one-team setting from D1 for every protected request made an otherwise
+// healthy save path needlessly sensitive to a transient lookup failure. Cache
+// only a verified, non-empty value for this warm Function isolate; D1 remains
+// the source of truth and an explicit environment value always wins.
+const PRIMARY_TEAM_CACHE_TTL_MS = 60 * 1000;
+let primaryTeamCache = { value: "", expiresAt: 0 };
 
 function cleanTeamId(value) {
   return String(value || "").trim();
@@ -38,12 +45,20 @@ export async function getPrimaryTeamId(env) {
   if (configured) return configured;
   if (!env?.DB) return "";
 
+  if (primaryTeamCache.value && primaryTeamCache.expiresAt > Date.now()) {
+    return primaryTeamCache.value;
+  }
+
   try {
     const row = await env.DB
       .prepare("SELECT setting_value FROM app_settings WHERE setting_key = ? LIMIT 1")
       .bind(PRIMARY_TEAM_SETTING)
       .first();
-    return cleanTeamId(row?.setting_value);
+    const teamId = cleanTeamId(row?.setting_value);
+    if (teamId) {
+      primaryTeamCache = { value: teamId, expiresAt: Date.now() + PRIMARY_TEAM_CACHE_TTL_MS };
+    }
+    return teamId;
   } catch (_err) {
     // The migration may not be installed yet. Callers decide whether a missing
     // explicit team is a configuration error or a reason to deny access.

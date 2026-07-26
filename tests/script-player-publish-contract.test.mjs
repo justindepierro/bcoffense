@@ -132,8 +132,8 @@ assert.match(
 );
 assert.match(
   cloudSync,
-  /CLOUD_AUTO_PUSH_SERVER_RETRY_MS = 5000[\s\S]*?Number\(err\?\.status\) >= 500[\s\S]*?CLOUD_AUTO_PUSH_SERVER_RETRY_MS/,
-  "a transient Cloudflare service failure retries a queued team publish promptly while local data stays protected",
+  /CLOUD_AUTO_PUSH_SERVER_RETRY_MS = 15 \* 1000[\s\S]*?function getCloudServerRetryDelay[\s\S]*?Number\(err\?\.status\) >= 500[\s\S]*?getCloudServerRetryDelay/,
+  "a transient Cloudflare service failure backs off safely while local data stays protected",
 );
 assert.match(
   cloudSync,

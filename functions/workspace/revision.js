@@ -187,11 +187,20 @@ function pointerSummary(pointer) {
 async function requireStaffContext(context) {
   const session = await getSessionFromRequest(context.request, context.env);
   if (!isStaff(session)) return { error: workspaceError("Coach access is required.", 403) };
-  const teamId = await resolveSessionTeamId(session, context.env);
-  if (!teamId) return { error: workspaceError("Team access is not configured for this account.", 503) };
+  // Distinguish an unavailable backing store from an account configuration
+  // issue. The browser can safely back off and preserve its local work for
+  // the former; the latter needs an administrator to correct access.
   if (!context.env?.DB || !context.env?.CLIPS) {
-    return { error: workspaceError("The canonical workspace store is not configured.", 503) };
+    return { error: workspaceError("The canonical workspace store is temporarily unavailable. Your local changes remain safe on this device.", 503, {
+      code: "BC_WORKSPACE_STORE_UNAVAILABLE",
+      retryAfterSeconds: 15,
+    }) };
   }
+  const teamId = await resolveSessionTeamId(session, context.env);
+  if (!teamId) return { error: workspaceError("Team access is temporarily unavailable. Your local changes remain safe on this device.", 503, {
+    code: "BC_TEAM_CONTEXT_UNAVAILABLE",
+    retryAfterSeconds: 15,
+  }) };
   return { session, teamId };
 }
 

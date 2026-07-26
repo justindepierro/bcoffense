@@ -26,6 +26,8 @@ assert.match(source, /validateWorkspaceReplacement\(currentWorkspace, workspace\
 assert.match(source, /BC_DESTRUCTIVE_WORKSPACE_REPLACEMENT_BLOCKED/, "destructive write rejections have a stable machine-readable code");
 assert.match(source, /readCurrentWorkspacePointer\(context\.env, principal\.teamId\)/, "foreground freshness checks read the compact current pointer before loading R2 bytes");
 assert.match(source, /If-None-Match/, "workspace reads honor ETags for no-body freshness responses");
+assert.match(source, /BC_WORKSPACE_STORE_UNAVAILABLE/, "workspace storage outages have a stable, actionable error code");
+assert.match(source, /BC_TEAM_CONTEXT_UNAVAILABLE/, "team-context outages are distinct from missing staff authorization");
 assert.match(cloudSync, /function rebaseCanonicalWorkspaceForAutoPush/, "automatic saves rebase onto the newest team workspace instead of pushing a stale full browser snapshot");
 assert.match(cloudSync, /opts\.auto[\s\S]*rebaseCanonicalWorkspaceForAutoPush/, "only background saves use key-scoped rebasing while deliberate recovery retains its existing behavior");
 assert.match(
@@ -34,6 +36,7 @@ assert.match(
   "a blank device cannot publish over populated canonical team collections",
 );
 assert.match(cloudSync, /CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS/, "revision conflicts retry promptly after reloading the current head");
+assert.match(cloudSync, /function getCloudServerRetryDelay/, "service-unavailable saves use bounded exponential retry rather than a request loop");
 assert.match(cloudSync, /function refreshTeamWorkspaceOnForeground/, "open devices perform lightweight foreground freshness checks");
 assert.match(cloudSync, /function shouldProtectUntrackedLocalWorkspace/, "only browser-only untracked work is protected from automatic replacement");
 assert.match(cloudSync, /remoteMatchesKnownRevision/, "staff freshness follows canonical revision identity instead of device timestamps");
