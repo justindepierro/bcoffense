@@ -3350,6 +3350,14 @@ function checkWristbandWorkspaceContracts() {
     fail("wristband landing actions do not provide saved-wristband access before format selection");
   }
   if (
+    !/class="wb-zoom-segment"/.test(html) ||
+    !/wb-fullscreen-btn/.test(html) ||
+    !/\.wb-zoom-segment/.test(css) ||
+    !/\.wb-fullscreen-btn/.test(css)
+  ) {
+    fail("wristband zoom controls are not grouped into a clear compact control");
+  }
+  if (
     !/#wristband\.wb-mobile-view-builder \.wristband-plays/.test(css) ||
     !/#wristband\.wb-mobile-view-library \.wristband-preview/.test(css) ||
     !/body\.shell-phone #wristband \.wristband-grid\.wb-phone-editor-grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(
