@@ -112,6 +112,11 @@ assert.match(
   "a flashcard must be flipped before the player can advance past it",
 );
 assert.match(
+  scriptQuiz,
+  /Play diagram with the title area hidden until you reveal the answer\.[\s\S]*?revealButton\.textContent = isFlashcard \? "Flip Card" : "Show Play Call"/,
+  "flashcards do not leak the call through hidden accessibility copy and label their reveal action clearly",
+);
+assert.match(
   cloudSync,
   /PLAYER_RELEASE_REQUEST_TIMEOUT_MS = 12 \* 1000[\s\S]*?controller\.abort\(\)[\s\S]*?signal: controller\?\.signal[\s\S]*?PLAYER_RELEASE_TIMEOUT/s,
   "a suspended mobile release request is aborted and can recover on the next foreground check",

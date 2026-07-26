@@ -1856,7 +1856,6 @@ function _quizDiagramUrl(play) {
 
 function _renderQuizRedactedDiagram(play, diagramUrl = _quizDiagramUrl(play)) {
   if (!diagramUrl) return "";
-  const label = _quizPlainCall(play);
   return `
     <figure class="sq-diagram-prompt" aria-label="Redacted play diagram">
       <div class="sq-diagram-prompt__stage">
@@ -1864,7 +1863,7 @@ function _renderQuizRedactedDiagram(play, diagramUrl = _quizDiagramUrl(play)) {
         <span class="sq-diagram-redaction-band" aria-hidden="true"></span>
       </div>
       <figcaption>Top title band hidden for quiz</figcaption>
-      <span class="sr-only">Diagram for ${escapeHtml(label)} with title area redacted.</span>
+      <span class="sr-only">Play diagram with the title area hidden until you reveal the answer.</span>
     </figure>
   `;
 }
@@ -3010,6 +3009,7 @@ function renderScriptQuizPlay() {
     gameMode ? "script-quiz-scenario--game" : "",
     question.type === "signal" ? "script-quiz-scenario--signal-video" : "",
     question.type === "signal_full_call" ? "script-quiz-scenario--signal-sequence" : "",
+    question.type === "diagram_flash" ? "script-quiz-scenario--diagram-flash" : "",
     choiceLengthTone ? `script-quiz-scenario--${choiceLengthTone}-choices` : "",
   ].filter(Boolean).join(" ");
 
@@ -3088,6 +3088,7 @@ function renderScriptQuizPlay() {
   const defenseItems = [play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean);
   const { ruleParts, noteParts, position } = _quizCoachDetails(item);
   const answerHtml = `
+    ${question.type === "diagram_flash" ? '<div class="sq-flashcard-answer-label">Practice script call</div>' : ""}
     <div class="sq-answer-call">${fullCall}</div>
     ${defenseItems.length ? `<div class="sq-answer-defense">vs ${defenseItems.map(escapeHtml).join(" / ")}</div>` : ""}
     ${ruleParts.length ? `<div class="sq-answer-note"><strong>${escapeHtml(position?.label || "Your")} Rule:</strong> ${ruleParts.map(escapeHtml).join(" ")}</div>` : ""}
@@ -3103,6 +3104,13 @@ function renderScriptQuizPlay() {
   }
   const revealRow = document.querySelector(".script-quiz-reveal-row");
   if (revealRow) revealRow.classList.toggle("hidden", gameMode);
+  const revealButton = document.getElementById("scriptQuizRevealBtn");
+  if (revealButton) {
+    const isFlashcard = question.type === "diagram_flash";
+    revealButton.textContent = isFlashcard ? "Flip Card" : "Show Play Call";
+    revealButton.setAttribute("aria-label", isFlashcard ? "Flip card to reveal the practice script call" : "Show play call");
+    revealButton.classList.toggle("is-flashcard", isFlashcard);
+  }
   _quizPerfRecord("render-question", renderStartedAt, {
     questionType: question.type,
     hasDiagram: Boolean(diagramPromptHtml),
