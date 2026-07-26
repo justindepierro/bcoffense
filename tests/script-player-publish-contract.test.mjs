@@ -25,6 +25,11 @@ assert.match(
   /async function recordPlayerPublishStatus[\s\S]*?awaitCompletion: opts\.awaitCompletion === true[\s\S]*?return publishResult !== false/s,
   "player publish receipts can wait for the canonical release result",
 );
+assert.match(
+  scriptPlayer,
+  /queuedLabel: "Player update queued — publishing shortly"[\s\S]*?runningLabel: "Publishing update to players\.\.\."[\s\S]*?errorLabel: "Player update needs attention — saved on this device"/,
+  "the coach-facing player handoff status explains queueing, publishing, and the safe failure state",
+);
 assert.doesNotMatch(
   scriptPlayer,
   /completeWorkspaceSyncJob\(publishJobKey, \{ label: "Player publish updated" \}\)/,

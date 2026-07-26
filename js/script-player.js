@@ -354,14 +354,14 @@ async function recordPlayerPublishStatus(kind, details = {}, opts = {}) {
   const updatedAt = details.updatedAt || new Date().toISOString();
   const publishJobKey = typeof window.queueWorkspaceSyncJob === "function"
     ? window.queueWorkspaceSyncJob("player", kind, {
-      queuedLabel: "Player publish update queued",
-      runningLabel: "Updating player publish...",
-      doneLabel: "Player publish updated",
-      errorLabel: "Player publish needs attention",
+      queuedLabel: "Player update queued — publishing shortly",
+      runningLabel: "Publishing update to players...",
+      doneLabel: "Player update published",
+      errorLabel: "Player update needs attention — saved on this device",
     })
     : "";
   if (publishJobKey && typeof window.startWorkspaceSyncJob === "function") {
-    window.startWorkspaceSyncJob(publishJobKey, { label: "Updating player publish..." });
+    window.startWorkspaceSyncJob(publishJobKey, { label: "Publishing update to players..." });
   }
   const status = getPlayerPublishStatus();
   const previous = status[kind] && typeof status[kind] === "object" ? status[kind] : {};
@@ -390,7 +390,7 @@ async function recordPlayerPublishStatus(kind, details = {}, opts = {}) {
   if (publishResult === false && publishJobKey && typeof window.failWorkspaceSyncJob === "function") {
     const error = new Error("Cloudflare did not confirm the player update. It is saved locally and needs a retry.");
     window.failWorkspaceSyncJob(publishJobKey, error, {
-      label: "Player update needs attention",
+      label: "Player update needs attention — saved on this device",
       retry: () => recordPlayerPublishStatus(kind, details, opts),
     });
   }

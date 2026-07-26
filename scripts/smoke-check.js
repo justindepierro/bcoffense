@@ -4270,7 +4270,7 @@ function checkWorkspaceSyncContracts() {
     "publishTeamWorkspace({",
     "throwOnError: true",
     "jobId: \"auto-push\"",
-    "Team publish queued",
+    "Team update queued — saved here, publishing shortly",
     "Publishing team update...",
     "Ready for players",
     "Published; readiness reviewed",

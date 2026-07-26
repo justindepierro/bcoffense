@@ -1742,10 +1742,10 @@
     const throwOnError = opts.throwOnError === true;
     const jobId = opts.jobId || (opts.auto ? "auto-publish" : "team-publish");
     const publishJobKey = _cloudQueueJob("cloud", jobId, {
-      queuedLabel: opts.queuedLabel || "Team publish queued",
+      queuedLabel: opts.queuedLabel || "Team update queued — saved here, publishing shortly",
       runningLabel: opts.runningLabel || "Publishing data...",
       doneLabel: "Ready for players",
-      errorLabel: "Publish needs attention",
+      errorLabel: "Publish needs attention — saved on this device",
       retry: () => publishTeamWorkspace(opts),
     });
     _cloudStartJob(publishJobKey, { label: opts.runningLabel || "Publishing data..." });
@@ -1819,7 +1819,7 @@
       // the transient network issue itself.
       if (!opts.auto) {
         _cloudFailJob(publishJobKey, err, {
-          label: "Publish needs attention",
+          label: "Publish needs attention — saved on this device",
           retry: () => publishTeamWorkspace(opts),
         });
       }
@@ -2074,22 +2074,22 @@
       const retrying = cloudAutoPushPending && cloudAutoPushRetryCount <= CLOUD_AUTO_PUSH_MAX_RETRIES;
       statusEl.textContent = retrying
         ? "Team sync retrying automatically..."
-        : `Publish needs attention - ${cloudAutoPushLastError}`;
+        : `Publish needs attention — saved on this device: ${cloudAutoPushLastError}`;
       statusEl.className = "cloud-sync-status cloud-sync-status-warn";
       if (typeof window.setWorkspaceSyncStatus === "function") {
         window.setWorkspaceSyncStatus(
           "cloud",
           retrying ? "queued" : "error",
-          { label: retrying ? "Team sync retrying automatically" : "Publish needs attention" },
+          { label: retrying ? "Team sync retrying automatically" : "Publish needs attention — saved on this device" },
         );
       }
       return;
     }
     if (cloudAutoPushPending) {
-      statusEl.textContent = "Team publish queued...";
+      statusEl.textContent = "Team update queued — saved here, publishing shortly.";
       statusEl.className = "cloud-sync-status cloud-sync-status-warn";
       if (typeof window.setWorkspaceSyncStatus === "function") {
-        window.setWorkspaceSyncStatus("cloud", "queued", { label: "Team publish queued" });
+        window.setWorkspaceSyncStatus("cloud", "queued", { label: "Team update queued — saved here, publishing shortly" });
       }
       return;
     }
@@ -2135,10 +2135,10 @@
     cloudAutoPushPending = true;
     cloudAutoPushLastError = "";
     _cloudQueueJob("cloud", "auto-push", {
-      queuedLabel: "Team publish queued",
+      queuedLabel: "Team update queued — saved here, publishing shortly",
       runningLabel: "Publishing team update...",
       doneLabel: "Team update published",
-      errorLabel: "Publish needs attention",
+      errorLabel: "Publish needs attention — saved on this device",
     });
     if (!cloudAutoPushFirstQueuedAt) cloudAutoPushFirstQueuedAt = Date.now();
 
@@ -2209,10 +2209,10 @@
     cloudAutoPushPending = false;
     cloudAutoPushFirstQueuedAt = 0;
     const cloudJobKey = _cloudQueueJob("cloud", "auto-push", {
-      queuedLabel: "Team publish queued",
+      queuedLabel: "Team update queued — saved here, publishing shortly",
       runningLabel: "Publishing team update...",
       doneLabel: "Team update published",
-      errorLabel: "Publish needs attention",
+      errorLabel: "Publish needs attention — saved on this device",
     });
     _cloudStartJob(cloudJobKey, { label: "Publishing team update..." });
     renderCloudSyncStatus();
@@ -2223,7 +2223,7 @@
         auto: true,
         throwOnError: true,
         jobId: "auto-push",
-        queuedLabel: "Team publish queued",
+        queuedLabel: "Team update queued — saved here, publishing shortly",
         runningLabel: "Publishing team update...",
       });
       if (!result) throw new Error("Publish did not complete.");
@@ -2253,7 +2253,7 @@
           queuedLabel: "Another tab is finishing the team update",
           runningLabel: "Publishing team update...",
           doneLabel: "Team update published",
-          errorLabel: "Publish needs attention",
+          errorLabel: "Publish needs attention — saved on this device",
         });
         scheduleCloudAutoPushTimer(Math.min(TEAM_FOREGROUND_REFRESH_MIN_MS, Math.max(
           TEAM_WORKSPACE_LEASE_RETRY_MS,
@@ -2265,7 +2265,7 @@
           queuedLabel: "Team sync retrying automatically",
           runningLabel: "Publishing team update...",
           doneLabel: "Team update published",
-          errorLabel: "Publish needs attention",
+          errorLabel: "Publish needs attention — saved on this device",
         });
         // A revision conflict means another staff device just finished a
         // valid save. Re-fetch and rebase almost immediately; waiting a full
@@ -2279,9 +2279,9 @@
               : CLOUD_AUTO_PUSH_RETRY_MS,
         );
       } else {
-        _cloudFailJob(cloudJobKey, err, { label: "Publish needs attention" });
+        _cloudFailJob(cloudJobKey, err, { label: "Publish needs attention — saved on this device" });
         if (typeof window.failPlayerPublishJobs === "function") {
-          window.failPlayerPublishJobs(err, { label: "Player update needs attention" });
+          window.failPlayerPublishJobs(err, { label: "Player update needs attention — saved on this device" });
         }
       }
       return false;
