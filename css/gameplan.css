@@ -422,6 +422,25 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
 .gp-library-search:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
 .gp-library-filters.is-active { background: var(--color-primary); color: var(--color-text-inverse); border-color: var(--color-primary); }
 
+/* Filters refine the Library, so the expanded controls live in that pane.
+   The board remains usable and visually stable while the coach narrows plays. */
+.gp-library .gp-filters-drawer { margin: 0; }
+.gp-library .gp-toolbar {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-xs);
+  margin: 0 0 var(--space-xs);
+  padding: var(--space-xs);
+}
+.gp-library .gp-toolbar select,
+.gp-library .gp-toolbar .gp-multi-filter,
+.gp-library .gp-toolbar .gp-toolbar-toggle,
+.gp-library .gp-toolbar .btn { width: 100%; min-width: 0; }
+.gp-library .gp-toolbar-spacer { display: none; }
+.gp-library .gp-matchup-chip-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; width: 100%; }
+.gp-library .gp-matchup-chip { min-width: 0; justify-content: center; }
+.gp-library .gp-toolbar-advanced { margin: 0 0 var(--space-xs); }
+
 .gp-library-list {
   flex: 1;
   min-height: 0;

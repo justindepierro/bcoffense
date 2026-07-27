@@ -160,9 +160,6 @@ function renderGamePlan() {
           ${_gpRenderHealthGauge(board, draftedPlays)}
         </div>
         <div class="gp-cmd-actions toolbar-secondary">
-        <button class="btn btn-sm gp-filters-btn${_gpFilters.showFilters ? " is-active" : ""}" data-action="toggleGamePlanFilters" title="Search &amp; filter the play library" aria-expanded="${_gpFilters.showFilters ? "true" : "false"}">
-          🔎 Filters${_gpActiveFilterCount() > 0 ? ` <span class="gp-adv-badge">${_gpActiveFilterCount()}</span>` : ""}
-        </button>
         <button class="btn btn-sm btn-primary" data-action="openSmartGamePlanBuilder" title="Recommend a first-draft plan from the playbook">
           🧠 Build Plan
         </button>
@@ -290,6 +287,7 @@ function renderGamePlan() {
         <button class="btn btn-sm gp-library-filters${_gpFilters.showFilters ? " is-active" : ""}" data-action="toggleGamePlanFilters"
           title="Filter this library by type, formation, personnel, and more" aria-expanded="${_gpFilters.showFilters ? "true" : "false"}">⚙ Filter${_gpActiveFilterCount() > 0 ? ` (${_gpActiveFilterCount()})` : ""}</button>
       </div>
+      ${toolbarHtml}
       ${_gpShowBulkSheet ? `<div class="gp-bulk-backdrop" data-action="toggleGamePlanBulkSheet" aria-hidden="true"></div>` : ""}
       <div class="gp-library-bulk${_gpShowBulkSheet ? " gp-bulk-open" : ""}">
         <div class="gp-bulk-sheet-header">
@@ -349,7 +347,7 @@ function renderGamePlan() {
     ? `<div class="gp-stats-bar">${distHtml}${scoreboardHtml}${mediaScoreHtml}${touchHtml}</div>`
     : "";
   wrapper.innerHTML =
-    `<div class="gp-command-zone">${headerHtml}${toolbarHtml}</div>` +
+    `<div class="gp-command-zone">${headerHtml}</div>` +
     `<div class="gp-board-scroll">${statsBarHtml}${chipsHtml}${jumpBarHtml}${spotlightBannerHtml}${trashZoneHtml}<div class="gp-layout">${libraryHtml}${boxesHtml}</div></div>`;
   while (wrapper.firstChild) root.appendChild(wrapper.firstChild);
   _gpAttachLibraryHandlers();
