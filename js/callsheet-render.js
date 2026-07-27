@@ -927,23 +927,62 @@ function _csPersonnelBucketForPlay(play) {
   return CS_PERSONNEL_BUCKETS.find((bucket) => bucket.types.some((value) => value.toLowerCase() === type)) || null;
 }
 
+function getCallSheetPersonnelGamePlanPlays() {
+  let board;
+  try {
+    board = typeof _gpEnsureBoard === "function" ? _gpEnsureBoard() : null;
+  } catch (_) {
+    board = null;
+  }
+  if (!board || !board.assignments || typeof board.assignments !== "object") return [];
+
+  const seen = new Set();
+  const result = [];
+  Object.values(board.assignments).forEach((list) => {
+    (Array.isArray(list) ? list : []).forEach((play) => {
+      if (!play) return;
+      const key = typeof _gpPlaySignature === "function"
+        ? _gpPlaySignature(play)
+        : csPlayKey(play);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      result.push(play);
+    });
+  });
+  return result;
+}
+
+function buildCallSheetPersonnelColumns(personnelGroups) {
+  const groupCount = personnelGroups.length;
+  const columnCount = groupCount <= 1 ? 1 : groupCount <= 4 ? 2 : 3;
+  const columns = Array.from({ length: columnCount }, () => []);
+  personnelGroups.forEach((group, index) => columns[index % columnCount].push(group));
+  return columns;
+}
+
 function renderPersonnelCallSheet(displayOptions) {
   const grouped = new Map();
-  (Array.isArray(plays) ? plays : []).forEach((play) => {
+  const gamePlanPlays = getCallSheetPersonnelGamePlanPlays();
+  gamePlanPlays.forEach((play) => {
     const personnel = String(play?.personnel || "").trim();
     const bucket = _csPersonnelBucketForPlay(play);
     if (!personnel || !bucket) return;
     if (!grouped.has(personnel)) grouped.set(personnel, new Map(CS_PERSONNEL_BUCKETS.map((item) => [item.id, []])));
     grouped.get(personnel).get(bucket.id).push(play);
   });
-  if (!grouped.size) return '<div class="callsheet-empty-state empty-state empty-state--compact"><strong>No personnel-classified plays yet.</strong><span>Add Personnel and Play Type metadata in the Playbook to build this sheet.</span></div>';
-  return `<div class="cs-personnel-sheet">${[...grouped.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([personnel, buckets]) => {
+  if (!grouped.size) return '<div class="callsheet-empty-state empty-state empty-state--compact"><strong>No personnel-classified Game Plan plays yet.</strong><span>Add plays to the active Game Plan, then give them Personnel and Play Type metadata.</span></div>';
+  const personnelGroups = [...grouped.entries()].map(([personnel, buckets]) => ({ personnel, buckets }));
+  const columns = buildCallSheetPersonnelColumns(personnelGroups);
+  const packageHtml = ({ personnel, buckets }) => {
     const bg = getPersonnelBgColor(personnel); const text = getPersonnelTextColor(personnel);
-    return `<section class="cs-personnel-package"><header style="background:${bg};color:${text}">${escapeHtml(personnel)} Personnel</header><div class="cs-personnel-buckets">${CS_PERSONNEL_BUCKETS.map((bucket) => {
+    const bucketHtml = CS_PERSONNEL_BUCKETS.map((bucket) => {
       const list = buckets.get(bucket.id) || [];
-      return `<section class="cs-personnel-bucket"><h3>${escapeHtml(personnel)} ${bucket.label}<span>${list.length}</span></h3><div>${list.map((play) => renderPersonnelCallSheetPlay(play, displayOptions)).join("") || '<p>—</p>'}</div></section>`;
-    }).join("")}</div></section>`;
-  }).join("")}</div>`;
+      if (!list.length) return "";
+      return `<section class="cs-personnel-bucket"><h3>${bucket.label}<span>${list.length}</span></h3><div>${list.map((play) => renderPersonnelCallSheetPlay(play, displayOptions)).join("")}</div></section>`;
+    }).join("");
+    return `<section class="cs-personnel-package"><header style="background:${bg};color:${text}">${escapeHtml(personnel)} Personnel</header><div class="cs-personnel-buckets">${bucketHtml}</div></section>`;
+  };
+  return `<div class="cs-personnel-sheet"><div class="cs-personnel-summary"><strong>Active Game Plan</strong><span>${gamePlanPlays.length} unique plays · ${personnelGroups.length} personnel package${personnelGroups.length === 1 ? "" : "s"}</span></div><div class="cs-personnel-columns">${columns.map((column) => `<div class="cs-personnel-column">${column.map(packageHtml).join("")}</div>`).join("")}</div></div>`;
 }
 
 function renderPersonnelCallSheetPlay(play, options) {
