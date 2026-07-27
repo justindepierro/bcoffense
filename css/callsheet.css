@@ -296,6 +296,36 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   flex-shrink: 0;
 }
 
+/* Wristband is the coach's primary scan key: keep it first, fixed-width, and
+   visually distinct from both the personnel marker and the play sentence. */
+.callsheet-play .cs-wristband-number,
+.print-wristband-number {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.2em;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: var(--color-text-dark);
+  color: var(--color-text-inverse);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9em;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.cs-one-word-full-call {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.print-wristband-number {
+  margin-right: 0.35em;
+  border-radius: 2px;
+}
+
 .callsheet-play .play-text {
   flex: 1;
   min-width: 0;

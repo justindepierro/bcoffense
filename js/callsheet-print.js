@@ -544,6 +544,9 @@ function renderPrintPlay(play, options, printJob) {
   const personnelHtml = displayOptions.showPersonnel
     ? `<span class="print-inline-code" style="background: ${bgColor}; color: ${textColor};">${code}</span>`
     : "";
+  const wristbandHtml = displayOptions.showNumbers && play.wristbandNumber
+    ? `<span class="print-wristband-number">#${escapeHtml(play.wristbandNumber)}</span>`
+    : "";
 
   const noteHtml = play.cellNote
     ? `<span class="print-cell-note">[${escapeHtml(play.cellNote)}]</span>`
@@ -551,7 +554,7 @@ function renderPrintPlay(play, options, printJob) {
 
   return `
     <div class="print-play ${highlightClass} ${tempoClass} ${densityClass}" style="${styles.join(" ")}">
-      <span class="print-play-text">${personnelHtml}${playText.trim()}${noteHtml}</span>
+      <span class="print-play-text">${wristbandHtml}${personnelHtml}${playText.trim()}${noteHtml}</span>
     </div>
   `;
 }

@@ -1349,14 +1349,6 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
     displayOptions = getCallSheetPlayDisplayOptions(play, options);
     displaySummary = getCallSheetCellDisplaySummary(play);
     const playParts = buildCallSheetPlayParts(play, displayOptions);
-    if (displayOptions.showNumbers && play.wristbandNumber) {
-      const idx = playParts.findIndex(
-        (p) => p === `<b>${play.wristbandNumber}</b>`,
-      );
-      if (idx !== -1)
-        playParts[idx] =
-          `<span class="wristband-num">${play.wristbandNumber}</span>`;
-    }
     const playText = playParts.join(" ");
     const fallbackPlayText = escapeHtml(
       [play.formation, play.protection, play.play].filter(Boolean).join(" ").trim() ||
@@ -1424,6 +1416,9 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
   const personnelHtml = displayOptions.showPersonnel
     ? `<span class="personnel-code" style="background: ${bgColor}; color: ${textColor};">${code}</span>`
     : "";
+  const wristbandHtml = displayOptions.showNumbers && play.wristbandNumber
+    ? `<span class="cs-wristband-number" title="Wristband ${escapeHtml(play.wristbandNumber)}">#${escapeHtml(play.wristbandNumber)}</span>`
+    : "";
 
   // Cell note badge
   const noteBadge = play.cellNote
@@ -1461,6 +1456,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
          style="${cellStyleStr}"
          role="row" aria-label="${escapeHtml(playLabel.trim())}"
          data-category="${categoryId}" data-hash="${hash}" data-index="${index}"${discAttr}>
+      ${wristbandHtml}
       ${personnelHtml}
       <span class="play-text" role="cell">${visiblePlayText}</span>
       ${displayIndicator}
@@ -1499,7 +1495,11 @@ function buildCallSheetPlayParts(play, options) {
     .map((value) => formatTagText(value));
 
   if (options.showOneWordOnly && oneWordCall) {
-    return [`<span class="cs-one-word-call">${oneWordCall}</span>`];
+    const fullPlayName = formatTagText(play.play);
+    return [
+      `<span class="cs-one-word-call">${oneWordCall}</span>`,
+      fullPlayName ? `<span class="cs-one-word-full-call">(${fullPlayName})</span>` : "",
+    ].filter(Boolean);
   }
 
   // Check if play has "Under"
@@ -1525,10 +1525,6 @@ function buildCallSheetPlayParts(play, options) {
   }
   if (options.underEmoji && hasUnder) {
     playParts.push("🍑");
-  }
-
-  if (options.showNumbers && play.wristbandNumber) {
-    playParts.push(`<b>${play.wristbandNumber}</b>`);
   }
 
   if (options.showFormation && play.formation) {
