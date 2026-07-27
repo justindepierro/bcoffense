@@ -67,7 +67,7 @@ function rebuildCallSheetCategoryRegistry() {
 }
 
 function normalizeCallSheetPage(page) {
-  return page === "back" ? "back" : "front";
+  return ["front", "back", "personnel"].includes(page) ? page : "front";
 }
 
 function normalizeCallSheetSettings(settings = {}) {

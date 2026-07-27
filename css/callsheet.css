@@ -317,9 +317,22 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
 }
 
 .cs-one-word-full-call {
-  color: var(--color-text-muted);
+  color: #475569;
   font-weight: 500;
 }
+
+.cs-personnel-sheet { display:grid; gap:16px; }
+.cs-personnel-package { border:1px solid var(--color-border); border-radius:8px; overflow:hidden; }
+.cs-personnel-package > header { padding:8px 12px; font-weight:800; }
+.cs-personnel-buckets { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:8px; }
+.cs-personnel-bucket { border:1px solid var(--color-border); background:var(--color-bg-card); }
+.cs-personnel-bucket h3 { display:flex; justify-content:space-between; margin:0; padding:5px 7px; background:var(--color-bg-subtle); font-size:12px; }
+.cs-personnel-bucket h3 span { color:var(--color-text-muted); }
+.cs-personnel-bucket > div { padding:4px; }
+.cs-personnel-bucket p { margin:2px 4px; color:var(--color-text-muted); }
+.cs-personnel-play { display:flex; gap:5px; align-items:flex-start; padding:4px; border-bottom:1px solid var(--color-border); font-size:12px; line-height:1.2; }
+.cs-personnel-play:last-child { border-bottom:0; }
+@media (max-width: 760px) { .cs-personnel-buckets { grid-template-columns:1fr; } }
 
 .print-wristband-number {
   margin-right: 0.35em;

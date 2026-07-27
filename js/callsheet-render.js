@@ -795,7 +795,7 @@ function renderCallSheet() {
   container.classList.toggle("callsheet-phone-cards", usePhoneCards);
 
   const page = callSheetSettings.currentPage;
-  const categories = getCallSheetCategoriesForPage(page);
+  const categories = page === "personnel" ? [] : getCallSheetCategoriesForPage(page);
 
   // Hoist display options once — avoids re-reading DOM per play
   const displayOptions = getCallSheetDisplayOptions();
@@ -810,7 +810,9 @@ function renderCallSheet() {
 
   // Build category columns
   let html = "";
-  if (categories.length === 0) {
+  if (page === "personnel") {
+    html += renderPersonnelCallSheet(displayOptions);
+  } else if (categories.length === 0) {
     html += `
       <div class="callsheet-empty-state empty-state empty-state--compact">
         <strong>No call sheet categories found.</strong>
@@ -883,6 +885,7 @@ function renderCallSheetPhoneCards(categories, dupeMap, displayOptions) {
 function updatePageToggle() {
   const frontBtn = document.getElementById("callsheetFrontBtn");
   const backBtn = document.getElementById("callsheetBackBtn");
+  const personnelBtn = document.getElementById("callsheetPersonnelBtn");
   if (frontBtn && backBtn) {
     frontBtn.classList.toggle(
       "active",
@@ -892,6 +895,7 @@ function updatePageToggle() {
       "active",
       callSheetSettings.currentPage === "back",
     );
+    if (personnelBtn) personnelBtn.classList.toggle("active", callSheetSettings.currentPage === "personnel");
   }
 
   const portraitBtn = document.getElementById("callsheetPortraitBtn");
@@ -906,6 +910,47 @@ function updatePageToggle() {
       callSheetSettings.orientation === "landscape",
     );
   }
+}
+
+const CS_PERSONNEL_BUCKETS = [
+  { id: "run", label: "RUN", types: ["Run", "Run Option"] },
+  { id: "rpo", label: "RPO", types: ["RPO"] },
+  { id: "movement", label: "Movement", types: ["Movement"] },
+  { id: "pass", label: "Pass", types: ["Drop", "Quick", "Pass"] },
+  { id: "play-action", label: "Play Action", types: ["Play Pass", "Play Action"] },
+  { id: "screen", label: "Screen", types: ["Screen"] },
+  { id: "tricks", label: "Tricks", types: ["Trick"] },
+];
+
+function _csPersonnelBucketForPlay(play) {
+  const type = String(play?.type || "").trim().toLowerCase();
+  return CS_PERSONNEL_BUCKETS.find((bucket) => bucket.types.some((value) => value.toLowerCase() === type)) || null;
+}
+
+function renderPersonnelCallSheet(displayOptions) {
+  const grouped = new Map();
+  (Array.isArray(plays) ? plays : []).forEach((play) => {
+    const personnel = String(play?.personnel || "").trim();
+    const bucket = _csPersonnelBucketForPlay(play);
+    if (!personnel || !bucket) return;
+    if (!grouped.has(personnel)) grouped.set(personnel, new Map(CS_PERSONNEL_BUCKETS.map((item) => [item.id, []])));
+    grouped.get(personnel).get(bucket.id).push(play);
+  });
+  if (!grouped.size) return '<div class="callsheet-empty-state empty-state empty-state--compact"><strong>No personnel-classified plays yet.</strong><span>Add Personnel and Play Type metadata in the Playbook to build this sheet.</span></div>';
+  return `<div class="cs-personnel-sheet">${[...grouped.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([personnel, buckets]) => {
+    const bg = getPersonnelBgColor(personnel); const text = getPersonnelTextColor(personnel);
+    return `<section class="cs-personnel-package"><header style="background:${bg};color:${text}">${escapeHtml(personnel)} Personnel</header><div class="cs-personnel-buckets">${CS_PERSONNEL_BUCKETS.map((bucket) => {
+      const list = buckets.get(bucket.id) || [];
+      return `<section class="cs-personnel-bucket"><h3>${escapeHtml(personnel)} ${bucket.label}<span>${list.length}</span></h3><div>${list.map((play) => renderPersonnelCallSheetPlay(play, displayOptions)).join("") || '<p>—</p>'}</div></section>`;
+    }).join("")}</div></section>`;
+  }).join("")}</div>`;
+}
+
+function renderPersonnelCallSheetPlay(play, options) {
+  const display = getCallSheetPlayDisplayOptions(play, options);
+  const wristband = display.showNumbers && play.wristbandNumber ? `<span class="cs-wristband-number">#${escapeHtml(play.wristbandNumber)}</span>` : "";
+  const text = buildCallSheetPlayParts(play, display).join(" ") || escapeHtml(play.play || "Play");
+  return `<div class="cs-personnel-play">${wristband}<span>${text}</span></div>`;
 }
 
 // RAF-coalesced version: multiple calls within one frame resolve to a single render
