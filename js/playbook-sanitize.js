@@ -64,21 +64,38 @@ let _sanitizeAutosaveTimer = null;
 let _sanitizeVocabCache = null;
 let _sanitizeVocabCacheKey = "";
 let _sanitizeFocus = null;
+let _sanitizeFilteredSnapshot = null;
+let _sanitizeHasPendingPlaybookRender = false;
+let _sanitizeHasPendingPersist = false;
+
+// A filtered cleanup must operate on the exact review set that was visible
+// when the coach opened it. Metadata changes can legitimately alter a live
+// filter result; reading that live result while editing can otherwise widen a
+// scoped cleanup into a different set of plays.
+function _captureSanitizeFilteredSnapshot() {
+  _sanitizeFilteredSnapshot = Array.isArray(filteredPlays) ? [...filteredPlays] : [];
+}
+
+function _persistSanitizeChanges() {
+  storageManager.setPlaybook(plays);
+  if (typeof invalidateFilterCache === "function") invalidateFilterCache();
+  _sanitizeHasPendingPersist = false;
+  _sanitizeHasPendingPlaybookRender = true;
+}
 
 // Returns the array of plays the cleanup tool should iterate over. When the
 // "Only filtered plays" toggle is on, we walk `filteredPlays` and resolve
 // each entry back to its master index in `plays` so commits stay correct.
-// Falls back to full `plays` if filteredPlays isn't populated.
+// An empty locked workset stays empty; it must never fall back to all plays.
 function _sanitizeSourceEntries() {
   const master = Array.isArray(plays) ? plays : [];
-  if (
-    _sanitizeUseFiltered &&
-    Array.isArray(filteredPlays) &&
-    filteredPlays.length > 0
-  ) {
+  if (_sanitizeUseFiltered) {
+    const source = Array.isArray(_sanitizeFilteredSnapshot)
+      ? _sanitizeFilteredSnapshot
+      : [];
     const seen = new Set();
     const entries = [];
-    filteredPlays.forEach((play) => {
+    source.forEach((play) => {
       const idx = master.indexOf(play);
       if (idx >= 0 && !seen.has(idx)) {
         seen.add(idx);
@@ -292,7 +309,10 @@ function openPlaybookSanitize(options = {}) {
     return;
   }
   if (!options.keepFocus) _sanitizeClearFocus();
-  if (!options.keepFiltered) _sanitizeUseFiltered = false;
+  if (!options.keepFiltered) {
+    _sanitizeUseFiltered = false;
+    _sanitizeFilteredSnapshot = null;
+  }
   const overlay = document.getElementById("playbookSanitizeOverlay");
   if (!overlay) return;
   overlay.classList.add("visible");
@@ -301,8 +321,7 @@ function openPlaybookSanitize(options = {}) {
 }
 
 // Open the cleanup tool scoped to the currently filtered plays.
-// If no filters are active (or the filter result equals the full playbook),
-// falls back to the full playbook scope so the modal is never empty.
+// If no subset filter is active, explicitly open the full-playbook scope.
 function openPlaybookSanitizeFiltered() {
   if (!Array.isArray(plays) || plays.length === 0) {
     showToast("Import a playbook CSV first", { duration: 2500, type: "error" });
@@ -314,11 +333,13 @@ function openPlaybookSanitizeFiltered() {
     filteredPlays.length < plays.length;
   _sanitizeUseFiltered = hasFilter;
   if (!hasFilter) {
+    _sanitizeFilteredSnapshot = null;
     showToast("No active filters — showing full playbook", {
       duration: 2200,
       type: "info",
     });
   } else {
+    _captureSanitizeFilteredSnapshot();
     showToast(`Cleaning up ${filteredPlays.length} filtered plays`, {
       duration: 2000,
       type: "info",
@@ -341,6 +362,7 @@ function openPlaybookSanitizeFocused(fieldKey, values) {
   if (!cleanValues.length) return;
   _sanitizeFieldKey = fieldKey;
   _sanitizeUseFiltered = false;
+  _sanitizeFilteredSnapshot = null;
   _sanitizeHideCompleted = false;
   _sanitizeFocus = {
     fieldKey,
@@ -369,6 +391,8 @@ function setPlaybookSanitizeFiltered(eventOrValue) {
     return;
   }
   _sanitizeUseFiltered = next;
+  if (next) _captureSanitizeFilteredSnapshot();
+  else _sanitizeFilteredSnapshot = null;
   _renderSanitizePicker();
   _renderSanitizeList();
 }
@@ -376,7 +400,16 @@ function setPlaybookSanitizeFiltered(eventOrValue) {
 function closePlaybookSanitize() {
   const overlay = document.getElementById("playbookSanitizeOverlay");
   if (!overlay) return;
+  clearTimeout(_sanitizeAutosaveTimer);
+  _sanitizeAutosaveTimer = null;
+  if (_sanitizeHasPendingPersist) _persistSanitizeChanges();
   overlay.classList.remove("visible");
+  _sanitizeFilteredSnapshot = null;
+  if (_sanitizeHasPendingPlaybookRender) {
+    _sanitizeHasPendingPlaybookRender = false;
+    if (typeof filterPlays === "function") filterPlays();
+    if (typeof renderPlaybook === "function") renderPlaybook();
+  }
 }
 
 function _renderSanitizePicker() {
@@ -689,9 +722,7 @@ async function applySanitizeStandardizeGroup(indexStr) {
     play[def.key] = target;
   });
   _sanitizeInvalidateVocab();
-  storageManager.setPlaybook(plays);
-  if (typeof invalidateFilterCache === "function") invalidateFilterCache();
-  if (typeof filterPlays === "function") filterPlays();
+  _persistSanitizeChanges();
   showToast(`Standardized ${changes.length} ${changes.length === 1 ? "row" : "rows"}`, {
     duration: 2200,
     type: "success",
@@ -808,9 +839,7 @@ async function applySanitizeFocusedMerge() {
     play[def.key] = target;
   });
   _sanitizeInvalidateVocab();
-  storageManager.setPlaybook(plays);
-  if (typeof invalidateFilterCache === "function") invalidateFilterCache();
-  if (typeof filterPlays === "function") filterPlays();
+  _persistSanitizeChanges();
   showToast(`Merged ${changes.length} ${changes.length === 1 ? "row" : "rows"}`, {
     duration: 2200,
     type: "success",
@@ -860,10 +889,10 @@ function _commitSanitizeInput(el) {
     }
 
     clearTimeout(_sanitizeAutosaveTimer);
+    _sanitizeHasPendingPersist = true;
     _sanitizeAutosaveTimer = setTimeout(() => {
-      storageManager.setPlaybook(plays);
-      if (typeof invalidateFilterCache === "function") invalidateFilterCache();
-      if (typeof filterPlays === "function") filterPlays();
+      _sanitizeAutosaveTimer = null;
+      _persistSanitizeChanges();
       _renderSanitizePicker();
     }, 500);
 
@@ -872,8 +901,9 @@ function _commitSanitizeInput(el) {
         if (row.parentNode) {
           const status = document.getElementById("playbookSanitizeStatus");
           const def2 = _sanitizeFieldDef(_sanitizeFieldKey);
-          const missingCount = plays.filter((p) => _sanitizeIsEmpty(p, def2.key)).length;
-          if (status) status.textContent = `${missingCount} of ${plays.length} plays missing ${def2.label}`;
+          const sourceEntries = _sanitizeSourceEntries();
+          const missingCount = sourceEntries.filter(({ play: sourcePlay }) => _sanitizeIsEmpty(sourcePlay, def2.key)).length;
+          if (status) status.textContent = `${missingCount} of ${sourceEntries.length} ${_sanitizeScopeLabel()} missing ${def2.label}`;
           row.classList.add("is-removing");
           setTimeout(() => {
             if (row.parentNode) row.parentNode.removeChild(row);
@@ -908,10 +938,10 @@ function _commitSanitizeInput(el) {
 
   // Debounced persist + filter cache invalidation
   clearTimeout(_sanitizeAutosaveTimer);
+  _sanitizeHasPendingPersist = true;
   _sanitizeAutosaveTimer = setTimeout(() => {
-    storageManager.setPlaybook(plays);
-    if (typeof invalidateFilterCache === "function") invalidateFilterCache();
-    if (typeof filterPlays === "function") filterPlays();
+    _sanitizeAutosaveTimer = null;
+    _persistSanitizeChanges();
     _renderSanitizePicker();
   }, 500);
 
@@ -925,8 +955,9 @@ function _commitSanitizeInput(el) {
       if (row.parentNode) {
         const status = document.getElementById("playbookSanitizeStatus");
         const def2 = _sanitizeFieldDef(_sanitizeFieldKey);
-        const missingCount = plays.filter((p) => _sanitizeIsEmpty(p, def2.key)).length;
-        if (status) status.textContent = `${missingCount} of ${plays.length} plays missing ${def2.label}`;
+        const sourceEntries = _sanitizeSourceEntries();
+        const missingCount = sourceEntries.filter(({ play: sourcePlay }) => _sanitizeIsEmpty(sourcePlay, def2.key)).length;
+        if (status) status.textContent = `${missingCount} of ${sourceEntries.length} ${_sanitizeScopeLabel()} missing ${def2.label}`;
         row.classList.add("is-removing");
         setTimeout(() => {
           if (row.parentNode) row.parentNode.removeChild(row);
@@ -1013,9 +1044,7 @@ function applySanitizeSuggestion(arg) {
   const slot = document.getElementById(`pbSanitizeSuggest-${masterIdx}`);
   if (slot) { slot.hidden = true; slot.innerHTML = ""; }
   // Persist immediately on explicit suggestion accept.
-  storageManager.setPlaybook(plays);
-  if (typeof invalidateFilterCache === "function") invalidateFilterCache();
-  if (typeof filterPlays === "function") filterPlays();
+  _persistSanitizeChanges();
   _renderSanitizePicker();
   // If hide-completed is on, remove the row.
   const row = document.querySelector(`.pb-sanitize-row[data-master-idx="${masterIdx}"]`);
