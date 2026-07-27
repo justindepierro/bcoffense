@@ -1359,7 +1359,7 @@ function _gpHandleKeydown(e) {
     return;
   }
   if (e.key === "Escape") {
-    const search = document.getElementById("gpSearch");
+    const search = document.getElementById("gpLibrarySearch");
     if (document.activeElement === search) {
       search.blur();
       return;
@@ -1383,7 +1383,7 @@ function _gpHandleKeydown(e) {
   if (isEditable) return;
   if (e.key === "/") {
     e.preventDefault();
-    const search = document.getElementById("gpSearch");
+    const search = document.getElementById("gpLibrarySearch");
     if (search) {
       search.focus();
       search.select();

@@ -403,6 +403,25 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   font-weight: 400;
 }
 
+.gp-library-refine {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-xs);
+  padding: var(--space-sm) 0;
+}
+.gp-library-search {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  color: var(--color-text);
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  padding: 7px 9px;
+}
+.gp-library-search:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+.gp-library-filters.is-active { background: var(--color-primary); color: var(--color-text-inverse); border-color: var(--color-primary); }
+
 .gp-library-list {
   flex: 1;
   min-height: 0;

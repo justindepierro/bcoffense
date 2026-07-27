@@ -240,9 +240,6 @@ function renderGamePlan() {
   const toolbarHtml = _gpFilters.showFilters ? `
     <div class="gp-filters-drawer" role="region" aria-label="Play filters">
     <div class="gp-toolbar toolbar-surface toolbar-surface--compact app-command-toolbar coach-grid-command-strip">
-      <input type="search" id="gpSearch" placeholder="Search plays…"
-        value="${escapeHtml(_gpFilters.search || "")}"
-        data-oninput="updateGamePlanFilter" data-arg="search" data-pass="value" />
       ${_gpRenderMultiFilterDropdown("type", "Play Types", types)}
       <select id="gpFilterFormation" data-onchange="updateGamePlanFilter" data-arg="formation" data-pass="value">
         <option value="">All Formations</option>
@@ -285,6 +282,13 @@ function renderGamePlan() {
         <span>Library</span>
         <span class="gp-library-count">${filtered.length} of ${plays.length}${_gpSelected.size > 0 ? ` • ${_gpSelected.size} selected` : ""}</span>
         <button class="btn btn-sm btn-secondary gp-bulk-trigger" data-action="toggleGamePlanBulkSheet" title="Bulk selection actions" aria-haspopup="true">⋯ Bulk</button>
+      </div>
+      <div class="gp-library-refine">
+        <label class="sr-only" for="gpLibrarySearch">Search Game Plan library</label>
+        <input type="search" id="gpLibrarySearch" class="gp-library-search" placeholder="Search library…"
+          value="${escapeHtml(_gpFilters.search || "")}" data-oninput="updateGamePlanFilter" data-arg="search" data-pass="value" />
+        <button class="btn btn-sm gp-library-filters${_gpFilters.showFilters ? " is-active" : ""}" data-action="toggleGamePlanFilters"
+          title="Filter this library by type, formation, personnel, and more" aria-expanded="${_gpFilters.showFilters ? "true" : "false"}">⚙ Filter${_gpActiveFilterCount() > 0 ? ` (${_gpActiveFilterCount()})` : ""}</button>
       </div>
       ${_gpShowBulkSheet ? `<div class="gp-bulk-backdrop" data-action="toggleGamePlanBulkSheet" aria-hidden="true"></div>` : ""}
       <div class="gp-library-bulk${_gpShowBulkSheet ? " gp-bulk-open" : ""}">

@@ -185,7 +185,7 @@ function filterGamePlanByPlayer(name) {
     _gpFilters.search = name;
   }
   renderGamePlan();
-  const search = document.getElementById("gpSearch");
+  const search = document.getElementById("gpLibrarySearch");
   if (search) search.value = _gpFilters.search;
 }
 
