@@ -307,8 +307,10 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   min-width: 2.2em;
   padding: 2px 4px;
   border-radius: 3px;
-  background: var(--color-text-dark);
-  color: var(--color-text-inverse);
+  background: #f8fafc;
+  border: 1px solid #334155;
+  color: #111827 !important;
+  text-shadow: none;
   font-family: var(--font-mono, monospace);
   font-size: 0.9em;
   font-weight: 800;
@@ -317,8 +319,9 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
 }
 
 .cs-one-word-full-call {
-  color: #475569;
-  font-weight: 500;
+  color: #1f2937 !important;
+  font-weight: 600;
+  opacity: 1;
 }
 
 .cs-personnel-sheet { display:grid; gap:16px; }
@@ -1773,9 +1776,31 @@ body.shell-phone #callsheet .cs-empty-cat {
 }
 
 .cs-no-wb-loaded {
-  color: var(--color-text-placeholder);
+  appearance: none;
+  border: 1px solid #b45309;
+  border-radius: var(--radius-sm);
+  background: #fffbeb;
+  color: #78350f;
+  cursor: pointer;
   font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 4px 8px;
 }
+.cs-no-wb-loaded:hover,
+.cs-no-wb-loaded:focus-visible { background: #fef3c7; }
+
+.cs-load-wristband-btn { white-space: nowrap; }
+.cs-source-bar .csb-wb--missing {
+  border: 1px solid #b45309;
+  border-radius: var(--radius-sm);
+  background: #fffbeb;
+  color: #78350f;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 3px 7px;
+}
+.cs-source-bar .csb-wb--missing:hover,
+.cs-source-bar .csb-wb--missing:focus-visible { background: #fef3c7; }
 
 /* Play count badge in category header */
 /* Category header with play count */

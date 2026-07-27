@@ -1736,6 +1736,14 @@ function _renderCsNosPlays(missing, emptyMsg, heading) {
 
 // ============ Source Status Bar (#159-161) ============
 
+function getCallSheetLoadedWristbandSummary() {
+  const name = String(callSheetSettings?.loadedWristbandName || "").trim();
+  const plays = Array.isArray(callSheetSettings?.loadedWristbandPlays)
+    ? callSheetSettings.loadedWristbandPlays
+    : [];
+  return { name, count: plays.length, loaded: Boolean(name && plays.length) };
+}
+
 function updateCSSourceBar() {
   const bar = document.getElementById("csSourceBar");
   if (!bar) return;
@@ -1774,12 +1782,8 @@ function updateCSSourceBar() {
     }
   } catch (_) { /* benign: script module may not be loaded */ }
 
-  // Wristband: loaded name from display element
-  let wbName = "";
-  try {
-    const wbEl = document.getElementById("loadedWristbandDisplay");
-    wbName = wbEl ? wbEl.textContent.trim() : "";
-  } catch (_) { /* benign: display element not present */ }
+  // Wristband state is saved Call Sheet data, never text scraped from the UI.
+  const wristband = getCallSheetLoadedWristbandSummary();
 
   const gpIcon = gpTotal === 0 ? "—" : gpOnCS === gpTotal ? "✅" : "⚠️";
   const scrIcon = scriptTotal === 0 ? "—" : scriptOnCS === scriptTotal ? "✅" : "⚠️";
@@ -1787,11 +1791,13 @@ function updateCSSourceBar() {
   bar.innerHTML = `
     <span class="csb-opponent">📅 ${escapeHtml(gw.opponentName)}${gw.week ? ` · Wk ${escapeHtml(String(gw.week))}` : ""}</span>
     <span class="csb-sep" aria-hidden="true">|</span>
-    <span class="csb-item" title="Game Plan plays currently on this call sheet">${gpIcon} GP: ${gpOnCS}/${gpTotal}</span>
+    <span class="csb-item" title="Game Plan plays currently on this call sheet">${gpIcon} Game Plan: ${gpOnCS} of ${gpTotal}</span>
     <span class="csb-sep" aria-hidden="true">|</span>
-    <span class="csb-item" title="Script plays currently on this call sheet">${scrIcon} Script: ${scriptOnCS}/${scriptTotal}</span>
+    <span class="csb-item" title="Script plays currently on this call sheet">${scrIcon} Script: ${scriptOnCS} of ${scriptTotal}</span>
     <span class="csb-sep" aria-hidden="true">|</span>
-    <span class="csb-item csb-wb" title="Loaded wristband">📟 ${wbName ? escapeHtml(wbName) : "<em>No wristband</em>"}</span>
+    ${wristband.loaded
+      ? `<span class="csb-item csb-wb" title="Loaded wristband">📟 Wristband: <strong>${escapeHtml(wristband.name)}</strong> (${wristband.count})</span>`
+      : '<button class="csb-item csb-wb csb-wb--missing" data-action="openLoadWristbandModal" title="Load a saved wristband to show its numbers on this call sheet">📟 Load wristband</button>'}
     <button class="btn btn-xs csb-finalize-btn" data-action="finalizeWeek" title="Validate and save game-day snapshot">🏁 Finalize</button>
   `;
 }
@@ -1825,12 +1831,11 @@ async function finalizeWeek() {
   }
 
   // #173: Wristband should be loaded
-  const wbEl = document.getElementById("loadedWristbandDisplay");
-  const wbName = wbEl ? wbEl.textContent.trim() : "";
-  if (!wbName) {
+  const wristband = getCallSheetLoadedWristbandSummary();
+  if (!wristband.loaded) {
     issues.push("<li>⚠️ No wristband loaded for this sheet</li>");
   } else {
-    checks.push(`<li>✅ Wristband: ${escapeHtml(wbName)}</li>`);
+    checks.push(`<li>✅ Wristband: ${escapeHtml(wristband.name)} (${wristband.count} plays)</li>`);
   }
 
   // #174: No stale plays (plays in CS but deleted from playbook)

@@ -602,14 +602,21 @@ function updateLoadedWristbandDisplay() {
   const display = document.getElementById("loadedWristbandDisplay");
   if (!display) return;
 
-  if (callSheetSettings.loadedWristbandName) {
+  const wristband = typeof getCallSheetLoadedWristbandSummary === "function"
+    ? getCallSheetLoadedWristbandSummary()
+    : {
+        name: String(callSheetSettings.loadedWristbandName || "").trim(),
+        count: Array.isArray(callSheetSettings.loadedWristbandPlays) ? callSheetSettings.loadedWristbandPlays.length : 0,
+        loaded: Boolean(callSheetSettings.loadedWristbandName),
+      };
+  if (wristband.loaded) {
     display.innerHTML = `<span class="cs-loaded-wb-badge">
-        📋 ${escapeHtml(callSheetSettings.loadedWristbandName)} (${callSheetSettings.loadedWristbandPlays.length} plays)
+        📋 ${escapeHtml(wristband.name)} (${wristband.count} plays)
         <button class="cs-loaded-wb-clear" data-action="clearLoadedWristband" aria-label="Clear loaded wristband">×</button>
       </span>`;
   } else {
     display.innerHTML =
-      '<span class="cs-no-wb-loaded">No wristband loaded</span>';
+      '<button class="cs-no-wb-loaded" data-action="openLoadWristbandModal">📟 Load wristband</button>';
   }
 }
 

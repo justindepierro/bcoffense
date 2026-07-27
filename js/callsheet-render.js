@@ -948,7 +948,12 @@ function renderPersonnelCallSheet(displayOptions) {
 
 function renderPersonnelCallSheetPlay(play, options) {
   const display = getCallSheetPlayDisplayOptions(play, options);
-  const wristband = display.showNumbers && play.wristbandNumber ? `<span class="cs-wristband-number">#${escapeHtml(play.wristbandNumber)}</span>` : "";
+  const wristbandNumber = play.wristbandNumber || (
+    typeof getWristbandNumberForPlay === "function"
+      ? getWristbandNumberForPlay(play)
+      : null
+  );
+  const wristband = display.showNumbers && wristbandNumber ? `<span class="cs-wristband-number">#${escapeHtml(wristbandNumber)}</span>` : "";
   const text = buildCallSheetPlayParts(play, display).join(" ") || escapeHtml(play.play || "Play");
   return `<div class="cs-personnel-play">${wristband}<span>${text}</span></div>`;
 }
