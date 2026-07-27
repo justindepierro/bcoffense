@@ -27,7 +27,7 @@ async function printCallSheet() {
 const CS_PRINT_DEFAULTS = {
   paperSize: "letter",       // "letter" | "legal" | "tabloid"
   orientation: "portrait",   // "portrait" | "landscape"
-  pages: "both",             // "both" | "current" | "front" | "back"
+  pages: "both",             // "both" | "all" | "current" | "front" | "back" | "personnel"
   columns: 3,                // 2 | 3 | 4
   margin: "normal",          // "tight" | "normal" | "wide"
 };
@@ -67,14 +67,15 @@ function _csApplyPrintSmartDefaults() {
 }
 
 function _csNormalizePrintPages(pages) {
-  if (pages === "both" || pages === "front" || pages === "back") return pages;
+  if (["both", "all", "front", "back", "personnel"].includes(pages)) return pages;
   return "current";
 }
 
 function _csGetPrintPages(pages) {
   const mode = _csNormalizePrintPages(pages);
   if (mode === "both") return ["front", "back"];
-  if (mode === "front" || mode === "back") return [mode];
+  if (mode === "all") return ["front", "back", "personnel"];
+  if (mode === "front" || mode === "back" || mode === "personnel") return [mode];
   return [normalizeCallSheetPage(callSheetSettings.currentPage)];
 }
 
@@ -90,15 +91,19 @@ function _csDescribePrintSelection(opts = {}) {
   const printJob = normalizeCallSheetPrintOptions(opts);
   const pages = printJob.pages;
   const currentPage = normalizeCallSheetPage(callSheetSettings?.currentPage);
-  const currentLabel = currentPage === "front" ? "Front" : "Back";
+  const currentLabel = currentPage === "front" ? "Front" : currentPage === "back" ? "Back" : "Personnel";
   const pageLabel =
     pages === "both"
       ? "Front + Back, in order"
+      : pages === "all"
+        ? "Front + Back + Personnel, in order"
       : pages === "current"
         ? `Current page only (${currentLabel})`
         : pages === "front"
           ? "Front only"
-          : "Back only";
+          : pages === "back"
+            ? "Back only"
+            : "Personnel only";
   const paper = printJob.paperSize === "legal"
     ? "Legal"
     : printJob.paperSize === "tabloid"
@@ -150,9 +155,11 @@ async function openCallSheetPrintModal() {
               <label>Pages</label>
               <select id="csPrintPages" title="Front first, then back for two-sided printing">
                 <option value="both" ${_csNormalizePrintPages(o.pages) === "both" ? "selected" : ""}>Front + Back (2-sided)</option>
+                <option value="all" ${_csNormalizePrintPages(o.pages) === "all" ? "selected" : ""}>Front + Back + Personnel (3 pages)</option>
                 <option value="current" ${_csNormalizePrintPages(o.pages) === "current" ? "selected" : ""}>Current page only</option>
                 <option value="front" ${_csNormalizePrintPages(o.pages) === "front" ? "selected" : ""}>Front only</option>
                 <option value="back" ${_csNormalizePrintPages(o.pages) === "back" ? "selected" : ""}>Back only</option>
+                <option value="personnel" ${_csNormalizePrintPages(o.pages) === "personnel" ? "selected" : ""}>Personnel only</option>
               </select>
             </div>
             <div class="gp-print-row">
@@ -172,7 +179,7 @@ async function openCallSheetPrintModal() {
               </select>
             </div>
             <p class="cs-print-hint" style="margin:10px 0 0;font-size:12px;color:var(--color-text-muted);">
-              💡 <strong>Front + Back</strong> prints two pages in order. Turn on two-sided printing in the print dialog to laminate one sheet.
+              💡 <strong>Front + Back</strong> prints two pages in order. Choose the three-page option when you also want the Personnel reference sheet.
             </p>
             <div class="cs-print-preview-summary" id="csPrintPreviewSummary" role="status" aria-live="polite"></div>
           </div>
@@ -354,12 +361,7 @@ function _csRunPrint(opts) {
     );
 
     setTimeout(() => {
-      const pageLabel =
-        pagesToPrint.length > 1
-          ? "Front-Back"
-          : pagesToPrint[0] === "front"
-            ? "Front"
-            : "Back";
+      const pageLabel = pagesToPrint.join("-").replace(/\b\w/g, (letter) => letter.toUpperCase());
       const restoreTitle = setPrintTitle("Call Sheet", pageLabel);
       let cleaned = false;
       const cleanup = () => {
@@ -396,6 +398,15 @@ function _csRunPrint(opts) {
 
 function renderCallSheetPrintPage(page, opts) {
   const safePage = normalizeCallSheetPage(page);
+  if (safePage === "personnel") {
+    const fontKey = typeof getCallSheetFontKey === "function"
+      ? getCallSheetFontKey(opts.printOptions?.font)
+      : "standard";
+    return `<section class="cs-print-page cs-print-personnel ${opts.orientClass} ${opts.colsClass}" data-cs-print-page="personnel" data-callsheet-font="${fontKey}">
+      <header class="cs-print-personnel-title">Personnel Call Sheet</header>
+      ${renderPersonnelCallSheet(opts.printOptions)}
+    </section>`;
+  }
   const categories = getCallSheetCategoriesForPage(safePage);
   const columnGroups = buildCallSheetColumns(categories, opts.columns);
   const fontKey = typeof getCallSheetFontKey === "function"

@@ -15,4 +15,6 @@ assert.match(css, /\.print-wristband-number \{[\s\S]*?background: transparent !i
 assert.match(callSheet, /function getCallSheetLoadedWristbandSummary\(\)[\s\S]*?loaded: Boolean\(name && plays\.length\)/, "loaded wristband state has one persisted source of truth");
 assert.doesNotMatch(callSheet, /getElementById\("loadedWristbandDisplay"\)/, "source status and Finalize never scrape wristband state from rendered text");
 assert.match(render, /const wristbandNumber = play\.wristbandNumber \|\| \([\s\S]*?getWristbandNumberForPlay\(play\)/, "Personnel page resolves wristband numbers from the loaded wristband mapping");
+assert.match(print, /if \(mode === "all"\) return \["front", "back", "personnel"\]/, "three-page jobs include the Personnel sheet after Front and Back");
+assert.match(print, /safePage === "personnel"[\s\S]*?renderPersonnelCallSheet\(opts\.printOptions\)/, "Personnel print uses the same classified play renderer as the screen");
 console.log("call sheet call clarity contract: wristband-first and one-word full-call passed");
