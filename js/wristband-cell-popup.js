@@ -9,6 +9,7 @@ let pendingPreShift = [];
 let pendingFormationTags = [];
 let pendingBackTags = [];
 let pendingComponentOrder = [];
+let pendingComponentNoVowels = [];
 let pendingCustomWriteIn = "";
 let pendingPlayerRuleSources = {};
 let pendingPlayerAssignmentOverrides = {};
@@ -241,6 +242,7 @@ function resetWristbandCellPopupPendingState() {
   pendingFormationTags = [];
   pendingBackTags = [];
   pendingComponentOrder = [];
+  pendingComponentNoVowels = [];
   pendingCustomWriteIn = "";
   pendingPlayerRuleSources = {};
   pendingPlayerAssignmentOverrides = {};
@@ -264,6 +266,7 @@ function setWristbandCellPopupPendingState(currentPlay, existing = {}) {
       (id) => typeof id === "string" && WB_CELL_TOKEN_LABELS[id],
     )
     : [];
+  pendingComponentNoVowels = normalizeWbComponentNoVowels(existing.componentNoVowels);
   pendingCustomWriteIn = existing.customWriteIn || "";
   pendingPlayerRuleSources = normalizePlayerRuleSources(
     existing.playerRuleSources,
@@ -286,11 +289,29 @@ function getWristbandPendingCellCustomization() {
       formationTags: pendingFormationTags,
       backTags: pendingBackTags,
       componentOrder: pendingComponentOrder,
+      componentNoVowels: pendingComponentNoVowels,
       customWriteIn: pendingCustomWriteIn,
       playerRuleSources: pendingPlayerRuleSources,
       playerAssignmentOverrides: pendingPlayerAssignmentOverrides,
     }) || {}
   );
+}
+
+function renderWbComponentVowelControls() {
+  const container = document.getElementById("cellComponentVowelControls");
+  if (!container) return;
+  container.innerHTML = [...WB_CELL_VOWEL_TOKEN_IDS].map((id) => {
+    const checked = pendingComponentNoVowels.includes(id) ? "checked" : "";
+    return `<label class="wb-component-vowel-option"><input type="checkbox" ${checked} data-onchange="toggleWbComponentNoVowels" data-arg="${escapeHtml(id)}" data-pass="event" />${escapeHtml(WB_CELL_TOKEN_LABELS[id])}</label>`;
+  }).join("");
+}
+
+function toggleWbComponentNoVowels(id, event) {
+  if (!WB_CELL_VOWEL_TOKEN_IDS.has(id)) return;
+  const selected = new Set(pendingComponentNoVowels);
+  if (event?.target?.checked) selected.add(id);
+  else selected.delete(id);
+  pendingComponentNoVowels = [...selected];
 }
 
 function syncCellPopupForSelection(cardIdx, cellIdx, play, custom = {}) {
@@ -310,6 +331,7 @@ function syncCellPopupForSelection(cardIdx, cellIdx, play, custom = {}) {
     document.getElementById("cellPopupPlayName").innerHTML =
       `<strong>Current Play:</strong> ${renderWristbandCellCall(play, custom, getWristbandDisplayOptions())}`;
   }
+  renderWbComponentVowelControls();
 }
 
 function openCellPopup(cardIdx, cellIdx, event) {
@@ -682,6 +704,7 @@ function applyCellStyle() {
       formationTags,
       backTags,
       componentOrder: pendingComponentOrder,
+      componentNoVowels: pendingComponentNoVowels,
       customWriteIn,
       playerRuleSources: pendingPlayerRuleSources,
       playerAssignmentOverrides: pendingPlayerAssignmentOverrides,

@@ -3906,3 +3906,6 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
     line-height: 1.2;
   }
 }
+.wb-component-vowel-controls { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.wb-component-vowel-option { display:inline-flex; align-items:center; gap:3px; padding:2px 5px; border:1px solid var(--color-border-light); border-radius:var(--radius-sm); background:var(--color-bg-subtle); color:var(--color-text); font-size:11px; }
+.wb-component-vowel-option input { margin:0; }

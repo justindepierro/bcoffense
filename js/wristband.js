@@ -588,6 +588,18 @@ const WB_CELL_TOKEN_LABELS = {
   "line-call": "Line Call",
 };
 
+const WB_CELL_VOWEL_TOKEN_IDS = new Set([
+  "pre-shift", "formation", "form-tag-1", "form-tag-2", "under", "back",
+  "shift", "motion", "protection", "play", "play-tag-1", "play-tag-2",
+  "write-in", "line-call",
+]);
+
+function normalizeWbComponentNoVowels(ids) {
+  return Array.isArray(ids)
+    ? [...new Set(ids.filter((id) => WB_CELL_VOWEL_TOKEN_IDS.has(id)))]
+    : [];
+}
+
 function buildWristbandCellTokens(play, custom = {}, opts = {}) {
   const {
     showEmoji = false,
@@ -602,6 +614,7 @@ function buildWristbandCellTokens(play, custom = {}, opts = {}) {
     showLineCall = true,
     hideProtection = false,
   } = opts;
+  const shortenedComponents = new Set(normalizeWbComponentNoVowels(custom?.componentNoVowels));
   const textOptions = { noVowels, forceUppercase };
 
   const hasUnder =
@@ -609,9 +622,9 @@ function buildWristbandCellTokens(play, custom = {}, opts = {}) {
     (play?.formTag1 && String(play.formTag1).toLowerCase() === "under") ||
     (play?.formTag2 && String(play.formTag2).toLowerCase() === "under");
 
-  const txt = (value) => {
+  const txt = (value, tokenId = "") => {
     if (value === null || value === undefined || value === "") return "";
-    return escapeHtml(formatPlayCallText(value, textOptions));
+    return escapeHtml(formatPlayCallText(value, { ...textOptions, noVowels: noVowels || shortenedComponents.has(tokenId) }));
   };
 
   // Markers
@@ -664,46 +677,46 @@ function buildWristbandCellTokens(play, custom = {}, opts = {}) {
   // Shift / motion with formatting
   let shiftHtml = "";
   if (play?.shift) {
-    let s = txt(play.shift);
+    let s = txt(play.shift, "shift");
     if (boldShifts) s = `<b>${s}</b>`;
     if (redShifts) s = `<span class="text-danger">${s}</span>`;
     shiftHtml = s;
   }
   let motionHtml = "";
   if (play?.motion) {
-    let m = txt(play.motion);
+    let m = txt(play.motion, "motion");
     if (italicMotions) m = `<i>${m}</i>`;
     if (redMotions) m = `<span class="text-danger">${m}</span>`;
     motionHtml = m;
   }
 
   const lineCallHtml = showLineCall && play?.lineCall
-    ? `<span class="line-call">[${escapeHtml(formatPlayCallText(play.lineCall, textOptions))}]</span>`
+    ? `<span class="line-call">[${txt(play.lineCall, "line-call")}]</span>`
     : "";
 
   return {
     "cadence-pre": cadencePreText,
     "personnel": personnelHtml,
     "extra-personnel": extraPersonnelHtml,
-    "pre-shift": preShiftHtml,
+    "pre-shift": preShiftValues.length ? preShiftValues.map((value) => `(${txt(value, "pre-shift")})`).join(" ") : "",
     "markers": "", // markers render via cadence-pre / cadence-post by default; this slot is reserved when user overrides order
-    "formation": txt(play?.formation),
-    "form-tag-1": formTag1Visible ? txt(play.formTag1) : "",
-    "form-tag-2": formTag2Visible ? txt(play.formTag2) : "",
+    "formation": txt(play?.formation, "formation"),
+    "form-tag-1": formTag1Visible ? txt(play.formTag1, "form-tag-1") : "",
+    "form-tag-2": formTag2Visible ? txt(play.formTag2, "form-tag-2") : "",
     "form-custom-tags": formCustomTagsHtml,
-    "under": underEmojiHtml || (underVisibleAsText ? txt(play.under) : ""),
-    "back": txt(play?.back),
+    "under": underEmojiHtml || (underVisibleAsText ? txt(play.under, "under") : ""),
+    "back": txt(play?.back, "back"),
     "back-custom-tags": backCustomTagsHtml,
     "shift": shiftHtml,
     "motion": motionHtml,
-    "protection": !hideProtection && play?.protection ? txt(play.protection) : "",
+    "protection": !hideProtection && play?.protection ? txt(play.protection, "protection") : "",
     "play": play?.play
-      ? `<span class="wristband-play-name">${txt(play.play)}</span>`
+      ? `<span class="wristband-play-name">${txt(play.play, "play")}</span>`
       : "",
-    "play-tag-1": txt(play?.playTag1),
-    "play-tag-2": txt(play?.playTag2),
+    "play-tag-1": txt(play?.playTag1, "play-tag-1"),
+    "play-tag-2": txt(play?.playTag2, "play-tag-2"),
     "write-in": custom?.customWriteIn
-      ? `<span class="cell-write-in">${escapeHtml(String(custom.customWriteIn).trim())}</span>`
+      ? `<span class="cell-write-in">${txt(String(custom.customWriteIn).trim(), "write-in")}</span>`
       : "",
     "cadence-post": cadencePostText,
     "line-call": lineCallHtml,
@@ -1260,6 +1273,7 @@ function buildWristbandCellCustomization(custom = {}) {
     formationTags: uniqueTagEntries(getCustomFormationTagEntries(custom)),
     backTags: uniqueTagEntries(getCustomBackTagEntries(custom)),
     componentOrder: hasCustomOrder ? normalizeWbComponentOrder(custom.componentOrder) : [],
+    componentNoVowels: normalizeWbComponentNoVowels(custom.componentNoVowels),
     customWriteIn: String(custom.customWriteIn || "").trim(),
     playerRuleSources: normalizePlayerRuleSources(custom.playerRuleSources),
     playerAssignmentOverrides: normalizePlayerAssignmentOverrides(
@@ -1276,6 +1290,7 @@ function buildWristbandCellCustomization(custom = {}) {
     normalized.formationTags.length > 0 ||
     normalized.backTags.length > 0 ||
     normalized.componentOrder.length > 0 ||
+    normalized.componentNoVowels.length > 0 ||
     normalized.customWriteIn ||
     Object.keys(normalized.playerRuleSources).length > 0 ||
     Object.keys(normalized.playerAssignmentOverrides).length > 0;
