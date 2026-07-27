@@ -12,6 +12,24 @@ let _catCleanupSearch = "";
 let _catCleanupTypeFilter = ""; // "" | type string (e.g. "Run", "Pass")
 let _catCleanupShowMode = "all"; // "all" | "matching" | "unmatched"
 let _catCleanupSearchTimer = null;
+// "Filtered" is a workset, not a live query. Recomputing it after each
+// metadata write can make rows vanish, appear, or (when empty) fall back to
+// the entire playbook. Capture the exact play objects when cleanup begins and
+// refresh the underlying Playbook only after the coach closes the tool.
+let _catCleanupFilteredSnapshot = null;
+let _catCleanupHasPendingPlaybookRender = false;
+
+function _captureCatCleanupFilteredSnapshot() {
+  _catCleanupFilteredSnapshot = Array.isArray(filteredPlays)
+    ? [...filteredPlays]
+    : [];
+}
+
+function _persistCatCleanupChanges() {
+  storageManager.setPlaybook(plays);
+  if (typeof invalidateFilterCache === "function") invalidateFilterCache();
+  _catCleanupHasPendingPlaybookRender = true;
+}
 
 function _catNormPV(v) {
   if (typeof splitPreferredValues === "function") return splitPreferredValues(v);
@@ -131,13 +149,9 @@ function _catCriteriaSummary(cat) {
 function _catCleanupScopeEntries() {
   let source = plays;
   if (_catCleanupScope === "filtered") {
-    if (
-      Array.isArray(filteredPlays) &&
-      filteredPlays.length > 0 &&
-      filteredPlays.length <= plays.length
-    ) {
-      source = filteredPlays;
-    }
+    source = Array.isArray(_catCleanupFilteredSnapshot)
+      ? _catCleanupFilteredSnapshot
+      : [];
   } else if (_catCleanupScope === "gameplan") {
     const boardSigs = typeof getGamePlanBoardSignatures === "function"
       ? getGamePlanBoardSignatures()
@@ -176,6 +190,8 @@ function openPlaybookCategoryCleanup() {
     const def = CALLSHEET_CATEGORIES.find((c) => !c.manual);
     _catCleanupCategoryId = def ? def.id : (CALLSHEET_CATEGORIES[0] && CALLSHEET_CATEGORIES[0].id) || "";
   }
+  if (_catCleanupScope === "filtered") _captureCatCleanupFilteredSnapshot();
+  _catCleanupHasPendingPlaybookRender = false;
   document.getElementById("playbookCatCleanupOverlay")?.remove();
   const overlay = document.createElement("div");
   overlay.className = "custom-modal-overlay visible";
@@ -343,6 +359,13 @@ function closePlaybookCategoryCleanup() {
   if (!overlay) return;
   overlay.classList.remove("visible");
   setTimeout(() => overlay.remove(), 180);
+  if (_catCleanupHasPendingPlaybookRender) {
+    _catCleanupHasPendingPlaybookRender = false;
+    // One refresh on exit reflects all completed cleanup edits without
+    // changing the set being reviewed while the modal is still open.
+    if (typeof filterPlays === "function") filterPlays();
+    if (typeof renderPlaybook === "function") renderPlaybook();
+  }
 }
 
 function setPlaybookCategoryCleanupCategory(catId) {
@@ -353,11 +376,7 @@ function setPlaybookCategoryCleanupCategory(catId) {
 function setPlaybookCategoryCleanupScope(scope) {
   if (scope !== "all" && scope !== "filtered" && scope !== "gameplan") return;
   if (scope === "filtered") {
-    const hasFilter = Array.isArray(filteredPlays) && filteredPlays.length > 0;
-    if (!hasFilter) {
-      showToast("No filtered plays — switching to All plays", { duration: 1800, type: "info" });
-      scope = "all";
-    }
+    _captureCatCleanupFilteredSnapshot();
   }
   _catCleanupScope = scope;
   const overlay = document.getElementById("playbookCatCleanupOverlay");
@@ -503,10 +522,7 @@ function catCleanupCheckAllVisible() {
     if (!isNaN(idx) && plays[idx] && _catApplyMetadata(plays[idx], cat)) mutated++;
   });
   if (mutated) {
-    storageManager.setPlaybook(plays);
-    if (typeof invalidateFilterCache === "function") invalidateFilterCache();
-    if (typeof filterPlays === "function") filterPlays();
-    if (typeof renderPlaybook === "function") renderPlaybook();
+    _persistCatCleanupChanges();
   }
   showToast(`Added ${mutated} play${mutated === 1 ? "" : "s"} to ${_catCategoryDisplayName(cat)}`, { duration: 2000, type: "success" });
   _renderCatCleanupSelect();
@@ -524,10 +540,7 @@ function catCleanupUncheckAllVisible() {
     if (!isNaN(idx) && plays[idx] && _catRemoveMetadata(plays[idx], cat)) mutated++;
   });
   if (mutated) {
-    storageManager.setPlaybook(plays);
-    if (typeof invalidateFilterCache === "function") invalidateFilterCache();
-    if (typeof filterPlays === "function") filterPlays();
-    if (typeof renderPlaybook === "function") renderPlaybook();
+    _persistCatCleanupChanges();
   }
   showToast(`Removed ${mutated} play${mutated === 1 ? "" : "s"} from ${_catCategoryDisplayName(cat)}`, { duration: 2000, type: "success" });
   _renderCatCleanupSelect();
@@ -676,10 +689,7 @@ function _onCatCleanupToggle(cb) {
     mutated = _catRemoveMetadata(play, cat);
   }
   if (mutated) {
-    storageManager.setPlaybook(plays);
-    if (typeof invalidateFilterCache === "function") invalidateFilterCache();
-    if (typeof filterPlays === "function") filterPlays();
-    if (typeof renderPlaybook === "function") renderPlaybook();
+    _persistCatCleanupChanges();
   }
   // Refresh row state inline
   const row = cb.closest(".cat-cleanup-row");
