@@ -324,6 +324,13 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
 .print-wristband-number {
   margin-right: 0.35em;
   border-radius: 2px;
+  /* Printers commonly suppress background fills. Never leave the primary
+     wristband scan key white-on-white when that setting is off. */
+  background: transparent !important;
+  border: 1px solid #111827;
+  color: #111827 !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 .callsheet-play .play-text {
