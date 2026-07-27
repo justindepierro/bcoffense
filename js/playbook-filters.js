@@ -334,20 +334,21 @@ function filterPlays() {
   if (hasClipFilter) _warmPlaybookClipFilterIndex();
   const checkingClipFilter = hasClipFilter && _isPlaybookClipFilterChecking();
   const gameWeek = getGameWeek();
-  // "Current Game Plan" must reflect the live board a coach just saved or
-  // edited. Older builds checked only dashboard tag selections, which made a
-  // populated Game Plan look empty from the Playbook. Keep tags as the
-  // fallback for plans deliberately loaded from a saved snapshot.
-  const boardGamePlanSigs = gamePlanOnly && typeof getGamePlanBoardSignatures === "function"
-    ? getGamePlanBoardSignatures()
-    : new Set();
+  // A current plan can be built from both board cards and dashboard/playbook
+  // tags. They are complementary sources, not fallbacks: preferring a small
+  // non-empty board used to hide the rest of a coach's tagged game plan.
+  const boardGamePlanMembership = gamePlanOnly && typeof getGamePlanBoardMembership === "function"
+    ? getGamePlanBoardMembership()
+    : {
+      signatures: gamePlanOnly && typeof getGamePlanBoardSignatures === "function"
+        ? getGamePlanBoardSignatures()
+        : new Set(),
+      sourceIds: new Set(),
+    };
   const gamePlanKey = gameWeek.opponentName || "__unassigned__";
   const taggedForOpponent = gamePlanOnly && typeof getGamePlanTags === "function"
     ? new Set((getGamePlanTags()[gamePlanKey] || []))
     : new Set();
-  const gamePlanFilterSigs = boardGamePlanSigs.size > 0
-    ? boardGamePlanSigs
-    : taggedForOpponent;
   const jvFlagged = jvOnly && typeof _gpFlaggedSigs === "function"
     ? _gpFlaggedSigs("jv")
     : null;
@@ -363,9 +364,15 @@ function filterPlays() {
     }
     const meta = runtimeIndex && runtimeIndex.byPlay ? runtimeIndex.byPlay.get(play) : null;
     if (gamePlanOnly) {
-      if (!gamePlanFilterSigs.size) return false;
+      if (!boardGamePlanMembership.signatures.size && !boardGamePlanMembership.sourceIds.size && !taggedForOpponent.size) return false;
       const gpSig = meta ? meta.gpSig : (typeof _gpPlaySignature === "function" ? _gpPlaySignature(play) : playSignature(play));
-      if (!gamePlanFilterSigs.has(gpSig)) return false;
+      const tagSig = meta ? meta.tagSig : playSignature(play);
+      const sourceId = typeof getStablePlaySourceId === "function"
+        ? getStablePlaySourceId(play)
+        : String(play?.playbookId || play?.sourcePlayId || play?.originalPlayId || play?.id || "").trim();
+      const onBoard = boardGamePlanMembership.signatures.has(gpSig) ||
+        Boolean(sourceId && boardGamePlanMembership.sourceIds.has(sourceId));
+      if (!onBoard && !taggedForOpponent.has(tagSig)) return false;
     }
     if (jvOnly) {
       if (!jvFlagged || typeof _gpPlaySignature !== "function") return false;

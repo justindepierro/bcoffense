@@ -1098,9 +1098,36 @@ function getGamePlanBoardSignatures() {
   return _gpAllAssignedSigs(board);
 }
 
+// Board cards are snapshots.  Their editable call text can change after they
+// are placed, so consumers that need to find the current playbook row must
+// also receive the immutable source IDs carried by newer cards.  Signatures
+// remain for legacy cards that predate source identity.
+function getGamePlanBoardMembership() {
+  const board = _gpEnsureBoard();
+  const signatures = new Set();
+  const sourceIds = new Set();
+  Object.values(board.assignments || {}).forEach((arr) => {
+    (arr || []).forEach((play) => {
+      if (!play) return;
+      const signature = _gpPlaySignature(play);
+      if (signature) signatures.add(signature);
+      const sourceId = typeof getStablePlaySourceId === "function"
+        ? getStablePlaySourceId(play)
+        : String(play.playbookId || play.sourcePlayId || play.originalPlayId || play.id || "").trim();
+      if (sourceId) sourceIds.add(sourceId);
+    });
+  });
+  return { signatures, sourceIds };
+}
+
 function isPlayInGamePlanBoard(play) {
   if (!play) return false;
-  return getGamePlanBoardSignatures().has(_gpPlaySignature(play));
+  const membership = getGamePlanBoardMembership();
+  const sourceId = typeof getStablePlaySourceId === "function"
+    ? getStablePlaySourceId(play)
+    : String(play.playbookId || play.sourcePlayId || play.originalPlayId || play.id || "").trim();
+  return membership.signatures.has(_gpPlaySignature(play)) ||
+    Boolean(sourceId && membership.sourceIds.has(sourceId));
 }
 
 function _gpFlaggedSigs(flag) {
