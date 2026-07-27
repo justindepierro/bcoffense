@@ -14,6 +14,11 @@ function applyWristbandDisplaySettings(displaySettings) {
   setCheckbox("wbItalicMotions", displaySettings.italicMotions);
   setCheckbox("wbRedMotions", displaySettings.redMotions);
   setCheckbox("wbRemoveVowels", displaySettings.noVowels || displaySettings.removeVowels);
+  setCheckbox("wbNoVowelsFormation", displaySettings.componentNoVowels?.includes("formation"));
+  setCheckbox("wbNoVowelsShift", displaySettings.componentNoVowels?.includes("shift"));
+  setCheckbox("wbNoVowelsMotion", displaySettings.componentNoVowels?.includes("motion"));
+  setCheckbox("wbNoVowelsProtection", displaySettings.componentNoVowels?.includes("protection"));
+  setCheckbox("wbNoVowelsPlayTags", displaySettings.componentNoVowels?.includes("play-tag-1"));
   setCheckbox("wbForceUppercase", displaySettings.forceUppercase);
   setCheckbox("wbShowLineCall", displaySettings.showLineCall);
   setCheckbox("wbLineCallOnly", displaySettings.lineCallOnly);

@@ -614,7 +614,10 @@ function buildWristbandCellTokens(play, custom = {}, opts = {}) {
     showLineCall = true,
     hideProtection = false,
   } = opts;
-  const shortenedComponents = new Set(normalizeWbComponentNoVowels(custom?.componentNoVowels));
+  const shortenedComponents = new Set([
+    ...normalizeWbComponentNoVowels(opts?.componentNoVowels),
+    ...normalizeWbComponentNoVowels(custom?.componentNoVowels),
+  ]);
   const textOptions = { noVowels, forceUppercase };
 
   const hasUnder =
@@ -1515,6 +1518,11 @@ function getWbDisplayOptionIds() {
     "wbItalicMotions",
     "wbRedMotions",
     "wbRemoveVowels",
+    "wbNoVowelsFormation",
+    "wbNoVowelsShift",
+    "wbNoVowelsMotion",
+    "wbNoVowelsProtection",
+    "wbNoVowelsPlayTags",
     "wbForceUppercase",
     "wbShowLineCall",
     "wbLineCallOnly",
@@ -1535,6 +1543,7 @@ const WB_DISPLAY_PRESETS = {
     wbItalicMotions: false,
     wbRedMotions: false,
     wbRemoveVowels: false,
+    wbNoVowelsFormation: false, wbNoVowelsShift: false, wbNoVowelsMotion: false, wbNoVowelsProtection: false, wbNoVowelsPlayTags: false,
     wbForceUppercase: false,
     wbShowLineCall: true,
     wbLineCallOnly: false,
@@ -1552,6 +1561,7 @@ const WB_DISPLAY_PRESETS = {
     wbItalicMotions: false,
     wbRedMotions: false,
     wbRemoveVowels: false,
+    wbNoVowelsFormation: false, wbNoVowelsShift: false, wbNoVowelsMotion: false, wbNoVowelsProtection: false, wbNoVowelsPlayTags: false,
     wbForceUppercase: false,
     wbShowLineCall: true,
     wbLineCallOnly: false,
@@ -1569,6 +1579,7 @@ const WB_DISPLAY_PRESETS = {
     wbItalicMotions: true,
     wbRedMotions: true,
     wbRemoveVowels: false,
+    wbNoVowelsFormation: false, wbNoVowelsShift: false, wbNoVowelsMotion: false, wbNoVowelsProtection: false, wbNoVowelsPlayTags: false,
     wbForceUppercase: false,
     wbShowLineCall: true,
     wbLineCallOnly: false,
