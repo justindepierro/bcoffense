@@ -412,7 +412,7 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
 .gp-library-search {
   width: 100%;
   min-width: 0;
-  min-height: 38px;
+  min-height: var(--coach-grid-control-height, 34px);
   color: var(--color-text);
   background: var(--color-bg-input);
   border: 1px solid var(--color-border-input);
@@ -429,8 +429,11 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-xs);
-  margin: 0 0 var(--space-xs);
-  padding: var(--space-xs);
+  margin: 0 0 4px;
+  padding: 4px;
+  border-color: var(--coach-grid-border, var(--color-border-light));
+  border-radius: var(--coach-grid-radius, var(--radius-sm));
+  box-shadow: none;
 }
 .gp-library .gp-toolbar select,
 .gp-library .gp-toolbar .gp-multi-filter,
@@ -439,7 +442,34 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
 .gp-library .gp-toolbar-spacer { display: none; }
 .gp-library .gp-matchup-chip-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; width: 100%; }
 .gp-library .gp-matchup-chip { min-width: 0; justify-content: center; }
-.gp-library .gp-toolbar-advanced { margin: 0 0 var(--space-xs); }
+.gp-library .gp-toolbar-advanced {
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin: 0 0 4px;
+  padding: 6px;
+  border-radius: var(--coach-grid-radius, var(--radius-sm));
+}
+.gp-library .gp-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+.gp-library .gp-filter-group-title { margin-bottom: 2px; font-size: 10px; }
+.gp-library .gp-toolbar-advanced select,
+.gp-library .gp-toolbar-advanced .gp-filter-input { min-height: var(--coach-grid-control-height, 34px); font-size: var(--font-size-xs); }
+
+@media screen and (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-library-refine { padding: 4px 0; gap: 4px; }
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-library-search,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-library-filters { min-height: var(--coach-grid-control-height); font-size: var(--font-size-xs); }
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-library .gp-filters-drawer {
+    max-height: min(40vh, 360px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding-right: 2px;
+  }
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-library .gp-toolbar .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-library .gp-toolbar select,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-library .gp-multi-filter-btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-library .gp-toolbar-toggle,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #gameplan .gp-library .gp-matchup-chip { min-height: var(--coach-grid-control-height); }
+}
 
 .gp-library-list {
   flex: 1;
