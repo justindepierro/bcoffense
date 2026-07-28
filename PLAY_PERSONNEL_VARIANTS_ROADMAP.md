@@ -186,7 +186,9 @@ chosen presentation, never a cloned variant.
 - [x] Explicitly define the selected variant payload sent to players. The
   release includes the chosen ID and allowed effective fields only; alternate
   variants and coach-only notes remain server-side.
-- [ ] Verify publish, resume, offline cache, and Cloudflare release behavior.
+- [x] Verify publish, resume, offline cache, and Cloudflare release behavior.
+  Player releases are immutable, fetched without an HTTP cache, applied
+  atomically, and deferred until Swipe View closes when a player is studying.
 - [x] Verify the player release keeps the original play/media identity while
   carrying an explicit selected variant, so Swipe View, Quiz, notifications,
   and comments continue to target the same play.
