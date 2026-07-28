@@ -1,12 +1,3 @@
-// ─── #150: Call-sheet usage dot for wristband cells ─────────────────────────
-function _wbCsDot(play) {
-  if (!play || typeof getCallSheetPlayLocations !== "function") return "";
-  const locs = getCallSheetPlayLocations(play);
-  if (!locs.length) return "";
-  const cats = [...new Set(locs.map((l) => l.replace(/ - (Left|Right)$/, "")))].join(", ");
-  return `<span class="wb-cs-dot" title="On call sheet: ${escapeHtml(cats)}" aria-label="On call sheet"></span>`;
-}
-
 function setHeaderColor(color, btn) {
   wristbandHeaderColor = color;
   document
@@ -416,7 +407,6 @@ function renderWristbandGrid() {
     if (oddPlay) {
       const oddCellHtml = getCachedDisplay(oddPlay, oddCustom);
       const oddWriteInHtml = renderWristbandCellWriteIn(oddCustom);
-      const oddCsDot = _wbCsDot(oddPlay);
       const oddSourceStatusBadge = typeof renderPlaySourceStatusBadge === "function"
         ? renderPlaySourceStatusBadge(oddPlay, { compact: true, className: "wb-source-status-badge" })
         : "";
@@ -428,7 +418,7 @@ function renderWristbandGrid() {
              data-drag="wbCell" data-cell-idx="${oddIndex}"
              data-card="${currentCardIndex}">
           <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${oddCellHtml}</span></span>
-          ${oddSourceStatusBadge}${oddWriteInHtml}${oddCsDot}
+          ${oddSourceStatusBadge}${oddWriteInHtml}
         </div>
       `;
     } else {
@@ -443,7 +433,6 @@ function renderWristbandGrid() {
     if (evenPlay) {
       const evenCellHtml = getCachedDisplay(evenPlay, evenCustom);
       const evenWriteInHtml = renderWristbandCellWriteIn(evenCustom);
-      const evenCsDot = _wbCsDot(evenPlay);
       const evenSourceStatusBadge = typeof renderPlaySourceStatusBadge === "function"
         ? renderPlaySourceStatusBadge(evenPlay, { compact: true, className: "wb-source-status-badge" })
         : "";
@@ -455,7 +444,7 @@ function renderWristbandGrid() {
              data-drag="wbCell" data-cell-idx="${evenIndex}"
              data-card="${currentCardIndex}">
           <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${evenCellHtml}</span></span>
-          ${evenSourceStatusBadge}${evenWriteInHtml}${evenCsDot}
+          ${evenSourceStatusBadge}${evenWriteInHtml}
         </div>
       `;
     } else {

@@ -3503,22 +3503,9 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
   font-size: var(--font-size-micro);
 }
 
-/* ─── #150: Call-sheet usage dot ────────────────────────────────────────────── */
-.wb-cs-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-info);
-  opacity: 0.75;
-  margin-left: 2px;
-  vertical-align: middle;
-  flex-shrink: 0;
-}
-
 @media print {
   .wb-source-badge,
-  .wb-cs-dot {
+  .wb-source-status-badge {
     display: none !important;
   }
 }
