@@ -183,10 +183,13 @@ chosen presentation, never a cloned variant.
 
 ### Phase 4 — Player release and publishing hardening
 
-- [ ] Explicitly define the selected variant payload sent to players.
+- [x] Explicitly define the selected variant payload sent to players. The
+  release includes the chosen ID and allowed effective fields only; alternate
+  variants and coach-only notes remain server-side.
 - [ ] Verify publish, resume, offline cache, and Cloudflare release behavior.
-- [ ] Verify Swipe View, Quiz, notifications, and comments still target the
-  original play identity.
+- [x] Verify the player release keeps the original play/media identity while
+  carrying an explicit selected variant, so Swipe View, Quiz, notifications,
+  and comments continue to target the same play.
 
 ### Phase 5 — Controlled migration and cleanup
 
