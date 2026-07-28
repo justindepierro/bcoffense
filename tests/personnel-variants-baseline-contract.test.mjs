@@ -92,6 +92,10 @@ assert.match(editor, /existing\.personnelVariants = stagedSource\.personnelVaria
   "saving a variant writes only the canonical base play's variant collection");
 assert.match(editor, /function choosePlayPersonnelVariant\(play\)/,
   "adding a personnel variant begins with a team-package picker");
+assert.match(editor, /custom-modal-overlay visible pb-personnel-picker-overlay/,
+  "the personnel picker uses the shared modal system's visible state");
+assert.doesNotMatch(editor, /custom-modal-overlay show pb-personnel-picker-overlay/,
+  "the personnel picker cannot regress to the legacy hidden show state");
 assert.match(editor, /getTeamPersonnelPackages\(\)/,
   "the personnel variant picker reuses the team's configured personnel vocabulary");
 assert.match(editor, /Add custom/,

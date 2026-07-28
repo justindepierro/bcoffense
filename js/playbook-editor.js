@@ -122,7 +122,9 @@ function choosePlayPersonnelVariant(play) {
   return new Promise((resolve) => {
     const choices = _getPlayEditorPersonnelChoices(play);
     const overlay = document.createElement("div");
-    overlay.className = "custom-modal-overlay show pb-personnel-picker-overlay";
+    // The shared modal system is visible-only. "show" is a legacy class used
+    // by a different overlay family and leaves this picker fully hidden.
+    overlay.className = "custom-modal-overlay visible pb-personnel-picker-overlay";
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-label", "Choose personnel variant");
