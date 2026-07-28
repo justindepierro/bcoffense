@@ -112,5 +112,9 @@ assert.match(callSheet, /"cellFormationTags", "cellBackTags", "personnelVariantI
   "Call Sheet refresh preserves an approved personnel selection");
 assert.match(callSheetPrint, /getCallSheetEffectivePlay\(play\)/,
   "Call Sheet printing resolves the same selected personnel as the editor");
+assert.match(callSheetRender, /function getCallSheetAdditionalPersonnel\(play\)/,
+  "Call Sheet can show additional approved personnel without changing the active call");
+assert.match(callSheet, /data-cs-display-variant/,
+  "Call Sheet cells expose an opt-in multi-personnel display control");
 
 console.log("personnel variants baseline contract: legacy data paths are preserved");

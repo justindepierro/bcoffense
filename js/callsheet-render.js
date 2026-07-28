@@ -982,13 +982,34 @@ function getCallSheetEffectivePlay(play) {
     "wristbandNumber", "highlighted", "highlightColor", "borderColor",
     "cellBg", "cellTextColor", "cellBold", "cellItalic", "cellUnderline",
     "cellStrikethrough", "cellFontSize", "cellNote", "cellFormationTags",
-    "cellBackTags", "personnelVariantId",
+    "cellBackTags", "personnelVariantId", "personnelDisplayVariantIds",
   ];
   const local = localFields.reduce((result, field) => {
     if (Object.prototype.hasOwnProperty.call(play, field)) result[field] = play[field];
     return result;
   }, {});
   return { ...play, ...effective, ...local };
+}
+
+function getCallSheetAdditionalPersonnel(play) {
+  if (!play || typeof getPlayPersonnelVariant !== "function") return [];
+  const source = getCallSheetVariantSource(play);
+  const activeVariantId = String(play.personnelVariantId || "base").trim() || "base";
+  const ids = Array.isArray(play.personnelDisplayVariantIds)
+    ? play.personnelDisplayVariantIds
+    : [];
+  return [...new Set(ids
+    .map((id) => getPlayPersonnelVariant(source, id))
+    .filter(Boolean)
+    .filter((option) => option.id !== activeVariantId)
+    .map((option) => String(option.personnel || "").trim())
+    .filter(Boolean))];
+}
+
+function renderCallSheetAdditionalPersonnel(play, className = "cs-extra-personnel") {
+  const labels = getCallSheetAdditionalPersonnel(play);
+  if (!labels.length) return "";
+  return `<span class="${className}" title="Also available in ${escapeHtml(labels.join(", "))}">${labels.map((label) => escapeHtml(label)).join(" / ")}</span>`;
 }
 
 function renderPersonnelCallSheet(displayOptions) {
@@ -1026,7 +1047,7 @@ function renderPersonnelCallSheetPlay(play, options) {
   );
   const wristband = display.showNumbers && wristbandNumber ? `<span class="cs-wristband-number">#${escapeHtml(wristbandNumber)}</span>` : "";
   const text = buildCallSheetPlayParts(play, display).join(" ") || escapeHtml(play.play || "Play");
-  return `<div class="cs-personnel-play">${wristband}<span>${text}</span></div>`;
+  return `<div class="cs-personnel-play">${wristband}<span>${text}</span>${renderCallSheetAdditionalPersonnel(play, "cs-personnel-play-options")}</div>`;
 }
 
 // RAF-coalesced version: multiple calls within one frame resolve to a single render
@@ -1539,6 +1560,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
   const personnelHtml = displayOptions.showPersonnel
     ? `<span class="personnel-code" style="background: ${bgColor}; color: ${textColor};">${code}</span>`
     : "";
+  const additionalPersonnelHtml = renderCallSheetAdditionalPersonnel(play);
   const wristbandHtml = displayOptions.showNumbers && play.wristbandNumber
     ? `<span class="cs-wristband-number" title="Wristband ${escapeHtml(play.wristbandNumber)}">#${escapeHtml(play.wristbandNumber)}</span>`
     : "";
@@ -1581,6 +1603,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
          data-category="${categoryId}" data-hash="${hash}" data-index="${index}"${discAttr}>
       ${wristbandHtml}
       ${personnelHtml}
+      ${additionalPersonnelHtml}
       <span class="play-text" role="cell">${visiblePlayText}</span>
       ${displayIndicator}
       ${formatIndicator}

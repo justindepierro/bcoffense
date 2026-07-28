@@ -744,12 +744,22 @@ function showPlayContextMenu(event, categoryId, hash, index) {
     : [];
   if (personnelOptions.length > 1) {
     const activeVariantId = String(play.personnelVariantId || "base").trim() || "base";
+    const displayIds = Array.isArray(play.personnelDisplayVariantIds)
+      ? play.personnelDisplayVariantIds
+      : [];
     menuHtml += `<div class="cs-ctx-section"><label class="cs-ctx-label" for="csPersonnelVariant">Approved Personnel</label>`;
     menuHtml += `<select id="csPersonnelVariant" class="cs-ctx-select" aria-label="Approved personnel for this call-sheet cell">`;
     personnelOptions.forEach((option) => {
       menuHtml += `<option value="${escapeHtml(option.id)}"${option.id === activeVariantId ? " selected" : ""}>${escapeHtml(option.personnel)}${option.isBase ? " · Primary" : ""}</option>`;
     });
-    menuHtml += `</select><div class="cs-ctx-helper">Changes this call-sheet cell only; the source play stays unchanged.</div></div>`;
+    menuHtml += `</select><div class="cs-ctx-helper">Changes this call-sheet cell only; the source play stays unchanged.</div>`;
+    menuHtml += `<div class="cs-ctx-label cs-ctx-label--subtle">Also display</div><div class="cs-ctx-personnel-options">`;
+    personnelOptions
+      .filter((option) => option.id !== activeVariantId)
+      .forEach((option) => {
+        menuHtml += `<label><input type="checkbox" data-cs-display-variant="${escapeHtml(option.id)}"${displayIds.includes(option.id) ? " checked" : ""}> ${escapeHtml(option.personnel)}</label>`;
+      });
+    menuHtml += `</div></div>`;
   }
 
   // ─── Font Size ───
@@ -1026,6 +1036,23 @@ function showPlayContextMenu(event, categoryId, hash, index) {
     });
   }
 
+  menu.querySelectorAll("[data-cs-display-variant]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const id = String(input.dataset.csDisplayVariant || "").trim();
+      if (!id) return;
+      const current = Array.isArray(play.personnelDisplayVariantIds)
+        ? play.personnelDisplayVariantIds.map((value) => String(value || "").trim()).filter(Boolean)
+        : [];
+      play.personnelDisplayVariantIds = input.checked
+        ? [...new Set([...current, id])]
+        : current.filter((value) => value !== id);
+      if (!play.personnelDisplayVariantIds.length) delete play.personnelDisplayVariantIds;
+      renderCallSheet();
+      saveCallSheet();
+      reopenMenu();
+    });
+  });
+
   showContextMenu(event, menu);
 }
 
@@ -1297,6 +1324,7 @@ function refreshCallSheetFromPlaybook() {
       "borderColor", "cellBg", "cellTextColor", "cellBold", "cellItalic",
       "cellUnderline", "cellStrikethrough", "cellFontSize", "cellNote",
       "cellFormationTags", "cellBackTags", "personnelVariantId",
+      "personnelDisplayVariantIds",
     ];
     return fields.reduce((overrides, field) => {
       if (Object.prototype.hasOwnProperty.call(snapshot || {}, field)) {

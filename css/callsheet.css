@@ -2681,6 +2681,16 @@ body.shell-phone #callsheet .cs-empty-cat {
   padding: 4px 7px;
 }
 
+.cs-ctx-label--subtle { margin-top:8px; color:var(--color-text-muted); font-size:10px; }
+.cs-ctx-personnel-options { display:flex; flex-wrap:wrap; gap:5px 8px; margin-top:4px; }
+.cs-ctx-personnel-options label { display:inline-flex; align-items:center; gap:3px; color:var(--color-text); font-size:11px; cursor:pointer; }
+.cs-extra-personnel,
+.cs-personnel-play-options,
+.print-extra-personnel { display:inline-flex; align-items:center; max-width:100%; padding:1px 4px; border:1px solid var(--color-border); border-radius:999px; color:var(--color-text-muted); background:var(--color-bg-subtle); font-size:9px; font-weight:700; line-height:1.2; white-space:nowrap; }
+.cs-extra-personnel { margin-left:2px; }
+.cs-personnel-play-options { margin-left:auto; }
+.print-extra-personnel { margin-right:3px; border-color:#94a3b8; color:#334155; background:#f8fafc; }
+
 .cs-ctx-tag-actions {
   display: flex;
   gap: 4px;
