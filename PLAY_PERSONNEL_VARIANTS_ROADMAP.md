@@ -174,7 +174,8 @@ chosen presentation, never a cloned variant.
 
 - [x] Script variant selector and effective call/rule resolution. Lineup
   assignments remain inherited until their dedicated adoption slice.
-- [ ] Wristband active/display selection and print verification.
+- [x] Wristband active/display selection and print verification. Legacy
+  write-in personnel remains additive and no saved wristband is rewritten.
 - [ ] Call-sheet active/display selection and third personnel-sheet support.
 - [ ] Game Plan filtering by approved personnel.
 
