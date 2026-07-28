@@ -153,12 +153,12 @@ chosen presentation, never a cloned variant.
 
 ### Phase 1 — Canonical read model (no visible behavior change)
 
-- [ ] Add normalization for `personnelVariants` at playbook hydration,
+- [x] Add normalization for `personnelVariants` at playbook hydration,
   import, restore, and cloud release boundaries.
-- [ ] Add shared helpers for options, lookup, effective-play derivation, and
+- [x] Add shared helpers for options, lookup, effective-play derivation, and
   validation.
-- [ ] Add tests for malformed, duplicate, old, and new records.
-- [ ] Deploy with no UI write path enabled yet.
+- [x] Add tests for malformed, duplicate, old, and new records.
+- [x] Deploy with no UI write path enabled yet.
 
 ### Phase 2 — Edit Play authoring
 

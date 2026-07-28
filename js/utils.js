@@ -1575,6 +1575,141 @@ function createPlayId(prefix = "play") {
   return `${prefix}_${time}_${rand}`;
 }
 
+// ── Personnel variants ───────────────────────────────────────────────────
+// A personnel variant is a small, explicitly-approved patch over one base
+// play. The base `play.personnel` field remains authoritative for every
+// legacy record; variants never create a second play identity.
+const PLAY_PERSONNEL_VARIANT_OVERRIDE_FIELDS = Object.freeze([
+  "formation",
+  "formTag1",
+  "formTag2",
+  "under",
+  "back",
+  "shift",
+  "motion",
+  "protection",
+  "lineCall",
+  "playTag1",
+  "playTag2",
+  "basePlay",
+  "oneWord",
+  "notes",
+  "playerNotes",
+]);
+
+function normalizePersonnelVariantText(value) {
+  return String(value == null ? "" : value).trim().replace(/\s+/g, " ");
+}
+
+function getPersonnelVariantComparisonKey(value) {
+  return normalizePersonnelVariantText(value).toLocaleLowerCase();
+}
+
+function createDeterministicPersonnelVariantId(play, personnel, index, usedIds) {
+  const playPart = normalizePlayCompareValue(play?.id || play?.play || "play")
+    .slice(0, 28) || "play";
+  const personnelPart = normalizePlayCompareValue(personnel).slice(0, 28) || "personnel";
+  const base = `pv_${playPart}_${personnelPart}`;
+  let candidate = base;
+  let suffix = Math.max(1, Number(index) + 1 || 1);
+  while (usedIds.has(candidate)) {
+    candidate = `${base}_${suffix}`;
+    suffix += 1;
+  }
+  return candidate;
+}
+
+function normalizePersonnelVariantOverrides(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const normalized = {};
+  PLAY_PERSONNEL_VARIANT_OVERRIDE_FIELDS.forEach((field) => {
+    if (!(field in value)) return;
+    const next = normalizePersonnelVariantText(value[field]);
+    if (next) normalized[field] = next;
+  });
+  return normalized;
+}
+
+function normalizePlayPersonnelVariants(play) {
+  if (!play || typeof play !== "object") return false;
+  // Do not add an empty field to legacy records. This makes Phase 1 read-safe
+  // and keeps existing backups and cloud revisions byte-compatible in shape.
+  if (!Object.prototype.hasOwnProperty.call(play, "personnelVariants")) return false;
+
+  const source = Array.isArray(play.personnelVariants) ? play.personnelVariants : [];
+  const primaryKey = getPersonnelVariantComparisonKey(play.personnel);
+  const usedIds = new Set();
+  const usedPersonnel = new Set(primaryKey ? [primaryKey] : []);
+  const normalized = [];
+
+  source.forEach((entry, index) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return;
+    const personnel = normalizePersonnelVariantText(entry.personnel);
+    const personnelKey = getPersonnelVariantComparisonKey(personnel);
+    if (!personnel || usedPersonnel.has(personnelKey)) return;
+
+    let id = normalizePersonnelVariantText(entry.id).replace(/[^A-Za-z0-9_-]/g, "_");
+    if (!id || usedIds.has(id)) {
+      id = createDeterministicPersonnelVariantId(play, personnel, index, usedIds);
+    }
+    usedIds.add(id);
+    usedPersonnel.add(personnelKey);
+
+    const overrides = normalizePersonnelVariantOverrides(entry.overrides);
+    const normalizedEntry = { id, personnel, overrides };
+    normalized.push(normalizedEntry);
+  });
+
+  const previous = JSON.stringify(play.personnelVariants);
+  const next = JSON.stringify(normalized);
+  if (previous === next) return false;
+  play.personnelVariants = normalized;
+  return true;
+}
+
+function ensurePlaybookPersonnelVariants(list) {
+  if (!Array.isArray(list)) return 0;
+  return list.reduce(
+    (changed, play) => changed + (normalizePlayPersonnelVariants(play) ? 1 : 0),
+    0,
+  );
+}
+
+function getPlayPersonnelOptions(play) {
+  const options = [];
+  const primary = normalizePersonnelVariantText(play?.personnel);
+  if (primary) options.push({ id: "base", personnel: primary, isBase: true });
+  const variants = Array.isArray(play?.personnelVariants) ? play.personnelVariants : [];
+  const seen = new Set(primary ? [getPersonnelVariantComparisonKey(primary)] : []);
+  variants.forEach((variant) => {
+    const personnel = normalizePersonnelVariantText(variant?.personnel);
+    const id = normalizePersonnelVariantText(variant?.id);
+    const key = getPersonnelVariantComparisonKey(personnel);
+    if (!personnel || !id || seen.has(key)) return;
+    seen.add(key);
+    options.push({ id, personnel, isBase: false, overrides: normalizePersonnelVariantOverrides(variant.overrides) });
+  });
+  return options;
+}
+
+function getPlayPersonnelVariant(play, variantId = "base") {
+  const requested = normalizePersonnelVariantText(variantId) || "base";
+  return getPlayPersonnelOptions(play).find((option) => option.id === requested) || null;
+}
+
+function getEffectivePlayVariant(play, variantId = "base") {
+  if (!play || typeof play !== "object") return null;
+  const option = getPlayPersonnelVariant(play, variantId) || getPlayPersonnelVariant(play, "base");
+  if (!option) return { ...play, personnelVariantId: "base" };
+  return {
+    ...play,
+    ...(option.overrides || {}),
+    personnel: option.personnel,
+    personnelVariantId: option.id,
+    personnelVariantIsBase: option.isBase,
+  };
+}
+
 function ensurePlaybookPlayIds(list) {
   if (!Array.isArray(list)) return 0;
   const used = new Set();
@@ -1605,6 +1740,7 @@ function ensurePlaybookPlayIds(list) {
       changed += 1;
     }
   });
+  changed += ensurePlaybookPersonnelVariants(list);
   // A media ID is a team-wide permanent pointer, not a display label. An old
   // import could preserve the same mediaId on two distinct rows, which makes
   // both plays resolve one cloud diagram. Keep the first established pointer

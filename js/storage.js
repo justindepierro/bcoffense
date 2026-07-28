@@ -887,6 +887,12 @@ const storageManager = {
   // Writes the playbook to IndexedDB asynchronously (fire-and-forget).
   // Falls back to localStorage if IDB fails.
   setPlaybook(data, opts = {}) {
+    // Variant normalization is additive: legacy plays without the field are
+    // untouched, while any present variant records are made safe before every
+    // local, restore, and cloud-boundary write.
+    if (typeof ensurePlaybookPersonnelVariants === "function") {
+      ensurePlaybookPersonnelVariants(data);
+    }
     const authUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
     const playerState = this.get(STORAGE_KEYS.PLAYER_RELEASE_STATE, null);
     const isCurrentPlayerRelease = Boolean(

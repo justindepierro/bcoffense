@@ -35,4 +35,43 @@ assert.match(callSheetExport, /esc\(p\.personnel\)/,
 assert.match(gamePlanIntegrations, /copyPlayForCallSheet\(play, \{ wristbandNumber: wb \}\)/,
   "Game Plan continues to copy the original play identity into Call Sheet entries");
 
+const helpers = new Function(`${utils}
+return {
+  normalizePlayPersonnelVariants,
+  getPlayPersonnelOptions,
+  getEffectivePlayVariant,
+};`)();
+
+const legacy = { ...base };
+assert.equal(helpers.normalizePlayPersonnelVariants(legacy), false,
+  "a legacy play without variants is not mutated on read");
+assert.equal(legacy.personnelVariants, undefined,
+  "legacy play shape remains unchanged on read");
+
+const variantPlay = {
+  ...base,
+  personnelVariants: [
+    { personnel: "Gold", overrides: { notes: "Gold note", ignored: "drop me" } },
+    { id: "duplicate-gold", personnel: "gold" },
+    { id: "Irish variant!", personnel: "Irish", overrides: { motion: "Jet" } },
+    null,
+  ],
+};
+assert.equal(helpers.normalizePlayPersonnelVariants(variantPlay), true,
+  "variant records are normalized at a write boundary");
+assert.deepEqual(variantPlay.personnelVariants, [
+  { id: "pv_playbluezorrowolf_gold", personnel: "Gold", overrides: { notes: "Gold note" } },
+  { id: "Irish_variant_", personnel: "Irish", overrides: { motion: "Jet" } },
+], "normalization creates stable IDs, removes duplicates, and keeps only approved overrides");
+
+const options = helpers.getPlayPersonnelOptions(variantPlay);
+assert.deepEqual(options.map((option) => option.personnel), ["Blue", "Gold", "Irish"],
+  "primary personnel is first and approved variants follow");
+const gold = helpers.getEffectivePlayVariant(variantPlay, "pv_playbluezorrowolf_gold");
+assert.equal(gold.id, base.id, "effective variants preserve the source play identity");
+assert.equal(gold.personnel, "Gold", "effective variants select their approved personnel");
+assert.equal(gold.play, base.play, "effective variants inherit the base call");
+assert.equal(gold.notes, "Gold note", "effective variants apply explicit overrides only");
+assert.equal(gold.personnelVariantId, "pv_playbluezorrowolf_gold", "effective variant identifies its stable selection");
+
 console.log("personnel variants baseline contract: legacy data paths are preserved");
