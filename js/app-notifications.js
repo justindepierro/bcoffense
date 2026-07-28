@@ -829,32 +829,27 @@ async function openDiscussionForPlayId(playId, opts = {}) {
   // Switch to playbook tab
   if (typeof showTab === "function") showTab("playbook");
 
-  // Attempt to find and open the workflow panel for the play
-  // The play ID format is encodeURIComponent("personnel::formation::play")
-  // We can try to match against the current plays array
+  // Attempt to find and open the workflow panel for the play. Notification
+  // parsing decodes the deep link, while discussion IDs are URL-safe, so use
+  // both forms and the canonical thread-ID helper instead of guessing fields.
   if (typeof plays === "undefined" || !Array.isArray(plays)) return;
 
   const decoded = (() => { try { return decodeURIComponent(playId); } catch (_) { return playId; } })();
-  const parts = decoded.split("::");
+  const encoded = encodeURIComponent(decoded);
+  const matchIndex = plays.findIndex((play) => {
+    if (!play) return false;
+    if (typeof getPlayThreadId === "function" && getPlayThreadId(play) === encoded) return true;
+    return String(play._id || "") === decoded ||
+      [play.personnel, play.formation, play.play].map((value) => String(value || "")).join("::") === decoded;
+  });
 
-  // Try matching by _id first
-  let match = plays.find((p) => p && p._id && encodeURIComponent(p._id) === playId);
-
-  // Fallback: match by personnel::formation::play
-  if (!match && parts.length >= 3) {
-    const [personnel, formation, play] = parts;
-    match = plays.find(
-      (p) => p &&
-        String(p.personnel || "") === personnel &&
-        String(p.formation || "") === formation &&
-        String(p.play || "") === play,
-    );
-  }
-
-  if (match && typeof openPlayWorkflowPanel === "function") {
+  if (matchIndex >= 0 && typeof openPlayWorkflowPanel === "function") {
+    if (opts.postId && typeof setDiscussionDeepLink === "function") {
+      setDiscussionDeepLink(encoded, opts.postId);
+    }
     // Scroll to the play in the table first
     setTimeout(() => {
-      openPlayWorkflowPanel(match);
+      openPlayWorkflowPanel(matchIndex);
       // Scroll to discussion section inside the panel
       setTimeout(() => {
         const discussion = document.querySelector(".disc-body[data-disc-play-id]");

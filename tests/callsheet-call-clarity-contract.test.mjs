@@ -8,6 +8,7 @@ const print = await readFile(new URL("js/callsheet-print.js", `file://${root}/`)
 const css = await readFile(new URL("css/callsheet.css", `file://${root}/`), "utf8");
 const callSheet = await readFile(new URL("js/callsheet.js", `file://${root}/`), "utf8");
 const gamePlanRender = await readFile(new URL("js/gameplan-render.js", `file://${root}/`), "utf8");
+const notifications = await readFile(new URL("js/app-notifications.js", `file://${root}/`), "utf8");
 
 assert.match(render, /const wristbandHtml = displayOptions\.showNumbers[\s\S]*?cs-wristband-number[\s\S]*?\$\{wristbandHtml\}[\s\S]*?\$\{personnelHtml\}/, "screen rows render wristband number before personnel and call text");
 assert.match(print, /const wristbandHtml = displayOptions\.showNumbers[\s\S]*?print-wristband-number[\s\S]*?\$\{wristbandHtml\}\$\{personnelHtml\}/, "print rows preserve wristband-first order");
@@ -22,4 +23,5 @@ assert.match(render, /buildCallSheetPersonnelColumns\(personnelGroups\)/, "Perso
 assert.match(print, /if \(mode === "all"\) return \["front", "back", "personnel"\]/, "three-page jobs include the Personnel sheet after Front and Back");
 assert.match(print, /safePage === "personnel"[\s\S]*?renderPersonnelCallSheet\(opts\.printOptions\)/, "Personnel print uses the same classified play renderer as the screen");
 assert.match(gamePlanRender, /id="gpLibrarySearch"[\s\S]*?placeholder="Search library…"/, "Game Plan library always exposes its search field");
+assert.match(notifications, /const matchIndex = plays\.findIndex[\s\S]*?openPlayWorkflowPanel\(matchIndex\)/, "staff question notifications resolve a play then open its workflow panel by index");
 console.log("call sheet call clarity contract: wristband-first and one-word full-call passed");
