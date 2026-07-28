@@ -322,6 +322,7 @@ window._reorderClose
 window._reorderSave
 window.appDiagnostics
 window.appStartup
+window.addPlayPersonnelVariant
 window.applyCloudBackupImmediately
 window.applyPendingRestoredStartupTab
 window.applyRoleUi
@@ -385,6 +386,7 @@ window.getLatestPublishActivity
 window.getPlayImageUrl
 window.getPublishActivityLog
 window.rebuildPlayerRelease
+window.removePlayPersonnelVariant
 window.recordPublishActivity
 window.recoverSelectedLegacyDiagrams
 window.getRemotePlayerLeaderboardMeta
@@ -444,8 +446,10 @@ window.requestImmediateTeamPublish
 window.refreshPlayerCloudBackup
 window.refreshPlayerLeaderboardSummary
 window.refreshPlayerRelease
+window.renamePlayPersonnelVariant
 window.resetAnchoredMenu
 window.resetCloudSyncAutoPull
+window.resetPlayPersonnelVariantOverrides
 window.resetSignalUploadReview
 window.retryWorkspaceSyncWork
 window.rollbackStagedRestore

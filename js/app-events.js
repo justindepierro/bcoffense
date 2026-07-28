@@ -443,6 +443,18 @@ document.addEventListener("click", (e) => {
   }
 
   switch (action) {
+    case "addPlayPersonnelVariant":
+      window.addPlayPersonnelVariant?.();
+      return;
+    case "renamePlayPersonnelVariant":
+      window.renamePlayPersonnelVariant?.();
+      return;
+    case "removePlayPersonnelVariant":
+      window.removePlayPersonnelVariant?.();
+      return;
+    case "resetPlayPersonnelVariantOverrides":
+      window.resetPlayPersonnelVariantOverrides?.();
+      return;
     case "setPeriodPreset": {
       const input = document.getElementById("newPeriodName");
       if (input) input.value = el.dataset.preset;

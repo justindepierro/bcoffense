@@ -252,6 +252,15 @@ function resetPlayPersonnelVariantOverrides() {
   showToast(`${selected.personnel} now inherits the base play.`, { duration: 1800, type: "success" });
 }
 
+// These editor actions are invoked by both the modal-local listener and the
+// central action router. Keep that public boundary explicit: classic scripts
+// do not guarantee every top-level declaration is visible through window in
+// every browser execution mode.
+window.addPlayPersonnelVariant = addPlayPersonnelVariant;
+window.renamePlayPersonnelVariant = renamePlayPersonnelVariant;
+window.removePlayPersonnelVariant = removePlayPersonnelVariant;
+window.resetPlayPersonnelVariantOverrides = resetPlayPersonnelVariantOverrides;
+
 function _hasScriptEditorNavigation() {
   return _editingScriptNavPosition >= 0 &&
     _editingScriptNavIndexes.length > 0 &&
