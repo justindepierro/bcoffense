@@ -173,7 +173,11 @@ function renderGamePlan() {
   // Build filter dropdown options from playbook
   const types = [...new Set(plays.map((p) => p.type).filter(Boolean))].sort();
   const formations = [...new Set(plays.map((p) => p.formation).filter(Boolean))].sort();
-  const personnel = [...new Set(plays.map((p) => p.personnel).filter(Boolean))].sort();
+  const personnel = [...new Set(plays.flatMap((play) => (
+    typeof _gpPersonnelChoicesForPlay === "function"
+      ? _gpPersonnelChoicesForPlay(play)
+      : [play?.personnel]
+  )).filter(Boolean))].sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
   const advBadge = _gpAdvancedFilterCount();
   const advancedHtml = _gpFilters.showAdvanced ? `
     <div class="gp-toolbar-advanced">

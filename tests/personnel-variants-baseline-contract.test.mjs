@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
 const fixture = JSON.parse(await read("tests/fixtures/personnel-variants-baseline.json"));
-const [utils, scriptShared, wristband, wristbandPopup, wristbandExport, callSheet, callSheetRender, callSheetPrint, callSheetExport, gamePlanIntegrations, editor] = await Promise.all([
+const [utils, scriptShared, wristband, wristbandPopup, wristbandExport, callSheet, callSheetRender, callSheetPrint, callSheetExport, gamePlan, gamePlanRender, gamePlanIntegrations, editor] = await Promise.all([
   read("js/utils.js"),
   read("js/script-shared.js"),
   read("js/wristband.js"),
@@ -15,6 +15,8 @@ const [utils, scriptShared, wristband, wristbandPopup, wristbandExport, callShee
   read("js/callsheet-render.js"),
   read("js/callsheet-print.js"),
   read("js/callsheet-export.js"),
+  read("js/gameplan.js"),
+  read("js/gameplan-render.js"),
   read("js/gameplan-integrations.js"),
   read("js/playbook-editor.js"),
 ]);
@@ -122,5 +124,11 @@ assert.match(callSheetRender, /function getCallSheetAdditionalPersonnel\(play\)/
   "Call Sheet can show additional approved personnel without changing the active call");
 assert.match(callSheet, /data-cs-display-variant/,
   "Call Sheet cells expose an opt-in multi-personnel display control");
+assert.match(gamePlan, /function _gpPersonnelChoicesForPlay\(play\)/,
+  "Game Plan derives filter choices from every approved personnel option");
+assert.match(gamePlan, /_gpPersonnelFilterMatches\(p, _gpFilters\.personnel\)/,
+  "Game Plan personnel filtering matches approved variants without rewriting primary personnel");
+assert.match(gamePlanRender, /_gpPersonnelChoicesForPlay\(play\)/,
+  "Game Plan shows approved personnel values in its existing filter menu");
 
 console.log("personnel variants baseline contract: legacy data paths are preserved");

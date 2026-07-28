@@ -1241,6 +1241,28 @@ function _gpFilterMatchesAny(value, filterValue) {
   return selected.some((target) => _gpFilterValueMatches(value, target));
 }
 
+// Game Plan filters discover every approved personnel package without changing
+// a play's primary personnel or its board identity. Older board snapshots are
+// resolved back to their source play when possible.
+function _gpPersonnelChoicesForPlay(play) {
+  const source = typeof findPlaybookSourceForPlay === "function"
+    ? findPlaybookSourceForPlay(play) || play
+    : play;
+  if (typeof getPlayPersonnelOptions === "function") {
+    return getPlayPersonnelOptions(source)
+      .map((option) => String(option?.personnel || "").trim())
+      .filter(Boolean);
+  }
+  return [String(play?.personnel || "").trim()].filter(Boolean);
+}
+
+function _gpPersonnelFilterMatches(play, filterValue) {
+  const selected = _gpFilterValueList(filterValue);
+  if (!selected.length) return true;
+  const choices = _gpPersonnelChoicesForPlay(play);
+  return selected.some((target) => choices.some((personnel) => _gpFilterValueMatches(personnel, target)));
+}
+
 function _gpFilterAnyFieldMatches(play, fields, target) {
   const wanted = _gpFilterNorm(target);
   if (!wanted) return true;
@@ -1287,7 +1309,7 @@ function _gpPlayMatchesCurrentFilters(p, board, options = {}) {
     .map((type) => GP_TYPE_ALIASES[type] || type);
   if (!_gpFilterMatchesAny(canonicalType, canonicalTypeFilters)) return false;
   if (_gpFilters.formation && p.formation !== _gpFilters.formation) return false;
-  if (!_gpFilterMatchesAny(p.personnel, _gpFilters.personnel)) return false;
+  if (!_gpPersonnelFilterMatches(p, _gpFilters.personnel)) return false;
   if (_gpFilters.basePlay && p.basePlay !== _gpFilters.basePlay) return false;
   if (_gpFilters.tempo && p.tempo !== _gpFilters.tempo) return false;
   if (_gpFilters.preferredDown && p.preferredDown !== _gpFilters.preferredDown) return false;
@@ -1318,7 +1340,8 @@ function _gpPlayMatchesCurrentFilters(p, board, options = {}) {
     const runtimeIndex =
       typeof getPlaybookRuntimeIndex === "function" ? getPlaybookRuntimeIndex() : null;
     const meta = runtimeIndex && runtimeIndex.byPlay ? runtimeIndex.byPlay.get(p) : null;
-    const hay = meta ? meta.searchText : [
+    const hay = [meta ? meta.searchText : "", ..._gpPersonnelChoicesForPlay(p),
+      ...(meta ? [] : [
       p.type, p.personnel, p.formation, p.formTag1, p.formTag2,
       p.under, p.back, p.shift, p.motion, p.protection, p.lineCall,
       p.play, p.playTag1, p.playTag2, p.basePlay, p.oneWord, p.notes,
@@ -1331,7 +1354,7 @@ function _gpPlayMatchesCurrentFilters(p, board, options = {}) {
       p.constraint1, p.constraint2, p.constraint3,
       p.hitChart1, p.hitChart2, p.hitChart3,
       p.deadVs, p.opponent,
-    ].filter(Boolean).join(" ").toLowerCase();
+    ])].filter(Boolean).join(" ").toLowerCase();
     if (!hay.includes(search)) return false;
   }
   return true;
