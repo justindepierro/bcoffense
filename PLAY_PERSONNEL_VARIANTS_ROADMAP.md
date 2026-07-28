@@ -129,7 +129,7 @@ chosen presentation, never a cloned variant.
 
 - [x] Let a call-sheet play select an active variant or show selected approved
   options.
-- [ ] Let the Game Plan filter by any approved personnel, while preserving the
+- [x] Let the Game Plan filter by any approved personnel, while preserving the
   current primary-personnel grouping until explicitly enhanced.
 - [ ] Make the Personnel call-sheet page use the active game-plan play and its
   selected effective personnel—never every play in the library.
@@ -179,7 +179,7 @@ chosen presentation, never a cloned variant.
 - [x] Call-sheet active/display selection and print verification. The
   Personnel sheet resolves a selected variant when one is present on its
   active Game Plan entry; Game Plan authoring/filtering is the next slice.
-- [ ] Game Plan filtering by approved personnel.
+- [x] Game Plan filtering by approved personnel.
 
 ### Phase 4 — Player release and publishing hardening
 
