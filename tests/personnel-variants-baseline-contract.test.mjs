@@ -83,5 +83,11 @@ assert.match(editor, /Editing base play[\s\S]*?Editing \$\{escapeHtml\(selected\
   "the editor gives distinct base and variant editing feedback");
 assert.match(editor, /existing\.personnelVariants = stagedSource\.personnelVariants/,
   "saving a variant writes only the canonical base play's variant collection");
+assert.match(scriptShared, /scriptPersonnelVariantId/,
+  "Script rows preserve a stable personnel variant reference during source refreshes");
+assert.match(scriptShared, /getEffectivePlayVariant\(play, variantId\)/,
+  "Script call rendering resolves selected personnel variant metadata");
+assert.match(scriptShared, /setScriptPersonnelVariant\(index, variantId\)/,
+  "Script personnel controls select an approved variant rather than cloning a play");
 
 console.log("personnel variants baseline contract: legacy data paths are preserved");

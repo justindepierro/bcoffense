@@ -172,7 +172,8 @@ chosen presentation, never a cloned variant.
 
 ### Phase 3 — Coach workflow adoption
 
-- [ ] Script variant selector and effective lineup/rule resolution.
+- [x] Script variant selector and effective call/rule resolution. Lineup
+  assignments remain inherited until their dedicated adoption slice.
 - [ ] Wristband active/display selection and print verification.
 - [ ] Call-sheet active/display selection and third personnel-sheet support.
 - [ ] Game Plan filtering by approved personnel.

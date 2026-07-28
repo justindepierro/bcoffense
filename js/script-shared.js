@@ -502,13 +502,29 @@ function normalizeScriptPersonnelOverride(value) {
   ) || "";
 }
 
+function getScriptPersonnelVariantId(play) {
+  const requested = String(play?.scriptPersonnelVariantId || "").trim();
+  if (!requested || typeof getPlayPersonnelVariant !== "function") return "base";
+  return getPlayPersonnelVariant(play, requested) ? requested : "base";
+}
+
 function getScriptPersonnelDisplay(play) {
+  const variantId = getScriptPersonnelVariantId(play);
+  if (variantId !== "base" && typeof getPlayPersonnelVariant === "function") {
+    const variant = getPlayPersonnelVariant(play, variantId);
+    if (variant?.personnel) return variant.personnel;
+  }
   return normalizeScriptPersonnelOverride(play?.scriptPersonnelOverride) ||
     String(play?.personnel || "").trim();
 }
 
 function getScriptDisplayPlay(play) {
   if (!play) return play;
+
+  const variantId = getScriptPersonnelVariantId(play);
+  const baseDisplayPlay = variantId !== "base" && typeof getEffectivePlayVariant === "function"
+    ? getEffectivePlayVariant(play, variantId)
+    : play;
 
   const customFormationTags = getSharedCustomTagEntries(play.scriptFormationTags)
     .map((entry) => `(${formatSharedCustomTagEntryText(entry)})`)
@@ -518,10 +534,10 @@ function getScriptDisplayPlay(play) {
     .filter(Boolean);
 
   const visualPersonnel = getScriptPersonnelDisplay(play);
-  const personnelChanged = visualPersonnel !== String(play.personnel || "").trim();
-  if (!customFormationTags.length && !customBackTags.length && !personnelChanged) return play;
+  const personnelChanged = visualPersonnel !== String(baseDisplayPlay.personnel || "").trim();
+  if (!customFormationTags.length && !customBackTags.length && !personnelChanged && baseDisplayPlay === play) return play;
 
-  const displayPlay = { ...play };
+  const displayPlay = { ...baseDisplayPlay };
 
   if (personnelChanged) displayPlay.personnel = visualPersonnel;
 
@@ -567,6 +583,7 @@ const SCRIPT_PLAYBOOK_REFRESH_LOCAL_FIELDS = new Set([
   "scriptBackTags",
   "scriptFormationTags",
   "scriptHidePersonnel",
+  "scriptPersonnelVariantId",
   "scriptPersonnelOverride",
   "scriptCallPrefix",
   "scriptCallPrefixColor",
@@ -642,7 +659,8 @@ function renderScriptPersonnelOverrideButton(play, index, playLabel, options = {
   const sourcePersonnel = String(play.personnel || "").trim();
   const displayPersonnel = getScriptPersonnelDisplay(play);
 
-  const isOverridden = Boolean(normalizeScriptPersonnelOverride(play.scriptPersonnelOverride));
+  const selectedVariant = getScriptPersonnelVariantId(play);
+  const isOverridden = selectedVariant !== "base" || Boolean(normalizeScriptPersonnelOverride(play.scriptPersonnelOverride));
   const title = isOverridden
     ? `Visual script personnel: ${displayPersonnel}. Playbook remains ${sourcePersonnel || "unchanged"}.`
     : `Personnel: ${displayPersonnel || sourcePersonnel}. Choose a visual script-only override.`;
@@ -670,7 +688,8 @@ function updateScriptPersonnelOverrideControl(index) {
   if (!play || !buttons?.length) return;
   const sourcePersonnel = String(play.personnel || "").trim();
   const displayPersonnel = getScriptPersonnelDisplay(play);
-  const isOverridden = Boolean(normalizeScriptPersonnelOverride(play.scriptPersonnelOverride));
+  const selectedVariant = getScriptPersonnelVariantId(play);
+  const isOverridden = selectedVariant !== "base" || Boolean(normalizeScriptPersonnelOverride(play.scriptPersonnelOverride));
   const title = isOverridden
     ? `Visual script personnel: ${displayPersonnel}. Playbook remains ${sourcePersonnel || "unchanged"}.`
     : `Personnel: ${displayPersonnel || sourcePersonnel}. Choose a visual script-only override.`;
@@ -713,36 +732,74 @@ function setScriptPersonnelOverride(index, value) {
   );
 }
 
+function setScriptPersonnelVariant(index, variantId) {
+  const play = script[index];
+  if (!play || play.isSeparator) return;
+  const next = typeof getPlayPersonnelVariant === "function"
+    ? getPlayPersonnelVariant(play, variantId)
+    : null;
+  if (!next) return;
+  const current = getScriptPersonnelVariantId(play);
+  if (current === next.id) {
+    closeScriptPersonnelOverrideModal();
+    return;
+  }
+  beginScriptEdit();
+  if (next.id === "base") delete play.scriptPersonnelVariantId;
+  else play.scriptPersonnelVariantId = next.id;
+  // A modern variant choice is authoritative. Clear a legacy visual-only
+  // marker so the selected variant's personnel and metadata stay together.
+  delete play.scriptPersonnelOverride;
+  closeScriptPersonnelOverrideModal();
+  updateScriptCallDisplay(index);
+  updateScriptPersonnelOverrideControl(index);
+  showToast(
+    next.id === "base"
+      ? "Using the playbook's primary personnel."
+      : `Using ${next.personnel} for this script row.`,
+    { type: "success", duration: 1800 },
+  );
+}
+
 function openScriptPersonnelOverrideModal(index) {
   const play = script[index];
   if (!play || play.isSeparator) return;
   closeScriptPersonnelOverrideModal();
 
   const sourcePersonnel = String(play.personnel || "").trim();
+  const selectedVariantId = getScriptPersonnelVariantId(play);
   const current = normalizeScriptPersonnelOverride(play.scriptPersonnelOverride);
   const playLabel = getScriptPlaySummaryText(play);
-  const choices = [
-    `<button type="button" class="script-personnel-override-choice${!current ? " is-selected" : ""}" data-personnel-value="">Match playbook${sourcePersonnel ? ` · ${escapeHtml(sourcePersonnel)}` : ""}</button>`,
-    ...SCRIPT_PERSONNEL_VISUAL_OPTIONS.map((option) =>
-      `<button type="button" class="script-personnel-override-choice${current === option ? " is-selected" : ""}" data-personnel-value="${option}"><span aria-hidden="true">${getPersonnelEmoji(option)}</span> ${option}</button>`,
-    ),
-  ].join("");
+  const approved = typeof getPlayPersonnelOptions === "function"
+    ? getPlayPersonnelOptions(play)
+    : [{ id: "base", personnel: sourcePersonnel, isBase: true }];
+  const variantChoices = approved.map((option) =>
+    `<button type="button" class="script-personnel-override-choice${selectedVariantId === option.id ? " is-selected" : ""}" data-personnel-variant-id="${escapeHtml(option.id)}"><span aria-hidden="true">${getPersonnelEmoji(option.personnel)}</span> ${escapeHtml(option.personnel || "Primary")}${option.isBase ? " · Primary" : ""}</button>`,
+  ).join("");
+  const legacyChoices = SCRIPT_PERSONNEL_VISUAL_OPTIONS
+    .filter((option) => !approved.some((approvedOption) => approvedOption.personnel.toLowerCase() === option.toLowerCase()))
+    .map((option) => `<button type="button" class="script-personnel-override-choice${current === option ? " is-selected" : ""}" data-personnel-value="${option}"><span aria-hidden="true">${getPersonnelEmoji(option)}</span> ${option}</button>`)
+    .join("");
   const overlay = document.createElement("div");
   overlay.id = "scriptPersonnelOverrideModalOverlay";
   overlay.className = "modal-overlay show";
   overlay.innerHTML = `
     <div class="modal-content modal-content-sm script-personnel-override-modal" role="dialog" aria-modal="true" aria-labelledby="scriptPersonnelOverrideTitle">
       <div class="modal-header-row">
-        <h3 class="modal-title" id="scriptPersonnelOverrideTitle">Script-only personnel color</h3>
+        <h3 class="modal-title" id="scriptPersonnelOverrideTitle">Script Personnel</h3>
         <button type="button" class="modal-close-btn" aria-label="Close">✕</button>
       </div>
       <p class="script-personnel-override-copy"><strong>${escapeHtml(playLabel)}</strong></p>
-      <p class="script-personnel-override-copy">This changes only this saved script's visual personnel marker. The Playbook personnel${sourcePersonnel ? ` stays ${escapeHtml(sourcePersonnel)}` : " is unchanged"}.</p>
-      <div class="script-personnel-override-options" aria-label="Choose visual personnel">${choices}</div>
+      <p class="script-personnel-override-copy">Choose an approved personnel variant to use its inherited call metadata in this script row. The master play remains unchanged.</p>
+      <div class="script-personnel-override-options" aria-label="Choose approved personnel">${variantChoices}</div>
+      ${legacyChoices ? `<details class="script-personnel-legacy-options"><summary>Legacy visual-only color</summary><p class="script-personnel-override-copy">For older scripts only. This changes the marker, not the play metadata.</p><div class="script-personnel-override-options">${legacyChoices}</div></details>` : ""}
     </div>`;
   overlay.querySelector(".modal-close-btn")?.addEventListener("click", closeScriptPersonnelOverrideModal);
   overlay.querySelectorAll("[data-personnel-value]").forEach((choice) => {
     choice.addEventListener("click", () => setScriptPersonnelOverride(index, choice.dataset.personnelValue));
+  });
+  overlay.querySelectorAll("[data-personnel-variant-id]").forEach((choice) => {
+    choice.addEventListener("click", () => setScriptPersonnelVariant(index, choice.dataset.personnelVariantId));
   });
   wireScriptOverlayDismiss(overlay);
   document.body.appendChild(overlay);
