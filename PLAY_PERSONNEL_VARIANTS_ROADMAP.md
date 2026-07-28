@@ -109,25 +109,25 @@ chosen presentation, never a cloned variant.
 
 ### Script
 
-- [ ] Replace the free-form script-only personnel picker with approved
+- [x] Replace the free-form script-only personnel picker with approved
   personnel choices for that play; retain a guarded legacy/custom option only
   where needed for existing records.
-- [ ] Let a script row choose one active variant or show selected approved
+- [x] Let a script row choose one active variant or show selected approved
   options.
 - [ ] Resolve package slots, depth chart, substitutions, and player rules from
   the active variant's effective personnel.
 
 ### Wristband
 
-- [ ] Reuse the same approved variant picker per cell.
-- [ ] Allow multiple approved labels to print/display cleanly without treating
+- [x] Reuse the same approved variant picker per cell.
+- [x] Allow multiple approved labels to print/display cleanly without treating
   them as separate plays.
 - [ ] Migrate the current cell-level `extraPersonnel` text safely into the new
   display model only after verifying every existing saved wristband.
 
 ### Call Sheet and Game Plan
 
-- [ ] Let a call-sheet play select an active variant or show selected approved
+- [x] Let a call-sheet play select an active variant or show selected approved
   options.
 - [ ] Let the Game Plan filter by any approved personnel, while preserving the
   current primary-personnel grouping until explicitly enhanced.
@@ -176,7 +176,9 @@ chosen presentation, never a cloned variant.
   assignments remain inherited until their dedicated adoption slice.
 - [x] Wristband active/display selection and print verification. Legacy
   write-in personnel remains additive and no saved wristband is rewritten.
-- [ ] Call-sheet active/display selection and third personnel-sheet support.
+- [x] Call-sheet active/display selection and print verification. The
+  Personnel sheet resolves a selected variant when one is present on its
+  active Game Plan entry; Game Plan authoring/filtering is the next slice.
 - [ ] Game Plan filtering by approved personnel.
 
 ### Phase 4 — Player release and publishing hardening
