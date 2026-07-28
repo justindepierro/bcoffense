@@ -97,14 +97,14 @@ chosen presentation, never a cloned variant.
 
 ### Edit Play
 
-- [ ] Keep the existing `Personnel` field as **Primary Personnel**.
-- [ ] Add **Also approved in** beneath it, using chip controls and team
+- [x] Keep the existing `Personnel` field as **Primary Personnel**.
+- [x] Add **Also approved in** beneath it, using chip controls and team
   personnel suggestions.
-- [ ] Add a clear base/variant editor switch with persistent visual context:
+- [x] Add a clear base/variant editor switch with persistent visual context:
   `Editing base play` versus `Editing Gold variant`.
-- [ ] Display inherited fields as inherited, and changed fields as local
+- [x] Display inherited fields as inherited, and changed fields as local
   overrides with a `Reset to base` action.
-- [ ] Prevent duplicate personnel labels, blank labels, and duplicate variant
+- [x] Prevent duplicate personnel labels, blank labels, and duplicate variant
   IDs.
 
 ### Script
@@ -162,10 +162,10 @@ chosen presentation, never a cloned variant.
 
 ### Phase 2 — Edit Play authoring
 
-- [ ] Add the primary/additional personnel controls.
-- [ ] Add the base-versus-variant editing context and inherited-field visual
+- [x] Add the primary/additional personnel controls.
+- [x] Add the base-versus-variant editing context and inherited-field visual
   feedback.
-- [ ] Allow only safe metadata overrides in the first release: formation,
+- [x] Allow only safe metadata overrides in the first release: formation,
   tags, shifts, motions, protections, notes, and player rules.
 - [ ] Verify CSV export retains the primary field and backup/cloud sync retain
   all variant data.

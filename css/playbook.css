@@ -3847,6 +3847,60 @@ body.shell-tablet #playbook .pb-card-actions {
 .pb-editor-section {
   margin-bottom: var(--space-lg);
 }
+.pb-editor-personnel-variants {
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+}
+.pb-editor-personnel-variants.is-variant-editing {
+  border-left-color: var(--color-accent, var(--color-warning));
+  background: color-mix(in srgb, var(--color-warning-light, #fff4cf) 58%, var(--color-surface));
+}
+.pb-personnel-variant-context { margin-bottom: var(--space-sm); }
+.pb-personnel-variant-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pb-personnel-variant-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  cursor: pointer;
+}
+.pb-personnel-variant-choice small {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.pb-personnel-variant-choice.is-active {
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
+}
+.pb-personnel-variant-choice.is-active small { color: inherit; opacity: .78; }
+.pb-personnel-variant-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--space-sm); }
+.pb-editor-field.is-inherited label { color: var(--color-text-muted); }
+.pb-editor-inherited {
+  margin-left: 4px;
+  color: var(--color-primary);
+  font-size: var(--font-size-2xs);
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
 .pb-editor-section-title {
   font-size: var(--font-size-sm);
   font-weight: 700;

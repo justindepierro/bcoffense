@@ -5,12 +5,13 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
 const fixture = JSON.parse(await read("tests/fixtures/personnel-variants-baseline.json"));
-const [utils, scriptShared, wristbandPopup, callSheetExport, gamePlanIntegrations] = await Promise.all([
+const [utils, scriptShared, wristbandPopup, callSheetExport, gamePlanIntegrations, editor] = await Promise.all([
   read("js/utils.js"),
   read("js/script-shared.js"),
   read("js/wristband-cell-popup.js"),
   read("js/callsheet-export.js"),
   read("js/gameplan-integrations.js"),
+  read("js/playbook-editor.js"),
 ]);
 
 const base = fixture.basePlay;
@@ -73,5 +74,14 @@ assert.equal(gold.personnel, "Gold", "effective variants select their approved p
 assert.equal(gold.play, base.play, "effective variants inherit the base call");
 assert.equal(gold.notes, "Gold note", "effective variants apply explicit overrides only");
 assert.equal(gold.personnelVariantId, "pv_playbluezorrowolf_gold", "effective variant identifies its stable selection");
+
+assert.match(editor, /Personnel variants[\s\S]*?Add personnel/,
+  "Edit Play exposes an approved-personnel authoring surface");
+assert.match(editor, /_pendingPlayEditorPersonnelVariants[\s\S]*?closePlayEditor[\s\S]*?_pendingPlayEditorPersonnelVariants = null/,
+  "personnel changes stay staged and are discarded when the editor closes");
+assert.match(editor, /Editing base play[\s\S]*?Editing \$\{escapeHtml\(selected\?\.personnel/,
+  "the editor gives distinct base and variant editing feedback");
+assert.match(editor, /existing\.personnelVariants = stagedSource\.personnelVariants/,
+  "saving a variant writes only the canonical base play's variant collection");
 
 console.log("personnel variants baseline contract: legacy data paths are preserved");

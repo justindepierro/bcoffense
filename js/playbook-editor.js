@@ -27,6 +27,10 @@ const PLAY_RULE_INHERIT_FIELDS = [
 ];
 /** Index into `filteredPlays` of the play being edited, for prev/next nav */
 let _editingFilteredIdx = -1;
+// "base" is the existing canonical play. Variant selection is editor-local
+// until Save so opening the editor never changes a play's active personnel.
+let _editingPersonnelVariantId = "base";
+let _pendingPlayEditorPersonnelVariants = null;
 
 // When the editor opens from a practice script, left/right follows the script
 // order instead of the entire filtered playbook. Store script indexes (rather
@@ -37,6 +41,147 @@ let _editingScriptNavPosition = -1;
 function _resetPlayEditorNavigation() {
   _editingScriptNavIndexes = [];
   _editingScriptNavPosition = -1;
+}
+
+function _getEditingPersonnelVariant(play) {
+  if (typeof getPlayPersonnelVariant !== "function") return null;
+  return getPlayPersonnelVariant(play, _editingPersonnelVariantId);
+}
+
+function _getPlayEditorVariantSource(play) {
+  if (!play || !Array.isArray(_pendingPlayEditorPersonnelVariants)) return play;
+  return { ...play, personnelVariants: _pendingPlayEditorPersonnelVariants };
+}
+
+function _setPendingPlayEditorPersonnelVariants(variants) {
+  _pendingPlayEditorPersonnelVariants = Array.isArray(variants)
+    ? JSON.parse(JSON.stringify(variants))
+    : [];
+}
+
+function _getPlayEditorEffectivePlay(play) {
+  if (_editingPersonnelVariantId === "base" || typeof getEffectivePlayVariant !== "function") {
+    return play;
+  }
+  return getEffectivePlayVariant(play, _editingPersonnelVariantId) || play;
+}
+
+function _renderPlayEditorPersonnelVariants(play, isNew) {
+  if (isNew) {
+    return `<div class="pb-editor-section pb-editor-personnel-variants">
+      <div class="pb-editor-section-title">Personnel variants</div>
+      <p class="pb-editor-hint">Save this new play first, then add approved personnel variants.</p>
+    </div>`;
+  }
+  const options = typeof getPlayPersonnelOptions === "function"
+    ? getPlayPersonnelOptions(play)
+    : [{ id: "base", personnel: play.personnel || "", isBase: true }];
+  const selected = _getEditingPersonnelVariant(play) || options[0];
+  const choiceHtml = options.map((option) => {
+    const active = option.id === _editingPersonnelVariantId;
+    const marker = typeof getPersonnelEmoji === "function" ? getPersonnelEmoji(option.personnel) : "";
+    return `<button type="button" class="pb-personnel-variant-choice${active ? " is-active" : ""}"
+      data-personnel-variant-id="${escapeHtml(option.id)}" aria-pressed="${active ? "true" : "false"}">
+      <span>${escapeHtml(marker || "●")} ${escapeHtml(option.personnel || "Primary")}</span>
+      <small>${option.isBase ? "Base" : "Variant"}</small>
+    </button>`;
+  }).join("");
+  const context = selected?.isBase
+    ? "Editing base play — changes apply to every inherited variant unless that variant overrides the field."
+    : `Editing ${escapeHtml(selected?.personnel || "variant")} variant — inherited values are marked and only your changes are saved on this variant.`;
+  return `<div class="pb-editor-section pb-editor-personnel-variants${selected?.isBase ? "" : " is-variant-editing"}">
+    <div class="pb-editor-section-title">Personnel variants</div>
+    <p class="pb-editor-hint pb-personnel-variant-context">${context}</p>
+    <div class="pb-personnel-variant-choices" role="group" aria-label="Edit personnel version">${choiceHtml}</div>
+    <div class="pb-personnel-variant-actions">
+      <button type="button" class="btn btn-sm btn-secondary" data-action="addPlayPersonnelVariant">＋ Add personnel</button>
+      ${selected && !selected.isBase ? `<button type="button" class="btn btn-sm btn-secondary" data-action="renamePlayPersonnelVariant">Rename</button>
+      <button type="button" class="btn btn-sm btn-secondary" data-action="resetPlayPersonnelVariantOverrides">Reset to base</button>
+      <button type="button" class="btn btn-sm btn-danger" data-action="removePlayPersonnelVariant">Remove variant</button>` : ""}
+    </div>
+  </div>`;
+}
+
+async function addPlayPersonnelVariant() {
+  const basePlay = plays?.[_editingMasterIdx];
+  const play = _getPlayEditorVariantSource(basePlay);
+  if (!play) return;
+  const value = await showPrompt("Enter an approved personnel label for this play.", "", {
+    title: "Add Personnel Variant", icon: "👥", placeholder: "e.g. Gold",
+  });
+  const personnel = typeof normalizePersonnelVariantText === "function"
+    ? normalizePersonnelVariantText(value)
+    : String(value || "").trim();
+  if (!personnel) return;
+  const options = typeof getPlayPersonnelOptions === "function" ? getPlayPersonnelOptions(play) : [];
+  if (options.some((option) => option.personnel.toLowerCase() === personnel.toLowerCase())) {
+    showToast(`${personnel} is already approved for this play.`, { type: "warning" });
+    return;
+  }
+  const variants = Array.isArray(play.personnelVariants) ? [...play.personnelVariants] : [];
+  variants.push({ personnel, overrides: {} });
+  const staged = { ...basePlay, personnelVariants: variants };
+  if (typeof normalizePlayPersonnelVariants === "function") normalizePlayPersonnelVariants(staged);
+  _setPendingPlayEditorPersonnelVariants(staged.personnelVariants);
+  _editingPersonnelVariantId = staged.personnelVariants[staged.personnelVariants.length - 1]?.id || "base";
+  _populateEditorForm(basePlay, false);
+}
+
+async function renamePlayPersonnelVariant() {
+  const basePlay = plays?.[_editingMasterIdx];
+  const play = _getPlayEditorVariantSource(basePlay);
+  const selected = _getEditingPersonnelVariant(play);
+  if (!play || !selected || selected.isBase) return;
+  const value = await showPrompt("Rename this approved personnel variant.", selected.personnel, {
+    title: "Rename Personnel Variant", icon: "✏️",
+  });
+  const personnel = typeof normalizePersonnelVariantText === "function"
+    ? normalizePersonnelVariantText(value)
+    : String(value || "").trim();
+  if (!personnel || personnel === selected.personnel) return;
+  const options = typeof getPlayPersonnelOptions === "function" ? getPlayPersonnelOptions(play) : [];
+  if (options.some((option) => option.id !== selected.id && option.personnel.toLowerCase() === personnel.toLowerCase())) {
+    showToast(`${personnel} is already approved for this play.`, { type: "warning" });
+    return;
+  }
+  const variants = Array.isArray(play.personnelVariants) ? [...play.personnelVariants] : [];
+  const target = variants.find((variant) => variant.id === selected.id);
+  if (!target) return;
+  target.personnel = personnel;
+  const staged = { ...basePlay, personnelVariants: variants };
+  if (typeof normalizePlayPersonnelVariants === "function") normalizePlayPersonnelVariants(staged);
+  _setPendingPlayEditorPersonnelVariants(staged.personnelVariants);
+  _populateEditorForm(basePlay, false);
+}
+
+async function removePlayPersonnelVariant() {
+  const basePlay = plays?.[_editingMasterIdx];
+  const play = _getPlayEditorVariantSource(basePlay);
+  const selected = _getEditingPersonnelVariant(play);
+  if (!play || !selected || selected.isBase) return;
+  const confirmed = await showConfirm(
+    `Remove <strong>${escapeHtml(selected.personnel)}</strong> as an approved variant? Base play data will not change.`,
+    { title: "Remove Personnel Variant", icon: "🗑️", confirmText: "Remove", danger: true },
+  );
+  if (!confirmed) return;
+  const variants = (play.personnelVariants || []).filter((variant) => variant.id !== selected.id);
+  _setPendingPlayEditorPersonnelVariants(variants);
+  _editingPersonnelVariantId = "base";
+  _populateEditorForm(basePlay, false);
+}
+
+function resetPlayPersonnelVariantOverrides() {
+  const basePlay = plays?.[_editingMasterIdx];
+  const play = _getPlayEditorVariantSource(basePlay);
+  const selected = _getEditingPersonnelVariant(play);
+  if (!basePlay || !selected || selected.isBase) return;
+  const variants = Array.isArray(play.personnelVariants) ? [...play.personnelVariants] : [];
+  const target = variants.find((variant) => variant.id === selected.id);
+  if (!target) return;
+  target.overrides = {};
+  _setPendingPlayEditorPersonnelVariants(variants);
+  _populateEditorForm(basePlay, false);
+  showToast(`${selected.personnel} now inherits the base play.`, { duration: 1800, type: "success" });
 }
 
 function _hasScriptEditorNavigation() {
@@ -561,6 +706,8 @@ function _buildPlayEditorLineupSection(play) {
 
 function openPlayEditor(filteredIdx) {
   _resetPendingPlayEditorMedia();
+  _pendingPlayEditorPersonnelVariants = null;
+  _editingPersonnelVariantId = "base";
   const play = filteredPlays[filteredIdx];
   if (!play) return;
   _resetPlayEditorNavigation();
@@ -578,6 +725,8 @@ function addNewPlay() {
     return;
   }
   _resetPendingPlayEditorMedia();
+  _pendingPlayEditorPersonnelVariants = null;
+  _editingPersonnelVariantId = "base";
   _editingMasterIdx = -1;
   _editingFilteredIdx = -1;
   _resetPlayEditorNavigation();
@@ -591,6 +740,10 @@ function addNewPlay() {
 }
 
 function _populateEditorForm(play, isNew) {
+  const sourcePlay = _getPlayEditorVariantSource(play);
+  const selectedVariant = _getEditingPersonnelVariant(sourcePlay);
+  const editingVariant = Boolean(!isNew && selectedVariant && !selectedVariant.isBase);
+  play = _getPlayEditorEffectivePlay(sourcePlay);
   const overlay = document.getElementById("playEditorOverlay");
   const body = document.getElementById("playEditorBody");
   const title = document.getElementById("playEditorTitle");
@@ -725,6 +878,8 @@ function _populateEditorForm(play, isNew) {
   </div>`;
   }
 
+  html += _renderPlayEditorPersonnelVariants(sourcePlay, isNew);
+
   _EDITOR_SECTIONS.forEach((section) => {
     html += `<div class="pb-editor-section">`;
     html += `<div class="pb-editor-section-title">${section.title}</div>`;
@@ -732,13 +887,15 @@ function _populateEditorForm(play, isNew) {
     section.fields.forEach((field) => {
       const val = play[field.key] || "";
       const wideClass = field.wide ? " pb-editor-field-wide" : "";
-      html += `<div class="pb-editor-field${wideClass}">`;
-      html += `<label for="pe-${field.key}">${escapeHtml(field.label)}</label>`;
+      const inherited = editingVariant && !Object.prototype.hasOwnProperty.call(selectedVariant.overrides || {}, field.key);
+      const personnelVariantField = editingVariant && field.key === "personnel";
+      html += `<div class="pb-editor-field${wideClass}${inherited ? " is-inherited" : ""}">`;
+      html += `<label for="pe-${field.key}">${escapeHtml(personnelVariantField ? "Variant Personnel" : field.key === "personnel" ? "Primary Personnel" : field.label)}${inherited ? ' <span class="pb-editor-inherited">Inherited</span>' : ""}</label>`;
 
       if (field.type === "select") {
         const opts = field.optionsFn ? field.optionsFn() : field.options || [];
         const valInList = opts.some((option) => option === val);
-        html += `<select id="pe-${field.key}" data-field="${field.key}"${field.canAddNew ? ' data-can-add-new="1"' : ""}>`;
+        html += `<select id="pe-${field.key}" data-field="${field.key}"${field.canAddNew ? ' data-can-add-new="1"' : ""}${personnelVariantField ? " disabled" : ""}>`;
         if (!valInList && val) {
           html += `<option value="${escapeHtml(val)}" selected>${escapeHtml(val)}</option>`;
         }
@@ -754,17 +911,28 @@ function _populateEditorForm(play, isNew) {
       } else if (field.type === "textarea") {
         html += `<textarea id="pe-${field.key}" data-field="${field.key}" rows="3">${escapeHtml(val)}</textarea>`;
       } else {
-        html += `<input type="text" id="pe-${field.key}" data-field="${field.key}" value="${escapeHtml(val)}">`;
+        html += `<input type="text" id="pe-${field.key}" data-field="${field.key}" value="${escapeHtml(val)}"${personnelVariantField ? " disabled" : ""}>`;
       }
       html += `</div>`;
     });
     html += `</div></div>`;
   });
 
-  html += _buildPlayEditorLineupSection(play);
+  html += editingVariant
+    ? `<div class="pb-editor-section pb-editor-variant-lineup-note"><div class="pb-editor-section-title">Lineup Template</div><p class="pb-editor-hint">This variant currently inherits the base play's lineup template. Variant-specific lineup assignments will be enabled with the Script and Call Sheet adoption slice.</p></div>`
+    : _buildPlayEditorLineupSection(play);
   html += _buildPlayEditorResponsibilitiesSection(play);
 
   setInnerHTML(body, html);
+  body.querySelectorAll("[data-personnel-variant-id]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextId = String(button.dataset.personnelVariantId || "base");
+      if (!nextId || nextId === _editingPersonnelVariantId) return;
+      _editingPersonnelVariantId = nextId;
+      const master = plays?.[_editingMasterIdx];
+      if (master) _populateEditorForm(master, false);
+    });
+  });
   overlay.removeAttribute("inert");
   overlay.setAttribute("aria-hidden", "false");
   overlay.classList.add("visible");
@@ -845,11 +1013,50 @@ function savePlayEditor(opts = {}) {
       closePlayEditor();
       return;
     }
-    Object.keys(data).forEach((key) => {
-      existing[key] = data[key];
-    });
-    if ("hiddenFromPlayers" in existing) delete existing.hiddenFromPlayers;
-    existing.playerAssignments = data.playerAssignments;
+    if (_editingPersonnelVariantId !== "base") {
+      const stagedSource = _getPlayEditorVariantSource(existing);
+      const selected = _getEditingPersonnelVariant(stagedSource);
+      const target = stagedSource.personnelVariants?.find((variant) => variant.id === selected?.id);
+      if (!selected || selected.isBase || !target) {
+        showToast("That personnel variant is no longer available.", { type: "error" });
+        return;
+      }
+      const overrides = {};
+      const allowed = typeof PLAY_PERSONNEL_VARIANT_OVERRIDE_FIELDS !== "undefined"
+        ? PLAY_PERSONNEL_VARIANT_OVERRIDE_FIELDS
+        : [];
+      allowed.forEach((field) => {
+        const next = String(data[field] || "").trim();
+        const base = String(existing[field] || "").trim();
+        if (next && next !== base) overrides[field] = next;
+      });
+      const playerRules = {};
+      const ruleFields = typeof PLAY_PERSONNEL_VARIANT_RULE_FIELDS !== "undefined"
+        ? PLAY_PERSONNEL_VARIANT_RULE_FIELDS
+        : [];
+      ruleFields.forEach((field) => {
+        const next = String(data[field] || "").trim();
+        const base = String(existing[field] || "").trim();
+        if (next && next !== base) playerRules[field] = next;
+      });
+      if (Object.keys(playerRules).length) overrides.playerRules = playerRules;
+      target.overrides = overrides;
+      if (typeof normalizePlayPersonnelVariants === "function") normalizePlayPersonnelVariants(stagedSource);
+      existing.personnelVariants = stagedSource.personnelVariants;
+    } else {
+      Object.keys(data).forEach((key) => {
+        existing[key] = data[key];
+      });
+      if (Array.isArray(_pendingPlayEditorPersonnelVariants)) {
+        if (_pendingPlayEditorPersonnelVariants.length) {
+          existing.personnelVariants = _pendingPlayEditorPersonnelVariants;
+        } else {
+          delete existing.personnelVariants;
+        }
+      }
+      if ("hiddenFromPlayers" in existing) delete existing.hiddenFromPlayers;
+      existing.playerAssignments = data.playerAssignments;
+    }
     existing.updatedAt = Date.now();
     if (typeof getCurrentAuthUser === "function") {
       const u = getCurrentAuthUser();
@@ -947,6 +1154,8 @@ function closePlayEditor(options = {}) {
   }
   _editingMasterIdx = -1;
   _editingFilteredIdx = -1;
+  _editingPersonnelVariantId = "base";
+  _pendingPlayEditorPersonnelVariants = null;
   _resetPlayEditorNavigation();
   _resetPendingPlayEditorMedia();
 }
@@ -955,6 +1164,8 @@ function closePlayEditor(options = {}) {
 function openPlayEditorForPlay(play, options = {}) {
   if (!play) return;
   _resetPendingPlayEditorMedia();
+  _pendingPlayEditorPersonnelVariants = null;
+  _editingPersonnelVariantId = "base";
   const scriptIndex = Number.parseInt(options.scriptIndex, 10);
   if (Number.isInteger(scriptIndex) && script?.[scriptIndex] && !script[scriptIndex].isSeparator) {
     _editingScriptNavIndexes = Array.isArray(options.scriptIndexes)

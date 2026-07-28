@@ -1596,6 +1596,10 @@ const PLAY_PERSONNEL_VARIANT_OVERRIDE_FIELDS = Object.freeze([
   "notes",
   "playerNotes",
 ]);
+const PLAY_PERSONNEL_VARIANT_RULE_FIELDS = Object.freeze([
+  "respQ", "respT", "respH", "respZ", "respX", "respY",
+  "respLT", "respLG", "respC", "respRG", "respRT", "respNotes",
+]);
 
 function normalizePersonnelVariantText(value) {
   return String(value == null ? "" : value).trim().replace(/\s+/g, " ");
@@ -1627,6 +1631,15 @@ function normalizePersonnelVariantOverrides(value) {
     const next = normalizePersonnelVariantText(value[field]);
     if (next) normalized[field] = next;
   });
+  if (value.playerRules && typeof value.playerRules === "object" && !Array.isArray(value.playerRules)) {
+    const playerRules = {};
+    PLAY_PERSONNEL_VARIANT_RULE_FIELDS.forEach((field) => {
+      if (!(field in value.playerRules)) return;
+      const next = normalizePersonnelVariantText(value.playerRules[field]);
+      if (next) playerRules[field] = next;
+    });
+    if (Object.keys(playerRules).length) normalized.playerRules = playerRules;
+  }
   return normalized;
 }
 
@@ -1701,9 +1714,12 @@ function getEffectivePlayVariant(play, variantId = "base") {
   if (!play || typeof play !== "object") return null;
   const option = getPlayPersonnelVariant(play, variantId) || getPlayPersonnelVariant(play, "base");
   if (!option) return { ...play, personnelVariantId: "base" };
+  const overrides = option.overrides || {};
+  const playerRules = overrides.playerRules || {};
   return {
     ...play,
-    ...(option.overrides || {}),
+    ...overrides,
+    ...playerRules,
     personnel: option.personnel,
     personnelVariantId: option.id,
     personnelVariantIsBase: option.isBase,
