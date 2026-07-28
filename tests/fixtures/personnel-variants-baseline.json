@@ -1,0 +1,35 @@
+{
+  "basePlay": {
+    "id": "play-blue-zorro-wolf",
+    "type": "Run",
+    "personnel": "Blue",
+    "formation": "Navy Rt",
+    "motion": "Zorro",
+    "protection": "Wolf",
+    "play": "Zorro Wolf",
+    "notes": "Base install note",
+    "QB": "Read end man on line",
+    "RB": "Mesh then insert"
+  },
+  "scriptEntry": {
+    "id": "play-blue-zorro-wolf",
+    "personnel": "Blue",
+    "scriptPersonnelOverride": "Gold"
+  },
+  "wristbandCell": {
+    "id": "play-blue-zorro-wolf",
+    "personnel": "Blue",
+    "custom": {
+      "extraPersonnel": "Gold; Irish"
+    }
+  },
+  "callSheetEntry": {
+    "id": "play-blue-zorro-wolf",
+    "personnel": "Blue",
+    "wristbandNumber": 42
+  },
+  "gamePlanEntry": {
+    "id": "play-blue-zorro-wolf",
+    "personnel": "Blue"
+  }
+}

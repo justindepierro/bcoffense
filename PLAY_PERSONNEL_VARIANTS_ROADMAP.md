@@ -144,11 +144,11 @@ chosen presentation, never a cloned variant.
 
 ### Phase 0 — Inventory and regression fixtures
 
-- [ ] Capture representative records: base-only play, alternate personnel,
+- [x] Capture representative records: base-only play, alternate personnel,
   script override, multi-personnel wristband cell, call-sheet play, active
   game-plan play, CSV import/export, and cloud backup/restore.
-- [ ] Record the current signatures and counts for those fixtures.
-- [ ] Add contract tests proving base-only records remain byte-for-byte
+- [x] Record the current signatures and counts for those fixtures.
+- [x] Add contract tests proving base-only records remain byte-for-byte
   behavior-compatible.
 
 ### Phase 1 — Canonical read model (no visible behavior change)
