@@ -601,6 +601,11 @@ function normalizeWbComponentNoVowels(ids) {
 }
 
 function buildWristbandCellTokens(play, custom = {}, opts = {}) {
+  const sourcePlay = play;
+  const selectedVariantId = String(custom?.personnelVariantId || "base").trim() || "base";
+  if (selectedVariantId !== "base" && typeof getEffectivePlayVariant === "function") {
+    play = getEffectivePlayVariant(play, selectedVariantId) || play;
+  }
   const {
     showEmoji = false,
     useSquares = false,
@@ -649,7 +654,19 @@ function buildWristbandCellTokens(play, custom = {}, opts = {}) {
 
   // Extra personnel
   let extraPersonnelHtml = "";
-  const extraPersonnelValues = getCustomExtraPersonnelValues(custom);
+  const approvedDisplayIds = Array.isArray(custom?.personnelDisplayVariantIds)
+    ? custom.personnelDisplayVariantIds
+    : [];
+  const approvedDisplayValues = typeof getPlayPersonnelOptions === "function"
+    ? approvedDisplayIds
+      .map((id) => getPlayPersonnelVariant(sourcePlay, id))
+      .filter(Boolean)
+      .map((option) => option.personnel)
+      .filter((personnel) => personnel && personnel !== play?.personnel)
+    : [];
+  const extraPersonnelValues = [
+    ...new Set([...approvedDisplayValues, ...getCustomExtraPersonnelValues(custom)]),
+  ];
   if (extraPersonnelValues.length) {
     extraPersonnelHtml = extraPersonnelValues
       .map((tag) => {
@@ -1272,6 +1289,12 @@ function buildWristbandCellCustomization(custom = {}) {
     ),
     markerPlacement: custom.markerPlacement || "prefix",
     extraPersonnel: getCustomExtraPersonnelValues(custom).join("; "),
+    personnelVariantId: String(custom.personnelVariantId || "").trim() === "base"
+      ? ""
+      : String(custom.personnelVariantId || "").trim(),
+    personnelDisplayVariantIds: Array.isArray(custom.personnelDisplayVariantIds)
+      ? [...new Set(custom.personnelDisplayVariantIds.map((id) => String(id || "").trim()).filter(Boolean))]
+      : [],
     preShift: uniqueStrings(getCustomPreShiftValues(custom)).join("; "),
     formationTags: uniqueTagEntries(getCustomFormationTagEntries(custom)),
     backTags: uniqueTagEntries(getCustomBackTagEntries(custom)),
@@ -1289,6 +1312,8 @@ function buildWristbandCellCustomization(custom = {}) {
     normalized.textColor !== UI_COLORS.textBlack ||
     normalized.markers.length > 0 ||
     normalized.extraPersonnel ||
+    normalized.personnelVariantId ||
+    normalized.personnelDisplayVariantIds.length > 0 ||
     normalized.preShift ||
     normalized.formationTags.length > 0 ||
     normalized.backTags.length > 0 ||

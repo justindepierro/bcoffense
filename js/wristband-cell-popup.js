@@ -5,6 +5,8 @@ let pendingPlaySelection = null;
 let pendingMarkers = [];
 let pendingMarkerPlacement = "prefix";
 let pendingExtraPersonnel = [];
+let pendingPersonnelVariantId = "base";
+let pendingPersonnelDisplayVariantIds = [];
 let pendingPreShift = [];
 let pendingFormationTags = [];
 let pendingBackTags = [];
@@ -238,6 +240,8 @@ function resetWristbandCellPopupPendingState() {
   pendingMarkers = [];
   pendingMarkerPlacement = "prefix";
   pendingExtraPersonnel = [];
+  pendingPersonnelVariantId = "base";
+  pendingPersonnelDisplayVariantIds = [];
   pendingPreShift = [];
   pendingFormationTags = [];
   pendingBackTags = [];
@@ -258,6 +262,10 @@ function setWristbandCellPopupPendingState(currentPlay, existing = {}) {
     getWristbandDisplayOptions(),
   );
   pendingExtraPersonnel = getCustomExtraPersonnelValues(existing);
+  pendingPersonnelVariantId = String(existing.personnelVariantId || "base").trim() || "base";
+  pendingPersonnelDisplayVariantIds = Array.isArray(existing.personnelDisplayVariantIds)
+    ? [...new Set(existing.personnelDisplayVariantIds.map((id) => String(id || "").trim()).filter(Boolean))]
+    : [];
   pendingPreShift = getCustomPreShiftValues(existing);
   pendingFormationTags = getCustomFormationTagEntries(existing);
   pendingBackTags = getCustomBackTagEntries(existing);
@@ -285,6 +293,8 @@ function getWristbandPendingCellCustomization() {
       markers: pendingMarkers,
       markerPlacement: pendingMarkerPlacement,
       extraPersonnel: pendingExtraPersonnel.join("; "),
+      personnelVariantId: pendingPersonnelVariantId,
+      personnelDisplayVariantIds: pendingPersonnelDisplayVariantIds,
       preShift: pendingPreShift.join("; "),
       formationTags: pendingFormationTags,
       backTags: pendingBackTags,
@@ -381,6 +391,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
   document.getElementById("cellFormationTagInput").value = "";
   document.getElementById("cellBackTagInput").value = "";
   populateWbPersonnelDatalist();
+  renderWbPersonnelVariantControls(currentPlay);
   populateWbPreShiftDatalist();
   populateWbFormationTagDatalist();
   populateWbBackTagDatalist();
@@ -494,6 +505,45 @@ function populateWbPersonnelDatalist() {
   if (!datalist) return;
   const unique = [...new Set(plays.map((p) => p.personnel).filter((p) => p && p.trim()))].sort();
   datalist.innerHTML = unique.map((p) => `<option value="${escapeHtml(p)}"></option>`).join("");
+}
+
+function renderWbPersonnelVariantControls(play) {
+  const mount = document.getElementById("cellPersonnelVariantControls");
+  if (!mount) return;
+  const options = typeof getPlayPersonnelOptions === "function"
+    ? getPlayPersonnelOptions(play)
+    : [];
+  if (options.length <= 1) {
+    mount.innerHTML = "";
+    mount.hidden = true;
+    return;
+  }
+  const validIds = new Set(options.map((option) => option.id));
+  if (!validIds.has(pendingPersonnelVariantId)) pendingPersonnelVariantId = "base";
+  pendingPersonnelDisplayVariantIds = pendingPersonnelDisplayVariantIds.filter((id) => validIds.has(id));
+  mount.hidden = false;
+  mount.innerHTML = `
+    <label for="cellPersonnelVariant">Approved personnel:</label>
+    <select id="cellPersonnelVariant" class="cell-popup-input" aria-label="Active personnel variant">
+      ${options.map((option) => `<option value="${escapeHtml(option.id)}"${option.id === pendingPersonnelVariantId ? " selected" : ""}>${escapeHtml(option.personnel)}${option.isBase ? " · Primary" : ""}</option>`).join("")}
+    </select>
+    <div class="cell-personnel-variant-display">
+      <span>Also display:</span>
+      ${options.filter((option) => option.id !== pendingPersonnelVariantId).map((option) => `<label><input type="checkbox" data-wb-display-variant="${escapeHtml(option.id)}"${pendingPersonnelDisplayVariantIds.includes(option.id) ? " checked" : ""} /> ${escapeHtml(option.personnel)}</label>`).join("")}
+    </div>`;
+  mount.querySelector("#cellPersonnelVariant")?.addEventListener("change", (event) => {
+    pendingPersonnelVariantId = String(event.target.value || "base");
+    pendingPersonnelDisplayVariantIds = pendingPersonnelDisplayVariantIds.filter((id) => id !== pendingPersonnelVariantId);
+    renderWbPersonnelVariantControls(play);
+  });
+  mount.querySelectorAll("[data-wb-display-variant]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const id = String(input.dataset.wbDisplayVariant || "");
+      if (!id) return;
+      if (input.checked) pendingPersonnelDisplayVariantIds = [...new Set([...pendingPersonnelDisplayVariantIds, id])];
+      else pendingPersonnelDisplayVariantIds = pendingPersonnelDisplayVariantIds.filter((value) => value !== id);
+    });
+  });
 }
 
 function populateWbPreShiftDatalist() {
@@ -643,6 +693,10 @@ async function applyWbComponentOrderToAll() {
           markers: Array.isArray(existing.markers) ? [...existing.markers] : [],
           markerPlacement: existing.markerPlacement || "",
           extraPersonnel: existing.extraPersonnel || "",
+          personnelVariantId: existing.personnelVariantId || "",
+          personnelDisplayVariantIds: Array.isArray(existing.personnelDisplayVariantIds)
+            ? [...existing.personnelDisplayVariantIds]
+            : [],
           preShift: existing.preShift || "",
           formationTags: Array.isArray(existing.formationTags) ? [...existing.formationTags] : [],
           backTags: Array.isArray(existing.backTags) ? [...existing.backTags] : [],
@@ -700,6 +754,8 @@ function applyCellStyle() {
       markers,
       markerPlacement,
       extraPersonnel,
+      personnelVariantId: pendingPersonnelVariantId,
+      personnelDisplayVariantIds: pendingPersonnelDisplayVariantIds,
       preShift,
       formationTags,
       backTags,

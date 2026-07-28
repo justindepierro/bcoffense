@@ -5,10 +5,12 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
 const fixture = JSON.parse(await read("tests/fixtures/personnel-variants-baseline.json"));
-const [utils, scriptShared, wristbandPopup, callSheetExport, gamePlanIntegrations, editor] = await Promise.all([
+const [utils, scriptShared, wristband, wristbandPopup, wristbandExport, callSheetExport, gamePlanIntegrations, editor] = await Promise.all([
   read("js/utils.js"),
   read("js/script-shared.js"),
+  read("js/wristband.js"),
   read("js/wristband-cell-popup.js"),
+  read("js/wristband-export.js"),
   read("js/callsheet-export.js"),
   read("js/gameplan-integrations.js"),
   read("js/playbook-editor.js"),
@@ -89,5 +91,15 @@ assert.match(scriptShared, /getEffectivePlayVariant\(play, variantId\)/,
   "Script call rendering resolves selected personnel variant metadata");
 assert.match(scriptShared, /setScriptPersonnelVariant\(index, variantId\)/,
   "Script personnel controls select an approved variant rather than cloning a play");
+assert.match(wristband, /getEffectivePlayVariant\(play, selectedVariantId\)/,
+  "Wristband cells resolve an approved active personnel selection without cloning the source play");
+assert.match(wristband, /personnelDisplayVariantIds/,
+  "Wristband cells can display additional approved personnel alongside legacy write-in personnel");
+assert.match(wristbandPopup, /renderWbPersonnelVariantControls/,
+  "Wristband editing presents approved personnel choices only when the source play has them");
+assert.match(wristbandPopup, /personnelVariantId: existing\.personnelVariantId/,
+  "Wristband component-order actions preserve an existing personnel selection");
+assert.match(wristbandExport, /personnelVariantId: custom\?\.personnelVariantId/,
+  "Wristband print caching distinguishes cells using different approved personnel selections");
 
 console.log("personnel variants baseline contract: legacy data paths are preserved");

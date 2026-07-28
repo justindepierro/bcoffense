@@ -124,6 +124,8 @@ function _executeClassicWristbandPrint(cardIndexes, layoutMode = "sheet", profil
         markers: getCellMarkerValues(custom),
         markerPlacement: getCellMarkerPlacement(custom, opts),
         extraPersonnel: custom?.extraPersonnel || "",
+        personnelVariantId: custom?.personnelVariantId || "",
+        personnelDisplayVariantIds: custom?.personnelDisplayVariantIds || [],
         preShift: getCustomPreShiftValues(custom),
         componentOrder: custom?.componentOrder || [],
         customWriteIn: custom?.customWriteIn || "",

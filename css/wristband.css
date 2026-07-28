@@ -3896,3 +3896,23 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
 .wb-component-vowel-controls { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
 .wb-component-vowel-option { display:inline-flex; align-items:center; gap:3px; padding:2px 5px; border:1px solid var(--color-border-light); border-radius:var(--radius-sm); background:var(--color-bg-subtle); color:var(--color-text); font-size:11px; }
 .wb-component-vowel-option input { margin:0; }
+
+.cell-personnel-variant-row {
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+}
+.cell-personnel-variant-row > label { display: block; margin-bottom: 5px; }
+.cell-personnel-variant-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  margin-top: 7px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+.cell-personnel-variant-display > span { font-weight: 800; }
+.cell-personnel-variant-display label { display: inline-flex; align-items: center; gap: 4px; }
