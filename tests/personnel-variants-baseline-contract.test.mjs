@@ -88,6 +88,12 @@ assert.match(editor, /Editing base play[\s\S]*?Editing \$\{escapeHtml\(selected\
   "the editor gives distinct base and variant editing feedback");
 assert.match(editor, /existing\.personnelVariants = stagedSource\.personnelVariants/,
   "saving a variant writes only the canonical base play's variant collection");
+assert.match(editor, /function choosePlayPersonnelVariant\(play\)/,
+  "adding a personnel variant begins with a team-package picker");
+assert.match(editor, /getTeamPersonnelPackages\(\)/,
+  "the personnel variant picker reuses the team's configured personnel vocabulary");
+assert.match(editor, /Add custom/,
+  "the personnel variant picker retains a deliberate custom-label fallback");
 assert.match(scriptShared, /scriptPersonnelVariantId/,
   "Script rows preserve a stable personnel variant reference during source refreshes");
 assert.match(scriptShared, /getEffectivePlayVariant\(play, variantId\)/,

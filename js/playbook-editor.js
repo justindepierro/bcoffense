@@ -102,13 +102,78 @@ function _renderPlayEditorPersonnelVariants(play, isNew) {
   </div>`;
 }
 
+function _getPlayEditorPersonnelChoices(play) {
+  const packages = typeof getTeamPersonnelPackages === "function"
+    ? getTeamPersonnelPackages()
+    : [];
+  const choices = packages
+    .map((pkg) => String(pkg?.personnel || "").trim())
+    .filter(Boolean);
+  const existing = typeof getPlayPersonnelOptions === "function"
+    ? getPlayPersonnelOptions(play).map((option) => option.personnel)
+    : [play?.personnel];
+  const existingSet = new Set(existing.map((value) => String(value || "").trim().toLowerCase()));
+  return [...new Set(choices)]
+    .filter((value) => !existingSet.has(value.toLowerCase()))
+    .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
+}
+
+function choosePlayPersonnelVariant(play) {
+  return new Promise((resolve) => {
+    const choices = _getPlayEditorPersonnelChoices(play);
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay show pb-personnel-picker-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", "Choose personnel variant");
+    const choiceHtml = choices.length
+      ? choices.map((personnel) => {
+        const marker = typeof getPersonnelEmoji === "function" ? getPersonnelEmoji(personnel) : "";
+        return `<button type="button" class="pb-personnel-picker-choice" data-personnel="${escapeHtml(personnel)}">${escapeHtml(marker || "●")} ${escapeHtml(personnel)}</button>`;
+      }).join("")
+      : `<p class="pb-editor-hint">No unused team personnel packages yet. Add a custom label below.</p>`;
+    overlay.innerHTML = `<div class="custom-modal pb-personnel-picker" role="document">
+      <div class="custom-modal-header"><h2>Choose Personnel Variant</h2><button type="button" class="modal-close" aria-label="Close">×</button></div>
+      <div class="custom-modal-body">
+        <p class="pb-editor-hint">Use an existing team package whenever possible. This keeps filtering, packages, and wristbands consistent.</p>
+        <div class="pb-personnel-picker-grid">${choiceHtml}</div>
+        <div class="pb-personnel-picker-custom"><label for="pbPersonnelVariantCustom">New personnel label</label><div><input id="pbPersonnelVariantCustom" type="text" maxlength="60" placeholder="Only if this is a new package" /><button type="button" class="btn btn-sm btn-secondary" data-action="custom">Add custom</button></div></div>
+      </div>
+      <div class="custom-modal-footer"><button type="button" class="btn" data-action="cancel">Cancel</button></div>
+    </div>`;
+    const finish = (value) => {
+      overlay.remove();
+      resolve(value || "");
+    };
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay || event.target.closest(".modal-close") || event.target.closest('[data-action="cancel"]')) {
+        finish("");
+        return;
+      }
+      const choice = event.target.closest("[data-personnel]");
+      if (choice) finish(choice.dataset.personnel || "");
+      if (event.target.closest('[data-action="custom"]')) {
+        finish(overlay.querySelector("#pbPersonnelVariantCustom")?.value || "");
+      }
+    });
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") finish("");
+      if (event.key === "Enter" && event.target.id === "pbPersonnelVariantCustom") {
+        event.preventDefault();
+        finish(event.target.value || "");
+      }
+    });
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector("#pbPersonnelVariantCustom");
+    if (input) input.focus();
+  });
+}
+
 async function addPlayPersonnelVariant() {
   const basePlay = plays?.[_editingMasterIdx];
   const play = _getPlayEditorVariantSource(basePlay);
   if (!play) return;
-  const value = await showPrompt("Enter an approved personnel label for this play.", "", {
-    title: "Add Personnel Variant", icon: "👥", placeholder: "e.g. Gold",
-  });
+  const value = await choosePlayPersonnelVariant(play);
   const personnel = typeof normalizePersonnelVariantText === "function"
     ? normalizePersonnelVariantText(value)
     : String(value || "").trim();

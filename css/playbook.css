@@ -3892,6 +3892,14 @@ body.shell-tablet #playbook .pb-card-actions {
 }
 .pb-personnel-variant-choice.is-active small { color: inherit; opacity: .78; }
 .pb-personnel-variant-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--space-sm); }
+.pb-personnel-picker { width:min(620px, calc(100vw - 28px)); }
+.pb-personnel-picker-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(112px, 1fr)); gap:8px; max-height:min(42vh, 310px); overflow:auto; padding:2px; }
+.pb-personnel-picker-choice { min-height:38px; border:1px solid var(--color-border); border-radius:var(--radius-sm); background:var(--color-surface); color:var(--color-text); font:inherit; font-size:var(--font-size-sm); font-weight:700; text-align:left; padding:7px 9px; cursor:pointer; }
+.pb-personnel-picker-choice:hover, .pb-personnel-picker-choice:focus-visible { border-color:var(--color-primary); background:var(--color-primary-light); outline:none; }
+.pb-personnel-picker-custom { margin-top:var(--space-md); padding-top:var(--space-sm); border-top:1px solid var(--color-border-light); }
+.pb-personnel-picker-custom label { display:block; margin-bottom:4px; color:var(--color-text-muted); font-size:var(--font-size-xs); font-weight:700; }
+.pb-personnel-picker-custom > div { display:flex; gap:7px; }
+.pb-personnel-picker-custom input { min-width:0; flex:1; }
 .pb-editor-field.is-inherited label { color: var(--color-text-muted); }
 .pb-editor-inherited {
   margin-left: 4px;
