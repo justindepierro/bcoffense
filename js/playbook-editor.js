@@ -172,7 +172,10 @@ function choosePlayPersonnelVariant(play) {
 async function addPlayPersonnelVariant() {
   const basePlay = plays?.[_editingMasterIdx];
   const play = _getPlayEditorVariantSource(basePlay);
-  if (!play) return;
+  if (!play) {
+    showToast("Could not find the source play for this editor session. Close and reopen the play, then try again.", { type: "error", duration: 4200 });
+    return;
+  }
   const value = await choosePlayPersonnelVariant(play);
   const personnel = typeof normalizePersonnelVariantText === "function"
     ? normalizePersonnelVariantText(value)
@@ -989,6 +992,24 @@ function _populateEditorForm(play, isNew) {
   html += _buildPlayEditorResponsibilitiesSection(play);
 
   setInnerHTML(body, html);
+  const variantActions = {
+    addPlayPersonnelVariant,
+    renamePlayPersonnelVariant,
+    resetPlayPersonnelVariantOverrides,
+    removePlayPersonnelVariant,
+  };
+  body.querySelectorAll("[data-action]").forEach((button) => {
+    const handler = variantActions[button.dataset.action];
+    if (typeof handler !== "function") return;
+    button.addEventListener("click", (event) => {
+      // The editor is re-rendered after every personnel action. Handle these
+      // controls locally so they remain reliable even when global delegation
+      // is busy with another overlay or menu.
+      event.preventDefault();
+      event.stopPropagation();
+      handler();
+    });
+  });
   body.querySelectorAll("[data-personnel-variant-id]").forEach((button) => {
     button.addEventListener("click", () => {
       const nextId = String(button.dataset.personnelVariantId || "base");

@@ -96,6 +96,8 @@ assert.match(editor, /getTeamPersonnelPackages\(\)/,
   "the personnel variant picker reuses the team's configured personnel vocabulary");
 assert.match(editor, /Add custom/,
   "the personnel variant picker retains a deliberate custom-label fallback");
+assert.match(editor, /const variantActions = \{[\s\S]*?addPlayPersonnelVariant/,
+  "personnel editor actions are wired locally after each modal render");
 assert.match(scriptShared, /scriptPersonnelVariantId/,
   "Script rows preserve a stable personnel variant reference during source refreshes");
 assert.match(scriptShared, /getEffectivePlayVariant\(play, variantId\)/,
