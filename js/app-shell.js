@@ -927,11 +927,13 @@ function toggleDarkMode() {
 
 // Restore theme on load
 (function _restoreTheme() {
-  const saved =
-    storageManager.get(STORAGE_KEYS.THEME) ||
-    (window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light");
+  const savedPreference = storageManager.get(STORAGE_KEYS.THEME);
+  const isPhone = window.matchMedia?.("(max-width: 820px)")?.matches;
+  // Mobile stays light by default until the dark palette is fully hardened.
+  // A coach/player can still deliberately choose and retain Dark mode.
+  const saved = savedPreference || (isPhone
+    ? "light"
+    : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
   if (saved === "dark") {
     document.documentElement.setAttribute("data-theme", "dark");
     const icon = document.getElementById("darkModeIcon");
@@ -943,7 +945,7 @@ function toggleDarkMode() {
 window
   .matchMedia("(prefers-color-scheme: dark)")
   .addEventListener("change", (e) => {
-    if (!storageManager.get(STORAGE_KEYS.THEME)) {
+    if (!storageManager.get(STORAGE_KEYS.THEME) && !window.matchMedia("(max-width: 820px)").matches) {
       document.documentElement.setAttribute(
         "data-theme",
         e.matches ? "dark" : "",

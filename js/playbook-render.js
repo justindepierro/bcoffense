@@ -165,8 +165,13 @@ function renderPlaybook() {
     const wbFlagged = typeof _gpFlaggedSigs === "function" ? _gpFlaggedSigs("wb") : new Set();
     const usageIndex =
       typeof getPlayUsageIndex === "function" ? getPlayUsageIndex() : null;
-    ensurePlaybookImageBadgesReady();
-    ensurePlaybookRemoteImageBadgesReady(pageSlice);
+    // Player cards hydrate diagram media in place below. Do not rebuild the
+    // entire mobile study feed when a local key or remote manifest arrives;
+    // that was replacing visible cards mid-scroll and causing a flicker.
+    if (!isStudyPortal) {
+      ensurePlaybookImageBadgesReady();
+      ensurePlaybookRemoteImageBadgesReady(pageSlice);
+    }
     const imageSignatureFor = (play, fallbackSig) => {
       if (
         typeof window !== "undefined" &&
