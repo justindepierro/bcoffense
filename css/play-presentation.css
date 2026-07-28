@@ -3462,6 +3462,37 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   line-height: 1.18;
 }
 
+/* The compact Swipe Study view is call-first, but it must not reserve a
+   full-height canvas for a landscape diagram. On a phone in portrait that
+   produced a large blank panel between the call and the diagram. Keep the
+   reading order intentional: call, diagram, then its compact tags. */
+body.play-presentation-mobile.is-portrait-screen.is-phone-screen
+  .pp-layout-minimum {
+  height: auto;
+  min-height: 0;
+  grid-template-rows: auto auto auto;
+  align-content: start;
+}
+
+body.play-presentation-mobile.is-portrait-screen.is-phone-screen
+  .pp-minimum-top {
+  min-height: 0;
+}
+
+body.play-presentation-mobile.is-portrait-screen.is-phone-screen
+  .pp-minimum-diagram {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 0;
+}
+
+body.play-presentation-mobile.is-portrait-screen.is-phone-screen
+  .pp-minimum-diagram .pp-diagram-frame {
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+}
+
 
 body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   .pp-player-rule {
