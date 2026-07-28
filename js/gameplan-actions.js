@@ -236,6 +236,9 @@ function toggleGamePlanLibrarySelect(sig) {
 
 function updateGamePlanFilter(field, valueOrEvent) {
   if (!field) return;
+  if (field === "search" && typeof rememberGamePlanLibrarySearchFocus === "function") {
+    rememberGamePlanLibrarySearchFocus();
+  }
   const booleanFields = typeof GP_BOOLEAN_FILTER_FIELDS !== "undefined"
     ? GP_BOOLEAN_FILTER_FIELDS
     : new Set(["hideAssigned", "onlyOpponentTagged", "filterBoxes"]);
@@ -251,7 +254,9 @@ function updateGamePlanFilter(field, valueOrEvent) {
   const debouncedFields = typeof GP_DEBOUNCED_FILTER_FIELDS !== "undefined"
     ? GP_DEBOUNCED_FILTER_FIELDS
     : new Set(["search"]);
-  requestRenderGamePlan({ debounceMs: debouncedFields.has(field) ? 90 : 0 });
+  // Leave enough time for a complete search entry before rebuilding the
+  // library. The previous 90ms cycle interrupted normal typing on touch.
+  requestRenderGamePlan({ debounceMs: debouncedFields.has(field) ? 220 : 0 });
 }
 
 function updateGamePlanMultiFilter(field, valueOrEvent) {

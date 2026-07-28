@@ -110,6 +110,9 @@ let _gpDragSource = null; // { boxId, sig, rawIdx } for box → box / box → li
 let _gpRenderQueued = false;
 let _gpRenderDebounceTimer = null;
 let _gpOpenMultiFilter = "";
+// Game Plan renders replace the library DOM. Preserve an active search input
+// across that work so typing never loses focus or its caret mid-query.
+let _gpLibrarySearchRestore = null;
 
 const GP_ADVANCED_FILTER_KEYS = [
   "basePlay",
@@ -224,6 +227,30 @@ function requestRenderGamePlan(opts = {}) {
   }
   clearTimeout(_gpRenderDebounceTimer);
   queue();
+}
+
+function rememberGamePlanLibrarySearchFocus() {
+  const input = document.getElementById("gpLibrarySearch");
+  if (!input || document.activeElement !== input) return;
+  _gpLibrarySearchRestore = {
+    value: input.value,
+    selectionStart: input.selectionStart,
+    selectionEnd: input.selectionEnd,
+  };
+}
+
+function restoreGamePlanLibrarySearchFocus() {
+  const restore = _gpLibrarySearchRestore;
+  _gpLibrarySearchRestore = null;
+  if (!restore) return;
+  const input = document.getElementById("gpLibrarySearch");
+  if (!input || input.value !== restore.value) return;
+  input.focus({ preventScroll: true });
+  const max = input.value.length;
+  input.setSelectionRange(
+    Math.max(0, Math.min(Number(restore.selectionStart) || 0, max)),
+    Math.max(0, Math.min(Number(restore.selectionEnd) || 0, max)),
+  );
 }
 
 // Type-alias map (used by Send to Game Plan + Holding auto-route)

@@ -235,7 +235,7 @@ function renderGamePlan() {
     </div>` : "";
 
   const toolbarHtml = _gpFilters.showFilters ? `
-    <div class="gp-filters-drawer" role="region" aria-label="Play filters">
+    <div id="gpLibraryFilters" class="gp-filters-drawer" role="region" aria-label="Play filters">
     <div class="gp-toolbar toolbar-surface toolbar-surface--compact app-command-toolbar coach-grid-command-strip">
       ${_gpRenderMultiFilterDropdown("type", "Play Types", types)}
       <select id="gpFilterFormation" data-onchange="updateGamePlanFilter" data-arg="formation" data-pass="value">
@@ -284,8 +284,8 @@ function renderGamePlan() {
         <label class="sr-only" for="gpLibrarySearch">Search Game Plan library</label>
         <input type="search" id="gpLibrarySearch" class="gp-library-search" placeholder="Search library…"
           value="${escapeHtml(_gpFilters.search || "")}" data-oninput="updateGamePlanFilter" data-arg="search" data-pass="value" />
-        <button class="btn btn-sm gp-library-filters${_gpFilters.showFilters ? " is-active" : ""}" data-action="toggleGamePlanFilters"
-          title="Filter this library by type, formation, personnel, and more" aria-expanded="${_gpFilters.showFilters ? "true" : "false"}">⚙ Filter${_gpActiveFilterCount() > 0 ? ` (${_gpActiveFilterCount()})` : ""}</button>
+        <button type="button" class="btn btn-sm gp-library-filters${_gpFilters.showFilters ? " is-active" : ""}" data-action="toggleGamePlanFilters"
+          title="Filter this library by type, formation, personnel, and more" aria-controls="gpLibraryFilters" aria-expanded="${_gpFilters.showFilters ? "true" : "false"}">⚙ Filter${_gpActiveFilterCount() > 0 ? ` (${_gpActiveFilterCount()})` : ""}</button>
       </div>
       ${toolbarHtml}
       ${_gpShowBulkSheet ? `<div class="gp-bulk-backdrop" data-action="toggleGamePlanBulkSheet" aria-hidden="true"></div>` : ""}
@@ -353,6 +353,9 @@ function renderGamePlan() {
   _gpAttachLibraryHandlers();
   _gpAttachBoxHandlers();
   _gpAttachTrashZoneHandlers();
+  if (typeof restoreGamePlanLibrarySearchFocus === "function") {
+    restoreGamePlanLibrarySearchFocus();
+  }
   _gpWarmMediaCompletionRemote(draftedPlays);
   if (typeof loadGamePlanDiscussionCounts === "function") {
     setTimeout(loadGamePlanDiscussionCounts, 150);
