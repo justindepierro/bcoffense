@@ -5,12 +5,15 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
 const fixture = JSON.parse(await read("tests/fixtures/personnel-variants-baseline.json"));
-const [utils, scriptShared, wristband, wristbandPopup, wristbandExport, callSheetExport, gamePlanIntegrations, editor] = await Promise.all([
+const [utils, scriptShared, wristband, wristbandPopup, wristbandExport, callSheet, callSheetRender, callSheetPrint, callSheetExport, gamePlanIntegrations, editor] = await Promise.all([
   read("js/utils.js"),
   read("js/script-shared.js"),
   read("js/wristband.js"),
   read("js/wristband-cell-popup.js"),
   read("js/wristband-export.js"),
+  read("js/callsheet.js"),
+  read("js/callsheet-render.js"),
+  read("js/callsheet-print.js"),
   read("js/callsheet-export.js"),
   read("js/gameplan-integrations.js"),
   read("js/playbook-editor.js"),
@@ -101,5 +104,13 @@ assert.match(wristbandPopup, /personnelVariantId: existing\.personnelVariantId/,
   "Wristband component-order actions preserve an existing personnel selection");
 assert.match(wristbandExport, /personnelVariantId: custom\?\.personnelVariantId/,
   "Wristband print caching distinguishes cells using different approved personnel selections");
+assert.match(callSheetRender, /function getCallSheetEffectivePlay\(play\)/,
+  "Call Sheet keeps a display-time effective personnel resolver instead of cloning plays");
+assert.match(callSheet, /Approved Personnel[\s\S]*?source play stays unchanged/,
+  "Call Sheet cell controls explain that personnel selection is local to the sheet");
+assert.match(callSheet, /"cellFormationTags", "cellBackTags", "personnelVariantId"/,
+  "Call Sheet refresh preserves an approved personnel selection");
+assert.match(callSheetPrint, /getCallSheetEffectivePlay\(play\)/,
+  "Call Sheet printing resolves the same selected personnel as the editor");
 
 console.log("personnel variants baseline contract: legacy data paths are preserved");

@@ -510,6 +510,9 @@ function getCallSheetPrintDensityClass(play, displayOptions, playText, printJob)
  * Render a play for print - matches screen display formatting
  */
 function renderPrintPlay(play, options, printJob) {
+  if (typeof getCallSheetEffectivePlay === "function") {
+    play = getCallSheetEffectivePlay(play);
+  }
   if (!options) options = getCallSheetDisplayOptions();
   const displayOptions = getCallSheetPlayDisplayOptions(play, options);
   const code = getPersonnelCode(play.personnel);

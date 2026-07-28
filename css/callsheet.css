@@ -2669,6 +2669,18 @@ body.shell-phone #callsheet .cs-empty-cat {
   font-size: var(--font-size-xs);
 }
 
+.cs-ctx-select {
+  width: 100%;
+  min-height: 30px;
+  border: 1px solid var(--border, #c8cfda);
+  border-radius: 6px;
+  background: var(--surface, #fff);
+  color: var(--text, #16213a);
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 7px;
+}
+
 .cs-ctx-tag-actions {
   display: flex;
   gap: 4px;

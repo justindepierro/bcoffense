@@ -736,6 +736,22 @@ function showPlayContextMenu(event, categoryId, hash, index) {
     menuHtml += `</div></div>`;
   }
 
+  const variantSource = typeof getCallSheetVariantSource === "function"
+    ? getCallSheetVariantSource(play)
+    : play;
+  const personnelOptions = typeof getPlayPersonnelOptions === "function"
+    ? getPlayPersonnelOptions(variantSource)
+    : [];
+  if (personnelOptions.length > 1) {
+    const activeVariantId = String(play.personnelVariantId || "base").trim() || "base";
+    menuHtml += `<div class="cs-ctx-section"><label class="cs-ctx-label" for="csPersonnelVariant">Approved Personnel</label>`;
+    menuHtml += `<select id="csPersonnelVariant" class="cs-ctx-select" aria-label="Approved personnel for this call-sheet cell">`;
+    personnelOptions.forEach((option) => {
+      menuHtml += `<option value="${escapeHtml(option.id)}"${option.id === activeVariantId ? " selected" : ""}>${escapeHtml(option.personnel)}${option.isBase ? " · Primary" : ""}</option>`;
+    });
+    menuHtml += `</select><div class="cs-ctx-helper">Changes this call-sheet cell only; the source play stays unchanged.</div></div>`;
+  }
+
   // ─── Font Size ───
   const curSize = play.cellFontSize || "";
   menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Font Size</span><div class="cs-ctx-sizes">`;
@@ -995,6 +1011,19 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       e.stopPropagation();
     });
     noteInput.addEventListener("click", (e) => e.stopPropagation());
+  }
+
+  const personnelVariantSelect = menu.querySelector("#csPersonnelVariant");
+  if (personnelVariantSelect) {
+    personnelVariantSelect.addEventListener("change", () => {
+      const selectedId = String(personnelVariantSelect.value || "base").trim() || "base";
+      if (selectedId === "base") delete play.personnelVariantId;
+      else play.personnelVariantId = selectedId;
+      renderCallSheet();
+      saveCallSheet();
+      showToast(selectedId === "base" ? "Call Sheet cell restored to primary personnel" : "Call Sheet personnel updated");
+      menu.remove();
+    });
   }
 
   showContextMenu(event, menu);
@@ -1267,7 +1296,7 @@ function refreshCallSheetFromPlaybook() {
       "playType", "wristbandNumber", "highlighted", "highlightColor",
       "borderColor", "cellBg", "cellTextColor", "cellBold", "cellItalic",
       "cellUnderline", "cellStrikethrough", "cellFontSize", "cellNote",
-      "cellFormationTags", "cellBackTags",
+      "cellFormationTags", "cellBackTags", "personnelVariantId",
     ];
     return fields.reduce((overrides, field) => {
       if (Object.prototype.hasOwnProperty.call(snapshot || {}, field)) {

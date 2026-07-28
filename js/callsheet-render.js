@@ -960,10 +960,42 @@ function buildCallSheetPersonnelColumns(personnelGroups) {
   return columns;
 }
 
+// A Call Sheet entry remains a lightweight linked snapshot. Its optional
+// personnelVariantId selects approved source metadata at display time; it
+// never creates another play or rewrites the source record.
+function getCallSheetVariantSource(play) {
+  if (!play || typeof play !== "object") return play;
+  if (typeof findPlaybookSourceForPlay === "function") {
+    return findPlaybookSourceForPlay(play) || play;
+  }
+  return play;
+}
+
+function getCallSheetEffectivePlay(play) {
+  if (!play || typeof play !== "object" || play._blank) return play;
+  const variantId = String(play.personnelVariantId || "base").trim() || "base";
+  if (variantId === "base" || typeof getEffectivePlayVariant !== "function") return play;
+  const source = getCallSheetVariantSource(play);
+  const effective = getEffectivePlayVariant(source, variantId);
+  if (!effective || effective.personnelVariantId !== variantId) return play;
+  const localFields = [
+    "wristbandNumber", "highlighted", "highlightColor", "borderColor",
+    "cellBg", "cellTextColor", "cellBold", "cellItalic", "cellUnderline",
+    "cellStrikethrough", "cellFontSize", "cellNote", "cellFormationTags",
+    "cellBackTags", "personnelVariantId",
+  ];
+  const local = localFields.reduce((result, field) => {
+    if (Object.prototype.hasOwnProperty.call(play, field)) result[field] = play[field];
+    return result;
+  }, {});
+  return { ...play, ...effective, ...local };
+}
+
 function renderPersonnelCallSheet(displayOptions) {
   const grouped = new Map();
   const gamePlanPlays = getCallSheetPersonnelGamePlanPlays();
   gamePlanPlays.forEach((play) => {
+    play = getCallSheetEffectivePlay(play);
     const personnel = String(play?.personnel || "").trim();
     const bucket = _csPersonnelBucketForPlay(play);
     if (!personnel || !bucket) return;
@@ -1423,6 +1455,8 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
         aria-label="Remove blank row" title="Remove blank spacer">×</button>
     </div>`;
   }
+
+  play = getCallSheetEffectivePlay(play);
 
   if (!options) options = getCallSheetDisplayOptions();
   const textMemo = options._playTextMemo;
