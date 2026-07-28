@@ -1,5 +1,6 @@
 import {
   buildPlayerRelease,
+  projectPlayerPlay,
   releaseAllowsClip,
   releaseAllowsDiagram,
 } from "../functions/_lib/player-release.js";
@@ -38,6 +39,18 @@ function play(overrides = {}) {
 }
 
 const visiblePlay = play();
+visiblePlay.personnelVariants = [
+  {
+    id: "pv-play-1-gold",
+    personnel: "Gold",
+    overrides: {
+      formation: "Gold Rip",
+      notes: "Coach-only Gold note",
+      playerNotes: "Gold player coaching point",
+      playerRules: { respQ: "Gold QB rule" },
+    },
+  },
+];
 const hiddenSibling = play({
   id: "play-hidden",
   mediaId: "play:hidden",
@@ -67,7 +80,7 @@ const backup = {
       workspace: { coachOnly: true },
       plays: [
         { isSeparator: true, label: "Team", minutes: 10, color: "#123456", private: "no" },
-        visiblePlay,
+        { ...visiblePlay, scriptPersonnelVariantId: "pv-play-1-gold" },
         scriptOnlyPlay,
         hiddenSibling,
       ],
@@ -155,6 +168,13 @@ assert(release.release.revision === repeat.release.revision, "same source produc
 assert(release.scripts.length === 1, "excludes unpublished and duplicate same-day scripts");
 assert(release.scripts[0].workspace === undefined, "does not carry script workspace state");
 assert(release.scripts[0].plays.length === 3, "keeps separator plus only player-eligible plays");
+const releasedVariant = release.scripts[0].plays.find((entry) => entry.id === "play-1");
+assert(releasedVariant?.personnel === "Gold", "publishes the Script-selected personnel variant, not the base personnel");
+assert(releasedVariant?.formation === "Gold Rip" && releasedVariant?.respQ === "Gold QB rule", "publishes allowed variant fields and player rules");
+assert(releasedVariant?.personnelVariantId === "pv-play-1-gold", "makes the selected variant explicit in the player payload");
+assert(releasedVariant?.id === "play-1" && releasedVariant?.mediaId === "play:visible", "keeps the original play and media identity for Swipe View, quizzes, and comments");
+assert(releasedVariant?.personnelVariants === undefined && releasedVariant?.scriptPersonnelVariantId === undefined, "does not expose alternate variants or coach selection internals to players");
+assert(!JSON.stringify(releasedVariant).includes("Coach-only Gold note"), "does not expose coach-only variant notes");
 assert(release.gamePlanQuiz?.id === "Opponent A", "projects the active game plan as a stable quiz source");
 assert(release.gamePlanQuiz?.items?.length === 2, "keeps active non-holding game plan calls only");
 assert(release.gamePlanQuiz?.items?.[0]?.period === "Openers", "keeps safe game plan bucket labels for quiz context");
@@ -166,6 +186,8 @@ assert(!release.playbook.some((entry) => entry.mediaId === "play:hidden"), "remo
 assert(!JSON.stringify(release).includes("coach-only"), "does not leak coach-only backup fields");
 assert(!JSON.stringify(release).includes("never-release-this"), "does not pass arbitrary record properties through");
 assert(release.playbook[0].notes === undefined, "does not expose generic coach notes");
+const missingVariant = projectPlayerPlay({ ...visiblePlay, scriptPersonnelVariantId: "missing-variant" });
+assert(missingVariant?.personnel === "10" && missingVariant?.personnelVariantId === "base", "an invalid selected variant safely falls back to the base play");
 assert(releaseAllowsDiagram(release, "play:visible"), "allows an exact released diagram ID");
 assert(!releaseAllowsDiagram(release, "play:hidden"), "rejects a hidden diagram ID");
 assert(releaseAllowsClip(release, "play:script-only"), "allows canonical permanent play-video IDs");

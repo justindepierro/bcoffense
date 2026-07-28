@@ -84,6 +84,19 @@ const PLAY_FIELDS = [
   "respRT",
 ];
 
+// Keep the server-side release projection in lockstep with the browser's
+// approved personnel-variant model. A player receives the one variant chosen
+// for a Script/Game Plan entry, never the full alternate-personnel collection.
+const PLAYER_VARIANT_OVERRIDE_FIELDS = [
+  "formation", "formTag1", "formTag2", "under", "back", "shift",
+  "motion", "protection", "lineCall", "playTag1", "playTag2",
+  "basePlay", "oneWord", "playerNotes",
+];
+const PLAYER_VARIANT_RULE_FIELDS = [
+  "respQ", "respT", "respH", "respZ", "respX", "respY",
+  "respLT", "respLG", "respC", "respRG", "respRT", "respNotes",
+];
+
 const RELEASE_VALUE_KEYS = [
   "teamName",
   "motd",
@@ -143,6 +156,39 @@ function mediaIdForPlay(play) {
   return sourceId ? `play:${sourceId}` : "";
 }
 
+function selectedPersonnelVariantId(play) {
+  const requested = cleanString(play?.scriptPersonnelVariantId || play?.personnelVariantId, 160);
+  return requested || "base";
+}
+
+function resolvePlayerPersonnelVariant(source, selectedId) {
+  const base = asObject(source, {});
+  const requested = cleanString(selectedId, 160) || "base";
+  if (requested === "base") return { ...base, personnelVariantId: "base" };
+  const variant = asArray(base.personnelVariants).find((candidate) =>
+    cleanString(candidate?.id, 160) === requested && cleanString(candidate?.personnel, 240),
+  );
+  if (!variant) return { ...base, personnelVariantId: "base" };
+
+  const rawOverrides = asObject(variant.overrides, {});
+  const overrides = {};
+  PLAYER_VARIANT_OVERRIDE_FIELDS.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(rawOverrides, field)) {
+      overrides[field] = rawOverrides[field];
+    }
+  });
+  const rules = asObject(rawOverrides.playerRules, {});
+  PLAYER_VARIANT_RULE_FIELDS.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(rules, field)) overrides[field] = rules[field];
+  });
+  return {
+    ...base,
+    ...overrides,
+    personnel: cleanString(variant.personnel, 240) || cleanString(base.personnel, 240),
+    personnelVariantId: requested,
+  };
+}
+
 function projectSeparator(play) {
   return {
     isSeparator: true,
@@ -154,28 +200,33 @@ function projectSeparator(play) {
 }
 
 export function projectPlayerPlay(play, opts = {}) {
-  const source = asObject(play, null);
+  const entry = asObject(play, null);
+  const source = asObject(opts.sourcePlay, entry);
   if (!source || isHiddenFromPlayers(source)) return null;
   if (source.isSeparator) return projectSeparator(source);
 
+  const resolved = resolvePlayerPersonnelVariant(source, selectedPersonnelVariantId(entry));
+
   const projected = {};
   PLAY_FIELDS.forEach((field) => {
-    const value = source[field];
+    const value = resolved[field];
     if (typeof value === "string") projected[field] = cleanString(value, MAX_PLAY_FIELD_CHARS);
     else if (typeof value === "number" && Number.isFinite(value)) projected[field] = value;
     else if (typeof value === "boolean") projected[field] = value;
   });
+  projected.personnelVariantId = cleanString(resolved.personnelVariantId, 160) || "base";
   const mediaId = cleanString(opts.mediaId || mediaIdForPlay(source), 512);
   if (mediaId) projected.mediaId = mediaId;
   return projected;
 }
 
-function projectScript(record, index, resolveMediaId) {
+function projectScript(record, index, resolveMediaId, resolveSourcePlay) {
   const source = asObject(record, {});
   if (!isPlayerVisible(source.playerVisible)) return null;
   const plays = asArray(source.plays)
     .map((play) => projectPlayerPlay(play, {
       mediaId: typeof resolveMediaId === "function" ? resolveMediaId(play) : "",
+      sourcePlay: typeof resolveSourcePlay === "function" ? resolveSourcePlay(play) : play,
     }))
     .filter(Boolean);
   if (!plays.some((play) => !play.isSeparator)) return null;
@@ -239,7 +290,7 @@ function isHoldingGamePlanBox(boxId) {
 // Game Plan boards carry a lot of staff-only planning data (targets, notes,
 // hidden boxes, sorting, etc.). A player only needs the active board's calls
 // and their public bucket labels to take a Game Plan quiz.
-function projectActiveGamePlanQuiz(source, resolveMediaId) {
+function projectActiveGamePlanQuiz(source, resolveMediaId, resolveSourcePlay) {
   const boards = asObject(readBackupValue(source, "gamePlanBoards", {}), {});
   const id = activeGamePlanKey(source);
   const board = asObject(boards[id], null);
@@ -257,6 +308,7 @@ function projectActiveGamePlanQuiz(source, resolveMediaId) {
     plays.forEach((play, index) => {
       const projected = projectPlayerPlay(play, {
         mediaId: typeof resolveMediaId === "function" ? resolveMediaId(play) : "",
+        sourcePlay: typeof resolveSourcePlay === "function" ? resolveSourcePlay(play) : play,
       });
       if (!projected || projected.isSeparator) return;
       const signature = projected.mediaId || stablePlaySourceId(projected) || `${boxId}:${index}`;
@@ -376,6 +428,19 @@ function buildCanonicalMediaResolver(sourcePlaybook) {
   };
 }
 
+function buildCanonicalPlayResolver(sourcePlaybook) {
+  const byReference = new Map();
+  asArray(sourcePlaybook).forEach((play) => {
+    if (!play || play.isSeparator) return;
+    sourceReferenceCandidates(play).forEach((reference) => {
+      if (!byReference.has(reference)) byReference.set(reference, play);
+    });
+  });
+  return (play) => sourceReferenceCandidates(play)
+    .map((reference) => byReference.get(reference))
+    .find(Boolean) || play;
+}
+
 function copyReleaseValue(value, depth = 0) {
   if (value === null || value === undefined) return null;
   if (typeof value === "string") return cleanString(value, MAX_PLAY_FIELD_CHARS);
@@ -461,17 +526,18 @@ export async function buildPlayerRelease(backup, opts = {}) {
 
   const sourcePlaybook = asArray(readBackupValue(source, "playbook", []));
   const resolveCanonicalMediaId = buildCanonicalMediaResolver(sourcePlaybook);
+  const resolveCanonicalSourcePlay = buildCanonicalPlayResolver(sourcePlaybook);
   const releasedPlaybook = sourcePlaybook
     .map((play) => projectPlayerPlay(play, { mediaId: resolveCanonicalMediaId(play) }))
     .filter((play) => play && !play.isSeparator)
     .slice(0, MAX_PLAYS);
 
   const scripts = newestVisibleScripts(readBackupValue(source, "savedScripts", []))
-    .map(({ record: script, index }) => projectScript(script, index, resolveCanonicalMediaId))
+    .map(({ record: script, index }) => projectScript(script, index, resolveCanonicalMediaId, resolveCanonicalSourcePlay))
     .filter(Boolean)
     .slice(0, MAX_SCRIPTS);
   const scriptPlays = scripts.flatMap((script) => script.plays || []);
-  const gamePlanQuiz = projectActiveGamePlanQuiz(source, resolveCanonicalMediaId);
+  const gamePlanQuiz = projectActiveGamePlanQuiz(source, resolveCanonicalMediaId, resolveCanonicalSourcePlay);
   const gamePlanQuizPlays = asArray(gamePlanQuiz?.items).map((item) => item?.play).filter(Boolean);
   const playbook = dedupePlays([...releasedPlaybook, ...scriptPlays, ...gamePlanQuizPlays]);
 
