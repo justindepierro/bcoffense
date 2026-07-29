@@ -114,6 +114,30 @@ function approvedPersonnelLabels(source) {
   }).slice(0, 24);
 }
 
+const PLAYER_FILTER_VARIANT_FIELDS = [
+  "formation", "formTag1", "formTag2", "under", "back", "shift",
+  "motion", "protection", "lineCall", "playTag1", "playTag2",
+  "basePlay", "oneWord",
+];
+
+function playerFilterVariants(source) {
+  return asArray(source?.personnelVariants)
+    .map((variant) => {
+      const personnel = cleanString(variant?.personnel, 240);
+      if (!personnel) return null;
+      const overrides = asObject(variant?.overrides, {});
+      const projected = { personnel };
+      PLAYER_FILTER_VARIANT_FIELDS.forEach((field) => {
+        if (typeof overrides[field] === "string" && overrides[field].trim()) {
+          projected[field] = cleanString(overrides[field], MAX_PLAY_FIELD_CHARS);
+        }
+      });
+      return projected;
+    })
+    .filter(Boolean)
+    .slice(0, 24);
+}
+
 const RELEASE_VALUE_KEYS = [
   "teamName",
   "motd",
@@ -233,6 +257,7 @@ export function projectPlayerPlay(play, opts = {}) {
   });
   projected.personnelVariantId = cleanString(resolved.personnelVariantId, 160) || "base";
   projected.approvedPersonnel = approvedPersonnelLabels(source);
+  projected.approvedFilterVariants = playerFilterVariants(source);
   const mediaId = cleanString(opts.mediaId || mediaIdForPlay(source), 512);
   if (mediaId) projected.mediaId = mediaId;
   return projected;

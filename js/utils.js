@@ -1739,7 +1739,18 @@ function getPlayFilterVariants(play) {
   // coach-approved personnel without receiving the alternate variant metadata.
   // Treat these entries as personnel-only effective records: no formation,
   // notes, rules, or other coach-only overrides can leak into the player UI.
-  const publishedOptions = Array.isArray(play.approvedPersonnel)
+  const publishedVariants = Array.isArray(play.approvedFilterVariants)
+    ? play.approvedFilterVariants
+      .map((variant) => {
+        const personnel = normalizePersonnelVariantText(variant?.personnel);
+        const key = getPersonnelVariantComparisonKey(personnel);
+        if (!personnel || knownPersonnel.has(key)) return null;
+        knownPersonnel.add(key);
+        return { id: `published:${key}`, personnel, publishedOnly: true, overrides: variant };
+      })
+      .filter(Boolean)
+    : [];
+  const publishedLabels = Array.isArray(play.approvedPersonnel)
     ? play.approvedPersonnel
       .map((personnel) => normalizePersonnelVariantText(personnel))
       .filter((personnel) => {
@@ -1748,12 +1759,12 @@ function getPlayFilterVariants(play) {
         knownPersonnel.add(key);
         return true;
       })
-      .map((personnel) => ({ id: `published:${getPersonnelVariantComparisonKey(personnel)}`, personnel, isBase: false, publishedOnly: true }))
+      .map((personnel) => ({ id: `published:${getPersonnelVariantComparisonKey(personnel)}`, personnel, publishedOnly: true, overrides: {} }))
     : [];
-  options.push(...publishedOptions);
+  options.push(...publishedVariants, ...publishedLabels);
   if (!options.length) return [play];
   return options.map((option) => option.publishedOnly
-    ? { ...play, personnel: option.personnel, personnelVariantId: option.id }
+    ? { ...play, ...option.overrides, personnel: option.personnel, personnelVariantId: option.id }
     : getEffectivePlayVariant(play, option.id) || play);
 }
 

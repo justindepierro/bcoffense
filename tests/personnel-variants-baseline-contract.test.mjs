@@ -86,6 +86,15 @@ assert.deepEqual(helpers.getPlayFilterVariants(variantPlay).map((play) => play.p
   "playbook filtering can inspect every approved personnel version without cloning a play");
 assert.deepEqual(helpers.getPlayFilterVariants({ personnel: "Blue", approvedPersonnel: ["Blue", "Gold"] }).map((play) => play.personnel), ["Blue", "Gold"],
   "player-safe approved personnel labels participate in filtering without exposing a variant object");
+assert.deepEqual(
+  helpers.getPlayFilterVariants({
+    personnel: "Blue",
+    formation: "Base",
+    approvedFilterVariants: [{ personnel: "Gold", formation: "Gold Rt", motion: "Orbit" }],
+  }).map((play) => [play.personnel, play.formation, play.motion]),
+  [["Blue", "Base", undefined], ["Gold", "Gold Rt", "Orbit"]],
+  "player-safe variant metadata participates in formation and motion filtering",
+);
 
 assert.match(editor, /Personnel variants[\s\S]*?Add personnel/,
   "Edit Play exposes an approved-personnel authoring surface");
