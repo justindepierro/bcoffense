@@ -47,8 +47,8 @@ function _gpPushPlayIntoCategory(play, categoryId) {
   if (!callSheet[categoryId]) callSheet[categoryId] = { left: [], right: [] };
   const bucket = callSheet[categoryId];
   const exists =
-    (bucket.left || []).some((x) => playsMatch(x, play)) ||
-    (bucket.right || []).some((x) => playsMatch(x, play));
+    (bucket.left || []).some((x) => _gpAssignmentIdentity(x) === _gpAssignmentIdentity(play)) ||
+    (bucket.right || []).some((x) => _gpAssignmentIdentity(x) === _gpAssignmentIdentity(play));
   if (exists) return false;
   const wb =
     typeof getWristbandNumberForPlay === "function"
@@ -444,10 +444,13 @@ async function pushGamePlanToScript() {
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   const opp = gw && gw.opponentName ? gw.opponentName : "";
 
-  // #124: Duplicate detection — build set of existing script play signatures
+  // Preserve intentional personnel versions of the same base call.
   const existingSigs = new Set();
   if (typeof _gpPlaySignature === "function") {
-    script.filter((s) => !s.isSeparator).forEach((s) => existingSigs.add(_gpPlaySignature(s)));
+    script.filter((s) => !s.isSeparator).forEach((s) => existingSigs.add(_gpAssignmentIdentity({
+      ...s,
+      personnelVariantId: s.scriptPersonnelVariantId || s.personnelVariantId || "base",
+    })));
   }
 
   // #127: snapshot for undo
@@ -467,7 +470,7 @@ async function pushGamePlanToScript() {
     }
     list.forEach((p) => {
       // #124: skip duplicates already in script
-      const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : null;
+      const sig = typeof _gpPlaySignature === "function" ? _gpAssignmentIdentity(p) : null;
       if (sig && existingSigs.has(sig)) { skipped++; return; }
       if (sig) existingSigs.add(sig);
       script.push(
@@ -537,11 +540,11 @@ async function pushGamePlanToWristband() {
   wristbandCards.forEach((card) => {
     if (!Array.isArray(card.data)) return;
     card.data.forEach((cell) => {
-      if (cell && typeof _gpPlaySignature === "function") existingWbSigs.add(_gpPlaySignature(cell));
+      if (cell && typeof _gpPlaySignature === "function") existingWbSigs.add(_gpAssignmentIdentity(cell));
     });
   });
   const toAdd = allPlays.filter((p) => {
-    const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : null;
+    const sig = typeof _gpPlaySignature === "function" ? _gpAssignmentIdentity(p) : null;
     return !sig || !existingWbSigs.has(sig);
   });
   const skippedCount = allPlays.length - toAdd.length;
@@ -645,7 +648,10 @@ async function createScriptFromGamePlan() {
   const preSnapshot = typeof safeDeepClone === "function" ? safeDeepClone(script) : JSON.parse(JSON.stringify(script));
   const existingSigs = new Set();
   if (typeof _gpPlaySignature === "function") {
-    script.filter((s) => !s.isSeparator).forEach((s) => existingSigs.add(_gpPlaySignature(s)));
+    script.filter((s) => !s.isSeparator).forEach((s) => existingSigs.add(_gpAssignmentIdentity({
+      ...s,
+      personnelVariantId: s.scriptPersonnelVariantId || s.personnelVariantId || "base",
+    })));
   }
   let pushed = 0, skipped = 0;
   populated.forEach((b) => {
@@ -653,7 +659,7 @@ async function createScriptFromGamePlan() {
     if (!list.length) return;
     script.push({ isSeparator: true, label: opp ? `${b.label} — vs ${opp}` : b.label, id: Date.now() + Math.random() });
     list.forEach((p) => {
-      const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : null;
+      const sig = typeof _gpPlaySignature === "function" ? _gpAssignmentIdentity(p) : null;
       if (sig && existingSigs.has(sig)) { skipped++; return; }
       if (sig) existingSigs.add(sig);
       script.push(
@@ -728,10 +734,10 @@ function _gpResolvePlanSource(id) {
 }
 
 function _gpAssignmentsByBox(board) {
-  // Return Map<boxId, Set<sig>>
+  // Return Map<boxId, Set<base play + personnel version>>
   const map = new Map();
   Object.entries(board.assignments || {}).forEach(([boxId, list]) => {
-    map.set(boxId, new Set((list || []).map(_gpPlaySignature)));
+    map.set(boxId, new Set((list || []).map(_gpAssignmentIdentity)));
   });
   return map;
 }
@@ -967,9 +973,9 @@ async function sendWristbandToGamePlan() {
     _gpUpdateBoard((board) => {
       Object.entries(typeMap).forEach(([boxId, plays]) => {
         if (!Array.isArray(board.assignments[boxId])) board.assignments[boxId] = [];
-        const existing = new Set(board.assignments[boxId].map((p) => _gpPlaySignature(p)));
+        const existing = new Set(board.assignments[boxId].map((p) => _gpAssignmentIdentity(p)));
         plays.forEach((p) => {
-          const sig = _gpPlaySignature(p);
+          const sig = _gpAssignmentIdentity(p);
           if (
             existing.has(sig) ||
             !_gpPlayAllowedOnBoard(p, board)
@@ -997,9 +1003,9 @@ async function sendWristbandToGamePlan() {
 
     _gpUpdateBoard((board) => {
       if (!Array.isArray(board.assignments[choice])) board.assignments[choice] = [];
-      const existing = new Set(board.assignments[choice].map((p) => _gpPlaySignature(p)));
+      const existing = new Set(board.assignments[choice].map((p) => _gpAssignmentIdentity(p)));
       eligiblePlays.forEach((p) => {
-        const sig = _gpPlaySignature(p);
+        const sig = _gpAssignmentIdentity(p);
         if (
           existing.has(sig) ||
           !_gpPlayAllowedOnBoard(p, board)

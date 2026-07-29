@@ -1192,9 +1192,9 @@ function getGamePlanFlaggedPlays(flag) {
   Object.values(board.assignments || {}).forEach((arr) => {
     (arr || []).forEach((p) => {
       if (!_gpHasFlag(p, flag)) return;
-      const sig = _gpPlaySignature(p);
-      if (seen.has(sig)) return;
-      seen.add(sig);
+      const identity = _gpAssignmentIdentity(p);
+      if (seen.has(identity)) return;
+      seen.add(identity);
       out.push(_gpStripFlags(p));
     });
   });
@@ -1520,9 +1520,14 @@ function refreshGamePlanFromPlaybook() {
           : String(snap?.playbookId || snap?.sourcePlayId || "").trim();
         const fresh = (sourceId && playBySourceId.get(sourceId)) || playBySignature.get(_gpPlaySignature(snap));
         if (fresh) {
-          // Preserve assignment metadata (flags, etc.)
+          // Preserve assignment metadata. The personnel variant is an
+          // assignment choice, not an editable master-play field; dropping it
+          // here silently turns a selected variant back into the primary call.
           const preserved = {};
           if (snap._gpFlags) preserved._gpFlags = { ...snap._gpFlags };
+          if (_gpAssignmentVariantId(snap) !== "base") {
+            preserved.personnelVariantId = _gpAssignmentVariantId(snap);
+          }
           arr[i] = typeof copyPlayWithSourceIdentity === "function"
             ? copyPlayWithSourceIdentity(fresh, preserved)
             : { ...fresh, ...preserved };

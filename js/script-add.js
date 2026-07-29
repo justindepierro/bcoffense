@@ -71,7 +71,9 @@ function getGamePlanScriptSourceContext(play, options = {}) {
 }
 
 function createScriptPlayFromGamePlan(play, options = {}) {
-  const copy = createScriptPlayFromPlaybook(play);
+  const copy = createScriptPlayFromPlaybook(play, {
+    personnelVariantId: String(play?.personnelVariantId || "base").trim() || "base",
+  });
   copy._gpSource = getGamePlanScriptSourceContext(play, options);
   return copy;
 }

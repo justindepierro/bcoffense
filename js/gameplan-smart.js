@@ -335,14 +335,14 @@ const GP_BOX_PICTURE_PREF = {
 async function gpSuggestFillBox(boxId) {
   if (!boxId || !Array.isArray(plays)) return;
   const board = _gpEnsureBoard();
-  const inBoxSigs = new Set((board.assignments[boxId] || []).map(_gpPlaySignature));
+  const inBoxSigs = new Set((board.assignments[boxId] || []).map(_gpAssignmentIdentity));
   const intent = GP_BOX_INTENT_TYPES[boxId];
   const meta = _gpGetBoxMeta(board, boxId);
   const hasCriteria = _gpHasCriteria(meta.criteria);
   let candidates = plays.filter(
     (play) =>
       _gpPlayAllowedOnBoard(play, board) &&
-      !inBoxSigs.has(_gpPlaySignature(play)),
+      !inBoxSigs.has(_gpAssignmentIdentity(play)),
   );
   if (hasCriteria) {
     candidates = candidates.filter((play) =>
@@ -1164,13 +1164,9 @@ function addSmartGamePlanTopPicks() {
       if (!group?.targetId) return;
       _gpEnsureSmartRecommendationBoxInBoard(board, group);
       const list = board.assignments[group.targetId];
-      const existing = new Set(list.map((play) => _gpPlaySignature(play)));
-      if (existing.has(entry.sig)) {
-        skipped += 1;
-        return;
-      }
+      const existing = new Set(list.map((play) => _gpAssignmentIdentity(play)));
       const play = _gpFindPlayBySig(entry.sig);
-      if (!play) {
+      if (!play || existing.has(_gpAssignmentIdentity(play))) {
         skipped += 1;
         return;
       }
@@ -1179,7 +1175,7 @@ function addSmartGamePlanTopPicks() {
           ? copyPlayWithSourceIdentity(play)
           : { ...play },
       );
-      existing.add(entry.sig);
+      existing.add(_gpAssignmentIdentity(play));
       added += 1;
     });
   });

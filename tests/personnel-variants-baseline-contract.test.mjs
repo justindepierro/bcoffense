@@ -140,6 +140,8 @@ assert.match(scriptAdd, /createScriptPlayFromAvailableLibrary\(playIndex\)/,
   "Script library add actions preserve the displayed approved personnel variant");
 assert.match(scriptAdd, /copy\.scriptPersonnelVariantId = personnelVariantId/,
   "Script records retain a stable approved personnel variant reference");
+assert.match(scriptAdd, /createScriptPlayFromGamePlan\(play, options = \{\}\)[\s\S]*?personnelVariantId: String\(play\?\.personnelVariantId/,
+  "Game Plan to Script carries the selected personnel variant into the Script-specific selection field");
 assert.match(wristband, /getEffectivePlayVariant\(play, selectedVariantId\)/,
   "Wristband cells resolve an approved active personnel selection without cloning the source play");
 assert.match(wristband, /findPlaybookSourceForPlay\(play\) \|\| play/,
@@ -186,6 +188,14 @@ assert.match(gamePlanRender, /addAllGamePlanPersonnelVariants/,
   "Game Plan exposes an add-all-variants action directly on eligible calls");
 assert.match(await read("js/gameplan-dnd.js"), /The source call was left untouched/,
   "a blocked Holding move cannot delete its source assignment");
+assert.match(gamePlan, /preserved\.personnelVariantId = _gpAssignmentVariantId\(snap\)/,
+  "Game Plan refresh preserves a selected personnel variant instead of reverting it to primary");
+assert.match(await read("js/gameplan-actions.js"), /_gpAssignmentIdentity\(p\) === _gpAssignmentIdentity\(play\)/,
+  "auto-routing never deletes a Holding variant when that exact version is already in a destination box");
+assert.match(gamePlanIntegrations, /_gpAssignmentIdentity\(p\)/,
+  "Game Plan handoffs distinguish the same base call under different approved personnel versions");
+assert.match(await read("js/gameplan-smart.js"), /map\(_gpAssignmentIdentity\)/,
+  "Game Plan recommendations do not hide a primary call merely because a different personnel version is in the box");
 assert.match(utils, /function getPlayFilterVariants\(play\)/,
   "shared filtering resolves coherent effective personnel variants");
 assert.match(utils, /filterVariants \};/,

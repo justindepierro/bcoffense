@@ -450,11 +450,15 @@ function autoRouteHoldingBox() {
         if (!Array.isArray(b.assignments[destination])) {
           b.assignments[destination] = [];
         }
-        const sig = _gpPlaySignature(play);
         const exists = b.assignments[destination]
-          .some((p) => _gpPlaySignature(p) === sig);
-        if (!exists) b.assignments[destination].push(play);
-        routed += 1;
+          .some((p) => _gpAssignmentIdentity(p) === _gpAssignmentIdentity(play));
+        if (!exists) {
+          b.assignments[destination].push(play);
+          routed += 1;
+        } else {
+          stillHolding.push(play);
+          leftBehind += 1;
+        }
       } else {
         stillHolding.push(play);
         leftBehind += 1;
@@ -524,8 +528,8 @@ async function addPlayToGamePlanBox(boxId) {
   const board = _gpEnsureBoard();
   const assignedSigs = _gpAllAssignedSigs(board);
   // Pick from plays NOT already in this box
-  const inBoxSigs = new Set((board.assignments[boxId] || []).map(_gpPlaySignature));
-  const candidates = plays.filter((p) => !inBoxSigs.has(_gpPlaySignature(p)));
+  const inBoxVersions = new Set((board.assignments[boxId] || []).map(_gpAssignmentIdentity));
+  const candidates = plays.filter((p) => !inBoxVersions.has(_gpAssignmentIdentity(p)));
   if (candidates.length === 0) {
     showToast("Every play is already in this box.", { type: "info" });
     return;
