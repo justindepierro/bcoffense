@@ -486,14 +486,28 @@ function _gpAddSigsToBox(sigs, boxId) {
 
 function _gpMoveBetweenBoxes(fromBoxId, toBoxId, sig, rawIdx) {
   if (!fromBoxId || !toBoxId || fromBoxId === toBoxId) return;
+  let blockedByExactVersion = false;
   _gpUpdateBoard((board) => {
     const fromArr = board.assignments[fromBoxId] || [];
     const idx = _gpFindBoxPlayIndex(fromArr, sig, rawIdx);
     if (idx < 0) return;
-    const [play] = fromArr.splice(idx, 1);
+    const play = fromArr[idx];
     if (!Array.isArray(board.assignments[toBoxId])) board.assignments[toBoxId] = [];
     const exists = board.assignments[toBoxId].some((p) => _gpAssignmentIdentity(p) === _gpAssignmentIdentity(play));
-    if (!exists) board.assignments[toBoxId].push(play);
+    // Never remove the source before we know the destination can accept this
+    // exact personnel version. This is especially important for Holding.
+    if (exists) {
+      blockedByExactVersion = true;
+      return;
+    }
+    fromArr.splice(idx, 1);
+    board.assignments[toBoxId].push(play);
   });
   requestRenderGamePlan();
+  if (blockedByExactVersion) {
+    showToast("That exact personnel version is already in the destination box. The source call was left untouched.", {
+      type: "warning",
+      duration: 4000,
+    });
+  }
 }

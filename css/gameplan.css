@@ -892,6 +892,24 @@ body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar-spacer {
 }
 .gp-box-play-personnel:hover,.gp-box-play-personnel:focus-visible { border-color:var(--color-primary); color:var(--color-primary); outline:none; }
 .gp-box-play-personnel.is-variant { border-color:var(--color-success); color:var(--color-success-dark,#137a3a); background:var(--color-success-light,#e5f6e9); }
+.gp-box-play-variants {
+  margin-left: 4px;
+  padding: 1px 5px;
+  border: 1px dashed var(--color-border-med);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.25;
+  cursor: pointer;
+}
+.gp-box-play-variants:hover,.gp-box-play-variants:focus-visible {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  outline: none;
+}
 .gp-box-play-actions {
   display: flex;
   align-items: center;

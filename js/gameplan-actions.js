@@ -722,6 +722,55 @@ async function openGamePlanDuplicatePersonnelVariant(boxId, sig) {
     type: "success",
   });
 }
+
+function addAllGamePlanPersonnelVariants(combined) {
+  const ref = _gpParseBoxPlayArg(combined);
+  if (!ref?.boxId || !ref.sig) return;
+  const board = _gpEnsureBoard();
+  const list = board.assignments?.[ref.boxId] || [];
+  const index = _gpFindBoxPlayIndex(list, ref.sig, ref.rawIdx);
+  const current = index >= 0 ? list[index] : null;
+  const source = _gpFindPlayBySig(ref.sig) || current;
+  if (!source) return;
+  const options = typeof getPlayPersonnelOptions === "function" ? getPlayPersonnelOptions(source) : [];
+  if (options.length < 2) {
+    showToast("This call has no additional approved personnel variants yet.", {
+      type: "info",
+      duration: 3000,
+    });
+    return;
+  }
+  const usedVariantIds = new Set(list
+    .filter((play) => _gpPlaySignature(play) === ref.sig)
+    .map((play) => _gpAssignmentVariantId(play)));
+  const additions = options.filter((option) => !usedVariantIds.has(String(option.id || "base")));
+  if (!additions.length) {
+    showToast("All approved personnel versions of this call are already in this box.", {
+      type: "info",
+      duration: 3000,
+    });
+    return;
+  }
+  _gpUpdateBoard((nextBoard) => {
+    const nextList = nextBoard.assignments?.[ref.boxId];
+    if (!Array.isArray(nextList)) return;
+    additions.forEach((option) => {
+      const identity = `${ref.sig}::personnel=${String(option.id || "base")}`;
+      if (nextList.some((play) => _gpAssignmentIdentity(play) === identity)) return;
+      const copy = typeof copyPlayWithSourceIdentity === "function"
+        ? copyPlayWithSourceIdentity(source)
+        : { ...source };
+      if (current?._gpFlags) copy._gpFlags = { ...current._gpFlags };
+      if (option.id === "base") delete copy.personnelVariantId;
+      else copy.personnelVariantId = option.id;
+      nextList.push(copy);
+    });
+  });
+  requestRenderGamePlan();
+  showToast(`Added ${additions.length} approved personnel version${additions.length === 1 ? "" : "s"} to this box.`, {
+    type: "success",
+  });
+}
 /* -------------------------------------------------------------------------
    Right-click / long-press context menu on a box play
    ------------------------------------------------------------------------- */
