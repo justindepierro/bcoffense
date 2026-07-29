@@ -654,6 +654,17 @@ async function openGamePlanPersonnelVariant(combined) {
     { title: "Game Plan Personnel", icon: "👥", selectedValue: current },
   );
   if (!selected) return;
+  const selectedIdentity = `${ref.sig}::personnel=${String(selected || "base")}`;
+  const hasExactDuplicate = list.some((candidate, candidateIndex) =>
+    candidateIndex !== index && _gpAssignmentIdentity(candidate) === selectedIdentity,
+  );
+  if (hasExactDuplicate) {
+    showToast("That personnel version is already in this box. Choose a different approved variant.", {
+      type: "warning",
+      duration: 3500,
+    });
+    return;
+  }
   _gpUpdateBoard((nextBoard) => {
     const nextList = nextBoard.assignments?.[ref.boxId] || [];
     const nextIndex = _gpFindBoxPlayIndex(nextList, ref.sig, ref.rawIdx);
@@ -664,6 +675,52 @@ async function openGamePlanPersonnelVariant(combined) {
   requestRenderGamePlan();
   const choice = options.find((option) => option.id === selected);
   showToast(selected === "base" ? "Using primary personnel for this Game Plan call." : `Using ${choice?.personnel || "selected"} for this Game Plan call.`, { type: "success" });
+}
+
+async function openGamePlanDuplicatePersonnelVariant(boxId, sig) {
+  if (!boxId || !sig) return;
+  const board = _gpEnsureBoard();
+  const list = board.assignments?.[boxId] || [];
+  const source = _gpFindPlayBySig(sig);
+  if (!source) return;
+  const options = typeof getPlayPersonnelOptions === "function" ? getPlayPersonnelOptions(source) : [];
+  const usedVariantIds = new Set(list
+    .filter((play) => _gpPlaySignature(play) === sig)
+    .map((play) => _gpAssignmentVariantId(play)));
+  const available = options.filter((option) => !usedVariantIds.has(String(option.id || "base")));
+  if (!available.length) {
+    showToast("Every approved personnel version of this call is already in this box.", {
+      type: "info",
+      duration: 3500,
+    });
+    return;
+  }
+  const selected = await showListPicker(
+    "The primary call is already here. Choose a different approved personnel version to add alongside it.",
+    available.map((option) => ({
+      value: option.id,
+      label: `${getPersonnelEmoji(option.personnel)} ${option.personnel}${option.isBase ? " · Primary" : " · Variant"}`,
+    })),
+    { title: "Add Personnel Variant", icon: "👥" },
+  );
+  if (!selected) return;
+  _gpUpdateBoard((nextBoard) => {
+    if (!Array.isArray(nextBoard.assignments?.[boxId])) return;
+    const nextList = nextBoard.assignments[boxId];
+    const chosenIdentity = `${sig}::personnel=${String(selected || "base")}`;
+    if (nextList.some((play) => _gpAssignmentIdentity(play) === chosenIdentity)) return;
+    const copy = typeof copyPlayWithSourceIdentity === "function"
+      ? copyPlayWithSourceIdentity(source)
+      : { ...source };
+    if (selected === "base") delete copy.personnelVariantId;
+    else copy.personnelVariantId = selected;
+    nextList.push(copy);
+  });
+  requestRenderGamePlan();
+  const choice = available.find((option) => option.id === selected);
+  showToast(`Added ${choice?.personnel || "selected"} version alongside the primary call.`, {
+    type: "success",
+  });
 }
 /* -------------------------------------------------------------------------
    Right-click / long-press context menu on a box play

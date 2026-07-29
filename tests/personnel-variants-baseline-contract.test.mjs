@@ -172,6 +172,14 @@ assert.match(gamePlan, /_gpPersonnelFilterMatches\(p, _gpFilters\.personnel\)/,
   "Game Plan personnel filtering matches approved variants without rewriting primary personnel");
 assert.match(gamePlanRender, /_gpPersonnelChoicesForPlay\(play\)/,
   "Game Plan shows approved personnel values in its existing filter menu");
+assert.match(gamePlanRender, /effectivePlay\.personnel.*\*/,
+  "Game Plan visibly marks a selected approved personnel variant");
+assert.match(await read("js/gameplan.js"), /function _gpAssignmentIdentity\(play\)/,
+  "Game Plan distinguishes same-call personnel versions only at box duplicate boundaries");
+assert.match(await read("js/gameplan-dnd.js"), /openGamePlanDuplicatePersonnelVariant\(boxId, duplicateSig\)/,
+  "duplicate primary calls offer an approved personnel variant instead of silently blocking the coach");
+assert.match(await read("js/gameplan-actions.js"), /function openGamePlanDuplicatePersonnelVariant\(boxId, sig\)/,
+  "Game Plan can add an unused approved personnel version alongside the primary call");
 assert.match(utils, /function getPlayFilterVariants\(play\)/,
   "shared filtering resolves coherent effective personnel variants");
 assert.match(utils, /filterVariants \};/,

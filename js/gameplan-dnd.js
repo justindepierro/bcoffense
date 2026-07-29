@@ -410,13 +410,19 @@ function _gpAddSigsToBox(sigs, boxId) {
   let added = 0;
   let skipped = 0;
   let restricted = 0;
+  const primaryDuplicates = [];
   _gpUpdateBoard((board) => {
     if (!Array.isArray(board.assignments[boxId])) board.assignments[boxId] = [];
-    const existingSigs = new Set(board.assignments[boxId].map((p) => _gpPlaySignature(p)));
+    const existingIdentities = new Set(board.assignments[boxId].map((p) => _gpAssignmentIdentity(p)));
     sigs.forEach((sig) => {
-      if (existingSigs.has(sig)) { skipped += 1; return; }
       const play = _gpFindPlayBySig(sig);
       if (!play) { skipped += 1; return; }
+      const primaryIdentity = _gpAssignmentIdentity(play);
+      if (existingIdentities.has(primaryIdentity)) {
+        skipped += 1;
+        primaryDuplicates.push(sig);
+        return;
+      }
       if (!_gpPlayAllowedOnBoard(play, board)) {
         restricted += 1;
         return;
@@ -426,7 +432,7 @@ function _gpAddSigsToBox(sigs, boxId) {
           ? copyPlayWithSourceIdentity(play)
           : { ...play },
       );
-      existingSigs.add(sig);
+      existingIdentities.add(primaryIdentity);
       added += 1;
     });
   });
@@ -435,15 +441,46 @@ function _gpAddSigsToBox(sigs, boxId) {
   if (added > 0) {
     const label = _gpBoxLabel(boxId);
     const skippedCount = skipped + restricted;
-    showToast(`Added ${added} play${added === 1 ? "" : "s"} to ${label}${skippedCount > 0 ? ` (${skippedCount} skipped)` : ""}`,
-      { type: "success" });
+    const duplicateSig = primaryDuplicates[0] || "";
+    const duplicateSource = duplicateSig ? _gpFindPlayBySig(duplicateSig) : null;
+    const hasAlternate = duplicateSource && typeof getPlayPersonnelOptions === "function"
+      ? getPlayPersonnelOptions(duplicateSource).length > 1
+      : false;
+    showToast(
+      `Added ${added} play${added === 1 ? "" : "s"} to ${label}${skippedCount > 0 ? ` (${skippedCount} skipped)` : ""}`,
+      hasAlternate
+        ? {
+          type: "success",
+          duration: 7000,
+          actionLabel: "Add variant",
+          action: () => openGamePlanDuplicatePersonnelVariant(boxId, duplicateSig),
+        }
+        : { type: "success" },
+    );
   } else if (restricted > 0) {
     showToast("This template accepts passing play types only.", {
       type: "warning",
       duration: 3000,
     });
   } else if (skipped > 0) {
-    showToast(`No plays added — ${skipped} were already in the box.`, { type: "warning" });
+    const duplicateSig = primaryDuplicates[0] || "";
+    const duplicateSource = duplicateSig ? _gpFindPlayBySig(duplicateSig) : null;
+    const hasAlternate = duplicateSource && typeof getPlayPersonnelOptions === "function"
+      ? getPlayPersonnelOptions(duplicateSource).length > 1
+      : false;
+    showToast(
+      hasAlternate
+        ? `That primary call is already in ${_gpBoxLabel(boxId)}. You can add it as an approved personnel variant instead.`
+        : `No plays added — ${skipped} were already in the box.`,
+      hasAlternate
+        ? {
+          type: "warning",
+          duration: 7000,
+          actionLabel: "Choose variant",
+          action: () => openGamePlanDuplicatePersonnelVariant(boxId, duplicateSig),
+        }
+        : { type: "warning" },
+    );
   }
 }
 
@@ -455,7 +492,7 @@ function _gpMoveBetweenBoxes(fromBoxId, toBoxId, sig, rawIdx) {
     if (idx < 0) return;
     const [play] = fromArr.splice(idx, 1);
     if (!Array.isArray(board.assignments[toBoxId])) board.assignments[toBoxId] = [];
-    const exists = board.assignments[toBoxId].some((p) => _gpPlaySignature(p) === sig);
+    const exists = board.assignments[toBoxId].some((p) => _gpAssignmentIdentity(p) === _gpAssignmentIdentity(play));
     if (!exists) board.assignments[toBoxId].push(play);
   });
   requestRenderGamePlan();

@@ -958,6 +958,17 @@ function _gpPlaySignature(play) {
   return getPlayIdentityKey(play, "gameplan", { trim: false });
 }
 
+// A board may intentionally carry the same canonical call for different
+// personnel packages. Keep the base signature for cross-module identity, and
+// use this stricter key only where a single Game Plan box rejects duplicates.
+function _gpAssignmentVariantId(play) {
+  return String(play?.personnelVariantId || "base").trim() || "base";
+}
+
+function _gpAssignmentIdentity(play) {
+  return `${_gpPlaySignature(play)}::personnel=${_gpAssignmentVariantId(play)}`;
+}
+
 function _gpNormalizeBoxPlayIndex(value) {
   if (value === null || value === undefined || value === "") return null;
   const idx = Number(value);
