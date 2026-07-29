@@ -188,6 +188,12 @@ async function addPlayPersonnelVariant() {
     showToast(`${personnel} is already approved for this play.`, { type: "warning" });
     return;
   }
+  // A deliberately entered personnel label is a team vocabulary decision,
+  // not disposable text on this one play. Persist it before staging the
+  // variant so it is immediately available to every personnel-aware tool.
+  const addedTeamPackage = typeof ensureTeamPersonnelPackage === "function"
+    ? ensureTeamPersonnelPackage(personnel)
+    : false;
   const variants = Array.isArray(play.personnelVariants) ? [...play.personnelVariants] : [];
   variants.push({ personnel, overrides: {} });
   const staged = { ...basePlay, personnelVariants: variants };
@@ -195,6 +201,9 @@ async function addPlayPersonnelVariant() {
   _setPendingPlayEditorPersonnelVariants(staged.personnelVariants);
   _editingPersonnelVariantId = staged.personnelVariants[staged.personnelVariants.length - 1]?.id || "base";
   _populateEditorForm(basePlay, false);
+  if (addedTeamPackage) {
+    showToast(`${personnel} is now available across team personnel tools.`, { duration: 2600, type: "success" });
+  }
 }
 
 async function renamePlayPersonnelVariant() {

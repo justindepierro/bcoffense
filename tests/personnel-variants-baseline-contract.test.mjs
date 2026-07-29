@@ -103,6 +103,12 @@ assert.match(editor, /getTeamPersonnelPackages\(\)/,
   "the personnel variant picker reuses the team's configured personnel vocabulary");
 assert.match(editor, /Add custom/,
   "the personnel variant picker retains a deliberate custom-label fallback");
+assert.match(editor, /ensureTeamPersonnelPackage\(personnel\)/,
+  "a newly approved personnel variant is registered for team-wide reuse");
+assert.match(await read("js/team-settings.js"), /function ensureTeamPersonnelPackage\(personnel\)/,
+  "Team Settings owns durable registration of reusable personnel packages");
+assert.match(await read("js/team-settings.js"), /getPlayPersonnelOptions\(play\)\.map\(\(option\) => option\.personnel\)/,
+  "existing personnel variants also appear in the team personnel vocabulary");
 assert.match(editor, /const variantActions = \{[\s\S]*?addPlayPersonnelVariant/,
   "personnel editor actions are wired locally after each modal render");
 assert.match(scriptShared, /scriptPersonnelVariantId/,

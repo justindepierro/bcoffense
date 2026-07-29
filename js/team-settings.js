@@ -877,6 +877,29 @@ function addTeamPersonnelPackage() {
   showToast(`${personnel} package added`);
 }
 
+// Register a personnel label at the team level without opening or depending
+// on Team Settings. Editor workflows use this when a coach deliberately adds
+// a new approved variant so the label becomes reusable everywhere immediately.
+function ensureTeamPersonnelPackage(personnel) {
+  const normalizedPersonnel = String(personnel || "").trim().replace(/\s+/g, " ");
+  if (!normalizedPersonnel) return false;
+  const stored = _teamCachedRawGet(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, []);
+  const packages = Array.isArray(stored)
+    ? stored.map((pkg) => normalizePersonnelPackage(pkg)).filter((pkg) => pkg.personnel)
+    : [];
+  if (packages.some((pkg) => pkg.personnel.toLowerCase() === normalizedPersonnel.toLowerCase())) {
+    return false;
+  }
+  packages.push(normalizePersonnelPackage({
+    personnel: normalizedPersonnel,
+    assignments: {},
+    labels: getTeamAssignmentLabelMap(normalizedPersonnel),
+  }));
+  saveTeamPersonnelPackages(packages);
+  if (typeof invalidateFilterCache === "function") invalidateFilterCache();
+  return true;
+}
+
 function addTeamSwapGroup() {
   const nameEl = document.getElementById("teamSwapGroupNameInput");
   const personnelEl = document.getElementById("teamSwapGroupPersonnelInput");
@@ -1343,7 +1366,10 @@ function getPlaybookPersonnelValues() {
   if (typeof plays === "undefined" || !Array.isArray(plays)) return [];
   return [...new Set(
     plays
-      .map((play) => String(play?.personnel || "").trim())
+      .flatMap((play) => typeof getPlayPersonnelOptions === "function"
+        ? getPlayPersonnelOptions(play).map((option) => option.personnel)
+        : [play?.personnel])
+      .map((personnel) => String(personnel || "").trim())
       .filter(Boolean),
   )].sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
 }
