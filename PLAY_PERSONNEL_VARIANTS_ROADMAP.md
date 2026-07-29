@@ -167,8 +167,8 @@ chosen presentation, never a cloned variant.
   feedback.
 - [x] Allow only safe metadata overrides in the first release: formation,
   tags, shifts, motions, protections, notes, and player rules.
-- [ ] Verify CSV export retains the primary field and backup/cloud sync retain
-  all variant data.
+- [x] Verify CSV export retains the primary field and backup/cloud sync retain
+  all variant data (contract: `tests/personnel-variants-roundtrip-contract.test.mjs`).
 
 ### Phase 3 — Coach workflow adoption
 
