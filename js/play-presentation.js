@@ -190,6 +190,7 @@ let playPresentationTeleTool = "pen";
 let playPresentationTeleColor = "#ffd400";
 let playPresentationTeleWidth = 5;
 let playPresentationTeleStrokes = [];
+let playPresentationTeleRedoStrokes = [];
 let playPresentationTeleActive = null;
 let playPresentationTeleCanvas = null;
 let playPresentationTeleCtx = null;
@@ -1017,6 +1018,9 @@ function attachPlayPresentationTelePointer(canvas) {
     if (stroke.points.length) {
       delete stroke.pointerId;
       playPresentationTeleStrokes.push(stroke);
+      // A new stroke establishes a new history branch, so previously undone
+      // work can no longer be replayed.
+      playPresentationTeleRedoStrokes = [];
     }
     updatePlayPresentationTeleControls();
     redrawPlayPresentationTele();
@@ -1055,9 +1059,11 @@ function ensurePlayPresentationTeleCanvas() {
 
 function updatePlayPresentationTeleControls() {
   const undo = document.getElementById("playPresentationTeleUndo");
+  const redo = document.getElementById("playPresentationTeleRedo");
   const clear = document.getElementById("playPresentationTeleClear");
   const empty = playPresentationTeleStrokes.length === 0;
   if (undo) undo.disabled = empty;
+  if (redo) redo.disabled = playPresentationTeleRedoStrokes.length === 0;
   if (clear) clear.disabled = empty;
 }
 
@@ -1099,13 +1105,24 @@ function setPlayPresentationTeleWidth(width) {
 }
 
 function undoPlayPresentationTele() {
-  playPresentationTeleStrokes.pop();
+  const stroke = playPresentationTeleStrokes.pop();
+  if (!stroke) return;
+  playPresentationTeleRedoStrokes.push(stroke);
+  updatePlayPresentationTeleControls();
+  redrawPlayPresentationTele();
+}
+
+function redoPlayPresentationTele() {
+  const stroke = playPresentationTeleRedoStrokes.pop();
+  if (!stroke) return;
+  playPresentationTeleStrokes.push(stroke);
   updatePlayPresentationTeleControls();
   redrawPlayPresentationTele();
 }
 
 function clearPlayPresentationTele() {
   playPresentationTeleStrokes = [];
+  playPresentationTeleRedoStrokes = [];
   playPresentationTeleActive = null;
   updatePlayPresentationTeleControls();
   redrawPlayPresentationTele();
@@ -2944,6 +2961,10 @@ function handlePlayPresentationKeydown(event) {
   if (event.key === "Escape") {
     event.preventDefault();
     closePlayPresentation();
+  } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z" && playPresentationTeleEnabled) {
+    event.preventDefault();
+    if (event.shiftKey) redoPlayPresentationTele();
+    else undoPlayPresentationTele();
   } else if (event.key === "ArrowRight" || event.key === "PageDown") {
     event.preventDefault();
     movePlayPresentation(1);
