@@ -2191,11 +2191,14 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   max-width: min(96vw, 720px);
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-pill);
-  background: var(--color-white-alpha-15);
-  border: 1px solid var(--color-white-alpha-20);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* This bar sits over diagrams that are often almost entirely white. Keep a
+     stable dark surface so every pen, width, Undo, and Clear control remains
+     readable instead of inheriting the field's contrast. */
+  background: rgba(7, 20, 52, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  box-shadow: 0 10px 24px rgba(4, 12, 34, 0.34), 0 1px 3px rgba(4, 12, 34, 0.54);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   transition: opacity var(--transition-normal) ease;
 }
 
@@ -2213,7 +2216,7 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   align-items: center;
   gap: var(--space-xs);
   padding: 0 var(--space-xs);
-  border-right: 1px solid var(--color-white-alpha-20);
+  border-right: 1px solid rgba(255, 255, 255, 0.28);
 }
 
 .pp-tele-group:last-child {
@@ -2229,9 +2232,9 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   min-height: 38px;
   padding: 0 var(--space-xs);
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-white-alpha-20);
-  background: var(--color-white-alpha-15);
-  color: var(--color-text-inverse);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.11);
+  color: #ffffff;
   font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;
@@ -2240,13 +2243,16 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
 
 .pp-tele-btn:hover,
 .pp-tele-width:hover {
-  background: var(--color-white-alpha-20);
+  border-color: rgba(255, 255, 255, 0.74);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .pp-tele-btn.active,
 .pp-tele-width.active {
-  background: var(--color-text-inverse);
-  color: var(--color-text);
+  border-color: #ffffff;
+  background: #ffffff;
+  color: #0b1d4a;
+  box-shadow: 0 0 0 2px rgba(255, 204, 68, 0.78);
 }
 
 .pp-tele-swatch {
@@ -2254,7 +2260,7 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   height: 30px;
   background: var(--pp-tele-swatch-color, var(--color-accent));
   border-radius: var(--radius-pill);
-  border: 2px solid var(--color-white-alpha-20);
+  border: 2px solid rgba(255, 255, 255, 0.78);
   cursor: pointer;
   padding: 0;
   transition: transform var(--transition-fast);
@@ -2262,7 +2268,7 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
 
 .pp-tele-swatch.active {
   transform: scale(1.12);
-  box-shadow: 0 0 0 2px var(--color-text-inverse);
+  box-shadow: 0 0 0 3px #ffffff, 0 0 0 5px rgba(255, 204, 68, 0.9);
 }
 
 .pp-tele-swatch-light {
@@ -2291,7 +2297,10 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
 
 .pp-tele-btn:disabled,
 .pp-tele-width:disabled {
-  opacity: 0.45;
+  opacity: 1;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.45);
   cursor: not-allowed;
 }
 
