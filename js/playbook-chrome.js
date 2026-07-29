@@ -150,10 +150,21 @@ function _applyPbFilterDrawerState() {
   const panel = document.getElementById("playbook");
   const drawer = document.getElementById("pbFilterDrawer");
   const btn = document.getElementById("pbFilterToggleBtn");
+  const backdrop = document.getElementById("pbFilterBackdrop");
   if (!panel || !drawer) return;
+  // Move focus before hiding/deactivating either surface. This is important
+  // for keyboard and screen-reader users who close filters through the scrim.
+  if (!_pbFilterDrawerOpen && document.activeElement &&
+    (drawer.contains(document.activeElement) || backdrop === document.activeElement)) {
+    btn?.focus({ preventScroll: true });
+  }
   panel.classList.toggle("pb-filter-open", _pbFilterDrawerOpen);
   drawer.toggleAttribute("inert", !_pbFilterDrawerOpen);
   drawer.setAttribute("aria-hidden", _pbFilterDrawerOpen ? "false" : "true");
+  if (backdrop) {
+    backdrop.setAttribute("aria-hidden", _pbFilterDrawerOpen ? "false" : "true");
+    backdrop.tabIndex = _pbFilterDrawerOpen ? 0 : -1;
+  }
   if (btn) {
     btn.setAttribute("aria-pressed", _pbFilterDrawerOpen ? "true" : "false");
     btn.setAttribute("aria-expanded", _pbFilterDrawerOpen ? "true" : "false");

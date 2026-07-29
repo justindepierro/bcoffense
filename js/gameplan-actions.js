@@ -783,10 +783,14 @@ function _gpOpenPersonnelVariantsPicker(choices) {
     overlay.addEventListener("change", updateSelection);
     overlay.addEventListener("click", (event) => {
       if (event.target === overlay || event.target.closest(".modal-close") || event.target.closest('[data-action="cancel"]')) {
+        event.preventDefault();
+        event.stopPropagation();
         finish([]);
         return;
       }
       if (event.target.closest('[data-action="add"]')) {
+        event.preventDefault();
+        event.stopPropagation();
         finish([...overlay.querySelectorAll('input[type="checkbox"]:checked')].map((input) => input.value));
       }
     });

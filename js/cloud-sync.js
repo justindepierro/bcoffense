@@ -2389,6 +2389,10 @@
     } catch (err) {
       // Freshness checks are enhancement work. Do not compete with an open
       // practice screen or present a recovery error for a transient poll.
+      // A 401 is handled centrally by auth.js, which locks the workspace and
+      // opens one clear sign-in prompt. Do not add a misleading sync warning
+      // after that deliberate security transition.
+      if (err?.status === 401) return null;
       console.warn("Team foreground refresh deferred:", err);
       return null;
     } finally {

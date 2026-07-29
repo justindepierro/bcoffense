@@ -2080,6 +2080,9 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
   display: none;
   position: absolute;
   inset: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
   z-index: var(--z-drawer-scrim);
   background: var(--color-overlay-xs);
   cursor: pointer;
