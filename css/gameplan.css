@@ -910,6 +910,54 @@ body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar-spacer {
   background: var(--color-primary-light);
   outline: none;
 }
+.gp-personnel-variants-picker {
+  max-width: 460px;
+}
+.gp-personnel-variants-picker-intro {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+.gp-personnel-variants-picker-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.gp-personnel-variants-picker-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-lighter);
+  cursor: pointer;
+}
+.gp-personnel-variants-picker-choice:hover,
+.gp-personnel-variants-picker-choice:has(input:focus-visible) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+.gp-personnel-variants-picker-choice input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+  flex: 0 0 auto;
+}
+.gp-personnel-variants-picker-choice span {
+  display: grid;
+  gap: 1px;
+}
+.gp-personnel-variants-picker-choice small {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+.gp-personnel-variants-picker-count {
+  margin-right: auto;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
 .gp-box-play-actions {
   display: flex;
   align-items: center;

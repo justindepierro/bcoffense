@@ -727,7 +727,86 @@ async function openGamePlanDuplicatePersonnelVariant(boxId, sig) {
   });
 }
 
-function addAllGamePlanPersonnelVariants(combined) {
+function _gpClosePersonnelVariantsPicker() {
+  const overlay = document.getElementById("gpPersonnelVariantsPickerOverlay");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer("gpPersonnelVariantsPickerOverlay", { returnFocus: false });
+  overlay.remove();
+}
+
+function _gpOpenPersonnelVariantsPicker(choices) {
+  return new Promise((resolve) => {
+    _gpClosePersonnelVariantsPicker();
+    const overlay = document.createElement("div");
+    overlay.id = "gpPersonnelVariantsPickerOverlay";
+    overlay.className = "custom-modal-overlay visible gp-personnel-variants-picker-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-labelledby", "gpPersonnelVariantsPickerTitle");
+    const choiceHtml = choices.map((option) => {
+      const label = `${getPersonnelEmoji(option.personnel) || "●"} ${option.personnel || "Primary"}`;
+      const detail = option.isBase ? "Primary version" : "Approved variant";
+      return `<label class="gp-personnel-variants-picker-choice">
+        <input type="checkbox" value="${escapeHtml(String(option.id || "base"))}" />
+        <span><strong>${escapeHtml(label)}</strong><small>${detail}</small></span>
+      </label>`;
+    }).join("");
+    overlay.innerHTML = `<div class="custom-modal gp-personnel-variants-picker" role="document">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">👥</span>
+        <h3 class="custom-modal-title" id="gpPersonnelVariantsPickerTitle">Add Personnel Versions</h3>
+        <button type="button" class="modal-close" aria-label="Close">×</button>
+      </div>
+      <div class="custom-modal-body">
+        <p class="gp-personnel-variants-picker-intro">Choose the approved personnel versions to add alongside this call. Versions already in this box are not shown.</p>
+        <div class="gp-personnel-variants-picker-list">${choiceHtml}</div>
+      </div>
+      <div class="custom-modal-actions">
+        <span class="gp-personnel-variants-picker-count" aria-live="polite">No versions selected</span>
+        <button type="button" class="btn" data-action="cancel">Cancel</button>
+        <button type="button" class="btn btn-primary" data-action="add" disabled>Add selected</button>
+      </div>
+    </div>`;
+    const finish = (selected) => {
+      _gpClosePersonnelVariantsPicker();
+      resolve(selected);
+    };
+    const updateSelection = () => {
+      const selected = [...overlay.querySelectorAll('input[type="checkbox"]:checked')];
+      const addButton = overlay.querySelector('[data-action="add"]');
+      const count = overlay.querySelector(".gp-personnel-variants-picker-count");
+      if (addButton) addButton.disabled = selected.length === 0;
+      if (count) count.textContent = selected.length
+        ? `${selected.length} version${selected.length === 1 ? "" : "s"} selected`
+        : "No versions selected";
+    };
+    overlay.addEventListener("change", updateSelection);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay || event.target.closest(".modal-close") || event.target.closest('[data-action="cancel"]')) {
+        finish([]);
+        return;
+      }
+      if (event.target.closest('[data-action="add"]')) {
+        finish([...overlay.querySelectorAll('input[type="checkbox"]:checked')].map((input) => input.value));
+      }
+    });
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") finish([]);
+    });
+    document.body.appendChild(overlay);
+    if (typeof openLayer === "function") {
+      openLayer(overlay, {
+        id: "gpPersonnelVariantsPickerOverlay",
+        scrollElement: overlay.querySelector(".custom-modal") || overlay,
+        blocking: true,
+        onEscape: () => finish([]),
+      });
+    }
+    overlay.querySelector('input[type="checkbox"]')?.focus();
+  });
+}
+
+async function openGamePlanPersonnelVariantsPicker(combined) {
   const ref = _gpParseBoxPlayArg(combined);
   if (!ref?.boxId || !ref.sig) return;
   const board = _gpEnsureBoard();
@@ -747,14 +826,19 @@ function addAllGamePlanPersonnelVariants(combined) {
   const usedVariantIds = new Set(list
     .filter((play) => _gpPlaySignature(play) === ref.sig)
     .map((play) => _gpAssignmentVariantId(play)));
-  const additions = options.filter((option) => !usedVariantIds.has(String(option.id || "base")));
-  if (!additions.length) {
+  const available = options.filter((option) => !usedVariantIds.has(String(option.id || "base")));
+  if (!available.length) {
     showToast("All approved personnel versions of this call are already in this box.", {
       type: "info",
       duration: 3000,
     });
     return;
   }
+  const selectedIds = await _gpOpenPersonnelVariantsPicker(available);
+  if (!selectedIds.length) return;
+  const selectedIdSet = new Set(selectedIds.map((id) => String(id || "base")));
+  const additions = available.filter((option) => selectedIdSet.has(String(option.id || "base")));
+  if (!additions.length) return;
   _gpUpdateBoard((nextBoard) => {
     const nextList = nextBoard.assignments?.[ref.boxId];
     if (!Array.isArray(nextList)) return;

@@ -188,10 +188,10 @@ assert.match(await read("js/gameplan-dnd.js"), /openGamePlanDuplicatePersonnelVa
   "duplicate primary calls offer an approved personnel variant instead of silently blocking the coach");
 assert.match(await read("js/gameplan-actions.js"), /function openGamePlanDuplicatePersonnelVariant\(boxId, sig\)/,
   "Game Plan can add an unused approved personnel version alongside the primary call");
-assert.match(await read("js/gameplan-actions.js"), /function addAllGamePlanPersonnelVariants\(combined\)/,
-  "Game Plan cards can intentionally add every unused approved personnel version");
-assert.match(gamePlanRender, /addAllGamePlanPersonnelVariants/,
-  "Game Plan exposes an add-all-variants action directly on eligible calls");
+assert.match(await read("js/gameplan-actions.js"), /async function openGamePlanPersonnelVariantsPicker\(combined\)/,
+  "Game Plan cards use a deliberate multi-select flow for unused approved personnel versions");
+assert.match(gamePlanRender, /openGamePlanPersonnelVariantsPicker/,
+  "Game Plan exposes a choose-variants action directly on eligible calls");
 assert.match(await read("js/gameplan-dnd.js"), /The source call was left untouched/,
   "a blocked Holding move cannot delete its source assignment");
 assert.match(gamePlan, /getPlayPersonnelVariant\(fresh, requestedVariantId\)[\s\S]*?preserved\.personnelVariantId = requestedVariantId/,

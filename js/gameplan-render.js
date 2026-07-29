@@ -836,7 +836,7 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx, renderCtx) {
     ? `<button type="button" class="gp-box-play-personnel${variantId !== "base" ? " is-variant" : ""}" data-action="openGamePlanPersonnelVariant" data-arg="${escapeHtml(actionArg)}" title="Choose the approved personnel variant for this Game Plan call">${escapeHtml(getPersonnelEmoji(effectivePlay.personnel) || "●")} ${escapeHtml(effectivePlay.personnel || "Personnel")}${variantId !== "base" ? " *" : ""} ▾</button>`
     : "";
   const addVariantsControl = variantOptions.length > 1
-    ? `<button type="button" class="gp-box-play-variants" data-action="addAllGamePlanPersonnelVariants" data-arg="${escapeHtml(actionArg)}" title="Add every unused approved personnel version of this call to this box">+ all variants</button>`
+    ? `<button type="button" class="gp-box-play-variants" data-action="openGamePlanPersonnelVariantsPicker" data-arg="${escapeHtml(actionArg)}" title="Choose which unused approved personnel versions to add to this box">+ variants</button>`
     : "";
   const matchupBadges = _gpMatchupBadges(play);
   const scoutBadge = _gpScoutBadge(play);
