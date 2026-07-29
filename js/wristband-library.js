@@ -50,8 +50,14 @@ function populateWristbandCheckboxFilters() {
     ...new Set(plays.map((p) => p.tempo).filter((t) => t && t.trim())),
   ].sort();
   const personnel = [
-    ...new Set(plays.map((p) => p.personnel).filter((p) => p && p.trim())),
-  ].sort();
+    ...new Set((typeof getTeamPersonnelPackages === "function"
+      ? getTeamPersonnelPackages().map((pkg) => pkg?.personnel)
+      : plays.flatMap((play) => typeof getPlayPersonnelOptions === "function"
+        ? getPlayPersonnelOptions(play).map((option) => option.personnel)
+        : [play?.personnel]))
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)),
+  ].sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
 
   buildCheckboxFilterGroup(
     "wbTempoFilters",
@@ -133,44 +139,18 @@ function syncWristbandFilterUi(filterState = getWristbandFilterState()) {
 
 function matchesWristbandPlayFilters(play, filterState, opts = {}) {
   if (!play) return false;
-
-  if (filterState.type && play.type !== filterState.type) return false;
-
-  if (
-    filterState.selectedTempos.length > 0 &&
-    !filterState.selectedTempos.includes(play.tempo)
-  ) {
-    return false;
-  }
-
-  if (
-    filterState.selectedPersonnel.length > 0 &&
-    !filterState.selectedPersonnel.includes(play.personnel)
-  ) {
-    return false;
-  }
-
-  if (!filterState.search) return true;
-
-  if (opts.searchMode === "fullCall") {
-    return getFullCall(play).toLowerCase().includes(filterState.search);
-  }
-
-  const searchFields = [
-    play.play,
-    play.formation,
-    play.protection,
-    play.personnel,
-    play.type,
-    play.oneWord,
-    play.basePlay,
-    play.lineCall,
-    play.playTag1,
-    play.playTag2,
-  ]
-    .filter(Boolean)
-    .map((value) => String(value).toLowerCase());
-  return searchFields.some((value) => value.includes(filterState.search));
+  const candidates = typeof getPlayFilterVariants === "function" ? getPlayFilterVariants(play) : [play];
+  return candidates.some((candidate) => {
+    if (filterState.type && candidate.type !== filterState.type) return false;
+    if (filterState.selectedTempos.length > 0 && !filterState.selectedTempos.includes(candidate.tempo)) return false;
+    if (filterState.selectedPersonnel.length > 0 && !filterState.selectedPersonnel.includes(candidate.personnel)) return false;
+    if (!filterState.search) return true;
+    if (opts.searchMode === "fullCall") return getFullCall(candidate).toLowerCase().includes(filterState.search);
+    return [candidate.play, candidate.formation, candidate.protection, candidate.personnel, candidate.type,
+      candidate.oneWord, candidate.basePlay, candidate.lineCall, candidate.playTag1, candidate.playTag2]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(filterState.search));
+  });
 }
 
 function filterWristbandPlays() {

@@ -516,25 +516,24 @@ function renderAvailablePlays() {
   const filteredEntries = [];
   for (let playIdx = 0; playIdx < plays.length; playIdx += 1) {
     const play = plays[playIdx];
-    if (!matchesFilter(play.type, scriptSelectedTypes)) continue;
-    if (!matchesFilter(play.preferredSituation, scriptSelectedSituation)) {
-      continue;
-    }
-    if (!matchesFilter(play.preferredDown, scriptSelectedDown)) continue;
-    if (!matchesFilter(play.preferredDistance, scriptSelectedDistance)) {
-      continue;
-    }
-    if (!matchesFilter(play.preferredHash, scriptSelectedHash)) continue;
-    if (!matchesFilter(play.preferredFieldPosition, scriptSelectedFieldPos)) {
-      continue;
-    }
-    if (!matchesFilter(play.personnel, scriptSelectedPersonnel)) continue;
-    if (formation && play.formation !== formation) continue;
-    if (basePlay && play.basePlay !== basePlay) continue;
-    const searchScore = searchQuery
-      ? scoreScriptPlaySearchQuery(play, searchQuery)
-      : 0;
-    if (searchScore === null) continue;
+    const candidates = typeof getPlayFilterVariants === "function" ? getPlayFilterVariants(play) : [play];
+    const matches = candidates.map((candidate) => ({
+      score: searchQuery ? scoreScriptPlaySearchQuery(candidate, searchQuery) : 0,
+      candidate,
+    })).filter(({ candidate, score }) =>
+      matchesFilter(candidate.type, scriptSelectedTypes) &&
+      matchesFilter(candidate.preferredSituation, scriptSelectedSituation) &&
+      matchesFilter(candidate.preferredDown, scriptSelectedDown) &&
+      matchesFilter(candidate.preferredDistance, scriptSelectedDistance) &&
+      matchesFilter(candidate.preferredHash, scriptSelectedHash) &&
+      matchesFilter(candidate.preferredFieldPosition, scriptSelectedFieldPos) &&
+      matchesFilter(candidate.personnel, scriptSelectedPersonnel) &&
+      (!formation || candidate.formation === formation) &&
+      (!basePlay || candidate.basePlay === basePlay) &&
+      score !== null,
+    );
+    if (!matches.length) continue;
+    const searchScore = Math.max(...matches.map(({ score }) => Number(score) || 0));
     if (gamePlanOnly) {
       if (typeof isPlayInGamePlanBoard !== "function") continue;
       if (!isPlayInGamePlanBoard(play)) continue;

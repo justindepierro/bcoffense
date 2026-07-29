@@ -503,7 +503,18 @@ function updateSwatchSelection(containerId, selectedColor) {
 function populateWbPersonnelDatalist() {
   const datalist = document.getElementById("wbPersonnelOptions");
   if (!datalist) return;
-  const unique = [...new Set(plays.map((p) => p.personnel).filter((p) => p && p.trim()))].sort();
+  const packageValues = typeof getTeamPersonnelPackages === "function"
+    ? getTeamPersonnelPackages().map((pkg) => pkg?.personnel)
+    : [];
+  const playValues = Array.isArray(plays)
+    ? plays.flatMap((play) => typeof getPlayPersonnelOptions === "function"
+      ? getPlayPersonnelOptions(play).map((option) => option.personnel)
+      : [play?.personnel])
+    : [];
+  const unique = [...new Set([...packageValues, ...playValues]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean))]
+    .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
   datalist.innerHTML = unique.map((p) => `<option value="${escapeHtml(p)}"></option>`).join("");
 }
 
