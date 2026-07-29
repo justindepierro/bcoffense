@@ -1525,8 +1525,13 @@ function refreshGamePlanFromPlaybook() {
           // here silently turns a selected variant back into the primary call.
           const preserved = {};
           if (snap._gpFlags) preserved._gpFlags = { ...snap._gpFlags };
-          if (_gpAssignmentVariantId(snap) !== "base") {
-            preserved.personnelVariantId = _gpAssignmentVariantId(snap);
+          const requestedVariantId = _gpAssignmentVariantId(snap);
+          if (
+            requestedVariantId !== "base" &&
+            typeof getPlayPersonnelVariant === "function" &&
+            getPlayPersonnelVariant(fresh, requestedVariantId)
+          ) {
+            preserved.personnelVariantId = requestedVariantId;
           }
           arr[i] = typeof copyPlayWithSourceIdentity === "function"
             ? copyPlayWithSourceIdentity(fresh, preserved)

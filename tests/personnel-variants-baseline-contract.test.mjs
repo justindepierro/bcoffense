@@ -188,8 +188,8 @@ assert.match(gamePlanRender, /addAllGamePlanPersonnelVariants/,
   "Game Plan exposes an add-all-variants action directly on eligible calls");
 assert.match(await read("js/gameplan-dnd.js"), /The source call was left untouched/,
   "a blocked Holding move cannot delete its source assignment");
-assert.match(gamePlan, /preserved\.personnelVariantId = _gpAssignmentVariantId\(snap\)/,
-  "Game Plan refresh preserves a selected personnel variant instead of reverting it to primary");
+assert.match(gamePlan, /getPlayPersonnelVariant\(fresh, requestedVariantId\)[\s\S]*?preserved\.personnelVariantId = requestedVariantId/,
+  "Game Plan refresh preserves a valid selected personnel variant instead of reverting it to primary");
 assert.match(await read("js/gameplan-actions.js"), /_gpAssignmentIdentity\(p\) === _gpAssignmentIdentity\(play\)/,
   "auto-routing never deletes a Holding variant when that exact version is already in a destination box");
 assert.match(gamePlanIntegrations, /_gpAssignmentIdentity\(p\)/,

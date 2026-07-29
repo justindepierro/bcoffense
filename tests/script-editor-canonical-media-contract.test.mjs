@@ -50,8 +50,8 @@ assert.match(
 );
 assert.match(
   scriptAdd,
-  /function createScriptPlayFromPlaybook\(play\)[\s\S]*?mediaId: typeof getPlayMediaId/,
-  "script-copy fallback preserves the canonical media ID",
+  /function createScriptPlayFromPlaybook\(play, options = \{\}\)[\s\S]*?mediaId: typeof getPlayMediaId[\s\S]*?copy\.scriptPersonnelVariantId = personnelVariantId/,
+  "script-copy fallback preserves the canonical media ID and an explicit approved personnel selection",
 );
 assert.match(
   scriptShared,

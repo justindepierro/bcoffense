@@ -49,8 +49,8 @@ assert.match(
 );
 assert.match(
   availableSource,
-  /function renderAvailablePlays\(\)[\s\S]*?const searchQuery = search \? parseScriptSearchQuery\(search\) : null;[\s\S]*?const searchScore = searchQuery[\s\S]*?scoreScriptPlaySearchQuery\(play, searchQuery\)/,
-  "available-play filtering parses one search query per render instead of once per play",
+  /function renderAvailablePlays\(\)[\s\S]*?const searchQuery = search \? parseScriptSearchQuery\(search\) : null;[\s\S]*?scoreScriptPlaySearchQuery\(candidate, searchQuery\)[\s\S]*?const searchScore = Math\.max/,
+  "available-play filtering parses one search query per render and scores coherent approved personnel versions",
 );
 
 console.log("Script render profiling contract passed");
