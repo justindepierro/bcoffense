@@ -629,6 +629,42 @@ function _gpNudgeBoxPlay(combined, delta) {
   });
   requestRenderGamePlan();
 }
+
+async function openGamePlanPersonnelVariant(combined) {
+  const ref = _gpParseBoxPlayArg(combined);
+  if (!ref?.boxId || !ref.sig) return;
+  const board = _gpEnsureBoard();
+  const list = board.assignments?.[ref.boxId] || [];
+  const index = _gpFindBoxPlayIndex(list, ref.sig, ref.rawIdx);
+  const boardPlay = index >= 0 ? list[index] : null;
+  if (!boardPlay) return;
+  const source = _gpFindPlayBySig(ref.sig) || boardPlay;
+  const options = typeof getPlayPersonnelOptions === "function" ? getPlayPersonnelOptions(source) : [];
+  if (options.length < 2) {
+    showToast("Add an approved personnel variant in Playbook first.", { type: "info" });
+    return;
+  }
+  const current = String(boardPlay.personnelVariantId || "base").trim() || "base";
+  const selected = await showListPicker(
+    "Choose the personnel version for this Game Plan call. The master play stays unchanged.",
+    options.map((option) => ({
+      value: option.id,
+      label: `${getPersonnelEmoji(option.personnel)} ${option.personnel}${option.isBase ? " · Primary" : ""}`,
+    })),
+    { title: "Game Plan Personnel", icon: "👥", selectedValue: current },
+  );
+  if (!selected) return;
+  _gpUpdateBoard((nextBoard) => {
+    const nextList = nextBoard.assignments?.[ref.boxId] || [];
+    const nextIndex = _gpFindBoxPlayIndex(nextList, ref.sig, ref.rawIdx);
+    if (nextIndex < 0) return;
+    if (selected === "base") delete nextList[nextIndex].personnelVariantId;
+    else nextList[nextIndex].personnelVariantId = selected;
+  });
+  requestRenderGamePlan();
+  const choice = options.find((option) => option.id === selected);
+  showToast(selected === "base" ? "Using primary personnel for this Game Plan call." : `Using ${choice?.personnel || "selected"} for this Game Plan call.`, { type: "success" });
+}
 /* -------------------------------------------------------------------------
    Right-click / long-press context menu on a box play
    ------------------------------------------------------------------------- */

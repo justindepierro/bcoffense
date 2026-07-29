@@ -822,8 +822,19 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx, renderCtx) {
   const sig = _gpRenderSig(play, renderCtx);
   const stableRawIdx = _gpNormalizeBoxPlayIndex(rawIdx);
   const actionArg = _gpBuildBoxPlayArg(boxId, sig, stableRawIdx);
-  const callHtml = _gpRenderCallHtml(play, renderCtx);
-  const meta = [play.formation, play.personnel].filter(Boolean).join(" • ");
+  const sourcePlay = typeof _gpFindPlayBySig === "function" ? _gpFindPlayBySig(sig) || play : play;
+  const variantId = String(play.personnelVariantId || "base").trim() || "base";
+  const effectivePlay = variantId !== "base" && typeof getEffectivePlayVariant === "function"
+    ? getEffectivePlayVariant(sourcePlay, variantId) || play
+    : play;
+  const callHtml = _gpRenderCallHtml(effectivePlay, renderCtx);
+  const meta = [effectivePlay.formation, effectivePlay.personnel].filter(Boolean).join(" • ");
+  const variantOptions = typeof getPlayPersonnelOptions === "function"
+    ? getPlayPersonnelOptions(sourcePlay)
+    : [];
+  const variantControl = variantOptions.length > 1
+    ? `<button type="button" class="gp-box-play-personnel${variantId !== "base" ? " is-variant" : ""}" data-action="openGamePlanPersonnelVariant" data-arg="${escapeHtml(actionArg)}" title="Choose the approved personnel variant for this Game Plan call">${escapeHtml(getPersonnelEmoji(effectivePlay.personnel) || "●")} ${escapeHtml(effectivePlay.personnel || "Personnel")} ▾</button>`
+    : "";
   const matchupBadges = _gpMatchupBadges(play);
   const scoutBadge = _gpScoutBadge(play);
   const sourceStatusBadge =
@@ -861,7 +872,7 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx, renderCtx) {
          data-raw-idx="${stableRawIdx === null ? "" : stableRawIdx}"${discAttr}>
       <div class="gp-box-play-body">
         <div class="gp-box-play-call">${callHtml}${matchupBadges}${sourceStatusBadge}</div>
-        ${meta || scoutBadge ? `<div class="gp-box-play-meta">${meta ? escapeHtml(meta) : ""}${scoutBadge}</div>` : ""}
+        ${meta || scoutBadge || variantControl ? `<div class="gp-box-play-meta">${variantControl || (meta ? escapeHtml(meta) : "")}${scoutBadge}</div>` : ""}
       </div>
       <div class="gp-box-play-actions">
         ${discBtn}

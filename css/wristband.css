@@ -3904,6 +3904,8 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
   border-radius: var(--radius-sm);
   background: var(--color-bg-light);
 }
+.cell-personnel-variant-kicker { display:block; margin-bottom:3px; color:var(--color-primary); font-size:var(--font-size-xs); font-weight:900; letter-spacing:.04em; text-transform:uppercase; }
+.cell-personnel-variant-empty { margin:5px 0 0; color:var(--color-text-secondary); font-size:var(--font-size-xs); line-height:1.35; }
 .cell-personnel-variant-row > label { display: block; margin-bottom: 5px; }
 .cell-personnel-variant-display {
   display: flex;

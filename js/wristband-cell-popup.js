@@ -513,22 +513,31 @@ function renderWbPersonnelVariantControls(play) {
   const options = typeof getPlayPersonnelOptions === "function"
     ? getPlayPersonnelOptions(play)
     : [];
-  if (options.length <= 1) {
+  if (!play) {
     mount.innerHTML = "";
     mount.hidden = true;
+    return;
+  }
+  mount.hidden = false;
+  if (options.length <= 1) {
+    const currentPersonnel = String(play?.personnel || "Primary personnel").trim();
+    mount.innerHTML = `
+      <span class="cell-personnel-variant-kicker">Approved Personnel</span>
+      <strong>${escapeHtml(currentPersonnel)}</strong>
+      <p class="cell-personnel-variant-empty">No alternate approved personnel is attached to this play yet. Add one in Playbook → Edit Play → Personnel Variants; it will appear here without rewriting this wristband cell.</p>`;
     return;
   }
   const validIds = new Set(options.map((option) => option.id));
   if (!validIds.has(pendingPersonnelVariantId)) pendingPersonnelVariantId = "base";
   pendingPersonnelDisplayVariantIds = pendingPersonnelDisplayVariantIds.filter((id) => validIds.has(id));
-  mount.hidden = false;
   mount.innerHTML = `
-    <label for="cellPersonnelVariant">Approved personnel:</label>
+    <span class="cell-personnel-variant-kicker">Approved Personnel</span>
+    <label for="cellPersonnelVariant">Use for this cell:</label>
     <select id="cellPersonnelVariant" class="cell-popup-input" aria-label="Active personnel variant">
       ${options.map((option) => `<option value="${escapeHtml(option.id)}"${option.id === pendingPersonnelVariantId ? " selected" : ""}>${escapeHtml(option.personnel)}${option.isBase ? " · Primary" : ""}</option>`).join("")}
     </select>
     <div class="cell-personnel-variant-display">
-      <span>Also display:</span>
+      <span>Also display on this cell:</span>
       ${options.filter((option) => option.id !== pendingPersonnelVariantId).map((option) => `<label><input type="checkbox" data-wb-display-variant="${escapeHtml(option.id)}"${pendingPersonnelDisplayVariantIds.includes(option.id) ? " checked" : ""} /> ${escapeHtml(option.personnel)}</label>`).join("")}
     </div>`;
   mount.querySelector("#cellPersonnelVariant")?.addEventListener("change", (event) => {
