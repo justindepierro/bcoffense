@@ -201,9 +201,13 @@ async function addPlayPersonnelVariant() {
   _setPendingPlayEditorPersonnelVariants(staged.personnelVariants);
   _editingPersonnelVariantId = staged.personnelVariants[staged.personnelVariants.length - 1]?.id || "base";
   _populateEditorForm(basePlay, false);
-  if (addedTeamPackage) {
-    showToast(`${personnel} is now available across team personnel tools.`, { duration: 2600, type: "success" });
-  }
+  const packageCopy = addedTeamPackage
+    ? ` ${personnel} is now available across team personnel tools.`
+    : "";
+  showToast(`${personnel} was added as an approved variant. Save Play to keep it on this play.${packageCopy}`, {
+    duration: 4200,
+    type: "success",
+  });
 }
 
 async function renamePlayPersonnelVariant() {
