@@ -533,6 +533,13 @@ function renderAvailablePlays() {
       score !== null,
     );
     if (!matches.length) continue;
+    const bestMatch = [...matches].sort((left, right) => {
+      const leftIsVariant = String(left.candidate?.personnelVariantId || "base") !== "base";
+      const rightIsVariant = String(right.candidate?.personnelVariantId || "base") !== "base";
+      // Prefer the approved variant that made the row match. That makes the
+      // displayed result and every following add action agree.
+      return rightIsVariant - leftIsVariant || (Number(right.score) || 0) - (Number(left.score) || 0);
+    })[0];
     const searchScore = Math.max(...matches.map(({ score }) => Number(score) || 0));
     if (gamePlanOnly) {
       if (typeof isPlayInGamePlanBoard !== "function") continue;
@@ -542,7 +549,12 @@ function renderAvailablePlays() {
       if (typeof isPlayFlaggedInGamePlan !== "function") continue;
       if (!isPlayFlaggedInGamePlan(play, "jv")) continue;
     }
-    filteredEntries.push({ play, playIdx, searchScore });
+    filteredEntries.push({
+      play,
+      playIdx,
+      searchScore,
+      personnelVariantId: String(bestMatch?.candidate?.personnelVariantId || "base") || "base",
+    });
   }
 
   if (search) {
@@ -553,22 +565,22 @@ function renderAvailablePlays() {
     );
   }
 
-  const filtered = filteredEntries.map((entry) => entry.play);
   const filteredIndices = filteredEntries.map((entry) => entry.playIdx);
 
   const container = document.getElementById("availablePlays");
   currentFilteredPlayIndices = filteredIndices;
+  currentFilteredPlayEntries = filteredEntries;
 
-  const totalAvail = filtered.length;
+  const totalAvail = filteredEntries.length;
   const totalAvailPages = Math.max(1, Math.ceil(totalAvail / AVAIL_PER_PAGE));
   if (scriptAvailPage >= totalAvailPages) scriptAvailPage = totalAvailPages - 1;
   if (scriptAvailPage < 0) scriptAvailPage = 0;
   const availStart = scriptAvailPage * AVAIL_PER_PAGE;
-  const pageFiltered = filtered.slice(availStart, availStart + AVAIL_PER_PAGE);
-  const pageIndices = filteredIndices.slice(availStart, availStart + AVAIL_PER_PAGE);
-  updateAvailableActionsUI(totalAvail, pageFiltered.length);
+  const pageEntries = filteredEntries.slice(availStart, availStart + AVAIL_PER_PAGE);
+  const pageIndices = pageEntries.map((entry) => entry.playIdx);
+  updateAvailableActionsUI(totalAvail, pageEntries.length);
 
-  if (pageFiltered.length === 0) {
+  if (pageEntries.length === 0) {
     const activeFilters =
       document.getElementById("activeFilterCount")?.textContent || "0 active";
     const hasSearch = Boolean(search);
@@ -597,27 +609,32 @@ function renderAvailablePlays() {
 
   const selectedSet = new Set(selectedAvailablePlays);
 
-  container.innerHTML = pageFiltered
-    .map((play, idx) => {
-      const playIdx = pageIndices[idx];
+  container.innerHTML = pageEntries
+    .map((entry) => {
+      const { play, playIdx } = entry;
+      const variantId = String(entry.personnelVariantId || "base") || "base";
+      const displayPlay = variantId !== "base" && typeof getEffectivePlayVariant === "function"
+        ? getEffectivePlayVariant(play, variantId) || play
+        : play;
+      const isVariant = variantId !== "base";
       const isSelected = selectedSet.has(playIdx);
       const alreadyIn = inScriptSet.has(
         `${play.formation}||${play.protection}||${play.play}`,
       );
-      const typeSlug = availTypeSlug(play.type);
+      const typeSlug = availTypeSlug(displayPlay.type);
       const callName =
-        [play.formation, play.protection, play.play]
+        [displayPlay.formation, displayPlay.protection, displayPlay.play]
           .filter(Boolean)
           .map((p) => escapeHtml(p))
           .join(" ") || "—";
-      const typeChip = play.type
-        ? `<span class="play-type-chip">${escapeHtml(play.type)}</span>`
+      const typeChip = displayPlay.type
+        ? `<span class="play-type-chip">${escapeHtml(displayPlay.type)}</span>`
         : "";
-      const metaChips = buildAvailMetaChips(play)
+      const metaChips = buildAvailMetaChips(displayPlay)
         .map((m) => `<span class="play-meta-tag play-meta-tag--${m.c}">${m.t}</span>`)
         .join("");
       return `
-            <div class="play-item script-library-row app-library-row play-item--${typeSlug} ${isSelected ? "selected" : ""} ${alreadyIn ? "in-script" : ""}" draggable="true" data-drag="availStart" data-idx="${playIdx}">
+            <div class="play-item script-library-row app-library-row play-item--${typeSlug} ${isSelected ? "selected" : ""} ${alreadyIn ? "in-script" : ""} ${isVariant ? "is-personnel-variant" : ""}" draggable="true" data-drag="availStart" data-idx="${playIdx}" data-personnel-variant-id="${escapeAttr(variantId)}">
                 <div class="play-item-controls">
                   <input type="checkbox" class="available-play-cb" data-index="${playIdx}" ${isSelected ? "checked" : ""} data-field="availableSelect" data-idx="${playIdx}" />
                   <button type="button" class="available-add-menu-btn" data-action="openAvailableAddMenu" data-idx="${playIdx}" title="Add to script" aria-label="Add ${callName} to script">+</button>
@@ -625,6 +642,7 @@ function renderAvailablePlays() {
                 <div class="play-info">
                     <div class="play-name-row">
                       <span class="play-name">${callName}</span>
+                      ${isVariant ? '<span class="script-library-variant-marker" title="Approved personnel variant" aria-label="Approved personnel variant">*</span>' : ""}
                       ${typeChip}
                       ${alreadyIn ? '<span class="in-script-badge" title="Already on script">✓ On</span>' : ""}
                     </div>

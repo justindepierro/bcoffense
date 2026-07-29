@@ -5,9 +5,11 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
 const fixture = JSON.parse(await read("tests/fixtures/personnel-variants-baseline.json"));
-const [utils, scriptShared, wristband, wristbandPopup, wristbandExport, callSheet, callSheetRender, callSheetPrint, callSheetExport, gamePlan, gamePlanRender, gamePlanIntegrations, editor] = await Promise.all([
+const [utils, scriptShared, scriptAvailable, scriptAdd, wristband, wristbandPopup, wristbandExport, callSheet, callSheetRender, callSheetPrint, callSheetExport, gamePlan, gamePlanRender, gamePlanIntegrations, editor] = await Promise.all([
   read("js/utils.js"),
   read("js/script-shared.js"),
+  read("js/script-available.js"),
+  read("js/script-add.js"),
   read("js/wristband.js"),
   read("js/wristband-cell-popup.js"),
   read("js/wristband-export.js"),
@@ -128,6 +130,16 @@ assert.match(scriptShared, /getEffectivePlayVariant\(play, variantId\)/,
   "Script call rendering resolves selected personnel variant metadata");
 assert.match(scriptShared, /setScriptPersonnelVariant\(index, variantId\)/,
   "Script personnel controls select an approved variant rather than cloning a play");
+assert.match(scriptAvailable, /currentFilteredPlayEntries = filteredEntries/,
+  "Script library retains the approved variant that made each filtered result match");
+assert.match(scriptAvailable, /getEffectivePlayVariant\(play, variantId\)/,
+  "Script library renders the selected approved personnel variant rather than the base call");
+assert.match(scriptAvailable, /script-library-variant-marker/,
+  "Script library visibly marks approved personnel variant rows");
+assert.match(scriptAdd, /createScriptPlayFromAvailableLibrary\(playIndex\)/,
+  "Script library add actions preserve the displayed approved personnel variant");
+assert.match(scriptAdd, /copy\.scriptPersonnelVariantId = personnelVariantId/,
+  "Script records retain a stable approved personnel variant reference");
 assert.match(wristband, /getEffectivePlayVariant\(play, selectedVariantId\)/,
   "Wristband cells resolve an approved active personnel selection without cloning the source play");
 assert.match(wristband, /findPlaybookSourceForPlay\(play\) \|\| play/,

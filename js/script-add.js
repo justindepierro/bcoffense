@@ -1,4 +1,4 @@
-function createScriptPlayFromPlaybook(play) {
+function createScriptPlayFromPlaybook(play, options = {}) {
   const scriptFields = {
     reps: 1,
     notes: "",
@@ -10,7 +10,7 @@ function createScriptPlayFromPlaybook(play) {
     playerAssignments: createScriptPlayerAssignments(play),
     id: Date.now() + Math.random(),
   };
-  return typeof copyPlayWithSourceIdentity === "function"
+  const copy = typeof copyPlayWithSourceIdentity === "function"
     ? copyPlayWithSourceIdentity(play, scriptFields)
     : {
       ...play,
@@ -20,6 +20,24 @@ function createScriptPlayFromPlaybook(play) {
         : String(play?.mediaId || "").trim(),
       ...scriptFields,
     };
+  const personnelVariantId = String(options.personnelVariantId || "base").trim() || "base";
+  if (personnelVariantId !== "base") copy.scriptPersonnelVariantId = personnelVariantId;
+  return copy;
+}
+
+function getAvailablePersonnelVariantId(playIndex) {
+  const entry = (currentFilteredPlayEntries || []).find(
+    (candidate) => Number(candidate?.playIdx) === Number(playIndex),
+  );
+  return String(entry?.personnelVariantId || "base").trim() || "base";
+}
+
+function createScriptPlayFromAvailableLibrary(playIndex) {
+  const play = plays[playIndex];
+  if (!play) return null;
+  return createScriptPlayFromPlaybook(play, {
+    personnelVariantId: getAvailablePersonnelVariantId(playIndex),
+  });
 }
 
 /* Game Plan → Script provenance stays with the copied Script record.  A plain
@@ -203,9 +221,8 @@ function addAvailableSelectionToScript(playIndices, targetSeparatorIndex) {
   const insertedIndices = insertPlaysIntoPeriod(
     targetSeparatorIndex,
     validIndices
-      .map((playIndex) => plays[playIndex])
-      .filter(Boolean)
-      .map((play) => createScriptPlayFromPlaybook(play)),
+      .map((playIndex) => createScriptPlayFromAvailableLibrary(playIndex))
+      .filter(Boolean),
   );
 
   if (selectedAvailablePlays.length) {
@@ -391,8 +408,7 @@ function flashScriptPlayAtIndex(scriptIndex) {
 }
 
 async function addToScript(playIndex, targetSeparatorIndex = null) {
-  const play = plays[playIndex];
-  if (!play) return;
+  if (!plays[playIndex]) return;
 
   let resolvedTargetIndex = Number.isInteger(targetSeparatorIndex)
     ? targetSeparatorIndex
@@ -411,7 +427,7 @@ async function addToScript(playIndex, targetSeparatorIndex = null) {
 
   saveScriptState();
   const insertedIndices = insertPlaysIntoPeriod(resolvedTargetIndex, [
-    createScriptPlayFromPlaybook(play),
+    createScriptPlayFromAvailableLibrary(playIndex),
   ]);
   maybeAutoCollapseScriptPlayRail();
   renderScriptSoon(() => flashScriptPlayAtIndex(insertedIndices[0]));
@@ -446,9 +462,8 @@ async function addAllFilteredToScript() {
   insertPlaysIntoPeriod(
     targetSeparatorIndex,
     filteredIndices
-      .map((playIndex) => plays[playIndex])
-      .filter(Boolean)
-      .map((play) => createScriptPlayFromPlaybook(play)),
+      .map((playIndex) => createScriptPlayFromAvailableLibrary(playIndex))
+      .filter(Boolean),
   );
   renderScriptSoon();
   setScriptToolbarStatus(
@@ -474,9 +489,8 @@ async function addSelectedToScript() {
   insertPlaysIntoPeriod(
     targetSeparatorIndex,
     selectedAvailablePlays
-      .map((playIndex) => plays[playIndex])
-      .filter(Boolean)
-      .map((play) => createScriptPlayFromPlaybook(play)),
+      .map((playIndex) => createScriptPlayFromAvailableLibrary(playIndex))
+      .filter(Boolean),
   );
 
   const addedCount = selectedAvailablePlays.length;

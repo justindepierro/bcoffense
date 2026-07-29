@@ -7376,6 +7376,19 @@ body[data-active-tab="script"] .script-display-fab {
   min-width: 0;
 }
 
+/* This row is an approved personnel version of the canonical Playbook call.
+   The small mark keeps dense coach-library scanning clean but unambiguous. */
+#script .script-library-variant-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 12px;
+  color: var(--color-success-dark, #137333);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+}
+
 #script .play-item .play-name {
   font-weight: 700;
   font-size: var(--font-size-sm);

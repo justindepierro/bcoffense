@@ -13,6 +13,9 @@ let collapsedPeriods = new Set();
 let selectedAvailablePlays = [];
 let lastScriptTargetPeriodId = null;
 let currentFilteredPlayIndices = [];
+// Each library result may represent an approved personnel version of its
+// canonical Playbook call. Keep that choice beside the stable source index.
+let currentFilteredPlayEntries = [];
 
 // Coach Grid library default: search and high-frequency refiners remain in
 // view while deeper filter groups open only on request.
