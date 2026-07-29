@@ -601,7 +601,13 @@ function normalizeWbComponentNoVowels(ids) {
 }
 
 function buildWristbandCellTokens(play, custom = {}, opts = {}) {
-  const sourcePlay = play;
+  // Saved wristbands intentionally retain a play snapshot for offline safety,
+  // but variant choices must always come from the current canonical Playbook
+  // record. Otherwise a variant added after the card was built is invisible.
+  const sourcePlay = typeof findPlaybookSourceForPlay === "function"
+    ? findPlaybookSourceForPlay(play) || play
+    : play;
+  play = sourcePlay;
   const selectedVariantId = String(custom?.personnelVariantId || "base").trim() || "base";
   if (selectedVariantId !== "base" && typeof getEffectivePlayVariant === "function") {
     play = getEffectivePlayVariant(play, selectedVariantId) || play;
@@ -741,6 +747,13 @@ function buildWristbandCellTokens(play, custom = {}, opts = {}) {
     "cadence-post": cadencePostText,
     "line-call": lineCallHtml,
   };
+}
+
+function getWristbandCanonicalPlaySource(play) {
+  if (!play) return play;
+  return typeof findPlaybookSourceForPlay === "function"
+    ? findPlaybookSourceForPlay(play) || play
+    : play;
 }
 
 function normalizeWbComponentOrder(order) {

@@ -521,8 +521,11 @@ function populateWbPersonnelDatalist() {
 function renderWbPersonnelVariantControls(play) {
   const mount = document.getElementById("cellPersonnelVariantControls");
   if (!mount) return;
+  const sourcePlay = typeof getWristbandCanonicalPlaySource === "function"
+    ? getWristbandCanonicalPlaySource(play)
+    : play;
   const options = typeof getPlayPersonnelOptions === "function"
-    ? getPlayPersonnelOptions(play)
+    ? getPlayPersonnelOptions(sourcePlay)
     : [];
   if (!play) {
     mount.innerHTML = "";
@@ -531,7 +534,7 @@ function renderWbPersonnelVariantControls(play) {
   }
   mount.hidden = false;
   if (options.length <= 1) {
-    const currentPersonnel = String(play?.personnel || "Primary personnel").trim();
+    const currentPersonnel = String(sourcePlay?.personnel || "Primary personnel").trim();
     mount.innerHTML = `
       <span class="cell-personnel-variant-kicker">Approved Personnel</span>
       <strong>${escapeHtml(currentPersonnel)}</strong>
@@ -554,7 +557,7 @@ function renderWbPersonnelVariantControls(play) {
   mount.querySelector("#cellPersonnelVariant")?.addEventListener("change", (event) => {
     pendingPersonnelVariantId = String(event.target.value || "base");
     pendingPersonnelDisplayVariantIds = pendingPersonnelDisplayVariantIds.filter((id) => id !== pendingPersonnelVariantId);
-    renderWbPersonnelVariantControls(play);
+    renderWbPersonnelVariantControls(sourcePlay);
   });
   mount.querySelectorAll("[data-wb-display-variant]").forEach((input) => {
     input.addEventListener("change", () => {

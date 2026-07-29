@@ -130,10 +130,14 @@ assert.match(scriptShared, /setScriptPersonnelVariant\(index, variantId\)/,
   "Script personnel controls select an approved variant rather than cloning a play");
 assert.match(wristband, /getEffectivePlayVariant\(play, selectedVariantId\)/,
   "Wristband cells resolve an approved active personnel selection without cloning the source play");
+assert.match(wristband, /findPlaybookSourceForPlay\(play\) \|\| play/,
+  "Wristband cells resolve newly added variants from the canonical Playbook source, not a stale saved-card snapshot");
 assert.match(wristband, /personnelDisplayVariantIds/,
   "Wristband cells can display additional approved personnel alongside legacy write-in personnel");
 assert.match(wristbandPopup, /renderWbPersonnelVariantControls/,
   "Wristband editing presents approved personnel choices only when the source play has them");
+assert.match(wristbandPopup, /getWristbandCanonicalPlaySource\(play\)/,
+  "Wristband editing resolves approved personnel from the canonical Playbook source");
 assert.match(wristbandPopup, /personnelVariantId: existing\.personnelVariantId/,
   "Wristband component-order actions preserve an existing personnel selection");
 assert.match(wristbandExport, /personnelVariantId: custom\?\.personnelVariantId/,
