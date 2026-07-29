@@ -1287,15 +1287,26 @@ function renderSignals() {
   root.innerHTML = `
     <div class="signals-shell coach-grid-signals-workspace">
       <header class="signals-header page-header-surface app-command-toolbar coach-grid-command-strip">
-        <div>
+        <div class="signals-header-intro">
           <p class="signals-eyebrow">Signal Collection</p>
-          <h1>Signals</h1>
+          <div class="signals-title-row">
+            <h1>Signals</h1>
+            <span>Film what matters for this week.</span>
+          </div>
+          ${_sigCanManage() ? `
+          <div class="signals-coverage-shortcuts" aria-label="Game Plan gap shortcuts">
+            <span class="signals-shortcut-label">Game Plan gap shortcuts</span>
+            <span class="signals-shortcut"><kbd>Shift</kbd><b>click</b><em>No signal needed</em></span>
+            <span class="signals-shortcut"><kbd>Ctrl/Cmd</kbd><b>click</b><em>On wristband</em></span>
+            <span class="signals-shortcut"><kbd>Shift + Ctrl/Cmd</kbd><b>click</b><em>Both</em></span>
+          </div>` : ""}
         </div>
-        <div class="signals-stats">${_sigRenderStats(visibleSummaries, gamePlanSignalStatus)}</div>
-        ${_sigCanManage() ? `
-        <div class="signals-header-actions">
+        <div class="signals-header-command">
+          <div class="signals-stats">${_sigRenderStats(visibleSummaries, gamePlanSignalStatus)}</div>
+          ${_sigCanManage() ? `
           <button type="button" class="btn btn-sm btn-outline" id="sigRecompressBtn" data-action="recompressSignalClips" title="Re-encode older clips to a smaller, faster size for player phones">Optimize Clips</button>
-        </div>` : ""}
+          ` : ""}
+        </div>
       </header>
       ${_sigRenderCoverageReport(summariesByComponent)}
       <div class="signals-layout">
