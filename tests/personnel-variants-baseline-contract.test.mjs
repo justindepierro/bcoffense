@@ -108,6 +108,12 @@ assert.match(editor, /existing\.personnelVariants = stagedSource\.personnelVaria
   "saving a variant writes only the canonical base play's variant collection");
 assert.match(editor, /function choosePlayPersonnelVariant\(play\)/,
   "adding a personnel variant begins with a team-package picker");
+assert.match(editor, /function _autoSaveCurrentEditorFields\(\)[\s\S]*?savePlayEditor\(\{ keepOpen: true, suppressFeedback: true \}\)/,
+  "Playbook editor next/previous navigation reuses the variant-aware save boundary");
+assert.doesNotMatch(editor, /function _autoSaveCurrentEditorFields\(\)[\s\S]*?existing\[el\.dataset\.field\] = val/,
+  "Playbook editor navigation cannot copy a displayed variant field directly onto the base play");
+assert.match(editor, /function savePlayEditor\(opts = \{\}\)[\s\S]*?if \(keepOpen\) \{[\s\S]*?return true;/,
+  "the shared editor save boundary supports safe in-place navigation without closing the editor");
 assert.match(editor, /custom-modal-overlay visible pb-personnel-picker-overlay/,
   "the personnel picker uses the shared modal system's visible state");
 assert.doesNotMatch(editor, /custom-modal-overlay show pb-personnel-picker-overlay/,

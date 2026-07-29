@@ -1086,6 +1086,7 @@ function _populateEditorForm(play, isNew) {
 
 function savePlayEditor(opts = {}) {
   const keepOpen = opts && opts.keepOpen === true;
+  const suppressFeedback = opts && opts.suppressFeedback === true;
   const wasNew = _editingMasterIdx < 0;
   let refreshedScriptRows = 0;
   const body = document.getElementById("playEditorBody");
@@ -1110,26 +1111,26 @@ function savePlayEditor(opts = {}) {
     : undefined;
 
   if (!data.play) {
-    showToast("Play name is required", { duration: 3000, type: "error" });
+    if (!suppressFeedback) showToast("Play name is required", { duration: 3000, type: "error" });
     const playInput = document.getElementById("pe-play");
     if (playInput) playInput.focus();
-    return;
+    return false;
   }
 
   if (_editingMasterIdx >= 0) {
     const existing = plays[_editingMasterIdx];
     if (!existing) {
-      showToast("Play no longer exists", { type: "error" });
+      if (!suppressFeedback) showToast("Play no longer exists", { type: "error" });
       closePlayEditor();
-      return;
+      return false;
     }
     if (_editingPersonnelVariantId !== "base") {
       const stagedSource = _getPlayEditorVariantSource(existing);
       const selected = _getEditingPersonnelVariant(stagedSource);
       const target = stagedSource.personnelVariants?.find((variant) => variant.id === selected?.id);
       if (!selected || selected.isBase || !target) {
-        showToast("That personnel variant is no longer available.", { type: "error" });
-        return;
+        if (!suppressFeedback) showToast("That personnel variant is no longer available.", { type: "error" });
+        return false;
       }
       const overrides = {};
       const allowed = typeof PLAY_PERSONNEL_VARIANT_OVERRIDE_FIELDS !== "undefined"
@@ -1198,7 +1199,7 @@ function savePlayEditor(opts = {}) {
     plays.push(newPlay);
     _syncGamePlanCheckbox(newPlay);
     _editingMasterIdx = plays.length - 1;
-    showToast("➕ Play added to playbook", { duration: 2000, type: "success" });
+    if (!suppressFeedback) showToast("➕ Play added to playbook", { duration: 2000, type: "success" });
   }
 
   storageManager.setPlaybook(plays);
@@ -1219,15 +1220,22 @@ function savePlayEditor(opts = {}) {
     if (firstInput) {
       try { firstInput.focus(); } catch (_e) { /* ignore */ }
     }
-    return;
+    return true;
+  }
+  if (keepOpen) {
+    // Prev/Next uses this branch. The form was saved through the exact same
+    // variant-aware logic as the explicit Save button, but the overlay stays
+    // open so navigation can safely continue to the adjacent play.
+    return true;
   }
   if (!wasNew) {
     const scriptNote = refreshedScriptRows
       ? ` · refreshed in ${refreshedScriptRows} script ${refreshedScriptRows === 1 ? "row" : "rows"}`
       : "";
-    showToast(`✏️ Play updated${scriptNote}`, { duration: 2200, type: "success" });
+    if (!suppressFeedback) showToast(`✏️ Play updated${scriptNote}`, { duration: 2200, type: "success" });
   }
   closePlayEditor();
+  return true;
 }
 
 function savePlayEditorAndAddAnother() {
@@ -1813,7 +1821,7 @@ function _flushPendingPlayEditorMedia(play) {
 function playEditorPrev() {
   if (_hasScriptEditorNavigation()) {
     if (_editingScriptNavPosition <= 0) return;
-    _autoSaveCurrentEditorFields();
+    if (!_autoSaveCurrentEditorFields()) return;
     const nextPosition = _editingScriptNavPosition - 1;
     const scriptIndex = _editingScriptNavIndexes[nextPosition];
     const scriptPlay = script?.[scriptIndex];
@@ -1825,14 +1833,14 @@ function playEditorPrev() {
     return;
   }
   if (_editingFilteredIdx <= 0) return;
-  _autoSaveCurrentEditorFields();
+  if (!_autoSaveCurrentEditorFields()) return;
   openPlayEditor(_editingFilteredIdx - 1);
 }
 
 function playEditorNext() {
   if (_hasScriptEditorNavigation()) {
     if (_editingScriptNavPosition >= _editingScriptNavIndexes.length - 1) return;
-    _autoSaveCurrentEditorFields();
+    if (!_autoSaveCurrentEditorFields()) return;
     const nextPosition = _editingScriptNavPosition + 1;
     const scriptIndex = _editingScriptNavIndexes[nextPosition];
     const scriptPlay = script?.[scriptIndex];
@@ -1844,45 +1852,15 @@ function playEditorNext() {
     return;
   }
   if (_editingFilteredIdx >= filteredPlays.length - 1) return;
-  _autoSaveCurrentEditorFields();
+  if (!_autoSaveCurrentEditorFields()) return;
   openPlayEditor(_editingFilteredIdx + 1);
 }
 
 function _autoSaveCurrentEditorFields() {
-  if (_editingMasterIdx < 0) return;
-  const body = document.getElementById("playEditorBody");
-  if (!body) return;
-  const fields = body.querySelectorAll("[data-field]");
-  const existing = plays[_editingMasterIdx];
-  if (!existing) return;
-  let changed = false;
-  fields.forEach((el) => {
-    const val = (el.value || "").trim();
-    if (existing[el.dataset.field] !== val) {
-      existing[el.dataset.field] = val;
-      changed = true;
-    }
-  });
-  // Also capture lineup template player slots so Prev/Next don't drop assignments
-  const slotFields = body.querySelectorAll("[data-player-slot]");
-  const playerAssignments = {};
-  slotFields.forEach((el) => {
-    const val = String(el.value || "").trim();
-    if (val) playerAssignments[el.dataset.playerSlot] = val;
-  });
-  const newAssignments = Object.keys(playerAssignments).length
-    ? playerAssignments
-    : undefined;
-  if (JSON.stringify(existing.playerAssignments) !== JSON.stringify(newAssignments)) {
-    existing.playerAssignments = newAssignments;
-    changed = true;
-  }
-  if (changed) {
-    storageManager.setPlaybook(plays);
-    if (typeof refreshLinkedScriptPlaysFromPlaybook === "function") {
-      refreshLinkedScriptPlaysFromPlaybook(existing);
-    }
-    invalidateFilterCache();
-  }
-  _syncGamePlanCheckbox(existing);
+  if (_editingMasterIdx < 0 || !document.getElementById("playEditorBody")) return false;
+  // Do not manually copy DOM values here. While editing a personnel variant,
+  // those values are an effective display and may include inherited fields.
+  // savePlayEditor owns the only write boundary and keeps those edits scoped
+  // to the variant's override object.
+  return savePlayEditor({ keepOpen: true, suppressFeedback: true }) === true;
 }
