@@ -497,6 +497,27 @@
   background: var(--color-warning-light);
 }
 
+/* A coach explicitly accepted this component for the active Game Plan. It is
+ * not a missing-video warning: the reason remains visible and reversible via
+ * the same modifier-click shortcut. */
+.signals-chip.has-signal-exception {
+  border-color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 10%, var(--color-bg-input));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-success) 35%, transparent);
+}
+
+.signals-gameplan-covered {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  color: var(--color-success-dark, #137a3a);
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
+}
+
 .signals-gameplan-warning {
   display: inline-flex;
   align-items: center;

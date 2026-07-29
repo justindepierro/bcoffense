@@ -76,6 +76,9 @@ function _sigNormalizeRecord(record) {
   if (!componentType || !compareKey) return null;
   const component = _sigComponentByType(componentType);
   const category = record.category || component?.category || "";
+  const coverage = record.coverageStatus && typeof record.coverageStatus === "object"
+    ? record.coverageStatus
+    : {};
   return {
     id: String(record.id || _sigRecordId(componentType, compareKey)),
     category,
@@ -90,6 +93,16 @@ function _sigNormalizeRecord(record) {
     createdAt: String(record.createdAt || ""),
     updatedAt: String(record.updatedAt || ""),
     notes: String(record.notes || ""),
+    // A coverage exception is intentionally signal-component scoped. The
+    // Game Plan warning aggregates calls by component, so storing this on an
+    // individual play would leave the same warning visible for every other
+    // call that uses the component.
+    coverageStatus: {
+      noSignalNeeded: coverage.noSignalNeeded === true,
+      onWristband: coverage.onWristband === true,
+      updatedAt: String(coverage.updatedAt || ""),
+      updatedBy: String(coverage.updatedBy || ""),
+    },
   };
 }
 
@@ -292,6 +305,104 @@ function _sigUpsertRecord(summary, patch = {}) {
   return next;
 }
 
+function _sigCoverageStatus(record) {
+  const coverage = record?.coverageStatus;
+  if (!coverage || typeof coverage !== "object") return null;
+  const noSignalNeeded = coverage.noSignalNeeded === true;
+  const onWristband = coverage.onWristband === true;
+  if (!noSignalNeeded && !onWristband) return null;
+  return {
+    noSignalNeeded,
+    onWristband,
+    updatedAt: String(coverage.updatedAt || ""),
+    updatedBy: String(coverage.updatedBy || ""),
+  };
+}
+
+function _sigCoverageLabel(status) {
+  if (!status) return "";
+  if (status.noSignalNeeded && status.onWristband) return "No signal needed; covered on wristband";
+  if (status.noSignalNeeded) return "No signal needed";
+  return "Covered on wristband";
+}
+
+function _sigSetCoverageException(summary, mode) {
+  if (!_sigCanManage() || !summary) return;
+  const current = _sigCoverageStatus(summary.record) || {
+    noSignalNeeded: false,
+    onWristband: false,
+  };
+  let noSignalNeeded = current.noSignalNeeded;
+  let onWristband = current.onWristband;
+
+  if (mode === "both") {
+    // Combined modifiers are deterministic: set both unless both are already
+    // set, in which case the same action cleanly removes the exception.
+    const next = !(noSignalNeeded && onWristband);
+    noSignalNeeded = next;
+    onWristband = next;
+  } else if (mode === "no-signal-needed") {
+    noSignalNeeded = !noSignalNeeded;
+  } else if (mode === "on-wristband") {
+    onWristband = !onWristband;
+  } else {
+    return;
+  }
+
+  const hasException = noSignalNeeded || onWristband;
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  const status = {
+    noSignalNeeded,
+    onWristband,
+    updatedAt: new Date().toISOString(),
+    updatedBy: user?.username || user?.role || "",
+  };
+  _sigUpsertRecord(summary, { coverageStatus: status });
+  const label = hasException ? _sigCoverageLabel(status) : "Signal coverage exception cleared";
+  showToast(label, { type: hasException ? "success" : "info", duration: 2200 });
+  renderSignals();
+}
+
+function _sigHandleCoverageExceptionShortcut(event) {
+  if (!_sigCanManage()) return;
+  const chip = event.target?.closest?.(".signals-chip.needs-gameplan-signal");
+  if (!chip) return;
+  const modifierPressed = event.shiftKey || event.ctrlKey || event.metaKey;
+  if (!modifierPressed) return;
+  // On macOS Ctrl-click is normally consumed as a context-menu gesture. Handle
+  // both click and contextmenu so Ctrl, Cmd, and Shift work consistently.
+  if (event.type === "contextmenu" && !event.ctrlKey && !event.metaKey) return;
+  const summary = _sigSummaryFromArg(chip.dataset.arg);
+  if (!summary) return;
+  const mode = event.shiftKey && (event.ctrlKey || event.metaKey)
+    ? "both"
+    : event.shiftKey
+      ? "no-signal-needed"
+      : "on-wristband";
+  // A few browser/platform combinations emit both click and contextmenu for a
+  // Ctrl-click. Treat that physical gesture as one toggle, never two.
+  const key = `${chip.dataset.arg}|${mode}`;
+  const now = Date.now();
+  if (_sigLastCoverageShortcut.key === key && now - _sigLastCoverageShortcut.at < 450) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  _sigLastCoverageShortcut = { key, at: now };
+  event.preventDefault();
+  event.stopPropagation();
+  _sigSetCoverageException(summary, mode);
+}
+
+let _sigCoverageShortcutBound = false;
+let _sigLastCoverageShortcut = { key: "", at: 0 };
+function _sigBindCoverageExceptionShortcut() {
+  if (_sigCoverageShortcutBound || typeof document === "undefined") return;
+  _sigCoverageShortcutBound = true;
+  document.addEventListener("click", _sigHandleCoverageExceptionShortcut, true);
+  document.addEventListener("contextmenu", _sigHandleCoverageExceptionShortcut, true);
+}
+
 function _sigDeleteRecordIfEmpty(recordId, clipsLength) {
   if (clipsLength > 0) return;
   const records = _sigLoadRecords().filter((record) => record.id !== recordId);
@@ -434,6 +545,7 @@ function _sigGamePlanMissingSignalMap() {
         if (seenForPlay.has(id)) return;
         seenForPlay.add(id);
         const record = records.get(id);
+        if (_sigCoverageStatus(record)) return;
         if (record && record.visibility === "published" && Number(record.clipCount || 0) > 0) return;
         const current = missing.get(id) || { playCount: 0, componentType: component.componentType, compareKey };
         current.playCount += 1;
@@ -587,6 +699,7 @@ function _sigRenderCategory(category, summariesByComponent, gamePlanSignalStatus
           _sigSelected.componentType === summary.componentType &&
           _sigSelected.compareKey === summary.compareKey;
         const hasClip = summary.record && summary.record.clipCount > 0;
+        const coverageStatus = _sigCoverageStatus(summary.record);
         const gamePlanGap = gamePlanSignalStatus.missing.get(
           _sigRecordId(summary.componentType, summary.compareKey),
         );
@@ -595,14 +708,18 @@ function _sigRenderCategory(category, summariesByComponent, gamePlanSignalStatus
         const gamePlanTitle = gamePlanGap
           ? ` ⚠ On the active Game Plan in ${gamePlanGap.playCount} play${gamePlanGap.playCount === 1 ? "" : "s"}; no published signal video.`
           : "";
+        const coverageTitle = coverageStatus
+          ? ` ✓ ${_sigCoverageLabel(coverageStatus)}. Shift-click toggles no-signal-needed; Ctrl/Cmd-click toggles wristband coverage; use both for both.`
+          : "";
         return `
-          <button type="button" class="signals-chip${selected ? " is-selected" : ""}${hasClip ? " has-clip" : ""}${gamePlanGap ? " needs-gameplan-signal" : ""}"
+          <button type="button" class="signals-chip${selected ? " is-selected" : ""}${hasClip ? " has-clip" : ""}${gamePlanGap ? " needs-gameplan-signal" : ""}${coverageStatus ? " has-signal-exception" : ""}"
             data-action="openSignalComponent"
             data-arg="${escapeAttr(`${summary.componentType}|${summary.compareKey}`)}"
-            title="${escapeAttr(variantTitle + gamePlanTitle)}">
+            title="${escapeAttr(variantTitle + gamePlanTitle + coverageTitle)}">
             <span>${escapeHtml(summary.displayValue)}</span>
             <small>${summary.count}</small>
-            ${gamePlanGap ? `<em class="signals-gameplan-warning" aria-label="On the active Game Plan with no published signal video" title="On Game Plan: ${gamePlanGap.playCount} play${gamePlanGap.playCount === 1 ? "" : "s"}, no published video">⚠️</em>` : ""}
+            ${coverageStatus ? `<em class="signals-gameplan-covered" aria-label="${escapeAttr(_sigCoverageLabel(coverageStatus))}" title="${escapeAttr(_sigCoverageLabel(coverageStatus))}">✓</em>` : ""}
+            ${gamePlanGap ? `<em class="signals-gameplan-warning" aria-label="On the active Game Plan with no published signal video" title="On Game Plan: ${gamePlanGap.playCount} play${gamePlanGap.playCount === 1 ? "" : "s"}, no published video. Shift-click: no signal needed. Ctrl/Cmd-click: covered on wristband. Use both: both.">⚠️</em>` : ""}
           </button>
         `;
       }).join("");
@@ -1195,6 +1312,7 @@ function renderSignals() {
 }
 
 function initSignals() {
+  _sigBindCoverageExceptionShortcut();
   renderSignals();
 }
 
