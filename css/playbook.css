@@ -3782,14 +3782,15 @@ body.shell-tablet #playbook .pb-card-actions {
 
 /* ============ Play Editor Modal ============ */
 .pb-editor-modal {
-  max-width: 680px;
-  max-height: calc(var(--app-vh, 1vh) * 90);
+  /* The editor is a working surface, not a narrow confirmation dialog. */
+  max-width: 960px;
+  max-height: calc((var(--app-vh, 1vh) * 100) - 24px);
 }
 .pb-editor-header {
   flex-direction: row;
   align-items: stretch;
   gap: 0;
-  padding: 12px 16px 8px;
+  padding: 8px 14px 4px;
 }
 .pb-editor-header-center {
   flex: 1;
@@ -3813,8 +3814,8 @@ body.shell-tablet #playbook .pb-card-actions {
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-primary);
-  padding: 6px 12px;
-  margin-top: 4px;
+  padding: 4px 10px;
+  margin-top: 2px;
   background: var(--color-bg-light);
   border-radius: var(--radius-sm);
   white-space: nowrap;
@@ -3839,13 +3840,13 @@ body.shell-tablet #playbook .pb-card-actions {
   cursor: default;
 }
 .pb-editor-body {
-  max-height: calc(var(--app-vh, 1vh) * 60);
+  max-height: calc(var(--app-vh, 1vh) * 74);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: var(--space-md) var(--space-lg) !important;
+  padding: 8px 16px 10px !important;
 }
 .pb-editor-section {
-  margin-bottom: var(--space-lg);
+  margin-bottom: 12px;
 }
 .pb-editor-personnel-variants {
   padding: var(--space-sm);
@@ -3915,14 +3916,14 @@ body.shell-tablet #playbook .pb-card-actions {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--color-text-muted);
-  margin-bottom: var(--space-sm);
-  padding-bottom: var(--space-xs);
+  margin-bottom: 6px;
+  padding-bottom: 3px;
   border-bottom: 1px solid var(--color-border-light);
 }
 .pb-editor-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-sm) var(--space-md);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px 10px;
 }
 .pb-editor-grid .pb-editor-field-wide {
   grid-column: 1 / -1;
@@ -3940,7 +3941,7 @@ body.shell-tablet #playbook .pb-card-actions {
 .pb-editor-field input,
 .pb-editor-field select,
 .pb-editor-field textarea {
-  padding: 7px 10px;
+  padding: 5px 8px;
   border: 1px solid var(--color-border-input);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
@@ -3960,7 +3961,7 @@ body.shell-tablet #playbook .pb-card-actions {
 }
 .pb-editor-field textarea {
   resize: vertical;
-  min-height: 60px;
+  min-height: 52px;
 }
 .pb-editor-lineup-hint {
   margin: 0 0 var(--space-sm);
@@ -3970,6 +3971,7 @@ body.shell-tablet #playbook .pb-card-actions {
 .pb-editor-actions {
   gap: var(--space-sm) !important;
   flex-wrap: wrap;
+  padding: 8px 16px max(10px, calc(8px + env(safe-area-inset-bottom)));
 }
 .pb-editor-actions .btn-danger {
   margin-left: auto;
@@ -3982,6 +3984,48 @@ body.shell-tablet #playbook .pb-card-actions {
   }
   .pb-editor-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Keep the mobile editor comfortably touch-sized. The compact three-column
+   layout is for coach desktops where the extra working width is available. */
+@media (max-width: 760px),
+  (pointer: coarse) and (max-width: 900px) {
+  .pb-editor-modal {
+    max-width: 100%;
+  }
+  .pb-editor-header {
+    padding: 12px 16px 8px;
+  }
+  .pb-editor-call-preview {
+    padding: 6px 12px;
+    margin-top: 4px;
+  }
+  .pb-editor-body {
+    max-height: calc(var(--app-vh, 1vh) * 60);
+    padding: var(--space-md) var(--space-lg) !important;
+  }
+  .pb-editor-section {
+    margin-bottom: var(--space-lg);
+  }
+  .pb-editor-section-title {
+    margin-bottom: var(--space-sm);
+    padding-bottom: var(--space-xs);
+  }
+  .pb-editor-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm) var(--space-md);
+  }
+  .pb-editor-field input,
+  .pb-editor-field select,
+  .pb-editor-field textarea {
+    padding: 7px 10px;
+  }
+  .pb-editor-field textarea {
+    min-height: 60px;
+  }
+  .pb-editor-actions {
+    padding: 12px 22px max(18px, calc(12px + env(safe-area-inset-bottom)));
   }
 }
 
