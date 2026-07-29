@@ -1734,8 +1734,27 @@ function getEffectivePlayVariant(play, variantId = "base") {
 function getPlayFilterVariants(play) {
   if (!play || typeof play !== "object") return [];
   const options = getPlayPersonnelOptions(play);
+  const knownPersonnel = new Set(options.map((option) => getPersonnelVariantComparisonKey(option.personnel)));
+  // Player releases expose this labels-only list so phone filters can include
+  // coach-approved personnel without receiving the alternate variant metadata.
+  // Treat these entries as personnel-only effective records: no formation,
+  // notes, rules, or other coach-only overrides can leak into the player UI.
+  const publishedOptions = Array.isArray(play.approvedPersonnel)
+    ? play.approvedPersonnel
+      .map((personnel) => normalizePersonnelVariantText(personnel))
+      .filter((personnel) => {
+        const key = getPersonnelVariantComparisonKey(personnel);
+        if (!personnel || knownPersonnel.has(key)) return false;
+        knownPersonnel.add(key);
+        return true;
+      })
+      .map((personnel) => ({ id: `published:${getPersonnelVariantComparisonKey(personnel)}`, personnel, isBase: false, publishedOnly: true }))
+    : [];
+  options.push(...publishedOptions);
   if (!options.length) return [play];
-  return options.map((option) => getEffectivePlayVariant(play, option.id) || play);
+  return options.map((option) => option.publishedOnly
+    ? { ...play, personnel: option.personnel, personnelVariantId: option.id }
+    : getEffectivePlayVariant(play, option.id) || play);
 }
 
 function ensurePlaybookPlayIds(list) {

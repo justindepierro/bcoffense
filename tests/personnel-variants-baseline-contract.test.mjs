@@ -84,6 +84,8 @@ assert.equal(gold.notes, "Gold note", "effective variants apply explicit overrid
 assert.equal(gold.personnelVariantId, "pv_playbluezorrowolf_gold", "effective variant identifies its stable selection");
 assert.deepEqual(helpers.getPlayFilterVariants(variantPlay).map((play) => play.personnel), ["Blue", "Gold", "Irish"],
   "playbook filtering can inspect every approved personnel version without cloning a play");
+assert.deepEqual(helpers.getPlayFilterVariants({ personnel: "Blue", approvedPersonnel: ["Blue", "Gold"] }).map((play) => play.personnel), ["Blue", "Gold"],
+  "player-safe approved personnel labels participate in filtering without exposing a variant object");
 
 assert.match(editor, /Personnel variants[\s\S]*?Add personnel/,
   "Edit Play exposes an approved-personnel authoring surface");

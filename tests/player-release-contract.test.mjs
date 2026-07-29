@@ -174,6 +174,7 @@ assert(releasedVariant?.formation === "Gold Rip" && releasedVariant?.respQ === "
 assert(releasedVariant?.personnelVariantId === "pv-play-1-gold", "makes the selected variant explicit in the player payload");
 assert(releasedVariant?.id === "play-1" && releasedVariant?.mediaId === "play:visible", "keeps the original play and media identity for Swipe View, quizzes, and comments");
 assert(releasedVariant?.personnelVariants === undefined && releasedVariant?.scriptPersonnelVariantId === undefined, "does not expose alternate variants or coach selection internals to players");
+assert(JSON.stringify(releasedVariant?.approvedPersonnel) === JSON.stringify(["10", "Gold"]), "releases approved personnel labels for player filtering without alternate metadata");
 assert(!JSON.stringify(releasedVariant).includes("Coach-only Gold note"), "does not expose coach-only variant notes");
 assert(release.gamePlanQuiz?.id === "Opponent A", "projects the active game plan as a stable quiz source");
 assert(release.gamePlanQuiz?.items?.length === 2, "keeps active non-holding game plan calls only");

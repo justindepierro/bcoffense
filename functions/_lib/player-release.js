@@ -97,6 +97,23 @@ const PLAYER_VARIANT_RULE_FIELDS = [
   "respLT", "respLG", "respC", "respRG", "respRT", "respNotes",
 ];
 
+// Players may filter by an approved personnel label, but they must not receive
+// the alternate variant object (which can carry different formations, rules,
+// and coach-only notes). This is intentionally labels-only.
+function approvedPersonnelLabels(source) {
+  const labels = [cleanString(source?.personnel, 240)];
+  asArray(source?.personnelVariants).forEach((variant) => {
+    labels.push(cleanString(variant?.personnel, 240));
+  });
+  const seen = new Set();
+  return labels.filter((label) => {
+    const key = label.toLocaleLowerCase();
+    if (!label || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 24);
+}
+
 const RELEASE_VALUE_KEYS = [
   "teamName",
   "motd",
@@ -215,6 +232,7 @@ export function projectPlayerPlay(play, opts = {}) {
     else if (typeof value === "boolean") projected[field] = value;
   });
   projected.personnelVariantId = cleanString(resolved.personnelVariantId, 160) || "base";
+  projected.approvedPersonnel = approvedPersonnelLabels(source);
   const mediaId = cleanString(opts.mediaId || mediaIdForPlay(source), 512);
   if (mediaId) projected.mediaId = mediaId;
   return projected;
