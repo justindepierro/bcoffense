@@ -195,10 +195,12 @@ assert.match(playPresentation, /function handlePlayPresentationTouchStart\(event
 assert.match(playPresentation, /PLAY_PRESENTATION_SWIPE_MIN_DISTANCE/, "only Swipe View owns horizontal swipe thresholds");
 assert.match(playPresentation, /function getPlayPresentationHeaderTitle\(item\)/, "Swipe View owns a plain-text pinned play title for portrait study");
 assert.match(playPresentation, /nextIndex >= itemCount[\s\S]*playPresentationState\.source === "script"[\s\S]*playPresentationState\.index = 0/, "finishing a script restarts that same packet instead of escaping into another source");
-assert.match(playPresentation, /let playPresentationTeleRedoStrokes = \[\]/, "Swipe View keeps a session-local telestrator redo history");
-assert.match(playPresentation, /function redoPlayPresentationTele\(\)[\s\S]*?playPresentationTeleStrokes\.push\(stroke\)/, "telestrator redo restores the most recently undone stroke");
-assert.match(playPresentation, /playPresentationTeleStrokes\.push\(stroke\);[\s\S]*?playPresentationTeleRedoStrokes = \[\]/, "a new telestrator stroke clears its obsolete redo branch");
+assert.match(playPresentation, /let playPresentationTeleHistory = \[\][\s\S]*?let playPresentationTeleHistoryIndex = 0/, "Swipe View keeps a session-local telestrator history cursor");
+assert.match(playPresentation, /function redoPlayPresentationTele\(\)[\s\S]*?playPresentationTeleHistoryIndex \+= 1[\s\S]*?rebuildPlayPresentationTeleFromHistory\(\)/, "telestrator redo restores the next reversible action");
+assert.match(playPresentation, /function clearPlayPresentationTele\(\)[\s\S]*?commitPlayPresentationTeleAction\(\{ type: "clear" \}\)/, "Clear Board is recorded as an undoable telestrator action");
+assert.match(playPresentation, /function resetPlayPresentationTeleBoard\(\)[\s\S]*?playPresentationTeleHistory = \[\]/, "play changes reset the session-local telestrator history safely");
 assert.match(indexHtml, /id="playPresentationTitle" class="pp-header-play-title"/, "presentation markup reserves a persistent header title outside the scrollable study body");
 assert.match(indexHtml, /id="playPresentationTeleRedo" data-action="redoPlayPresentationTele"/, "presentation markup exposes a telestrator redo control");
+assert.match(indexHtml, /id="playPresentationTeleClear" data-action="clearPlayPresentationTele"[\s\S]*?>Clear</, "presentation markup exposes an explicit Clear Board control");
 
 console.log("shell cleanup contract: runtime asset inventory and retired aliases passed");

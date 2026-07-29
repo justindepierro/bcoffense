@@ -190,7 +190,10 @@ let playPresentationTeleTool = "pen";
 let playPresentationTeleColor = "#ffd400";
 let playPresentationTeleWidth = 5;
 let playPresentationTeleStrokes = [];
-let playPresentationTeleRedoStrokes = [];
+// The action cursor makes Clear Board as reversible as an individual stroke.
+// Nothing is persisted; this is only the current presenter session.
+let playPresentationTeleHistory = [];
+let playPresentationTeleHistoryIndex = 0;
 let playPresentationTeleActive = null;
 let playPresentationTeleCanvas = null;
 let playPresentationTeleCtx = null;
@@ -957,6 +960,37 @@ function redrawPlayPresentationTele() {
   ctx.globalCompositeOperation = "source-over";
 }
 
+function rebuildPlayPresentationTeleFromHistory() {
+  let strokes = [];
+  playPresentationTeleHistory.slice(0, playPresentationTeleHistoryIndex).forEach((action) => {
+    if (action?.type === "clear") {
+      strokes = [];
+    } else if (action?.type === "stroke" && action.stroke) {
+      strokes.push(action.stroke);
+    }
+  });
+  playPresentationTeleStrokes = strokes;
+  updatePlayPresentationTeleControls();
+  redrawPlayPresentationTele();
+}
+
+function commitPlayPresentationTeleAction(action) {
+  if (!action?.type) return;
+  playPresentationTeleHistory = playPresentationTeleHistory.slice(0, playPresentationTeleHistoryIndex);
+  playPresentationTeleHistory.push(action);
+  playPresentationTeleHistoryIndex = playPresentationTeleHistory.length;
+  rebuildPlayPresentationTeleFromHistory();
+}
+
+function resetPlayPresentationTeleBoard() {
+  playPresentationTeleStrokes = [];
+  playPresentationTeleHistory = [];
+  playPresentationTeleHistoryIndex = 0;
+  playPresentationTeleActive = null;
+  updatePlayPresentationTeleControls();
+  redrawPlayPresentationTele();
+}
+
 function resizePlayPresentationTeleCanvas() {
   const canvas = playPresentationTeleCanvas;
   const frame = document.getElementById("playPresentationDiagram");
@@ -1017,13 +1051,14 @@ function attachPlayPresentationTelePointer(canvas) {
     playPresentationTeleActive = null;
     if (stroke.points.length) {
       delete stroke.pointerId;
-      playPresentationTeleStrokes.push(stroke);
       // A new stroke establishes a new history branch, so previously undone
       // work can no longer be replayed.
-      playPresentationTeleRedoStrokes = [];
+      commitPlayPresentationTeleAction({ type: "stroke", stroke });
     }
-    updatePlayPresentationTeleControls();
-    redrawPlayPresentationTele();
+    if (!stroke.points.length) {
+      updatePlayPresentationTeleControls();
+      redrawPlayPresentationTele();
+    }
   };
   canvas.addEventListener("pointerup", finishStroke);
   canvas.addEventListener("pointercancel", finishStroke);
@@ -1062,8 +1097,11 @@ function updatePlayPresentationTeleControls() {
   const redo = document.getElementById("playPresentationTeleRedo");
   const clear = document.getElementById("playPresentationTeleClear");
   const empty = playPresentationTeleStrokes.length === 0;
-  if (undo) undo.disabled = empty;
-  if (redo) redo.disabled = playPresentationTeleRedoStrokes.length === 0;
+  // Clear Board can leave the visible board empty while still being the last
+  // reversible action, so Undo follows the history cursor—not pixel/stroke
+  // visibility.
+  if (undo) undo.disabled = playPresentationTeleHistoryIndex <= 0;
+  if (redo) redo.disabled = playPresentationTeleHistoryIndex >= playPresentationTeleHistory.length;
   if (clear) clear.disabled = empty;
 }
 
@@ -1105,27 +1143,23 @@ function setPlayPresentationTeleWidth(width) {
 }
 
 function undoPlayPresentationTele() {
-  const stroke = playPresentationTeleStrokes.pop();
-  if (!stroke) return;
-  playPresentationTeleRedoStrokes.push(stroke);
-  updatePlayPresentationTeleControls();
-  redrawPlayPresentationTele();
+  if (playPresentationTeleHistoryIndex <= 0) return;
+  playPresentationTeleActive = null;
+  playPresentationTeleHistoryIndex -= 1;
+  rebuildPlayPresentationTeleFromHistory();
 }
 
 function redoPlayPresentationTele() {
-  const stroke = playPresentationTeleRedoStrokes.pop();
-  if (!stroke) return;
-  playPresentationTeleStrokes.push(stroke);
-  updatePlayPresentationTeleControls();
-  redrawPlayPresentationTele();
+  if (playPresentationTeleHistoryIndex >= playPresentationTeleHistory.length) return;
+  playPresentationTeleActive = null;
+  playPresentationTeleHistoryIndex += 1;
+  rebuildPlayPresentationTeleFromHistory();
 }
 
 function clearPlayPresentationTele() {
-  playPresentationTeleStrokes = [];
-  playPresentationTeleRedoStrokes = [];
+  if (!playPresentationTeleStrokes.length) return;
   playPresentationTeleActive = null;
-  updatePlayPresentationTeleControls();
-  redrawPlayPresentationTele();
+  commitPlayPresentationTeleAction({ type: "clear" });
 }
 
 function setPlayPresentationTelestrator(on) {
@@ -1630,7 +1664,7 @@ function openPlayPresentation(items, startIndex, source, options = {}) {
   playPresentationProjectorPromptDismissed = false;
   resetPlayPresentationZoom();
   setPlayPresentationTelestrator(false);
-  clearPlayPresentationTele();
+  resetPlayPresentationTeleBoard();
   setPlayPresentationDetailPanel(false);
   if (typeof openLayer === "function") {
     openLayer(overlay, {
@@ -1718,7 +1752,7 @@ function closePlayPresentation(opts = {}) {
   releasePlayPresentationWakeLock();
   resetPlayPresentationZoom();
   setPlayPresentationTelestrator(false);
-  clearPlayPresentationTele();
+  resetPlayPresentationTeleBoard();
   setPlayPresentationDetailPanel(false);
   if (typeof closePresentationDiscussion === "function") closePresentationDiscussion();
   playPresentationState.imageToken += 1;
@@ -1842,7 +1876,7 @@ function movePlayPresentation(direction) {
     // Restart the same immutable presentation list from its first play.
     playPresentationState.index = 0;
     resetPlayPresentationZoom();
-    clearPlayPresentationTele();
+    resetPlayPresentationTeleBoard();
     renderPlayPresentation();
     if (playPresentationDetailOpen) renderPlayPresentationDetailPanel();
     if (typeof syncPresentationDiscussion === "function") syncPresentationDiscussion();
@@ -1852,7 +1886,7 @@ function movePlayPresentation(direction) {
   if (nextIndex < 0 || nextIndex >= itemCount) return false;
   playPresentationState.index = nextIndex;
   resetPlayPresentationZoom();
-  clearPlayPresentationTele();
+  resetPlayPresentationTeleBoard();
   renderPlayPresentation();
   if (playPresentationDetailOpen) renderPlayPresentationDetailPanel();
   if (typeof syncPresentationDiscussion === "function") syncPresentationDiscussion();

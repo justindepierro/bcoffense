@@ -2255,6 +2255,11 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   box-shadow: 0 0 0 2px rgba(255, 204, 68, 0.78);
 }
 
+.pp-tele-clear {
+  min-width: 58px;
+  font-size: var(--font-size-xs);
+}
+
 .pp-tele-swatch {
   width: 30px;
   height: 30px;
