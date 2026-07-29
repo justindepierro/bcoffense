@@ -2223,31 +2223,22 @@ document.addEventListener("keydown", (e) => {
 // PLAYER MOBILE INTERACTIONS (Tier 4)
 // ================================================================
 
-// Item 34: Capture beforeinstallprompt event for Add-to-Home-Screen
-let _a2hsPromptEvent = null;
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  _a2hsPromptEvent = e;
-  if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
-});
-
 function getPlayerA2HSActionState() {
   const standalone =
     window.matchMedia("(display-mode: standalone)").matches ||
     !!navigator.standalone;
   if (standalone) return { available: false, reason: "installed" };
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  if (!_a2hsPromptEvent && !isIOS) return { available: false, reason: "unsupported" };
   return {
     available: true,
-    isIOS,
-    label: isIOS && !_a2hsPromptEvent ? "Install help" : "Install app",
+    label: "Install help",
   };
 }
 
 function showPlayerA2HSInstallHelp() {
-  const msg =
-    "On iPhone or iPad, tap Share, then choose Add to Home Screen. That keeps BCOffense available like an app without taking over this page.";
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const msg = isIOS
+    ? "On iPhone or iPad, tap Share, then choose Add to Home Screen. That keeps BCOffense available like an app without taking over this page."
+    : "In Chrome, use the Install button in the address bar, or open the browser menu and choose Install BCOffense. This uses the browser's normal secure install flow.";
   if (typeof showModal === "function") {
     return showModal(msg, { title: "Install BCOffense", icon: "📱" });
   }
@@ -2256,15 +2247,7 @@ function showPlayerA2HSInstallHelp() {
 }
 
 function installPlayerA2HS() {
-  if (_a2hsPromptEvent) {
-    _a2hsPromptEvent.prompt();
-    _a2hsPromptEvent.userChoice.then(() => {
-      _a2hsPromptEvent = null;
-      dismissPlayerA2HS();
-    });
-  } else {
-    showPlayerA2HSInstallHelp();
-  }
+  showPlayerA2HSInstallHelp();
 }
 
 function dismissPlayerA2HS() {

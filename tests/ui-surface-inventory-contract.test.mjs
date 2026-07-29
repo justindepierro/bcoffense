@@ -55,6 +55,7 @@ const UI_SURFACES = Object.freeze({
   gpBoxMatchingOverlay: { owner: "js/gameplan-smart.js", pattern: "blocking-layer", scrollOwner: "layer" },
   gpDiscModalOverlay: { owner: "js/play-discussion.js", pattern: "blocking-layer", scrollOwner: "layer" },
   gpDrawer: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
+  gpPersonnelVariantsPickerOverlay: { owner: "js/gameplan-actions.js", pattern: "blocking-layer", scrollOwner: "layer" },
   gpSmartBuilderOverlay: { owner: "js/gameplan-smart.js", pattern: "blocking-layer", scrollOwner: "layer" },
   helpOverlay: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
   legacyDiagramRecoveryOverlay: { owner: "js/media-inventory.js", pattern: "blocking-layer", scrollOwner: "layer" },
