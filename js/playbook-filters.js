@@ -406,10 +406,33 @@ function filterPlays() {
       if (playerHasVideoOnly && !checkingClipFilter && !_playbookHasClipForCurrentViewer(play)) return false;
       if (playerPlaybookStudyFilters.has("notes") && !_playbookHasPlayerNotes(play)) return false;
     }
-    if (activeTypes.size > 0 && !activeTypes.has(play.type)) return false;
-    if (activePersonnel.size > 0 && !activePersonnel.has(play.personnel)) {
-      return false;
-    }
+    // Test filters against coherent effective variants, but keep the
+    // canonical play as the one rendered result. A "Gold + Motion" query,
+    // for example, matches only when one approved Gold version has that
+    // motion—not when those values happen to exist on separate versions.
+    const filterVariants = meta?.filterVariants || (
+      typeof getPlayFilterVariants === "function" ? getPlayFilterVariants(play) : [play]
+    );
+    const matchesVariantFilters = filterVariants.some((candidate) => {
+      if (activeTypes.size > 0 && !activeTypes.has(candidate.type)) return false;
+      if (activePersonnel.size > 0 && !activePersonnel.has(candidate.personnel)) return false;
+      if (formation && candidate.formation !== formation) return false;
+      if (basePlay && candidate.basePlay !== basePlay) return false;
+      if (back && candidate.back !== back) return false;
+      if (motion && candidate.motion !== motion) return false;
+      if (protection && candidate.protection !== protection) return false;
+      if (tempo && candidate.tempo !== tempo) return false;
+      if (search) {
+        const candidateSearchText = PLAYBOOK_RUNTIME_SEARCH_FIELDS
+          .map((field) => candidate[field])
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!candidateSearchText.includes(search)) return false;
+      }
+      return true;
+    });
+    if (!matchesVariantFilters) return false;
     if (
       typeof activePictureChips !== "undefined" &&
       activePictureChips.size > 0 &&
@@ -419,27 +442,6 @@ function filterPlays() {
     ) {
       const pic = getPlayPicture(play);
       if (!pic || !activePictureChips.has(pic)) return false;
-    }
-    if (formation && play.formation !== formation) return false;
-    if (basePlay && play.basePlay !== basePlay) return false;
-    if (back && play.back !== back) return false;
-    if (motion && play.motion !== motion) return false;
-    if (protection && play.protection !== protection) return false;
-    if (tempo && play.tempo !== tempo) return false;
-    if (search) {
-      const searchText = meta ? meta.searchText : [
-        play.play,
-        play.formation,
-        play.protection,
-        play.motion,
-        play.shift,
-        play.back,
-        play.basePlay,
-        play.personnel,
-        play.type,
-        play.tempo,
-      ].filter(Boolean).join(" ").toLowerCase();
-      if (!searchText.includes(search)) return false;
     }
     return true;
   });
@@ -566,6 +568,9 @@ function _getPlayerPlaybookFilterGroups() {
     // finishes hydrating, leaving every dynamic group falsely empty.
     const directValues = field
       ? [...new Set(sourcePlays
+        .flatMap((play) => typeof getPlayFilterVariants === "function"
+          ? getPlayFilterVariants(play)
+          : [play])
         .map((play) => String(play[field] || "").trim())
         .filter(Boolean))].sort((a, b) => a.localeCompare(b))
       : [];

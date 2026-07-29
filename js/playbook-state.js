@@ -20,10 +20,13 @@ function getFilterCache() {
     const trimmed = str.trim();
     return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
   };
-  const unique = (field) =>
-    [
-      ...new Set(plays.map((play) => normalizeCase(play[field])).filter(Boolean)),
-    ].sort();
+  const candidates = (play) => typeof getPlayFilterVariants === "function"
+    ? getPlayFilterVariants(play)
+    : [play];
+  const values = (field, normalize = normalizeCase) => [
+    ...new Set(plays.flatMap(candidates).map((play) => normalize(play[field])).filter(Boolean)),
+  ].sort();
+  const unique = (field) => values(field);
 
   _filterCache = {
     types: unique("type"),
@@ -33,16 +36,12 @@ function getFilterCache() {
     hashes: unique("preferredHash"),
     fieldPositions: unique("preferredFieldPosition"),
     personnels: unique("personnel"),
-    formations: [
-      ...new Set(plays.map((play) => play.formation).filter(Boolean)),
-    ].sort(),
-    basePlays: [
-      ...new Set(plays.map((play) => play.basePlay).filter(Boolean)),
-    ].sort(),
-    backs: [...new Set(plays.map((play) => play.back).filter(Boolean))].sort(),
-    motions: [...new Set(plays.map((play) => play.motion).filter(Boolean))].sort(),
-    protections: [...new Set(plays.map((play) => play.protection).filter(Boolean))].sort(),
-    tempos: [...new Set(plays.map((play) => play.tempo).filter(Boolean))].sort(),
+    formations: values("formation", (value) => String(value || "").trim()),
+    basePlays: values("basePlay", (value) => String(value || "").trim()),
+    backs: values("back", (value) => String(value || "").trim()),
+    motions: values("motion", (value) => String(value || "").trim()),
+    protections: values("protection", (value) => String(value || "").trim()),
+    tempos: values("tempo", (value) => String(value || "").trim()),
   };
   return _filterCache;
 }

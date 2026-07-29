@@ -48,6 +48,7 @@ return {
   normalizePlayPersonnelVariants,
   getPlayPersonnelOptions,
   getEffectivePlayVariant,
+  getPlayFilterVariants,
 };`)();
 
 const legacy = { ...base };
@@ -81,6 +82,8 @@ assert.equal(gold.personnel, "Gold", "effective variants select their approved p
 assert.equal(gold.play, base.play, "effective variants inherit the base call");
 assert.equal(gold.notes, "Gold note", "effective variants apply explicit overrides only");
 assert.equal(gold.personnelVariantId, "pv_playbluezorrowolf_gold", "effective variant identifies its stable selection");
+assert.deepEqual(helpers.getPlayFilterVariants(variantPlay).map((play) => play.personnel), ["Blue", "Gold", "Irish"],
+  "playbook filtering can inspect every approved personnel version without cloning a play");
 
 assert.match(editor, /Personnel variants[\s\S]*?Add personnel/,
   "Edit Play exposes an approved-personnel authoring surface");
@@ -136,5 +139,11 @@ assert.match(gamePlan, /_gpPersonnelFilterMatches\(p, _gpFilters\.personnel\)/,
   "Game Plan personnel filtering matches approved variants without rewriting primary personnel");
 assert.match(gamePlanRender, /_gpPersonnelChoicesForPlay\(play\)/,
   "Game Plan shows approved personnel values in its existing filter menu");
+assert.match(utils, /function getPlayFilterVariants\(play\)/,
+  "shared filtering resolves coherent effective personnel variants");
+assert.match(utils, /filterVariants \};/,
+  "the runtime index retains effective variants for fast repeated filtering");
+assert.match(await read("js/playbook-filters.js"), /const matchesVariantFilters = filterVariants\.some/,
+  "Playbook filtering evaluates a full filter query against each approved variant");
 
 console.log("personnel variants baseline contract: legacy data paths are preserved");

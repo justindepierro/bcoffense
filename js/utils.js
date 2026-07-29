@@ -1726,6 +1726,18 @@ function getEffectivePlayVariant(play, variantId = "base") {
   };
 }
 
+// Filtering and search must see every approved personnel version of a play,
+// while the playbook still renders one canonical row. Returning effective
+// records here keeps a multi-filter query coherent: formation, motion, and
+// personnel are always tested on the same approved version rather than being
+// accidentally combined from different variants.
+function getPlayFilterVariants(play) {
+  if (!play || typeof play !== "object") return [];
+  const options = getPlayPersonnelOptions(play);
+  if (!options.length) return [play];
+  return options.map((option) => getEffectivePlayVariant(play, option.id) || play);
+}
+
 function ensurePlaybookPlayIds(list) {
   if (!Array.isArray(list)) return 0;
   const used = new Set();
@@ -1989,12 +2001,15 @@ function getPlaybookRuntimeIndex() {
     const tagSig = playSignature(play);
     const gpCompareKey = getPlayCompareKey(play, "gameplan");
     const tagCompareKey = getPlayCompareKey(play, "tag");
-    const searchText = PLAYBOOK_RUNTIME_SEARCH_FIELDS
-      .map((field) => play[field])
-      .filter(Boolean)
+    const filterVariants = getPlayFilterVariants(play);
+    const searchText = filterVariants
+      .map((candidate) => PLAYBOOK_RUNTIME_SEARCH_FIELDS
+        .map((field) => candidate[field])
+        .filter(Boolean)
+        .join(" "))
       .join(" ")
       .toLowerCase();
-    const entry = { play, index, gpSig, tagSig, gpCompareKey, tagCompareKey, searchText };
+    const entry = { play, index, gpSig, tagSig, gpCompareKey, tagCompareKey, searchText, filterVariants };
     byPlay.set(play, entry);
     if (play.id) byId.set(String(play.id), entry);
     if (gpSig && !byGamePlanSig.has(gpSig)) byGamePlanSig.set(gpSig, entry);
