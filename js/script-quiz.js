@@ -3137,6 +3137,9 @@ function renderScriptQuizPlay() {
   const questionData = _getQuizQuestionAndChoices(item);
   _quizCurrentQuestion = questionData.question;
   _quizCurrentChoices = questionData.choices;
+  // Navigation needs the question type to decide whether the card must be
+  // flipped before advancing. Define it before rendering those controls.
+  const question = _quizCurrentQuestion || _buildQuizQuestion(item);
   _preloadUpcomingQuizSignalMedia(_quizIndex);
   const gameMode = _quizCurrentChoices.length >= 2;
   _quizRevealed = Boolean(answer);
@@ -3203,7 +3206,6 @@ function renderScriptQuizPlay() {
   const typeLabel = play.type ? play.type : "";
   const sourceLabel = _getQuizSourceLabel(_quizSourceType);
   const weightLabel = _quizSourceWeight === 1 ? "1.0x" : `${_quizSourceWeight}x`;
-  const question = _quizCurrentQuestion || _buildQuizQuestion(item);
   const detailValue = _quizCleanText(question.detailValue);
   const diagramPromptHtml = ["diagram", "diagram_formation", "diagram_flash", "study_card"].includes(question.type)
     ? _renderQuizRedactedDiagram(play, question.diagramUrl)

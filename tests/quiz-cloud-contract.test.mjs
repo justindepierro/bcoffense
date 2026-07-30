@@ -122,6 +122,11 @@ assert(
   "dynamic player quiz actions are explicit window exports for the central delegated action router",
 );
 assert(
+  quiz.indexOf("const question = _quizCurrentQuestion || _buildQuizQuestion(item);")
+    < quiz.indexOf("// Nav buttons"),
+  "the current question is initialized before navigation evaluates flash-card advance rules after an answer",
+);
+assert(
   releaseClient.includes('fetch("/player/release"')
     && releaseClient.includes("cache: \"no-store\"")
     && releaseClient.includes("storageManager.replacePlayerReleaseData(release)"),
