@@ -2194,7 +2194,7 @@ function initScriptQuizInteractionRouting() {
       return;
     }
     nextScriptQuizPlay();
-  });
+  }, true);
 }
 
 document.addEventListener("DOMContentLoaded", initScriptQuizInteractionRouting);
@@ -2540,6 +2540,14 @@ function answerScriptQuizChoice(choiceKey) {
   _schedulePlayerQuizDraftSave();
   _advanceSignalGameAfterAnswer(questionKey);
   _maybeAutoAdvanceQuizAfterAnswer(questionKey);
+}
+
+// app-events routes declarative actions through window[action]. These are
+// player-safe quiz controls, so explicitly publish the two dynamic controls
+// rather than relying on browser-specific top-level declaration behavior.
+if (typeof window !== "undefined") {
+  window.answerScriptQuizChoice = answerScriptQuizChoice;
+  window.nextScriptQuizPlay = nextScriptQuizPlay;
 }
 
 function _getQuizAnswerReviewRows() {

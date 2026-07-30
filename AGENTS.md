@@ -327,6 +327,7 @@ window._reorderSave
 window.appDiagnostics
 window.appStartup
 window.addPlayPersonnelVariant
+window.answerScriptQuizChoice
 window.applyCloudBackupImmediately
 window.applyPendingRestoredStartupTab
 window.applyRoleUi
@@ -410,6 +411,7 @@ window.isActionAllowedForRole
 window.isAdminUser
 window.logoutAuth
 window.mediaUploadOutbox
+window.nextScriptQuizPlay
 window.openAboutBCOffense
 window.openBCOffenseTerms
 window.openCloudSyncModal

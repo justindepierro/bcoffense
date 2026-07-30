@@ -111,9 +111,15 @@ assert(
 assert(
   quiz.includes("function initScriptQuizInteractionRouting()")
     && quiz.includes('overlay.addEventListener("click"')
+    && quiz.includes("}, true);")
     && quiz.includes('action !== "answerScriptQuizChoice" && action !== "nextScriptQuizPlay"')
     && quiz.includes("event.stopPropagation();"),
   "dynamic quiz answer and next controls have an overlay-owned click route independent of the global app dispatcher",
+);
+assert(
+  quiz.includes("window.answerScriptQuizChoice = answerScriptQuizChoice;")
+    && quiz.includes("window.nextScriptQuizPlay = nextScriptQuizPlay;"),
+  "dynamic player quiz actions are explicit window exports for the central delegated action router",
 );
 assert(
   releaseClient.includes('fetch("/player/release"')
