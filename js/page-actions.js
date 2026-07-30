@@ -54,7 +54,7 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "📂", label: "Templates & saves", run: () => _paCall("openLoadCallSheetModal") },
       { icon: "💾", label: "Save", run: () => _paCall("saveCallSheetTemplate") },
       { icon: "🖨️", label: "Print", run: () => _paCall("printCallSheet") },
-      { icon: "🗂️", label: "Index Cards", sublabel: "4×6 front / back", run: () => _paCall("openCallSheetIndexCards") },
+      { icon: "🗂️", label: "Index Cards", sublabel: "4×6 front / back", run: () => _paCall("switchCallSheetPage", "index") },
       { icon: "⚙️", label: "Display", sublabel: _paCallsheetDisplayStatus, run: () => _paCall("openDisplayPanel") },
     ],
     extras: [
