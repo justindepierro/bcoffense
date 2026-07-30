@@ -20,17 +20,18 @@ async function source(relativePath) {
 
 console.log("\n▸ Quiz Cloudflare data path");
 
-const [release, storage, quizFoundation, quizRuntime, sync, releaseClient, revision, syncRoute] = await Promise.all([
+const [release, storage, quizFoundation, quizRuntime, scriptPlayer, sync, releaseClient, revision, syncRoute] = await Promise.all([
   source("../functions/_lib/player-release.js"),
   source("../js/storage.js"),
   source("../js/script-quiz-foundation.js"),
   source("../js/script-quiz.js"),
+  source("../js/script-player.js"),
   source("../js/player-quiz-sync.js"),
   source("../js/cloud-sync.js"),
   source("../functions/workspace/revision.js"),
   source("../functions/api/leaderboard/sync.js"),
 ]);
-const quiz = `${quizFoundation}\n${quizRuntime}`;
+const quiz = `${quizFoundation}\n${quizRuntime}\n${scriptPlayer}`;
 
 assert(
   release.includes("projectActiveGamePlanQuiz")
@@ -54,6 +55,12 @@ assert(
     && quiz.includes("_getPlayerGamePlanQuizStorageKey")
     && quiz.includes('window.queuePlayerLeaderboardSync("attempts")'),
   "player quiz reads the immutable release source and queues attempts for D1 sync",
+);
+assert(
+  quiz.includes("function getPlayerQuizSourceAvailability")
+    && scriptPlayer.includes('isPlayerQuizSourceAvailable("script", requestedId)')
+    && quiz.includes("needs-question-pair"),
+  "player script quiz launch resolves the released script record and requires a real question pair",
 );
 assert(
   releaseClient.includes('fetch("/player/release"')

@@ -217,7 +217,10 @@ function _getPlayerQuizScriptOptions() {
     .map((savedScript) => {
       const stats = typeof getSavedScriptStats === "function" ? getSavedScriptStats(savedScript) : null;
       const quizStats = _quizCompletenessStats(savedScript.plays || []);
-      const state = _getQuizSourceState("script", savedScript);
+      const availability = typeof getPlayerQuizSourceAvailability === "function"
+        ? getPlayerQuizSourceAvailability("script", savedScript.id, savedScript)
+        : { available: savedScript.playerVisible && _getQuizSourceState("script", savedScript) === "available" };
+      const state = availability.state || _getQuizSourceState("script", savedScript);
       const option = {
         id: String(savedScript.id),
         name: savedScript.name || "Published Practice",
@@ -227,9 +230,10 @@ function _getPlayerQuizScriptOptions() {
         date: savedScript.date || "",
         dateStr: stats?.dateStr || savedScript.date || "No date",
         state,
+        availabilityReason: availability.reason || "",
         quizStats,
         readiness: _quizReadinessLabel(quizStats.score),
-        playerSelectable: savedScript.playerVisible && state === "available",
+        playerSelectable: Boolean(availability.available),
         playerVisible: Boolean(savedScript.playerVisible),
       };
       return {
@@ -570,6 +574,8 @@ function _renderPlayerQuizScriptPicker(options) {
       ? "Locked"
       : option.state === "coach"
         ? "Coach-only"
+        : option.availabilityReason === "needs-question-pair"
+          ? "Needs 2 calls"
         : option.quizStats?.score < 40
           ? "Thin"
           : "";

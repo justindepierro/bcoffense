@@ -575,6 +575,40 @@ function _getQuizSourceState(kind, source = {}) {
   return "available";
 }
 
+// The final player-side launch guard must resolve the released script record,
+// not just an ID.  An ID-only check loses `playerVisible` whenever a coach has
+// not created an optional quiz-source setting, which made a coach-visible
+// “Available” source reject players at Start Quiz.
+function getPlayerQuizSourceAvailability(kind, id, source = null) {
+  const sourceKind = String(kind || "").trim().toLowerCase();
+  const sourceId = String(id || "").trim();
+  let record = source && typeof source === "object" ? source : { id: sourceId };
+
+  if (sourceKind === "script" && !Array.isArray(record?.plays)) {
+    const savedScripts = typeof getSavedScripts === "function" ? getSavedScripts() : [];
+    record = (Array.isArray(savedScripts) ? savedScripts : [])
+      .find((savedScript) => String(savedScript?.id || "") === sourceId) || record;
+  }
+
+  const state = _getQuizSourceState(sourceKind, record || { id: sourceId });
+  if (state !== "available") {
+    return { available: false, state, reason: state === "locked" ? "locked" : "coach-only", source: record || null };
+  }
+  if (sourceKind !== "script") return { available: true, state, reason: "", source: record || null };
+  if (!record?.playerVisible) {
+    return { available: false, state: "coach", reason: "not-player-visible", source: record || null };
+  }
+
+  // Two distinct calls are the minimum fair fallback: they give Call ID an
+  // answer plus a real distractor even when diagrams or player rules are thin.
+  const items = typeof _normalizeQuizItems === "function" ? _normalizeQuizItems(record.plays || []) : [];
+  const calls = new Set(items.map((item) => _quizShortCall(item.play).toLowerCase()).filter(Boolean));
+  if (items.length < 2 || calls.size < 2) {
+    return { available: false, state, reason: "needs-question-pair", source: record };
+  }
+  return { available: true, state, reason: "", source: record };
+}
+
 function _quizSourceStateLabel(state, stats = null) {
   if (state === "available" && stats && stats.score < 40) return { label: "Available · Thin", tone: "thin" };
   if (state === "available") return { label: "Available", tone: "ready" };
@@ -583,8 +617,7 @@ function _quizSourceStateLabel(state, stats = null) {
 }
 
 function isPlayerQuizSourceAvailable(kind, id) {
-  const state = _getQuizSourceState(kind, { id });
-  return state === "available";
+  return getPlayerQuizSourceAvailability(kind, id).available;
 }
 
 function _getPlayerHelmetStickerStorageKey() {
