@@ -508,6 +508,22 @@ async function sendScriptToCallSheet() {
   if (pushed > 0 && typeof showTab === "function") showTab("callsheet");
 }
 
+function sendScriptToIndexCallSheet() {
+  const source = _getScriptIntegrationSource();
+  if (!source.plays.length) {
+    showToast("Script is empty", { type: "warning" });
+    return;
+  }
+  if (typeof createSmartCallSheetIndexCard !== "function") {
+    showToast("Index Card builder is unavailable", { type: "warning" });
+    return;
+  }
+  const scriptName = document.getElementById("scriptName")?.value.trim() || "Practice Script";
+  createSmartCallSheetIndexCard(source.plays, {
+    name: source.selected ? `${scriptName} Selected Calls` : `${scriptName} Call Card`,
+  });
+}
+
 // ─── #138/#139: Reconcile Script with Game Plan ───────────────────────────────
 async function reconcileScriptWithGamePlan() {
   if (typeof _gpEnsureBoard !== "function" || typeof _gpPlaySignature !== "function") {

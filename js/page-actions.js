@@ -43,6 +43,7 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "🎯", label: "Send to Game Plan", run: () => _paCall("sendScriptToGamePlan") },
       { icon: "🃏", label: "Send to Wristband", run: () => _paCall("sendScriptToWristband") },
       { icon: "📄", label: "Send to Call Sheet", run: () => _paCall("sendScriptToCallSheet") },
+      { icon: "🗂️", label: "Build Index Card", sublabel: "Smart 4×6 front / back", run: () => _paCall("sendScriptToIndexCallSheet") },
       { icon: "🖨️", label: "Print Studio", run: () => _paCall("openPrintStudio") },
       { icon: "🛠️", label: "Workspace Tools", run: () => _paCall("openScriptToolsDrawer") },
     ],
@@ -138,6 +139,7 @@ const PAGE_ACTIONS_CONFIG = {
         items: [
           { icon: "📋", label: "Create Script", run: () => _paCall("createScriptFromGamePlan") },
           { icon: "➡️", label: "Send to Call Sheet", run: () => _paCall("pushGamePlanToCallSheet") },
+          { icon: "🗂️", label: "Build Index Card", sublabel: "Smart 4×6 front / back", run: () => _paCall("sendGamePlanToIndexCallSheet") },
           { icon: "🃏", label: "Send to Wristband", run: () => _paCall("pushGamePlanToWristband") },
           { icon: "🃏", label: "Build WB Card", run: () => _paCall("sendGamePlanToWristbandCard") },
           { icon: "🛡️", label: "Constraints", run: () => _paCall("runConstraintCheck") },

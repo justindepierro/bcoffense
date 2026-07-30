@@ -11,6 +11,8 @@ const gamePlanRender = await readFile(new URL("js/gameplan-render.js", `file://$
 const notifications = await readFile(new URL("js/app-notifications.js", `file://${root}/`), "utf8");
 const indexCards = await readFile(new URL("js/callsheet-index-cards.js", `file://${root}/`), "utf8");
 const appEvents = await readFile(new URL("js/app-events.js", `file://${root}/`), "utf8");
+const scriptIntegrations = await readFile(new URL("js/script-integrations.js", `file://${root}/`), "utf8");
+const gamePlanIntegrations = await readFile(new URL("js/gameplan-integrations.js", `file://${root}/`), "utf8");
 
 assert.match(render, /const wristbandHtml = displayOptions\.showNumbers[\s\S]*?cs-wristband-number[\s\S]*?\$\{wristbandHtml\}[\s\S]*?\$\{personnelHtml\}/, "screen rows render wristband number before personnel and call text");
 assert.match(print, /const wristbandHtml = displayOptions\.showNumbers[\s\S]*?print-wristband-number[\s\S]*?\$\{wristbandHtml\}\$\{personnelHtml\}/, "print rows preserve wristband-first order");
@@ -32,5 +34,10 @@ assert.match(indexCards, /toggleCallSheetIndexFamily[\s\S]*?toggleCallSheetIndex
 assert.match(indexCards, /function openCallSheetIndexCardPrintModal\(\)[\s\S]*?Cards[\s\S]*?Sides[\s\S]*?Copies[\s\S]*?Preview/, "index cards use a dedicated print suite with card, side, copy, and preview controls");
 assert.match(indexCards, /function _csIndexPrintSides[\s\S]*?\["front", "back"\][\s\S]*?function renderCallSheetIndexCardPrintPages/, "index-card duplex jobs render front then back for each card");
 assert.match(indexCards, /function _runCallSheetIndexCardsPrint[\s\S]*?setupPrintPageStyle[\s\S]*?@page \{ size: 4in 6in/, "index cards use the shared print-page setup with an exact 4×6 page");
+assert.match(indexCards, /function _csBucketRows\(bucket\)[\s\S]*?bucket\?\.playKeys[\s\S]*?_csIndexIdentity/, "smart index-card buckets stay scoped to their source calls");
+assert.match(indexCards, /function _csSmartIndexPlan\(entries\)[\s\S]*?CS_INDEX_SMART_CATEGORY_PRIORITY[\s\S]*?three per side/, "smart index cards balance logical groups across a compact front and back");
+assert.match(indexCards, /function createSmartCallSheetIndexCard\(entries, options = \{\}\)[\s\S]*?saveCallSheet\(\)[\s\S]*?switchCallSheetPage\("index"\)/, "smart generation saves calls then opens the editable index-card workspace");
+assert.match(scriptIntegrations, /function sendScriptToIndexCallSheet\(\)[\s\S]*?createSmartCallSheetIndexCard/, "Script can build a smart index card from selected or full script plays");
+assert.match(gamePlanIntegrations, /function sendGamePlanToIndexCallSheet\(\)[\s\S]*?sourceBoxId[\s\S]*?createSmartCallSheetIndexCard/, "Game Plan can build a smart index card while retaining bucket context");
 assert.match(appEvents, /"openCallSheetIndexPlayMenu"/, "delegated event routing passes the index-card play action its source element");
 console.log("call sheet call clarity contract: wristband-first and one-word full-call passed");

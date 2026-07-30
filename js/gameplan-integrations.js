@@ -206,6 +206,23 @@ async function pushGamePlanToCallSheet() {
   );
   if (pushed > 0 && typeof showTab === "function") showTab("callsheet");
 }
+
+function sendGamePlanToIndexCallSheet() {
+  if (typeof createSmartCallSheetIndexCard !== "function") {
+    showToast("Index Card builder is unavailable", { type: "warning" });
+    return;
+  }
+  const board = _gpEnsureBoard();
+  const boxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])]
+    .filter((box) => box && box.id !== GP_HOLDING_ID && box.id !== "holding");
+  const entries = boxes.flatMap((box) => (board.assignments?.[box.id] || []).map((play) => ({ play, sourceBoxId: box.id })));
+  if (!entries.length) {
+    showToast("Add drafted Game Plan calls before building an Index Card.", { type: "warning" });
+    return;
+  }
+  const opponent = typeof getGameWeek === "function" ? getGameWeek()?.opponentName : "";
+  createSmartCallSheetIndexCard(entries, { name: `${opponent || "Game Day"} Call Card` });
+}
 /* -------------------------------------------------------------------------
    Send tagged plays from the dashboard's active game plan to the boxes
    - Plays whose `type` matches a default box go directly into that box

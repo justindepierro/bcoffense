@@ -13,12 +13,20 @@ function _csBucketHash(bucket) { return bucket?.hash === "right" ? "right" : buc
 function _csIndexPlayKey(play, hash, index) {
   return [hash, play?.id || play?.playId || play?._id || "", play?.wristbandNumber || "", play?.personnel || "", play?.formation || "", play?.protection || "", play?.play || "", index].join("|");
 }
+function _csIndexIdentity(play) {
+  if (typeof _gpAssignmentIdentity === "function") return _gpAssignmentIdentity(play);
+  if (typeof getPlayIdentityKey === "function") return getPlayIdentityKey(play, "callsheet-index", { trim: false });
+  return [play?.personnel, play?.formation, play?.protection, play?.play, play?.personnelVariantId || "base"].map((value) => String(value || "").trim()).join("|");
+}
 function _csBucketRows(bucket) {
   const data = callSheet?.[bucket?.categoryId] || {};
   const hash = _csBucketHash(bucket);
   const makeRows = (items, side) => _csSafeList(items).map((play, index) => ({ play, hash: side, index, key: _csIndexPlayKey(play, side, index) }));
-  if (hash === "both") return [...makeRows(data.left, "left"), ...makeRows(data.right, "right")];
-  return makeRows(data[hash], hash);
+  const rows = hash === "both" ? [...makeRows(data.left, "left"), ...makeRows(data.right, "right")] : makeRows(data[hash], hash);
+  // Smart cards are a scoped view of the canonical Call Sheet. Older/manual
+  // cards have no playKeys and continue to show the full linked category.
+  const keys = Array.isArray(bucket?.playKeys) ? new Set(bucket.playKeys) : null;
+  return keys?.size ? rows.filter((row) => keys.has(_csIndexIdentity(row.play))) : rows;
 }
 function _csIndexFamily(bucket, row) { return Boolean(bucket?.family?.[row.key]?.indent); }
 function _csIndexCompact(bucket, row) { return Boolean(bucket?.family?.[row.key]?.compact); }
@@ -71,6 +79,108 @@ function _csIndexBucketMarkup(bucket, editable) {
 function _csCardMarkup(card, side, editable = false) {
   const buckets = card?.[side] || [];
   return `<article class="cs-index-card"><div class="cs-index-card-head"><b>${escapeHtml(card?.name || "Game Day Card")}</b><span>${side === "front" ? "Front" : "Back"}</span></div><div class="cs-index-grid">${buckets.map((bucket) => _csIndexBucketMarkup(bucket, editable)).join("") || `<div class="cs-index-empty">Use + Add bucket to build this side.</div>`}</div></article>`;
+}
+
+const CS_INDEX_SMART_CATEGORY_PRIORITY = [
+  "openers", "goal-line", "rz-5", "rz-10", "rz-20", "backed-up", "2-minute", "4-minute",
+  "3rd-short-1-3", "3rd-short-2down", "3rd-medium", "3rd-long", "4th-down", "1st-down",
+  "short-yardage", "base-run", "run-options", "rpos", "base-pass", "quick", "play-action",
+  "movement", "screen", "perimeter-screens", "must-haves",
+];
+
+function _csSmartIndexCategoryForPlay(play, sourceBoxId = "") {
+  const targets = typeof _gpComputeCallSheetTargets === "function"
+    ? [..._gpComputeCallSheetTargets(play, sourceBoxId)].filter((id) => CALLSHEET_CATEGORIES.some((category) => category.id === id))
+    : [];
+  if (!targets.length && typeof findMatchingCategories === "function") {
+    try { targets.push(...findMatchingCategories(play)); } catch (_err) { /* best-effort routing */ }
+  }
+  const ranked = targets.sort((a, b) => {
+    const ai = CS_INDEX_SMART_CATEGORY_PRIORITY.indexOf(a);
+    const bi = CS_INDEX_SMART_CATEGORY_PRIORITY.indexOf(b);
+    return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
+  });
+  return ranked[0] || "must-haves";
+}
+
+function _csSmartIndexBucketLabel(categoryId) {
+  return _csName(categoryId) || "Core Calls";
+}
+
+function _csSmartIndexPlan(entries) {
+  const seen = new Set();
+  const groups = new Map();
+  (Array.isArray(entries) ? entries : []).forEach((entry) => {
+    const play = entry?.play || entry;
+    const identity = _csIndexIdentity(play);
+    if (!play || !identity || seen.has(identity)) return;
+    seen.add(identity);
+    const categoryId = _csSmartIndexCategoryForPlay(play, entry?.sourceBoxId || "");
+    if (!groups.has(categoryId)) groups.set(categoryId, []);
+    groups.get(categoryId).push(play);
+  });
+  const ranked = [...groups.entries()].sort(([a, aPlays], [b, bPlays]) => {
+    const ai = CS_INDEX_SMART_CATEGORY_PRIORITY.indexOf(a);
+    const bi = CS_INDEX_SMART_CATEGORY_PRIORITY.indexOf(b);
+    return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi) || bPlays.length - aPlays.length;
+  });
+  // Six focused groups (three per side) keep a portrait 4×6 card usable. Any
+  // lower-priority overflow becomes one deliberately named Core Calls group.
+  const primary = ranked.slice(0, 6);
+  const overflow = ranked.slice(6).flatMap(([, plays]) => plays);
+  if (overflow.length) {
+    const existing = primary.find(([id]) => id === "must-haves");
+    if (existing) existing[1].push(...overflow);
+    else if (primary.length < 6) primary.push(["must-haves", overflow]);
+    else primary[primary.length - 1] = ["must-haves", [...primary[primary.length - 1][1], ...overflow]];
+  }
+  const sides = { front: [], back: [] };
+  const rowCounts = { front: 0, back: 0 };
+  primary.forEach(([categoryId, plays], index) => {
+    const side = rowCounts.front <= rowCounts.back ? "front" : "back";
+    sides[side].push({
+      id: `bucket-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 5)}`,
+      label: categoryId === "must-haves" && overflow.length ? "Core Calls" : _csSmartIndexBucketLabel(categoryId),
+      categoryId,
+      hash: "both",
+      targetHash: "left",
+      playKeys: plays.map(_csIndexIdentity),
+      family: {},
+    });
+    rowCounts[side] += plays.length;
+  });
+  return { sides, groups: primary, playCount: seen.size };
+}
+
+function createSmartCallSheetIndexCard(entries, options = {}) {
+  if (typeof callSheet !== "object" || !callSheet || !Array.isArray(entries) || !entries.length) {
+    showToast("Add Script or Game Plan plays before building an Index Card.", { type: "warning" });
+    return null;
+  }
+  const plan = _csSmartIndexPlan(entries);
+  if (!plan.playCount) {
+    showToast("No usable calls were found for this Index Card.", { type: "warning" });
+    return null;
+  }
+  plan.groups.forEach(([categoryId, plays]) => {
+    plays.forEach((play) => {
+      if (typeof _gpPushPlayIntoCategory === "function") _gpPushPlayIntoCategory(play, categoryId);
+    });
+  });
+  const name = String(options.name || "Game Day Call Card").trim() || "Game Day Call Card";
+  const card = _csNewCard(name);
+  card.front = plan.sides.front;
+  card.back = plan.sides.back;
+  callSheetSettings.indexCards = _csCards();
+  callSheetSettings.indexCards.push(card);
+  _csIndexCardId = card.id;
+  _csIndexSide = "front";
+  if (typeof saveCallSheet === "function") saveCallSheet();
+  _csPersistCards();
+  if (typeof showTab === "function") showTab("callsheet");
+  if (typeof switchCallSheetPage === "function") switchCallSheetPage("index");
+  showToast(`Built ${name}: ${plan.playCount} calls in ${plan.groups.length} compact groups.`, { type: "success", duration: 4500 });
+  return card;
 }
 
 function openCallSheetIndexCards() { switchCallSheetPage("index"); }
