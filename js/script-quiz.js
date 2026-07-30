@@ -360,7 +360,7 @@ function _getPlayerQuizModes(context = {}) {
       key: "diagram-flash",
       label: "Diagram Flash Cards",
       time: hasDiagram ? "Flip" : "Needs diagrams",
-      note: hasDiagram ? "See the redacted diagram, name the call, then flip to check yourself." : "Add diagrams to this script to unlock flash cards.",
+      note: hasDiagram ? "See the redacted diagram, name the call, then flip to check yourself. Published media is verified before the round begins." : "Add and publish diagrams to this script to unlock flash cards.",
       source: "script",
       disabled: !hasDiagram,
     },
@@ -844,6 +844,26 @@ function openPlayerQuizHubForScript(id = "") {
   const target = _getPlayerQuizScriptOptions().find((option) => option.id === String(id || "") && option.playerSelectable);
   if (!target) {
     showToast("Coach has not opened that script quiz yet.", { type: "warning" });
+    return;
+  }
+  _playerQuizSelectedScriptId = target.id;
+  openPlayerQuizHub();
+}
+
+// The current-practice shortcut is intentionally kept on the same setup path
+// as every card in the player launcher.  Resolving the loaded packet first
+// prevents an older default script from silently replacing the practice a
+// player is currently studying.
+function openPlayerQuizHubForCurrentScript() {
+  const currentName = document.getElementById("scriptName")?.value || "";
+  const currentDate = document.getElementById("scriptDate")?.value || "";
+  const options = _getPlayerQuizScriptOptions();
+  const target = options.find((option) => option.playerSelectable && option.name === currentName && option.date === currentDate)
+    || options.find((option) => option.playerSelectable && option.name === currentName)
+    || options.find((option) => option.playerSelectable)
+    || null;
+  if (!target) {
+    showToast("Coach has not opened a practice quiz yet.", { type: "warning" });
     return;
   }
   _playerQuizSelectedScriptId = target.id;

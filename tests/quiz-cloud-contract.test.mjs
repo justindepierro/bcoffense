@@ -20,7 +20,7 @@ async function source(relativePath) {
 
 console.log("\n▸ Quiz Cloudflare data path");
 
-const [release, storage, quizFoundation, quizRuntime, scriptPlayer, sync, releaseClient, revision, syncRoute] = await Promise.all([
+const [release, storage, quizFoundation, quizRuntime, scriptPlayer, sync, releaseClient, revision, syncRoute, indexHtml] = await Promise.all([
   source("../functions/_lib/player-release.js"),
   source("../js/storage.js"),
   source("../js/script-quiz-foundation.js"),
@@ -30,6 +30,7 @@ const [release, storage, quizFoundation, quizRuntime, scriptPlayer, sync, releas
   source("../js/cloud-sync.js"),
   source("../functions/workspace/revision.js"),
   source("../functions/api/leaderboard/sync.js"),
+  source("../index.html"),
 ]);
 const quiz = `${quizFoundation}\n${quizRuntime}\n${scriptPlayer}`;
 
@@ -70,8 +71,10 @@ assert(
 );
 assert(
   quiz.includes("function openPlayerQuizHubForScript")
-    && scriptPlayer.includes('data-action="openPlayerQuizHubForScript"'),
-  "player Practice Quiz buttons open the shared setup screen before the first question",
+    && quiz.includes("function openPlayerQuizHubForCurrentScript")
+    && scriptPlayer.includes('data-action="openPlayerQuizHubForScript"')
+    && indexHtml.includes('data-action="openPlayerQuizHubForCurrentScript"'),
+  "every player Practice Quiz entry point opens the shared setup screen before the first question",
 );
 assert(
   releaseClient.includes('fetch("/player/release"')
