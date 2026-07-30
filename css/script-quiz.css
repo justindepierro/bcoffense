@@ -721,6 +721,15 @@
   color: var(--color-text);
 }
 
+.sq-feedback-continue {
+  width: min(100%, 320px);
+  min-height: 48px;
+  justify-self: center;
+  margin-top: var(--space-sm);
+  font-size: var(--font-size-md);
+  font-weight: 900;
+}
+
 .sq-feedback-calm {
   justify-self: center;
   max-width: 34rem;

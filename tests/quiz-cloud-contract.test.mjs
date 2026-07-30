@@ -104,6 +104,11 @@ assert(
   "pausing or closing a quiz cancels queued answer transitions so feedback cannot advance behind the exit screen",
 );
 assert(
+  quiz.includes('class="btn btn-primary sq-feedback-continue" data-action="nextScriptQuizPlay"')
+    && quiz.includes("Continue to next question"),
+  "answered questions expose an immediate in-context Continue action instead of requiring players to find the distant footer navigation",
+);
+assert(
   releaseClient.includes('fetch("/player/release"')
     && releaseClient.includes("cache: \"no-store\"")
     && releaseClient.includes("storageManager.replacePlayerReleaseData(release)"),

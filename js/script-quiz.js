@@ -2145,6 +2145,7 @@ function _renderQuizFeedback(item, answer) {
   const momentLabel = answer.correct ? (answer.momentLabel || _getQuizCorrectMomentLabel(answer)) : "";
   const streakMoment = answer.correct ? _getQuizStreakMoment(answer.streakAfter) : null;
   const reviewPrompt = answer.correct ? "" : "No problem. Study the call, rule, and coach note, then try it again later.";
+  const continueLabel = _quizIndex >= _quizPlays.length - 1 ? "Finish quiz" : "Continue to next question";
   return `
     <div class="sq-feedback ${resultClass}${streakMoment?.hot ? " is-hot-streak" : ""}">
       <div class="sq-feedback-result">${escapeHtml(resultText)}</div>
@@ -2160,6 +2161,7 @@ function _renderQuizFeedback(item, answer) {
       ${ruleParts.length ? `<div class="sq-answer-note"><strong>${escapeHtml(position?.label || "Your")} Rule:</strong> ${ruleParts.map(escapeHtml).join(" ")}</div>` : ""}
       ${noteParts.length ? `<div class="sq-answer-note"><strong>Coach note:</strong> ${noteParts.map(escapeHtml).join(" ")}</div>` : ""}
       ${_renderQuizWrongReview(item, answer)}
+      <button type="button" class="btn btn-primary sq-feedback-continue" data-action="nextScriptQuizPlay">${escapeHtml(continueLabel)} <span aria-hidden="true">→</span></button>
     </div>
   `;
 }
