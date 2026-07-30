@@ -2140,8 +2140,9 @@ function _renderQuizInlineFeedback(item, answer) {
   `;
 }
 
-function _renderQuizFeedback(item, answer) {
+function _renderQuizFeedback(item, answer, options = {}) {
   if (!answer) return "";
+  const includeContinue = options.includeContinue !== false;
   const { play } = item;
   const fullCall = typeof getFullCall === "function"
     ? getFullCall(play, { showEmoji: false })
@@ -2169,7 +2170,7 @@ function _renderQuizFeedback(item, answer) {
       ${ruleParts.length ? `<div class="sq-answer-note"><strong>${escapeHtml(position?.label || "Your")} Rule:</strong> ${ruleParts.map(escapeHtml).join(" ")}</div>` : ""}
       ${noteParts.length ? `<div class="sq-answer-note"><strong>Coach note:</strong> ${noteParts.map(escapeHtml).join(" ")}</div>` : ""}
       ${_renderQuizWrongReview(item, answer)}
-      <button type="button" class="btn btn-primary sq-feedback-continue" data-action="nextScriptQuizPlay">${escapeHtml(continueLabel)} <span aria-hidden="true">→</span></button>
+      ${includeContinue ? `<button type="button" class="btn btn-primary sq-feedback-continue" data-action="nextScriptQuizPlay">${escapeHtml(continueLabel)} <span aria-hidden="true">→</span></button>` : ""}
     </div>
   `;
 }
@@ -2471,7 +2472,10 @@ function _celebrateCorrectQuizChoice(questionKey) {
 }
 
 function _maybeAutoAdvanceQuizAfterAnswer(questionKey) {
-  if (_isSignalAutoAdvanceMode() || _quizFinished) return;
+  // Signal Study is deliberately self-paced. Its feedback lives beside the
+  // choices and owns the single explicit Continue action; a background timer
+  // here made that button race the renderer on mobile.
+  if (_isSignalAutoAdvanceMode() || _quizSourceType === "signal" || _quizFinished) return;
   const answer = _quizAnswers.get(questionKey);
   if (!answer) return;
   if (answer.correct) _celebrateCorrectQuizChoice(questionKey);
@@ -3343,7 +3347,11 @@ function renderScriptQuizPlay() {
   `;
   const answerEl = document.getElementById("scriptQuizAnswer");
   if (answerEl) {
-    setInnerHTML(answerEl, gameMode ? _renderQuizFeedback(item, answer) : answerHtml);
+    // Standard Signal Study keeps its single Continue button next to the
+    // answered choices. Other quiz sources retain the detailed feedback CTA.
+    setInnerHTML(answerEl, gameMode
+      ? _renderQuizFeedback(item, answer, { includeContinue: _quizSourceType !== "signal" || _isSignalAutoAdvanceMode() })
+      : answerHtml);
     answerEl.classList.toggle("hidden", gameMode ? !answer : true);
     if (window.playImages && typeof window.playImages.hydrateSmartDiagramImages === "function") {
       requestAnimationFrame(() => window.playImages.hydrateSmartDiagramImages(answerEl));

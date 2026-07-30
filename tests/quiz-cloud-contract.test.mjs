@@ -94,8 +94,8 @@ assert(
 assert(
   quiz.includes("QUIZ_WRONG_AUTO_ADVANCE_MS")
     && quiz.includes("const advanceDelay = answer.correct")
-    && quiz.includes("function _maybeAutoAdvanceQuizAfterAnswer"),
-  "every scored standard quiz answer advances after bounded feedback instead of leaving misses stranded",
+    && quiz.includes('if (_isSignalAutoAdvanceMode() || _quizSourceType === "signal" || _quizFinished) return;'),
+  "standard quizzes advance after bounded feedback while Signal Study remains deliberately self-paced",
 );
 assert(
   quiz.includes("function _clearStandardQuizAdvance")
@@ -129,6 +129,11 @@ assert(
 assert(
   quiz.includes('data-action="nextScriptQuizPlay"') && quiz.includes("function _renderQuizInlineFeedback"),
   "self-paced signal-study feedback includes a local continue action instead of relying on distant footer navigation",
+);
+assert(
+  quiz.includes("const includeContinue = options.includeContinue !== false;")
+    && quiz.includes('includeContinue: _quizSourceType !== "signal" || _isSignalAutoAdvanceMode()'),
+  "Signal Study renders one nearby continuation action instead of duplicate competing controls",
 );
 assert(
   releaseClient.includes('fetch("/player/release"')
