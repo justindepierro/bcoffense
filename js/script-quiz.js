@@ -2120,6 +2120,13 @@ function _renderQuizInlineFeedback(item, answer) {
   const correct = Boolean(answer.correct);
   const correctLabel = answer.correctLabel || _quizPlainCall(item.play);
   const selectedLabel = answer.selectedLabel || "";
+  const continueLabel = _quizIndex >= _quizPlays.length - 1 ? "Finish quiz" : "Continue to next question";
+  // Signal Study is intentionally self-paced. Its footer navigation can be
+  // visually distant (and is disabled while the answer state settles on some
+  // mobile browsers), so keep a first-class continuation beside the feedback.
+  const continueHtml = !_isSignalAutoAdvanceMode()
+    ? `<button type="button" class="btn btn-primary sq-feedback-continue" data-action="nextScriptQuizPlay">${escapeHtml(continueLabel)} <span aria-hidden="true">→</span></button>`
+    : "";
   const detail = correct
     ? answer.momentLabel || _getQuizCorrectMomentLabel(answer)
     : `Answer: ${correctLabel}`;
@@ -2128,6 +2135,7 @@ function _renderQuizInlineFeedback(item, answer) {
       <strong>${correct ? "Correct" : "Incorrect"}</strong>
       <span>${escapeHtml(detail)}</span>
       ${!correct && selectedLabel ? `<small>You picked ${escapeHtml(selectedLabel)}</small>` : ""}
+      ${continueHtml}
     </div>
   `;
 }

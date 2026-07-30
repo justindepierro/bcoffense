@@ -127,6 +127,10 @@ assert(
   "the current question is initialized before navigation evaluates flash-card advance rules after an answer",
 );
 assert(
+  quiz.includes('data-action="nextScriptQuizPlay"') && quiz.includes("function _renderQuizInlineFeedback"),
+  "self-paced signal-study feedback includes a local continue action instead of relying on distant footer navigation",
+);
+assert(
   releaseClient.includes('fetch("/player/release"')
     && releaseClient.includes("cache: \"no-store\"")
     && releaseClient.includes("storageManager.replacePlayerReleaseData(release)"),
