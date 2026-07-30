@@ -108,12 +108,159 @@ function openCallSheetIndexPlayMenu(element) {
   const rect = element.getBoundingClientRect();
   showPlayContextMenu({ preventDefault() {}, clientX: rect.left, clientY: rect.bottom + 4 }, row.dataset.category, row.dataset.hash, parseInt(row.dataset.index, 10));
 }
-function printCallSheetIndexCards() { const cards = _csCards(); let host = document.getElementById("csIndexCardPrintRoot"); if (!host) { host = document.createElement("div"); host.id = "csIndexCardPrintRoot"; document.body.appendChild(host); } host.innerHTML = cards.flatMap((card) => ["front", "back"].map((side) => `<section class="cs-index-print-page">${_csCardMarkup(card, side)}</section>`)).join(""); document.body.classList.add("cs-index-printing"); let style = document.getElementById("csIndexCardPrintStyle"); if (!style) { style = document.createElement("style"); style.id = "csIndexCardPrintStyle"; document.head.appendChild(style); } style.textContent = "@page { size: 4in 6in; margin: .08in; }"; setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove("cs-index-printing"), 500); }, 80); }
+const CS_INDEX_PRINT_DEFAULTS = { cards: "all", sides: "both", copies: 1 };
+
+function normalizeCallSheetIndexCardPrintOptions(options = {}) {
+  const raw = { ...CS_INDEX_PRINT_DEFAULTS, ...(options && typeof options === "object" ? options : {}) };
+  return {
+    cards: raw.cards === "current" ? "current" : "all",
+    sides: ["both", "front", "back"].includes(raw.sides) ? raw.sides : "both",
+    copies: Math.max(1, Math.min(4, Number.parseInt(raw.copies, 10) || 1)),
+  };
+}
+
+function getCallSheetIndexCardPrintOptions() {
+  return normalizeCallSheetIndexCardPrintOptions(callSheetSettings?.indexCardPrintOptions);
+}
+
+function setCallSheetIndexCardPrintOptions(options = {}) {
+  const normalized = normalizeCallSheetIndexCardPrintOptions(options);
+  callSheetSettings.indexCardPrintOptions = normalized;
+  saveCallSheetSettings();
+  return normalized;
+}
+
+function _csIndexCardsForPrint(options = {}) {
+  const job = normalizeCallSheetIndexCardPrintOptions(options);
+  const cards = job.cards === "current" ? [_csActiveCard()].filter(Boolean) : _csCards();
+  return cards.filter(Boolean);
+}
+
+function _csIndexPrintSides(options = {}) {
+  const sides = normalizeCallSheetIndexCardPrintOptions(options).sides;
+  return sides === "both" ? ["front", "back"] : [sides];
+}
+
+function renderCallSheetIndexCardPrintPages(options = {}) {
+  const job = normalizeCallSheetIndexCardPrintOptions(options);
+  const cards = _csIndexCardsForPrint(job);
+  const sides = _csIndexPrintSides(job);
+  return Array.from({ length: job.copies }, () => cards.flatMap((card) => sides.map((side) => `
+    <section class="cs-index-print-page" data-card-id="${escapeAttr(card.id)}" data-card-side="${side}">
+      ${_csCardMarkup(card, side)}
+    </section>`))).flat().join("");
+}
+
+function _csIndexPrintSummary(options = {}) {
+  const job = normalizeCallSheetIndexCardPrintOptions(options);
+  const cards = _csIndexCardsForPrint(job);
+  const sides = _csIndexPrintSides(job);
+  const pageCount = cards.length * sides.length * job.copies;
+  const cardLabel = job.cards === "current" ? "current card" : `${cards.length} card${cards.length === 1 ? "" : "s"}`;
+  const sideLabel = job.sides === "both" ? "front + back" : job.sides;
+  return { pageCount, title: `${cardLabel} · ${sideLabel}`, detail: `${pageCount} 4×6 page${pageCount === 1 ? "" : "s"} · ${job.copies} cop${job.copies === 1 ? "y" : "ies"}` };
+}
+
+async function openCallSheetIndexCardPrintModal() {
+  if (!_csCards().length) {
+    showToast("Create an Index Card before printing.", { type: "warning" });
+    return;
+  }
+  const stored = getCallSheetIndexCardPrintOptions();
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay";
+  overlay.innerHTML = `
+    <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="csIndexPrintTitle">
+      <div class="custom-modal-header"><span class="custom-modal-icon">🗂️</span><h3 class="custom-modal-title" id="csIndexPrintTitle">Print Index Cards</h3></div>
+      <div class="custom-modal-body"><div class="gp-print-form">
+        <div class="gp-print-row"><label for="csIndexPrintCards">Cards</label><select id="csIndexPrintCards"><option value="all">All saved index cards</option><option value="current">Current card only</option></select></div>
+        <div class="gp-print-row"><label for="csIndexPrintSides">Sides</label><select id="csIndexPrintSides"><option value="both">Front + Back (duplex)</option><option value="front">Front only</option><option value="back">Back only</option></select></div>
+        <div class="gp-print-row"><label for="csIndexPrintCopies">Copies</label><select id="csIndexPrintCopies"><option value="1">1 copy</option><option value="2">2 copies</option><option value="3">3 copies</option><option value="4">4 copies</option></select></div>
+        <p class="cs-print-hint">Index Cards are locked to <strong>portrait 4 × 6 in</strong>. For double-sided cards, select <strong>Flip on short edge</strong> in your printer dialog.</p>
+        <div class="cs-print-preview-summary" id="csIndexPrintSummary" role="status" aria-live="polite"></div>
+      </div></div>
+      <div class="custom-modal-actions"><button type="button" class="btn custom-modal-btn custom-modal-cancel" data-index-print="cancel">Cancel</button><button type="button" class="btn btn-secondary custom-modal-btn" data-index-print="preview">Preview</button><button type="button" class="btn btn-primary custom-modal-btn" data-index-print="print">Print</button></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+  if (typeof openLayer === "function") openLayer(overlay, { id: "cs-index-print-modal", exclusive: false, trapFocus: false });
+  const read = () => ({
+    cards: overlay.querySelector("#csIndexPrintCards")?.value || stored.cards,
+    sides: overlay.querySelector("#csIndexPrintSides")?.value || stored.sides,
+    copies: overlay.querySelector("#csIndexPrintCopies")?.value || stored.copies,
+  });
+  overlay.querySelector("#csIndexPrintCards").value = stored.cards;
+  overlay.querySelector("#csIndexPrintSides").value = stored.sides;
+  overlay.querySelector("#csIndexPrintCopies").value = String(stored.copies);
+  const update = () => {
+    const summary = _csIndexPrintSummary(read());
+    const target = overlay.querySelector("#csIndexPrintSummary");
+    if (target) target.innerHTML = `<strong>${escapeHtml(summary.title)}</strong><span>${escapeHtml(summary.detail)}</span>${read().sides === "both" ? "<small>Pages print in Front → Back order for each card.</small>" : ""}`;
+  };
+  const close = () => {
+    if (typeof closeLayer === "function") closeLayer("cs-index-print-modal");
+    overlay.remove();
+  };
+  overlay.querySelectorAll("select").forEach((select) => select.addEventListener("change", update));
+  overlay.querySelector('[data-index-print="cancel"]').addEventListener("click", close);
+  overlay.querySelector('[data-index-print="preview"]').addEventListener("click", () => {
+    const job = setCallSheetIndexCardPrintOptions(read());
+    close();
+    openCallSheetIndexCardPrintPreview(job);
+  });
+  overlay.querySelector('[data-index-print="print"]').addEventListener("click", () => {
+    const job = setCallSheetIndexCardPrintOptions(read());
+    close();
+    _runCallSheetIndexCardsPrint(job);
+  });
+  overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
+  overlay.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.preventDefault(); close(); } });
+  update();
+}
+
+function openCallSheetIndexCardPrintPreview(options = {}) {
+  const job = normalizeCallSheetIndexCardPrintOptions(options);
+  const summary = _csIndexPrintSummary(job);
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay cs-index-print-preview-overlay";
+  overlay.innerHTML = `
+    <div class="custom-modal cs-index-print-preview-modal" role="dialog" aria-modal="true" aria-labelledby="csIndexPrintPreviewTitle">
+      <div class="custom-modal-header"><span class="custom-modal-icon">👁️</span><h3 class="custom-modal-title" id="csIndexPrintPreviewTitle">Index Card Print Preview</h3></div>
+      <div class="cs-print-preview-meta"><strong>${escapeHtml(summary.title)}</strong><span>${escapeHtml(summary.detail)}</span></div>
+      <div class="cs-index-print-preview-pages">${renderCallSheetIndexCardPrintPages(job)}</div>
+      <div class="custom-modal-actions"><button type="button" class="btn custom-modal-btn custom-modal-cancel" data-index-preview="back">Back</button><button type="button" class="btn btn-primary custom-modal-btn" data-index-preview="print">Print this job</button></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+  if (typeof openLayer === "function") openLayer(overlay, { id: "cs-index-print-preview", exclusive: false, trapFocus: false });
+  const close = () => { if (typeof closeLayer === "function") closeLayer("cs-index-print-preview"); overlay.remove(); };
+  overlay.querySelector('[data-index-preview="back"]').addEventListener("click", close);
+  overlay.querySelector('[data-index-preview="print"]').addEventListener("click", () => { close(); _runCallSheetIndexCardsPrint(job); });
+  overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
+  overlay.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.preventDefault(); close(); } });
+}
+
+function _runCallSheetIndexCardsPrint(options = {}) {
+  const job = normalizeCallSheetIndexCardPrintOptions(options);
+  const pages = renderCallSheetIndexCardPrintPages(job);
+  if (!pages) { showToast("There are no Index Card pages to print.", { type: "warning" }); return; }
+  let host = document.getElementById("csIndexCardPrintRoot");
+  if (!host) { host = document.createElement("div"); host.id = "csIndexCardPrintRoot"; document.body.appendChild(host); }
+  host.innerHTML = pages;
+  document.body.classList.add("cs-index-printing");
+  if (typeof setupPrintPageStyle === "function") setupPrintPageStyle("@media print { @page { size: 4in 6in; margin: .08in; } }");
+  const cleanup = () => { document.body.classList.remove("cs-index-printing"); window.removeEventListener("afterprint", cleanup); };
+  window.addEventListener("afterprint", cleanup);
+  setTimeout(cleanup, 60000);
+  setTimeout(() => window.print(), 80);
+}
+
+function printCallSheetIndexCards() { openCallSheetIndexCardPrintModal(); }
 
 function renderCallSheetIndexCardPage() {
   const cards = _csCards(); const card = _csActiveCard();
   if (!card) return `<section class="cs-index-main-empty"><h3>🗂️ Index Card Template</h3><p>Build a portrait 4×6 mini call sheet from your current Call Sheet categories.</p><button class="btn btn-primary" data-action="newCallSheetIndexCard">＋ Create first card</button></section>`;
-  return `<section class="cs-index-main"><div class="cs-index-main-head"><div><span class="cs-index-kicker">INDEX CARD TEMPLATE · PORTRAIT 4 × 6</span><h3>Signal-ready mini call sheets</h3></div><div class="cs-index-main-actions"><button class="btn btn-sm btn-outline" data-action="newCallSheetIndexCard">＋ Card</button><button class="btn btn-sm btn-primary" data-action="printCallSheetIndexCards">🖨️ Print front & back</button></div></div><div class="cs-index-main-tabs">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}</div><div class="cs-index-main-sides"><button class="btn ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><span>Drop from Game Plan, use ＋ Play, or open ⋯ to edit a call. ↳ nests a family call; ≈ hides repeated components.</span></div>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add bucket</button></section>`;
+  return `<section class="cs-index-main"><div class="cs-index-main-head"><div><span class="cs-index-kicker">INDEX CARD TEMPLATE · PORTRAIT 4 × 6</span><h3>Signal-ready mini call sheets</h3></div><div class="cs-index-main-actions"><button class="btn btn-sm btn-outline" data-action="newCallSheetIndexCard">＋ Card</button><button class="btn btn-sm btn-primary" data-action="openCallSheetIndexCardPrintModal">🖨️ Print options</button></div></div><div class="cs-index-main-tabs">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}</div><div class="cs-index-main-sides"><button class="btn ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><span>Drop from Game Plan, use ＋ Play, or open ⋯ to edit a call. ↳ nests a family call; ≈ hides repeated components.</span></div>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add bucket</button></section>`;
 }
 function selectCallSheetIndexCard(id) { _csIndexCardId = String(id || ""); renderCallSheet(); }
 function setCallSheetIndexCardSide(side) { _csIndexSide = side === "back" ? "back" : "front"; renderCallSheet(); }

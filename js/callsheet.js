@@ -104,6 +104,9 @@ function normalizeCallSheetSettings(settings = {}) {
         ? merged.wristbandAutoCategoryId
         : "",
     indexCards: Array.isArray(merged.indexCards) ? merged.indexCards : [],
+    indexCardPrintOptions: merged.indexCardPrintOptions && typeof merged.indexCardPrintOptions === "object"
+      ? merged.indexCardPrintOptions
+      : {},
   };
 }
 
@@ -154,6 +157,7 @@ function getDefaultCallSheetSettings() {
     allowedPlayTypes: [],
     wristbandAutoCategoryId: "",
     indexCards: [],
+    indexCardPrintOptions: {},
   };
 }
 

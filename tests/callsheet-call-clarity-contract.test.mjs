@@ -29,5 +29,8 @@ assert.match(notifications, /const matchIndex = plays\.findIndex[\s\S]*?openPlay
 assert.match(indexCards, /data-action="openCallSheetPlayPicker"[\s\S]*?data-drop="csHashDrop"/, "index-card buckets accept the normal Call Sheet drag/drop and picker pipeline");
 assert.match(indexCards, /showPlayContextMenu\([\s\S]*?row\.dataset\.category[\s\S]*?row\.dataset\.hash/, "index-card play actions open the canonical Call Sheet cell editor");
 assert.match(indexCards, /toggleCallSheetIndexFamily[\s\S]*?toggleCallSheetIndexCompact/, "index cards retain per-row family indentation and repeated-component controls");
+assert.match(indexCards, /function openCallSheetIndexCardPrintModal\(\)[\s\S]*?Cards[\s\S]*?Sides[\s\S]*?Copies[\s\S]*?Preview/, "index cards use a dedicated print suite with card, side, copy, and preview controls");
+assert.match(indexCards, /function _csIndexPrintSides[\s\S]*?\["front", "back"\][\s\S]*?function renderCallSheetIndexCardPrintPages/, "index-card duplex jobs render front then back for each card");
+assert.match(indexCards, /function _runCallSheetIndexCardsPrint[\s\S]*?setupPrintPageStyle[\s\S]*?@page \{ size: 4in 6in/, "index cards use the shared print-page setup with an exact 4×6 page");
 assert.match(appEvents, /"openCallSheetIndexPlayMenu"/, "delegated event routing passes the index-card play action its source element");
 console.log("call sheet call clarity contract: wristband-first and one-word full-call passed");
