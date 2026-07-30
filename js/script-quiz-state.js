@@ -34,6 +34,9 @@ let _quizPositionMode = "primary";
 let _quizFinished = false;
 let _quizSavedAttemptId = "";
 let _quizExitSummaryOpen = false;
+// Preserve the player's intentional destination when the quiz overlay closes.
+// Without this, a script-backed quiz can fall through to the coach Script tab.
+let _quizReturnDestination = "stay";
 let _quizTimerId = 0;
 let _quizTimeLimitMs = 0;
 let _quizStartedAt = 0;
@@ -56,10 +59,10 @@ const SIGNAL_QUIZ_CORRECT_ADVANCE_MS = 90;
 const SIGNAL_QUIZ_WRONG_FEEDBACK_MS = 420;
 const SIGNAL_QUIZ_HEAT_MISS_FINISH_MS = 520;
 const SIGNAL_QUIZ_PRELOAD_WINDOW = 3;
-// Standard (non-timed) quiz: how long the correct-answer celebration shows
-// before auto-advancing to the next question. Wrong answers never auto-advance
-// so the player can study the miss.
+// Standard quizzes show a brief result moment, then advance every scored answer.
+// Leaving misses in place looked like a dead answer button on a phone.
 const QUIZ_CORRECT_AUTO_ADVANCE_MS = 950;
+const QUIZ_WRONG_AUTO_ADVANCE_MS = 1600;
 // How many of the most-plausible (similarity-ranked) distractors to keep as the
 // candidate window before randomly choosing 3. Small enough that wrong answers
 // stay believable look-alikes, large enough that repeated quizzes still vary.

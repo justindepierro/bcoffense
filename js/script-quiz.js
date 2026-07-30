@@ -959,6 +959,9 @@ function startPlayerQuizHubScript() {
       title: _quizModeTitle(selected.name || "Practice Script Quiz", _quizMode),
       positionKey: _quizPositionKey,
       positionMode: _quizPositionMode,
+      // Load the source packet, but keep the player on the Quiz page.
+      keepCurrentTab: true,
+      returnDestination: "quiz",
     });
     return;
   }
@@ -1063,6 +1066,7 @@ async function startPlayerQuizHubSignals() {
       signalCategories,
       signalCategoryMultiplier: signalMultiplier,
       mode: _quizMode,
+      returnDestination: "quiz",
     });
   } catch (err) {
     showToast(err?.message || "Could not start Signal Study.", { type: "error", duration: 3500 });
@@ -1223,6 +1227,7 @@ function startPlayerQuizHubGamePlan() {
     positionKey: _quizPositionKey,
     positionMode: _quizPositionMode,
     mode: _quizMode,
+    returnDestination: "quiz",
   });
 }
 
@@ -2172,6 +2177,12 @@ async function startScriptQuiz(options = {}) {
   const sourceType = ["gameplan", "signal", "assignment"].includes(requestedSourceType) ? requestedSourceType : "script";
   const items = Array.isArray(opts.items) ? opts.items : _buildQuizPlays(false);
   _quizMode = String(opts.mode || "full");
+  const playerQuiz = typeof _isPlayerQuizWorkspace === "function" && _isPlayerQuizWorkspace();
+  _quizReturnDestination = ["quiz", "practice", "stay"].includes(opts.returnDestination)
+    ? opts.returnDestination
+    : playerQuiz
+      ? "quiz"
+      : "stay";
   let normalizedItems = opts.mode
     ? _prepareQuizItemsForMode(items, _quizMode)
     : _normalizeQuizItems(items);
@@ -2272,15 +2283,32 @@ function closeScriptQuiz() {
     _renderQuizExitSummary();
     return;
   }
-  if (_quizFinished) _renderPlayerQuizHub();
-  if (typeof closeLayer === "function") {
-    closeLayer(overlay);
+  _closeScriptQuizOverlayTo(_quizReturnDestination);
+}
+
+function _closeScriptQuizOverlayTo(destination = "stay") {
+  const overlay = document.getElementById("scriptQuizOverlay");
+  if (overlay) {
+    if (typeof closeLayer === "function") closeLayer(overlay);
+    overlay.classList.add("hidden");
   }
-  overlay.classList.add("hidden");
   _quizExitSummaryOpen = false;
-  if (typeof isQuizPageActive === "function" && isQuizPageActive()) {
-    renderQuizPage();
+  const playerQuiz = typeof _isPlayerQuizWorkspace === "function" && _isPlayerQuizWorkspace();
+  if (!playerQuiz) {
+    if (typeof isQuizPageActive === "function" && isQuizPageActive()) renderQuizPage();
+    return;
   }
+  _renderPlayerQuizHub();
+  if (destination === "practice") {
+    if (typeof showTab === "function") showTab("script");
+    return;
+  }
+  if (destination === "quiz") {
+    if (typeof showTab === "function") showTab("quiz");
+    if (typeof renderQuizPage === "function") renderQuizPage();
+    return;
+  }
+  if (typeof isQuizPageActive === "function" && isQuizPageActive()) renderQuizPage();
 }
 
 function toggleScriptQuizShuffle() {
@@ -2381,10 +2409,9 @@ function _advanceSignalGameAfterAnswer(questionKey) {
   }, advanceDelay);
 }
 
-// Standard (non-timed) quizzes advance manually via the Next button, EXCEPT on
-// a correct answer: play a quick celebration on the chosen tile, then move to
-// the next question automatically so a good run feels fast and rewarding. A
-// wrong answer stays put so the player can read the correct call and coach note.
+// Every scored standard question gets a bounded feedback-to-next transition.
+// Misses used to remain in place, which looked exactly like a broken answer
+// button on touch devices. Flash-card study reps remain deliberately manual.
 function _celebrateCorrectQuizChoice(questionKey) {
   const scenarioEl = document.getElementById("scriptQuizScenario");
   if (!scenarioEl || scenarioEl.dataset.quizKey !== questionKey) return;
@@ -2404,8 +2431,11 @@ function _celebrateCorrectQuizChoice(questionKey) {
 function _maybeAutoAdvanceQuizAfterAnswer(questionKey) {
   if (_isSignalAutoAdvanceMode() || _quizFinished) return;
   const answer = _quizAnswers.get(questionKey);
-  if (!answer || !answer.correct) return;
-  _celebrateCorrectQuizChoice(questionKey);
+  if (!answer) return;
+  if (answer.correct) _celebrateCorrectQuizChoice(questionKey);
+  const advanceDelay = answer.correct
+    ? QUIZ_CORRECT_AUTO_ADVANCE_MS
+    : QUIZ_WRONG_AUTO_ADVANCE_MS;
   setTimeout(() => {
     if (_quizFinished || _isSignalAutoAdvanceMode()) return;
     const item = _quizPlays[_quizIndex];
@@ -2418,7 +2448,7 @@ function _maybeAutoAdvanceQuizAfterAnswer(questionKey) {
     _resetQuizRoundState();
     renderScriptQuizPlay();
     _schedulePlayerQuizDraftSave();
-  }, QUIZ_CORRECT_AUTO_ADVANCE_MS);
+  }, advanceDelay);
 }
 
 function answerScriptQuizChoice(choiceKey) {
@@ -2874,12 +2904,7 @@ function saveAndCloseScriptQuiz() {
     return;
   }
   _savePlayerQuizDraft();
-  _quizExitSummaryOpen = false;
-  _setScriptQuizOverlayOpen(false);
-  _renderPlayerQuizHub();
-  if (typeof isQuizPageActive === "function" && isQuizPageActive()) {
-    renderQuizPage();
-  }
+  _closeScriptQuizOverlayTo(_quizReturnDestination);
 }
 
 function endScriptQuiz() {
@@ -2937,6 +2962,7 @@ function resumePlayerQuizDraft() {
   _quizFinished = false;
   _quizSavedAttemptId = "";
   _quizExitSummaryOpen = false;
+  _quizReturnDestination = "quiz";
   _clearQuizTimer();
   _resetQuizRoundState();
   _quizTimeLimitMs = 0;
@@ -2987,8 +3013,10 @@ function _renderQuizResults(summary) {
         ${_renderQuizResultReview(summary, review)}
         <div class="sq-result-tier">Weekly tier now: <strong>${escapeHtml(tierAfter)}</strong></div>
         <div class="sq-result-actions">
-          <button type="button" class="btn btn-primary sq-result-close" data-action="closeScriptQuiz">Done</button>
-          <button type="button" class="btn btn-outline sq-result-close" data-action="closeScriptQuizToHub">Quiz Center</button>
+          <button type="button" class="btn btn-primary sq-result-close" data-action="closeScriptQuizToHub">Quiz Center</button>
+          ${typeof _isPlayerQuizWorkspace === "function" && _isPlayerQuizWorkspace()
+      ? '<button type="button" class="btn btn-outline sq-result-close" data-action="closeScriptQuizToPractice">Practice</button>'
+      : '<button type="button" class="btn btn-outline sq-result-close" data-action="closeScriptQuiz">Done</button>'}
         </div>
       </div>
     `);
@@ -3035,8 +3063,11 @@ function _finishScriptQuizInternal(options = {}) {
 }
 
 function closeScriptQuizToHub() {
-  closeScriptQuiz();
-  openPlayerQuizHub();
+  _closeScriptQuizOverlayTo("quiz");
+}
+
+function closeScriptQuizToPractice() {
+  _closeScriptQuizOverlayTo("practice");
 }
 
 function renderScriptQuizPlay() {

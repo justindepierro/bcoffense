@@ -84,6 +84,20 @@ assert(
   "quiz setup selects the source, challenge, and position before one explicit start action",
 );
 assert(
+  scriptPlayer.includes("keepCurrentTab: opts.keepCurrentTab === true")
+    && quiz.includes('keepCurrentTab: true')
+    && quiz.includes('returnDestination: "quiz"')
+    && quiz.includes("function _closeScriptQuizOverlayTo")
+    && quiz.includes('showTab("quiz")'),
+  "player script quizzes load their source without leaving Quiz and always return there on close",
+);
+assert(
+  quiz.includes("QUIZ_WRONG_AUTO_ADVANCE_MS")
+    && quiz.includes("const advanceDelay = answer.correct")
+    && quiz.includes("function _maybeAutoAdvanceQuizAfterAnswer"),
+  "every scored standard quiz answer advances after bounded feedback instead of leaving misses stranded",
+);
+assert(
   releaseClient.includes('fetch("/player/release"')
     && releaseClient.includes("cache: \"no-store\"")
     && releaseClient.includes("storageManager.replacePlayerReleaseData(release)"),

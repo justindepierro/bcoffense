@@ -214,6 +214,8 @@
     "startPlayerScriptQuiz",
     "startScriptQuiz",
     "closeScriptQuiz",
+    "closeScriptQuizToHub",
+    "closeScriptQuizToPractice",
     "resumeScriptQuiz",
     "saveAndCloseScriptQuiz",
     "endScriptQuiz",

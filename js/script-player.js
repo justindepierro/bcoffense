@@ -845,6 +845,7 @@ function startPlayerScriptQuiz(id = "", options = {}) {
     const loaded = loadPublishedPlayerScript(requestedId, {
       skipToast: true,
       toastMessage: "Practice loaded for quiz.",
+      keepCurrentTab: opts.keepCurrentTab === true,
     });
     if (!loaded) return false;
   } else if (!loadedPlayCount) {
@@ -861,6 +862,7 @@ function startPlayerScriptQuiz(id = "", options = {}) {
     const loaded = loadPublishedPlayerScript(fallbackScript.id, {
       skipToast: true,
       toastMessage: "Practice loaded for quiz.",
+      keepCurrentTab: opts.keepCurrentTab === true,
     });
     if (!loaded) return false;
   } else if (typeof showTab === "function") {
@@ -879,6 +881,7 @@ function startPlayerScriptQuiz(id = "", options = {}) {
       positionKey: opts.positionKey,
       positionMode: opts.positionMode,
       mode: opts.mode,
+      returnDestination: opts.returnDestination,
     });
     return true;
   }
@@ -1142,17 +1145,17 @@ function loadPublishedPlayerScript(id, opts = {}) {
     return null;
   }
 
-  // Opening a practice intentionally leaves the player landing surface; the
-  // loaded packet still remains role-restricted and cannot expose coach UI.
+  // A normal practice load opens the player practice surface. Quiz launches
+  // need the packet without leaving the Quiz page.
   document.getElementById("script")?.classList.remove("script-player-practice-landing");
 
-  if (typeof showTab === "function") {
+  if (!opts.keepCurrentTab && typeof showTab === "function") {
     showTab("script");
     tracePlayerScriptAction("show tab", {
       id: String(scriptData.id),
       name: scriptData.name,
     });
-  } else {
+  } else if (!opts.keepCurrentTab) {
     tracePlayerScriptAction(
       "show tab skipped",
       { id: String(scriptData.id), reason: "showTab-missing" },
