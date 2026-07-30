@@ -98,6 +98,12 @@ assert(
   "every scored standard quiz answer advances after bounded feedback instead of leaving misses stranded",
 );
 assert(
+  quiz.includes("function _clearStandardQuizAdvance")
+    && quiz.includes("_quizExitSummaryOpen || _isSignalAutoAdvanceMode()")
+    && quiz.includes("function _renderQuizExitSummary() {\n  _clearStandardQuizAdvance();"),
+  "pausing or closing a quiz cancels queued answer transitions so feedback cannot advance behind the exit screen",
+);
+assert(
   releaseClient.includes('fetch("/player/release"')
     && releaseClient.includes("cache: \"no-store\"")
     && releaseClient.includes("storageManager.replacePlayerReleaseData(release)"),

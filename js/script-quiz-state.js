@@ -37,6 +37,9 @@ let _quizExitSummaryOpen = false;
 // Preserve the player's intentional destination when the quiz overlay closes.
 // Without this, a script-backed quiz can fall through to the coach Script tab.
 let _quizReturnDestination = "stay";
+// Standard question feedback uses a short delayed transition. Keep its handle
+// so pausing, closing, navigating, or starting another quiz cancels it.
+let _quizStandardAdvanceTimer = 0;
 let _quizTimerId = 0;
 let _quizTimeLimitMs = 0;
 let _quizStartedAt = 0;

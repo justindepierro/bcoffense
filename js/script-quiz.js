@@ -1233,6 +1233,7 @@ function startPlayerQuizHubGamePlan() {
 
 function _resetQuizGameState() {
   _clearQuizTimer();
+  _clearStandardQuizAdvance();
   _resetQuizRoundState();
   _quizRevealed = false;
   _quizAnswers = new Map();
@@ -2279,6 +2280,7 @@ function closeScriptQuiz() {
     return;
   }
   if (!_quizFinished && _quizPlays.length && !_quizExitSummaryOpen) {
+    _clearStandardQuizAdvance();
     _savePlayerQuizDraft();
     _renderQuizExitSummary();
     return;
@@ -2287,6 +2289,7 @@ function closeScriptQuiz() {
 }
 
 function _closeScriptQuizOverlayTo(destination = "stay") {
+  _clearStandardQuizAdvance();
   const overlay = document.getElementById("scriptQuizOverlay");
   if (overlay) {
     if (typeof closeLayer === "function") closeLayer(overlay);
@@ -2349,10 +2352,12 @@ function nextScriptQuizPlay() {
     return;
   }
   if (_quizIndex >= _quizPlays.length - 1) {
+    _clearStandardQuizAdvance();
     finishScriptQuiz();
     return;
   }
   if (_quizIndex < _quizPlays.length - 1) {
+    _clearStandardQuizAdvance();
     _quizIndex++;
     renderScriptQuizPlay();
     _schedulePlayerQuizDraftSave();
@@ -2361,6 +2366,7 @@ function nextScriptQuizPlay() {
 
 function prevScriptQuizPlay() {
   if (_quizIndex > 0) {
+    _clearStandardQuizAdvance();
     _quizIndex--;
     renderScriptQuizPlay();
     _schedulePlayerQuizDraftSave();
@@ -2436,8 +2442,10 @@ function _maybeAutoAdvanceQuizAfterAnswer(questionKey) {
   const advanceDelay = answer.correct
     ? QUIZ_CORRECT_AUTO_ADVANCE_MS
     : QUIZ_WRONG_AUTO_ADVANCE_MS;
-  setTimeout(() => {
-    if (_quizFinished || _isSignalAutoAdvanceMode()) return;
+  _clearStandardQuizAdvance();
+  _quizStandardAdvanceTimer = setTimeout(() => {
+    _quizStandardAdvanceTimer = 0;
+    if (_quizFinished || _quizExitSummaryOpen || _isSignalAutoAdvanceMode()) return;
     const item = _quizPlays[_quizIndex];
     if (!item || _quizItemKey(item) !== questionKey) return;
     if (_quizIndex >= _quizPlays.length - 1) {
@@ -2852,6 +2860,7 @@ function _setScriptQuizOverlayOpen(open) {
 }
 
 function _renderQuizExitSummary() {
+  _clearStandardQuizAdvance();
   _quizExitSummaryOpen = true;
   const summary = _buildQuizAttemptSummary({ partial: true });
   const scenarioEl = document.getElementById("scriptQuizScenario");
@@ -2894,6 +2903,7 @@ function _renderQuizExitSummary() {
 
 function resumeScriptQuiz() {
   if (!_quizPlays.length) return;
+  _clearStandardQuizAdvance();
   _quizExitSummaryOpen = false;
   renderScriptQuizPlay();
 }
@@ -2909,6 +2919,7 @@ function saveAndCloseScriptQuiz() {
 
 function endScriptQuiz() {
   if (_quizFinished) return;
+  _clearStandardQuizAdvance();
   _quizFinishedAt = Date.now();
   _clearQuizTimer();
   _resetQuizRoundState();
@@ -2964,6 +2975,7 @@ function resumePlayerQuizDraft() {
   _quizExitSummaryOpen = false;
   _quizReturnDestination = "quiz";
   _clearQuizTimer();
+  _clearStandardQuizAdvance();
   _resetQuizRoundState();
   _quizTimeLimitMs = 0;
   _quizStartedAt = 0;
@@ -3031,6 +3043,7 @@ function finishScriptQuiz(options = {}) {
 
 function _finishScriptQuizInternal(options = {}) {
   if (_quizFinished) return;
+  _clearStandardQuizAdvance();
   _quizFinished = true;
   _quizFinishedAt = Date.now();
   _clearQuizTimer();

@@ -328,6 +328,13 @@ function _clearQuizTimer() {
   }
 }
 
+function _clearStandardQuizAdvance() {
+  if (_quizStandardAdvanceTimer) {
+    clearTimeout(_quizStandardAdvanceTimer);
+    _quizStandardAdvanceTimer = 0;
+  }
+}
+
 function _clearQuizRoundTimer() {
   if (_quizRoundTimerId) {
     clearInterval(_quizRoundTimerId);
