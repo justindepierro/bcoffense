@@ -92,16 +92,16 @@ assert(
   "player script quizzes load their source without leaving Quiz and always return there on close",
 );
 assert(
-  quiz.includes("QUIZ_WRONG_AUTO_ADVANCE_MS")
-    && quiz.includes("const advanceDelay = answer.correct")
-    && quiz.includes('if (_isSignalAutoAdvanceMode() || _quizSourceType === "signal" || _quizFinished) return;'),
-  "standard quizzes advance after bounded feedback while Signal Study remains deliberately self-paced",
+  quiz.includes("function _maybeAutoAdvanceQuizAfterAnswer(questionKey)")
+    && quiz.includes("Every non-timed quiz is intentionally player-paced after an answer.")
+    && quiz.includes("Timed signal modes advance through _advanceSignalGameAfterAnswer instead."),
+  "manual quizzes stay player-paced after an answer while timed signal games retain their own advance path",
 );
 assert(
   quiz.includes("function _clearStandardQuizAdvance")
-    && quiz.includes("_quizExitSummaryOpen || _isSignalAutoAdvanceMode()")
+    && quiz.includes("function closeScriptQuiz()")
     && quiz.includes("function _renderQuizExitSummary() {\n  _clearStandardQuizAdvance();"),
-  "pausing or closing a quiz cancels queued answer transitions so feedback cannot advance behind the exit screen",
+  "pausing or closing a quiz clears any pending transition state before the exit screen renders",
 );
 assert(
   quiz.includes('class="btn btn-primary sq-feedback-continue" data-action="nextScriptQuizPlay"')
@@ -134,6 +134,12 @@ assert(
   quiz.includes("const includeContinue = options.includeContinue !== false;")
     && quiz.includes('includeContinue: _quizSourceType !== "signal" || _isSignalAutoAdvanceMode()'),
   "Signal Study renders one nearby continuation action instead of duplicate competing controls",
+);
+assert(
+  quiz.includes("function _focusQuizContinuation()")
+    && quiz.includes("continueButton.scrollIntoView")
+    && quiz.includes("_focusQuizContinuation();"),
+  "answered manual quizzes bring their single next action into view instead of leaving it below feedback",
 );
 assert(
   releaseClient.includes('fetch("/player/release"')

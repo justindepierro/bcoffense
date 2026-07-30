@@ -64,8 +64,6 @@ const SIGNAL_QUIZ_HEAT_MISS_FINISH_MS = 520;
 const SIGNAL_QUIZ_PRELOAD_WINDOW = 3;
 // Standard quizzes show a brief result moment, then advance every scored answer.
 // Leaving misses in place looked like a dead answer button on a phone.
-const QUIZ_CORRECT_AUTO_ADVANCE_MS = 950;
-const QUIZ_WRONG_AUTO_ADVANCE_MS = 1600;
 // How many of the most-plausible (similarity-ranked) distractors to keep as the
 // candidate window before randomly choosing 3. Small enough that wrong answers
 // stay believable look-alikes, large enough that repeated quizzes still vary.

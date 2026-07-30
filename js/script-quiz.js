@@ -2472,31 +2472,31 @@ function _celebrateCorrectQuizChoice(questionKey) {
 }
 
 function _maybeAutoAdvanceQuizAfterAnswer(questionKey) {
-  // Signal Study is deliberately self-paced. Its feedback lives beside the
-  // choices and owns the single explicit Continue action; a background timer
-  // here made that button race the renderer on mobile.
-  if (_isSignalAutoAdvanceMode() || _quizSourceType === "signal" || _quizFinished) return;
+  // Every non-timed quiz is intentionally player-paced after an answer.
+  // A previous delayed advance raced the visible Continue control, especially
+  // on phones where a delayed render can land after the player has tapped.
+  // Timed signal modes advance through _advanceSignalGameAfterAnswer instead.
+  if (_isSignalAutoAdvanceMode() || _quizFinished) return;
   const answer = _quizAnswers.get(questionKey);
   if (!answer) return;
   if (answer.correct) _celebrateCorrectQuizChoice(questionKey);
-  const advanceDelay = answer.correct
-    ? QUIZ_CORRECT_AUTO_ADVANCE_MS
-    : QUIZ_WRONG_AUTO_ADVANCE_MS;
   _clearStandardQuizAdvance();
-  _quizStandardAdvanceTimer = setTimeout(() => {
-    _quizStandardAdvanceTimer = 0;
-    if (_quizFinished || _quizExitSummaryOpen || _isSignalAutoAdvanceMode()) return;
-    const item = _quizPlays[_quizIndex];
-    if (!item || _quizItemKey(item) !== questionKey) return;
-    if (_quizIndex >= _quizPlays.length - 1) {
-      finishScriptQuiz();
-      return;
-    }
-    _quizIndex++;
-    _resetQuizRoundState();
-    renderScriptQuizPlay();
-    _schedulePlayerQuizDraftSave();
-  }, advanceDelay);
+}
+
+function _focusQuizContinuation() {
+  if (_isSignalAutoAdvanceMode()) return;
+  requestAnimationFrame(() => {
+    const continueButton = document.querySelector(
+      _quizSourceType === "signal"
+        ? "#scriptQuizScenario .sq-feedback-continue"
+        : "#scriptQuizAnswer .sq-feedback-continue",
+    );
+    if (!(continueButton instanceof HTMLButtonElement) || continueButton.disabled) return;
+    // Keep the next safe action in view after the answer state expands (wrong
+    // answers can include a rule and diagram), without a jump back to page top.
+    continueButton.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    try { continueButton.focus({ preventScroll: true }); } catch (_err) { continueButton.focus(); }
+  });
 }
 
 function answerScriptQuizChoice(choiceKey) {
@@ -2550,6 +2550,7 @@ function answerScriptQuizChoice(choiceKey) {
   if (_isSignalBattleMode()) _resetQuizRoundState();
   renderScriptQuizPlay();
   _schedulePlayerQuizDraftSave();
+  _focusQuizContinuation();
   _advanceSignalGameAfterAnswer(questionKey);
   _maybeAutoAdvanceQuizAfterAnswer(questionKey);
 }
