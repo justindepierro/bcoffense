@@ -206,6 +206,9 @@ assert.match(playPresentation, /event\.key\.toLowerCase\(\) === "y"[\s\S]*?redoP
 assert.match(indexHtml, /id="playPresentationTitle" class="pp-header-play-title"/, "presentation markup reserves a persistent header title outside the scrollable study body");
 assert.match(indexHtml, /id="playPresentationTeleRedo" data-action="redoPlayPresentationTele"/, "presentation markup exposes a telestrator redo control");
 assert.match(indexHtml, /id="playPresentationTeleClear" data-action="clearPlayPresentationTele"[\s\S]*?>Clear</, "presentation markup exposes an explicit Clear Board control");
+assert.match(indexHtml, /id="playPresentationTeleExport" data-action="exportPlayPresentationTeleJpg"[\s\S]*?>⬇ JPG</, "presentation markup exposes a local JPG export control");
+assert.match(playPresentation, /function exportPlayPresentationTeleJpg\(\)[\s\S]*?context\.drawImage\(diagram[\s\S]*?context\.drawImage\(markup[\s\S]*?output\.toBlob\(/, "telestrator JPG export composites the rendered diagram and markup locally");
+assert.match(playPresentation, /link\.download = getPlayPresentationTeleExportFilename\(\)/, "telestrator JPG export supplies a safe play-specific download name");
 assert.match(indexHtml, /id="playPresentationTeleStatus" aria-live="polite"/, "telestrator announces destructive and recovery actions to assistive technology");
 
 console.log("shell cleanup contract: runtime asset inventory and retired aliases passed");

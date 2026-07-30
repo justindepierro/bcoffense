@@ -2260,6 +2260,11 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   font-size: var(--font-size-xs);
 }
 
+.pp-tele-export {
+  min-width: 62px;
+  font-size: var(--font-size-xs);
+}
+
 .pp-tele-swatch {
   width: 30px;
   height: 30px;

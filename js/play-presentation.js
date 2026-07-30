@@ -1120,6 +1120,7 @@ function updatePlayPresentationTeleControls() {
   const undo = document.getElementById("playPresentationTeleUndo");
   const redo = document.getElementById("playPresentationTeleRedo");
   const clear = document.getElementById("playPresentationTeleClear");
+  const exportButton = document.getElementById("playPresentationTeleExport");
   const empty = playPresentationTeleStrokes.length === 0;
   // Clear Board can leave the visible board empty while still being the last
   // reversible action, so Undo follows the history cursor—not pixel/stroke
@@ -1127,6 +1128,7 @@ function updatePlayPresentationTeleControls() {
   if (undo) undo.disabled = playPresentationTeleHistoryIndex <= 0;
   if (redo) redo.disabled = playPresentationTeleHistoryIndex >= playPresentationTeleHistory.length;
   if (clear) clear.disabled = empty;
+  if (exportButton) exportButton.disabled = empty;
 }
 
 function updatePlayPresentationTeleButton() {
@@ -1189,6 +1191,62 @@ function clearPlayPresentationTele() {
   playPresentationTeleActive = null;
   commitPlayPresentationTeleAction({ type: "clear" });
   announcePlayPresentationTele("Board cleared. Undo is available.");
+}
+
+function getPlayPresentationTeleExportFilename() {
+  const play = playPresentationState.items[playPresentationState.index]?.play;
+  const label = typeof getPlayPresentationPlayLabel === "function"
+    ? getPlayPresentationPlayLabel(play || {})
+    : "play";
+  const safeLabel = String(label || "play")
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 96) || "play";
+  return `${safeLabel}-telestration.jpg`;
+}
+
+function exportPlayPresentationTeleJpg() {
+  const frame = document.getElementById("playPresentationDiagram");
+  const diagram = frame?.querySelector(".pp-diagram-canvas");
+  const markup = playPresentationTeleCanvas;
+  if (!diagram || !markup || !playPresentationTeleStrokes.length) {
+    showToast("Add a telestrator mark before downloading a JPG.", { type: "info" });
+    return;
+  }
+
+  try {
+    const output = document.createElement("canvas");
+    output.width = Math.max(1, diagram.width);
+    output.height = Math.max(1, diagram.height);
+    const context = output.getContext("2d");
+    if (!context) throw new Error("Canvas export is unavailable.");
+    // The diagram and telestrator have independent device-pixel ratios. Draw
+    // each into one output canvas so the exported JPG exactly matches the
+    // visible diagram without exporting any of the presentation controls.
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, output.width, output.height);
+    context.drawImage(diagram, 0, 0, output.width, output.height);
+    context.drawImage(markup, 0, 0, output.width, output.height);
+    output.toBlob((blob) => {
+      if (!blob) {
+        showToast("Could not create the JPG. Please try again.", { type: "error" });
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = getPlayPresentationTeleExportFilename();
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      announcePlayPresentationTele("Marked-up diagram downloaded as JPG.");
+      showToast("✅ Marked-up diagram downloaded as JPG", { type: "success" });
+    }, "image/jpeg", 0.92);
+  } catch (error) {
+    console.warn("telestrator JPG export failed:", error);
+    showToast("Could not create the JPG. Please try again.", { type: "error" });
+  }
 }
 
 function announcePlayPresentationTele(message) {
