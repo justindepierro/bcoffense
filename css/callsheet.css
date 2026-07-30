@@ -7,6 +7,32 @@
   padding-bottom: var(--space-xs);
 }
 
+/* 4×6 Call Sheet index-card builder */
+.cs-index-modal { width: min(760px, 96vw); max-height: 92vh; display: flex; flex-direction: column; }
+.cs-index-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--color-border); color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.cs-index-card { width: min(100%, 480px); min-height: 420px; margin: var(--space-sm) auto; padding: 11px; border: 2px solid #142a57; border-radius: 7px; background: #fff; color: #101b34; box-shadow: 0 6px 18px rgba(14, 32, 73, .16); }
+.cs-index-card-head { display: flex; justify-content: space-between; gap: 8px; padding: 5px 7px; border-bottom: 2px solid #142a57; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.cs-index-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; padding-top: 8px; }
+.cs-index-bucket { min-width: 0; border: 1px solid #8795ae; break-inside: avoid; }
+.cs-index-bucket header { display: flex; justify-content: space-between; gap: 4px; padding: 3px 5px; background: #e7edf7; color: #10234c; font-size: 10px; text-transform: uppercase; }
+.cs-index-bucket button { min-width: 21px; min-height: 21px; padding: 0; border: 1px solid #72819d; border-radius: 3px; background: #fff; color: #10234c; font-weight: 800; cursor: pointer; }
+.cs-index-bucket ol { margin: 0; padding: 4px 4px 4px 20px; font-size: 9px; line-height: 1.2; }
+.cs-index-bucket li { margin: 0 0 3px; overflow-wrap: anywhere; }
+.cs-index-empty { grid-column: 1 / -1; display: grid; min-height: 180px; place-items: center; border: 1px dashed #8795ae; color: #5f6c80; font-style: italic; text-align: center; }
+.cs-index-add { display: block; width: min(100%, 480px); margin: var(--space-sm) auto; border-style: dashed; }
+@media print {
+  body.cs-index-printing > * { display: none !important; }
+  body.cs-index-printing #csIndexCardPrintRoot { display: block !important; }
+  body.cs-index-printing .cs-index-print-page { width: 3.84in; height: 5.84in; break-after: page; page-break-after: always; }
+  body.cs-index-printing .cs-index-print-page:last-child { break-after: auto; page-break-after: auto; }
+  body.cs-index-printing .cs-index-card { box-sizing: border-box; width: 3.84in; min-height: 5.84in; height: 5.84in; margin: 0; padding: .08in; border-width: 1.5pt; border-radius: 0; box-shadow: none; }
+  body.cs-index-printing .cs-index-card-head { padding: .03in .04in; font-size: 7pt; border-bottom-width: 1.5pt; }
+  body.cs-index-printing .cs-index-grid { gap: .055in; padding-top: .06in; }
+  body.cs-index-printing .cs-index-bucket header { padding: .025in .04in; font-size: 6.4pt; }
+  body.cs-index-printing .cs-index-bucket ol { padding: .035in .035in .035in .14in; font-size: 6.3pt; line-height: 1.14; }
+  body.cs-index-printing .cs-index-bucket li { margin-bottom: .025in; }
+}
+
 /* Tablet tier: keep the print-like grid compact but make toolbar actions
    comfortable to operate without changing the printed Call Sheet. */
 body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
