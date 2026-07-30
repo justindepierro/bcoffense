@@ -109,6 +109,13 @@ assert(
   "answered questions expose an immediate in-context Continue action instead of requiring players to find the distant footer navigation",
 );
 assert(
+  quiz.includes("function initScriptQuizInteractionRouting()")
+    && quiz.includes('overlay.addEventListener("click"')
+    && quiz.includes('action !== "answerScriptQuizChoice" && action !== "nextScriptQuizPlay"')
+    && quiz.includes("event.stopPropagation();"),
+  "dynamic quiz answer and next controls have an overlay-owned click route independent of the global app dispatcher",
+);
+assert(
   releaseClient.includes('fetch("/player/release"')
     && releaseClient.includes("cache: \"no-store\"")
     && releaseClient.includes("storageManager.replacePlayerReleaseData(release)"),

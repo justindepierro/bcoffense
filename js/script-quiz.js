@@ -2173,6 +2173,32 @@ function isScriptQuizAwaitingAnswer() {
   return choices.length >= 2 && !_quizAnswers.has(_quizItemKey(item));
 }
 
+// The choices are re-rendered for every rep. Keep their critical answer/next
+// route owned by the quiz overlay instead of depending solely on the app-wide
+// delegated router, which may be intercepted by other modal or mobile layers.
+// Authentication still runs first in its document capture handler.
+function initScriptQuizInteractionRouting() {
+  const overlay = document.getElementById("scriptQuizOverlay");
+  if (!overlay || overlay.dataset.quizInteractionRouting === "true") return;
+  overlay.dataset.quizInteractionRouting = "true";
+  overlay.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target.closest("[data-action]") : null;
+    if (!target || !overlay.contains(target) || target.disabled) return;
+    const action = target.dataset.action;
+    if (action !== "answerScriptQuizChoice" && action !== "nextScriptQuizPlay") return;
+    if (typeof isActionAllowedForRole === "function" && !isActionAllowedForRole(action)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (action === "answerScriptQuizChoice") {
+      answerScriptQuizChoice(target.dataset.arg || "");
+      return;
+    }
+    nextScriptQuizPlay();
+  });
+}
+
+document.addEventListener("DOMContentLoaded", initScriptQuizInteractionRouting);
+
 async function startScriptQuiz(options = {}) {
   const launchStartedAt = _quizPerfNow();
   const opts = options && typeof options === "object" ? options : {};
