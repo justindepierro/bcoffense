@@ -35,7 +35,7 @@ assert.match(indexCards, /function openCallSheetIndexCardPrintModal\(\)[\s\S]*?C
 assert.match(indexCards, /function _csIndexPrintSides[\s\S]*?\["front", "back"\][\s\S]*?function renderCallSheetIndexCardPrintPages/, "index-card duplex jobs render front then back for each card");
 assert.match(indexCards, /function _runCallSheetIndexCardsPrint[\s\S]*?setupPrintPageStyle[\s\S]*?@page \{ size: 4in 6in/, "index cards use the shared print-page setup with an exact 4×6 page");
 assert.match(indexCards, /function _csBucketRows\(bucket\)[\s\S]*?bucket\?\.playKeys[\s\S]*?_csIndexIdentity/, "smart index-card buckets stay scoped to their source calls");
-assert.match(indexCards, /function _csSmartIndexPlan\(entries\)[\s\S]*?CS_INDEX_SMART_CATEGORY_PRIORITY[\s\S]*?three per side/, "smart index cards balance logical groups across a compact front and back");
+assert.match(indexCards, /function _csSmartIndexPlan\(entries\)[\s\S]*?typeof entry\.play === "object"[\s\S]*?CS_INDEX_SMART_CATEGORY_PRIORITY[\s\S]*?three per side/, "smart index cards preserve direct Script plays and wrapped Game Plan plays while balancing logical groups");
 assert.match(indexCards, /function createSmartCallSheetIndexCard\(entries, options = \{\}\)[\s\S]*?saveCallSheet\(\)[\s\S]*?switchCallSheetPage\("index"\)/, "smart generation saves calls then opens the editable index-card workspace");
 assert.match(scriptIntegrations, /function sendScriptToIndexCallSheet\(\)[\s\S]*?createSmartCallSheetIndexCard/, "Script can build a smart index card from selected or full script plays");
 assert.match(gamePlanIntegrations, /function sendGamePlanToIndexCallSheet\(\)[\s\S]*?sourceBoxId[\s\S]*?createSmartCallSheetIndexCard/, "Game Plan can build a smart index card while retaining bucket context");

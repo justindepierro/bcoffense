@@ -111,9 +111,13 @@ function _csSmartIndexPlan(entries) {
   const seen = new Set();
   const groups = new Map();
   (Array.isArray(entries) ? entries : []).forEach((entry) => {
-    const play = entry?.play || entry;
+    // A Script gives us play objects directly; a Game Plan supplies wrapper
+    // entries ({ play, sourceBoxId }). Do not use `entry.play || entry` here:
+    // on a normal play object `play` is the call-name string, not the object.
+    const play = entry && typeof entry.play === "object" ? entry.play : entry;
+    if (!play || typeof play !== "object") return;
     const identity = _csIndexIdentity(play);
-    if (!play || !identity || seen.has(identity)) return;
+    if (!identity || seen.has(identity)) return;
     seen.add(identity);
     const categoryId = _csSmartIndexCategoryForPlay(play, entry?.sourceBoxId || "");
     if (!groups.has(categoryId)) groups.set(categoryId, []);
