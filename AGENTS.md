@@ -112,6 +112,7 @@ js/
   callsheet-layout.js   ← Call sheet layout/order modal state, drag-drop helpers, smart reorder, and category reset
   callsheet-templates.js ← Call sheet template management: built-in templates, save/load/delete, apply template flow
   callsheet-picker-runtime.js ← Call sheet picker flows, wristband loading, and runtime bindings
+  callsheet-index-cards.js ← Editable 4×6 index-card Call Sheet view and print layout
   callsheet-gameplan-drawer.js ← Game plan drawer inside the call sheet
   constraints.js        ← Game plan constraints evaluation engine
   script-vision.js      ← Script vision-mode rendering and controls
@@ -129,6 +130,7 @@ js/
   gameplan-actions.js   ← Game plan box CRUD, per-play flags, selection, density, manage/reorder/hide/rename
   gameplan-smart.js     ← Game plan smart features (criteria detect, suggest fill, templates, health, touches, spotlight, coverage matrix, tendency mirror)
   gameplan-print.js     ← Game plan print modal, print render, and one-page presets
+  gameplan-index-cards.js ← Game Plan 4×6 index-card template helpers
   gameplan-integrations.js ← Game plan push to call sheet/script, dashboard send, plan compare
   gameplan-snapshots.js ← Game plan named snapshots and built-in/reusable templates
   print-studio.js       ← Deferred Print Studio UI; core export naming lives in utils.js
@@ -253,7 +255,8 @@ The startup shell uses `defer` and loads in this exact order from index.html. Ex
 94.   js/callsheet-layout.js
 95.   js/callsheet-templates.js
 96.   js/callsheet-picker-runtime.js
-97.   js/callsheet-gameplan-drawer.js
+97.   js/callsheet-index-cards.js
+98.   js/callsheet-gameplan-drawer.js
 98.   js/constraints.js
 99.   js/constraints-ui.js
 100.   js/script-vision.js
@@ -275,7 +278,8 @@ The startup shell uses `defer` and loads in this exact order from index.html. Ex
 116.   js/gameplan-smart.js
 117.   js/gameplan-health.js
 118.   js/gameplan-print.js
-119.   js/gameplan-integrations.js
+119.   js/gameplan-index-cards.js
+120.   js/gameplan-integrations.js
 120.   js/gameplan-snapshots.js
 121.   js/script-events.js
 122.   js/anchored-menu.js
@@ -532,6 +536,7 @@ const _ELEMENT_FNS = new Set([
   "moveInstallItemUp",
   "moveInstallItemDown",
   "toggleIdentityCard",
+  "openCallSheetIndexPlayMenu",
   // Discussion actions (need both arg + element)
   "submitDiscPost",
   "deleteDiscPost",

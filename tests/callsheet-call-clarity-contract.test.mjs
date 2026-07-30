@@ -9,6 +9,8 @@ const css = await readFile(new URL("css/callsheet.css", `file://${root}/`), "utf
 const callSheet = await readFile(new URL("js/callsheet.js", `file://${root}/`), "utf8");
 const gamePlanRender = await readFile(new URL("js/gameplan-render.js", `file://${root}/`), "utf8");
 const notifications = await readFile(new URL("js/app-notifications.js", `file://${root}/`), "utf8");
+const indexCards = await readFile(new URL("js/callsheet-index-cards.js", `file://${root}/`), "utf8");
+const appEvents = await readFile(new URL("js/app-events.js", `file://${root}/`), "utf8");
 
 assert.match(render, /const wristbandHtml = displayOptions\.showNumbers[\s\S]*?cs-wristband-number[\s\S]*?\$\{wristbandHtml\}[\s\S]*?\$\{personnelHtml\}/, "screen rows render wristband number before personnel and call text");
 assert.match(print, /const wristbandHtml = displayOptions\.showNumbers[\s\S]*?print-wristband-number[\s\S]*?\$\{wristbandHtml\}\$\{personnelHtml\}/, "print rows preserve wristband-first order");
@@ -24,4 +26,8 @@ assert.match(print, /if \(mode === "all"\) return \["front", "back", "personnel"
 assert.match(print, /safePage === "personnel"[\s\S]*?renderPersonnelCallSheet\(opts\.printOptions\)/, "Personnel print uses the same classified play renderer as the screen");
 assert.match(gamePlanRender, /id="gpLibrarySearch"[\s\S]*?placeholder="Search library…"/, "Game Plan library always exposes its search field");
 assert.match(notifications, /const matchIndex = plays\.findIndex[\s\S]*?openPlayWorkflowPanel\(matchIndex\)/, "staff question notifications resolve a play then open its workflow panel by index");
+assert.match(indexCards, /data-action="openCallSheetPlayPicker"[\s\S]*?data-drop="csHashDrop"/, "index-card buckets accept the normal Call Sheet drag/drop and picker pipeline");
+assert.match(indexCards, /showPlayContextMenu\([\s\S]*?row\.dataset\.category[\s\S]*?row\.dataset\.hash/, "index-card play actions open the canonical Call Sheet cell editor");
+assert.match(indexCards, /toggleCallSheetIndexFamily[\s\S]*?toggleCallSheetIndexCompact/, "index cards retain per-row family indentation and repeated-component controls");
+assert.match(appEvents, /"openCallSheetIndexPlayMenu"/, "delegated event routing passes the index-card play action its source element");
 console.log("call sheet call clarity contract: wristband-first and one-word full-call passed");

@@ -111,6 +111,7 @@ const _ELEMENT_FNS = new Set([
   "moveInstallItemUp",
   "moveInstallItemDown",
   "toggleIdentityCard",
+  "openCallSheetIndexPlayMenu",
   // Discussion actions (need both arg + element)
   "submitDiscPost",
   "deleteDiscPost",
