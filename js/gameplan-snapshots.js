@@ -466,6 +466,7 @@ function _gpBuildTemplate(name, includePlays) {
     sheetTitle: board.sheetTitle || "",
     printPreset: board.printPreset || "",
     wristbandAutoBoxId: board.wristbandAutoBoxId || "",
+    indexCards: safeDeepClone(board.indexCards || []),
     assignments,
   };
 }
@@ -500,6 +501,7 @@ function _gpBoardFromTemplate(template) {
     sheetTitle: template.sheetTitle || "",
     printPreset: template.printPreset || "",
     wristbandAutoBoxId: template.wristbandAutoBoxId || "",
+    indexCards: safeDeepClone(template.indexCards || []),
   };
 }
 

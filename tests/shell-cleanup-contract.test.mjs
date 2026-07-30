@@ -211,4 +211,12 @@ assert.match(playPresentation, /function exportPlayPresentationTeleJpg\(\)[\s\S]
 assert.match(playPresentation, /link\.download = getPlayPresentationTeleExportFilename\(\)/, "telestrator JPG export supplies a safe play-specific download name");
 assert.match(indexHtml, /id="playPresentationTeleStatus" aria-live="polite"/, "telestrator announces destructive and recovery actions to assistive technology");
 
+const gamePlanIndexCards = await source("js/gameplan-index-cards.js");
+const gamePlanSnapshots = await source("js/gameplan-snapshots.js");
+assert.match(indexHtml, /js\/gameplan-index-cards\.js\?v=/, "the Game Plan 4×6 index-card builder is loaded with the app shell");
+assert.match(gamePlanIndexCards, /function printGamePlanIndexCards\(\)[\s\S]*?@page \{ size: 4in 6in/, "index cards print as exact 4×6 front/back pages");
+assert.match(gamePlanIndexCards, /function _gpIndexCardAddBucket\(\)[\s\S]*?GP_BUCKET_TEMPLATES/, "index cards reuse the normal Game Plan bucket suggestions");
+assert.match(gamePlanIndexCards, /function _gpIndexCardBucketPlays\(board, bucket\)[\s\S]*?board\.assignments/, "index cards remain linked to active Game Plan bucket plays");
+assert.match(gamePlanSnapshots, /indexCards: safeDeepClone\(board\.indexCards \|\| \[\]\)/, "Game Plan snapshots preserve index-card layouts");
+
 console.log("shell cleanup contract: runtime asset inventory and retired aliases passed");

@@ -654,6 +654,10 @@ function _gpCreateEmptyBoard() {
     sheetTitle: "",
     printPreset: "",
     wristbandAutoBoxId: "",
+    // Coach-only 4×6 front/back quick-call cards. Buckets reference the
+    // active Game Plan boxes so they stay in sync instead of duplicating play
+    // data into a second, drifting plan.
+    indexCards: [],
     // The named snapshot currently open in this opponent's workspace. This
     // lets Save update that plan deterministically, like an open script.
     activeSnapshotId: "",
@@ -733,6 +737,10 @@ function _gpEnsureBoard() {
     }
     if (typeof all[key].wristbandAutoBoxId !== "string") {
       all[key].wristbandAutoBoxId = "";
+      changed = true;
+    }
+    if (!Array.isArray(all[key].indexCards)) {
+      all[key].indexCards = [];
       changed = true;
     }
     if (typeof all[key].activeSnapshotId !== "string") {

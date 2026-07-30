@@ -3956,3 +3956,36 @@ body.gp-printing .gp-print-detail-val {
     padding: 4px 8px;
   }
 }
+
+/* ── 4×6 Game Day Index Cards ───────────────────────────────────────── */
+.gp-index-modal { width: min(760px, 96vw); max-height: min(92vh, 900px); display: flex; flex-direction: column; }
+.gp-index-intro { padding-bottom: 0; color: var(--color-text-muted); }
+.gp-index-toolbar, .gp-index-card-tabs, .gp-index-side-tabs { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
+.gp-index-toolbar { padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--color-border); }
+.gp-index-card-tabs { flex: 1; }
+.gp-index-side-tabs { padding: var(--space-sm) var(--space-md); color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.gp-index-card { width: min(100%, 480px); min-height: 420px; margin: 0 auto; padding: 11px; border: 2px solid #142a57; border-radius: 7px; background: #fff; color: #101b34; box-shadow: 0 6px 18px rgba(14, 32, 73, .16); }
+.gp-index-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 7px; border-bottom: 2px solid #142a57; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.gp-index-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; padding-top: 8px; }
+.gp-index-bucket { min-width: 0; border: 1px solid #8795ae; break-inside: avoid; }
+.gp-index-bucket header { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 3px 5px; background: #e7edf7; color: #10234c; font-size: 10px; text-transform: uppercase; }
+.gp-index-bucket-actions { display: inline-flex; gap: 3px; }
+.gp-index-bucket-actions button { min-width: 21px; min-height: 21px; padding: 0; border: 1px solid #72819d; border-radius: 3px; background: #fff; color: #10234c; font-weight: 800; cursor: pointer; }
+.gp-index-bucket ol { margin: 0; padding: 4px 4px 4px 20px; font-size: 9px; line-height: 1.2; }
+.gp-index-bucket li { margin: 0 0 3px; overflow-wrap: anywhere; }
+.gp-index-empty, .gp-index-empty-card { color: #5f6c80; font-style: italic; }
+.gp-index-empty-card { grid-column: 1 / -1; min-height: 180px; display: grid; place-items: center; text-align: center; border: 1px dashed #8795ae; padding: 12px; }
+.gp-index-add { display: block; width: min(100%, 480px); margin: var(--space-sm) auto; border-style: dashed; }
+
+@media print {
+  body.gp-index-printing > * { display: none !important; }
+  body.gp-index-printing #gpIndexCardPrintRoot { display: block !important; }
+  body.gp-index-printing .gp-index-print-page { display: block; width: 3.84in; height: 5.84in; break-after: page; page-break-after: always; }
+  body.gp-index-printing .gp-index-print-page:last-child { break-after: auto; page-break-after: auto; }
+  body.gp-index-printing .gp-index-card { box-sizing: border-box; width: 3.84in; min-height: 5.84in; height: 5.84in; margin: 0; padding: .08in; border-width: 1.5pt; border-radius: 0; box-shadow: none; }
+  body.gp-index-printing .gp-index-card-head { padding: .03in .04in; font-size: 7pt; border-bottom-width: 1.5pt; }
+  body.gp-index-printing .gp-index-card-grid { gap: .055in; padding-top: .06in; }
+  body.gp-index-printing .gp-index-bucket header { padding: .025in .04in; font-size: 6.4pt; }
+  body.gp-index-printing .gp-index-bucket ol { padding: .035in .035in .035in .14in; font-size: 6.3pt; line-height: 1.14; }
+  body.gp-index-printing .gp-index-bucket li { margin-bottom: .025in; }
+}

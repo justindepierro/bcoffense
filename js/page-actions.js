@@ -114,6 +114,7 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "💾", label: "Save", sublabel: _paGamePlanSaveStatus, run: () => _paCall("saveGamePlanSnapshot") },
       { icon: "＋", label: "Save as new", sublabel: "Copy this plan", run: () => _paCall("saveGamePlanSnapshotAsNew") },
       { icon: "🖨️", label: "Print", sublabel: "Board only", run: () => _paCall("openGamePlanPrintModal") },
+      { icon: "🗂️", label: "Index Cards", sublabel: "4×6 front / back", run: () => _paCall("openGamePlanIndexCards") },
     ],
     sections: [
       {
