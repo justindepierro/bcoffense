@@ -788,7 +788,8 @@ function renderCallSheet() {
     "aria-label",
     "Call sheet " + (callSheetSettings.currentPage || "front") + " page",
   );
-  const isLandscape = callSheetSettings.orientation === "landscape";
+  const isIndexCards = callSheetSettings.currentPage === "index";
+  const isLandscape = !isIndexCards && callSheetSettings.orientation === "landscape";
   const usePhoneCards = shouldRenderCallSheetPhoneCards();
   container.classList.toggle("callsheet-landscape", isLandscape);
   container.classList.toggle("callsheet-portrait", !isLandscape);
@@ -810,7 +811,9 @@ function renderCallSheet() {
 
   // Build category columns
   let html = "";
-  if (page === "personnel") {
+  if (page === "index" && typeof renderCallSheetIndexCardPage === "function") {
+    html += renderCallSheetIndexCardPage();
+  } else if (page === "personnel") {
     html += renderPersonnelCallSheet(displayOptions);
   } else if (categories.length === 0) {
     html += `
@@ -886,6 +889,7 @@ function updatePageToggle() {
   const frontBtn = document.getElementById("callsheetFrontBtn");
   const backBtn = document.getElementById("callsheetBackBtn");
   const personnelBtn = document.getElementById("callsheetPersonnelBtn");
+  const indexCardsBtn = document.getElementById("callsheetIndexCardsBtn");
   if (frontBtn && backBtn) {
     frontBtn.classList.toggle(
       "active",
@@ -896,6 +900,7 @@ function updatePageToggle() {
       callSheetSettings.currentPage === "back",
     );
     if (personnelBtn) personnelBtn.classList.toggle("active", callSheetSettings.currentPage === "personnel");
+    if (indexCardsBtn) indexCardsBtn.classList.toggle("active", callSheetSettings.currentPage === "index");
   }
 
   const portraitBtn = document.getElementById("callsheetPortraitBtn");
@@ -903,12 +908,14 @@ function updatePageToggle() {
   if (portraitBtn && landscapeBtn) {
     portraitBtn.classList.toggle(
       "active",
-      callSheetSettings.orientation === "portrait",
+      callSheetSettings.currentPage === "index" || callSheetSettings.orientation === "portrait",
     );
     landscapeBtn.classList.toggle(
       "active",
-      callSheetSettings.orientation === "landscape",
+      callSheetSettings.currentPage !== "index" && callSheetSettings.orientation === "landscape",
     );
+    portraitBtn.disabled = callSheetSettings.currentPage === "index";
+    landscapeBtn.disabled = callSheetSettings.currentPage === "index";
   }
 }
 
@@ -1101,6 +1108,10 @@ function switchCallSheetPage(page) {
  * Toggle orientation
  */
 function setCallSheetOrientation(orient) {
+  if (callSheetSettings.currentPage === "index") {
+    showToast("Index Cards are locked to portrait for 4×6 printing.", { type: "info" });
+    return;
+  }
   callSheetSettings.orientation =
     orient === "portrait" ? "portrait" : "landscape";
   saveCallSheetSettings();

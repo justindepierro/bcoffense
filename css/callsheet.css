@@ -5181,3 +5181,18 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
     font-size: 10px;
   }
 }
+
+.cs-index-main { padding: var(--space-md); }
+.cs-index-main-head, .cs-index-main-actions, .cs-index-main-tabs, .cs-index-main-sides { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
+.cs-index-main-head { justify-content: space-between; margin-bottom: var(--space-sm); }
+.cs-index-main-head h3 { margin: 2px 0 0; color: var(--color-text); }
+.cs-index-kicker { color: var(--color-text-muted); font-size: var(--font-size-xs); font-weight: 800; letter-spacing: .08em; }
+.cs-index-main-tabs { padding: var(--space-sm); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-muted); }
+.cs-index-main-sides { margin: var(--space-sm) 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.cs-index-main-empty { display: grid; min-height: 340px; place-content: center; gap: var(--space-sm); text-align: center; }
+
+@media (max-width: 640px) {
+  .cs-index-main { padding: var(--space-sm); }
+  .cs-index-main-head { align-items: flex-start; }
+  .cs-index-main-actions { width: 100%; }
+}
