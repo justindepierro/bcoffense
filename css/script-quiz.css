@@ -1520,6 +1520,11 @@
 .player-quiz-customize[open] > summary::after { transform: rotate(180deg); }
 .player-quiz-customize > summary small { color: var(--color-text-muted); font-weight: 700; }
 .player-quiz-customize__challenge { display: grid; gap: var(--space-sm); }
+.player-quiz-customize--setup { border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border-light)); }
+.player-quiz-setup-head { display: flex; align-items: end; justify-content: space-between; gap: var(--space-sm); }
+.player-quiz-setup-head span { display: block; color: var(--color-primary); font-size: var(--font-size-xs); font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+.player-quiz-setup-head h3 { margin: 2px 0 0; color: var(--color-text); font-size: var(--font-size-md); }
+.player-quiz-setup-head small { color: var(--color-text-secondary); font-weight: 750; text-align: right; }
 
 .player-quiz-hub-section-head {
   display: flex;
@@ -5384,6 +5389,9 @@
   .player-quiz-position-mode {
     grid-template-columns: 1fr;
   }
+
+  .player-quiz-setup-head { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .player-quiz-setup-head small { text-align: left; }
 
   .player-quiz-tier-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));

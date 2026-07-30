@@ -260,6 +260,36 @@ function _quizItemHasDiagram(itemOrPlay) {
   );
 }
 
+// A player can legitimately have a published diagram that has not been cached
+// on this particular phone yet.  Local IndexedDB is therefore not allowed to
+// decide whether Diagram Flash Cards exist; it only tells us whether the image
+// is already warm. The launch preflight below verifies the cloud copy before a
+// flash-card round begins.
+function _quizItemMayHaveDiagram(itemOrPlay) {
+  const play = itemOrPlay?.play || itemOrPlay;
+  if (!play) return false;
+  if (_quizItemHasDiagram(play)) return true;
+  const mediaId = typeof getPlayMediaId === "function"
+    ? getPlayMediaId(play)
+    : String(play.mediaId || "").trim();
+  const cached = window.playImages && typeof window.playImages.getCachedRemoteManifestForPlay === "function"
+    ? window.playImages.getCachedRemoteManifestForPlay(play)
+    : null;
+  return Boolean(cached?.published || mediaId);
+}
+
+async function _resolveDiagramFlashItems(items) {
+  const candidates = _normalizeQuizItems(items).filter(_quizItemMayHaveDiagram);
+  if (!candidates.length || !window.playImages || typeof window.playImages.ensureDisplayReadinessForPlay !== "function") {
+    return [];
+  }
+  const settled = await Promise.allSettled(candidates.map(async (item) => {
+    const readiness = await window.playImages.ensureDisplayReadinessForPlay(item.play);
+    return readiness?.url ? item : null;
+  }));
+  return settled.map((result) => result.status === "fulfilled" ? result.value : null).filter(Boolean).slice(0, 8);
+}
+
 function _quizItemHasPositionRule(itemOrPlay, key = _quizPositionKey) {
   const play = itemOrPlay?.play || itemOrPlay;
   const keys = _resolveQuizPositionKeysForMode(_quizPositionMode);
@@ -306,7 +336,7 @@ function _getPlayerQuizModes(context = {}) {
   const gamePlanStatus = context.gamePlanStatus || _getActiveGamePlanQuizStatus();
   const signalStatus = context.signalStatus || _getSignalQuizStatus();
   const signalFullCallCount = Number(signalStatus.fullCallCount || 0);
-  const hasDiagram = scriptItems.some(_quizItemHasDiagram);
+  const hasDiagram = scriptItems.some(_quizItemMayHaveDiagram);
   const hasRules = scriptItems.some((item) => _quizItemHasPositionRule(item));
   const missedItems = _getRecentMissedQuizItems(5);
   return [
@@ -533,7 +563,8 @@ function _prepareQuizItemsForMode(items, modeKey = _quizMode) {
   const normalized = _normalizeQuizItems(items);
   const mode = String(modeKey || "quick");
   if (mode === "diagram" || mode === "diagram-flash") {
-    const withDiagrams = normalized.filter(_quizItemHasDiagram);
+    const withDiagrams = normalized.filter(_quizItemMayHaveDiagram);
+    if (mode === "diagram-flash") return withDiagrams;
     return (withDiagrams.length ? withDiagrams : normalized).slice(0, 8);
   }
   if (mode === "job") {
@@ -806,6 +837,19 @@ function openPlayerQuizHubWithMode(modeKey = "") {
   openPlayerQuizHub();
 }
 
+// Every player-facing Quiz button lands in the same setup screen first. This
+// keeps position and quiz mode visible before the first question instead of
+// silently launching with whichever default happened to be active.
+function openPlayerQuizHubForScript(id = "") {
+  const target = _getPlayerQuizScriptOptions().find((option) => option.id === String(id || "") && option.playerSelectable);
+  if (!target) {
+    showToast("Coach has not opened that script quiz yet.", { type: "warning" });
+    return;
+  }
+  _playerQuizSelectedScriptId = target.id;
+  openPlayerQuizHub();
+}
+
 function closePlayerQuizHub(options = {}) {
   if (options.keepQuizPage) return;
   if (typeof showTab === "function") showTab("dashboard");
@@ -865,6 +909,8 @@ function startPlayerQuizHubScript() {
       mode: _quizMode,
       items: mode?.key === "missed" ? _prepareQuizItemsForMode([], "missed") : undefined,
       title: _quizModeTitle(selected.name || "Practice Script Quiz", _quizMode),
+      positionKey: _quizPositionKey,
+      positionMode: _quizPositionMode,
     });
     return;
   }
@@ -2078,9 +2124,16 @@ async function startScriptQuiz(options = {}) {
   const sourceType = ["gameplan", "signal", "assignment"].includes(requestedSourceType) ? requestedSourceType : "script";
   const items = Array.isArray(opts.items) ? opts.items : _buildQuizPlays(false);
   _quizMode = String(opts.mode || "full");
-  const normalizedItems = opts.mode
+  let normalizedItems = opts.mode
     ? _prepareQuizItemsForMode(items, _quizMode)
     : _normalizeQuizItems(items);
+  if (_quizMode === "diagram-flash") {
+    normalizedItems = await _resolveDiagramFlashItems(normalizedItems);
+    if (!normalizedItems.length) {
+      showToast("No published diagrams are ready for this practice yet. Ask your coach to publish the diagram media, then try again.", { type: "warning", duration: 4500 });
+      return;
+    }
+  }
   if (!normalizedItems.length) {
     showToast("Add plays to the script before starting a quiz", { type: "warning" });
     return;

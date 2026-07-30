@@ -715,16 +715,16 @@ function renderPlayerScriptLauncher() {
             ${featured ? "Open Swipe View" : "Open practice"}
           </button>
           ${featured ? `
-            <button type="button" class="btn btn-secondary btn-sm" data-action="startPlayerScriptQuiz"
-              data-arg="${scriptId}" title="Quiz yourself on this practice">Quiz</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="openPlayerQuizHubForScript"
+              data-arg="${scriptId}" title="Choose position and quiz type before starting">Quiz setup</button>
             <button type="button" class="btn btn-secondary btn-sm" data-action="openPlayerScriptChat"
               data-arg="${scriptId}" title="Ask questions about this practice">Questions</button>
           ` : `
             <details class="player-script-card__options">
               <summary>Study options <span aria-hidden="true">⌄</span></summary>
               <div class="player-script-card__option-list">
-                <button type="button" class="btn btn-sm" data-action="startPlayerScriptQuiz"
-                  data-arg="${scriptId}" title="Quiz yourself on this practice">Quiz</button>
+                <button type="button" class="btn btn-sm" data-action="openPlayerQuizHubForScript"
+                  data-arg="${scriptId}" title="Choose position and quiz type before starting">Quiz setup</button>
                 <button type="button" class="btn btn-sm" data-action="openPlayerScriptChat"
                   data-arg="${scriptId}" title="Ask questions about this practice">Questions</button>
               </div>

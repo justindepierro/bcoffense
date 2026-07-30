@@ -63,6 +63,17 @@ assert(
   "player script quiz launch resolves the released script record and requires a real question pair",
 );
 assert(
+  quiz.includes("function _resolveDiagramFlashItems")
+    && quiz.includes("ensureDisplayReadinessForPlay")
+    && quiz.includes("No published diagrams are ready for this practice yet"),
+  "diagram flash cards verify published cloud diagrams before starting instead of relying on a device cache",
+);
+assert(
+  quiz.includes("function openPlayerQuizHubForScript")
+    && scriptPlayer.includes('data-action="openPlayerQuizHubForScript"'),
+  "player Practice Quiz buttons open the shared setup screen before the first question",
+);
+assert(
   releaseClient.includes('fetch("/player/release"')
     && releaseClient.includes("cache: \"no-store\"")
     && releaseClient.includes("storageManager.replacePlayerReleaseData(release)"),

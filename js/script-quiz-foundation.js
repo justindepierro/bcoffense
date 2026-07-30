@@ -882,7 +882,7 @@ function _getQuizScriptProgress(scriptOption) {
   const answered = latest ? Number(latest.answered || 0) : 0;
   const pct = total ? Math.min(100, Math.round((answered / total) * 100)) : 0;
   let icon = "";
-  let label = "No quiz yet";
+  let label = "Not attempted";
   if (latest) {
     if (latest.completed === false) {
       label = `${pct}% done`;
