@@ -185,6 +185,8 @@ let playPresentationPan = null;
 
 // M-042 — Telestrator (session-local, drawings clear on play change)
 const PLAY_PRESENTATION_TELE_TOOLS = new Set(["pen", "arrow", "circle", "eraser"]);
+const PLAY_PRESENTATION_TELE_MAX_HISTORY_ACTIONS = 120;
+const PLAY_PRESENTATION_TELE_MAX_POINTS_PER_STROKE = 900;
 let playPresentationTeleEnabled = false;
 let playPresentationTeleTool = "pen";
 let playPresentationTeleColor = "#ffd400";
@@ -194,6 +196,7 @@ let playPresentationTeleStrokes = [];
 // Nothing is persisted; this is only the current presenter session.
 let playPresentationTeleHistory = [];
 let playPresentationTeleHistoryIndex = 0;
+let playPresentationTeleHistoryBaseStrokes = [];
 let playPresentationTeleActive = null;
 let playPresentationTeleCanvas = null;
 let playPresentationTeleCtx = null;
@@ -960,14 +963,16 @@ function redrawPlayPresentationTele() {
   ctx.globalCompositeOperation = "source-over";
 }
 
+function applyPlayPresentationTeleAction(strokes, action) {
+  if (action?.type === "clear") return [];
+  if (action?.type === "stroke" && action.stroke) return [...strokes, action.stroke];
+  return strokes;
+}
+
 function rebuildPlayPresentationTeleFromHistory() {
-  let strokes = [];
+  let strokes = playPresentationTeleHistoryBaseStrokes.slice();
   playPresentationTeleHistory.slice(0, playPresentationTeleHistoryIndex).forEach((action) => {
-    if (action?.type === "clear") {
-      strokes = [];
-    } else if (action?.type === "stroke" && action.stroke) {
-      strokes.push(action.stroke);
-    }
+    strokes = applyPlayPresentationTeleAction(strokes, action);
   });
   playPresentationTeleStrokes = strokes;
   updatePlayPresentationTeleControls();
@@ -979,6 +984,17 @@ function commitPlayPresentationTeleAction(action) {
   playPresentationTeleHistory = playPresentationTeleHistory.slice(0, playPresentationTeleHistoryIndex);
   playPresentationTeleHistory.push(action);
   playPresentationTeleHistoryIndex = playPresentationTeleHistory.length;
+  const overflow = playPresentationTeleHistory.length - PLAY_PRESENTATION_TELE_MAX_HISTORY_ACTIONS;
+  if (overflow > 0) {
+    const retired = playPresentationTeleHistory.splice(0, overflow);
+    retired.forEach((retiredAction) => {
+      playPresentationTeleHistoryBaseStrokes = applyPlayPresentationTeleAction(
+        playPresentationTeleHistoryBaseStrokes,
+        retiredAction,
+      );
+    });
+    playPresentationTeleHistoryIndex = Math.max(0, playPresentationTeleHistoryIndex - overflow);
+  }
   rebuildPlayPresentationTeleFromHistory();
 }
 
@@ -986,6 +1002,7 @@ function resetPlayPresentationTeleBoard() {
   playPresentationTeleStrokes = [];
   playPresentationTeleHistory = [];
   playPresentationTeleHistoryIndex = 0;
+  playPresentationTeleHistoryBaseStrokes = [];
   playPresentationTeleActive = null;
   updatePlayPresentationTeleControls();
   redrawPlayPresentationTele();
@@ -1033,8 +1050,12 @@ function attachPlayPresentationTelePointer(canvas) {
         playPresentationTeleActive.points[0],
         pt,
       ];
-    } else {
+    } else if (playPresentationTeleActive.points.length < PLAY_PRESENTATION_TELE_MAX_POINTS_PER_STROKE) {
       playPresentationTeleActive.points.push(pt);
+    } else {
+      // Preserve the current end point while preventing a long Pencil hold
+      // from creating an unbounded in-memory session payload.
+      playPresentationTeleActive.points[playPresentationTeleActive.points.length - 1] = pt;
     }
     redrawPlayPresentationTele();
     event.preventDefault();
@@ -1046,9 +1067,11 @@ function attachPlayPresentationTelePointer(canvas) {
     ) {
       return;
     }
-    canvas.releasePointerCapture?.(event.pointerId);
     const stroke = playPresentationTeleActive;
     playPresentationTeleActive = null;
+    // Release only after clearing the active pointer. Some browsers emit
+    // lostpointercapture synchronously, and that must not commit twice.
+    canvas.releasePointerCapture?.(event.pointerId);
     if (stroke.points.length) {
       delete stroke.pointerId;
       // A new stroke establishes a new history branch, so previously undone
@@ -1062,6 +1085,7 @@ function attachPlayPresentationTelePointer(canvas) {
   };
   canvas.addEventListener("pointerup", finishStroke);
   canvas.addEventListener("pointercancel", finishStroke);
+  canvas.addEventListener("lostpointercapture", finishStroke);
 }
 
 function ensurePlayPresentationTeleCanvas() {
@@ -1147,19 +1171,29 @@ function undoPlayPresentationTele() {
   playPresentationTeleActive = null;
   playPresentationTeleHistoryIndex -= 1;
   rebuildPlayPresentationTeleFromHistory();
+  const undone = playPresentationTeleHistory[playPresentationTeleHistoryIndex];
+  announcePlayPresentationTele(undone?.type === "clear" ? "Board restored." : "Stroke undone.");
 }
 
 function redoPlayPresentationTele() {
   if (playPresentationTeleHistoryIndex >= playPresentationTeleHistory.length) return;
   playPresentationTeleActive = null;
+  const redone = playPresentationTeleHistory[playPresentationTeleHistoryIndex];
   playPresentationTeleHistoryIndex += 1;
   rebuildPlayPresentationTeleFromHistory();
+  announcePlayPresentationTele(redone?.type === "clear" ? "Board cleared again." : "Stroke restored.");
 }
 
 function clearPlayPresentationTele() {
   if (!playPresentationTeleStrokes.length) return;
   playPresentationTeleActive = null;
   commitPlayPresentationTeleAction({ type: "clear" });
+  announcePlayPresentationTele("Board cleared. Undo is available.");
+}
+
+function announcePlayPresentationTele(message) {
+  const status = document.getElementById("playPresentationTeleStatus");
+  if (status) status.textContent = String(message || "");
 }
 
 function setPlayPresentationTelestrator(on) {
@@ -2999,6 +3033,9 @@ function handlePlayPresentationKeydown(event) {
     event.preventDefault();
     if (event.shiftKey) redoPlayPresentationTele();
     else undoPlayPresentationTele();
+  } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "y" && playPresentationTeleEnabled) {
+    event.preventDefault();
+    redoPlayPresentationTele();
   } else if (event.key === "ArrowRight" || event.key === "PageDown") {
     event.preventDefault();
     movePlayPresentation(1);
