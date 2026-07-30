@@ -2248,9 +2248,9 @@ test.describe("Player mobile experience", () => {
     await expect(picker).toContainText("Diagrams");
     await expect(picker).toContainText("Metadata");
     await expect(picker).not.toContainText("Hidden Quiz");
-    await expect(hub.locator("#playerQuizStartScriptBtn")).toBeDisabled();
-    await expect(hub.locator("#playerQuizStartGamePlanBtn")).toBeDisabled();
-    await expect(hub.locator("#playerQuizStartGamePlanBtn")).toContainText("Game Plan Locked");
+    await expect(hub.locator("#playerQuizSelectScriptBtn")).toBeDisabled();
+    await expect(hub.locator("#playerQuizSelectGamePlanBtn")).toBeDisabled();
+    await expect(hub.locator("#playerQuizSelectGamePlanBtn")).toContainText("Game Plan Locked");
     await expect(hub.locator("#playerQuizGamePlanStatus")).toContainText("Coach locked this Game Plan quiz");
     await expect(hub.locator("#playerQuizGamePlanStatus")).toContainText("Rules");
     await expect(hub.locator("#playerQuizGamePlanStatus")).toContainText("Diagrams");

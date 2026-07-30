@@ -279,7 +279,9 @@
   top: 0;
   left: 0;
   right: 0;
-  height: clamp(44px, 16%, 74px);
+  /* Keep the answer title out of view without eating meaningful routes,
+     blocking structure, or quarterback landmarks at the top of a diagram. */
+  height: clamp(18px, 7%, 34px);
   border-bottom: 1px dashed
     color-mix(in srgb, var(--color-primary) 42%, var(--color-border-light));
   background: repeating-linear-gradient(
@@ -289,7 +291,7 @@
     color-mix(in srgb, var(--color-bg-body) 80%, var(--color-primary)) 8px,
     color-mix(in srgb, var(--color-bg-body) 80%, var(--color-primary)) 16px
   );
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(6px);
 }
 
 .sq-diagram-prompt figcaption {
@@ -1787,6 +1789,43 @@
   align-content: start;
   box-shadow: var(--shadow-xs);
 }
+
+.player-quiz-source-card:has([aria-pressed="true"]) {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--player-quiz-source-accent) 34%, transparent), var(--shadow-sm);
+}
+
+.player-quiz-launch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 34%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 9%, var(--color-bg-body)), var(--color-bg-body));
+}
+
+.player-quiz-launch span,
+.player-quiz-launch small {
+  display: block;
+  color: var(--color-text-muted);
+}
+
+.player-quiz-launch span {
+  margin-bottom: 2px;
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.player-quiz-launch strong {
+  display: block;
+  color: var(--color-text);
+}
+
+.player-quiz-launch small { margin-top: 3px; }
 
 .player-quiz-source-card--script {
   --player-quiz-source-accent: var(--color-info);
@@ -5370,6 +5409,14 @@
     width: 100%;
     min-height: 42px;
   }
+
+  .player-quiz-launch {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .player-quiz-launch .btn { width: 100%; min-height: 44px; }
 
   .player-quiz-mode-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

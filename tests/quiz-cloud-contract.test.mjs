@@ -77,6 +77,13 @@ assert(
   "every player Practice Quiz entry point opens the shared setup screen before the first question",
 );
 assert(
+  quiz.includes("function setPlayerQuizSource")
+    && quiz.includes("function startPlayerQuizHubSelection")
+    && indexHtml.includes('data-action="setPlayerQuizSource"')
+    && indexHtml.includes('data-action="startPlayerQuizHubSelection"'),
+  "quiz setup selects the source, challenge, and position before one explicit start action",
+);
+assert(
   releaseClient.includes('fetch("/player/release"')
     && releaseClient.includes("cache: \"no-store\"")
     && releaseClient.includes("storageManager.replacePlayerReleaseData(release)"),

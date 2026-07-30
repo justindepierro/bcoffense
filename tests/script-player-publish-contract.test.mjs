@@ -122,8 +122,8 @@ assert.match(
 );
 assert.match(
   scriptQuiz,
-  /function _getPlayerQuizRecommendation[\s\S]*?diagram-flash[\s\S]*?function startRecommendedPlayerQuiz\(\)/,
-  "the player Quiz center recommends a diagram flashcard rep when the selected released practice supports it",
+  /function _getPlayerQuizRecommendation[\s\S]*?const mode = quick;[\s\S]*?function startRecommendedPlayerQuiz\(\)[\s\S]*?_renderPlayerQuizHub\(\);/,
+  "the player Quiz center keeps Quick Hits as the non-launching recommendation so players choose focused modes deliberately",
 );
 assert.match(
   cloudSync,

@@ -28,6 +28,7 @@ let _quizMode = "quick";
 let _quizSignalCategories = [];
 let _quizSignalMultiplier = 1;
 let _playerQuizSelectedMode = "quick";
+let _playerQuizSelectedSource = "script";
 let _quizPositionKey = "respQ";
 let _quizPositionMode = "primary";
 let _quizFinished = false;

@@ -436,16 +436,14 @@ function _getPlayerQuizMode(key = _playerQuizSelectedMode) {
 }
 
 function _renderPlayerQuizModeCards() {
-  const modes = _getPlayerQuizModes();
+  const selectedSource = ["script", "gameplan", "signal"].includes(_playerQuizSelectedSource)
+    ? _playerQuizSelectedSource
+    : "script";
+  const modes = _getPlayerQuizModes().filter((mode) => mode.source === selectedSource);
   if (!modes.some((mode) => mode.key === _playerQuizSelectedMode && !mode.disabled)) {
     _playerQuizSelectedMode = modes.find((mode) => !mode.disabled)?.key || "quick";
   }
-  const visibleModes = modes
-    .filter((mode) => !mode.disabled)
-    .sort((a, b) => {
-      const priority = (mode) => mode.key === "diagram-flash" ? -1 : 0;
-      return priority(a) - priority(b);
-    });
+  const visibleModes = modes.filter((mode) => !mode.disabled);
   return visibleModes.map((mode) => `
     <button type="button"
       class="player-quiz-mode-card${mode.key === _playerQuizSelectedMode ? " is-selected" : ""}${mode.disabled ? " is-disabled" : ""}"
@@ -465,18 +463,15 @@ function _getPlayerQuizRecommendation(options = _getPlayerQuizScriptOptions()) {
     options.find((option) => option.playerSelectable) || null;
   if (!selected) return null;
   const modes = _getPlayerQuizModes({ scriptSource: _getPlayerQuizSelectedScriptRecord() });
-  const flash = modes.find((mode) => mode.key === "diagram-flash" && !mode.disabled);
   const quick = modes.find((mode) => mode.key === "quick" && !mode.disabled);
-  const mode = flash || quick;
+  const mode = quick;
   if (!mode) return null;
   return {
     script: selected,
     mode,
-    title: flash ? "Best next rep: Diagram Flash Cards" : "Best next rep: Quick Hits",
-    detail: flash
-      ? `${selected.name} has ${Number(selected.quizStats?.diagrams || 0)} diagrams ready to study.`
-      : `${selected.name} is ready for a fast five-play check.`,
-    actionLabel: flash ? "Start Flash Cards" : "Start Quick Hits",
+    title: "Best next rep: Quick Hits",
+    detail: `${selected.name} is ready for a fast five-play check. Choose another challenge type below if you want a focused rep.`,
+    actionLabel: "Use Quick Hits",
   };
 }
 
@@ -487,8 +482,9 @@ function startRecommendedPlayerQuiz() {
     return;
   }
   _playerQuizSelectedScriptId = recommendation.script.id;
+  _playerQuizSelectedSource = "script";
   _playerQuizSelectedMode = recommendation.mode.key;
-  startPlayerQuizHubScript();
+  _renderPlayerQuizHub();
 }
 
 function _renderSignalGameCategorySelector(status = _getSignalQuizStatus()) {
@@ -706,7 +702,10 @@ function _renderPlayerQuizHub() {
 
   const select = document.getElementById("playerQuizScriptSelect");
   const scriptPicker = document.getElementById("playerQuizScriptPicker");
-  const scriptStartBtn = document.getElementById("playerQuizStartScriptBtn");
+  const scriptSourceBtn = document.getElementById("playerQuizSelectScriptBtn");
+  const gamePlanSourceBtn = document.getElementById("playerQuizSelectGamePlanBtn");
+  const signalSourceBtn = document.getElementById("playerQuizSelectSignalsBtn");
+  const startBtn = document.getElementById("playerQuizStartSelectedBtn");
   if (select) {
     const options = _getPlayerQuizScriptOptions();
     const selectableOptions = options.filter((option) => option.playerSelectable);
@@ -735,22 +734,13 @@ function _renderPlayerQuizHub() {
     modeGrid.innerHTML = _renderPlayerQuizModeCards();
   }
 
-  if (scriptStartBtn) {
+  if (scriptSourceBtn) {
     const hasScriptOption = _getPlayerQuizScriptOptions().some((option) => option.playerSelectable);
-    const mode = _getPlayerQuizMode();
-    const modeNeedsGamePlan = mode?.source === "gameplan";
-    const modeNeedsSignal = mode?.source === "signal";
-    const scriptStartLabel = !mode || mode.key === "quick"
-      ? "Start Script Quiz"
-      : `Start ${mode.label}`;
-    scriptStartBtn.disabled = !hasScriptOption || modeNeedsGamePlan || modeNeedsSignal;
-    scriptStartBtn.textContent = !hasScriptOption
-      ? "Script Quiz Locked"
-      : modeNeedsGamePlan
-        ? "Use Game Plan"
-        : modeNeedsSignal
-          ? "Use Signals"
-          : scriptStartLabel;
+    scriptSourceBtn.disabled = !hasScriptOption;
+    scriptSourceBtn.textContent = hasScriptOption
+      ? (_playerQuizSelectedSource === "script" ? "Selected" : "Choose practice script")
+      : "Script Quiz Locked";
+    scriptSourceBtn.setAttribute("aria-pressed", String(_playerQuizSelectedSource === "script"));
   }
   if (scriptPicker) {
     scriptPicker.innerHTML = _renderPlayerQuizScriptPicker(_getPlayerQuizScriptOptions());
@@ -774,17 +764,15 @@ function _renderPlayerQuizHub() {
     setInnerHTML(weakSlot, _renderPlayerQuizWeakAreaPanel(summary));
   }
 
-  const gamePlanBtn = document.getElementById("playerQuizStartGamePlanBtn");
   const gamePlanStatusEl = document.getElementById("playerQuizGamePlanStatus");
   const signalStatus = _getSignalQuizStatus();
-  const signalBtn = document.getElementById("playerQuizStartSignalsBtn");
   const signalStatusEl = document.getElementById("playerQuizSignalsStatus");
-  if (gamePlanBtn) {
-    const mode = _getPlayerQuizMode();
-    gamePlanBtn.disabled = !gamePlanStatus.available;
-    gamePlanBtn.textContent = gamePlanStatus.available
-      ? `Start ${mode?.key === "gameplan" ? mode.label : "Game Plan Quiz"}`
+  if (gamePlanSourceBtn) {
+    gamePlanSourceBtn.disabled = !gamePlanStatus.available;
+    gamePlanSourceBtn.textContent = gamePlanStatus.available
+      ? (_playerQuizSelectedSource === "gameplan" ? "Selected" : "Choose game plan")
       : gamePlanStatus.label;
+    gamePlanSourceBtn.setAttribute("aria-pressed", String(_playerQuizSelectedSource === "gameplan"));
   }
   if (gamePlanStatusEl) {
     setInnerHTML(gamePlanStatusEl, `
@@ -793,12 +781,12 @@ function _renderPlayerQuizHub() {
     `);
     gamePlanStatusEl.hidden = !gamePlanStatus.detail;
   }
-  if (signalBtn) {
-    const mode = _getPlayerQuizMode();
-    signalBtn.disabled = !signalStatus.available;
-    signalBtn.textContent = signalStatus.available
-      ? `Start ${mode?.source === "signal" ? mode.label : "Signal Study"}`
+  if (signalSourceBtn) {
+    signalSourceBtn.disabled = !signalStatus.available;
+    signalSourceBtn.textContent = signalStatus.available
+      ? (_playerQuizSelectedSource === "signal" ? "Selected" : "Choose signals")
       : signalStatus.label;
+    signalSourceBtn.setAttribute("aria-pressed", String(_playerQuizSelectedSource === "signal"));
   }
   if (signalStatusEl) {
     const categoryChips = signalStatus.categories.length
@@ -818,6 +806,19 @@ function _renderPlayerQuizHub() {
     signalStatusEl.hidden = !signalStatus.detail;
   }
 
+  if (startBtn) {
+    const mode = _getPlayerQuizMode();
+    const sourceReady = _playerQuizSelectedSource === "gameplan"
+      ? gamePlanStatus.available
+      : _playerQuizSelectedSource === "signal"
+        ? signalStatus.available
+        : _getPlayerQuizScriptOptions().some((option) => option.id === _playerQuizSelectedScriptId && option.playerSelectable);
+    startBtn.disabled = !sourceReady || !mode || mode.disabled;
+    startBtn.textContent = !sourceReady
+      ? "Choose an available quiz source"
+      : `Start ${mode?.label || "Quiz"}`;
+  }
+
   // This function owns refreshes inside the existing hub. Re-entering the page
   // renderer from here calls this function again and can lock the Quiz tab in
   // a recursive render loop.
@@ -833,7 +834,10 @@ function openPlayerQuizHub() {
 // between the dashboard, homework, and leaderboard.
 function openPlayerQuizHubWithMode(modeKey = "") {
   const mode = _getPlayerQuizModes().find((entry) => entry.key === String(modeKey || ""));
-  if (mode && !mode.disabled) _playerQuizSelectedMode = mode.key;
+  if (mode && !mode.disabled) {
+    _playerQuizSelectedSource = mode.source;
+    _playerQuizSelectedMode = mode.key;
+  }
   openPlayerQuizHub();
 }
 
@@ -847,6 +851,7 @@ function openPlayerQuizHubForScript(id = "") {
     return;
   }
   _playerQuizSelectedScriptId = target.id;
+  _playerQuizSelectedSource = "script";
   openPlayerQuizHub();
 }
 
@@ -867,6 +872,7 @@ function openPlayerQuizHubForCurrentScript() {
     return;
   }
   _playerQuizSelectedScriptId = target.id;
+  _playerQuizSelectedSource = "script";
   openPlayerQuizHub();
 }
 
@@ -892,14 +898,36 @@ function setPlayerQuizPositionMode(mode) {
 function setPlayerQuizMode(modeKey) {
   const mode = _getPlayerQuizModes().find((entry) => entry.key === String(modeKey || ""));
   if (!mode || mode.disabled) return;
+  _playerQuizSelectedSource = mode.source;
   _playerQuizSelectedMode = mode.key;
   _renderPlayerQuizHub();
+}
+
+function setPlayerQuizSource(source = "script") {
+  const next = String(source || "").trim().toLowerCase();
+  if (!["script", "gameplan", "signal"].includes(next)) return;
+  _playerQuizSelectedSource = next;
+  const firstAvailable = _getPlayerQuizModes().find((mode) => mode.source === next && !mode.disabled);
+  if (firstAvailable) _playerQuizSelectedMode = firstAvailable.key;
+  _renderPlayerQuizHub();
+}
+
+function startPlayerQuizHubSelection() {
+  const mode = _getPlayerQuizMode();
+  if (!mode || mode.disabled) {
+    showToast("Choose a quiz type before you start.", { type: "warning" });
+    return;
+  }
+  if (mode.source === "gameplan") return startPlayerQuizHubGamePlan();
+  if (mode.source === "signal") return startPlayerQuizHubSignals();
+  startPlayerQuizHubScript();
 }
 
 function setPlayerQuizScriptSource(id) {
   const target = _getPlayerQuizScriptOptions().find((option) => option.id === String(id || ""));
   if (target && !target.playerSelectable) return;
   _playerQuizSelectedScriptId = target ? target.id : "";
+  if (target) _playerQuizSelectedSource = "script";
   const select = document.getElementById("playerQuizScriptSelect");
   if (select) select.value = _playerQuizSelectedScriptId;
   _renderPlayerQuizHub();
@@ -978,7 +1006,7 @@ async function startPlayerQuizHubSignals() {
     showToast(status.detail || "Signal Study is not ready yet.", { type: "warning" });
     return;
   }
-  const button = document.getElementById("playerQuizStartSignalsBtn");
+  const button = document.getElementById("playerQuizStartSelectedBtn");
   if (button) {
     button.disabled = true;
     button.textContent = "Loading Signals...";
