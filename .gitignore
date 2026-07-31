@@ -5,6 +5,7 @@
 .wrangler/
 .mobile-debug/
 .stress-audit/
+.stress-*/
 tests/.env.test
 tests/test-results/
 tests/playwright-report/

@@ -79,33 +79,49 @@ function decodeSig(value) {
 }
 
 async function listPrefix(store, prefix, encoded = false) {
-  const sigs = [];
+  const entries = [];
   let cursor;
   for (let guard = 0; guard < 50; guard += 1) {
     const page = await store.list({ prefix, cursor });
     (page.keys || []).forEach((key) => {
       const raw = String(key.name || "").slice(prefix.length);
       const sig = encoded ? decodeSig(raw) : raw;
-      if (sig) sigs.push(sig);
+      // KV list results include the metadata written alongside each manifest.
+      // Keep it here so callers that only need an index do not have to issue a
+      // second KV read for every key just to distinguish deletion tombstones.
+      if (sig) entries.push({ sig, metadata: key.metadata || null });
     });
     if (page.list_complete || !page.cursor) break;
     cursor = page.cursor;
   }
-  return sigs;
+  return entries;
+}
+
+function isDeletedClipManifestEntry(entry) {
+  const deleted = entry?.metadata?.deleted;
+  return deleted === true || deleted === "true";
 }
 
 export async function listTeamClipSigs(store, env, teamId) {
   const canonicalCandidates = await listPrefix(store, teamClipManifestPrefix(teamId), true);
-  const canonical = [];
-  for (const sig of canonicalCandidates) {
-    const current = await readTeamClipManifest(store, env, teamId, sig);
-    if (current.entries.length) canonical.push(sig);
-  }
+  // Every current write records a `deleted` tombstone in KV metadata. Listing
+  // the prefix therefore provides the clip index directly: avoid one KV get
+  // per current manifest on every app startup merely to re-read that state.
+  // Entries predating metadata are conservatively treated as live; the normal
+  // manifest route still validates their contents before returning clips.
+  const canonical = canonicalCandidates
+    .filter((entry) => !isDeletedClipManifestEntry(entry))
+    .map((entry) => entry.sig);
+  const canonicalSet = new Set(canonicalCandidates.map((entry) => entry.sig));
   if (!(await canReadLegacyForTeam(env, teamId))) return [...new Set(canonical)];
 
   const legacyCandidates = await listPrefix(store, LEGACY_CLIP_PREFIX, false);
   const legacy = [];
-  for (const sig of legacyCandidates) {
+  for (const { sig } of legacyCandidates) {
+    // Legacy manifests do not have trustworthy metadata. Keep their narrow,
+    // compatibility-only content check, but never let one bypass a canonical
+    // manifest (including a canonical deletion tombstone).
+    if (canonicalSet.has(sig)) continue;
     const current = await readTeamClipManifest(store, env, teamId, sig);
     if (current.legacy && current.entries.length) legacy.push(sig);
   }
