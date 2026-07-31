@@ -2149,6 +2149,154 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
     0 0 0 4px var(--color-primary-light);
 }
 
+/* Admin settings is an operations surface, not a first-run upload card. The
+   compact desktop treatment shares the Coach Grid's square, scan-first
+   geometry while phone layouts keep their existing comfortable spacing. */
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .upload-section {
+    align-items: flex-start;
+    min-height: 0;
+    padding: 12px var(--coach-workbench-padding) var(--space-lg);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings {
+    display: grid;
+    gap: var(--coach-grid-gap);
+    max-width: 1500px;
+    padding: 6px;
+    border: 1px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+    box-shadow: var(--coach-grid-shadow);
+    text-align: left;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings .back-btn {
+    width: max-content;
+    min-height: var(--coach-grid-control-height);
+    margin: 0;
+    padding: 4px 8px;
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .admin-settings-import {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px;
+    border: 1px solid var(--coach-grid-border);
+    background: var(--coach-grid-surface);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .admin-settings-kicker {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-2xs);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings .admin-settings-import h2,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings .backup-section h3 {
+    margin: 0;
+    color: var(--color-text);
+    font-size: var(--font-size-md);
+    line-height: 1.2;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings .admin-settings-import p,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings .backup-section p {
+    margin: 3px 0 0;
+    font-size: var(--font-size-xs);
+    line-height: 1.35;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .admin-settings-import-actions,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings .backup-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--coach-grid-gap);
+    flex-wrap: wrap;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .admin-settings-import-actions .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings .backup-buttons .btn {
+    min-height: var(--coach-grid-control-height);
+    padding: 4px 8px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .admin-settings-import-actions .hint {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-2xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .admin-settings-utility-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings > .admin-settings-utility-grid > .backup-section {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    margin: 0;
+    padding: 8px;
+    border: 1px solid var(--coach-grid-border);
+    background: var(--coach-grid-surface);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings > .team-settings-section {
+    margin: 2px 0 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-surface-nav {
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    gap: var(--coach-grid-gap);
+    margin-top: 6px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-surface-nav__item {
+    min-height: 44px;
+    padding: 4px 6px;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface);
+    box-shadow: var(--coach-grid-shadow);
+    transform: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-surface-nav__item strong {
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-surface-nav__item small {
+    font-size: var(--font-size-2xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-surface-nav__item:hover,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-surface-nav__item:focus-visible,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-team-workspace .team-settings-surface-nav__item.is-active {
+    transform: none;
+    box-shadow: inset 3px 0 0 var(--color-primary);
+  }
+}
+
+@media (max-width: 820px) {
+  .admin-settings-utility-grid {
+    display: contents;
+  }
+}
+
 /* ── Player Accounts Admin Panel (pa-*) ──────────────────────────── */
 .pa-overlay {
   position: fixed;
@@ -2812,6 +2960,104 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
     border-width: 1px;
     border-radius: var(--coach-grid-radius);
     box-shadow: var(--coach-grid-shadow);
+  }
+
+  /* Coach access was introduced after the account panel and still carried a
+     light, rounded standalone treatment. Keep its permission editor in the
+     same dense admin language as the roster/account tooling. */
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-panel {
+    width: min(96vw, 980px);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-overlay .pa-header p,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-intro,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-list-head,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-person,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-person strong,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-person span,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-person small,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-detail-head span,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-toggle strong,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-toggle small,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-save span,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-empty {
+    color: var(--color-text-secondary);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-intro,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-list,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-detail,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-group {
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-intro,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-list,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-detail,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-group {
+    padding: 7px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-layout {
+    gap: var(--coach-grid-gap);
+    margin-top: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-list {
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-list-head,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-detail-head {
+    padding: 1px 0 5px;
+    border-bottom-color: var(--coach-grid-divider);
+    color: var(--color-text);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-person {
+    gap: 2px;
+    padding: 6px;
+    border-color: var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-person:hover,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-person.is-selected {
+    border-color: var(--color-primary);
+    background: var(--coach-grid-surface);
+    box-shadow: inset 3px 0 0 var(--color-primary);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-group legend {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-2xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-toggle {
+    gap: 6px;
+    padding: 4px;
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-toggle:hover {
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-access-state {
+    min-height: var(--coach-grid-mini-control-height);
+    padding: 2px 6px;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface-muted);
+    color: var(--color-primary) !important;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-invite-section {
+    margin-top: 6px;
   }
 }
 

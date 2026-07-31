@@ -238,23 +238,27 @@
 
   <!-- Upload Section -->
   <div id="uploadSection" class="upload-section" role="region" aria-label="File upload and settings">
-    <div class="upload-box upload-box--wide-settings" data-testid="upload-box">
+    <div class="upload-box upload-box--wide-settings coach-grid-admin-settings" data-testid="upload-box">
       <button id="backToAppBtn" class="back-btn hidden" data-action="backToApp" data-testid="back-to-app">
         ← Back to Dashboard
       </button>
-      <h2>📁 Upload Your Playbook CSV</h2>
-      <p>Upload your CSV file (headers excluded) to get started</p>
-      <input type="file" id="csvFile" accept=".csv" aria-label="Upload playbook CSV file"
-        data-onchange="handleFileUpload" data-pass="event" data-testid="csv-upload" />
-      <button class="btn btn-primary" data-action="triggerClick" data-target="csvFile">
-        Choose CSV File
-      </button>
-      <p class="hint">Or drag and drop your file here</p>
-      <button class="btn btn-outline mt-sm" data-action="showCSVTemplateModal">
-        📋 CSV Column Template
-      </button>
+      <section class="admin-settings-import" aria-labelledby="adminSettingsImportTitle">
+        <div>
+          <span class="admin-settings-kicker">Admin control center</span>
+          <h2 id="adminSettingsImportTitle">📁 Import playbook data</h2>
+          <p>Upload a CSV without headers to replace this device’s playbook.</p>
+        </div>
+        <div class="admin-settings-import-actions">
+          <input type="file" id="csvFile" accept=".csv" aria-label="Upload playbook CSV file"
+            data-onchange="handleFileUpload" data-pass="event" data-testid="csv-upload" />
+          <button class="btn btn-primary" data-action="triggerClick" data-target="csvFile">Choose CSV File</button>
+          <button class="btn btn-outline" data-action="showCSVTemplateModal">📋 CSV Template</button>
+          <span class="hint">or drag and drop a file here</span>
+        </div>
+      </section>
 
-      <div class="backup-section" data-auth-player-hide="true">
+      <div class="admin-settings-utility-grid">
+      <section class="backup-section" data-auth-player-hide="true">
         <h3>💾 Backup & Restore</h3>
         <p>
           Export your playbook, scripts, and wristbands to a file for backup
@@ -274,8 +278,8 @@
           Backup includes your roster, personnel packages, sub packages, package-specific slot labels, depth charts, and
           other saved team settings.
         </p>
-      </div>
-      <div class="backup-section" data-auth-admin-only="true">
+      </section>
+      <section class="backup-section" data-auth-admin-only="true">
         <h3>🛟 Admin Recovery</h3>
         <p>
           Recovery tools are for fixing a device or investigating publish problems. They are not the normal daily
@@ -286,9 +290,10 @@
             🛟 Recovery Tools
           </button>
         </div>
+      </section>
       </div>
 
-      <div class="backup-section team-settings-section">
+      <section class="backup-section team-settings-section">
         <div class="team-settings-shell coach-grid-team-workspace">
           <div class="team-settings-hero">
             <div class="team-settings-hero-copy">
@@ -524,7 +529,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 
@@ -1575,7 +1580,7 @@
             </div>
 
             <!-- Desktop keeps the script controls in the same operational row. -->
-            <div class="script-toolbar app-command-toolbar" data-auth-player-hide="true">
+            <div class="script-toolbar app-command-toolbar coach-grid-command-strip" data-auth-player-hide="true">
               <div class="script-toolbar-left toolbar-primary">
                 <label class="bulk-select-label">
                   <input type="checkbox" id="bulkSelectAll" data-onchange="selectAllScriptItems" />

@@ -3980,6 +3980,60 @@ body.shell-tablet #playbook .pb-card-actions {
   margin-left: auto;
 }
 
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pb-editor-modal {
+    border: 1px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pb-editor-header {
+    min-height: var(--coach-grid-control-height);
+    padding: 5px 8px 3px;
+    border-bottom-color: var(--coach-grid-border);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pb-editor-call-preview,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pb-editor-personnel-variants {
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface-muted);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pb-editor-nav,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pb-editor-field input,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pb-editor-field select,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pb-editor-field textarea,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pb-editor-actions .btn {
+    min-height: var(--coach-grid-control-height);
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pb-editor-body {
+    padding: 6px 8px 8px !important;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pb-editor-section {
+    margin-bottom: 8px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pb-editor-section-title {
+    margin-bottom: 4px;
+    padding-bottom: 3px;
+    border-bottom-color: var(--coach-grid-divider);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .pb-editor-actions {
+    gap: var(--coach-grid-gap) !important;
+    padding: 6px 8px;
+    border-top-color: var(--coach-grid-border);
+    background: var(--coach-grid-surface-muted);
+  }
+}
+
 @media (max-width: 600px) {
   .pb-editor-modal {
     max-width: 100%;

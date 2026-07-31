@@ -3612,6 +3612,92 @@ kbd {
   flex-wrap: wrap;
 }
 
+/* Recovery is an admin-only operational dialog. Keep its many status blocks
+   dense and visually related to the Team Workspace instead of treating each
+   one as an isolated rounded card. */
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-modal {
+    max-width: 680px;
+    border: 1px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-modal .custom-modal-header {
+    min-height: var(--coach-grid-control-height);
+    padding: 6px 8px;
+    border-bottom-color: var(--coach-grid-border);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-body {
+    gap: var(--coach-grid-gap);
+    padding: 8px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-body > p:first-child {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    line-height: 1.35;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-flow-grid {
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-flow-card,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-explainer,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-ledger,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-ledger-row,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-modal-status,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-warning {
+    padding: 6px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-flow-card,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-ledger,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-modal-status {
+    border-color: var(--coach-grid-border);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-explainer,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-ledger-row {
+    border-color: var(--coach-grid-divider);
+    background: var(--coach-grid-surface);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-explainer {
+    gap: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-explainer-item {
+    gap: 6px;
+    padding: 5px 0;
+    border-bottom-color: var(--coach-grid-divider);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-ledger-list {
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-actions {
+    gap: var(--coach-grid-gap);
+    padding: 6px 8px;
+    border-top-color: var(--coach-grid-border);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .cloud-sync-actions .btn {
+    min-height: var(--coach-grid-control-height);
+    padding: 4px 8px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+}
+
 .staged-restore-modal { max-width: 720px; }
 .staged-restore-flow,
 .staged-restore-metrics {
@@ -5714,6 +5800,78 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
 
 .print-studio-actions .btn {
   min-height: 32px;
+}
+
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio {
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-head {
+    gap: 8px;
+    padding: 8px;
+    border-bottom-color: var(--coach-grid-border);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-head h3 {
+    margin: 1px 0;
+    font-size: var(--font-size-md);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-head p {
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-close,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-controls input,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-controls select,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-actions .btn {
+    min-height: var(--coach-grid-control-height);
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-body {
+    padding: 8px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-controls,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-grid {
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-context {
+    gap: var(--coach-grid-gap);
+    margin: 6px 0 8px;
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-context span,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-card,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-preview-page,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-metric,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-check,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-status {
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-card {
+    gap: 6px;
+    padding: 8px;
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-preview-page,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-metric,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .print-studio-check {
+    padding: 6px;
+    border-color: var(--coach-grid-divider);
+    background: var(--coach-grid-surface);
+  }
 }
 
 @media (max-width: 760px) {

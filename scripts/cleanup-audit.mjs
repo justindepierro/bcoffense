@@ -35,6 +35,15 @@ function getHtmlAssets(html) {
   return { scripts: unique(scripts), styles: unique(styles) };
 }
 
+function getDeferredFeatureAssets(featureLoader) {
+  // Deferred features are deliberately absent from the startup shell and its
+  // precache. Treat their registered script URLs as runtime references so this
+  // audit does not report supported, lazy-loaded features as dead files.
+  return unique(
+    extractAll(featureLoader, /loadDeferredFeature\([^,]+,\s*["'](js\/[^"'?]+\.js)(?:\?[^"']*)?["']\)/g),
+  );
+}
+
 function getServiceWorkerAssets(sw) {
   const assetsMatch = sw.match(/const LOCAL_ASSETS = \[([\s\S]*?)\];/);
   if (!assetsMatch) return [];
@@ -93,6 +102,7 @@ function audit() {
   const html = read("index.html");
   const sw = read("sw.js");
   const htmlAssets = getHtmlAssets(html);
+  const deferredJs = getDeferredFeatureAssets(read("js/feature-loader.js"));
   const swAssets = getServiceWorkerAssets(sw);
   const jsFiles = walk("js").filter((file) => file.endsWith(".js")).sort();
   const cssFiles = walk("css").filter((file) => file.endsWith(".css")).sort();
@@ -136,7 +146,8 @@ function audit() {
   const linkedCss = new Set(htmlAssets.styles.filter((asset) => asset.startsWith("css/")));
   const cachedAssets = new Set(swAssets);
 
-  const jsNotInIndex = jsFiles.filter((file) => !loadedJs.has(file));
+  const runtimeJs = new Set([...loadedJs, ...deferredJs]);
+  const jsNotInIndex = jsFiles.filter((file) => !runtimeJs.has(file));
   const cssNotLinked = cssFiles.filter((file) => !linkedCss.has(file));
   const indexAssetsMissing = [...htmlAssets.scripts, ...htmlAssets.styles].filter(
     (asset) => !exists(asset),
@@ -153,6 +164,7 @@ function audit() {
       dataActions: unique(actions.map(({ name }) => name)).length,
       declarativeHandlers: unique(inputHandlers.map(({ name }) => name)).length,
     },
+    deferredJs,
     missingActions,
     missingInputHandlers,
     jsNotInIndex,

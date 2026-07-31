@@ -1445,3 +1445,132 @@
   color: var(--color-text-placeholder);
   text-align: center;
 }
+
+/* Coach Grid: Installation is operational tracking, not a landing page.
+   This desktop treatment preserves the progress ring and all dedicated print
+   classes while making controls, category cards, and checklist rows read as
+   one compact staff worksheet. */
+@media screen and (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-container {
+    max-width: none;
+    padding: 8px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-header {
+    gap: var(--coach-grid-gap);
+    margin-bottom: 6px;
+    padding: 6px 8px;
+    border: 1px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+    color: var(--color-text);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-title {
+    font-size: var(--font-size-md);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-subtitle,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-overall-label {
+    color: var(--color-text-secondary);
+    opacity: 1;
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-header-right,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-header-actions {
+    gap: var(--coach-grid-gap);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-header-actions .btn {
+    min-height: var(--coach-grid-control-height);
+    padding: 3px 8px;
+    border-radius: var(--coach-grid-radius);
+    box-shadow: var(--coach-grid-shadow);
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-overall-ring {
+    width: 58px;
+    height: 58px;
+    margin-bottom: 2px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-overall-ring::before {
+    width: 46px;
+    height: 46px;
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-overall-pct {
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-readiness {
+    gap: var(--coach-grid-gap);
+    margin-bottom: 6px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-readiness-item {
+    padding: 6px;
+    border: 1px solid var(--coach-grid-divider);
+    border-top-width: 3px;
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-readiness-val {
+    font-size: var(--font-size-xl);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-category-grid {
+    gap: var(--coach-grid-gap);
+    margin-bottom: 6px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-cat-card {
+    min-height: 54px;
+    padding: 5px 7px;
+    border-color: var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-cat-name {
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-detail {
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-detail-header,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-detail-actions {
+    gap: var(--coach-grid-gap);
+    padding: 5px 7px;
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-detail-actions .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-search {
+    min-height: var(--coach-grid-control-height);
+    padding: 3px 7px;
+    border-radius: var(--coach-grid-radius);
+    font-size: var(--font-size-xs);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #installation .install-item {
+    min-height: var(--coach-grid-compact-control-height);
+    padding: 4px 7px;
+    border-color: var(--coach-grid-divider);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface);
+  }
+}
