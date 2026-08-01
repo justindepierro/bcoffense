@@ -2864,6 +2864,90 @@ body[data-auth-role="player"]
   font-size: var(--font-size-sm);
 }
 
+.script-period-manager-modal {
+  width: min(680px, calc(100vw - (var(--space-md) * 2)));
+}
+
+.script-period-manager-list {
+  display: grid;
+  gap: var(--space-xs);
+  max-height: min(54vh, 460px);
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.script-period-manager-item {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: 54px;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--coach-grid-line, var(--color-border-med));
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.script-period-manager-order {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.script-period-manager-main {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.script-period-manager-main strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.script-period-manager-main span,
+.script-period-manager-empty {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.script-period-manager-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.script-period-manager-actions .btn {
+  min-height: 30px;
+  padding-inline: 8px;
+}
+
+.script-period-manager-empty {
+  padding: var(--space-lg) var(--space-md);
+  border: 1px dashed var(--color-border-med);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+@media (max-width: 620px) {
+  .script-period-manager-item {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .script-period-manager-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
 .script-period-color-palette {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

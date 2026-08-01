@@ -1374,9 +1374,9 @@
                 title="Launch a play-call quiz from the current script — great for team study">
                 🧩 Quiz
               </button>
-              <button type="button" class="btn btn-sm btn-outline" data-action="openLoadWristbandToScriptModal"
-                title="Load plays from a saved wristband into this practice script">
-                📟 Wristband
+              <button type="button" class="btn btn-sm btn-outline" data-action="openScriptWristbandNumbersModal"
+                title="Show saved wristband numbers on this practice script without adding plays">
+                #️⃣ Wristband Numbers
               </button>
               <button type="button" class="btn btn-sm btn-outline page-actions-open-btn" data-action="openPageActions"
                 title="Load, print, display, wristband, send, and advanced script tools" aria-haspopup="dialog">
@@ -1778,6 +1778,10 @@
                 <details class="script-drawer-section" open>
                   <summary>Arrange</summary>
                   <div class="script-action-cluster" data-cluster="arrange">
+                    <button class="btn btn-sm btn-primary" data-action="openScriptPeriodManager"
+                      title="Quickly organize, duplicate, reorder, or delete practice periods">
+                      🗂️ Organize Periods
+                    </button>
                     <button class="btn btn-sm" data-action="openScriptReorderModal"
                       title="Reorder plays in a chosen period">
                       🗂️ Reorder
@@ -1909,7 +1913,7 @@
               </div>
               <div class="wristband-integration-panel" data-auth-player-hide="true">
                 <div class="integration-header" data-action="toggleCollapsiblePanel">
-                  <strong>🏈 Wristband Integration</strong>
+                  <strong>#️⃣ Wristband Numbers</strong>
                   <span class="toggle-icon">▼</span>
                 </div>
                 <div class="integration-content">
@@ -1920,8 +1924,8 @@
                   </div>
                   <div class="wristband-actions-row">
                     <button class="btn btn-sm" data-action="openLoadWristbandToScriptModal"
-                      title="Add plays from a wristband to script">
-                      ➕ Load Plays
+                      title="Add plays from a wristband to this script">
+                      ➕ Add Plays
                     </button>
                     <button class="btn btn-sm" data-action="highlightPlaysNotOnWristband"
                       title="Highlight plays not on selected wristband">

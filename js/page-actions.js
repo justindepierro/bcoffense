@@ -33,7 +33,7 @@ const PAGE_ACTIONS_CONFIG = {
     title: "Practice Script",
     verbs: [
       { icon: "📂", label: "Load", keepOpen: true, run: openScriptLoadView },
-      { icon: "📟", label: "Wristband", sublabel: "Load saved plays", run: () => _paCall("openLoadWristbandToScriptModal") },
+      { icon: "#️⃣", label: "Wristband Numbers", sublabel: "Show numbers on this script", run: () => _paCall("openScriptWristbandNumbersModal") },
       { icon: "🖨️", label: "Print", run: () => _paCall("generatePDF") },
       { icon: "⚙️", label: "Display", sublabel: _paScriptDisplayStatus, run: () => _paCall("toggleScriptDisplayPanel") },
     ],
@@ -42,11 +42,13 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "🗂️", label: "Print Packet", run: () => _paCall("openScriptPacketBuilder") },
       { icon: "▶️", label: "Present", run: () => _paCall("openScriptPresentation") },
       { icon: "🎯", label: "Send to Game Plan", run: () => _paCall("sendScriptToGamePlan") },
+      { icon: "➕", label: "Add Plays from Wristband", run: () => _paCall("openLoadWristbandToScriptModal") },
+      { icon: "🗂️", label: "Organize Periods", run: () => _paCall("openScriptPeriodManager") },
       { icon: "🃏", label: "Send Script to Wristband", run: () => _paCall("sendScriptToWristband") },
       { icon: "📄", label: "Send to Call Sheet", run: () => _paCall("sendScriptToCallSheet") },
       { icon: "🗂️", label: "Build Index Card", sublabel: "Smart 4×6 front / back", run: () => _paCall("sendScriptToIndexCallSheet") },
       { icon: "🖨️", label: "Print Studio", run: () => _paCall("openPrintStudio") },
-      { icon: "🛠️", label: "Workspace Tools", run: () => _paCall("openScriptToolsDrawer") },
+      { icon: "🛠️", label: "Workspace Tools", keepOpen: true, run: openScriptToolsFromPageActions },
     ],
   },
 
@@ -166,6 +168,14 @@ const PAGE_ACTIONS_CONFIG = {
 function _paCall(name, ...args) {
   if (typeof window[name] === "function") return window[name](...args);
   return undefined;
+}
+
+function openScriptToolsFromPageActions() {
+  // The drawer sits beneath the Actions overlay in the layer stack. Finish
+  // the overlay's close transition before opening it so the control always
+  // becomes visible instead of appearing behind a fading sheet.
+  closePageActions();
+  setTimeout(() => _paCall("openScriptToolsDrawer"), 200);
 }
 
 function _paGamePlanSnapshotCount() {

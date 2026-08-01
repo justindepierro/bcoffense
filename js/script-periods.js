@@ -529,6 +529,129 @@ function reorderPeriodById(sourcePeriodId, targetPeriodId, position = "before") 
   return true;
 }
 
+function _getScriptPeriodManagerEntries() {
+  return script
+    .map((item, index) => {
+      if (!item?.isSeparator) return null;
+      const bounds = getPeriodBlockBounds(index);
+      return {
+        id: String(item.id),
+        index,
+        label: item.label || "Untitled Period",
+        minutes: Number(item.minutes) || 0,
+        playCount: bounds ? Math.max(0, bounds.endIndex - bounds.startIndex - 1) : 0,
+      };
+    })
+    .filter(Boolean);
+}
+
+function openScriptPeriodManager() {
+  const existing = document.getElementById("scriptPeriodManagerModal");
+  if (existing) closeScriptPeriodManager({ returnFocus: false });
+
+  document.body.insertAdjacentHTML("beforeend", `
+    <div id="scriptPeriodManagerModal" class="modal-overlay show" data-action="closeScriptPeriodManagerOverlay">
+      <div class="modal-content modal-content-md script-period-manager-modal" role="dialog" aria-modal="true" aria-labelledby="scriptPeriodManagerTitle">
+        <div class="modal-header-row">
+          <div>
+            <h3 class="modal-title" id="scriptPeriodManagerTitle">🗂️ Organize Practice Periods</h3>
+            <p class="modal-helper-text">Move whole periods, change a period’s play order, duplicate it, or remove it with its plays.</p>
+          </div>
+          <button class="modal-close-btn" data-action="closeScriptPeriodManager" aria-label="Close period organizer">✕</button>
+        </div>
+        <div id="scriptPeriodManagerList" class="script-period-manager-list"></div>
+        <div class="modal-action-row mt-md">
+          <button class="btn btn-primary" data-action="openScriptPeriodCreatorFromManager">＋ Add Period</button>
+          <button class="btn" data-action="closeScriptPeriodManager">Done</button>
+        </div>
+      </div>
+    </div>
+  `);
+  renderScriptPeriodManager();
+  const overlay = document.getElementById("scriptPeriodManagerModal");
+  if (typeof openLayer === "function" && overlay) {
+    openLayer(overlay, {
+      id: "scriptPeriodManagerModal",
+      scrollElement: overlay.querySelector(".script-period-manager-list") || overlay,
+      blocking: true,
+    });
+  }
+}
+
+function closeScriptPeriodManager(eventOrOptions = {}) {
+  const isEvent = eventOrOptions && typeof eventOrOptions.target !== "undefined";
+  if (isEvent && eventOrOptions.target.id !== "scriptPeriodManagerModal") return;
+  const overlay = document.getElementById("scriptPeriodManagerModal");
+  if (typeof closeLayer === "function") {
+    closeLayer("scriptPeriodManagerModal", isEvent ? {} : eventOrOptions);
+  }
+  overlay?.remove();
+}
+
+function openScriptPeriodCreatorFromManager() {
+  closeScriptPeriodManager();
+  addSeparator();
+}
+
+function renderScriptPeriodManager() {
+  const list = document.getElementById("scriptPeriodManagerList");
+  if (!list) return;
+  const periods = _getScriptPeriodManagerEntries();
+  if (!periods.length) {
+    list.innerHTML = '<div class="script-period-manager-empty">No periods yet. Add one to start building this practice.</div>';
+    return;
+  }
+
+  list.innerHTML = periods.map((period, index) => `
+    <article class="script-period-manager-item">
+      <div class="script-period-manager-order" aria-label="Period ${index + 1}">${index + 1}</div>
+      <div class="script-period-manager-main">
+        <strong>${escapeHtml(period.label)}</strong>
+        <span>${period.playCount} play${period.playCount === 1 ? "" : "s"} · ${period.minutes} min</span>
+      </div>
+      <div class="script-period-manager-actions" aria-label="Actions for ${escapeHtml(period.label)}">
+        <button class="btn btn-sm" data-action="moveScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}:up" ${index === 0 ? "disabled" : ""} title="Move ${escapeHtml(period.label)} up" aria-label="Move ${escapeHtml(period.label)} up">↑</button>
+        <button class="btn btn-sm" data-action="moveScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}:down" ${index === periods.length - 1 ? "disabled" : ""} title="Move ${escapeHtml(period.label)} down" aria-label="Move ${escapeHtml(period.label)} down">↓</button>
+        <button class="btn btn-sm" data-action="reorderScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}" title="Arrange plays in ${escapeHtml(period.label)}">↕ Plays</button>
+        <button class="btn btn-sm" data-action="duplicateScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}" title="Duplicate ${escapeHtml(period.label)}" aria-label="Duplicate ${escapeHtml(period.label)}">⧉</button>
+        <button class="btn btn-sm btn-danger" data-action="deleteScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}" title="Delete ${escapeHtml(period.label)} and its plays" aria-label="Delete ${escapeHtml(period.label)} and its plays">✕</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+function moveScriptPeriodFromManager(value) {
+  const [periodId, direction] = String(value || "").split(":");
+  const periods = _getScriptPeriodManagerEntries();
+  const sourceIndex = periods.findIndex((period) => period.id === periodId);
+  const targetIndex = direction === "up" ? sourceIndex - 1 : sourceIndex + 1;
+  if (sourceIndex < 0 || targetIndex < 0 || targetIndex >= periods.length) return;
+  const target = periods[targetIndex];
+  const moved = reorderPeriodById(periodId, target.id, direction === "up" ? "before" : "after");
+  if (moved) renderScriptPeriodManager();
+}
+
+function reorderScriptPeriodFromManager(periodId) {
+  const entry = _getScriptPeriodManagerEntries().find((period) => period.id === String(periodId));
+  if (!entry) return;
+  closeScriptPeriodManager();
+  openPeriodReorderModal(entry.index);
+}
+
+function duplicateScriptPeriodFromManager(periodId) {
+  const entry = _getScriptPeriodManagerEntries().find((period) => period.id === String(periodId));
+  if (!entry) return;
+  duplicatePeriod(entry.index);
+  renderScriptPeriodManager();
+}
+
+async function deleteScriptPeriodFromManager(periodId) {
+  const entry = _getScriptPeriodManagerEntries().find((period) => period.id === String(periodId));
+  if (!entry) return;
+  await removeFromScript(entry.index);
+  renderScriptPeriodManager();
+}
+
 function handlePeriodDragStart(event, periodId) {
   if (typeof isAdminUser === "function" && !isAdminUser()) {
     event.preventDefault();

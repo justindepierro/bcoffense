@@ -311,7 +311,11 @@ function setScriptWristbandSelection(wristbandId, shouldRender = true) {
   if (!normalizedId) {
     scriptWristband = null;
     infoDiv.textContent = "";
-    if (shouldRender) renderScript();
+    if (shouldRender) {
+      markScriptDirty();
+      scheduleScriptAutosave();
+      renderScript();
+    }
     return;
   }
 
@@ -321,7 +325,11 @@ function setScriptWristbandSelection(wristbandId, shouldRender = true) {
     scriptWristband = null;
     infoDiv.textContent = "";
     select.value = "";
-    if (shouldRender) renderScript();
+    if (shouldRender) {
+      markScriptDirty();
+      scheduleScriptAutosave();
+      renderScript();
+    }
     return;
   }
 
@@ -334,7 +342,11 @@ function setScriptWristbandSelection(wristbandId, shouldRender = true) {
     : 0;
   infoDiv.textContent = `Loaded: ${wb.title} • ${wb.cards ? wb.cards.length : 1} card(s) • ${totalPlays} plays`;
 
-  if (shouldRender) renderScript();
+  if (shouldRender) {
+    markScriptDirty();
+    scheduleScriptAutosave();
+    renderScript();
+  }
 }
 
 function restoreSavedScriptWorkspace(workspace) {

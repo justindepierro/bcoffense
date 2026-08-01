@@ -1,3 +1,88 @@
+function openScriptWristbandNumbersModal() {
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
+  if (saved.length === 0) {
+    showToast("No saved wristbands found — save one in Wristband Maker first", {
+      type: "info",
+      duration: 4500,
+    });
+    return;
+  }
+
+  const options = saved.map((wristband) => {
+    const cellsPerCard = getWristbandRecordCellCount(wristband);
+    const count = Array.isArray(wristband.cards)
+      ? wristband.cards.reduce((total, card) => {
+        const cells = Array.isArray(card?.data) ? card.data : card;
+        return total + (Array.isArray(cells)
+          ? cells.slice(0, cellsPerCard).filter((play) => play && typeof play === "object").length
+          : 0);
+      }, 0)
+      : 0;
+    const selected = Number(scriptWristband?.id) === Number(wristband.id) ? " selected" : "";
+    return `<option value="${escapeHtml(String(wristband.id))}"${selected}>${escapeHtml(wristband.title)} · ${count} plays</option>`;
+  }).join("");
+
+  document.body.insertAdjacentHTML("beforeend", `
+    <div id="scriptWristbandNumbersModal" class="modal-overlay show" data-action="closeScriptWristbandNumbersModalOverlay">
+      <div class="modal-content modal-content-sm" role="dialog" aria-modal="true" aria-labelledby="scriptWristbandNumbersTitle">
+        <div class="modal-header-row">
+          <h3 class="modal-title" id="scriptWristbandNumbersTitle">#️⃣ Wristband Numbers</h3>
+          <button data-action="closeScriptWristbandNumbersModal" class="modal-close-btn" aria-label="Close wristband numbers modal">✕</button>
+        </div>
+        <p class="modal-helper-text">This only overlays matching wristband numbers on plays already in your script. It does not add or remove plays.</p>
+        <div class="mb-md">
+          <label class="modal-field-label" for="scriptWristbandNumbersSelect">Saved wristband:</label>
+          <select id="scriptWristbandNumbersSelect" class="modal-field-input">${options}</select>
+        </div>
+        <div class="modal-action-row mt-md">
+          <button data-action="applyScriptWristbandNumbers" class="btn btn-primary modal-btn-lg">#️⃣ Show Numbers</button>
+          <button data-action="clearScriptWristbandNumbers" class="btn modal-btn-lg">Clear</button>
+        </div>
+        <button data-action="switchScriptWristbandModalToImport" class="btn btn-link modal-secondary-action">➕ Need to add plays from a wristband instead?</button>
+      </div>
+    </div>
+  `);
+  const overlay = document.getElementById("scriptWristbandNumbersModal");
+  if (typeof openLayer === "function" && overlay) {
+    openLayer(overlay, {
+      id: "scriptWristbandNumbersModal",
+      scrollElement: overlay.querySelector(".modal-content") || overlay,
+      blocking: true,
+      onEscape: () => closeScriptWristbandNumbersModal(),
+    });
+  }
+}
+
+function closeScriptWristbandNumbersModal(eventOrOptions = {}) {
+  const isEvent = eventOrOptions && typeof eventOrOptions.target !== "undefined";
+  if (isEvent && eventOrOptions.target.id !== "scriptWristbandNumbersModal") return;
+  const overlay = document.getElementById("scriptWristbandNumbersModal");
+  if (typeof closeLayer === "function") {
+    closeLayer("scriptWristbandNumbersModal", isEvent ? {} : eventOrOptions);
+  }
+  overlay?.remove();
+}
+
+function applyScriptWristbandNumbers() {
+  const selected = document.getElementById("scriptWristbandNumbersSelect");
+  const wristbandId = parseInt(selected?.value, 10);
+  if (!Number.isFinite(wristbandId)) return;
+  setScriptWristbandSelection(wristbandId, true);
+  closeScriptWristbandNumbersModal();
+  showToast("Wristband numbers are now shown on matching script plays.", { type: "success" });
+}
+
+function clearScriptWristbandNumbers() {
+  setScriptWristbandSelection(null, true);
+  closeScriptWristbandNumbersModal();
+  showToast("Wristband numbers cleared from this script.", { type: "info" });
+}
+
+function switchScriptWristbandModalToImport() {
+  closeScriptWristbandNumbersModal();
+  openLoadWristbandToScriptModal();
+}
+
 function openLoadWristbandToScriptModal() {
   const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
 
