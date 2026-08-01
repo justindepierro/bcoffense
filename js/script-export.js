@@ -2,7 +2,10 @@ function openLoadWristbandToScriptModal() {
   const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
 
   if (saved.length === 0) {
-    showToast("No saved wristbands found — create one first");
+    showToast("No saved wristbands found — save one in Wristband Maker first", {
+      type: "info",
+      duration: 4500,
+    });
     return;
   }
 
@@ -25,13 +28,15 @@ function openLoadWristbandToScriptModal() {
     <div id="loadWbToScriptModal" class="modal-overlay show" data-action="closeLoadWbToScriptModalOverlay">
       <div class="modal-content modal-content-sm" role="dialog" aria-modal="true" aria-labelledby="loadWbToScriptTitle">
         <div class="modal-header-row">
-          <h3 class="modal-title" id="loadWbToScriptTitle">➕ Load Wristband Plays to Script</h3>
+          <h3 class="modal-title" id="loadWbToScriptTitle">📟 Add Wristband Plays</h3>
           <button data-action="closeLoadWbToScriptModal" class="modal-close-btn" aria-label="Close load wristband modal">✕</button>
         </div>
 
+        <p class="modal-helper-text">Choose a saved wristband and add its active plays to this practice script.</p>
+
         <div class="mb-md">
           <label class="modal-field-label">Select Wristband:</label>
-          <select id="wbToScriptSelect" class="modal-field-input">
+          <select id="wbToScriptSelect" class="modal-field-input" data-onchange="refreshLoadWbToScriptCards">
             ${wristbandOptions}
           </select>
         </div>
@@ -45,15 +50,9 @@ function openLoadWristbandToScriptModal() {
         </div>
 
         <div class="mb-md">
-          <label class="modal-field-label">Card(s) to load:</label>
-          <select id="wbToScriptCards" class="modal-field-input">
-            <option value="all">All Cards</option>
-            <option value="1">Card 1 Only</option>
-            <option value="2">Card 2 Only</option>
-            <option value="3">Card 3 Only</option>
-            <option value="4">Card 4 Only</option>
-            <option value="5">Card 5 Only</option>
-          </select>
+          <label class="modal-field-label" for="wbToScriptCards">Cards to add:</label>
+          <select id="wbToScriptCards" class="modal-field-input"></select>
+          <div id="wbToScriptSummary" class="modal-field-help"></div>
         </div>
 
         <div class="modal-action-row mt-md">
@@ -69,6 +68,36 @@ function openLoadWristbandToScriptModal() {
   `;
 
   document.body.insertAdjacentHTML("beforeend", modalHtml);
+  refreshLoadWbToScriptCards();
+}
+
+function refreshLoadWbToScriptCards() {
+  const wristbandSelect = document.getElementById("wbToScriptSelect");
+  const cardsSelect = document.getElementById("wbToScriptCards");
+  const summary = document.getElementById("wbToScriptSummary");
+  if (!wristbandSelect || !cardsSelect) return;
+
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
+  const wristband = saved[parseInt(wristbandSelect.value, 10)];
+  const cards = Array.isArray(wristband?.cards) ? wristband.cards : [];
+  const cellsPerCard = getWristbandRecordCellCount(wristband);
+  const options = ["<option value=\"all\">All cards</option>"];
+  let totalPlays = 0;
+
+  cards.forEach((card, index) => {
+    const cellData = Array.isArray(card?.data) ? card.data : card;
+    const playCount = Array.isArray(cellData)
+      ? cellData.slice(0, cellsPerCard).filter((play) => play && typeof play === "object").length
+      : 0;
+    totalPlays += playCount;
+    const label = String(card?.name || `Card ${index + 1}`).trim() || `Card ${index + 1}`;
+    options.push(`<option value="${index + 1}">${escapeHtml(label)} · ${playCount} play${playCount === 1 ? "" : "s"}</option>`);
+  });
+
+  cardsSelect.innerHTML = options.join("");
+  if (summary) {
+    summary.textContent = `${cards.length} card${cards.length === 1 ? "" : "s"} · ${totalPlays} active play${totalPlays === 1 ? "" : "s"}`;
+  }
 }
 
 function closeLoadWbToScriptModal(event) {

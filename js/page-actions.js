@@ -33,6 +33,7 @@ const PAGE_ACTIONS_CONFIG = {
     title: "Practice Script",
     verbs: [
       { icon: "📂", label: "Load", keepOpen: true, run: openScriptLoadView },
+      { icon: "📟", label: "Wristband", sublabel: "Load saved plays", run: () => _paCall("openLoadWristbandToScriptModal") },
       { icon: "🖨️", label: "Print", run: () => _paCall("generatePDF") },
       { icon: "⚙️", label: "Display", sublabel: _paScriptDisplayStatus, run: () => _paCall("toggleScriptDisplayPanel") },
     ],
@@ -41,7 +42,7 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "🗂️", label: "Print Packet", run: () => _paCall("openScriptPacketBuilder") },
       { icon: "▶️", label: "Present", run: () => _paCall("openScriptPresentation") },
       { icon: "🎯", label: "Send to Game Plan", run: () => _paCall("sendScriptToGamePlan") },
-      { icon: "🃏", label: "Send to Wristband", run: () => _paCall("sendScriptToWristband") },
+      { icon: "🃏", label: "Send Script to Wristband", run: () => _paCall("sendScriptToWristband") },
       { icon: "📄", label: "Send to Call Sheet", run: () => _paCall("sendScriptToCallSheet") },
       { icon: "🗂️", label: "Build Index Card", sublabel: "Smart 4×6 front / back", run: () => _paCall("sendScriptToIndexCallSheet") },
       { icon: "🖨️", label: "Print Studio", run: () => _paCall("openPrintStudio") },
@@ -270,6 +271,8 @@ function renderPageActionsRoot(config) {
       } catch (e) {
         sub = "";
       }
+    } else if (typeof verb.sublabel === "string") {
+      sub = verb.sublabel;
     }
     html += `<button type="button" class="page-actions-tile" data-action="runPageAction" data-arg="verb:${index}">
       <span class="page-actions-tile__icon" aria-hidden="true">${verb.icon || ""}</span>
