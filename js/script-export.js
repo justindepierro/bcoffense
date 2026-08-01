@@ -8,13 +8,16 @@ function openLoadWristbandToScriptModal() {
 
   const wristbandOptions = saved
     .map((wristband, index) => {
-      const totalPlays = wristband.cards
-        ? wristband.cards.reduce(
-          (sum, card) => sum + (Array.isArray(card?.data) ? card.data.filter((play) => play !== null).length : 0),
-          0,
-        )
+      const cellsPerCard = getWristbandRecordCellCount(wristband);
+      const totalPlays = Array.isArray(wristband.cards)
+        ? wristband.cards.reduce((sum, card) => {
+          const cellData = Array.isArray(card?.data) ? card.data : card;
+          return sum + (Array.isArray(cellData)
+            ? cellData.slice(0, cellsPerCard).filter((play) => play && typeof play === "object").length
+            : 0);
+        }, 0)
         : 0;
-      return `<option value="${index}">${wristband.title} (${totalPlays} plays)</option>`;
+      return `<option value="${index}">${escapeHtml(wristband.title)} (${totalPlays} plays)</option>`;
     })
     .join("");
 
@@ -100,19 +103,22 @@ function executeLoadWbToScript() {
   saveScriptState();
 
   const playsToAdd = [];
+  const cellsPerCard = getWristbandRecordCellCount(wristband);
   wristband.cards.forEach((card, cardIndex) => {
     if (cardChoice !== "all" && parseInt(cardChoice, 10) !== cardIndex + 1) {
       return;
     }
-    if (!Array.isArray(card?.data)) return;
-    card.data.forEach((play) => {
-      if (play !== null) {
-        playsToAdd.push(
-          typeof copyPlayWithSourceIdentity === "function"
-            ? copyPlayWithSourceIdentity(play, { id: Date.now() + Math.random() })
-            : { ...play },
-        );
-      }
+    // Saved classic cards use card.data; accept the legacy array-shaped card
+    // as well. Player cards intentionally expose only their active rows.
+    const cellData = Array.isArray(card?.data) ? card.data : card;
+    if (!Array.isArray(cellData)) return;
+    cellData.slice(0, cellsPerCard).forEach((play) => {
+      if (!play || typeof play !== "object") return;
+      playsToAdd.push(
+        typeof copyPlayWithSourceIdentity === "function"
+          ? copyPlayWithSourceIdentity(play, { id: Date.now() + Math.random() })
+          : { ...play, id: Date.now() + Math.random() },
+      );
     });
   });
 
