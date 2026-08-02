@@ -8739,6 +8739,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     transform: translateX(calc(100% + 12px));
   }
 
+  /* Match the desktop selector above so the open state wins over its
+     off-canvas transform. Without this, the backdrop opens while the drawer
+     remains just outside the right edge of the viewport. */
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-tools-drawer.open {
+    transform: translateX(0);
+  }
+
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-tools-drawer-header {
     gap: var(--coach-grid-gap);
     padding: 6px 8px;
