@@ -1209,6 +1209,7 @@
       Accept: "application/json",
       "X-BC-Auth-Mode": "json",
       "X-BC-Request-Id": workspaceRequestId(method),
+      "X-BC-Workspace-Transport": "gzip-base64-json-v1",
     };
     if (bodyText) headers["Content-Type"] = "application/json";
     if (method === "PUT" && expectedRevision !== undefined && expectedRevision !== null) {
@@ -1269,6 +1270,17 @@
           updatedAt: "",
           size: 0,
         };
+      }
+      if (data.workspaceTransport === "gzip-base64-json-v1") {
+        const encoded = String(data.workspaceCompressed || "");
+        if (!encoded || typeof DecompressionStream !== "function") {
+          throw new Error("This browser needs an update before it can load the compressed team workspace.");
+        }
+        const binary = atob(encoded);
+        const bytes = new Uint8Array(binary.length);
+        for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+        const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+        data.workspace = JSON.parse(await new Response(stream).text());
       }
       if (!data.workspace || typeof data.workspace !== "object") {
         throw new Error("Canonical workspace did not include restorable team data.");

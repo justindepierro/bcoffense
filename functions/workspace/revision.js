@@ -69,34 +69,41 @@ function byteLength(value) {
   return new TextEncoder().encode(value).byteLength;
 }
 
+function base64FromArrayBuffer(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = "";
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+  return btoa(binary);
+}
+
 // Complete team workspaces can be large when a coach intentionally keeps
-// several full Call Sheet templates. Stream gzip to browsers that support it
-// rather than forcing the Pages Function to send an oversized plain JSON body.
-// Fetch transparently decodes Content-Encoding, so the client keeps the same
-// response contract and older runtimes safely fall back to authJson.
-function workspaceJson(context, data, init = {}) {
-  const text = JSON.stringify(data);
-  const acceptsGzip = /(?:^|,)\s*gzip\s*(?:;|,|$)/i.test(
-    context.request.headers.get("Accept-Encoding") || "",
-  );
+// several full Call Sheet templates. New clients explicitly opt into this
+// compact envelope; cached clients retain the original response shape rather
+// than receiving an unfamiliar Content-Encoding contract.
+async function workspaceJson(context, data, init = {}) {
+  const workspaceText = JSON.stringify(data.workspace || {});
+  const acceptsCompactTransport = context.request.headers.get("X-BC-Workspace-Transport") === "gzip-base64-json-v1";
   if (
-    byteLength(text) < 512 * 1024 ||
-    !acceptsGzip ||
+    byteLength(workspaceText) < 512 * 1024 ||
+    !acceptsCompactTransport ||
     typeof CompressionStream !== "function" ||
     typeof Blob !== "function"
   ) {
     return authJson(data, init);
   }
 
-  const headers = new Headers(init.headers || {});
-  headers.set("Content-Type", "application/json; charset=utf-8");
-  headers.set("Cache-Control", "no-store");
-  headers.set("Content-Encoding", "gzip");
-  headers.append("Vary", "Accept-Encoding");
-  return withSecurityHeaders(new Response(
-    new Blob([text]).stream().pipeThrough(new CompressionStream("gzip")),
-    { ...init, headers },
-  ));
+  const stream = new Blob([workspaceText]).stream().pipeThrough(new CompressionStream("gzip"));
+  const workspaceCompressed = base64FromArrayBuffer(await new Response(stream).arrayBuffer());
+  const compact = { ...data };
+  delete compact.workspace;
+  return authJson({
+    ...compact,
+    workspaceTransport: "gzip-base64-json-v1",
+    workspaceCompressed,
+  }, init);
 }
 
 function isoFromSeconds(value) {
@@ -308,7 +315,7 @@ async function getWorkspace(context, opts = {}) {
         headers: { "Cache-Control": "private, no-store", "ETag": etag, "Vary": "Cookie" },
       }));
     }
-    return workspaceJson(context, {
+    return await workspaceJson(context, {
       ok: true,
       workspace,
       revision: current.pointer.workspaceRevision,
