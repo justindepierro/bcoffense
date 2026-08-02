@@ -86,24 +86,12 @@ const BC_CRITICAL_GLOBALS = [
   "_gpPlaySignature", "getCategoryDisplayName", "getCurrentAuthUser",
 ];
 
-// Probe a global by NAME. Critical: `const`/`let`/`class` globals do NOT become
-// properties of `window` (only `var` and `function` declarations do), so
-// `window[name]` gives false negatives for e.g. `const storageManager`. Running
-// `typeof <name>` inside a `new Function` evaluates in global scope and sees all
-// declaration kinds. The names are a hardcoded manifest (never user input), so
-// this is injection-safe.
+// Every name in this manifest is part of the intentional public global
+// contract: declarations are functions or explicitly exported to window.
+// Keep this probe CSP-safe—using new Function here produces a blocked-eval
+// console violation on a correctly hardened production site.
 function bcGlobalExists(name) {
-  try {
-    return new Function(
-      `return typeof ${name} !== "undefined" && ${name} !== null;`,
-    )();
-  } catch (_e) {
-    // A Content-Security-Policy without 'unsafe-eval' can block Function().
-    // Degrade gracefully to the window probe — accurate for var/function
-    // globals, though it may false-negative for const/let (which aren't on
-    // window). Better than crashing the integrity check.
-    return typeof window !== "undefined" && window[name] != null;
-  }
+  return typeof window !== "undefined" && window[name] != null;
 }
 
 function bcIntegrityCheck(opts = {}) {

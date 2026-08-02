@@ -17,5 +17,6 @@ assert.match(source, /workspaceCompressed/, "compact responses carry only compre
 assert.match(source, /return await workspaceJson\(context, \{[\s\S]*?workspace,/, "workspace GET uses the compressed transport for full workspace bodies");
 assert.match(client, /"X-BC-Workspace-Transport": "gzip-base64-json-v1"/, "new clients opt into the compact workspace response");
 assert.match(client, /data\.workspaceTransport === "gzip-base64-json-v1"[\s\S]*?new DecompressionStream\("gzip"\)/, "new clients decode the compact workspace response before validation");
+assert.match(client, /fetchCanonicalWorkspace\(\{\n        allowMissing: true,\n        ifNoneMatch: localRevision,/, "routine saves use the known revision for a lightweight 304 check before reading the full workspace");
 
-console.log("workspace revision compression contract: 9 assertions passed");
+console.log("workspace revision compression contract: 10 assertions passed");

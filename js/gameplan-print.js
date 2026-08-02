@@ -212,7 +212,7 @@ async function openGamePlanPrintModal() {
         <div class="custom-modal-body">
           <div class="gp-print-form">
             <div class="gp-print-row">
-              <label>Paper</label>
+              <label for="gpPrintPaper">Paper</label>
               <select id="gpPrintPaper">
                 <option value="letter" ${o.paperSize === "letter" ? "selected" : ""}>Letter (8.5×11)</option>
                 <option value="legal" ${o.paperSize === "legal" ? "selected" : ""}>Legal (8.5×14)</option>
@@ -220,14 +220,14 @@ async function openGamePlanPrintModal() {
               </select>
             </div>
             <div class="gp-print-row">
-              <label>Orientation</label>
+              <label for="gpPrintOrientation">Orientation</label>
               <select id="gpPrintOrientation">
                 <option value="portrait" ${o.orientation === "portrait" ? "selected" : ""}>Portrait</option>
                 <option value="landscape" ${o.orientation === "landscape" ? "selected" : ""}>Landscape</option>
               </select>
             </div>
             <div class="gp-print-row">
-              <label>Columns</label>
+              <label for="gpPrintColumns">Columns</label>
               <select id="gpPrintColumns">
                 <option value="2" ${o.columns === 2 ? "selected" : ""}>2</option>
                 <option value="3" ${o.columns === 3 ? "selected" : ""}>3</option>
@@ -236,14 +236,14 @@ async function openGamePlanPrintModal() {
               </select>
             </div>
             <div class="gp-print-row">
-              <label>Personnel</label>
+              <label for="gpPrintPersonnelFilter">Personnel</label>
               <select id="gpPrintPersonnelFilter" title="Only include game plan plays from this personnel group">
                 <option value="" ${selectedPersonnelFilter ? "" : "selected"}>All Personnel</option>
                 ${personnelChoices.map((personnel) => `<option value="${escapeAttr(personnel)}" ${personnel === selectedPersonnelFilter ? "selected" : ""}>${escapeHtml(personnel)}</option>`).join("")}
               </select>
             </div>
             <div class="gp-print-row">
-              <label>Sort all buckets</label>
+              <label for="gpPrintSort">Sort all buckets</label>
               <select id="gpPrintSort" title="Override per-box sort for printing">
                 <option value="perBox" ${o.sortMode === "perBox" ? "selected" : ""}>Per-box (use each bucket's setting)</option>
                 <option value="manual" ${o.sortMode === "manual" ? "selected" : ""}>Manual order</option>
@@ -260,7 +260,7 @@ async function openGamePlanPrintModal() {
               </select>
             </div>
             <div class="gp-print-row" id="gpPrintSortTierRow">
-              <label>Then by</label>
+              <label for="gpPrintSort2">Then by</label>
               <select id="gpPrintSort2" title="Secondary sort tier">
                 <option value="" ${!o.sortMode2 ? "selected" : ""}>— none —</option>
                 <option value="type" ${o.sortMode2 === "type" ? "selected" : ""}>Type</option>
@@ -274,6 +274,7 @@ async function openGamePlanPrintModal() {
                 <option value="field" ${o.sortMode2 === "field" ? "selected" : ""}>Field Position</option>
                 <option value="play" ${o.sortMode2 === "play" ? "selected" : ""}>Play Name</option>
               </select>
+              <label class="sr-only" for="gpPrintSort3">Then by (third)</label>
               <select id="gpPrintSort3" title="Tertiary sort tier">
                 <option value="" ${!o.sortMode3 ? "selected" : ""}>— none —</option>
                 <option value="type" ${o.sortMode3 === "type" ? "selected" : ""}>Type</option>

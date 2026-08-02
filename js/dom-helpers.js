@@ -64,6 +64,48 @@ const SAFE_ATTRS = new Set([
   "preload",
 ]);
 
+// Dynamic workbench controls are often built from play data after initial
+// page load. Give each anonymous field a stable-in-page identity so browser
+// autofill and accessibility tooling can recognize it without changing the
+// existing data-action/data-field event contracts.
+let bcGeneratedFormFieldId = 0;
+
+function ensureFormFieldIdentity(root = document) {
+  if (!root || typeof root.querySelectorAll !== "function") return;
+  const fields = [];
+  if (root.matches?.("input, select, textarea")) fields.push(root);
+  root.querySelectorAll("input, select, textarea").forEach((field) => fields.push(field));
+  fields.forEach((field) => {
+    if (field.id || field.name) return;
+    bcGeneratedFormFieldId += 1;
+    field.id = `bc-form-field-${bcGeneratedFormFieldId}`;
+  });
+
+  const labels = [];
+  if (root.matches?.("label")) labels.push(root);
+  root.querySelectorAll("label").forEach((label) => labels.push(label));
+  labels.forEach((label) => {
+    if (label.htmlFor || label.querySelector("input, select, textarea")) return;
+    const sibling = label.nextElementSibling;
+    if (!sibling?.matches?.("input, select, textarea")) return;
+    if (!sibling.id && !sibling.name) {
+      bcGeneratedFormFieldId += 1;
+      sibling.id = `bc-form-field-${bcGeneratedFormFieldId}`;
+    }
+    label.htmlFor = sibling.id;
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  ensureFormFieldIdentity();
+  const observer = new MutationObserver((records) => {
+    records.forEach((record) => record.addedNodes.forEach((node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) ensureFormFieldIdentity(node);
+    }));
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+});
+
 function sanitizeHTML(html) {
   if (!html) return "";
 

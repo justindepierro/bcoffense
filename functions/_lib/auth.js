@@ -30,8 +30,8 @@ const USERS = {
 // Content-Security-Policy backstop for the innerHTML-heavy app.
 // - script-src keeps 'unsafe-inline' because index.html ships a pre-paint theme
 //   bootstrap inline <script> and there is no build step to inject nonces.
-//   'unsafe-eval' is intentionally OMITTED: the only new Function() site
-//   (bcIntegrityCheck in app-shell.js) degrades gracefully when blocked.
+//   'unsafe-eval' is intentionally OMITTED: the client integrity check uses
+//   the explicit window export contract and never evaluates source strings.
 // - style-src allows 'unsafe-inline' for inline style="" attrs + Google Fonts CSS.
 // - img/media allow data: and blob: for the favicon + IndexedDB object URLs.
 // - Cloudflare Web Analytics injects its integrity-protected beacon from its

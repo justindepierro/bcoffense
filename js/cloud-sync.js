@@ -1645,7 +1645,16 @@
       // browser's local Script Library predates a script saved elsewhere.
       // Merging the script collection here means a stale device can add or
       // edit its own work without silently erasing newer saved scripts.
-      const remoteBeforePush = await fetchCanonicalWorkspace({ allowMissing: true });
+      // Most routine edits originate from the same device that just committed
+      // this revision. Send that revision as an ETag first: the server can
+      // answer 304 from D1 without reopening/decompressing the full team
+      // workspace. Only a genuinely newer remote head needs the expensive
+      // full read and merge below.
+      const localRevision = getCloudSyncSettings().lastWorkspaceRevision || "";
+      const remoteBeforePush = await fetchCanonicalWorkspace({
+        allowMissing: true,
+        ifNoneMatch: localRevision,
+      });
       if (remoteBeforePush?.backup) {
         preventEmptyPlaybookOverwrite(backup, remoteBeforePush.backup, opts);
         backup = opts.auto
