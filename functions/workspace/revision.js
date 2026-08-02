@@ -69,6 +69,36 @@ function byteLength(value) {
   return new TextEncoder().encode(value).byteLength;
 }
 
+// Complete team workspaces can be large when a coach intentionally keeps
+// several full Call Sheet templates. Stream gzip to browsers that support it
+// rather than forcing the Pages Function to send an oversized plain JSON body.
+// Fetch transparently decodes Content-Encoding, so the client keeps the same
+// response contract and older runtimes safely fall back to authJson.
+function workspaceJson(context, data, init = {}) {
+  const text = JSON.stringify(data);
+  const acceptsGzip = /(?:^|,)\s*gzip\s*(?:;|,|$)/i.test(
+    context.request.headers.get("Accept-Encoding") || "",
+  );
+  if (
+    byteLength(text) < 512 * 1024 ||
+    !acceptsGzip ||
+    typeof CompressionStream !== "function" ||
+    typeof Blob !== "function"
+  ) {
+    return authJson(data, init);
+  }
+
+  const headers = new Headers(init.headers || {});
+  headers.set("Content-Type", "application/json; charset=utf-8");
+  headers.set("Cache-Control", "no-store");
+  headers.set("Content-Encoding", "gzip");
+  headers.append("Vary", "Accept-Encoding");
+  return withSecurityHeaders(new Response(
+    new Blob([text]).stream().pipeThrough(new CompressionStream("gzip")),
+    { ...init, headers },
+  ));
+}
+
 function isoFromSeconds(value) {
   const seconds = Math.max(0, Number(value) || 0);
   return seconds ? new Date(seconds * 1000).toISOString() : "";
@@ -278,7 +308,7 @@ async function getWorkspace(context, opts = {}) {
         headers: { "Cache-Control": "private, no-store", "ETag": etag, "Vary": "Cookie" },
       }));
     }
-    return authJson({
+    return workspaceJson(context, {
       ok: true,
       workspace,
       revision: current.pointer.workspaceRevision,
