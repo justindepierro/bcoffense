@@ -3930,7 +3930,7 @@ body.shell-phone #callsheet .cs-empty-cat {
   flex-direction: column;
   transform: translateX(100%);
   transition: transform var(--transition-normal);
-  z-index: var(--z-drawer); /* below app chrome, above panel content */
+  z-index: var(--z-overlay); /* above fixed app chrome, below dialogs */
   font-family: var(--font-sans);
 }
 .gp-drawer.gp-drawer-open {
@@ -4348,8 +4348,8 @@ body.gp-drag-active .hash-column.gp-drag-over {
   right: max(10px, env(safe-area-inset-right));
   transform: translateY(-50%);
   z-index: var(
-    --z-drawer-scrim
-  ); /* one below the open drawer — above header (1000) */
+    --z-overlay
+  ); /* shares the drawer's header-safe overlay layer */
   display: none; /* only visible on the call sheet tab */
   align-items: center;
   gap: 6px;

@@ -39,26 +39,38 @@ window._gpDrawerVisiblePlays = [];
 /* ---------- Source plays ---------------------------------------------------- */
 
 function _gpDrawerSourcePlays() {
-  if (!Array.isArray(plays)) return [];
-  if (typeof getGamePlanTags !== "function" || typeof playSignature !== "function") {
-    return [];
+  const sourceBoards = [];
+  if (typeof _gpEnsureBoard === "function") {
+    // The active board is the authoritative Game Plan. Legacy opponent tags
+    // are a Playbook filter and can legitimately be smaller than the board.
+    if (_gpDrawerState.scope === "active") sourceBoards.push(_gpEnsureBoard());
+    else if (typeof _gpLoadBoards === "function") sourceBoards.push(...Object.values(_gpLoadBoards() || {}));
   }
+
+  const seen = new Set();
+  const drafted = [];
+  sourceBoards.forEach((board) => {
+    Object.entries(board?.assignments || {}).forEach(([boxId, bucket]) => {
+      if (typeof GP_HOLDING_ID !== "undefined" && boxId === GP_HOLDING_ID) return;
+      (Array.isArray(bucket) ? bucket : []).forEach((play) => {
+        const signature = typeof _gpPlaySignature === "function"
+          ? _gpPlaySignature(play)
+          : (typeof playSignature === "function" ? playSignature(play) : "");
+        if (!signature || seen.has(signature)) return;
+        seen.add(signature);
+        drafted.push(play);
+      });
+    });
+  });
+  if (drafted.length || sourceBoards.length) return drafted;
+
+  // Compatibility fallback for workspaces that have not yet initialized the
+  // board model. It is never the preferred source for an active board.
+  if (!Array.isArray(plays) || typeof getGamePlanTags !== "function" || typeof playSignature !== "function") return [];
   const tags = getGamePlanTags() || {};
-
-  if (_gpDrawerState.scope === "active") {
-    const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
-    const opp = gw && gw.opponentName ? gw.opponentName : "";
-    if (!opp) return [];
-    const sigs = new Set(tags[opp] || []);
-    if (!sigs.size) return [];
-    return plays.filter((p) => sigs.has(playSignature(p)));
-  }
-
-  // "all" — union of every opponent's tags
   const all = new Set();
-  Object.values(tags).forEach((arr) => (arr || []).forEach((s) => all.add(s)));
-  if (!all.size) return [];
-  return plays.filter((p) => all.has(playSignature(p)));
+  Object.values(tags).forEach((arr) => (arr || []).forEach((signature) => all.add(signature)));
+  return plays.filter((play) => all.has(playSignature(play)));
 }
 
 function _gpDrawerFilterAndSort(source, usageMap) {
