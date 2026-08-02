@@ -131,6 +131,7 @@ const PAGE_ACTIONS_CONFIG = {
           { icon: "➕", label: "Add Bucket", run: () => _paCall("openGamePlanAddBucket") },
           { icon: "👁️", label: "Manage Buckets", run: () => _paCall("openGamePlanManageBoxes") },
           { icon: "🔀", label: "Reorder Buckets", run: () => _paCall("openGamePlanReorderBoxes") },
+          { icon: "↕️", label: "Sort All Buckets", sublabel: "Choose one order", run: () => _paCall("openGamePlanSortAllBuckets") },
           { icon: "⚙️", label: "Density", run: () => _paCall("cycleGamePlanDensity") },
           { icon: "▼", label: "Expand All", run: () => _paCall("expandAllGamePlanBoxes") },
           { icon: "▶", label: "Collapse All", run: () => _paCall("collapseAllGamePlanBoxes") },

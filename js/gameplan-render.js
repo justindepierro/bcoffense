@@ -163,6 +163,9 @@ function renderGamePlan() {
         <button class="btn btn-sm btn-primary" data-action="openSmartGamePlanBuilder" title="Recommend a first-draft plan from the playbook">
           🧠 Build Plan
         </button>
+        <button class="btn btn-sm" data-action="openGamePlanSortAllBuckets" title="Choose one sort order for every Game Plan bucket">
+          ↕️ Sort All
+        </button>
         <button class="btn btn-sm btn-outline page-actions-open-btn" data-action="openPageActions" title="Save, print, load plans, and open more Game Plan tools" aria-haspopup="dialog">
           ⚡ Actions
         </button>

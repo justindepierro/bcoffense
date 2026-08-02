@@ -3,6 +3,20 @@
    Split out of gameplan.js — see AGENTS.md for ownership map.
    ========================================================================= */
 
+const GP_BUCKET_SORT_OPTIONS = [
+  ["manual", "Manual order"],
+  ["type", "Type"],
+  ["formation", "Formation"],
+  ["personnel", "Personnel"],
+  ["basePlay", "Base Play"],
+  ["hash", "Hash (L / M / R)"],
+  ["down", "Down"],
+  ["distance", "Distance"],
+  ["situation", "Situation"],
+  ["field", "Field Position"],
+  ["play", "Play Name"],
+];
+
 function removeFromGamePlanBox(combined) {
   const ref = _gpParseBoxPlayArg(combined);
   if (!ref || !ref.boxId || !ref.sig) return;
@@ -604,6 +618,73 @@ function setGamePlanBoxSort(boxId, mode) {
     else b.sort[boxId] = mode;
   });
   requestRenderGamePlan();
+}
+
+function openGamePlanSortAllBuckets() {
+  const existing = document.getElementById("gpSortAllBucketsOverlay");
+  if (existing) return;
+  const board = _gpEnsureBoard();
+  const boxes = _gpGetBoardBoxes(board);
+  const currentModes = new Set(boxes.map((box) => (board.sort && board.sort[box.id]) || "manual"));
+  const selected = currentModes.size === 1 ? [...currentModes][0] : "manual";
+  const overlay = document.createElement("div");
+  overlay.id = "gpSortAllBucketsOverlay";
+  overlay.className = "custom-modal-overlay";
+  overlay.innerHTML = `
+    <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="gpSortAllBucketsTitle">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">↕️</span>
+        <h3 class="custom-modal-title" id="gpSortAllBucketsTitle">Sort All Buckets</h3>
+      </div>
+      <div class="custom-modal-body">
+        <p>Choose one order for every Game Plan bucket, including custom and hidden buckets. Manual restores each bucket’s drag order.</p>
+        <label class="modal-field-label" for="gpSortAllBucketsSelect">Sort every bucket by</label>
+        <select id="gpSortAllBucketsSelect" class="modal-field-input">
+          ${GP_BUCKET_SORT_OPTIONS.map(([value, label]) => `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`).join("")}
+        </select>
+      </div>
+      <div class="custom-modal-actions">
+        <button type="button" class="btn custom-modal-btn custom-modal-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary custom-modal-btn">Apply to All</button>
+      </div>
+    </div>`;
+  const close = () => {
+    if (typeof closeLayer === "function") closeLayer("gpSortAllBucketsOverlay");
+    overlay.remove();
+  };
+  overlay.querySelector(".custom-modal-cancel")?.addEventListener("click", close);
+  overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
+  overlay.querySelector(".btn-primary")?.addEventListener("click", () => {
+    applyGamePlanSortAllBuckets(overlay.querySelector("#gpSortAllBucketsSelect")?.value || "manual");
+    close();
+  });
+  document.body.appendChild(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "gpSortAllBucketsOverlay",
+      scrollElement: overlay.querySelector(".custom-modal") || overlay,
+      blocking: true,
+      onEscape: close,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+  }
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+}
+
+function applyGamePlanSortAllBuckets(mode) {
+  const allowed = new Set(GP_BUCKET_SORT_OPTIONS.map(([value]) => value));
+  const nextMode = allowed.has(mode) ? mode : "manual";
+  _gpUpdateBoard((board) => {
+    const nextSort = {};
+    _gpGetBoardBoxes(board).forEach((box) => {
+      if (nextMode !== "manual") nextSort[box.id] = nextMode;
+    });
+    board.sort = nextSort;
+  });
+  requestRenderGamePlan();
+  const label = GP_BUCKET_SORT_OPTIONS.find(([value]) => value === nextMode)?.[1] || "Manual order";
+  showToast(`All buckets sorted by ${label}`, { type: "success" });
 }
 
 /* -------------------------------------------------------------------------
