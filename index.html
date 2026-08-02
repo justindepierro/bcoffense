@@ -3061,9 +3061,9 @@
       </label>
       <div class="gp-drawer-search-wrap">
         <span class="gp-drawer-search-icon" aria-hidden="true">🔎</span>
-        <input id="gpDrawerSearch" type="search" class="gp-drawer-search" placeholder="Search game plan plays…"
+        <input id="gpDrawerSearch" type="text" inputmode="search" class="gp-drawer-search" placeholder="Search game plan plays…"
           data-oninput="setGameplanDrawerSearch" data-pass="value" autocomplete="off" />
-        <button class="gp-drawer-search-clear" data-action="clearGameplanDrawerSearch" title="Clear search"
+        <button id="gpDrawerSearchClear" class="gp-drawer-search-clear hidden" data-action="clearGameplanDrawerSearch" title="Clear search"
           aria-label="Clear search">×</button>
       </div>
       <div class="gp-drawer-sort-row">

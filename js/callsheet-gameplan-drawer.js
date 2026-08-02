@@ -233,6 +233,8 @@ function _gpDrawerRender() {
   if (sortSel && sortSel.value !== _gpDrawerState.sortBy) {
     sortSel.value = _gpDrawerState.sortBy;
   }
+  const clearSearch = document.getElementById("gpDrawerSearchClear");
+  if (clearSearch) clearSearch.classList.toggle("hidden", !_gpDrawerState.search.trim());
 
   // Counts
   const totalEl = document.getElementById("gpDrawerCount");
