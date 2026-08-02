@@ -117,7 +117,7 @@ const PAGE_ACTIONS_CONFIG = {
     verbs: [
       { icon: "📂", label: "Plans", sublabel: _paGamePlanPlansStatus, keepOpen: true, run: openGamePlanPlanCenter },
       { icon: "💾", label: "Save", sublabel: _paGamePlanSaveStatus, run: () => _paCall("saveGamePlanSnapshot") },
-      { icon: "＋", label: "Save as new", sublabel: "Copy this plan", run: () => _paCall("saveGamePlanSnapshotAsNew") },
+      { icon: "＋", label: "Save As", sublabel: "Copy current sheet", run: () => _paCall("saveGamePlanSnapshotAsNew") },
       { icon: "🖨️", label: "Print", sublabel: "Board only", run: () => _paCall("openGamePlanPrintModal") },
       { icon: "🗂️", label: "Index Cards", sublabel: "4×6 front / back", run: () => _paCall("openGamePlanIndexCards") },
     ],
@@ -205,7 +205,7 @@ function _paGamePlanSaveStatus() {
   const repairName = String(board?.activeSnapshotName || "").trim();
   if (active) return `Updates ${active.name}`;
   if (repairName) return `Restores ${repairName}`;
-  return "Name this plan";
+  return `Updates ${String(board?.sheetTitle || "current sheet").trim() || "current sheet"}`;
 }
 
 function getActivePageActionsKey() {
@@ -410,16 +410,16 @@ function _paRenderGamePlanPlanCenter() {
         <span class="gp-plan-center-badge">${activeName ? "Current saved plan" : "Autosaved draft"}</span>
       </div>
       <div class="gp-plan-center-meta">${workingCount} plays · ${snapshots.length} saved plan${snapshots.length === 1 ? "" : "s"}</div>
-      <p>Your board autosaves here. <strong>Save</strong> updates the current named plan. <strong>Save as new</strong> makes a copy; loading one replaces this working board only after you confirm.</p>
+      <p>Your board saves locally as you build. <strong>Save</strong> updates this current sheet in your Game Plan Library. <strong>Save As</strong> is the only action that makes a copy; loading one replaces this working board only after you confirm.</p>
       <div class="gp-plan-center-primary">
-        <button type="button" class="btn btn-primary" data-action="saveGamePlanFromActions">💾 ${activeName ? "Update current plan" : recoverableName ? `Restore & update ${escapeHtml(recoverableName)}` : "Save current plan"}</button>
-        <button type="button" class="btn btn-secondary" data-action="saveGamePlanAsNewFromActions">＋ Save as new</button>
+        <button type="button" class="btn btn-primary" data-action="saveGamePlanFromActions">💾 ${activeName ? "Update current plan" : recoverableName ? `Restore & update ${escapeHtml(recoverableName)}` : "Save current sheet"}</button>
+        <button type="button" class="btn btn-secondary" data-action="saveGamePlanAsNewFromActions">＋ Save As</button>
       </div>
     </section>`;
 
   html += '<div class="page-actions-list-label">Saved plans</div>';
   if (!ordered.length) {
-    html += '<div class="page-actions-empty">No named plans yet. Your current board is still autosaved; use Save current plan when you want a reusable version.</div>';
+    html += '<div class="page-actions-empty">No plans are in the library yet. Your working sheet is saved locally; use Save to add this current sheet once.</div>';
   } else {
     html += '<div class="gp-plan-center-list">';
     ordered.forEach((snapshot) => {

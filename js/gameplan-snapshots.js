@@ -34,6 +34,7 @@ function _gpSetActiveSnapshot(snapshot) {
   if (!boards[key]) boards[key] = _gpCreateEmptyBoard();
   boards[key].activeSnapshotId = String(snapshot?.id || "");
   boards[key].activeSnapshotName = String(snapshot?.name || "");
+  if (snapshot?.name) boards[key].sheetTitle = String(snapshot.name);
   _gpSaveBoards(boards);
 }
 
@@ -54,6 +55,32 @@ function _gpSnapshotNameKey(value) {
   return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
 }
 
+function _gpFindSnapshotByName(snapshots, name) {
+  const nameKey = _gpSnapshotNameKey(name);
+  if (!nameKey || !Array.isArray(snapshots)) return null;
+  return snapshots.find((snapshot) => (
+    _gpSnapshotNameKey(snapshot?.name) === nameKey
+  )) || null;
+}
+
+// A Game Plan board is the coach's current sheet. Normal Save must always
+// update that sheet, even after an older workspace restore lost its snapshot
+// pointer. Only Save as new should ever ask for a name or make a second copy.
+function _gpCurrentSheetName(board, key) {
+  const savedName = String(board?.activeSnapshotName || "").trim();
+  if (savedName) return savedName;
+  const title = String(board?.sheetTitle || "").trim();
+  if (title) return title;
+  return key === "__unassigned__" ? "Current Game Plan" : `vs ${key} Game Plan`;
+}
+
+function _gpPrepareBoardForSnapshot(board, snapshot) {
+  // Keep the visible sheet title, saved record, and active pointer describing
+  // the same plan. This also makes a restored board self-healing on Save.
+  board.sheetTitle = String(snapshot?.name || board.sheetTitle || "");
+  return _gpBoardWithActiveSnapshot(board, snapshot);
+}
+
 // Older game-plan boards could retain an active snapshot name after the
 // matching snapshot list was restored, cleared, or migrated. That made the
 // UI say "current saved plan" while Save had no record to update and asked
@@ -67,9 +94,7 @@ function _gpRepairActiveSnapshotForSave(board, all, key) {
 
   const legacyName = String(board?.activeSnapshotName || "").trim();
   if (!legacyName) return null;
-  const matchingSnapshot = snapshots.find((snapshot) => (
-    _gpSnapshotNameKey(snapshot?.name) === _gpSnapshotNameKey(legacyName)
-  ));
+  const matchingSnapshot = _gpFindSnapshotByName(snapshots, legacyName);
   if (matchingSnapshot) {
     _gpSetActiveSnapshot(matchingSnapshot);
     return matchingSnapshot;
@@ -81,7 +106,33 @@ function _gpRepairActiveSnapshotForSave(board, all, key) {
     savedAt: new Date().toISOString(),
     board: null,
   };
-  snapshot.board = _gpBoardWithActiveSnapshot(board, snapshot);
+  snapshot.board = _gpPrepareBoardForSnapshot(board, snapshot);
+  snapshots.push(snapshot);
+  all[key] = snapshots;
+  _gpSaveAllSnapshots(all);
+  _gpSetActiveSnapshot(snapshot);
+  return snapshot;
+}
+
+function _gpResolveCurrentSnapshotForSave(board, all, key) {
+  const repaired = _gpRepairActiveSnapshotForSave(board, all, key);
+  if (repaired) return repaired;
+
+  const snapshots = Array.isArray(all?.[key]) ? all[key] : [];
+  const sheetName = _gpCurrentSheetName(board, key);
+  const matchingSnapshot = _gpFindSnapshotByName(snapshots, sheetName);
+  if (matchingSnapshot) {
+    _gpSetActiveSnapshot(matchingSnapshot);
+    return matchingSnapshot;
+  }
+
+  const snapshot = {
+    id: _gpSnapshotId(),
+    name: sheetName,
+    savedAt: new Date().toISOString(),
+    board: null,
+  };
+  snapshot.board = _gpPrepareBoardForSnapshot(board, snapshot);
   snapshots.push(snapshot);
   all[key] = snapshots;
   _gpSaveAllSnapshots(all);
@@ -102,12 +153,12 @@ async function saveGamePlanSnapshot(options = {}) {
   if (!Array.isArray(all[key])) all[key] = [];
   const activeSnapshot = options.asNew
     ? null
-    : _gpRepairActiveSnapshotForSave(board, all, key);
+    : _gpResolveCurrentSnapshotForSave(board, all, key);
 
   if (activeSnapshot) {
     const savedAt = new Date().toISOString();
     activeSnapshot.savedAt = savedAt;
-    activeSnapshot.board = _gpBoardWithActiveSnapshot(board, activeSnapshot);
+    activeSnapshot.board = _gpPrepareBoardForSnapshot(board, activeSnapshot);
     _gpSaveAllSnapshots(all);
     _gpSetActiveSnapshot(activeSnapshot);
     if (typeof recordArtifactModified === "function") recordArtifactModified("gameplan");
@@ -115,11 +166,9 @@ async function saveGamePlanSnapshot(options = {}) {
     return true;
   }
 
-  const defaultName = options.asNew && board.activeSnapshotName
-    ? `${board.activeSnapshotName} copy`
-    : new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  const defaultName = `${_gpCurrentSheetName(board, key)} copy`;
   const name = await showPrompt("Name this plan:", defaultName, {
-    title: options.asNew ? "Save Game Plan as New" : "Save Game Plan",
+    title: "Save Game Plan as New",
     icon: "💾",
     placeholder: "e.g. v1 base, blitz-heavy, etc.",
   });
@@ -130,7 +179,7 @@ async function saveGamePlanSnapshot(options = {}) {
     savedAt: new Date().toISOString(),
     board: null,
   };
-  snapshot.board = _gpBoardWithActiveSnapshot(board, snapshot);
+  snapshot.board = _gpPrepareBoardForSnapshot(board, snapshot);
   all[key].push(snapshot);
   _gpSaveAllSnapshots(all);
   _gpSetActiveSnapshot(snapshot);
