@@ -37,6 +37,9 @@ assert.match(
 );
 assert.match(cloudSync, /CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS/, "revision conflicts retry promptly after reloading the current head");
 assert.match(cloudSync, /function getCloudServerRetryDelay/, "service-unavailable saves use bounded exponential retry rather than a request loop");
+assert.match(cloudSync, /CLOUD_AUTO_PUSH_SERVER_COOLDOWN_MS/, "an unavailable team service enters a local-save cooldown after bounded retries");
+assert.match(cloudSync, /cloudAutoPushServerUnavailableUntil/, "new edits respect the service-unavailable cooldown instead of restarting failed requests");
+assert.match(cloudSync, /data\.code \? ` \(\$\{data\.code\}\)`/, "workspace errors retain their safe server diagnostic code for the sync dock");
 assert.match(cloudSync, /function refreshTeamWorkspaceOnForeground/, "open devices perform lightweight foreground freshness checks");
 assert.match(cloudSync, /function shouldProtectUntrackedLocalWorkspace/, "only browser-only untracked work is protected from automatic replacement");
 assert.match(cloudSync, /remoteMatchesKnownRevision/, "staff freshness follows canonical revision identity instead of device timestamps");
@@ -60,5 +63,7 @@ assert.match(cloudSync, /timeoutMs: opts\.timeoutMs/, "the startup deadline reac
 assert.match(appShell, /function setStartupLoadingHold/, "the shared startup loader supports an explicit workspace hydration hold");
 assert.match(appShell, /!isStartupLoadingHeld\(\)/, "the generic startup fallback cannot dismiss an authoritative workspace load");
 assert.match(cloudSync, /err\.code !== "BC_WORKSPACE_TIMEOUT"/, "a startup workspace timeout exits quietly so a device can show its saved workspace");
+assert.match(source, /Workspace service unavailable/, "missing workspace bindings are safely logged for server-side diagnosis");
+assert.match(source, /Workspace team context unavailable/, "missing team context is safely logged for server-side diagnosis");
 
-console.log("workspace revision route and live-sync contract: 41 assertions passed");
+console.log("workspace revision route and live-sync contract: 46 assertions passed");

@@ -28,6 +28,11 @@
   // explicitly reported itself unavailable; the dock remains clear that the
   // work is safely local while the bounded retries run.
   const CLOUD_AUTO_PUSH_SERVER_RETRY_MS = 15 * 1000;
+  // After a service-unavailable response has exhausted its bounded retries,
+  // wait before accepting another background publish attempt. Every edit is
+  // still saved locally; this only prevents one unavailable service from
+  // producing a fresh browser-console error for every subsequent field edit.
+  const CLOUD_AUTO_PUSH_SERVER_COOLDOWN_MS = 60 * 1000;
   const CLOUD_AUTO_PUSH_MAX_RETRIES = 3;
   const TEAM_FOREGROUND_REFRESH_MIN_MS = 20 * 1000;
   const TEAM_FOREGROUND_REFRESH_INTERVAL_MS = 3 * 60 * 1000;
@@ -106,6 +111,7 @@
   let cloudAutoPushFlushPromise = null;
   let cloudAutoPushLastError = "";
   let cloudAutoPushRetryCount = 0;
+  let cloudAutoPushServerUnavailableUntil = 0;
   let cloudAutoPushSuppress = false;
   // A player release replaces the complete read-only study dataset. Never do
   // that destructive-in-memory swap while the player is inside Swipe View.
@@ -1227,7 +1233,8 @@
     }, { timeoutMs: opts.timeoutMs });
     const data = response.status === 304 ? { ok: true, notModified: true } : await response.json().catch(() => ({}));
     if (!response.ok && response.status !== 304) {
-      const err = new Error(data.error || `Workspace request failed with ${response.status}`);
+      const detail = data.code ? ` (${data.code})` : "";
+      const err = new Error(`${data.error || `Workspace request failed with ${response.status}`}${detail}`);
       err.status = response.status;
       err.data = data;
       throw err;
@@ -2103,15 +2110,18 @@
     }
     if (cloudAutoPushLastError) {
       const retrying = cloudAutoPushPending && cloudAutoPushRetryCount <= CLOUD_AUTO_PUSH_MAX_RETRIES;
+      const waitingForService = cloudAutoPushPending && Date.now() < cloudAutoPushServerUnavailableUntil;
       statusEl.textContent = retrying
         ? "Team sync retrying automatically..."
-        : `Publish needs attention — saved on this device: ${cloudAutoPushLastError}`;
+        : waitingForService
+          ? "Team service reconnecting — changes are saved on this device."
+          : `Publish needs attention — saved on this device: ${cloudAutoPushLastError}`;
       statusEl.className = "cloud-sync-status cloud-sync-status-warn";
       if (typeof window.setWorkspaceSyncStatus === "function") {
         window.setWorkspaceSyncStatus(
           "cloud",
-          retrying ? "queued" : "error",
-          { label: retrying ? "Team sync retrying automatically" : "Publish needs attention — saved on this device" },
+          retrying || waitingForService ? "queued" : "error",
+          { label: retrying ? "Team sync retrying automatically" : waitingForService ? "Team service reconnecting — saved on this device" : "Publish needs attention — saved on this device" },
         );
       }
       return;
@@ -2171,7 +2181,8 @@
 
     cloudAutoPushDirtyKeys.add(key);
     cloudAutoPushPending = true;
-    cloudAutoPushLastError = "";
+    const serviceWaitMs = cloudAutoPushServerUnavailableUntil - Date.now();
+    if (serviceWaitMs <= 0) cloudAutoPushLastError = "";
     _cloudQueueJob("cloud", "auto-push", {
       queuedLabel: "Team update queued — saved here, publishing shortly",
       runningLabel: "Publishing team update...",
@@ -2181,6 +2192,12 @@
     if (!cloudAutoPushFirstQueuedAt) cloudAutoPushFirstQueuedAt = Date.now();
 
     if (cloudAutoPushSaving) {
+      renderCloudSyncStatus();
+      return true;
+    }
+
+    if (serviceWaitMs > 0) {
+      scheduleCloudAutoPushTimer(serviceWaitMs);
       renderCloudSyncStatus();
       return true;
     }
@@ -2238,6 +2255,13 @@
     }
     if (cloudAutoPushSaving) return false;
 
+    const serviceWaitMs = cloudAutoPushServerUnavailableUntil - Date.now();
+    if (serviceWaitMs > 0) {
+      scheduleCloudAutoPushTimer(serviceWaitMs);
+      renderCloudSyncStatus();
+      return false;
+    }
+
     if (cloudAutoPushTimer) {
       clearTimeout(cloudAutoPushTimer);
       cloudAutoPushTimer = null;
@@ -2269,6 +2293,7 @@
       const moreChangesQueued = cloudAutoPushPending;
       cloudAutoPushLastError = "";
       cloudAutoPushRetryCount = 0;
+      cloudAutoPushServerUnavailableUntil = 0;
       _cloudCompleteJob(cloudJobKey, { label: "Team update published" });
       if (typeof window.completePlayerPublishJobs === "function") {
         window.completePlayerPublishJobs({ label: playerRelease.label });
@@ -2282,6 +2307,7 @@
       return true;
     } catch (err) {
       const leaseBusy = err?.code === "BC_WORKSPACE_LEASE_BUSY";
+      const serviceUnavailable = Number(err?.status) === 503;
       cloudAutoPushPending = true;
       cloudAutoPushLastError = leaseBusy ? "" : (err.message || "Unknown error");
       if (!leaseBusy) cloudAutoPushRetryCount += 1;
@@ -2319,6 +2345,21 @@
                 : CLOUD_AUTO_PUSH_RETRY_MS,
         );
       } else {
+        if (serviceUnavailable) {
+          cloudAutoPushServerUnavailableUntil = Date.now() + Math.max(
+            CLOUD_AUTO_PUSH_SERVER_COOLDOWN_MS,
+            getCloudServerRetryDelay(err, cloudAutoPushRetryCount),
+          );
+          cloudAutoPushFirstQueuedAt = Date.now();
+          _cloudQueueJob("cloud", "auto-push", {
+            queuedLabel: "Team service reconnecting — saved on this device",
+            runningLabel: "Publishing team update...",
+            doneLabel: "Team update published",
+            errorLabel: "Publish needs attention — saved on this device",
+          });
+          scheduleCloudAutoPushTimer(cloudAutoPushServerUnavailableUntil - Date.now());
+          return false;
+        }
         _cloudFailJob(cloudJobKey, err, { label: "Publish needs attention — saved on this device" });
         if (typeof window.failPlayerPublishJobs === "function") {
           window.failPlayerPublishJobs(err, { label: "Player update needs attention — saved on this device" });
