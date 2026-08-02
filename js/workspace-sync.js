@@ -381,6 +381,16 @@
     ) || Boolean(window.mediaUploadOutbox?.hasPendingCached?.());
   }
 
+  // A queued/error cloud publish has already been saved locally (and upload
+  // intents are durable in IndexedDB). It should warn before leaving the app,
+  // but it must not keep a newer service worker waiting forever during a
+  // server outage. Only work actively being written is an unsafe update point.
+  function hasBlockingWorkspaceSyncWork() {
+    return Object.values(WORKSPACE_SYNC_STATES).some((item) =>
+      ["dirty", "saving", "syncing"].includes(item.state),
+    );
+  }
+
   function _wsHasRetryableJob(channel) {
     return [...workspaceSyncJobs.values()].some(
       (job) => job.channel === channel && job.state === "error" && typeof job.retry === "function",
@@ -532,6 +542,7 @@
     run: runWorkspaceSyncJob,
     retry: retryWorkspaceSyncWork,
     hasWork: hasWorkspaceSyncWork,
+    hasBlockingWork: hasBlockingWorkspaceSyncWork,
     setStatus: setWorkspaceSyncStatus,
     getConnectivity: getWorkspaceSyncConnectivity,
     checkConnectivity: checkWorkspaceSyncConnectivity,
@@ -541,6 +552,7 @@
   };
   window.setWorkspaceSyncStatus = setWorkspaceSyncStatus;
   window.hasWorkspaceSyncWork = hasWorkspaceSyncWork;
+  window.hasBlockingWorkspaceSyncWork = hasBlockingWorkspaceSyncWork;
   window.queueWorkspaceSyncJob = queueWorkspaceSyncJob;
   window.startWorkspaceSyncJob = startWorkspaceSyncJob;
   window.completeWorkspaceSyncJob = completeWorkspaceSyncJob;

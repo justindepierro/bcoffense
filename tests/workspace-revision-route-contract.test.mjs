@@ -51,6 +51,8 @@ assert.match(cloudSync, /auto: opts\.auto === true/, "automatic publishes retain
 assert.match(cloudSync, /workspace-sync-remote-update/, "a clean sibling tab refreshes after another tab publishes");
 assert.match(workspaceSync, /TEAM_WORKSPACE_LEASE_KEY/, "workspace sync stores an expiring cross-tab lease");
 assert.match(workspaceSync, /function acquireTeamWorkspaceLease/, "workspace sync provides a lease acquisition API");
+assert.match(workspaceSync, /function hasBlockingWorkspaceSyncWork\(\)/, "a background-retrying publish does not block a safe app-shell upgrade forever");
+assert.match(workspaceSync, /\["dirty", "saving", "syncing"\]/, "only actively writing work blocks a service-worker update");
 assert.match(workspaceSync, /workspace-published/, "workspace sync broadcasts successful team revision handoffs");
 assert.match(appInit, /Loading team workspace\.\.\./, "each staff login checks its canonical workspace before rendering");
 assert.match(appInit, /waitForStaffWorkspaceBootstrap/, "staff startup hydration has a bounded bootstrap path");
@@ -62,8 +64,9 @@ assert.doesNotMatch(appInit, /Promise\.race\(\[\s*autoPullLatestCloudBackup/, "s
 assert.match(cloudSync, /timeoutMs: opts\.timeoutMs/, "the startup deadline reaches every canonical workspace request, including migration repair reads");
 assert.match(appShell, /function setStartupLoadingHold/, "the shared startup loader supports an explicit workspace hydration hold");
 assert.match(appShell, /!isStartupLoadingHeld\(\)/, "the generic startup fallback cannot dismiss an authoritative workspace load");
+assert.match(await readFile(new URL("index.html", `file://${root}/`), "utf8"), /hasBlockingWorkspaceSyncWork/, "the app-shell update gate does not wait indefinitely on a locally-saved cloud retry");
 assert.match(cloudSync, /err\.code !== "BC_WORKSPACE_TIMEOUT"/, "a startup workspace timeout exits quietly so a device can show its saved workspace");
 assert.match(source, /Workspace service unavailable/, "missing workspace bindings are safely logged for server-side diagnosis");
 assert.match(source, /Workspace team context unavailable/, "missing team context is safely logged for server-side diagnosis");
 
-console.log("workspace revision route and live-sync contract: 46 assertions passed");
+console.log("workspace revision route and live-sync contract: 49 assertions passed");

@@ -402,6 +402,7 @@ window.getSignalCountForPlay
 window.getSignalQuizItems
 window.getSignalQuizStats
 window.getTeamWorkspacePullSummary
+window.hasBlockingWorkspaceSyncWork
 window.hasWorkspaceSyncWork
 window.hasPlayImage
 window.historyManager
