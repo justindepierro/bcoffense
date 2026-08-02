@@ -38,6 +38,12 @@ window._gpDrawerVisiblePlays = [];
 
 /* ---------- Source plays ---------------------------------------------------- */
 
+function _gpDrawerPlayKey(play) {
+  if (typeof csPlayKey === "function") return csPlayKey(play);
+  if (typeof _gpPlaySignature === "function") return _gpPlaySignature(play);
+  return typeof playSignature === "function" ? playSignature(play) : "";
+}
+
 function _gpDrawerSourcePlays() {
   const sourceBoards = [];
   if (typeof _gpEnsureBoard === "function") {
@@ -53,9 +59,7 @@ function _gpDrawerSourcePlays() {
     Object.entries(board?.assignments || {}).forEach(([boxId, bucket]) => {
       if (typeof GP_HOLDING_ID !== "undefined" && boxId === GP_HOLDING_ID) return;
       (Array.isArray(bucket) ? bucket : []).forEach((play) => {
-        const signature = typeof _gpPlaySignature === "function"
-          ? _gpPlaySignature(play)
-          : (typeof playSignature === "function" ? playSignature(play) : "");
+        const signature = _gpDrawerPlayKey(play);
         if (!signature || seen.has(signature)) return;
         seen.add(signature);
         drafted.push(play);
@@ -144,8 +148,8 @@ function _gpDrawerFilterAndSort(source, usageMap) {
 }
 
 function _gpDrawerUseCount(play, usageMap) {
-  if (!usageMap || typeof playSignature !== "function") return 0;
-  const arr = usageMap[playSignature(play)] || [];
+  if (!usageMap) return 0;
+  const arr = usageMap[_gpDrawerPlayKey(play)] || [];
   return arr.reduce((sum, usage) => sum + (usage.count || 1), 0);
 }
 
@@ -167,7 +171,6 @@ function _gpDrawerBuildUsageMap() {
   // signature -> [{ catId, name, color }]
   const map = Object.create(null);
   if (typeof callSheet !== "object" || !callSheet) return map;
-  if (typeof playSignature !== "function") return map;
 
   const cats = Array.isArray(CALLSHEET_CATEGORIES) ? CALLSHEET_CATEGORIES : [];
   const catById = {};
@@ -191,7 +194,7 @@ function _gpDrawerBuildUsageMap() {
       const arr = Array.isArray(bucket[side]) ? bucket[side] : [];
       arr.forEach((play) => {
         if (!play) return;
-        const sig = playSignature(play);
+        const sig = _gpDrawerPlayKey(play);
         if (!sig) return;
         // Count once per bucket (both hashes => single chip), but bump count if
         // the same play is in both hashes of the same bucket.
@@ -311,7 +314,7 @@ function _gpDrawerRender() {
           : escapeHtml(play.play || "");
       const meta = [play.personnel, play.formation, play.type].filter(Boolean).join(" • ");
       const highlightedMeta = q ? _gpDrawerHighlight(meta, q) : escapeHtml(meta);
-      const sig = typeof playSignature === "function" ? playSignature(play) : "";
+      const sig = _gpDrawerPlayKey(play);
       const uses = (sig && usageMap[sig]) || [];
       const totalUses = _gpDrawerUseCount(play, usageMap);
       const usageBadge = totalUses
