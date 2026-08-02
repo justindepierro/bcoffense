@@ -56,13 +56,14 @@ const PAGE_ACTIONS_CONFIG = {
     title: "Call Sheet",
     verbs: [
       { icon: "📂", label: "Templates & saves", run: () => _paCall("openLoadCallSheetModal") },
-      { icon: "💾", label: "Save", run: () => _paCall("saveCallSheetTemplate") },
+      { icon: "💾", label: "Save", sublabel: "Updates current sheet", run: () => _paCall("saveCurrentCallSheet") },
       { icon: "🖨️", label: "Print", run: () => _paCall("printCallSheet") },
       { icon: "🗂️", label: "Index Cards", sublabel: "4×6 front / back", run: () => _paCall("switchCallSheetPage", "index") },
       { icon: "⚙️", label: "Display", sublabel: _paCallsheetDisplayStatus, run: () => _paCall("openDisplayPanel") },
     ],
     extras: [
       { icon: "📁", label: "Saved Call Sheets", run: () => _paCall("openTemplatesModal", "manage") },
+      { icon: "＋", label: "Save As Copy", run: () => _paCall("openTemplatesModal", "save") },
       { icon: "📋", label: "Load Wristband", run: () => _paCall("openLoadWristbandModal") },
       { icon: "🎯", label: "Scouting Intel", run: () => _paCall("toggleScoutingOverlay") },
       { icon: "📋", label: "Sideline View", run: () => _paCall("toggleCsSidelineMode") },

@@ -103,6 +103,14 @@ function normalizeCallSheetSettings(settings = {}) {
       typeof merged.wristbandAutoCategoryId === "string"
         ? merged.wristbandAutoCategoryId
         : "",
+    activeSavedCallSheetId:
+      typeof merged.activeSavedCallSheetId === "string"
+        ? merged.activeSavedCallSheetId
+        : "",
+    activeSavedCallSheetName:
+      typeof merged.activeSavedCallSheetName === "string"
+        ? merged.activeSavedCallSheetName
+        : "",
     indexCards: Array.isArray(merged.indexCards) ? merged.indexCards : [],
     indexCardPrintOptions: merged.indexCardPrintOptions && typeof merged.indexCardPrintOptions === "object"
       ? merged.indexCardPrintOptions
@@ -156,6 +164,10 @@ function getDefaultCallSheetSettings() {
     hiddenCategoryIds: [],
     allowedPlayTypes: [],
     wristbandAutoCategoryId: "",
+    // Normal Save updates this saved sheet. Creating a name is reserved for
+    // the deliberate Save As Copy flow.
+    activeSavedCallSheetId: "",
+    activeSavedCallSheetName: "",
     indexCards: [],
     indexCardPrintOptions: {},
   };

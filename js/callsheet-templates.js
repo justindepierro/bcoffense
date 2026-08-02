@@ -123,6 +123,7 @@ function buildCallSheetPayload(includePlays = true) {
 function buildCallSheetTemplate(name, options = {}) {
   const includePlays = options.includePlays !== false;
   return {
+    id: String(options.id || (typeof createPlayId === "function" ? createPlayId("callsheet") : `callsheet-${Date.now()}`)),
     name,
     includePlays,
     templateKind: includePlays ? "full" : "structure",
@@ -137,6 +138,41 @@ function buildCallSheetTemplate(name, options = {}) {
     collapsed: [...csCollapsed],
     printOptions: getCallSheetPrintOptions(),
   };
+}
+
+function getCurrentCallSheetSaveTarget(templates) {
+  const activeId = String(callSheetSettings?.activeSavedCallSheetId || "");
+  const activeName = String(callSheetSettings?.activeSavedCallSheetName || "").trim();
+  return templates.find((template) => String(template?.id || "") === activeId)
+    || templates.find((template) => activeName && String(template?.name || "").trim().toLowerCase() === activeName.toLowerCase())
+    || null;
+}
+
+function saveCurrentCallSheet() {
+  try {
+    // Persist the working state first; the library snapshot is an additional
+    // recovery point and should never gate a coach's ordinary Save action.
+    saveCallSheet();
+    const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
+    const existing = getCurrentCallSheetSaveTarget(templates);
+    const defaultName = `Call Sheet ${new Date().toLocaleDateString()}`;
+    const name = String(existing?.name || callSheetSettings?.activeSavedCallSheetName || defaultName).trim() || defaultName;
+    const id = String(existing?.id || callSheetSettings?.activeSavedCallSheetId || (typeof createPlayId === "function" ? createPlayId("callsheet") : `callsheet-${Date.now()}`));
+
+    callSheetSettings.activeSavedCallSheetId = id;
+    callSheetSettings.activeSavedCallSheetName = name;
+    const replacement = buildCallSheetTemplate(name, { includePlays: true, id });
+    if (existing) Object.assign(existing, replacement);
+    else templates.unshift(replacement);
+    storageManager.set(STORAGE_KEYS.CALLSHEET_TEMPLATES, templates);
+    saveCallSheetSettings();
+    showToast(`💾 Saved ${name}`);
+    return true;
+  } catch (err) {
+    console.error("saveCurrentCallSheet error:", err);
+    showToast("❌ Current call sheet could not be saved.", { duration: 4000, type: "error" });
+    return false;
+  }
 }
 
 async function saveCallSheetTemplate() {
@@ -412,6 +448,8 @@ async function applyCallSheetTemplate(template) {
       ...getDefaultCallSheetSettings(),
       ...safeDeepClone(template.settings || {}),
     });
+    callSheetSettings.activeSavedCallSheetId = template.builtIn ? "" : String(template.id || "");
+    callSheetSettings.activeSavedCallSheetName = template.builtIn ? "" : String(template.name || "").trim();
     if (preservedWristband?.plays.length) {
       callSheetSettings.loadedWristbandName = preservedWristband.name;
       callSheetSettings.loadedWristbandPlays = preservedWristband.plays;
