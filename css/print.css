@@ -745,6 +745,25 @@
     text-transform: uppercase;
   }
 
+  body.script-packet-printing .script-packet-diagram-card-numbers {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 3pt;
+  }
+
+  body.script-packet-printing .script-packet-wristband-number {
+    display: inline-flex !important;
+    align-items: center;
+    padding: 1pt 3pt;
+    border: .6pt solid #c88a1c;
+    border-radius: 999pt;
+    background: #fff4d8 !important;
+    color: #7c4a03 !important;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
   body.script-packet-printing .script-packet-diagram-image {
     display: flex !important;
     align-items: center;

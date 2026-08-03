@@ -64,6 +64,21 @@ assert.match(
 );
 assert.match(
   scriptExport,
+  /showWristbandNumbers: overlay\.querySelector\("#scriptPacketShowWristbandNumbers"\)\.checked[\s\S]*?id="scriptPacketShowWristbandNumbers"/,
+  "packet setup exposes a wristband-number toggle that persists into the print options",
+);
+assert.match(
+  scriptExport,
+  /function _scriptPacketDiagramCard\(entry, options\)[\s\S]*?findPlayOnWristband\(play\)[\s\S]*?script-packet-wristband-number/,
+  "diagram cards resolve the linked script wristband number for every packet density",
+);
+assert.match(
+  scriptExport,
+  /async function _saveScriptPacketSampleImage\(selectedScripts, options\)[\s\S]*?findPlayOnWristband\(entry\.play\)[\s\S]*?WB #\$\{wristbandNumber\}/,
+  "saved packet page images include the same optional wristband number marker",
+);
+assert.match(
+  scriptExport,
   /async function _warmScriptPacketMedia\(selectedScripts\)[\s\S]*?await window\.playImages\.prefetchForPlays[\s\S]*?const backgroundWarm = window\.playImages\.prefetchAll/,
   "packet previews resolve their own canonical cloud media before any background full-cache warm",
 );

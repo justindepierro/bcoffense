@@ -1184,6 +1184,7 @@ let _scriptPacketPrintOptions = {
   showDefense: true,
   showCoaching: true,
   showNotes: true,
+  showWristbandNumbers: true,
   startScriptOnNewPage: true,
   showFooter: true,
 };
@@ -1235,6 +1236,7 @@ function _scriptPacketOptionsFromOverlay(overlay, selectedDensity) {
     showDefense: overlay.querySelector("#scriptPacketShowDefense").checked,
     showCoaching: overlay.querySelector("#scriptPacketShowCoaching").checked,
     showNotes: overlay.querySelector("#scriptPacketShowNotes").checked,
+    showWristbandNumbers: overlay.querySelector("#scriptPacketShowWristbandNumbers").checked,
     startScriptOnNewPage: overlay.querySelector("#scriptPacketNewPage").checked,
     showFooter: overlay.querySelector("#scriptPacketFooter").checked,
   };
@@ -1312,6 +1314,7 @@ function _scriptPacketLivePreviewMarkup(selectedScripts, options, state = {}) {
     options.showDefense ? "Defense" : "",
     options.showCoaching ? "Coaching" : "",
     options.showNotes ? "Notes" : "",
+    options.showWristbandNumbers ? "Wristband #" : "",
   ].filter(Boolean);
   const pageMarkup = state.loading
     ? `<section class="script-packet-page script-packet-live-preview-page script-packet-live-preview-empty">
@@ -1470,6 +1473,16 @@ async function _saveScriptPacketSampleImage(selectedScripts, options) {
     context.fillStyle = "#64748b";
     context.font = "700 12px system-ui, sans-serif";
     context.fillText(`${entry.period} · Play ${entry.periodPlayNumber}`, x + pad, y + pad + 10);
+    const wristbandNumber = options.showWristbandNumbers && typeof findPlayOnWristband === "function"
+      ? findPlayOnWristband(entry.play)
+      : null;
+    if (wristbandNumber !== null) {
+      context.textAlign = "right";
+      context.fillStyle = "#7c4a03";
+      context.font = "800 12px system-ui, sans-serif";
+      context.fillText(`WB #${wristbandNumber}`, x + cardWidth - pad, y + pad + 10);
+      context.textAlign = "left";
+    }
 
     const infoHeight = options.showMeta || options.showDefense || options.showCoaching || options.showNotes
       ? Math.min(cardHeight * .30, 150)
@@ -1585,6 +1598,7 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
               <label><input type="checkbox" id="scriptPacketShowDefense" ${o.showDefense ? "checked" : ""}> Defensive look and reps</label>
               <label><input type="checkbox" id="scriptPacketShowCoaching" ${o.showCoaching ? "checked" : ""}> Game-plan coaching details</label>
               <label><input type="checkbox" id="scriptPacketShowNotes" ${o.showNotes ? "checked" : ""}> Play notes</label>
+              <label><input type="checkbox" id="scriptPacketShowWristbandNumbers" ${o.showWristbandNumbers !== false ? "checked" : ""}> Wristband numbers</label>
               <label><input type="checkbox" id="scriptPacketNewPage" ${o.startScriptOnNewPage ? "checked" : ""}> Start each selected script on a new page</label>
               <label><input type="checkbox" id="scriptPacketFooter" ${o.showFooter ? "checked" : ""}> Show team, script, and page footer</label>
             </div>
@@ -1789,6 +1803,12 @@ function _scriptPacketCoachingMarkup(play) {
 
 function _scriptPacketDiagramCard(entry, options) {
   const play = entry.play;
+  const wristbandNumber = options.showWristbandNumbers && typeof findPlayOnWristband === "function"
+    ? findPlayOnWristband(play)
+    : null;
+  const wristbandHtml = wristbandNumber !== null
+    ? `<span class="script-packet-wristband-number" aria-label="Wristband number ${escapeAttr(wristbandNumber)}">WB #${escapeHtml(wristbandNumber)}</span>`
+    : "";
   const displayOpts =
     typeof getScriptDisplayOptions === "function" ? getScriptDisplayOptions() : {};
   const callHtml =
@@ -1816,7 +1836,7 @@ function _scriptPacketDiagramCard(entry, options) {
   return `<article class="script-packet-diagram-card">
     <div class="script-packet-diagram-kicker">
       <span>${escapeHtml(entry.period)}</span>
-      <span>Play ${entry.periodPlayNumber}</span>
+      <span class="script-packet-diagram-card-numbers">Play ${entry.periodPlayNumber}${wristbandHtml}</span>
     </div>
     <div class="script-packet-diagram-image">${imageHtml}</div>
     <div class="script-packet-diagram-info">

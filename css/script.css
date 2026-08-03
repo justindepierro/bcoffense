@@ -5197,6 +5197,25 @@ body[data-auth-role="player"] .script-builder {
   font-weight: 700;
   text-transform: uppercase;
 }
+.script-packet-diagram-card-numbers {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 0;
+}
+.script-packet-wristband-number {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 4px;
+  border: 1px solid #c88a1c;
+  border-radius: 999px;
+  background: #fff4d8;
+  color: #7c4a03;
+  font-weight: 800;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
 .script-packet-diagram-image {
   display: flex;
   align-items: center;

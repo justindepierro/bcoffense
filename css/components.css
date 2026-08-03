@@ -5244,6 +5244,23 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   font-weight: 700;
   text-transform: uppercase;
 }
+.print-preview-content--packet .script-packet-diagram-card-numbers {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3pt;
+}
+.print-preview-content--packet .script-packet-wristband-number {
+  display: inline-flex;
+  align-items: center;
+  padding: 1pt 3pt;
+  border: .6pt solid #c88a1c;
+  border-radius: 999pt;
+  background: #fff4d8;
+  color: #7c4a03;
+  font-weight: 800;
+  white-space: nowrap;
+}
 .print-preview-content--packet .script-packet-diagram-image {
   display: flex;
   align-items: center;
