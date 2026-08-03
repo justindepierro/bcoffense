@@ -1251,6 +1251,15 @@ function findPlayOnWristband(play) {
   if (!scriptWristband || !scriptWristband.cards) return null;
 
   const cellsPerCard = getWristbandRecordCellCount(scriptWristband);
+  // A Script row has its own mutable row id. These are the durable Playbook
+  // identities copied between Script, Wristband, Game Plan, and Call Sheet.
+  // Always use them before looking at display text.
+  const getPersistentPlayIds = (candidate) => new Set(
+    [candidate?.playbookId, candidate?.sourcePlayId, candidate?.originalPlayId]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean),
+  );
+  const persistentIds = getPersistentPlayIds(play);
   const normalizeWristbandLabel = (value) => typeof normalizePlayCompareValue === "function"
     ? normalizePlayCompareValue(value)
     : String(value || "").trim().toLowerCase();
@@ -1299,8 +1308,17 @@ function findPlayOnWristband(play) {
       cellIdx++
     ) {
       const wristbandPlay = card.data[cellIdx];
+      const wristbandNumber = cellIdx + WRISTBAND_OFFSET + cardOffset;
+      const wristbandIds = getPersistentPlayIds(wristbandPlay);
+      if (
+        wristbandPlay &&
+        persistentIds.size &&
+        Array.from(persistentIds).some((id) => wristbandIds.has(id))
+      ) {
+        return wristbandNumber;
+      }
       if (wristbandPlay && playsMatch(play, wristbandPlay)) {
-        return cellIdx + WRISTBAND_OFFSET + cardOffset;
+        return wristbandNumber;
       }
       // Imported wristbands can use abbreviated calls (for example, “BB”
       // while the Script says “Bob”). Match only a shared short Line Call or
@@ -1311,10 +1329,10 @@ function findPlayOnWristband(play) {
         wristbandPlay?.play,
       ].map(normalizeWristbandLabel);
       if (fallbackLabels.size && wristbandLabels.some((label) => fallbackLabels.has(label))) {
-        fallbackMatches.push(cellIdx + WRISTBAND_OFFSET + cardOffset);
+        fallbackMatches.push(wristbandNumber);
       }
       if (canonicalCall && canonicalCall === normalizeWristbandCall(wristbandPlay)) {
-        canonicalMatches.push(cellIdx + WRISTBAND_OFFSET + cardOffset);
+        canonicalMatches.push(wristbandNumber);
       }
     }
   }
