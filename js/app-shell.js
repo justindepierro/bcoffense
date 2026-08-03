@@ -771,6 +771,12 @@ function syncMobilePrimaryNav() {
     playerQuiz.classList.toggle("active", isPlayer && activeTab === "quiz");
     playerQuiz.setAttribute("aria-current", isPlayer && activeTab === "quiz" ? "page" : "false");
   }
+  const playerSignals = nav.querySelector("[data-mobile-player-signals]");
+  if (playerSignals) {
+    playerSignals.hidden = !isPlayer;
+    playerSignals.classList.toggle("active", isPlayer && activeTab === "signals");
+    playerSignals.setAttribute("aria-current", isPlayer && activeTab === "signals" ? "page" : "false");
+  }
   const more = nav.querySelector("[data-mobile-more]");
   if (more) {
     more.hidden = isPlayer;

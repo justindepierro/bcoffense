@@ -175,7 +175,7 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
     bottom: 0;
     left: 0;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     min-height: calc(66px + env(safe-area-inset-bottom, 0px));
     padding: 7px max(10px, env(safe-area-inset-right, 0px)) calc(7px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
     background: color-mix(in srgb, var(--color-surface) 88%, transparent);

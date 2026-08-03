@@ -120,9 +120,20 @@ assert.match(
   "the phone player nav exposes Quiz directly instead of requiring a broader More menu",
 );
 assert.match(
+  indexHtml,
+  /data-mobile-player-signals="true" data-action="showTab" data-arg="signals"/,
+  "the phone player nav exposes published Signals directly",
+);
+assert.match(
   appShell,
-  /const isPlayer = document\.body\?\.dataset\?\.authRole === "player";[\s\S]*?playerQuiz\.hidden = !isPlayer;[\s\S]*?more\.hidden = isPlayer;/,
-  "the mobile shell swaps staff More for the player-only Quiz destination by role",
+  /const isPlayer = document\.body\?\.dataset\?\.authRole === "player";[\s\S]*?playerQuiz\.hidden = !isPlayer;[\s\S]*?playerSignals\.hidden = !isPlayer;[\s\S]*?more\.hidden = isPlayer;/,
+  "the mobile shell swaps staff More for player-only Signals and Quiz destinations by role",
+);
+const responsiveCss = await readFile(new URL("css/responsive.css", `file://${root}/`), "utf8");
+assert.match(
+  responsiveCss,
+  /\.mobile-primary-nav \{[\s\S]*?grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/,
+  "the phone bottom nav gives all five player destinations equal-width slots",
 );
 assert.match(
   playerPlaybookFilters,
