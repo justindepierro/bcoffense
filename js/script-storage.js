@@ -1251,10 +1251,17 @@ function findPlayOnWristband(play) {
   if (!scriptWristband || !scriptWristband.cards) return null;
 
   const cellsPerCard = getWristbandRecordCellCount(scriptWristband);
-  const uniqueOneWord = typeof normalizePlayCompareValue === "function"
-    ? normalizePlayCompareValue(play?.oneWord)
-    : String(play?.oneWord || "").trim().toLowerCase();
-  const oneWordMatches = [];
+  const normalizeWristbandLabel = (value) => typeof normalizePlayCompareValue === "function"
+    ? normalizePlayCompareValue(value)
+    : String(value || "").trim().toLowerCase();
+  // Script rows display the Line Call in brackets. Imports may store that
+  // same short identity in a wristband's play or One Word field instead.
+  const fallbackLabels = new Set(
+    [play?.lineCall, play?.oneWord]
+      .map(normalizeWristbandLabel)
+      .filter((label) => label.length >= 3),
+  );
+  const fallbackMatches = [];
   for (let cardIdx = 0; cardIdx < scriptWristband.cards.length; cardIdx++) {
     const card = scriptWristband.cards[cardIdx];
     const cardOffset = cardIdx * cellsPerCard;
@@ -1267,17 +1274,18 @@ function findPlayOnWristband(play) {
       if (wristbandPlay && playsMatch(play, wristbandPlay)) {
         return cellIdx + WRISTBAND_OFFSET + cardOffset;
       }
-      // Imported wristbands sometimes retain abbreviated calls (for example,
-      // “BB” while the Script says “Bob”). A unique One Word is a reliable
-      // coach-facing identity in that case, but only use it when exactly one
-      // wristband cell shares it—never guess across duplicate labels.
-      const wristbandOneWord = typeof normalizePlayCompareValue === "function"
-        ? normalizePlayCompareValue(wristbandPlay?.oneWord)
-        : String(wristbandPlay?.oneWord || "").trim().toLowerCase();
-      if (uniqueOneWord && wristbandOneWord === uniqueOneWord) {
-        oneWordMatches.push(cellIdx + WRISTBAND_OFFSET + cardOffset);
+      // Imported wristbands can use abbreviated calls (for example, “BB”
+      // while the Script says “Bob”). Match only a shared short Line Call or
+      // One Word label, and only if it maps to exactly one wristband cell.
+      const wristbandLabels = [
+        wristbandPlay?.lineCall,
+        wristbandPlay?.oneWord,
+        wristbandPlay?.play,
+      ].map(normalizeWristbandLabel);
+      if (fallbackLabels.size && wristbandLabels.some((label) => fallbackLabels.has(label))) {
+        fallbackMatches.push(cellIdx + WRISTBAND_OFFSET + cardOffset);
       }
     }
   }
-  return oneWordMatches.length === 1 ? oneWordMatches[0] : null;
+  return fallbackMatches.length === 1 ? fallbackMatches[0] : null;
 }
