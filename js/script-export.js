@@ -38,6 +38,7 @@ function openScriptWristbandNumbersModal() {
           <button data-action="applyScriptWristbandNumbers" class="btn btn-primary modal-btn-lg">#️⃣ Show Numbers</button>
           <button data-action="clearScriptWristbandNumbers" class="btn modal-btn-lg">Clear</button>
         </div>
+        <button data-action="openScriptWristbandLinkRepairModal" class="btn btn-link modal-secondary-action">🔗 Repair missing number links</button>
         <button data-action="switchScriptWristbandModalToImport" class="btn btn-link modal-secondary-action">➕ Need to add plays from a wristband instead?</button>
       </div>
     </div>
@@ -76,6 +77,96 @@ function clearScriptWristbandNumbers() {
   setScriptWristbandSelection(null, true);
   closeScriptWristbandNumbersModal();
   showToast("Wristband numbers cleared from this script.", { type: "info" });
+}
+
+function _getScriptWristbandRepairCells() {
+  if (!scriptWristband?.cards) return [];
+  const cellsPerCard = getWristbandRecordCellCount(scriptWristband);
+  const cells = [];
+  scriptWristband.cards.forEach((card, cardIdx) => {
+    const data = Array.isArray(card?.data) ? card.data : card;
+    if (!Array.isArray(data)) return;
+    data.slice(0, cellsPerCard).forEach((play, cellIdx) => {
+      if (!play || typeof play !== "object") return;
+      cells.push({
+        number: cardIdx * cellsPerCard + cellIdx + WRISTBAND_OFFSET,
+        play,
+      });
+    });
+  });
+  return cells;
+}
+
+function _scriptWristbandRepairLabel(play) {
+  return [play?.formation, play?.play, play?.lineCall && `[${play.lineCall}]`]
+    .filter(Boolean)
+    .join(" ") || "Unnamed play";
+}
+
+function openScriptWristbandLinkRepairModal() {
+  if (!scriptWristband?.cards) {
+    showToast("Select the wristband first, then repair its missing links.", { type: "warning" });
+    return;
+  }
+  const unresolved = (Array.isArray(script) ? script : [])
+    .map((play, scriptIndex) => ({ play, scriptIndex }))
+    .filter(({ play }) => play && !play.isSeparator && findPlayOnWristband(play) === null);
+  if (!unresolved.length) {
+    showToast("Every Script play already has a wristband number.", { type: "success" });
+    return;
+  }
+  const cellOptions = _getScriptWristbandRepairCells().map(({ number, play }) =>
+    `<option value="${number}">#${number} — ${escapeHtml(_scriptWristbandRepairLabel(play))}</option>`,
+  ).join("");
+  closeScriptWristbandNumbersModal();
+  const overlay = document.createElement("div");
+  overlay.id = "scriptWristbandLinkRepairModal";
+  overlay.className = "modal-overlay show";
+  overlay.innerHTML = `<div class="modal-content modal-content-lg" role="dialog" aria-modal="true" aria-labelledby="scriptWristbandLinkRepairTitle">
+    <div class="modal-header-row"><h3 class="modal-title" id="scriptWristbandLinkRepairTitle">🔗 Repair missing wristband links</h3><button class="modal-close-btn" data-action="closeScriptWristbandLinkRepairModal" aria-label="Close">✕</button></div>
+    <p class="modal-helper-text">Choose the exact wristband number once for each unresolved Script play. This saves a durable link on both records; it does not change the play call.</p>
+    <div class="script-wristband-repair-list">${unresolved.map(({ play, scriptIndex }) => `<label class="modal-field-label">${escapeHtml(_scriptWristbandRepairLabel(play))}<select class="modal-field-input" data-script-wristband-repair="${scriptIndex}"><option value="">No link yet</option>${cellOptions}</select></label>`).join("")}</div>
+    <div class="modal-action-row mt-md"><button class="btn btn-primary" data-action="saveScriptWristbandLinkRepairs">Save links</button><button class="btn" data-action="closeScriptWristbandLinkRepairModal">Cancel</button></div>
+  </div>`;
+  document.body.appendChild(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "scriptWristbandLinkRepairModal",
+      scrollElement: overlay.querySelector(".modal-content") || overlay,
+      blocking: true,
+      onEscape: () => closeScriptWristbandLinkRepairModal(),
+    });
+  }
+}
+
+function closeScriptWristbandLinkRepairModal() {
+  if (typeof closeLayer === "function") closeLayer("scriptWristbandLinkRepairModal");
+  document.getElementById("scriptWristbandLinkRepairModal")?.remove();
+}
+
+function saveScriptWristbandLinkRepairs() {
+  const cells = new Map(_getScriptWristbandRepairCells().map((cell) => [String(cell.number), cell.play]));
+  let repaired = 0;
+  document.querySelectorAll("[data-script-wristband-repair]").forEach((select) => {
+    const scriptPlay = script[Number(select.dataset.scriptWristbandRepair)];
+    const wristbandPlay = cells.get(select.value);
+    if (!scriptPlay || !wristbandPlay) return;
+    const linkId = scriptPlay.wristbandLinkId || wristbandPlay.wristbandLinkId || `wb-link-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    scriptPlay.wristbandLinkId = linkId;
+    wristbandPlay.wristbandLinkId = linkId;
+    repaired += 1;
+  });
+  if (!repaired) {
+    showToast("Choose at least one wristband number to repair.", { type: "warning" });
+    return;
+  }
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
+  storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
+  markScriptDirty();
+  scheduleScriptAutosave();
+  renderScript();
+  closeScriptWristbandLinkRepairModal();
+  showToast(`${repaired} wristband link${repaired === 1 ? "" : "s"} repaired.`, { type: "success" });
 }
 
 function switchScriptWristbandModalToImport() {

@@ -16,9 +16,10 @@ assert.match(actions, /label: "Workspace Tools", keepOpen: true, run: openScript
 assert.match(index, /data-action="openScriptWristbandNumbersModal"[\s\S]*?#️⃣ Wristband Numbers/, "Script command strip exposes wristband numbers without importing plays");
 assert.match(exportUi, /function openScriptWristbandNumbersModal\(\)/, "number overlay selector has a dedicated modal");
 assert.match(exportUi, /This only overlays matching wristband numbers on plays already in your script\./, "number overlay modal explicitly promises not to add plays");
+assert.match(exportUi, /function openScriptWristbandLinkRepairModal\(\)[\s\S]*?Repair missing wristband links[\s\S]*?function saveScriptWristbandLinkRepairs\(\)/, "missing legacy wristband links have a dedicated one-time repair flow");
 assert.match(storage, /function setScriptWristbandSelection\([\s\S]*?markScriptDirty\(\);[\s\S]*?scheduleScriptAutosave\(\);/, "wristband-number selection persists with the script workspace");
 assert.match(storage, /scriptWristband = wb;[\s\S]*?scriptShowWbNum[\s\S]*?showWristbandNumbers\.checked = true[\s\S]*?saveScriptDisplayOptions\(\)/, "linking a wristband restores its visible number layer in the live Script grid");
-assert.match(storage, /function findPlayOnWristband\(play\)[\s\S]*?playbookId[\s\S]*?sourcePlayId[\s\S]*?originalPlayId[\s\S]*?wristbandIds\.has\(id\)[\s\S]*?playsMatch/, "wristband lookup checks durable source identifiers before any display-text fallback");
+assert.match(storage, /function findPlayOnWristband\(play\)[\s\S]*?playbookId[\s\S]*?sourcePlayId[\s\S]*?originalPlayId[\s\S]*?wristbandLinkId[\s\S]*?wristbandIds\.has\(id\)[\s\S]*?playsMatch/, "wristband lookup checks durable source identifiers before any display-text fallback");
 assert.match(storage, /function findPlayOnWristband\(play\)[\s\S]*?play\?\.lineCall[\s\S]*?fallbackMatches\.length === 1/, "wristband lookup supports only an unambiguous Line Call or One Word fallback for abbreviated calls");
 assert.match(storage, /normalizeWristbandCall[\s\S]*?\(leo\|l\)[\s\S]*?\(bb\|bob\)[\s\S]*?canonicalMatches\.length === 1/, "wristband lookup safely normalizes common imported call abbreviations only when the full call is unique");
 assert.match(exportUi, /function refreshLoadWbToScriptCards\(\)/, "import modal refreshes card choices for the selected saved wristband");

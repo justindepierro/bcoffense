@@ -110,6 +110,7 @@ const UI_SURFACES = Object.freeze({
   scriptQuizOverlay: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
   scriptShortcutsModal: { owner: "js/script-health.js", pattern: "blocking-layer", scrollOwner: "layer" },
   scriptToolsDrawer: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
+  scriptWristbandLinkRepairModal: { owner: "js/script-export.js", pattern: "blocking-layer", scrollOwner: "layer" },
   scriptWristbandNumbersModal: { owner: "js/script-export.js", pattern: "blocking-layer", scrollOwner: "layer" },
   shortcutsModal: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
   signalClipModalOverlay: { owner: "js/signals.js", pattern: "blocking-layer", scrollOwner: "layer" },

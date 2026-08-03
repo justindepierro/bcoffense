@@ -1255,7 +1255,7 @@ function findPlayOnWristband(play) {
   // identities copied between Script, Wristband, Game Plan, and Call Sheet.
   // Always use them before looking at display text.
   const getPersistentPlayIds = (candidate) => new Set(
-    [candidate?.playbookId, candidate?.sourcePlayId, candidate?.originalPlayId]
+    [candidate?.playbookId, candidate?.sourcePlayId, candidate?.originalPlayId, candidate?.wristbandLinkId]
       .map((value) => String(value || "").trim())
       .filter(Boolean),
   );
