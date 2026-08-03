@@ -260,7 +260,10 @@ export async function updateD1Password(db, userId, password) {
   const hash = await hashPassword(password);
   const now = Math.floor(Date.now() / 1000);
   await db
-    .prepare("UPDATE users SET password_hash = ?, password_changed_at = ?, updated_at = ? WHERE id = ?")
+    .prepare(`UPDATE users
+      SET password_hash = ?, password_changed_at = ?,
+          failed_login_count = 0, lockout_until = NULL, updated_at = ?
+      WHERE id = ?`)
     .bind(hash, now, now, userId)
     .run();
   await setD1SessionInvalidBefore(db, userId, now);
