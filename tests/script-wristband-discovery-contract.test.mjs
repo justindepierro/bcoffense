@@ -17,6 +17,7 @@ assert.match(index, /data-action="openScriptWristbandNumbersModal"[\s\S]*?#Ô∏è‚É
 assert.match(exportUi, /function openScriptWristbandNumbersModal\(\)/, "number overlay selector has a dedicated modal");
 assert.match(exportUi, /This only overlays matching wristband numbers on plays already in your script\./, "number overlay modal explicitly promises not to add plays");
 assert.match(storage, /function setScriptWristbandSelection\([\s\S]*?markScriptDirty\(\);[\s\S]*?scheduleScriptAutosave\(\);/, "wristband-number selection persists with the script workspace");
+assert.match(storage, /scriptWristband = wb;[\s\S]*?scriptShowWbNum[\s\S]*?showWristbandNumbers\.checked = true[\s\S]*?saveScriptDisplayOptions\(\)/, "linking a wristband restores its visible number layer in the live Script grid");
 assert.match(exportUi, /function refreshLoadWbToScriptCards\(\)/, "import modal refreshes card choices for the selected saved wristband");
 assert.match(exportUi, /data-onchange="refreshLoadWbToScriptCards"/, "changing wristbands refreshes its card choices");
 assert.match(exportUi, /card\?\.name \|\| `Card \$\{index \+ 1\}`/, "card choices use saved card names when available");

@@ -334,6 +334,17 @@ function setScriptWristbandSelection(wristbandId, shouldRender = true) {
   }
 
   scriptWristband = wb;
+  // A linked wristband is an explicit request to overlay its numbers on this
+  // script. Older display preferences could leave the live Coach Grid hidden
+  // while print still resolved the same mapping, which was needlessly
+  // confusing. Keep the regular Script view and its print views in sync.
+  const showWristbandNumbers = document.getElementById("scriptShowWbNum");
+  if (showWristbandNumbers && !showWristbandNumbers.checked) {
+    showWristbandNumbers.checked = true;
+    if (typeof saveScriptDisplayOptions === "function") {
+      saveScriptDisplayOptions();
+    }
+  }
   const totalPlays = wb.cards
     ? wb.cards.reduce(
       (sum, card) => sum + card.data.filter((play) => play !== null).length,
