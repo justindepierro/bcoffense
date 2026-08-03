@@ -1262,6 +1262,34 @@ function findPlayOnWristband(play) {
       .filter((label) => label.length >= 3),
   );
   const fallbackMatches = [];
+  const normalizeWristbandCall = (candidate) => {
+    const rawCall = [
+      candidate?.formation,
+      candidate?.formTag1,
+      candidate?.formTag2,
+      candidate?.under,
+      candidate?.back,
+      candidate?.shift,
+      candidate?.motion,
+      candidate?.protection,
+      candidate?.play,
+      candidate?.playTag1,
+      candidate?.playTag2,
+    ].filter(Boolean).join(" ");
+    const normalized = typeof normalizePlayCompareValue === "function"
+      ? normalizePlayCompareValue(rawCall, { spaced: true })
+      : String(rawCall).trim().toLowerCase().replace(/[^a-z0-9]+/g, " ");
+    return normalized
+      .replace(/\bfield\b/g, " ")
+      .replace(/\b(leo|l)\b/g, "l")
+      .replace(/\b(reo|r)\b/g, "r")
+      .replace(/\b(bb|bob)\b/g, "bob")
+      .replace(/\b(wrrn|warren)\b/g, "warren")
+      .trim()
+      .replace(/\s+/g, " ");
+  };
+  const canonicalCall = normalizeWristbandCall(play);
+  const canonicalMatches = [];
   for (let cardIdx = 0; cardIdx < scriptWristband.cards.length; cardIdx++) {
     const card = scriptWristband.cards[cardIdx];
     const cardOffset = cardIdx * cellsPerCard;
@@ -1285,7 +1313,11 @@ function findPlayOnWristband(play) {
       if (fallbackLabels.size && wristbandLabels.some((label) => fallbackLabels.has(label))) {
         fallbackMatches.push(cellIdx + WRISTBAND_OFFSET + cardOffset);
       }
+      if (canonicalCall && canonicalCall === normalizeWristbandCall(wristbandPlay)) {
+        canonicalMatches.push(cellIdx + WRISTBAND_OFFSET + cardOffset);
+      }
     }
   }
-  return fallbackMatches.length === 1 ? fallbackMatches[0] : null;
+  if (fallbackMatches.length === 1) return fallbackMatches[0];
+  return canonicalMatches.length === 1 ? canonicalMatches[0] : null;
 }
