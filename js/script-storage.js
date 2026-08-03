@@ -1251,6 +1251,10 @@ function findPlayOnWristband(play) {
   if (!scriptWristband || !scriptWristband.cards) return null;
 
   const cellsPerCard = getWristbandRecordCellCount(scriptWristband);
+  const uniqueOneWord = typeof normalizePlayCompareValue === "function"
+    ? normalizePlayCompareValue(play?.oneWord)
+    : String(play?.oneWord || "").trim().toLowerCase();
+  const oneWordMatches = [];
   for (let cardIdx = 0; cardIdx < scriptWristband.cards.length; cardIdx++) {
     const card = scriptWristband.cards[cardIdx];
     const cardOffset = cardIdx * cellsPerCard;
@@ -1263,7 +1267,17 @@ function findPlayOnWristband(play) {
       if (wristbandPlay && playsMatch(play, wristbandPlay)) {
         return cellIdx + WRISTBAND_OFFSET + cardOffset;
       }
+      // Imported wristbands sometimes retain abbreviated calls (for example,
+      // “BB” while the Script says “Bob”). A unique One Word is a reliable
+      // coach-facing identity in that case, but only use it when exactly one
+      // wristband cell shares it—never guess across duplicate labels.
+      const wristbandOneWord = typeof normalizePlayCompareValue === "function"
+        ? normalizePlayCompareValue(wristbandPlay?.oneWord)
+        : String(wristbandPlay?.oneWord || "").trim().toLowerCase();
+      if (uniqueOneWord && wristbandOneWord === uniqueOneWord) {
+        oneWordMatches.push(cellIdx + WRISTBAND_OFFSET + cardOffset);
+      }
     }
   }
-  return null;
+  return oneWordMatches.length === 1 ? oneWordMatches[0] : null;
 }
