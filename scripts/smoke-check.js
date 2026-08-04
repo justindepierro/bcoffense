@@ -873,10 +873,10 @@ function checkPlayCompareKeyContracts() {
   }
   if (
     !/function _sanitizeStandardizeGroups\(def, entries\)[\s\S]*_sanitizeStandardizeCompare\(value\)/.test(playbookSanitize) ||
-    !/variants\.length > 1 && group\.changeCount > 0/.test(playbookSanitize) ||
+    !/group\.variants\.length > 1 && group\.changeCount > 0/.test(playbookSanitize) ||
     !/function _renderSanitizeStandardizePanel\(def, entries\)[\s\S]*Standardize \$\{escapeHtml\(def\.label\)\}/.test(playbookSanitize) ||
     !/data-action="applySanitizeStandardizeGroup"/.test(playbookSanitize) ||
-    !/async function applySanitizeStandardizeGroup\(indexStr\)[\s\S]*showConfirm\([\s\S]*Apply Standard[\s\S]*storageManager\.setPlaybook\(plays\)/.test(playbookSanitize) ||
+    !/async function applySanitizeStandardizeGroup\(indexStr\)[\s\S]*showConfirm\([\s\S]*Apply Standard[\s\S]*_persistSanitizeChanges\(\)/.test(playbookSanitize) ||
     !/\.pb-sanitize-standardize-panel/.test(playbookCss) ||
     !/\.pb-sanitize-standardize-row[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(230px,\s*0\.62fr\)/.test(playbookCss)
   ) {
@@ -2068,7 +2068,6 @@ function checkScriptPlayerPublishingContracts() {
     ) ||
     !/function togglePlayerScriptAccess\(id,\s*event\)/.test(scriptPlayer) ||
     !/data-onchange="togglePlayerScriptAccess"/.test(scriptPlayer) ||
-    !/data-action="loadPublishedPlayerScript"/.test(scriptPlayer) ||
     !/data-action="openPlayerCurrentScriptPresentation"/.test(scriptPlayer) ||
     !/data-action="openPlayerCurrentScriptPresentation"/.test(html) ||
     !/case "loadPublishedPlayerScript"/.test(appEvents) ||
@@ -4336,7 +4335,7 @@ function checkWorkspaceSyncContracts() {
     }
   });
 
-  if (!/setWorkspaceSyncStatus\(\s*"cloud",\s*retrying \? "queued" : "error"/.test(cloudSync)) {
+  if (!/retrying \|\| waitingForService \? "queued" : "error"/.test(cloudSync)) {
     fail("workspace sync cloud/media contract missing retry-aware cloud error state");
   }
 
@@ -4497,7 +4496,8 @@ function checkWorkspaceSyncContracts() {
     !/window\.getPublishActivityLog = getPublishActivityLog/.test(cloudSync) ||
     !/window\.getLatestPublishActivity = getLatestPublishActivity/.test(cloudSync) ||
     !/window\.recordPublishActivity = recordPublishActivity/.test(cloudSync) ||
-    !/window\.recordPublishActivity\(\{[\s\S]*id: `player-\$\{kind\}-\$\{updatedAt\}`/.test(scriptPlayer) ||
+    !/requestImmediateTeamPublish\(kind, \{[\s\S]*awaitCompletion: opts\.awaitCompletion === true/.test(scriptPlayer) ||
+    !/Do not create a premature[\s\S]*local “success” row here/.test(scriptPlayer) ||
     !/const ledger = typeof getPublishActivityLog === "function" \? getPublishActivityLog\(\) : \[\]/.test(dashboardRender) ||
     !/cloud-sync-ledger/.test(cloudSync) ||
     !/\.cloud-sync-ledger/.test(componentsCss) ||
@@ -5679,7 +5679,7 @@ function checkSignalPlayIntegrationContracts() {
 
   if (
     !/id="playPresentationSignalsBtn"[\s\S]*data-action="openPlayPresentationSignals"/.test(html) ||
-    !/id="playerQuizStartSignalsBtn"[\s\S]*data-action="startPlayerQuizHubSignals"/.test(html) ||
+    !/id="playerQuizSelectSignalsBtn"[\s\S]*data-action="setPlayerQuizSource"[\s\S]*data-arg="signal"/.test(html) ||
     !/player-quiz-source-card--signals/.test(html) ||
     !/function updatePlayPresentationSignalsButton\(\)/.test(presentation) ||
     !/getSignalCountForPlay\(item\.play\)/.test(presentation) ||

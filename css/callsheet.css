@@ -346,7 +346,7 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   font-size: 0.9em;
   font-weight: 800;
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .cs-one-word-full-call {
