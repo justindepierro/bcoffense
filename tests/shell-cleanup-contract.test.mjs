@@ -49,7 +49,12 @@ const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, scri
 const shellScripts = [...indexHtml.matchAll(/src="(js\/[^"?]+\.js)(?:\?[^\"]*)?"/g)].map((match) => match[1]);
 const cachedScripts = [...serviceWorker.matchAll(/["']\.\/(js\/[^"']+\.js)["']/g)].map((match) => match[1]);
 const runtimeFiles = jsEntries.filter((name) => name.endsWith(".js")).map((name) => `js/${name}`);
-const deferredScripts = [...(await source("js/feature-loader.js")).matchAll(/loadDeferredFeature\("[^"]+", "(js\/[^"?]+\.js)(?:\?[^\"]*)?"\)/g)].map((match) => match[1]);
+const featureLoaderSource = await source("js/feature-loader.js");
+const deferredScripts = [
+  ...featureLoaderSource.matchAll(
+    /loadDeferredFeature\("[^"]+", (?:"|deferredFeatureSrc\(")(js\/[^"?]+\.js)(?:\?[^\"]*)?"\)?\)/g,
+  ),
+].map((match) => match[1]);
 const shellStyles = [...indexHtml.matchAll(/href="(css\/[^"?]+\.css)(?:\?[^\"]*)?"/g)].map((match) => match[1]);
 const cachedStyles = [...serviceWorker.matchAll(/["']\.\/(css\/[^"']+\.css)["']/g)].map((match) => match[1]);
 const runtimeStyles = cssEntries.filter((name) => name.endsWith(".css")).map((name) => `css/${name}`);

@@ -8,6 +8,22 @@
  */
 
 const deferredFeatureLoads = new Map();
+// Deferred tools are not present in index.html, so they cannot inherit the
+// normal cache-buster check by accident. Read this boot script's own version
+// once and reuse it for every deferred asset instead of leaving a stale
+// literal behind after a release.
+const DEFERRED_FEATURE_ASSET_VERSION = (() => {
+  try {
+    return new URL(document.currentScript?.src || "", window.location.href)
+      .searchParams.get("v") || "";
+  } catch (_err) {
+    return "";
+  }
+})();
+
+function deferredFeatureSrc(path) {
+  return DEFERRED_FEATURE_ASSET_VERSION ? `${path}?v=${DEFERRED_FEATURE_ASSET_VERSION}` : path;
+}
 
 function loadDeferredFeature(name, src) {
   if (deferredFeatureLoads.has(name)) return deferredFeatureLoads.get(name);
@@ -32,7 +48,7 @@ function loadDeferredFeature(name, src) {
 
 async function openDeferredMediaInventory() {
   try {
-    await loadDeferredFeature("media-inventory", "js/media-inventory.js?v=1382");
+    await loadDeferredFeature("media-inventory", deferredFeatureSrc("js/media-inventory.js"));
     if (typeof window.openMediaInventoryReport !== "function" || window.openMediaInventoryReport === openDeferredMediaInventory) {
       throw new Error("Media Inventory did not finish starting.");
     }
@@ -48,7 +64,7 @@ async function openDeferredMediaInventory() {
 
 async function openDeferredPrintStudio() {
   try {
-    await loadDeferredFeature("print-studio", "js/print-studio.js?v=1382");
+    await loadDeferredFeature("print-studio", deferredFeatureSrc("js/print-studio.js"));
     if (typeof window.openPrintStudio !== "function" || window.openPrintStudio === openDeferredPrintStudio) {
       throw new Error("Print Studio did not finish starting.");
     }

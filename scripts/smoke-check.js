@@ -4760,7 +4760,9 @@ function checkPlayerDiagramReadinessContracts() {
     !/Automatic Cloud Health/.test(mediaInventory) ||
     !/mediaUploadOutbox\?\.getHealth/.test(mediaInventory) ||
     !/data-action="openMediaInventoryReport"/.test(html) ||
-    !/loadDeferredFeature\("media-inventory", "js\/media-inventory\.js\?v=1377"\)/.test(featureLoader) ||
+    !/const DEFERRED_FEATURE_ASSET_VERSION/.test(featureLoader) ||
+    !/function deferredFeatureSrc\(path\)/.test(featureLoader) ||
+    !/loadDeferredFeature\("media-inventory", deferredFeatureSrc\("js\/media-inventory\.js"\)\)/.test(featureLoader) ||
     !/"\.\/js\/feature-loader\.js"/.test(sw) ||
     /"\.\/js\/media-inventory\.js"/.test(sw)
   ) {
