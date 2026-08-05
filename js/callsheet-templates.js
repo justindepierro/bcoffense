@@ -143,9 +143,18 @@ function buildCallSheetTemplate(name, options = {}) {
 function getCurrentCallSheetSaveTarget(templates) {
   const activeId = String(callSheetSettings?.activeSavedCallSheetId || "");
   const activeName = String(callSheetSettings?.activeSavedCallSheetName || "").trim();
-  return templates.find((template) => String(template?.id || "") === activeId)
-    || templates.find((template) => activeName && String(template?.name || "").trim().toLowerCase() === activeName.toLowerCase())
-    || null;
+  const byId = templates.find((template) => String(template?.id || "") === activeId);
+  if (byId) return byId;
+  const nameMatches = templates.filter((template) => activeName && String(template?.name || "").trim().toLowerCase() === activeName.toLowerCase());
+  return nameMatches.length === 1 ? nameMatches[0] : null;
+}
+
+function hasAmbiguousCurrentCallSheetName(templates) {
+  const activeId = String(callSheetSettings?.activeSavedCallSheetId || "");
+  const activeName = String(callSheetSettings?.activeSavedCallSheetName || "").trim().toLowerCase();
+  return !activeId && Boolean(activeName) && templates.filter((template) =>
+    String(template?.name || "").trim().toLowerCase() === activeName,
+  ).length > 1;
 }
 
 function saveCurrentCallSheet() {
@@ -154,6 +163,10 @@ function saveCurrentCallSheet() {
     // recovery point and should never gate a coach's ordinary Save action.
     saveCallSheet();
     const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
+    if (hasAmbiguousCurrentCallSheetName(templates)) {
+      showToast("⚠️ More than one saved call sheet has this name. Load the intended sheet before saving.", { type: "warning", duration: 5000 });
+      return false;
+    }
     const existing = getCurrentCallSheetSaveTarget(templates);
     const defaultName = `Call Sheet ${new Date().toLocaleDateString()}`;
     const name = String(existing?.name || callSheetSettings?.activeSavedCallSheetName || defaultName).trim() || defaultName;

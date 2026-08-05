@@ -58,9 +58,17 @@ function _gpSnapshotNameKey(value) {
 function _gpFindSnapshotByName(snapshots, name) {
   const nameKey = _gpSnapshotNameKey(name);
   if (!nameKey || !Array.isArray(snapshots)) return null;
-  return snapshots.find((snapshot) => (
+  const matches = snapshots.filter((snapshot) => (
     _gpSnapshotNameKey(snapshot?.name) === nameKey
-  )) || null;
+  ));
+  return matches.length === 1 ? matches[0] : null;
+}
+
+function _gpHasAmbiguousSnapshotName(snapshots, name) {
+  const nameKey = _gpSnapshotNameKey(name);
+  return Boolean(nameKey) && Array.isArray(snapshots) && snapshots.filter((snapshot) => (
+    _gpSnapshotNameKey(snapshot?.name) === nameKey
+  )).length > 1;
 }
 
 // A Game Plan board is the coach's current sheet. Normal Save must always
@@ -151,6 +159,12 @@ async function saveGamePlanSnapshot(options = {}) {
   const all = _gpLoadAllSnapshots();
   const key = _gpActiveOpponentKey();
   if (!Array.isArray(all[key])) all[key] = [];
+  const fallbackName = String(board.activeSnapshotName || _gpCurrentSheetName(board, key)).trim();
+  const hasActiveSnapshot = Boolean(_gpActiveSnapshotForBoard(board, all[key]));
+  if (!options.asNew && !hasActiveSnapshot && _gpHasAmbiguousSnapshotName(all[key], fallbackName)) {
+    showToast("⚠️ More than one saved plan has this name. Load the intended plan before saving.", { type: "warning", duration: 5000 });
+    return false;
+  }
   const activeSnapshot = options.asNew
     ? null
     : _gpResolveCurrentSnapshotForSave(board, all, key);

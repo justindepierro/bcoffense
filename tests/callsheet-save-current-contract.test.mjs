@@ -12,6 +12,8 @@ const [callsheet, templates, pageActions] = await Promise.all([
 assert.match(callsheet, /activeSavedCallSheetId/, "Call Sheet settings retain the active saved-sheet identity");
 assert.match(templates, /function saveCurrentCallSheet\(\)/, "Call Sheet has a prompt-free current-sheet save path");
 assert.match(templates, /function getCurrentCallSheetSaveTarget/, "normal save resolves an existing sheet before creating one");
+assert.match(templates, /function hasAmbiguousCurrentCallSheetName/, "a duplicate display name cannot silently choose a saved Call Sheet");
+assert.match(templates, /More than one saved call sheet has this name/, "ambiguous legacy Call Sheet identity asks the coach to load the intended record");
 assert.match(templates, /saveCallSheet\(\);/, "current-sheet save persists the working sheet first");
 assert.match(templates, /activeSavedCallSheetName = template\.builtIn \? ""/, "loading a saved sheet makes it the next Save target");
 assert.match(pageActions, /label: "Save", sublabel: "Updates current sheet", run: \(\) => _paCall\("saveCurrentCallSheet"\)/, "Actions Save updates the current Call Sheet without a naming prompt");

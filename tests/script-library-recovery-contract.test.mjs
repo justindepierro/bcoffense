@@ -20,6 +20,8 @@ assert.match(scriptPlayer, /function getDeletedSavedScripts/, "saved scripts exp
 assert.match(scriptPlayer, /function reconcileDuplicateSavedScriptDocuments/, "legacy same-day saved copies are consolidated into one living script");
 assert.match(scriptStorage, /function duplicateCurrentScript\(\)/, "copying is an explicit action instead of a normal-save duplicate path");
 assert.doesNotMatch(scriptStorage, /title: "Duplicate Name"/, "normal saves do not interrupt coaches with duplicate-name prompts");
+assert.match(scriptStorage, /const sameDocumentMatches = !active/, "legacy script recovery evaluates every same-name candidate instead of taking the first match");
+assert.match(scriptStorage, /More than one saved script has this name and date/, "an ambiguous legacy Script identity cannot overwrite an arbitrary saved record");
 assert.match(scriptPlayer, /function getPlayerPublishedScripts\(\)[\s\S]*?getActiveSavedScripts\(\)/, "deleted scripts are never projected to player logins");
 assert.match(scriptStorage, /function openCloudSavedScriptRecovery/, "admins can self-serve immutable cloud script history");
 assert.match(scriptStorage, /function restoreCloudSavedScript/, "cloud history restores through an explicit user action");

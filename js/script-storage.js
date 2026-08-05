@@ -618,13 +618,20 @@ async function saveScript() {
     const active = savedScripts.find(
       (s) => String(s.id) === String(activeScriptSaveId),
     );
-    const sameDocument = !active && typeof getSavedScriptDocumentKey === "function"
-      ? savedScripts.find((candidate) =>
+    const sameDocumentMatches = !active && typeof getSavedScriptDocumentKey === "function"
+      ? savedScripts.filter((candidate) =>
         !candidate.deletedAt &&
         getSavedScriptDocumentKey(candidate) === getSavedScriptDocumentKey({ name, date }),
       )
-      : null;
-    const existing = active || sameDocument;
+      : [];
+    // A display name is migration evidence, never a record identity. An old
+    // draft without its saved ID may reconnect to one unambiguous record, but
+    // it must never overwrite whichever duplicate happens to be first.
+    if (!active && sameDocumentMatches.length > 1) {
+      showToast("⚠️ More than one saved script has this name and date. Open the intended script from Library before saving.", { type: "warning", duration: 5000 });
+      return false;
+    }
+    const existing = active || sameDocumentMatches[0] || null;
     if (existing) {
       markSavedScriptUpdated(existing, "save");
       existing.name = name;
