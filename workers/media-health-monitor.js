@@ -9,6 +9,7 @@ const R2_PAGE_SIZE = 1000;
 const KV_PAGE_SIZE = 1000;
 const LEGACY_CLIP_MANIFEST_PREFIX = "clips:";
 const LEGACY_CLIP_PREFIX = "clips/";
+const LEGACY_DIAGRAM_PREFIXES = ["media/plays/", "images/"];
 const STUCK_UPLOAD_SECONDS = 15 * 60;
 
 function teamPrefix(teamId) {
@@ -17,6 +18,13 @@ function teamPrefix(teamId) {
 
 function decodeComponent(value) {
   try { return decodeURIComponent(value); } catch (_err) { return ""; }
+}
+
+function legacyDiagramKind(key) {
+  const value = String(key || "");
+  if (value.startsWith("media/plays/") || value.startsWith("images/play:")) return "legacy-canonical-key";
+  if (value.startsWith("images/") && value.slice("images/".length).includes("|")) return "legacy-content";
+  return "legacy-signature";
 }
 
 async function listR2(bucket, prefixes) {
@@ -85,9 +93,10 @@ async function runTeamHealth(env, teamId, includeLegacy) {
   const startedAt = Math.floor(Date.now() / 1000);
   const diagramPrefix = `${teamPrefix(teamId)}plays/`;
   const clipPrefix = `${teamPrefix(teamId)}clips/`;
-  const [pointers, diagramList, clipList, manifestList, release, pendingUploads, stuckUploads] = await Promise.all([
+  const [pointers, diagramList, legacyDiagramList, clipList, manifestList, release, pendingUploads, stuckUploads] = await Promise.all([
     env.DB.prepare("SELECT media_id, r2_key, checksum FROM team_media_manifests WHERE team_id = ? AND kind = 'diagram'").bind(teamId).all(),
     listR2(env.CLIPS, [diagramPrefix]),
+    includeLegacy ? listR2(env.CLIPS, LEGACY_DIAGRAM_PREFIXES) : Promise.resolve({ objects: [], truncated: false }),
     listR2(env.CLIPS, [clipPrefix, ...(includeLegacy ? [LEGACY_CLIP_PREFIX] : [])]),
     listManifestSigs(env.SYNC_KV, teamId, includeLegacy),
     env.DB.prepare("SELECT updated_at FROM team_player_release_current WHERE team_id = ? LIMIT 1").bind(teamId).first(),
@@ -100,6 +109,13 @@ async function runTeamHealth(env, teamId, includeLegacy) {
   ]);
   const clipManifests = await readClipManifestHealth(env.SYNC_KV, env, teamId, manifestList.sigs);
   const diagramObjectByKey = new Map((diagramList.objects || []).map((object) => [String(object.key || ""), object]));
+  const pointerKeys = new Set((pointers.results || []).map((row) => String(row.r2_key || "")).filter(Boolean));
+  const orphanCanonicalDiagramKeys = [...diagramObjectByKey.keys()].filter((key) => !pointerKeys.has(key));
+  const legacyDiagramCounts = (legacyDiagramList.objects || []).reduce((counts, object) => {
+    const kind = legacyDiagramKind(object?.key);
+    counts[kind] = (counts[kind] || 0) + 1;
+    return counts;
+  }, { "legacy-canonical-key": 0, "legacy-content": 0, "legacy-signature": 0 });
   const clipObjectKeys = new Set((clipList.objects || []).map((object) => String(object.key || "")));
   const rows = pointers.results || [];
   const missing = [];
@@ -138,11 +154,15 @@ async function runTeamHealth(env, teamId, includeLegacy) {
       : "healthy";
   const completedAt = Math.floor(Date.now() / 1000);
   const detail = {
-    scanComplete: !diagramList.truncated && !clipList.truncated && !manifestList.truncated,
+    scanComplete: !diagramList.truncated && !legacyDiagramList.truncated && !clipList.truncated && !manifestList.truncated,
     missingMediaIds: missing.slice(0, 25),
     invalidMediaIds: invalid.slice(0, 25),
     checksumMismatchMediaIds: checksumMismatch.slice(0, 25),
     missingClipIds: missingClips.slice(0, 25),
+    canonicalDiagramObjectCount: diagramObjectByKey.size,
+    orphanCanonicalDiagramCount: orphanCanonicalDiagramKeys.length,
+    orphanCanonicalDiagramKeys: orphanCanonicalDiagramKeys.slice(0, 25),
+    legacyDiagramObjectCounts: legacyDiagramCounts,
     clipCount,
     // A queued receipt is not automatically a failure: it may be a phone
     // safely offline with its original bytes retained in IndexedDB. Only a

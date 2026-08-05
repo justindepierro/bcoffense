@@ -75,6 +75,8 @@ assert.match(client, /player_question: "❓"/, "the bell has an icon for player 
 assert.match(client, /player_reply: "↩️"/, "the bell has an icon for player replies");
 assert.match(client, /getCurrentAuthUser === "function" \? getCurrentAuthUser\(\) : null/, "the unread poll waits for a verified session before calling its protected endpoint");
 assert.match(client, /credentials: "same-origin"[\s\S]*cache: "no-store"/, "notification reads use the current same-site session and never reuse a stale count");
+assert.match(client, /canAttemptBackgroundRequest\("notification-count"\)/, "notification polling respects the shared background service cooldown");
+assert.match(client, /recordBackgroundRequestFailure\?\.\("notification-count", err\)/, "temporary notification service failures are recorded for a calm retry");
 assert.match(client, /const _NOTIF_CONVERSATION_TYPES = new Set/, "discussion alerts are explicitly classified as conversation work");
 assert.match(client, /function _notifGroupItems\(items\)/, "repeated practice publish receipts are grouped in the feed");
 assert.match(client, /_NOTIF_STAFF_INBOX_TYPES/, "staff discussion activity has a dedicated coach-inbox classification");

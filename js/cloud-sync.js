@@ -1237,6 +1237,7 @@
       const err = new Error(`${data.error || `Workspace request failed with ${response.status}`}${detail}`);
       err.status = response.status;
       err.data = data;
+      err.retryable = response.status === 429 || (response.status >= 500 && response.status < 600);
       throw err;
     }
     return { ...data, etag: response.headers.get("ETag") || "" };
@@ -2404,12 +2405,20 @@
       }
       const canReadTeamWorkspace = ["admin", "coach", "assistant_coach"].includes(String(currentUser.role || ""));
       if (!canReadTeamWorkspace || hasLocalTeamEditInProgress()) return null;
+      // This is a quiet freshness check, never a required save. Respect the
+      // shared outage circuit so focus/visibility events cannot hammer a
+      // temporarily unavailable revision endpoint.
+      if (typeof window.workspaceSync?.canAttemptBackgroundRequest === "function" &&
+          !window.workspaceSync.canAttemptBackgroundRequest("team-workspace-refresh")) {
+        return null;
+      }
 
       const settings = getCloudSyncSettings();
       const remote = await fetchCanonicalWorkspace({
         allowMissing: true,
         ifNoneMatch: settings.lastWorkspaceRevision || "",
       });
+      window.workspaceSync?.recordBackgroundRequestSuccess?.("team-workspace-refresh");
       if (!remote || remote.notModified || !remote.revision || remote.revision === settings.lastWorkspaceRevision) return remote;
 
       // A browser with no recorded canonical head may be an older offline
@@ -2455,7 +2464,11 @@
       // opens one clear sign-in prompt. Do not add a misleading sync warning
       // after that deliberate security transition.
       if (err?.status === 401) return null;
-      console.warn("Team foreground refresh deferred:", err);
+      const deferred = window.workspaceSync?.recordBackgroundRequestFailure?.("team-workspace-refresh", err);
+      // Expected transient failures are deliberately quiet: their retry
+      // timing and the saved-local status live in the shared sync dock.
+      // Preserve a diagnostic warning only for unexpected data/logic faults.
+      if (!deferred && !opts.quiet) console.warn("Team foreground refresh deferred:", err);
       return null;
     } finally {
       teamForegroundRefreshPromise = null;

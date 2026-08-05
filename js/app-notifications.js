@@ -99,6 +99,8 @@ async function _pollUnreadCount(opts = {}) {
   // failure, so skip it and let the authenticated render start polling.
   const authUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
   if (!authUser) return;
+  if (typeof window.workspaceSync?.canAttemptBackgroundRequest === "function" &&
+      !window.workspaceSync.canAttemptBackgroundRequest("notification-count")) return;
   try {
     const res = await fetch("/api/notifications/count", {
       credentials: "same-origin",
@@ -106,15 +108,30 @@ async function _pollUnreadCount(opts = {}) {
       headers: { Accept: "application/json" },
     });
     if (res.status === 401) return;
-    if (!res.ok) return;
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const err = new Error(data.error || `Alert request failed with ${res.status}`);
+      err.status = res.status;
+      err.data = data;
+      err.retryable = res.status === 429 || (res.status >= 500 && res.status < 600);
+      window.workspaceSync?.recordBackgroundRequestFailure?.("notification-count", err);
+      _setNotificationState({
+        checkedAt: new Date().toISOString(),
+        error: err.retryable ? "Alerts will reconnect automatically." : "Could not check alerts.",
+        online: typeof navigator === "undefined" || navigator.onLine !== false,
+      }, opts);
+      return;
+    }
     const data = await res.json();
+    window.workspaceSync?.recordBackgroundRequestSuccess?.("notification-count");
     _setNotificationState({
       unread: data.unread || 0,
       checkedAt: new Date().toISOString(),
       error: "",
       online: typeof navigator === "undefined" || navigator.onLine !== false,
     }, opts);
-  } catch (_) {
+  } catch (err) {
+    window.workspaceSync?.recordBackgroundRequestFailure?.("notification-count", err);
     _setNotificationState({
       checkedAt: new Date().toISOString(),
       error: "Could not check alerts.",

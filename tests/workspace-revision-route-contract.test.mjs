@@ -54,6 +54,10 @@ assert.match(workspaceSync, /function acquireTeamWorkspaceLease/, "workspace syn
 assert.match(workspaceSync, /function hasBlockingWorkspaceSyncWork\(\)/, "a background-retrying publish does not block a safe app-shell upgrade forever");
 assert.match(workspaceSync, /\["dirty", "saving", "syncing"\]/, "only actively writing work blocks a service-worker update");
 assert.match(workspaceSync, /workspace-published/, "workspace sync broadcasts successful team revision handoffs");
+assert.match(workspaceSync, /function canAttemptWorkspaceBackgroundRequest\(key\)/, "background polling shares one retry circuit instead of per-feature retry loops");
+assert.match(workspaceSync, /function recordWorkspaceBackgroundRequestFailure\(key, error\)/, "temporary service failures record an exponentially delayed retry");
+assert.match(cloudSync, /canAttemptBackgroundRequest\("team-workspace-refresh"\)/, "foreground workspace refresh respects the shared service cooldown");
+assert.match(cloudSync, /recordBackgroundRequestFailure\?\.\("team-workspace-refresh", err\)/, "expected workspace service failures are reported to the shared circuit");
 assert.match(appInit, /Loading team workspace\.\.\./, "each staff login checks its canonical workspace before rendering");
 assert.match(appInit, /waitForStaffWorkspaceBootstrap/, "staff startup hydration has a bounded bootstrap path");
 assert.match(appInit, /return whenAuthReady\(\);/, "startup waits for the authoritative auth result before choosing a workspace path");

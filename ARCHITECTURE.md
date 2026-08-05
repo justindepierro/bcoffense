@@ -1,6 +1,6 @@
 # BCOffense Architecture
 
-Last updated: 2026-07-15
+Last updated: 2026-08-04
 
 This document maps the current wiring of BCOffense and records the cleanup work
 that would make the app feel faster and more professional. It is intentionally
@@ -158,7 +158,10 @@ restore belong in admin recovery surfaces.
 
 Main owners:
 
-- `js/workspace-sync.js`: shared visible queue and retry surface.
+- `js/workspace-sync.js`: shared visible queue, connection state, and the one
+  background-request outage circuit. Quiet polls must use
+  `canAttemptBackgroundRequest()` and report their result here instead of
+  creating another per-feature retry timer.
 - `js/cloud-sync.js`: publish/update orchestration and activity log.
 - `js/script-player.js`: player-visible script publishing and publish status.
 - `js/play-images.js`: diagram readiness reports and media publish.
@@ -166,6 +169,41 @@ Main owners:
 - `js/media-inventory.js`: coach-facing media inventory and cleanup candidate
   report.
 - `js/signals.js`: signal clip upload and signal publish metadata.
+
+## Surgical Cleanup Protocol
+
+Do not rewrite the global-scope app in one pass. The safe target is a smaller
+number of explicit owners, reached through reversible slices:
+
+1. **Map before moving.** Record the current owner, callers, persisted keys,
+   public actions, and success/failure behavior. Run `npm run audit:globals`
+   before and after each slice.
+2. **Make one authority executable.** Move shared policy behind a narrow
+   existing boundary (for example, `workspace-sync` for background retries)
+   while feature modules retain their own data and presentation.
+3. **Dual-read before deletion.** Any storage, media, or identifier migration
+   must read the new canonical form first and retain the old form as a
+   documented recovery fallback until production inventory proves it is empty.
+4. **Add a removal gate.** A legacy path can be deleted only after a migration
+   is idempotent, an inventory shows no remaining records, a backup/rollback
+   test exists, and the targeted contract test passes.
+5. **Ship one boundary at a time.** Require unit contracts, smoke checks,
+   hydration E2E, and a production deployment verification before starting the
+   next owner slice. Do not combine visual restyling, data migration, and
+   startup-load changes in one release.
+
+Current cleanup order:
+
+1. Shared sync/retry/status ownership (in progress).
+2. Save-current behavior for Script, Call Sheet, Game Plan, and Wristband,
+   using one explicit current-record identity per surface.
+3. Cross-file global guard reduction by owner, starting with shell and command
+   dispatch boundaries.
+4. Data/media legacy retirement only after the existing admin inventory and
+   migration reports show a zero remaining count.
+5. First-load performance changes only after measurements identify a safe,
+   independent feature boundary; loading-order correctness outweighs a
+   speculative lazy-load win.
 
 ## Media Architecture
 

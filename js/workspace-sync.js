@@ -14,10 +14,60 @@
   const workspaceConnectivity = {
     browserOnline: typeof navigator === "undefined" || navigator.onLine !== false,
     reachability: "unknown", // unknown | online | unavailable
+    service: "unknown", // unknown | available | unavailable
     checkedAt: "",
     lastError: "",
   };
   let workspaceConnectivityProbe = null;
+
+  // Background reads used to each invent their own interval and retry rule.
+  // That made a temporary Pages/D1 outage look like a fresh error every time
+  // the app gained focus, saved a field, or polled the notification bell.
+  // Keep the circuit state in this one owner. Individual features still own
+  // their data and UI; they only ask this coordinator whether a quiet retry is
+  // due and report the outcome.
+  const WORKSPACE_BACKGROUND_RETRY_BASE_MS = 15 * 1000;
+  const WORKSPACE_BACKGROUND_RETRY_MAX_MS = 5 * 60 * 1000;
+  const workspaceBackgroundRequests = new Map();
+
+  function _wsRetryAfterMs(error, attempt) {
+    const hintedSeconds = Math.max(0, Number(error?.data?.retryAfterSeconds || error?.retryAfterSeconds || 0) || 0);
+    const base = hintedSeconds ? hintedSeconds * 1000 : WORKSPACE_BACKGROUND_RETRY_BASE_MS;
+    return Math.min(WORKSPACE_BACKGROUND_RETRY_MAX_MS, base * (2 ** Math.max(0, attempt - 1)));
+  }
+
+  function _wsIsTransientBackgroundError(error) {
+    const status = Number(error?.status || 0);
+    return error?.retryable === true || error?.code === "BC_WORKSPACE_TIMEOUT" || status === 429 || (status >= 500 && status < 600) || error?.name === "AbortError" || error instanceof TypeError;
+  }
+
+  function canAttemptWorkspaceBackgroundRequest(key) {
+    const record = workspaceBackgroundRequests.get(String(key || "default"));
+    return !record || Date.now() >= Number(record.nextAttemptAt || 0);
+  }
+
+  function recordWorkspaceBackgroundRequestSuccess(key) {
+    workspaceBackgroundRequests.delete(String(key || "default"));
+    if (![...workspaceBackgroundRequests.values()].some((record) => Number(record.nextAttemptAt || 0) > Date.now())) {
+      _wsSetConnectivity({ service: "available", lastError: "" });
+    }
+  }
+
+  function recordWorkspaceBackgroundRequestFailure(key, error) {
+    if (!_wsIsTransientBackgroundError(error)) return null;
+    const normalizedKey = String(key || "default");
+    const previous = workspaceBackgroundRequests.get(normalizedKey);
+    const attempts = Math.max(1, Number(previous?.attempts || 0) + 1);
+    const retryAfterMs = _wsRetryAfterMs(error, attempts);
+    const record = {
+      attempts,
+      nextAttemptAt: Date.now() + retryAfterMs,
+      lastError: String(error?.message || "Team service is temporarily unavailable."),
+    };
+    workspaceBackgroundRequests.set(normalizedKey, record);
+    _wsSetConnectivity({ service: "unavailable", lastError: record.lastError });
+    return { ...record, retryAfterMs };
+  }
 
   // Multiple open tabs share local storage but used to publish and refresh the
   // canonical team revision independently. A small, expiring lease gives one
@@ -202,9 +252,10 @@
       headers: { Accept: "application/json" },
       signal: controller?.signal,
     })
-      // A response (including 401/5xx) proves the app server is reachable.
+      // A response proves the app server is reachable. A separate background
+      // request result owns whether the team data service itself is available.
       .then(() => {
-        _wsSetConnectivity({ browserOnline: true, reachability: "online", lastError: "" });
+        _wsSetConnectivity({ browserOnline: true, reachability: "online" });
         return getWorkspaceSyncConnectivity();
       })
       .catch((err) => {
@@ -224,7 +275,7 @@
 
   function _wsConnectivityState() {
     if (workspaceConnectivity.browserOnline === false) return "offline";
-    if (workspaceConnectivity.reachability === "unavailable") return "unavailable";
+    if (workspaceConnectivity.reachability === "unavailable" || workspaceConnectivity.service === "unavailable") return "unavailable";
     return "";
   }
 
@@ -546,6 +597,9 @@
     setStatus: setWorkspaceSyncStatus,
     getConnectivity: getWorkspaceSyncConnectivity,
     checkConnectivity: checkWorkspaceSyncConnectivity,
+    canAttemptBackgroundRequest: canAttemptWorkspaceBackgroundRequest,
+    recordBackgroundRequestSuccess: recordWorkspaceBackgroundRequestSuccess,
+    recordBackgroundRequestFailure: recordWorkspaceBackgroundRequestFailure,
     acquireTeamWorkspaceLease,
     releaseTeamWorkspaceLease,
     announceTeamWorkspacePublished,
