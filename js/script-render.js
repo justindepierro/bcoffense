@@ -390,8 +390,8 @@ function renderPeriodActionsToolbar(index, periodLabel) {
             </div>
           </details>
           <details class="period-actions-menu period-tools-menu">
-            <summary title="More organization and sharing tools for ${escapeHtml(periodLabel)}" aria-label="More tools for ${escapeHtml(periodLabel)}">
-              <span aria-hidden="true">⋯</span> More tools
+            <summary title="Organization and sharing tools for ${escapeHtml(periodLabel)}" aria-label="Organize and share ${escapeHtml(periodLabel)}">
+              <span aria-hidden="true">⋯</span> Organize &amp; share
             </summary>
             <div class="period-actions-menu-panel" role="group" aria-label="Actions for ${escapeHtml(periodLabel)}">
               ${actions.map(([action, label, icon, title, extraClass = ""]) => renderPeriodActionButton(action, index, label, icon, title, extraClass)).join("")}

@@ -258,10 +258,28 @@ function initScriptToolsDrawerSections() {
   });
 }
 
+// Period commands are rendered with every Script refresh, so bind one
+// delegated listener to their stable container. It keeps the worksheet calm:
+// opening Lineup closes Organize & share (and the same is true across periods)
+// instead of leaving overlapping popovers behind after a coach changes focus.
+function initScriptPeriodActionMenus() {
+  const playsEl = document.getElementById("scriptPlays");
+  if (!playsEl || playsEl.dataset.periodActionMenusReady === "true") return;
+  playsEl.dataset.periodActionMenusReady = "true";
+  playsEl.addEventListener("toggle", (event) => {
+    const menu = event.target;
+    if (!(menu instanceof HTMLDetailsElement) || !menu.matches(".period-actions-menu[open]")) return;
+    playsEl.querySelectorAll(".period-actions-menu[open]").forEach((other) => {
+      if (other !== menu) other.open = false;
+    });
+  }, true);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   _syncScriptSidebarTabUi();
   applyScriptLibraryPinState();
   initScriptToolsDrawerSections();
+  initScriptPeriodActionMenus();
 });
 
 document.addEventListener("keydown", (event) => {

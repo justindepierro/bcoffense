@@ -6966,6 +6966,7 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
   position: relative;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   min-height: 0;
   padding: 4px 8px;
   background: var(--color-surface-muted);
