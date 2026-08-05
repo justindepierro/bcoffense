@@ -1132,7 +1132,8 @@ function saveCallSheet() {
   // Persist constraints snapshot alongside call sheet
   if (typeof saveConstraintsSnapshot === "function") saveConstraintsSnapshot();
   // Record artifact modified timestamp (#38)
-  if (typeof recordArtifactModified === "function") recordArtifactModified("callsheet");
+  if (typeof completeArtifactSaveLifecycle === "function") completeArtifactSaveLifecycle("callsheet");
+  else if (typeof recordArtifactModified === "function") recordArtifactModified("callsheet");
   if (typeof refreshCallSheetGamePlanDrawer === "function") {
     refreshCallSheetGamePlanDrawer();
   }

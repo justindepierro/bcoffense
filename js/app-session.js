@@ -62,6 +62,18 @@ function markWristbandClean() {
   }
 }
 
+// One completion boundary for normal artifact Save actions. Storage remains
+// module-owned, but clean state, draft retirement, and revision tracking do
+// not drift among the coach workspaces.
+function completeArtifactSaveLifecycle(type, opts = {}) {
+  const artifact = String(type || "");
+  if (artifact === "script" && opts.markClean !== false) markScriptClean();
+  if (artifact === "wristband" && opts.markClean !== false) markWristbandClean();
+  if (opts.discardDraftKey && typeof discardDraftData === "function") discardDraftData(opts.discardDraftKey);
+  if (opts.recordModified !== false && typeof recordArtifactModified === "function") recordArtifactModified(artifact);
+  return artifact;
+}
+
 window.addEventListener("beforeunload", (e) => {
   const workspaceSyncPending =
     typeof window.hasWorkspaceSyncWork === "function" &&

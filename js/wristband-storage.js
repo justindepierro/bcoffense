@@ -174,10 +174,13 @@ function finalizeWristbandSave(record) {
     activeWristbandSavedAt = record.savedAt || new Date().toISOString();
   }
   refreshWristbandSavedReferences();
-  markWristbandClean();
-  discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
+  if (typeof completeArtifactSaveLifecycle === "function") completeArtifactSaveLifecycle("wristband", { discardDraftKey: STORAGE_KEYS.WRISTBAND_DRAFT });
+  else {
+    markWristbandClean();
+    discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
+    if (typeof recordArtifactModified === "function") recordArtifactModified("wristband");
+  }
   updateWristbandSaveChrome();
-  if (typeof recordArtifactModified === "function") recordArtifactModified("wristband");
 }
 
 async function confirmWristbandHandoffPersistence(summary) {

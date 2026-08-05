@@ -22,9 +22,12 @@ function finalizeScriptSave(record) {
     activeScriptSaveTitle = record.name || "Practice Script";
     activeScriptSavedAt = record.savedAt || new Date().toISOString();
   }
-  markScriptClean();
-  discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
-  if (typeof recordArtifactModified === "function") recordArtifactModified("script");
+  if (typeof completeArtifactSaveLifecycle === "function") completeArtifactSaveLifecycle("script", { discardDraftKey: STORAGE_KEYS.SCRIPT_DRAFT });
+  else {
+    markScriptClean();
+    discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
+    if (typeof recordArtifactModified === "function") recordArtifactModified("script");
+  }
   if (typeof updateScriptArtifactStatus === "function") updateScriptArtifactStatus();
 }
 

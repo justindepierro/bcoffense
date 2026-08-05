@@ -175,7 +175,8 @@ async function saveGamePlanSnapshot(options = {}) {
     activeSnapshot.board = _gpPrepareBoardForSnapshot(board, activeSnapshot);
     _gpSaveAllSnapshots(all);
     _gpSetActiveSnapshot(activeSnapshot);
-    if (typeof recordArtifactModified === "function") recordArtifactModified("gameplan");
+    if (typeof completeArtifactSaveLifecycle === "function") completeArtifactSaveLifecycle("gameplan");
+    else if (typeof recordArtifactModified === "function") recordArtifactModified("gameplan");
     showToast(`✅ “${activeSnapshot.name}” updated`, { type: "success" });
     return true;
   }
@@ -197,7 +198,8 @@ async function saveGamePlanSnapshot(options = {}) {
   all[key].push(snapshot);
   _gpSaveAllSnapshots(all);
   _gpSetActiveSnapshot(snapshot);
-  if (typeof recordArtifactModified === "function") recordArtifactModified("gameplan");
+  if (typeof completeArtifactSaveLifecycle === "function") completeArtifactSaveLifecycle("gameplan");
+  else if (typeof recordArtifactModified === "function") recordArtifactModified("gameplan");
   showToast(`✅ Saved “${snapshot.name}” — future Save updates this plan`, { type: "success" });
   return true;
 }
