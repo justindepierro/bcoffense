@@ -11,6 +11,7 @@ const LEGACY_CLIP_MANIFEST_PREFIX = "clips:";
 const LEGACY_CLIP_PREFIX = "clips/";
 const LEGACY_DIAGRAM_PREFIXES = ["media/plays/", "images/"];
 const STUCK_UPLOAD_SECONDS = 15 * 60;
+const CANONICAL_ORPHAN_RETENTION_SECONDS = 7 * 24 * 60 * 60;
 
 function teamPrefix(teamId) {
   return `media/teams/${encodeURIComponent(String(teamId || "").trim())}/`;
@@ -89,6 +90,41 @@ async function readClipManifestHealth(store, env, teamId, sigs) {
   return rows;
 }
 
+async function syncCanonicalOrphanCandidates(db, teamId, keys, scannedAt, scanComplete) {
+  // A partial R2 listing can never prove that a key is orphaned or restored.
+  // Leave the ledger untouched until a complete scan is available.
+  if (!scanComplete) return { pendingCount: 0, eligibleCount: 0, tracked: false };
+  const uniqueKeys = [...new Set(keys.map((key) => String(key || "")).filter(Boolean))];
+  for (const r2Key of uniqueKeys) {
+    await db.prepare(
+      `INSERT INTO media_cleanup_candidates (team_id, r2_key, first_seen_at, last_seen_at, scan_count, status)
+       VALUES (?, ?, ?, ?, 1, 'pending')
+       ON CONFLICT(team_id, r2_key) DO UPDATE SET
+         last_seen_at = excluded.last_seen_at,
+         scan_count = media_cleanup_candidates.scan_count + 1,
+         status = 'pending'`,
+    ).bind(teamId, r2Key, scannedAt, scannedAt).run();
+  }
+  // If a future scan finds the key referenced again, it is no longer a
+  // deletion candidate. Preserve the record as audit history, never erase it.
+  await db.prepare(
+    `UPDATE media_cleanup_candidates
+       SET status = 'resolved'
+       WHERE team_id = ? AND status = 'pending' AND last_seen_at < ?`,
+  ).bind(teamId, scannedAt).run();
+  const counts = await db.prepare(
+    `SELECT
+       SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending_count,
+       SUM(CASE WHEN status = 'pending' AND first_seen_at <= ? THEN 1 ELSE 0 END) AS eligible_count
+       FROM media_cleanup_candidates WHERE team_id = ?`,
+  ).bind(scannedAt - CANONICAL_ORPHAN_RETENTION_SECONDS, teamId).first();
+  return {
+    pendingCount: Number(counts?.pending_count || 0) || 0,
+    eligibleCount: Number(counts?.eligible_count || 0) || 0,
+    tracked: true,
+  };
+}
+
 async function runTeamHealth(env, teamId, includeLegacy) {
   const startedAt = Math.floor(Date.now() / 1000);
   const diagramPrefix = `${teamPrefix(teamId)}plays/`;
@@ -146,6 +182,14 @@ async function runTeamHealth(env, teamId, includeLegacy) {
   const releaseAgeSeconds = release?.updated_at ? Math.max(0, startedAt - Number(release.updated_at)) : -1;
   const pendingReceiptRows = pendingUploads.results || [];
   const stuckReceiptRows = stuckUploads.results || [];
+  const scanComplete = !diagramList.truncated && !legacyDiagramList.truncated && !clipList.truncated && !manifestList.truncated;
+  const orphanRetention = await syncCanonicalOrphanCandidates(
+    env.DB,
+    teamId,
+    orphanCanonicalDiagramKeys,
+    startedAt,
+    scanComplete,
+  );
   const hasMediaIssue = missing.length || invalid.length || checksumMismatch.length || missingClips.length;
   const status = hasMediaIssue || stuckReceiptRows.length
     ? "attention"
@@ -154,7 +198,7 @@ async function runTeamHealth(env, teamId, includeLegacy) {
       : "healthy";
   const completedAt = Math.floor(Date.now() / 1000);
   const detail = {
-    scanComplete: !diagramList.truncated && !legacyDiagramList.truncated && !clipList.truncated && !manifestList.truncated,
+    scanComplete,
     missingMediaIds: missing.slice(0, 25),
     invalidMediaIds: invalid.slice(0, 25),
     checksumMismatchMediaIds: checksumMismatch.slice(0, 25),
@@ -162,6 +206,10 @@ async function runTeamHealth(env, teamId, includeLegacy) {
     canonicalDiagramObjectCount: diagramObjectByKey.size,
     orphanCanonicalDiagramCount: orphanCanonicalDiagramKeys.length,
     orphanCanonicalDiagramKeys: orphanCanonicalDiagramKeys.slice(0, 25),
+    orphanRetention: {
+      retentionDays: CANONICAL_ORPHAN_RETENTION_SECONDS / (24 * 60 * 60),
+      ...orphanRetention,
+    },
     legacyDiagramObjectCounts: legacyDiagramCounts,
     clipCount,
     // A queued receipt is not automatically a failure: it may be a phone
