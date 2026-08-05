@@ -758,6 +758,7 @@ function syncMobilePrimaryNav() {
   if (nav.hidden) return;
   const activeTab = document.body?.dataset.activeTab || "";
   const isPlayer = document.body?.dataset?.authRole === "player";
+  nav.setAttribute("aria-label", isPlayer ? "Player study navigation" : "Mobile coach navigation");
   nav.querySelectorAll("[data-mobile-tab]").forEach((button) => {
     const tab = button.dataset.mobileTab;
     const allowed = typeof canAccessTab !== "function" || canAccessTab(tab);

@@ -202,6 +202,7 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
   .mobile-primary-nav button::before { content: ""; position: absolute; top: 1px; width: 22px; height: 3px; border-radius: 999px; background: var(--color-primary); opacity: 0; transform: scaleX(.35); transition: opacity var(--transition-fast), transform var(--transition-fast); }
   .mobile-primary-nav button.active { color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 10%, transparent); }
   .mobile-primary-nav button.active::before { opacity: 1; transform: scaleX(1); }
+  .mobile-primary-nav button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
   body.is-mobile-screen:not(.play-presentation-open) { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
   .mobile-primary-more-overlay { position: fixed; z-index: calc(var(--z-modal) + 1); inset: 0; display: flex; align-items: end; background: color-mix(in srgb, var(--color-primary-dark) 76%, transparent); opacity: 0; transition: opacity .16s ease; backdrop-filter: blur(5px); }
   .mobile-primary-more-overlay.visible { opacity: 1; }

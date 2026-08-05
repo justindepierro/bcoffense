@@ -152,6 +152,11 @@ assert.match(
   "the phone player nav exposes published Signals directly",
 );
 assert.match(
+  indexHtml,
+  /data-mobile-tab="dashboard"[\s\S]*?data-mobile-tab="playbook"[\s\S]*?data-mobile-player-signals="true"[\s\S]*?data-mobile-tab="script"[\s\S]*?data-mobile-player-quiz="true"/,
+  "the phone player nav matches the portal study order: Home, Plays, Signals, Practice, Quiz",
+);
+assert.match(
   appShell,
   /const isPlayer = document\.body\?\.dataset\?\.authRole === "player";[\s\S]*?playerQuiz\.hidden = !isPlayer;[\s\S]*?playerSignals\.hidden = !isPlayer;[\s\S]*?more\.hidden = isPlayer;/,
   "the mobile shell swaps staff More for player-only Signals and Quiz destinations by role",
