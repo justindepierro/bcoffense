@@ -556,7 +556,18 @@ function openScriptLoadView() {
     typeof getSavedScripts === "function" ? getSavedScripts() : [];
 
   let html =
-    '<button type="button" class="page-actions-back" data-action="pageActionsBack">← Back</button>';
+    '<div class="page-actions-load-view"><button type="button" class="page-actions-back" data-action="pageActionsBack">← Back</button>';
+
+  // Templates are a starting point, not a saved-script record. Keeping this
+  // utility ahead of the library makes that distinction clear and prevents a
+  // lone Day Templates row from appearing to be another saved practice.
+  html += `
+    <section class="page-actions-load-tools" aria-labelledby="scriptLoadToolsHeading">
+      <div id="scriptLoadToolsHeading" class="page-actions-list-label">Start from a template</div>
+      <button type="button" class="page-actions-extra__item page-actions-load-template" data-action="openScriptDayTemplatesFromActions">
+        <span aria-hidden="true">📁</span><span><strong>Day Templates</strong><small>Start a practice from a reusable plan</small></span>
+      </button>
+    </section>`;
 
   if (!scripts.length) {
     html +=
@@ -582,8 +593,7 @@ function openScriptLoadView() {
     html += "</div>";
   }
 
-  html +=
-    '<div class="page-actions-extra"><button type="button" class="page-actions-extra__item" data-action="openScriptDayTemplatesFromActions">📁 Day Templates…</button></div>';
+  html += "</div>";
 
   bodyEl.innerHTML = html;
 }

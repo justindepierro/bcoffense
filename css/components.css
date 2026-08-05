@@ -4122,6 +4122,40 @@ kbd {
   font-weight: 700;
   cursor: pointer;
 }
+
+.page-actions-load-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.page-actions-load-tools {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+}
+
+.page-actions-load-template {
+  min-height: 48px;
+  justify-content: flex-start;
+}
+
+.page-actions-load-template > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.page-actions-load-template strong {
+  font-size: var(--font-size-sm);
+}
+
+.page-actions-load-template small {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+}
 .page-actions-empty {
   padding: var(--space-md);
   border: 1px dashed var(--color-border);
