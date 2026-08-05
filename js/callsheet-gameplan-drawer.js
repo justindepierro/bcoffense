@@ -254,7 +254,15 @@ function _gpDrawerRender() {
     notOnSheetWrap.classList.toggle("gp-drawer-filter-active", _gpDrawerState.notOnSheetOnly);
   }
 
-  // Active opponent label
+  // Current board and active opponent labels
+  const boardEl = document.getElementById("gpDrawerBoard");
+  if (boardEl) {
+    let boardName = "Current Game Plan";
+    try {
+      boardName = String(_gpEnsureBoard()?.sheetTitle || boardName).trim() || boardName;
+    } catch (_) { /* keep the dependable generic label if Game Plan is unavailable */ }
+    boardEl.textContent = boardName;
+  }
   const oppEl = document.getElementById("gpDrawerOpponent");
   if (oppEl) {
     const gw = typeof getGameWeek === "function" ? getGameWeek() : null;

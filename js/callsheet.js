@@ -1828,9 +1828,10 @@ function updateCSSourceBar() {
   bar.classList.remove("hidden");
 
   // GP: count unique plays across all GP boxes for this opponent
-  let gpOnCS = 0, gpTotal = 0;
+  let gpOnCS = 0, gpTotal = 0, gpBoardName = "";
   try {
     const board = _gpEnsureBoard();
+    gpBoardName = String(board?.sheetTitle || "").trim();
     const seen = new Set();
     Object.values(board.assignments || {}).forEach((boxPlays) => {
       (boxPlays || []).forEach((p) => {
@@ -1865,16 +1866,17 @@ function updateCSSourceBar() {
     : "📅 No active opponent";
 
   bar.innerHTML = `
+    <span class="csb-kicker">Sources</span>
     <span class="csb-opponent${opponent ? "" : " csb-opponent--empty"}">${context}</span>
     <button class="csb-item csb-source-card csb-source-card--action" data-action="openGameplanDrawer"
       title="Open current Game Plan plays and drag them onto this Call Sheet">
-      <span aria-hidden="true">${gpIcon}</span><span><strong>Game Plan</strong><small>${gpOnCS} of ${gpTotal} placed</small></span>
+      <span aria-hidden="true">${gpIcon}</span><span><strong>Game Plan</strong><small>${gpBoardName ? `${escapeHtml(gpBoardName)} · ` : ""}${gpTotal ? `${gpOnCS} placed · ${Math.max(0, gpTotal - gpOnCS)} ready` : "No plays on active board"}</small></span>
     </button>
     <span class="csb-item csb-source-card" title="Script plays currently on this call sheet">
-      <span aria-hidden="true">${scrIcon}</span><span><strong>Script</strong><small>${scriptOnCS} of ${scriptTotal} placed</small></span>
+      <span aria-hidden="true">${scrIcon}</span><span><strong>Practice Script</strong><small>${scriptTotal ? `${scriptOnCS} placed · ${Math.max(0, scriptTotal - scriptOnCS)} ready` : "No active script"}</small></span>
     </span>
     ${wristband.loaded
-      ? `<span class="csb-item csb-source-card csb-wb" title="Loaded wristband"><span aria-hidden="true">📟</span><span><strong>${escapeHtml(wristband.name)}</strong><small>${wristband.count} wristband plays</small></span></span>`
+      ? `<span class="csb-item csb-source-card csb-wb" title="Loaded wristband"><span aria-hidden="true">📟</span><span><strong>Wristband</strong><small>${escapeHtml(wristband.name)} · ${wristband.count} play${wristband.count === 1 ? "" : "s"}</small></span></span>`
       : '<button class="csb-item csb-wb csb-wb--missing" data-action="openLoadWristbandModal" title="Load a saved wristband to show its numbers on this call sheet">📟 Load wristband</button>'}
     <button class="btn btn-xs csb-finalize-btn" data-action="finalizeWeek" title="Validate and save game-day snapshot">🏁 Finalize</button>
   `;

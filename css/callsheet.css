@@ -4011,6 +4011,19 @@ body.shell-phone #callsheet .cs-empty-cat {
   font-variant-numeric: tabular-nums;
   font-size: var(--font-size-xs);
 }
+.gp-drawer-source-context {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+.gp-drawer-board {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .gp-drawer-scope {
   display: flex;
@@ -4875,6 +4888,13 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-source-bar.hidden {
   display: none;
 }
+.csb-kicker {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-micro);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
 .csb-opponent {
   font-weight: 600;
   color: var(--color-text);
@@ -4906,6 +4926,11 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 }
 .csb-source-card strong { font-size: var(--font-size-xs); }
 .csb-source-card small {
+  display: block;
+  max-width: min(22vw, 210px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--color-text-muted);
   font-size: var(--font-size-micro);
 }
