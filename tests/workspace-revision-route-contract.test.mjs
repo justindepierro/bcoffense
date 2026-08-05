@@ -3,12 +3,13 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const [source, cloudSync, workspaceSync, appInit, appShell] = await Promise.all([
+const [source, cloudSync, workspaceSync, appInit, appShell, deployScript] = await Promise.all([
   readFile(new URL("functions/workspace/revision.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/cloud-sync.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/workspace-sync.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/app-init.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/app-shell.js", `file://${root}/`), "utf8"),
+  readFile(new URL("scripts/deploy-cloudflare.sh", `file://${root}/`), "utf8"),
 ]);
 
 assert.match(source, /commitWorkspaceAndPlayerRelease/, "daily workspace route uses the atomic D1\/R2 commit helper");
@@ -72,5 +73,15 @@ assert.match(await readFile(new URL("index.html", `file://${root}/`), "utf8"), /
 assert.match(cloudSync, /err\.code !== "BC_WORKSPACE_TIMEOUT"/, "a startup workspace timeout exits quietly so a device can show its saved workspace");
 assert.match(source, /Workspace service unavailable/, "missing workspace bindings are safely logged for server-side diagnosis");
 assert.match(source, /Workspace team context unavailable/, "missing team context is safely logged for server-side diagnosis");
+assert.match(
+  deployScript,
+  /required_pages_secrets=\(AUTH_SESSION_SECRET AUTH_PRIMARY_TEAM_ID\)/,
+  "production deploys refuse to proceed without the static-staff workspace team binding",
+);
+assert.match(
+  deployScript,
+  /pages secret list --project-name bcoffense/,
+  "the deployment preflight verifies Pages secret bindings without reading their encrypted values",
+);
 
-console.log("workspace revision route and live-sync contract: 49 assertions passed");
+console.log("workspace revision route and live-sync contract: 51 assertions passed");

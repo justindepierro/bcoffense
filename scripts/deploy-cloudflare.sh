@@ -13,6 +13,21 @@ cd "$(dirname "$0")/.."
 # Use globally-installed wrangler directly (faster than npx)
 WRANGLER="$(which wrangler 2>/dev/null || echo "npx wrangler")"
 
+# The workspace revision route needs both a signing key and an explicit
+# primary-team value for static staff sessions. Without the latter, a cold
+# Pages Function falls back to D1 just to identify its team; a transient D1
+# lookup can then surface as a misleading /workspace/revision 503. Values are
+# never read or printed here—this guard verifies only that production has the
+# encrypted secret bindings required by the deployed Function.
+required_pages_secrets=(AUTH_SESSION_SECRET AUTH_PRIMARY_TEAM_ID)
+pages_secrets="$($WRANGLER pages secret list --project-name bcoffense)"
+for required_secret in "${required_pages_secrets[@]}"; do
+  if ! grep -Fq -- "- ${required_secret}:" <<<"$pages_secrets"; then
+    printf 'Missing required production Pages secret: %s\n' "$required_secret" >&2
+    exit 1
+  fi
+done
+
 tmpdir="$(mktemp -d)"
 cleanup() {
   rm -rf "$tmpdir"
