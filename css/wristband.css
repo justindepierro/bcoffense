@@ -356,25 +356,44 @@ body.app-ready:not(.is-mobile-screen)
   white-space: nowrap;
 }
 .wb-cmd-actions {
-  display: grid;
-  grid-template-columns: minmax(88px, max-content) repeat(
-      4,
-      minmax(72px, max-content)
-    );
+  display: flex;
+  align-items: end;
   justify-content: end;
   gap: var(--space-xs);
   min-width: 0;
   max-width: 100%;
 }
 
-.wb-cmd-actions > .btn,
-.wb-cmd-actions > .tool-menu-wrap {
+.wb-command-group {
+  display: grid;
+  gap: 3px;
   min-width: 0;
   max-width: 100%;
 }
 
-.wb-cmd-actions > .btn,
-.wb-cmd-actions > .tool-menu-wrap > .btn {
+.wb-command-group-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-3xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.wb-command-group-primary {
+  padding-left: var(--space-xs);
+  border-left: 1px solid var(--color-border-light);
+}
+
+.wb-command-group-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(72px, max-content));
+  gap: var(--space-xs);
+}
+
+.wb-command-group-actions > .btn,
+.wb-command-group > .tool-menu-wrap > .btn {
+  min-width: 0;
   width: 100%;
   justify-content: center;
   white-space: normal;
@@ -932,6 +951,20 @@ body.app-ready:not(.is-mobile-screen)
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   font-weight: 800;
+}
+
+.wb-print-preview-stage-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.wb-print-preview-coverage {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  text-align: right;
 }
 
 .wb-print-preview-warnings {
@@ -3009,7 +3042,15 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
 
   #wristband .wb-cmd-actions {
     justify-content: stretch;
-    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+    flex-wrap: wrap;
+  }
+
+  #wristband .wb-command-group {
+    flex: 1 1 180px;
+  }
+
+  #wristband .wb-command-group-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   #wristband .wb-toolbar-group {
@@ -3261,8 +3302,7 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   .wb-toolbar-left > .btn,
   .wb-toolbar-right > .btn,
   .wb-toolbar-right > .tool-menu-wrap,
-  .wb-cmd-actions > .btn,
-  .wb-cmd-actions > .tool-menu-wrap,
+  .wb-command-group,
   .wb-sort-toolbar .btn,
   .wb-sort-actions .btn {
     flex: 1 1 140px;
@@ -3328,22 +3368,32 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
 
   body.is-mobile-screen #wristband .wb-cmd-actions {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
     gap: 6px;
     align-items: stretch;
   }
 
-  body.is-mobile-screen #wristband .wb-cmd-actions > .btn,
-  body.is-mobile-screen #wristband .wb-cmd-actions > .tool-menu-wrap,
-  body.is-mobile-screen #wristband .wb-cmd-actions > .wb-toolbar-group {
+  body.is-mobile-screen #wristband .wb-command-group {
+    min-width: 0;
+  }
+
+  body.is-mobile-screen #wristband .wb-command-group-primary {
+    grid-column: 1 / -1;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  body.is-mobile-screen #wristband .wb-command-group,
+  body.is-mobile-screen #wristband .wb-command-group > .tool-menu-wrap,
+  body.is-mobile-screen #wristband .wb-command-group .wb-toolbar-group {
     width: auto;
     min-width: 0;
     flex: initial;
   }
 
-  body.is-mobile-screen #wristband .wb-cmd-actions > .tool-menu-wrap > .btn,
-  body.is-mobile-screen #wristband .wb-cmd-actions > .btn {
+  body.is-mobile-screen #wristband .wb-command-group > .tool-menu-wrap > .btn,
+  body.is-mobile-screen #wristband .wb-command-group-actions > .btn {
     width: 100%;
     min-height: 40px;
     padding: 6px 8px;
@@ -3352,13 +3402,13 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
     white-space: nowrap;
   }
 
-  body.is-mobile-screen #wristband .wb-cmd-actions > .wb-toolbar-group {
+  body.is-mobile-screen #wristband .wb-command-group .wb-toolbar-group {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 4px;
   }
 
-  body.is-mobile-screen #wristband .wb-cmd-actions > .wb-toolbar-group .btn {
+  body.is-mobile-screen #wristband .wb-command-group .wb-toolbar-group .btn {
     width: 100%;
     min-height: 40px;
     padding: 6px 4px;
@@ -3754,8 +3804,8 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
     gap: var(--coach-grid-gap);
   }
 
-  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-cmd-actions > .btn,
-  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-cmd-actions > .tool-menu-wrap > .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-command-group-actions > .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-command-group > .tool-menu-wrap > .btn,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-toolbar-group .btn {
     min-height: var(--coach-grid-control-height);
     padding: 3px 7px;

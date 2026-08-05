@@ -258,9 +258,10 @@ function checkPageStyleContracts() {
   if (
     !/\.wb-cmd-bar\s*\{[\s\S]*overflow:\s*clip/.test(wristbandCss) ||
     !/\.wb-cmd-main\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(520px,\s*max-content\)/.test(wristbandCss) ||
-    !/\.wb-cmd-actions\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:[\s\S]*minmax\(88px,\s*max-content\)[\s\S]*repeat\([\s\S]*4,[\s\S]*minmax\(72px,\s*max-content\)/.test(wristbandCss) ||
-    !/\.wb-cmd-actions > \.btn,[\s\S]*\.wb-cmd-actions > \.tool-menu-wrap > \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(wristbandCss) ||
-    !/@media \(max-width:\s*1180px\)[\s\S]*#wristband \.wb-cmd-main\s*\{[\s\S]*grid-template-columns:\s*1fr[\s\S]*#wristband \.wb-cmd-actions\s*\{[\s\S]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(92px,\s*1fr\)\)/.test(wristbandCss)
+    !/\.wb-cmd-actions\s*\{[\s\S]*display:\s*flex[\s\S]*align-items:\s*end/.test(wristbandCss) ||
+    !/\.wb-command-group-actions\s*\{[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*repeat\(3,\s*minmax\(72px,\s*max-content\)\)/.test(wristbandCss) ||
+    !/\.wb-command-group-actions > \.btn,[\s\S]*\.wb-command-group > \.tool-menu-wrap > \.btn\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/.test(wristbandCss) ||
+    !/@media \(max-width:\s*1180px\)[\s\S]*#wristband \.wb-cmd-main\s*\{[\s\S]*grid-template-columns:\s*1fr[\s\S]*#wristband \.wb-cmd-actions\s*\{[\s\S]*flex-wrap:\s*wrap/.test(wristbandCss)
   ) {
     fail("Wristband command bar is missing overflow-safe shared-surface rules");
   }

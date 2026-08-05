@@ -722,6 +722,19 @@ function renderWristbandPrintPreview() {
   }
 
   const summary = document.getElementById("wbPrintPreviewSummary");
+  const selectedPlayCount = cardIndexes.reduce((count, cardIdx) => {
+    const card = wristbandCards[cardIdx];
+    if (!card) return count;
+    const printableCells = isPlayer ? WB_ROWS : CELLS_PER_CARD;
+    return count + card.data.slice(0, printableCells).filter(Boolean).length;
+  }, 0);
+  const coverage = document.getElementById("wbPrintPreviewCoverage");
+  if (coverage) {
+    const positionCoverage = isPlayer
+      ? ` · ${positionKeys.length} position${positionKeys.length === 1 ? "" : "s"}`
+      : "";
+    coverage.textContent = `${selectedPlayCount} play${selectedPlayCount === 1 ? "" : "s"} selected across ${cardIndexes.length} card${cardIndexes.length === 1 ? "" : "s"}${positionCoverage}`;
+  }
   if (summary) {
     const cardNoun = isPlayer && cardIndexes.some((cardIdx) =>
       _getWbPrintScriptPageMeta(wristbandCards[cardIdx]),
