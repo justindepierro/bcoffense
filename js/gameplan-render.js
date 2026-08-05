@@ -150,25 +150,33 @@ function renderGamePlan() {
     <div class="gp-cmd-bar page-header-surface app-command-toolbar coach-grid-command-strip">
       <div class="gp-cmd-main page-header-row">
         <div class="gp-cmd-identity toolbar-status">
-          <span class="gp-cmd-title">🎯 Game Plan</span>
+          <span class="gp-cmd-kicker">Current board</span>
+          <strong class="gp-cmd-title">${escapeHtml(board.sheetTitle || "Game Plan")}</strong>
           ${opponent
       ? `<span class="gp-header-opponent">vs ${escapeHtml(opponent)}</span>`
       : `<span class="gp-header-empty">No opponent — set one in Dashboard</span>`}
           ${weekLabel ? `<span class="gp-header-week">${escapeHtml(weekLabel)}</span>` : ""}
-          ${board.sheetTitle ? `<span class="gp-header-template">${escapeHtml(board.sheetTitle)}</span>` : ""}
           <span class="gp-cmd-count">${totalAssigned} plays · ${allBoxes.length} boxes</span>
           ${_gpRenderHealthGauge(board, draftedPlays)}
         </div>
         <div class="gp-cmd-actions toolbar-secondary">
-        <button class="btn btn-sm btn-primary" data-action="openSmartGamePlanBuilder" title="Recommend a first-draft plan from the playbook">
-          🧠 Build Plan
-        </button>
-        <button class="btn btn-sm" data-action="openGamePlanSortAllBuckets" title="Choose one sort order for every Game Plan bucket">
-          ↕️ Sort All
-        </button>
-        <button class="btn btn-sm btn-outline page-actions-open-btn" data-action="openPageActions" title="Save, print, load plans, and open more Game Plan tools" aria-haspopup="dialog">
-          ⚡ Actions
-        </button>
+          <div class="gp-command-group">
+            <span class="gp-command-group-label">Build</span>
+            <div class="gp-command-group-actions">
+              <button class="btn btn-sm btn-primary" data-action="openSmartGamePlanBuilder" title="Recommend a first-draft plan from the playbook">
+                🧠 Build Plan
+              </button>
+              <button class="btn btn-sm" data-action="openGamePlanSortAllBuckets" title="Choose one sort order for every Game Plan bucket">
+                ↕️ Sort All
+              </button>
+            </div>
+          </div>
+          <div class="gp-command-group gp-command-group-primary">
+            <span class="gp-command-group-label">Workspace</span>
+            <button class="btn btn-sm btn-outline page-actions-open-btn" data-action="openPageActions" title="Save, print, load plans, send, and open advanced Game Plan tools" aria-haspopup="dialog">
+              ⚡ Actions
+            </button>
+          </div>
         </div>
       </div>
     </div>`;

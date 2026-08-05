@@ -141,13 +141,11 @@ const PAGE_ACTIONS_CONFIG = {
       {
         label: "Build & organize",
         items: [
-          { icon: "🧠", label: "Build Plan", run: () => _paCall("openSmartGamePlanBuilder") },
           { icon: "📚", label: "Library", run: () => _paCall("openPlayLibrary") },
           { icon: "📋", label: "Load Wristband", run: () => _paCall("loadGamePlanWristband") },
           { icon: "➕", label: "Add Bucket", run: () => _paCall("openGamePlanAddBucket") },
           { icon: "👁️", label: "Manage Buckets", run: () => _paCall("openGamePlanManageBoxes") },
           { icon: "🔀", label: "Reorder Buckets", run: () => _paCall("openGamePlanReorderBoxes") },
-          { icon: "↕️", label: "Sort All Buckets", sublabel: "Choose one order", run: () => _paCall("openGamePlanSortAllBuckets") },
           { icon: "⚙️", label: "Density", run: () => _paCall("cycleGamePlanDensity") },
           { icon: "▼", label: "Expand All", run: () => _paCall("expandAllGamePlanBoxes") },
           { icon: "▶", label: "Collapse All", run: () => _paCall("collapseAllGamePlanBoxes") },

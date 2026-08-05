@@ -111,21 +111,35 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   min-width: 0;
 }
 .gp-cmd-identity {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: auto minmax(0, max-content);
+  align-items: baseline;
   gap: var(--space-sm);
-  flex-wrap: wrap;
   min-width: 0;
+}
+.gp-cmd-kicker,
+.gp-command-group-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-3xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 .gp-cmd-title {
   font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .gp-cmd-identity > * {
   min-width: 0;
   max-width: 100%;
+}
+.gp-cmd-identity > :not(.gp-cmd-kicker):not(.gp-cmd-title) {
+  grid-column: 1 / -1;
 }
 .gp-cmd-count {
   font-size: var(--font-size-xs);
@@ -133,15 +147,28 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   white-space: nowrap;
 }
 .gp-cmd-actions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(86px, max-content));
-  align-items: center;
+  display: flex;
+  align-items: end;
   gap: var(--space-xs);
   justify-content: flex-end;
   min-width: 0;
   max-width: 100%;
 }
-.gp-cmd-actions .btn {
+.gp-command-group {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.gp-command-group-primary {
+  padding-left: var(--space-xs);
+  border-left: 1px solid var(--color-border-light);
+}
+.gp-command-group-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(86px, max-content));
+  gap: var(--space-xs);
+}
+.gp-command-group .btn {
   min-width: 0;
   max-width: 100%;
   min-height: 44px;
@@ -808,8 +835,16 @@ body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar-spacer {
   }
 
   #gameplan .gp-cmd-actions {
-    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
     justify-content: stretch;
+    flex-wrap: wrap;
+  }
+
+  #gameplan .gp-command-group {
+    flex: 1 1 220px;
+  }
+
+  #gameplan .gp-command-group-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   #gameplan .gp-toolbar {

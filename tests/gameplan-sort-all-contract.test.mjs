@@ -15,6 +15,6 @@ assert.match(actions, /function applyGamePlanSortAllBuckets\(mode\)/, "sort-all 
 assert.match(actions, /_gpGetBoardBoxes\(board\)\.forEach/, "sort-all applies to every default, custom, and hidden bucket");
 assert.match(actions, /id: "gpSortAllBucketsOverlay"[\s\S]*?blocking: true[\s\S]*?onEscape: close/, "sort picker uses shared dialog lifecycle");
 assert.match(render, /data-action="openGamePlanSortAllBuckets"/, "Game Plan command strip exposes Sort All");
-assert.match(pageActions, /label: "Sort All Buckets"[\s\S]*?openGamePlanSortAllBuckets/, "Game Plan Actions exposes Sort All");
+assert.doesNotMatch(pageActions, /label: "Sort All Buckets"[\s\S]*?openGamePlanSortAllBuckets/, "Sort All stays on the primary Game Plan command strip instead of duplicating inside Actions");
 
 console.log("game plan sort-all contract: 7 assertions passed");
