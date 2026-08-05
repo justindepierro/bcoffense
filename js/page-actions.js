@@ -54,23 +54,45 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "🗂️", label: "Index Cards", sublabel: "4×6 front / back", run: () => _paCall("switchCallSheetPage", "index") },
       { icon: "⚙️", label: "Display", sublabel: _paCallsheetDisplayStatus, run: () => _paCall("openDisplayPanel") },
     ],
-    extras: [
-      { icon: "📁", label: "Saved Call Sheets", run: () => _paCall("openTemplatesModal", "manage") },
-      { icon: "＋", label: "Save As Copy", run: () => _paCall("openTemplatesModal", "save") },
-      { icon: "📋", label: "Load Wristband", run: () => _paCall("openLoadWristbandModal") },
-      { icon: "🎯", label: "Scouting Intel", run: () => _paCall("toggleScoutingOverlay") },
-      { icon: "📋", label: "Sideline View", run: () => _paCall("toggleCsSidelineMode") },
-      { icon: "📊", label: "Stats", run: () => _paCall("toggleStatsPanel") },
-      { icon: "🔍", label: "Not On Sheet", run: () => _paCall("toggleNotOnSheet") },
-      { icon: "➕", label: "Add Category", run: () => _paCall("openAddCallSheetCategoryModal") },
-      { icon: "🧩", label: "Smart Layout", run: () => _paCall("smartReorderCategories") },
-      { icon: "🗂️", label: "Reorder Categories", run: () => _paCall("openCallSheetLayoutModal") },
-      { icon: "↩️", label: "Reset Layout", run: () => _paCall("resetCategoryOrder") },
-      { icon: "▼", label: "Expand All", run: () => _paCall("expandAllCategories") },
-      { icon: "▶", label: "Collapse All", run: () => _paCall("collapseAllCategories") },
-      { icon: "🛡️", label: "Check Constraints", run: () => _paCall("runConstraintCheck") },
-      { icon: "📄", label: "Export CSV", run: () => _paCall("exportCallSheetCSV") },
-      { icon: "🗑️", label: "Clear Sheet", run: () => _paCall("clearCallSheet") },
+    // The primary Templates & saves action owns browsing existing sheets. A
+    // copy remains deliberately separate so a coach can preserve the current
+    // sheet without ever risking an overwrite.
+    sections: [
+      {
+        label: "Save safely",
+        items: [
+          { icon: "＋", label: "Save As Copy", run: () => _paCall("openTemplatesModal", "save") },
+        ],
+      },
+      {
+        label: "Review & sideline",
+        items: [
+          { icon: "📋", label: "Load Wristband", run: () => _paCall("openLoadWristbandModal") },
+          { icon: "🎯", label: "Scouting Intel", run: () => _paCall("toggleScoutingOverlay") },
+          { icon: "📋", label: "Sideline View", run: () => _paCall("toggleCsSidelineMode") },
+          { icon: "📊", label: "Stats", run: () => _paCall("toggleStatsPanel") },
+          { icon: "🔍", label: "Not On Sheet", run: () => _paCall("toggleNotOnSheet") },
+          { icon: "🛡️", label: "Check Constraints", run: () => _paCall("runConstraintCheck") },
+        ],
+      },
+      {
+        label: "Layout",
+        items: [
+          { icon: "➕", label: "Add Category", run: () => _paCall("openAddCallSheetCategoryModal") },
+          { icon: "🧩", label: "Smart Layout", run: () => _paCall("smartReorderCategories") },
+          { icon: "🗂️", label: "Reorder Categories", run: () => _paCall("openCallSheetLayoutModal") },
+          { icon: "↩️", label: "Reset Layout", run: () => _paCall("resetCategoryOrder") },
+          { icon: "▼", label: "Expand All", run: () => _paCall("expandAllCategories") },
+          { icon: "▶", label: "Collapse All", run: () => _paCall("collapseAllCategories") },
+        ],
+      },
+      {
+        label: "Export & reset",
+        items: [
+          { icon: "📄", label: "Export CSV", run: () => _paCall("exportCallSheetCSV") },
+          { icon: "🗑️", label: "Clear Sheet", run: () => _paCall("clearCallSheet") },
+        ],
+      },
     ],
   },
 
@@ -305,7 +327,9 @@ function renderPageActionsRoot(config) {
   if (titleEl) titleEl.textContent = `${config.title} actions`;
   if (!bodyEl) return;
 
-  let html = '<div class="page-actions-grid">';
+  const pageKey = getActivePageActionsKey();
+  let html = `<div class="page-actions-root page-actions-root--${escapeAttr(pageKey)}">`;
+  html += '<div class="page-actions-grid">';
   (config.verbs || []).forEach((verb, index) => {
     let sub = "";
     if (typeof verb.sublabel === "function") {
@@ -348,7 +372,7 @@ function renderPageActionsRoot(config) {
 
   // Direct innerHTML: content contains <button> which sanitizeHTML would strip.
   // All interpolated labels are escaped above.
-  bodyEl.innerHTML = html;
+  bodyEl.innerHTML = `${html}</div>`;
 }
 
 function runPageAction(arg) {
