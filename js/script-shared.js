@@ -244,9 +244,24 @@ function toggleScriptToolsDrawer() {
   setScriptToolsDrawerOpen(!scriptToolsDrawerOpen);
 }
 
+function initScriptToolsDrawerSections() {
+  const drawer = document.getElementById("scriptToolsDrawer");
+  if (!drawer || drawer.dataset.sectionDisclosureReady === "true") return;
+  drawer.dataset.sectionDisclosureReady = "true";
+  drawer.querySelectorAll(".script-drawer-section").forEach((section) => {
+    section.addEventListener("toggle", () => {
+      if (!section.open) return;
+      drawer.querySelectorAll(".script-drawer-section[open]").forEach((other) => {
+        if (other !== section) other.open = false;
+      });
+    });
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   _syncScriptSidebarTabUi();
   applyScriptLibraryPinState();
+  initScriptToolsDrawerSections();
 });
 
 document.addEventListener("keydown", (event) => {
