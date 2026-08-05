@@ -168,8 +168,53 @@ const PAGE_ACTIONS_CONFIG = {
 };
 
 function _paCall(name, ...args) {
-  if (typeof window[name] === "function") return window[name](...args);
+  const fn = window[name];
+  if (typeof fn === "function") return fn(...args);
+
+  // Page Actions is an intentional command surface, not an optional
+  // enhancement. A missing target used to look like a dead button because
+  // this helper silently returned. Keep the failure observable in the same
+  // action trace used by delegated controls.
+  const payload = { action: name, source: "page-actions", handlerType: typeof fn };
+  if (typeof traceAppAction === "function") {
+    traceAppAction("missing page action handler", payload, {}, "warn");
+  } else {
+    console.warn("[BC page actions] missing action handler", payload);
+  }
   return undefined;
+}
+
+function _paRunVerb(verb, options = {}) {
+  if (!verb || typeof verb.run !== "function") return false;
+  const {
+    closeBeforeRun = false,
+    openHubForKeptOpen = false,
+  } = options;
+  const execute = () => {
+    try {
+      verb.run();
+    } catch (error) {
+      console.error("[BC page actions] action failed", {
+        label: verb.label || "Unnamed action",
+        error,
+      });
+    }
+  };
+
+  if (verb.keepOpen) {
+    if (openHubForKeptOpen) openPageActions();
+    execute();
+    return true;
+  }
+
+  if (closeBeforeRun) {
+    closePageActions();
+    // Let the sheet close before opening a second overlay or panel.
+    setTimeout(execute, 60);
+  } else {
+    execute();
+  }
+  return true;
 }
 
 function openScriptToolsFromPageActions() {
@@ -333,15 +378,7 @@ function runPageAction(arg) {
     const list = kind === "extra" ? config.extras : config.verbs;
     verb = list && list[index];
   }
-  if (!verb || typeof verb.run !== "function") return;
-
-  if (verb.keepOpen) {
-    verb.run();
-    return;
-  }
-  closePageActions();
-  // Let the sheet close before running (some verbs open their own overlay).
-  setTimeout(() => verb.run(), 60);
+  _paRunVerb(verb, { closeBeforeRun: true });
 }
 
 function pageActionsBack() {
@@ -722,18 +759,9 @@ function getPageActionsCommandItems() {
 }
 
 function _runPageActionsCommand(key, verb) {
-  if (typeof showTab === "function") showTab(key);
+  _paCall("showTab", key);
   requestAnimationFrame(() => {
-    try {
-      if (verb.keepOpen) {
-        openPageActions();
-        verb.run();
-      } else {
-        verb.run();
-      }
-    } catch (e) {
-      /* verb target unavailable — ignore */
-    }
+    _paRunVerb(verb, { openHubForKeptOpen: true });
   });
 }
 

@@ -30,7 +30,7 @@ const panelScrollSources = [
   "js/wristband-search.js",
 ];
 
-const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, scriptQuizCss, appShell, playerPlaybookFilters, appNotifications, playerPortal, panelScrollOwners, jsEntries, cssEntries] = await Promise.all([
+const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, scriptQuizCss, appShell, appEvents, pageActions, playerPlaybookFilters, appNotifications, playerPortal, panelScrollOwners, jsEntries, cssEntries] = await Promise.all([
   source("index.html"),
   source("sw.js"),
   source("js/playbook-identity.js"),
@@ -38,6 +38,8 @@ const [indexHtml, serviceWorker, identitySource, playbookSource, scriptCss, scri
   source("css/script.css"),
   source("css/script-quiz.css"),
   source("js/app-shell.js"),
+  source("js/app-events.js"),
+  source("js/page-actions.js"),
   source("js/playbook-filters.js"),
   source("js/app-notifications.js"),
   source("js/player-portal.js"),
@@ -94,6 +96,26 @@ assert.deepEqual(sort(shellStyles), sort(runtimeStyles), "every stylesheet is lo
 assert.deepEqual(sort(cachedStyles), sort(runtimeStyles), "every stylesheet is cached by the service worker");
 
 assert.doesNotMatch(identitySource, /setPlaybookCategoryCleanupHide/, "the retired category-cleanup no-op shim stays removed");
+assert.doesNotMatch(
+  appEvents,
+  /case "duplicateCurrentScript"/,
+  "plain delegated actions use the one generic dispatcher instead of duplicate switch ownership",
+);
+assert.match(
+  pageActions,
+  /function _paRunVerb\(verb, options = \{\}\)/,
+  "Page Actions owns one shared verb executor for its hub and command-palette entries",
+);
+assert.doesNotMatch(
+  pageActions,
+  /\/\* verb target unavailable — ignore \*\//,
+  "command-palette Page Actions never suppress an unavailable target",
+);
+assert.match(
+  pageActions,
+  /missing page action handler/,
+  "a missing Page Action target leaves an actionable diagnostic instead of a silent no-op",
+);
 assert.match(
   playbookSource,
   /group\.dataset\.chipListenerBound === "true"/,
