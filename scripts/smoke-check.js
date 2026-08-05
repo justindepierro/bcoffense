@@ -1054,10 +1054,10 @@ function checkScriptWorkspaceCommandSurface() {
   if (
     /scriptToolsDrawerToggle|scriptSidebarTabTools/.test(html) ||
     !/script-sidebar-title/.test(html) ||
-    !/label: "Workspace Tools", run: \(\) => _paCall\("openScriptToolsDrawer"\)/.test(
+    !/label: "Workspace Tools", sublabel: "Organize, packet, send & more", postCloseDelayMs: 200, run: \(\) => _paCall\("openScriptToolsDrawer"\)/.test(
       pageActions,
     ) ||
-    !/label: "Saved Scripts", sublabel: "Load \/ Player login", run: \(\) => _paCall\("openSavedScriptsWorkspace"\)/.test(
+    !/label: "Load", keepOpen: true, run: openScriptLoadView/.test(
       pageActions,
     ) ||
     !/function setScriptToolsDrawerOpen\(isOpen\)/.test(shared) ||
@@ -1070,7 +1070,7 @@ function checkScriptWorkspaceCommandSurface() {
     !/function maybeAutoCollapseScriptPlayRail\(\)/.test(shared) ||
     !/scriptLibraryPinned/.test(shared) ||
     !/data-controls-mode="run"/.test(css) ||
-    !/script-sidebar-tabs \{[\s\S]*grid-template-columns: minmax\(0, 1fr\) 28px auto/.test(
+    !/#script \.script-sidebar-tabs \{[\s\S]*display:\s*flex[\s\S]*gap:\s*4px[\s\S]*flex:\s*0 0 auto/.test(
       css,
     ) ||
     !/available-plays-actions \{[\s\S]*grid-template-columns: 1fr 1fr/.test(

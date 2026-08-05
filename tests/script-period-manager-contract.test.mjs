@@ -15,6 +15,6 @@ assert.match(periods, /function reorderScriptPeriodFromManager\(periodId\)/, "pe
 assert.match(periods, /async function deleteScriptPeriodFromManager\(periodId\)/, "period organizer supports confirmed period deletion");
 assert.match(periods, /data-action="duplicateScriptPeriodFromManager"/, "period organizer exposes duplication");
 assert.match(index, /data-action="openScriptPeriodManager"[\s\S]*?🗂️ Organize Periods/, "Workspace Tools exposes the period organizer");
-assert.match(actions, /label: "Organize Periods", run: \(\) => _paCall\("openScriptPeriodManager"\)/, "Actions exposes the period organizer");
+assert.doesNotMatch(actions, /label: "Organize Periods"/, "period organization has one owner in Workspace Tools instead of a duplicate Actions route");
 
 console.log("script period manager contract: 7 assertions passed");

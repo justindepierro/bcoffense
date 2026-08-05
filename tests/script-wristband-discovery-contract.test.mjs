@@ -11,8 +11,8 @@ const [actions, exportUi, index, storage] = await Promise.all([
 ]);
 
 assert.match(actions, /label: "Wristband Numbers", sublabel: "Show numbers on this script", run: \(\) => _paCall\("openScriptWristbandNumbersModal"\)/, "Script Actions exposes wristband numbers without importing plays");
-assert.match(actions, /label: "Add Plays from Wristband", run: \(\) => _paCall\("openLoadWristbandToScriptModal"\)/, "bulk wristband import remains a clearly secondary action");
-assert.match(actions, /label: "Workspace Tools", keepOpen: true, run: openScriptToolsFromPageActions/, "Workspace Tools waits for the Actions sheet to close before opening its drawer");
+assert.match(actions, /label: "Workspace Tools", sublabel: "Organize, packet, send & more", postCloseDelayMs: 200, run: \(\) => _paCall\("openScriptToolsDrawer"\)/, "one Actions entry hands advanced Script work to the dedicated tools drawer");
+assert.doesNotMatch(actions, /label: "Add Plays from Wristband"/, "bulk wristband import stays in its Script workspace owner instead of duplicating the Actions hub");
 assert.match(index, /data-action="openScriptWristbandNumbersModal"[\s\S]*?#️⃣ Wristband Numbers/, "Script command strip exposes wristband numbers without importing plays");
 assert.match(exportUi, /function openScriptWristbandNumbersModal\(\)/, "number overlay selector has a dedicated modal");
 assert.match(exportUi, /This only overlays matching wristband numbers on plays already in your script\./, "number overlay modal explicitly promises not to add plays");

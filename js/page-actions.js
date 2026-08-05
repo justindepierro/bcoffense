@@ -38,17 +38,10 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "⚙️", label: "Display", sublabel: _paScriptDisplayStatus, run: () => _paCall("toggleScriptDisplayPanel") },
     ],
     extras: [
-      { icon: "📁", label: "Saved Scripts", sublabel: "Load / Player login", run: () => _paCall("openSavedScriptsWorkspace") },
-      { icon: "🗂️", label: "Print Packet", run: () => _paCall("openScriptPacketBuilder") },
-      { icon: "▶️", label: "Present", run: () => _paCall("openScriptPresentation") },
-      { icon: "🎯", label: "Send to Game Plan", run: () => _paCall("sendScriptToGamePlan") },
-      { icon: "➕", label: "Add Plays from Wristband", run: () => _paCall("openLoadWristbandToScriptModal") },
-      { icon: "🗂️", label: "Organize Periods", run: () => _paCall("openScriptPeriodManager") },
-      { icon: "🃏", label: "Send Script to Wristband", run: () => _paCall("sendScriptToWristband") },
-      { icon: "📄", label: "Send to Call Sheet", run: () => _paCall("sendScriptToCallSheet") },
-      { icon: "🗂️", label: "Build Index Card", sublabel: "Smart 4×6 front / back", run: () => _paCall("sendScriptToIndexCallSheet") },
-      { icon: "🖨️", label: "Print Studio", run: () => _paCall("openPrintStudio") },
-      { icon: "🛠️", label: "Workspace Tools", keepOpen: true, run: openScriptToolsFromPageActions },
+      // Advanced Script actions have one owner: the Script Tools drawer.
+      // Keeping duplicate tiles here made the Actions sheet visually noisy
+      // and left two different routes to the same management controls.
+      { icon: "🛠️", label: "Workspace Tools", sublabel: "Organize, packet, send & more", postCloseDelayMs: 200, run: () => _paCall("openScriptToolsDrawer") },
     ],
   },
 
@@ -189,6 +182,7 @@ function _paRunVerb(verb, options = {}) {
   const {
     closeBeforeRun = false,
     openHubForKeptOpen = false,
+    postCloseDelayMs = 60,
   } = options;
   const execute = () => {
     try {
@@ -210,19 +204,11 @@ function _paRunVerb(verb, options = {}) {
   if (closeBeforeRun) {
     closePageActions();
     // Let the sheet close before opening a second overlay or panel.
-    setTimeout(execute, 60);
+    setTimeout(execute, Math.max(0, Number(postCloseDelayMs) || 0));
   } else {
     execute();
   }
   return true;
-}
-
-function openScriptToolsFromPageActions() {
-  // The drawer sits beneath the Actions overlay in the layer stack. Finish
-  // the overlay's close transition before opening it so the control always
-  // becomes visible instead of appearing behind a fading sheet.
-  closePageActions();
-  setTimeout(() => _paCall("openScriptToolsDrawer"), 200);
 }
 
 function _paGamePlanSnapshotCount() {
@@ -378,7 +364,7 @@ function runPageAction(arg) {
     const list = kind === "extra" ? config.extras : config.verbs;
     verb = list && list[index];
   }
-  _paRunVerb(verb, { closeBeforeRun: true });
+  _paRunVerb(verb, { closeBeforeRun: true, postCloseDelayMs: verb?.postCloseDelayMs });
 }
 
 function pageActionsBack() {

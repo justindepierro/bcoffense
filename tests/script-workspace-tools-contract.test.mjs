@@ -15,8 +15,13 @@ assert.match(
 );
 assert.match(
   actions,
-  /function openScriptToolsFromPageActions\(\)[\s\S]*?closePageActions\(\);[\s\S]*?setTimeout\(\(\) => _paCall\("openScriptToolsDrawer"\), 200\);/,
-  "Workspace Tools waits for Actions to finish closing before opening the drawer",
+  /label: "Workspace Tools", sublabel: "Organize, packet, send & more", postCloseDelayMs: 200, run: \(\) => _paCall\("openScriptToolsDrawer"\)/,
+  "Workspace Tools is the one advanced Script entry in the Actions hub",
+);
+assert.match(
+  actions,
+  /setTimeout\(execute, Math\.max\(0, Number\(postCloseDelayMs\) \|\| 0\)\);/,
+  "the shared Actions executor waits for the sheet transition before opening a layered Script drawer",
 );
 
 console.log("script workspace tools contract: 2 assertions passed");
