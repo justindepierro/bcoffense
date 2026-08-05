@@ -462,7 +462,7 @@ function renderPlaybook() {
     if (!emptyEl) {
       emptyEl = document.createElement("div");
       emptyEl.id = "pbEmptyState";
-      emptyEl.className = "empty-state empty-state--bordered";
+      emptyEl.className = `empty-state empty-state--bordered${isStudyPortal ? " player-study-state" : ""}`;
       const container = document.getElementById("playbookContainer");
       if (container) container.appendChild(emptyEl);
     }

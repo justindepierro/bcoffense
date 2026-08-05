@@ -750,7 +750,7 @@ function _sigRenderCategory(category, summariesByComponent, gamePlanSignalStatus
 function _sigRenderDetailSkeleton(summary, record) {
   if (!summary) {
     return `
-      <div class="signals-detail-empty">
+      <div class="signals-detail-empty${_sigCanManage() ? "" : " player-study-state"}">
         <h2>Signals</h2>
         <p>${_sigCanManage() ? "Choose a component chip to manage its signal." : "Choose a published signal to view it."}</p>
       </div>

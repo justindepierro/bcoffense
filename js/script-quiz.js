@@ -586,7 +586,7 @@ function _quizModeTitle(baseTitle, modeKey = _playerQuizSelectedMode) {
 
 function _renderPlayerQuizScriptPicker(options) {
   if (!Array.isArray(options) || !options.length) {
-    return `<div class="player-quiz-script-empty">Current practice only. Published scripts will appear here when your coach posts them.</div>`;
+    return `<div class="player-quiz-script-empty player-study-state">Current practice only. Published scripts will appear here when your coach posts them.</div>`;
   }
   const selectable = options.filter((option) => option.playerSelectable);
   if (!_playerQuizSelectedScriptId || !selectable.some((option) => option.id === _playerQuizSelectedScriptId)) {

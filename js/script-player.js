@@ -644,7 +644,7 @@ function renderPlayerScriptLauncher() {
   if (publishedScripts.length === 0) {
     section.hidden = false;
     list.innerHTML = `
-      <div class="player-script-empty">
+      <div class="player-script-empty player-study-state">
         No team practice script has been published yet.
       </div>
     `;
