@@ -446,6 +446,19 @@ function checkAccessibilityBasics() {
     }
   });
 
+  const domHelpers = read("js/dom-helpers.js");
+  if (
+    !/function ensureFormFieldIdentity\(root = document\)/.test(domHelpers) ||
+    !/if \(!field\.name\) field\.name = field\.id/.test(domHelpers) ||
+    !/if \(!hasAssociatedFormFieldLabel\(field\)\)/.test(domHelpers) ||
+    !/field\.setAttribute\("aria-label"/.test(domHelpers)
+  ) {
+    fail("dynamic form fields are missing the shared identity and accessible-label safeguard");
+  }
+  if (/label for="cellCadence"/.test(read("index.html"))) {
+    fail("a visible label must not target the hidden wristband marker state field");
+  }
+
   console.log("accessibility basics ok");
 }
 

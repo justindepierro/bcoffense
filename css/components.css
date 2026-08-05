@@ -2922,7 +2922,8 @@ input.smart-input-sm[type="number"] {
 .cell-popup-row {
   margin-bottom: 15px;
 }
-.cell-popup-row label {
+.cell-popup-row label,
+.cell-popup-label {
   display: block;
   font-weight: bold;
   margin-bottom: 5px;

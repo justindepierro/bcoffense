@@ -70,15 +70,52 @@ const SAFE_ATTRS = new Set([
 // existing data-action/data-field event contracts.
 let bcGeneratedFormFieldId = 0;
 
+function getGeneratedFormFieldToken(field) {
+  const raw = [
+    field.getAttribute("aria-label"),
+    field.getAttribute("placeholder"),
+    field.dataset?.field,
+    field.dataset?.arg,
+    field.dataset?.key,
+    field.type,
+    field.tagName?.toLowerCase(),
+  ].find((value) => String(value || "").trim());
+  const normalized = String(raw || "field")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+  return normalized || "field";
+}
+
+function hasAssociatedFormFieldLabel(field) {
+  if (field.closest?.("label")) return true;
+  if (field.labels?.length) return true;
+  return Boolean(field.getAttribute("aria-label") || field.getAttribute("aria-labelledby"));
+}
+
 function ensureFormFieldIdentity(root = document) {
   if (!root || typeof root.querySelectorAll !== "function") return;
   const fields = [];
   if (root.matches?.("input, select, textarea")) fields.push(root);
   root.querySelectorAll("input, select, textarea").forEach((field) => fields.push(field));
   fields.forEach((field) => {
-    if (field.id || field.name) return;
-    bcGeneratedFormFieldId += 1;
-    field.id = `bc-form-field-${bcGeneratedFormFieldId}`;
+    // Hidden state carriers are not user-editable form controls. They do not
+    // need an accessible label, but retaining their existing id remains useful
+    // to the owning feature.
+    if (field.type === "hidden") return;
+    const token = getGeneratedFormFieldToken(field);
+    if (!field.id && !field.name) {
+      bcGeneratedFormFieldId += 1;
+      field.id = `bc-form-field-${token}-${bcGeneratedFormFieldId}`;
+    }
+    // Dynamic editor rows are not submitted as native forms, but a stable
+    // name prevents browser autofill and DevTools from treating them as
+    // anonymous fields. Preserve every explicit author-provided name.
+    if (!field.name) field.name = field.id || `bc-form-field-${token}`;
+    if (!hasAssociatedFormFieldLabel(field)) {
+      field.setAttribute("aria-label", field.getAttribute("placeholder") || `${token.replace(/-/g, " ")} field`);
+    }
   });
 
   const labels = [];
@@ -88,6 +125,7 @@ function ensureFormFieldIdentity(root = document) {
     if (label.htmlFor || label.querySelector("input, select, textarea")) return;
     const sibling = label.nextElementSibling;
     if (!sibling?.matches?.("input, select, textarea")) return;
+    if (sibling.type === "hidden") return;
     if (!sibling.id && !sibling.name) {
       bcGeneratedFormFieldId += 1;
       sibling.id = `bc-form-field-${bcGeneratedFormFieldId}`;
