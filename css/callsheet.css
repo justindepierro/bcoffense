@@ -3921,7 +3921,7 @@ body.shell-phone #callsheet .cs-empty-cat {
   right: 0;
   bottom: 0;
   height: calc(var(--app-vh, 1vh) * 100);
-  width: var(--gp-drawer-width, 380px);
+  width: var(--gp-drawer-width, 420px);
   max-width: 90vw;
   background: var(--color-bg-light);
   border-left: 1px solid var(--color-border);
@@ -3963,9 +3963,17 @@ body.shell-phone #callsheet .cs-empty-cat {
   gap: var(--space-sm);
 }
 .gp-drawer-title {
-  margin: 0;
+  margin: 1px 0 0;
   font-size: var(--font-size-md);
   color: var(--color-text);
+}
+.gp-drawer-kicker {
+  display: block;
+  font-size: var(--font-size-micro);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 .gp-drawer-close {
   background: transparent;
@@ -4407,7 +4415,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab {
 
 /* When drawer is open, slide the tab to the drawer's left edge */
 body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
-  right: calc(var(--gp-drawer-width, 380px) + max(10px, env(safe-area-inset-right)));
+  right: calc(var(--gp-drawer-width, 420px) + max(10px, env(safe-area-inset-right)));
 }
 @media (max-width: 600px) {
   body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
@@ -4854,14 +4862,15 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-source-bar {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-xs) var(--space-md);
-  background: var(--color-bg-light);
-  border-bottom: 1px solid var(--color-border-light);
+  gap: 6px;
+  padding: 6px var(--space-md);
+  background: var(--coach-grid-surface-muted, var(--color-bg-light));
+  border: 1px solid var(--coach-grid-divider, var(--color-border-light));
+  border-radius: var(--coach-grid-radius, var(--radius-sm));
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   flex-wrap: wrap;
-  min-height: 32px;
+  min-height: 40px;
 }
 .cs-source-bar.hidden {
   display: none;
@@ -4869,13 +4878,45 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .csb-opponent {
   font-weight: 600;
   color: var(--color-text);
+  margin-right: 2px;
 }
-.csb-sep {
-  color: var(--color-border-med);
-  user-select: none;
+.csb-opponent--empty {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-style: italic;
 }
 .csb-item {
   white-space: nowrap;
+}
+.csb-source-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 3px 7px;
+  border: 1px solid var(--coach-grid-border, var(--color-border-light));
+  border-radius: var(--coach-grid-radius, var(--radius-sm));
+  background: var(--coach-grid-surface, var(--color-surface));
+  color: var(--color-text);
+  line-height: 1.1;
+}
+.csb-source-card span:last-child {
+  display: grid;
+  gap: 1px;
+}
+.csb-source-card strong { font-size: var(--font-size-xs); }
+.csb-source-card small {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-micro);
+}
+.csb-source-card--action {
+  cursor: pointer;
+  font: inherit;
+}
+.csb-source-card--action:hover,
+.csb-source-card--action:focus-visible {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
 }
 .csb-wb em {
   color: var(--color-text-muted);

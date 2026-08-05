@@ -238,7 +238,7 @@ function _gpDrawerRender() {
 
   // Counts
   const totalEl = document.getElementById("gpDrawerCount");
-  if (totalEl) totalEl.textContent = `${visible.length} of ${source.length}`;
+  if (totalEl) totalEl.textContent = `Showing ${visible.length} of ${source.length}`;
 
   const notOnSheetCount = source.filter((play) => _gpDrawerUseCount(play, usageMap) === 0).length;
   const notOnSheetCountEl = document.getElementById("gpDrawerNotOnSheetCount");
@@ -295,9 +295,9 @@ function _gpDrawerRender() {
     const msg =
       _gpDrawerState.scope === "active"
         ? opp
-          ? `No plays tagged for <strong>${escapeHtml(opp)}</strong> yet. Open the Game Plan tab and tag plays to fill this drawer.`
-          : `No active opponent set. Open the Tendencies tab and mark a team as the active opponent.`
-        : `No plays tagged for any opponent yet. Open the Game Plan tab to tag plays.`;
+          ? `No plays are in the active Game Plan for <strong>${escapeHtml(opp)}</strong> yet. Add plays to its buckets, then return here to drag them onto the Call Sheet.`
+          : `No plays are in the current Game Plan yet. Add plays to its buckets, then return here to drag them onto the Call Sheet.`
+        : `No plays are in any saved Game Plan yet. Add plays to a plan, then return here to drag them onto the Call Sheet.`;
     list.innerHTML = `<div class="gp-drawer-empty">${msg}</div>`;
     return;
   }
