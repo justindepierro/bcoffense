@@ -12,7 +12,11 @@
 // ============================================================
 
 /**
- * Get wristband number for a play by matching with loaded wristband
+ * Get wristband number for a play by matching with the loaded wristband.
+ *
+ * The durable Playbook identity is authoritative. Formation/call text is a
+ * display detail and can legitimately be abbreviated or overridden on a
+ * Script/Call Sheet, so it is only a compatibility fallback.
  */
 function getWristbandNumberForPlay(play) {
   if (
@@ -22,9 +26,42 @@ function getWristbandNumberForPlay(play) {
     return null;
   }
 
-  // Try to find a matching play in the loaded wristband
-  // Match on formation + play name, with optional personnel match
-  let match = callSheetSettings.loadedWristbandPlays.find(
+  const wristbandPlays = callSheetSettings.loadedWristbandPlays;
+  const persistentIds = new Set(
+    [play?.playbookId, play?.sourcePlayId, play?.originalPlayId, play?.wristbandLinkId]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean),
+  );
+  if (persistentIds.size) {
+    const persistentMatch = wristbandPlays.find((wristbandPlay) => {
+      const wristbandIds = [
+        wristbandPlay?.playbookId,
+        wristbandPlay?.sourcePlayId,
+        wristbandPlay?.originalPlayId,
+        wristbandPlay?.wristbandLinkId,
+      ]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean);
+      return wristbandIds.some((id) => persistentIds.has(id));
+    });
+    if (persistentMatch && persistentMatch.wristbandNumber != null) {
+      return persistentMatch.wristbandNumber;
+    }
+  }
+
+  // Retain the shared cross-surface matcher before the legacy text matching.
+  // It recognizes canonical source/compare keys without requiring the same
+  // exact display formatting in every workspace.
+  if (typeof playsMatch === "function") {
+    const identityMatch = wristbandPlays.find((wristbandPlay) => playsMatch(play, wristbandPlay));
+    if (identityMatch && identityMatch.wristbandNumber != null) {
+      return identityMatch.wristbandNumber;
+    }
+  }
+
+  // Legacy imports may lack source identity metadata. Match the displayed
+  // call only as the final fallback.
+  let match = wristbandPlays.find(
     (wp) =>
       wp.formation === play.formation &&
       wp.play === play.play &&
@@ -33,7 +70,7 @@ function getWristbandNumberForPlay(play) {
 
   // If no exact match, try matching without personnel
   if (!match) {
-    match = callSheetSettings.loadedWristbandPlays.find(
+    match = wristbandPlays.find(
       (wp) => wp.formation === play.formation && wp.play === play.play,
     );
   }
@@ -42,7 +79,7 @@ function getWristbandNumberForPlay(play) {
   if (!match) {
     const playForm = (play.formation || "").toLowerCase().trim();
     const playName = (play.play || "").toLowerCase().trim();
-    match = callSheetSettings.loadedWristbandPlays.find(
+    match = wristbandPlays.find(
       (wp) =>
         (wp.formation || "").toLowerCase().trim() === playForm &&
         (wp.play || "").toLowerCase().trim() === playName,

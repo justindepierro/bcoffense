@@ -3,10 +3,11 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const [callsheet, templates, pageActions] = await Promise.all([
+const [callsheet, templates, pageActions, filters] = await Promise.all([
   readFile(new URL("js/callsheet.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/callsheet-templates.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/page-actions.js", `file://${root}/`), "utf8"),
+  readFile(new URL("js/callsheet-filters.js", `file://${root}/`), "utf8"),
 ]);
 
 assert.match(callsheet, /activeSavedCallSheetId/, "Call Sheet settings retain the active saved-sheet identity");
@@ -22,5 +23,8 @@ assert.match(pageActions, /label: "Save safely"/, "copy creation is grouped with
 assert.match(pageActions, /label: "Review & sideline"/, "Call Sheet review tools have a named home");
 assert.match(pageActions, /label: "Layout"/, "Call Sheet layout controls have a named home");
 assert.doesNotMatch(pageActions, /label: "Saved Call Sheets"/, "saved-sheet browsing has one owner through Templates & saves");
+assert.match(filters, /play\?\.playbookId, play\?\.sourcePlayId, play\?\.originalPlayId, play\?\.wristbandLinkId/, "Call Sheet wristband matching starts with durable play identity");
+assert.match(filters, /typeof playsMatch === "function"/, "Call Sheet wristband matching shares the canonical compare-key fallback");
+assert.match(filters, /Legacy imports may lack source identity metadata/, "display-text matching is explicitly retained only for legacy wristbands");
 
-console.log("call sheet current-save contract: 11 assertions passed");
+console.log("call sheet current-save contract: 14 assertions passed");
