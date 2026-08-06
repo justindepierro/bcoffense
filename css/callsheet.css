@@ -5464,7 +5464,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-main-actions { justify-content: flex-end; gap: 4px; }
 .cs-index-main-actions .btn, .cs-index-main-strip .btn { min-height: 28px; padding: 3px 7px; font-size: 11px; }
 .cs-index-main-strip { justify-content: space-between; padding: 4px 6px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-muted); box-shadow: var(--shadow-xs); }
-.callsheet-index-mode .cs-index-main-strip { position: sticky; z-index: 11; top: 58px; }
+.callsheet-index-mode .cs-index-main-strip { position: relative; z-index: 1; }
 .cs-index-main-tabs { min-width: 0; gap: 4px; }
 .cs-index-main-tabs .btn { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cs-index-main-sides { gap: 2px; color: var(--color-text-muted); font-size: 11px; }
