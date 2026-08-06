@@ -14,7 +14,6 @@ const LEGACY_AUDIT_ADVISORIES = new Set([
   "uppercase call rendering is not wired through all display surfaces",
   "Meat personnel marker is not wired through wristband, script, and game plan calls",
   "Script lineup controls no longer preserve personnel markers while hiding player assignments",
-  "Script library and workspace tools still have duplicate navigation",
   "responsive audit fixes are missing the compact timeline or player search/filter entry point",
   "Script coach rows no longer have compact fields and scannable type accents",
   "Coach Grid Team Workspace contract is missing",
@@ -1076,21 +1075,15 @@ function checkScriptWorkspaceCommandSurface() {
       pageActions,
     ) ||
     !/function setScriptToolsDrawerOpen\(isOpen\)/.test(shared) ||
-    !/function toggleScriptToolsDrawer\(\)[\s\S]*setScriptToolsDrawerOpen\(!scriptToolsDrawerOpen\)/.test(
-      shared,
-    ) ||
     !/Library-only sidebar/.test(css) ||
     !/option value="run">Run View<\/option>/.test(html) ||
     !/scriptLibraryPinToggle/.test(html) ||
     !/function maybeAutoCollapseScriptPlayRail\(\)/.test(shared) ||
     !/scriptLibraryPinned/.test(shared) ||
     !/data-controls-mode="run"/.test(css) ||
-    !/#script \.script-sidebar-tabs \{[\s\S]*display:\s*flex[\s\S]*gap:\s*4px[\s\S]*flex:\s*0 0 auto/.test(
-      css,
-    ) ||
-    !/available-plays-actions \{[\s\S]*grid-template-columns: 1fr 1fr/.test(
-      css,
-    )
+    !/\.script-tools-drawer/.test(css) ||
+    !/\.script-drawer-section/.test(css) ||
+    !/data-cluster="output"/.test(html)
   ) {
     fail("Script library and workspace tools still have duplicate navigation");
   }

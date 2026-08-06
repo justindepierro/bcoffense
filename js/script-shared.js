@@ -240,10 +240,6 @@ function closeScriptToolsDrawer() {
   setScriptToolsDrawerOpen(false);
 }
 
-function toggleScriptToolsDrawer() {
-  setScriptToolsDrawerOpen(!scriptToolsDrawerOpen);
-}
-
 function initScriptToolsDrawerSections() {
   const drawer = document.getElementById("scriptToolsDrawer");
   if (!drawer || drawer.dataset.sectionDisclosureReady === "true") return;
