@@ -62,11 +62,15 @@ assert.match(indexCards, /function removeCallSheetIndexPlay\(arg\)/, "each index
 assert.match(indexCards, /openLoadWristbandModal/, "index-card editing can load or replace the Call Sheet wristband directly");
 assert.match(indexCards, /cs-index-wristband-number/, "index-card and print calls show loaded wristband numbers");
 assert.match(indexCards, /function _csUpdateIndexCardFitStatus\(\)/, "index-card editing reports whether the live card fits its 4×6 print area");
+assert.match(indexCards, /usedPercent[\s\S]*?overflowLines[\s\S]*?Over the 4 × 6 print area by about/, "Index Card capacity reports both fill and approximate overflow");
+assert.match(indexCards, /function copyCallSheetIndexBucketToOtherSide\(id\)/, "Index Card situations can be copied to the opposite side");
+assert.match(indexCards, /function clearCallSheetIndexCardBucket\(id\)[\s\S]*?bucket\.playKeys = \[\]/, "Index Card situations can be cleared without deleting canonical Call Sheet calls");
+assert.match(indexCards, /function removeEmptyCallSheetIndexBuckets\(\)/, "Index Card editor can remove empty situations in bulk");
 assert.match(css, /\.cs-index-card \{ box-sizing: border-box; display: flex; flex-direction: column; width: min\(100%, 480px\); height:/, "index-card editing uses a fixed 4×6-proportional frame instead of growing with content");
 assert.match(css, /\.cs-index-grid \{ display: grid;[\s\S]*?flex: 1 1 auto; min-height: 0;[\s\S]*?overflow: auto/, "index-card bucket content stays in a constrained scroll region instead of painting over the next situation");
 assert.match(css, /\.cs-index-play-actions \{ display: inline-flex; position: absolute;[\s\S]*?pointer-events: none/, "editor-only play controls overlay on demand instead of changing the 4×6 capacity");
 assert.match(render, /Index Cards are a fixed physical preview[\s\S]*?card\.scrollIntoView/, "opening Index Cards resets the old Call Sheet scroll position instead of landing mid-card");
-assert.match(css, /\.cs-index-print-preview-pages \.cs-index-card \{ width: min\(100%, 390px\); height: auto;[\s\S]*?aspect-ratio: 2 \/ 3/, "index-card preview overrides the editor height and keeps the real 4×6 ratio");
+assert.match(css, /\.cs-index-print-preview-pages \.cs-index-card \{ width: min\(100%, 390px\); height: min\(585px,[\s\S]*?aspect-ratio: 2 \/ 3/, "index-card preview uses a fixed 4×6-proportional canvas rather than growing with content");
 assert.match(scriptIntegrations, /function sendScriptToIndexCallSheet\(\)[\s\S]*?createSmartCallSheetIndexCard/, "Script can build a smart index card from selected or full script plays");
 assert.match(gamePlanIntegrations, /function sendGamePlanToIndexCallSheet\(\)[\s\S]*?sourceBoxId[\s\S]*?createSmartCallSheetIndexCard/, "Game Plan can build a smart index card while retaining bucket context");
 assert.match(appEvents, /"openCallSheetIndexPlayMenu"/, "delegated event routing passes the index-card play action its source element");

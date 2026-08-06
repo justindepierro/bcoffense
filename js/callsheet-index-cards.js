@@ -26,9 +26,10 @@ function _csBucketRows(bucket) {
   const rows = hash === "both" ? [...makeRows(data.left, "left"), ...makeRows(data.right, "right")] : makeRows(data[hash], hash);
   // Smart cards are a scoped view of the canonical Call Sheet. Older/manual
   // cards have no playKeys and continue to show the full linked category.
-  const keys = Array.isArray(bucket?.playKeys) ? new Set(bucket.playKeys) : null;
+  const hasScopedKeys = Array.isArray(bucket?.playKeys);
+  const keys = hasScopedKeys ? new Set(bucket.playKeys) : null;
   const excluded = new Set(Array.isArray(bucket?.excludedPlayKeys) ? bucket.excludedPlayKeys : []);
-  const scoped = keys?.size ? rows.filter((row) => keys.has(_csIndexIdentity(row.play))) : rows;
+  const scoped = hasScopedKeys ? rows.filter((row) => keys.has(_csIndexIdentity(row.play))) : rows;
   // A scoped bucket represents a call, not every accidental duplicate copy of
   // that call in the full Call Sheet. Keep the first canonical occurrence so
   // one picker selection always occupies one row on the compact card.
@@ -114,12 +115,17 @@ function _csUpdateIndexCardFitStatus() {
   const grid = card?.querySelector(".cs-index-grid");
   const status = document.getElementById("csIndexCardFitStatus");
   if (!card || !grid || !status) return;
-  const overflow = grid.scrollHeight > grid.clientHeight + 2;
+  const usedPercent = Math.round((grid.scrollHeight / Math.max(grid.clientHeight, 1)) * 100);
+  const overflowPixels = Math.max(0, grid.scrollHeight - grid.clientHeight);
+  const lineHeight = Math.max(12, parseFloat(getComputedStyle(grid).fontSize || "12") * 1.35);
+  const overflowLines = Math.max(1, Math.ceil(overflowPixels / lineHeight));
+  const overflow = overflowPixels > 2;
   card.classList.toggle("cs-index-card--overfull", overflow);
+  card.style.setProperty("--cs-index-fill", `${usedPercent}%`);
   status.classList.toggle("is-overfull", overflow);
   status.innerHTML = overflow
-    ? "⚠️ Over the 4 × 6 print area — reduce calls or move a situation to the other side."
-    : "✓ Fits inside the 4 × 6 print area.";
+    ? `<strong>⚠️ ${usedPercent}% full</strong><span>Over the 4 × 6 print area by about ${overflowLines} line${overflowLines === 1 ? "" : "s"}.</span>`
+    : `<strong>✓ ${usedPercent}% full</strong><span>Fits inside the 4 × 6 print area.</span>`;
 }
 
 const CS_INDEX_SMART_CATEGORY_PRIORITY = [
@@ -504,7 +510,7 @@ function renderCallSheetIndexCardPage() {
     ? `<button class="btn btn-sm btn-outline" data-action="openLoadWristbandModal" title="Change loaded wristband">📟 ${escapeHtml(wristband.name)} · ${wristband.count}</button>`
     : `<button class="btn btn-sm btn-outline" data-action="openLoadWristbandModal">📟 Load wristband</button>`;
   requestAnimationFrame(_csUpdateIndexCardFitStatus);
-  return `<section class="cs-index-main"><div class="cs-index-main-head"><div><span class="cs-index-kicker">CALL SHEET · GAME-DAY CARD · 4 × 6</span><h3>${escapeHtml(card.name || "Game Day Call Card")}</h3></div><div class="cs-index-main-actions">${wristbandAction}<button class="btn btn-sm btn-outline" data-action="toggleCallSheetIndexCardHeader">${card.hideHeader ? "↳ Show title band" : "⊘ Hide title band"}</button><button class="btn btn-sm btn-outline" data-action="newCallSheetIndexCard">＋ New card</button><button class="btn btn-sm btn-secondary" data-action="previewCurrentCallSheetIndexCard">👁️ Preview</button><button class="btn btn-sm btn-primary" data-action="openCallSheetIndexCardPrintModal">🖨️ Print options</button></div></div><div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}<button class="btn btn-sm btn-outline cs-index-delete-card" data-action="deleteCallSheetIndexCard" title="Delete current card">🗑️</button></div><div class="cs-index-main-sides"><span class="cs-index-side-label">Side</span><button class="btn ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><span>Click the card title to edit it. ⋯ controls source, label, color, side, and removal.</span></div><div id="csIndexCardFitStatus" class="cs-index-fit-status" role="status" aria-live="polite">4 × 6 print area</div>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></section>`;
+  return `<section class="cs-index-main"><div class="cs-index-main-head"><div><span class="cs-index-kicker">CALL SHEET · GAME-DAY CARD · 4 × 6</span><h3>${escapeHtml(card.name || "Game Day Call Card")}</h3></div><div class="cs-index-main-actions">${wristbandAction}<button class="btn btn-sm btn-outline" data-action="toggleCallSheetIndexCardHeader">${card.hideHeader ? "↳ Show title band" : "⊘ Hide title band"}</button><button class="btn btn-sm btn-outline" data-action="removeEmptyCallSheetIndexBuckets">⌫ Remove empty</button><button class="btn btn-sm btn-outline" data-action="newCallSheetIndexCard">＋ New card</button><button class="btn btn-sm btn-secondary" data-action="previewCurrentCallSheetIndexCard">👁️ Preview</button><button class="btn btn-sm btn-primary" data-action="openCallSheetIndexCardPrintModal">🖨️ Print options</button></div></div><div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}<button class="btn btn-sm btn-outline cs-index-delete-card" data-action="deleteCallSheetIndexCard" title="Delete current card">🗑️</button></div><div class="cs-index-main-sides"><span class="cs-index-side-label">Side</span><button class="btn ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><span>Click the card title to edit it. ⋯ manages source, color, copy/move, clear, and removal.</span></div><div id="csIndexCardFitStatus" class="cs-index-fit-status" role="status" aria-live="polite">4 × 6 print area</div>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></section>`;
 }
 function selectCallSheetIndexCard(id) { _csIndexCardId = String(id || ""); renderCallSheet(); }
 function setCallSheetIndexCardSide(side) { _csIndexSide = side === "back" ? "back" : "front"; renderCallSheet(); }
@@ -541,6 +547,30 @@ function moveCallSheetIndexBucket(arg) {
   [items[index], items[next]] = [items[next], items[index]];
   _csPersistCards();
 }
+function copyCallSheetIndexBucketToOtherSide(id) {
+  const card = _csActiveCard();
+  const bucket = _csIndexBucketFromArg(id);
+  if (!card || !bucket) return;
+  const otherSide = _csIndexSide === "front" ? "back" : "front";
+  card[otherSide].push({ ...JSON.parse(JSON.stringify(bucket)), id: `bucket-${Date.now()}-${Math.random().toString(36).slice(2, 5)}` });
+  _csPersistCards();
+}
+function clearCallSheetIndexCardBucket(id) {
+  const bucket = _csIndexBucketFromArg(id);
+  if (!bucket) return;
+  bucket.playKeys = [];
+  bucket.excludedPlayKeys = [];
+  bucket.family = {};
+  _csPersistCards();
+}
+function removeEmptyCallSheetIndexBuckets() {
+  const card = _csActiveCard();
+  if (!card) return;
+  const before = card[_csIndexSide].length;
+  card[_csIndexSide] = card[_csIndexSide].filter((bucket) => _csBucketRows(bucket).length > 0);
+  if (card[_csIndexSide].length !== before) _csPersistCards();
+  else showToast("There are no empty situations on this side.", { type: "info" });
+}
 async function setCallSheetIndexBucketColor(id) {
   const bucket = _csIndexBucketFromArg(id);
   if (!bucket) return;
@@ -565,6 +595,8 @@ async function manageCallSheetIndexCardBucket(id) {
       { value: "source", label: "Change Call Sheet source", icon: "↻" },
       { value: "color", label: "Change header color", icon: "🎨" },
       { value: "other-side", label: `Move to ${_csIndexSide === "front" ? "Back" : "Front"}`, icon: "↔" },
+      { value: "copy-other-side", label: `Copy to ${_csIndexSide === "front" ? "Back" : "Front"}`, icon: "⧉" },
+      { value: "clear", label: "Clear calls from this card bucket", icon: "⌫" },
       { value: "delete", label: "Remove from card", icon: "🗑️" },
       { value: "cancel", label: "Cancel" },
     ],
@@ -581,6 +613,10 @@ async function manageCallSheetIndexCardBucket(id) {
     const otherSide = _csIndexSide === "front" ? "back" : "front";
     card[otherSide].push(bucket);
     _csPersistCards();
+  } else if (action === "copy-other-side") {
+    copyCallSheetIndexBucketToOtherSide(id);
+  } else if (action === "clear") {
+    clearCallSheetIndexCardBucket(id);
   } else if (action === "delete") {
     removeCallSheetIndexCardBucket(id);
   }

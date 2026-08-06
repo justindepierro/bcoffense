@@ -28,7 +28,8 @@
 .cs-index-print-preview-pages .cs-index-print-page { min-width: 0; }
 /* The editor has an explicit pixel height so it can report capacity. The
    preview must instead use the physical 4×6 ratio at its scaled width. */
-.cs-index-print-preview-pages .cs-index-card { width: min(100%, 390px); height: auto; min-height: 0; aspect-ratio: 2 / 3; margin: 0 auto; font-size: .84em; }
+.cs-index-print-preview-pages .cs-index-card { width: min(100%, 390px); height: min(585px, calc((100vw - 84px) * 1.5)); min-height: 0; aspect-ratio: 2 / 3; margin: 0 auto; font-size: .84em; }
+.cs-index-print-preview-pages .cs-index-grid { overflow: hidden; }
 @media print {
   body.cs-index-printing > * { display: none !important; }
   body.cs-index-printing #csIndexCardPrintRoot { display: block !important; }
@@ -932,7 +933,7 @@ body.shell-phone #callsheet .cs-empty-cat {
   display: grid;
   grid-template-columns:
     minmax(132px, max-content) minmax(116px, max-content)
-    minmax(96px, max-content);
+    minmax(96px, max-content) minmax(106px, max-content);
   align-items: center;
   justify-content: start;
   gap: 8px;
@@ -5423,7 +5424,8 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-main-tabs { padding: var(--space-sm); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-muted); }
 .cs-index-main-sides { margin: var(--space-sm) 0; padding: var(--space-xs) var(--space-sm); border-left: 3px solid var(--color-primary); background: var(--color-surface-muted); color: var(--color-text-muted); font-size: var(--font-size-sm); }
 .cs-index-side-label { color: var(--color-text); font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
-.cs-index-fit-status { width: min(100%, 480px); margin: var(--space-sm) auto 0; padding: 6px 8px; border: 1px solid var(--color-success, #168a52); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--color-success, #168a52) 8%, white); color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: 700; text-align: center; }
+.cs-index-fit-status { width: min(100%, 480px); margin: var(--space-sm) auto 0; padding: 6px 8px; border: 1px solid var(--color-success, #168a52); border-radius: var(--radius-sm); background: linear-gradient(90deg, color-mix(in srgb, var(--color-success, #168a52) 16%, white) var(--cs-index-fill, 0%), color-mix(in srgb, var(--color-success, #168a52) 4%, white) var(--cs-index-fill, 0%)); color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: 700; text-align: center; }
+.cs-index-fit-status strong, .cs-index-fit-status span { display: block; }
 .cs-index-fit-status.is-overfull { border-color: var(--color-warning, #d39b18); background: color-mix(in srgb, var(--color-warning, #d39b18) 12%, white); color: var(--color-text); }
 .cs-index-card--overfull { border-color: var(--color-warning, #d39b18); }
 .cs-index-main-empty { display: grid; min-height: 340px; place-content: center; gap: var(--space-sm); text-align: center; }
