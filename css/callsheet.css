@@ -985,7 +985,7 @@ body.shell-phone #callsheet .cs-empty-cat {
 .callsheet-index-mode [data-action="autoPopulateCallSheet"] { display: none; }
 .callsheet-index-mode .cs-index-toolbar-only { display: inline-flex; }
 .callsheet-index-mode > .page-help { display: none; }
-.callsheet-index-mode .cs-toolbar { position: sticky; z-index: 20; top: 0; }
+.callsheet-index-mode .cs-toolbar { position: sticky; z-index: 20; top: 0; overflow: visible; }
 .callsheet-index-mode .cs-toolbar-left,
 .callsheet-index-mode .cs-toolbar-right { display: flex; grid-template-columns: none; flex-wrap: nowrap; gap: 6px; }
 .callsheet-index-mode .cs-toolbar-left { min-width: 0; }
