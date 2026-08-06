@@ -725,7 +725,7 @@ function printCallSheetIndexCards() { openCallSheetIndexCardPrintModal(); }
 function renderCallSheetIndexToolbarContext() {
   const cards = _csCards(); const card = _csActiveCard();
   if (!card) return "";
-  return `<div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}" title="${escapeAttr(item.name || `Card ${index + 1}`)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}</div><div class="cs-index-main-sides" aria-label="Card side"><span class="cs-index-side-label">Side</span><button class="btn btn-sm ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn btn-sm ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><details class="cs-index-main-more"><summary title="More card actions">⋯</summary><div class="cs-index-main-more-menu"><button class="btn btn-sm btn-outline" data-action="renameCallSheetIndexCard">✏️ Rename card</button><button class="btn btn-sm btn-outline" data-action="toggleCallSheetIndexCardHeader">${card.hideHeader ? "Show title band" : "Hide title band"}</button><button class="btn btn-sm btn-outline" data-action="removeEmptyCallSheetIndexBuckets">Remove empty</button><button class="btn btn-sm btn-outline cs-index-delete-card" data-action="deleteCallSheetIndexCard">🗑️ Delete card</button></div></details></div>`;
+  return `<div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}" title="${escapeAttr(item.name || `Card ${index + 1}`)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}</div><div class="cs-index-main-sides" aria-label="Card side"><span class="cs-index-side-label">Side</span><button class="btn btn-sm ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn btn-sm ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><details class="cs-index-main-more"><summary title="More card actions">⋯</summary><div class="cs-index-main-more-menu"><button class="btn btn-sm btn-outline" data-action="renameCallSheetIndexCard">✏️ Rename card</button><button class="btn btn-sm btn-outline" data-action="recoverCallSheetIndexCard">☁️ Recover from cloud history</button><button class="btn btn-sm btn-outline" data-action="toggleCallSheetIndexCardHeader">${card.hideHeader ? "Show title band" : "Hide title band"}</button><button class="btn btn-sm btn-outline" data-action="removeEmptyCallSheetIndexBuckets">Remove empty</button><button class="btn btn-sm btn-outline cs-index-delete-card" data-action="deleteCallSheetIndexCard">🗑️ Delete card</button></div></details></div>`;
 }
 
 function renderCallSheetIndexCardPage() {
@@ -759,6 +759,28 @@ async function deleteCallSheetIndexCard() {
   _csIndexCardId = callSheetSettings.indexCards[0]?.id || "";
   _csIndexSide = "front";
   _csPersistCards();
+}
+async function recoverCallSheetIndexCard() {
+  const card = _csActiveCard();
+  if (!card) return;
+  try {
+    const response = await fetch(`/admin/callsheet-index-card-recovery?cardId=${encodeURIComponent(card.id)}`, { credentials: "same-origin", headers: { Accept: "application/json" } });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result?.ok) throw new Error(result?.error || "Cloud history could not be searched.");
+    const candidates = (result.candidates || []).filter((item) => Number(item.backBuckets || 0) > 0);
+    if (!candidates.length) { showToast("No older cloud copy with Back-side buckets was found.", { type: "info" }); return; }
+    const selected = await showListPicker("Choose the saved card version to restore. Only this card will change; the rest of the workspace stays current.", candidates.map((item) => ({ value: item.sourceRevision, label: `${new Date(Number(item.historicalRevisionAt || 0) * 1000).toLocaleString()} — Front ${item.frontBuckets}, Back ${item.backBuckets}` })), { title: "Cloud Index Card History", icon: "☁️" });
+    if (!selected) return;
+    const confirmed = await showConfirm("Restore this Index Card's saved Front and Back configuration? Current Call Sheet plays and every other workspace record will remain untouched.", { title: "Restore this card only?", icon: "🛟", confirmText: "Restore card" });
+    if (!confirmed) return;
+    const restoreResponse = await fetch("/admin/callsheet-index-card-recovery", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ sourceRevision: selected, cardId: card.id }) });
+    const restored = await restoreResponse.json().catch(() => ({}));
+    if (!restoreResponse.ok || !restored?.ok) throw new Error(restored?.error || "The Index Card could not be restored.");
+    showToast("Index Card recovered from cloud history. Refreshing the current workspace…", { type: "success", duration: 3500 });
+    setTimeout(() => window.location.reload(), 700);
+  } catch (err) {
+    showToast(err?.message || "The Index Card could not be restored.", { type: "error", duration: 6000 });
+  }
 }
 function moveCallSheetIndexBucket(arg) {
   const [id, rawDirection] = String(arg || "").split("|");

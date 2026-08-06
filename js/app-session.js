@@ -5,7 +5,17 @@ let wristbandDirty = false;
 const draftRestoreChecksRun = new Set();
 const draftRestoreChecksPending = new Set();
 
+// Legacy per-tab drafts were allowed to overwrite the current primary record
+// during normal startup. Recovery must be an explicit review operation, never
+// an automatic prompt that competes with today's saved workspace.
+const LEGACY_DRAFT_AUTO_RESTORE_ENABLED = false;
+
 function runDraftRestoreCheckForTab(tabName) {
+  if (!LEGACY_DRAFT_AUTO_RESTORE_ENABLED) {
+    draftRestoreChecksRun.add(tabName);
+    return;
+  }
+
   const tabDraftCheckMap = {
     script: window.checkScriptDraft,
     wristband: window.checkWristbandDraft,

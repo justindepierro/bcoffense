@@ -1165,6 +1165,11 @@ function setCallSheetOrientation(orient) {
  */
 function saveCallSheetSettings() {
   storageManager.set(STORAGE_KEYS.CALL_SHEET_SETTINGS, callSheetSettings);
+  // Settings are canonical as soon as they are written. An older full Call
+  // Sheet draft could otherwise restore stale Index Card state over them.
+  if (typeof retireCallSheetRecoveryDraft === "function") {
+    retireCallSheetRecoveryDraft();
+  }
 }
 
 /**

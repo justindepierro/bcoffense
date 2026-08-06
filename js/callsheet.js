@@ -1154,7 +1154,7 @@ function saveCallSheet() {
   saveCallSheetState();
   storageManager.set(STORAGE_KEYS.CALL_SHEET, callSheet);
   if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
-  scheduleCallSheetAutosave();
+  retireCallSheetRecoveryDraft();
   // Persist constraints snapshot alongside call sheet
   if (typeof saveConstraintsSnapshot === "function") saveConstraintsSnapshot();
   // Record artifact modified timestamp (#38)
@@ -1185,7 +1185,7 @@ function undoCallSheet() {
     callSheetHistoryBaseline = safeDeepClone(callSheet);
     callSheetHistoryBaselineJson = JSON.stringify(callSheetHistoryBaseline);
     storageManager.set(STORAGE_KEYS.CALL_SHEET, callSheet);
-    scheduleCallSheetAutosave();
+    retireCallSheetRecoveryDraft();
     if (typeof saveConstraintsSnapshot === "function") saveConstraintsSnapshot();
     renderCallSheet();
     _csUndoInProgress = false;
@@ -1200,7 +1200,7 @@ function redoCallSheet() {
     callSheetHistoryBaseline = safeDeepClone(callSheet);
     callSheetHistoryBaselineJson = JSON.stringify(callSheetHistoryBaseline);
     storageManager.set(STORAGE_KEYS.CALL_SHEET, callSheet);
-    scheduleCallSheetAutosave();
+    retireCallSheetRecoveryDraft();
     if (typeof saveConstraintsSnapshot === "function") saveConstraintsSnapshot();
     renderCallSheet();
     _csUndoInProgress = false;
@@ -1236,16 +1236,15 @@ async function clearCallSheet() {
 
 /* toggleCsPanel merged into shared toggleCollapsiblePanel() in utils.js */
 
-/**
- * Schedule autosave for call sheet draft
- */
-function scheduleCallSheetAutosave() {
-  callSheetAutosaveTimer = queueAutosave(callSheetAutosaveTimer, () => {
-    persistDraftData(STORAGE_KEYS.CALLSHEET_DRAFT, {
-      callSheet: safeDeepClone(callSheet),
-      settings: safeDeepClone(callSheetSettings),
-    });
-  }, AUTOSAVE_DEBOUNCE_MS);
+// The primary Call Sheet and settings records are written synchronously by
+// their save paths. Retire any older whole-page recovery draft so it cannot
+// later merge stale Index Card/settings data back over the current sheet.
+function retireCallSheetRecoveryDraft() {
+  if (typeof discardDraftData !== "function") return;
+  callSheetAutosaveTimer = discardDraftData(
+    STORAGE_KEYS.CALLSHEET_DRAFT,
+    callSheetAutosaveTimer,
+  );
 }
 
 /**
