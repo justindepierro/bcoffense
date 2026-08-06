@@ -3,6 +3,7 @@
 let _csIndexCardId = "";
 let _csIndexSide = "front";
 let _csIndexPickerBucketId = "";
+let _csIndexDraggingBucketId = "";
 
 function _csCards() { return Array.isArray(callSheetSettings.indexCards) ? callSheetSettings.indexCards : []; }
 function _csActiveCard() { const cards = _csCards(); const card = cards.find((item) => item.id === _csIndexCardId) || cards[0] || null; if (card) _csIndexCardId = card.id; return card; }
@@ -103,8 +104,76 @@ function _csIndexBucketMarkup(bucket, editable) {
     : "<li class=\"cs-index-no-calls\">Drop or add plays here</li>");
   const addControl = editable && bucket.categoryId ? `<button class="cs-index-bucket-add" data-action="openCallSheetIndexCardBucketPicker" data-arg="${escapeAttr(bucket.id)}" title="Add a play to ${escapeAttr(bucket.label)}" aria-label="Add a play to ${escapeAttr(bucket.label)}">＋</button>` : "";
   const dropAttrs = bucket.categoryId ? ` data-drop="csHashDrop" data-cat="${escapeAttr(bucket.categoryId)}" data-hash="${bucket.targetHash === "right" ? "right" : "left"}"` : "";
-  return `<section class="cs-index-bucket${_csIndexPrintBucketClass(bucket)}"${dropAttrs}${editable ? ` data-cs-card-bucket="${escapeAttr(bucket.id)}"` : ""}><header style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading"><b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}<button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|-1" title="Move situation up" aria-label="Move ${escapeAttr(bucket.label)} up">↑</button><button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|1" title="Move situation down" aria-label="Move ${escapeAttr(bucket.label)} down">↓</button><button data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}">⋯</button><button data-action="removeCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Remove situation" aria-label="Remove ${escapeAttr(bucket.label)}">×</button></span>` : ""}</header><ol class="${bucket.showSequenceNumbers ? "" : "cs-index-list--unsequenced"}">${plays}</ol></section>`;
+  return `<section class="cs-index-bucket${_csIndexPrintBucketClass(bucket)}"${dropAttrs}${editable ? ` data-cs-card-bucket="${escapeAttr(bucket.id)}"` : ""}><header${editable ? ` draggable="true" data-cs-index-bucket-drag="${escapeAttr(bucket.id)}" title="Drag this header to reorder situations"` : ""} style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading"><b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}<button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|-1" title="Move situation up" aria-label="Move ${escapeAttr(bucket.label)} up">↑</button><button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|1" title="Move situation down" aria-label="Move ${escapeAttr(bucket.label)} down">↓</button><button data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}">⋯</button><button data-action="removeCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Remove situation" aria-label="Remove ${escapeAttr(bucket.label)}">×</button></span>` : ""}</header><ol class="${bucket.showSequenceNumbers ? "" : "cs-index-list--unsequenced"}">${plays}</ol></section>`;
 }
+
+function _csClearIndexBucketDragFeedback() {
+  _csClearIndexBucketDropFeedback();
+  document.querySelectorAll(".cs-index-bucket--dragging")
+    .forEach((element) => element.classList.remove("cs-index-bucket--dragging"));
+}
+function _csClearIndexBucketDropFeedback() {
+  document.querySelectorAll(".cs-index-bucket--drop-before, .cs-index-bucket--drop-after")
+    .forEach((element) => element.classList.remove("cs-index-bucket--drop-before", "cs-index-bucket--drop-after"));
+}
+
+function _csReorderIndexBuckets(sourceId, targetId, placeAfter) {
+  const buckets = _csActiveCard()?.[_csIndexSide];
+  if (!Array.isArray(buckets) || !sourceId || !targetId || sourceId === targetId) return false;
+  const sourceIndex = buckets.findIndex((bucket) => bucket.id === sourceId);
+  let targetIndex = buckets.findIndex((bucket) => bucket.id === targetId);
+  if (sourceIndex < 0 || targetIndex < 0) return false;
+  const [bucket] = buckets.splice(sourceIndex, 1);
+  if (sourceIndex < targetIndex) targetIndex -= 1;
+  buckets.splice(placeAfter ? targetIndex + 1 : targetIndex, 0, bucket);
+  _csPersistCards();
+  return true;
+}
+
+function _csBindIndexBucketDragAndDrop() {
+  const grid = document.getElementById("callSheetGrid");
+  if (!grid || grid.dataset.csIndexBucketDragBound === "true") return;
+  grid.dataset.csIndexBucketDragBound = "true";
+  grid.addEventListener("dragstart", (event) => {
+    const handle = event.target.closest("[data-cs-index-bucket-drag]");
+    if (!handle || event.target.closest("button, input")) return;
+    _csIndexDraggingBucketId = handle.dataset.csIndexBucketDrag || "";
+    if (!_csIndexDraggingBucketId) return;
+    event.dataTransfer?.setData("text/plain", `cs-index-bucket:${_csIndexDraggingBucketId}`);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    handle.closest(".cs-index-bucket")?.classList.add("cs-index-bucket--dragging");
+  });
+  grid.addEventListener("dragover", (event) => {
+    if (!_csIndexDraggingBucketId) return;
+    const target = event.target.closest(".cs-index-card--editor .cs-index-bucket[data-cs-card-bucket]");
+    if (!target || target.dataset.csCardBucket === _csIndexDraggingBucketId) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+    const rect = target.getBoundingClientRect();
+    const placeAfter = event.clientY > rect.top + rect.height / 2;
+    if (typeof clearCallSheetDropIndicators === "function") clearCallSheetDropIndicators();
+    _csClearIndexBucketDropFeedback();
+    target.classList.add(placeAfter ? "cs-index-bucket--drop-after" : "cs-index-bucket--drop-before");
+  });
+  grid.addEventListener("drop", (event) => {
+    if (!_csIndexDraggingBucketId) return;
+    const target = event.target.closest(".cs-index-card--editor .cs-index-bucket[data-cs-card-bucket]");
+    if (!target) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const rect = target.getBoundingClientRect();
+    const moved = _csReorderIndexBuckets(_csIndexDraggingBucketId, target.dataset.csCardBucket, event.clientY > rect.top + rect.height / 2);
+    _csIndexDraggingBucketId = "";
+    _csClearIndexBucketDragFeedback();
+    if (moved) showToast("Situation reordered", { type: "success", duration: 1200 });
+  });
+  grid.addEventListener("dragend", () => {
+    _csIndexDraggingBucketId = "";
+    _csClearIndexBucketDragFeedback();
+  });
+}
+
+document.addEventListener("DOMContentLoaded", _csBindIndexBucketDragAndDrop);
 function _csIndexPrintColumns(buckets) {
   const columns = [[], []];
   const weights = [0, 0];

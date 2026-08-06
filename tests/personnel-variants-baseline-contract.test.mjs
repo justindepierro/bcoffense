@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
 const fixture = JSON.parse(await read("tests/fixtures/personnel-variants-baseline.json"));
-const [utils, scriptShared, scriptAvailable, scriptAdd, wristband, wristbandPopup, wristbandExport, callSheet, callSheetRender, callSheetPrint, callSheetExport, gamePlan, gamePlanRender, gamePlanActions, gamePlanIntegrations, editor] = await Promise.all([
+const [utils, scriptShared, scriptAvailable, scriptAdd, wristband, wristbandPopup, wristbandExport, callSheet, callSheetRender, callSheetPrint, callSheetExport, gamePlan, gamePlanRender, gamePlanPrint, gamePlanActions, gamePlanIntegrations, editor] = await Promise.all([
   read("js/utils.js"),
   read("js/script-shared.js"),
   read("js/script-available.js"),
@@ -19,6 +19,7 @@ const [utils, scriptShared, scriptAvailable, scriptAdd, wristband, wristbandPopu
   read("js/callsheet-export.js"),
   read("js/gameplan.js"),
   read("js/gameplan-render.js"),
+  read("js/gameplan-print.js"),
   read("js/gameplan-actions.js"),
   read("js/gameplan-integrations.js"),
   read("js/playbook-editor.js"),
@@ -191,6 +192,10 @@ assert.match(gamePlanActions, /gamePlanPersonnelOverride = value\.trim\(\)/,
   "a custom Game Plan personnel label is saved on only the board assignment");
 assert.match(gamePlan, /snap\.gamePlanPersonnelOverride[\s\S]*?preserved\.gamePlanPersonnelOverride/,
   "Game Plan refresh retains its local personnel override");
+assert.match(gamePlanPrint, /function _gpPrintDisplayPlay\(play\)[\s\S]*?gamePlanPersonnelOverride/,
+  "Game Plan print resolves the same local personnel override shown in the board");
+assert.match(gamePlanPrint, /\(GP only\)/,
+  "printed Game Plan-only personnel is explicitly identified as local planning context");
 assert.match(await read("js/gameplan.js"), /function _gpAssignmentIdentity\(play\)/,
   "Game Plan distinguishes same-call personnel versions only at box duplicate boundaries");
 assert.match(await read("js/gameplan-dnd.js"), /openGamePlanDuplicatePersonnelVariant\(boxId, duplicateSig\)/,

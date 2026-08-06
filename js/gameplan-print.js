@@ -101,7 +101,7 @@ function _gpGetPrintPersonnelChoices(board = null) {
   const values = new Set();
   Object.values(sourceBoard.assignments || {}).forEach((list) => {
     (list || []).forEach((play) => {
-      const personnel = String(play?.personnel || "").trim();
+      const personnel = String(_gpPrintDisplayPlay(play)?.personnel || "").trim();
       if (personnel) values.add(personnel);
     });
   });
@@ -147,6 +147,7 @@ function _gpGetModalUseCurrentFilters(options = _gpPrintOptions) {
 
 function _gpMatchesPrintFilters(play, board) {
   const o = _gpPrintOptions;
+  const displayPlay = _gpPrintDisplayPlay(play);
   if (!_gpPlayAllowedOnBoard(play, board)) return false;
   if (
     _gpHasPrintableCurrentFilters() &&
@@ -159,10 +160,24 @@ function _gpMatchesPrintFilters(play, board) {
     return false;
   }
   const personnelFilter = _gpGetPrintPersonnelFilter();
-  if (personnelFilter && String(play?.personnel || "").trim() !== personnelFilter) {
+  if (personnelFilter && String(displayPlay?.personnel || "").trim() !== personnelFilter) {
     return false;
   }
   return true;
+}
+
+// A board assignment can select an approved personnel variant or carry a
+// Game Plan-only personnel note. Resolve both at print time without changing
+// the canonical play or leaking the board-only note into other workspaces.
+function _gpPrintDisplayPlay(play) {
+  if (!play || typeof play !== "object") return play || {};
+  const variantId = String(play.personnelVariantId || "base").trim() || "base";
+  const source = typeof _gpFindPlayBySig === "function" ? _gpFindPlayBySig(_gpPlaySignature(play)) || play : play;
+  const effective = variantId !== "base" && typeof getEffectivePlayVariant === "function"
+    ? getEffectivePlayVariant(source, variantId) || play
+    : play;
+  const customPersonnel = String(play.gamePlanPersonnelOverride || "").trim();
+  return customPersonnel ? { ...effective, personnel: customPersonnel, gamePlanPersonnelOverride: customPersonnel } : effective;
 }
 
 function _gpPrintBoxList(board, boxId) {
@@ -585,10 +600,11 @@ function _gpRenderPrintBoxDetail(box, list) {
 
 function _gpRenderPrintPlay(play, board = null) {
   const o = _gpPrintOptions;
+  const displayPlay = _gpPrintDisplayPlay(play);
   const callHtml = typeof getFullCall === "function"
-    ? getFullCall(play, { showLineCall: false, showEmoji: o.showMeta, useSquares: true })
-    : escapeHtml(play.play || "");
-  const oneWordRaw = String(play?.oneWord || "").trim();
+    ? getFullCall(displayPlay, { showLineCall: false, showEmoji: o.showMeta, useSquares: true })
+    : escapeHtml(displayPlay.play || "");
+  const oneWordRaw = String(displayPlay?.oneWord || "").trim();
   const oneWordHtml = o.showOneWord && oneWordRaw
     ? `<span class="gp-print-oneword">(${escapeHtml(oneWordRaw.toUpperCase())})</span>`
     : "";
@@ -601,8 +617,8 @@ function _gpRenderPrintPlay(play, board = null) {
   }
   const meta = [];
   if (o.showMeta) {
-    if (play.formation) meta.push(escapeHtml(play.formation));
-    if (play.personnel) meta.push(escapeHtml(play.personnel));
+    if (displayPlay.formation) meta.push(escapeHtml(displayPlay.formation));
+    if (displayPlay.personnel) meta.push(`${escapeHtml(displayPlay.personnel)}${displayPlay.gamePlanPersonnelOverride ? " <small>(GP only)</small>" : ""}`);
     if (play.preferredHash) {
       const norm = _gpNormalizeHashLabel(play.preferredHash) || "";
       const letter = norm === "Left" ? "L" : norm === "Right" ? "R" : norm === "Middle" ? "M" : String(play.preferredHash).trim().charAt(0).toUpperCase();

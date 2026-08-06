@@ -5494,6 +5494,11 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-bucket.cs-drop-target { outline: 3px solid var(--color-primary); outline-offset: 2px; background: color-mix(in srgb, var(--color-primary) 10%, white); }
 .cs-index-bucket.cs-drop-target::after { content: "Drop play into this situation"; display: block; padding: 4px 6px; color: var(--color-primary); font-size: 10px; font-weight: 800; text-align: center; }
 .cs-index-bucket[data-drop="csHashDrop"].gp-drag-over { outline: 2px solid var(--color-primary); outline-offset: 2px; background: color-mix(in srgb, var(--color-primary) 8%, white); }
+.cs-index-card--editor .cs-index-bucket > header[draggable="true"] { cursor: grab; user-select: none; }
+.cs-index-card--editor .cs-index-bucket > header[draggable="true"]:active { cursor: grabbing; }
+.cs-index-bucket--dragging { opacity: .45; }
+.cs-index-bucket--drop-before { box-shadow: 0 -4px 0 var(--color-primary); }
+.cs-index-bucket--drop-after { box-shadow: 0 4px 0 var(--color-primary); }
 
 @media (max-width: 640px) {
   .cs-index-main { padding: var(--space-sm); }
