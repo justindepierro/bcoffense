@@ -48,7 +48,8 @@ assert.match(indexCards, /function removeCallSheetIndexPlay\(arg\)/, "each index
 assert.match(indexCards, /openLoadWristbandModal/, "index-card editing can load or replace the Call Sheet wristband directly");
 assert.match(indexCards, /cs-index-wristband-number/, "index-card and print calls show loaded wristband numbers");
 assert.match(indexCards, /function _csUpdateIndexCardFitStatus\(\)/, "index-card editing reports whether the live card fits its 4×6 print area");
-assert.match(css, /\.cs-index-card \{ box-sizing: border-box; width: min\(100%, 480px\); height:/, "index-card editing uses a fixed 4×6-proportional frame instead of growing with content");
+assert.match(css, /\.cs-index-card \{ box-sizing: border-box; display: flex; flex-direction: column; width: min\(100%, 480px\); height:/, "index-card editing uses a fixed 4×6-proportional frame instead of growing with content");
+assert.match(css, /\.cs-index-grid \{ display: grid;[\s\S]*?flex: 1 1 auto; min-height: 0;[\s\S]*?overflow: auto/, "index-card bucket content stays in a constrained scroll region instead of painting over the next situation");
 assert.match(render, /Index Cards are a fixed physical preview[\s\S]*?card\.scrollIntoView/, "opening Index Cards resets the old Call Sheet scroll position instead of landing mid-card");
 assert.match(css, /\.cs-index-print-preview-pages \.cs-index-card \{ width: min\(100%, 390px\); height: auto;[\s\S]*?aspect-ratio: 2 \/ 3/, "index-card preview overrides the editor height and keeps the real 4×6 ratio");
 assert.match(scriptIntegrations, /function sendScriptToIndexCallSheet\(\)[\s\S]*?createSmartCallSheetIndexCard/, "Script can build a smart index card from selected or full script plays");
