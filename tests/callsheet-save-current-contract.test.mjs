@@ -3,11 +3,14 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const [callsheet, templates, pageActions, filters] = await Promise.all([
+const [callsheet, templates, pageActions, filters, render, picker, css] = await Promise.all([
   readFile(new URL("js/callsheet.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/callsheet-templates.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/page-actions.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/callsheet-filters.js", `file://${root}/`), "utf8"),
+  readFile(new URL("js/callsheet-render.js", `file://${root}/`), "utf8"),
+  readFile(new URL("js/callsheet-picker-runtime.js", `file://${root}/`), "utf8"),
+  readFile(new URL("css/callsheet.css", `file://${root}/`), "utf8"),
 ]);
 
 assert.match(callsheet, /activeSavedCallSheetId/, "Call Sheet settings retain the active saved-sheet identity");
@@ -26,5 +29,11 @@ assert.doesNotMatch(pageActions, /label: "Saved Call Sheets"/, "saved-sheet brow
 assert.match(filters, /play\?\.playbookId, play\?\.sourcePlayId, play\?\.originalPlayId, play\?\.wristbandLinkId/, "Call Sheet wristband matching starts with durable play identity");
 assert.match(filters, /typeof playsMatch === "function"/, "Call Sheet wristband matching shares the canonical compare-key fallback");
 assert.match(filters, /Legacy imports may lack source identity metadata/, "display-text matching is explicitly retained only for legacy wristbands");
+assert.match(callsheet, /function toggleCallSheetCategoryColumns\(categoryId\)/, "each Call Sheet category can switch between hash and sequence layouts");
+assert.match(render, /cs-single-column/, "the Call Sheet render path exposes the one-column category state");
+assert.match(css, /\.callsheet-category\.cs-single-column .category-content/, "one-column categories use a full-width call layout");
+assert.match(picker, /const otherHash = hash === "left" \? "right" : "left"/, "hash-layout blank spacers are paired for side-by-side alignment");
+assert.match(filters, /A saved wristband can change after it was loaded into the call sheet/, "new wristband entries are read live before assigning a Call Sheet number");
+assert.match(render, /const marker = typeof getPersonnelEmoji/, "additional personnel uses the shared marker language rather than raw chip text");
 
-console.log("call sheet current-save contract: 14 assertions passed");
+console.log("call sheet current-save contract: layout, live wristband, and save identity contracts passed");

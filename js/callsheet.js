@@ -85,11 +85,16 @@ function normalizeCallSheetSettings(settings = {}) {
     customColors: merged.customColors && typeof merged.customColors === "object"
       ? merged.customColors
       : {},
+    categoryColumnModes: merged.categoryColumnModes && typeof merged.categoryColumnModes === "object"
+      ? Object.fromEntries(Object.entries(merged.categoryColumnModes)
+        .filter(([id, mode]) => typeof id === "string" && (mode === "single" || mode === "hashes")))
+      : {},
     customCategories: {
       front: Array.isArray(customCategories.front) ? customCategories.front : [],
       back: Array.isArray(customCategories.back) ? customCategories.back : [],
     },
     loadedWristbandName: merged.loadedWristbandName || "",
+    loadedWristbandId: String(merged.loadedWristbandId || ""),
     loadedWristbandPlays: Array.isArray(merged.loadedWristbandPlays)
       ? merged.loadedWristbandPlays
       : [],
@@ -158,8 +163,12 @@ function getDefaultCallSheetSettings() {
     currentPage: "front", // front or back
     customNames: {}, // { categoryId: "Custom Name" }
     customColors: {}, // { categoryId: "#hex" }
+    // Hashes are the default. A single column is useful for ordered menus
+    // such as Openers and two-point calls where left/right placement is noise.
+    categoryColumnModes: {},
     customCategories: { front: [], back: [] },
     loadedWristbandName: "", // Name of loaded wristband
+    loadedWristbandId: "", // Durable saved wristband identity when available
     loadedWristbandPlays: [], // Plays from loaded wristband with numbers
     hiddenCategoryIds: [],
     allowedPlayTypes: [],
@@ -183,6 +192,23 @@ let editingHash = null;
 let callSheetAutosaveTimer = null;
 let callSheetHistoryBaseline = null;
 let callSheetHistoryBaselineJson = "";
+
+function getCallSheetCategoryColumnMode(categoryId) {
+  return callSheetSettings?.categoryColumnModes?.[categoryId] === "single" ? "single" : "hashes";
+}
+
+function toggleCallSheetCategoryColumns(categoryId) {
+  if (!categoryId) return;
+  const nextMode = getCallSheetCategoryColumnMode(categoryId) === "single" ? "hashes" : "single";
+  if (!callSheetSettings.categoryColumnModes || typeof callSheetSettings.categoryColumnModes !== "object") {
+    callSheetSettings.categoryColumnModes = {};
+  }
+  if (nextMode === "single") callSheetSettings.categoryColumnModes[categoryId] = "single";
+  else delete callSheetSettings.categoryColumnModes[categoryId];
+  saveCallSheetSettings();
+  renderCallSheet();
+  showToast(nextMode === "single" ? "One-column sequence enabled" : "Left/right hash columns enabled", { type: "success" });
+}
 
 // Custom category ordering (array of category IDs per page)
 let csCategoryOrder = getDefaultCallSheetCategoryOrder();

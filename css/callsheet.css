@@ -287,6 +287,25 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   border-right: none;
 }
 
+.callsheet-category.cs-single-column .category-subheader,
+.callsheet-category.cs-single-column .category-content {
+  grid-template-columns: 1fr;
+}
+.callsheet-category.cs-single-column .hash-header,
+.callsheet-category.cs-single-column .hash-column {
+  border-right: 0;
+}
+.cs-column-mode-btn {
+  min-width: 26px;
+  min-height: 26px;
+  padding: 2px 5px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
 .callsheet-play {
   display: flex;
   align-items: center;

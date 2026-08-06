@@ -19,6 +19,31 @@
  * Script/Call Sheet, so it is only a compatibility fallback.
  */
 function getWristbandNumberForPlay(play) {
+  // A saved wristband can change after it was loaded into the call sheet.
+  // Rebuild its numbered view on demand so newly added call-sheet plays show
+  // their wristband number immediately instead of requiring a manual reload.
+  if (typeof storageManager !== "undefined" && callSheetSettings?.loadedWristbandName) {
+    const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
+    const selected = Array.isArray(saved) && saved.find((item, index) =>
+      String(item?.id || index) === String(callSheetSettings.loadedWristbandId || "") ||
+      (!callSheetSettings.loadedWristbandId && item?.title === callSheetSettings.loadedWristbandName));
+    if (selected?.cards && typeof getWristbandRecordCellCount === "function") {
+      const cellsPerCard = getWristbandRecordCellCount(selected);
+      const live = [];
+      selected.cards.forEach((card, cardIdx) => {
+        const cells = card?.data || card;
+        if (!Array.isArray(cells)) return;
+        cells.slice(0, cellsPerCard).forEach((item, cellIdx) => {
+          if (!item || (!item.formation && !item.play)) return;
+          const wristbandNumber = cardIdx * cellsPerCard + cellIdx + WRISTBAND_OFFSET;
+          live.push(typeof copyPlayWithSourceIdentity === "function"
+            ? copyPlayWithSourceIdentity(item, { wristbandNumber })
+            : { ...item, wristbandNumber });
+        });
+      });
+      callSheetSettings.loadedWristbandPlays = live;
+    }
+  }
   if (
     !callSheetSettings.loadedWristbandPlays ||
     callSheetSettings.loadedWristbandPlays.length === 0

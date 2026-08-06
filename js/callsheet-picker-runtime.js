@@ -568,6 +568,7 @@ function loadWristbandToCallSheet() {
   });
 
   callSheetSettings.loadedWristbandName = wristbandData.title;
+  callSheetSettings.loadedWristbandId = String(wristbandData.id || wristbandIdx);
   callSheetSettings.loadedWristbandPlays = wristbandPlays;
   const syncedCount = syncLoadedWristbandToCallSheetCategory(wristbandPlays);
   saveCallSheetSettings();
@@ -625,6 +626,7 @@ function clearLoadedWristband() {
     callSheetSettings.wristbandAutoCategoryId || "",
   ).trim();
   callSheetSettings.loadedWristbandName = "";
+  callSheetSettings.loadedWristbandId = "";
   callSheetSettings.loadedWristbandPlays = [];
   if (autoCategoryId && callSheet[autoCategoryId]) {
     callSheet[autoCategoryId] = { left: [], right: [] };
@@ -648,6 +650,17 @@ function addCsBlankRow(arg) {
   if (!catId || !hash || !callSheet[catId]) return;
   if (!Array.isArray(callSheet[catId][hash])) callSheet[catId][hash] = [];
   callSheet[catId][hash].push({ _blank: true });
+  // Hash layouts use matched spacer pairs, so the two columns remain lined
+  // up while a coach builds a side-by-side call sequence. Single-column
+  // sequence buckets intentionally receive only one blank row.
+  const mode = typeof getCallSheetCategoryColumnMode === "function"
+    ? getCallSheetCategoryColumnMode(catId)
+    : "hashes";
+  const otherHash = hash === "left" ? "right" : "left";
+  if (mode === "hashes") {
+    if (!Array.isArray(callSheet[catId][otherHash])) callSheet[catId][otherHash] = [];
+    callSheet[catId][otherHash].push({ _blank: true });
+  }
   renderCallSheet();
   saveCallSheet();
 }

@@ -1016,7 +1016,11 @@ function getCallSheetAdditionalPersonnel(play) {
 function renderCallSheetAdditionalPersonnel(play, className = "cs-extra-personnel") {
   const labels = getCallSheetAdditionalPersonnel(play);
   if (!labels.length) return "";
-  return `<span class="${className}" title="Also available in ${escapeHtml(labels.join(", "))}">${labels.map((label) => escapeHtml(label)).join(" / ")}</span>`;
+  const markers = labels.map((label) => {
+    const marker = typeof getPersonnelEmoji === "function" ? getPersonnelEmoji(label) : "";
+    return marker || escapeHtml(label);
+  });
+  return `<span class="${className}" title="Also available in ${escapeHtml(labels.join(", "))}">${markers.join(" ")}</span>`;
 }
 
 function renderPersonnelCallSheet(displayOptions) {
@@ -1134,6 +1138,9 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
   const displayName = getCategoryDisplayName(cat);
   const isPlayerSpecific = cat.playerSpecific;
   const isCollapsed = csCollapsed.has(cat.id);
+  const columnMode = typeof getCallSheetCategoryColumnMode === "function"
+    ? getCallSheetCategoryColumnMode(cat.id)
+    : "hashes";
 
   const headerColor = getCategoryColor(cat);
   const textColor = getCategoryHeaderTextColor(headerColor);
@@ -1160,7 +1167,7 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
   const collapseIcon = isCollapsed ? "▶" : "▼";
 
   let html = `
-    <div class="callsheet-category${isCollapsed ? " cs-collapsed" : ""}" data-category="${cat.id}"
+    <div class="callsheet-category${isCollapsed ? " cs-collapsed" : ""}${columnMode === "single" ? " cs-single-column" : ""}" data-category="${cat.id}"
          draggable="true"
          data-drag="catDrag" data-cat="${cat.id}"
          role="group" aria-label="${escapeHtml(displayName)} — ${playCount} play${playCount !== 1 ? "s" : ""}">
@@ -1170,6 +1177,7 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
         <span class="header-text" data-dblaction="editCategoryName" data-cat="${cat.id}">${escapeHtml(displayName)}</span>
         ${countDisplay}
         ${sortBtn}
+        <button type="button" class="cs-column-mode-btn" data-action="toggleCallSheetCategoryColumns" data-arg="${cat.id}" title="${columnMode === "single" ? "Use left/right hash columns" : "Use one full-width sequence column"}">${columnMode === "single" ? "▤" : "▥"}</button>
         ${isPlayerSpecific ? '<span class="edit-hint" title="Double-click to rename">✏️</span>' : ""}
         <span class="cs-cat-menu-btn" data-action="openCategoryMenu" data-arg="${cat.id}" title="Category options">⋯</span>
         ${csScoutingOverlayOn ? `<button class="cs-suggest-btn" data-action="openSmartSuggestionsModal" data-arg="${cat.id}" title="Smart play suggestions">💡</button>` : ""}
@@ -1189,8 +1197,9 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
 
     html += `
       <div class="category-subheader" role="row">
-        <div class="hash-header" role="columnheader">Left Hash</div>
-        <div class="hash-header" role="columnheader">Right Hash</div>
+        ${columnMode === "single"
+    ? '<div class="hash-header" role="columnheader">Scripted Calls</div>'
+    : '<div class="hash-header" role="columnheader">Left Hash</div><div class="hash-header" role="columnheader">Right Hash</div>'}
       </div>
       <div class="category-content" role="grid" aria-label="${escapeHtml(displayName)} plays">
         <div class="hash-column left" data-drop="csHashDrop" data-cat="${cat.id}" data-hash="left" role="rowgroup" aria-label="Left hash">`;
