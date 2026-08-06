@@ -22,6 +22,7 @@ assert.match(templates, /function getCurrentCallSheetSaveTarget/, "normal save r
 assert.match(templates, /function setCurrentCallSheetSaveTarget\(template\)/, "all full-sheet save flows share one active-sheet identity update");
 assert.match(templates, /if \(includePlays\) setCurrentCallSheetSaveTarget\(created\)/, "saving a full sheet makes that exact saved record the next Save target");
 assert.match(templates, /clearCurrentCallSheetSaveTarget\(\)/, "deleting the active saved sheet clears its stale save identity");
+assert.doesNotMatch(templates, /renderCallSheet\(\);\s*if \(typeof updateLoadedWristbandDisplay/, "template loading relies on the shared render lifecycle instead of refreshing wristband state twice");
 assert.match(templates, /function hasAmbiguousCurrentCallSheetName/, "a duplicate display name cannot silently choose a saved Call Sheet");
 assert.match(templates, /More than one saved call sheet has this name/, "ambiguous legacy Call Sheet identity asks the coach to load the intended record");
 assert.match(templates, /saveCallSheet\(\);/, "current-sheet save persists the working sheet first");

@@ -522,9 +522,6 @@ async function applyCallSheetTemplate(template) {
     storageManager.set(STORAGE_KEYS.CALLSHEET_COLLAPSED, [...csCollapsed]);
 
     renderCallSheet();
-    if (typeof updateLoadedWristbandDisplay === "function") {
-      updateLoadedWristbandDisplay();
-    }
     closeTemplateModal();
     showToast(
       `📁 Loaded ${isStructure ? "structure" : "call sheet"} "${template.name}"` +
