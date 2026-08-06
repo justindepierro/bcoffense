@@ -4,6 +4,7 @@ let _csIndexCardId = "";
 let _csIndexSide = "front";
 let _csIndexPickerBucketId = "";
 let _csIndexDraggingBucketId = "";
+let _csIndexDraggingPlay = null;
 
 function _csCards() { return Array.isArray(callSheetSettings.indexCards) ? callSheetSettings.indexCards : []; }
 function _csActiveCard() { const cards = _csCards(); const card = cards.find((item) => item.id === _csIndexCardId) || cards[0] || null; if (card) _csIndexCardId = card.id; return card; }
@@ -35,12 +36,17 @@ function _csBucketRows(bucket) {
   // that call in the full Call Sheet. Keep the first canonical occurrence so
   // one picker selection always occupies one row on the compact card.
   const seen = new Set();
-  return scoped.filter((row) => {
+  const uniqueRows = scoped.filter((row) => {
     const identity = _csIndexIdentity(row.play);
     if (excluded.has(identity) || seen.has(identity)) return false;
     seen.add(identity);
     return true;
   });
+  // A scoped card owns its display order. Filtering canonical Call Sheet rows
+  // preserves membership, but not a coach's manual card order.
+  if (!hasScopedKeys) return uniqueRows;
+  const rowsByIdentity = new Map(uniqueRows.map((row) => [_csIndexIdentity(row.play), row]));
+  return bucket.playKeys.map((identity) => rowsByIdentity.get(identity)).filter(Boolean);
 }
 function _csIndexFamily(bucket, row) { return Boolean(bucket?.family?.[row.key]?.indent); }
 function _csIndexCompact(bucket, row) { return Boolean(bucket?.family?.[row.key]?.compact); }
@@ -98,7 +104,7 @@ function _csIndexBucketMarkup(bucket, editable) {
     previous = row.play;
     if (!editable) return `<li class="${family ? "cs-index-play--family" : ""}">${text}</li>`;
     const label = escapeHtml([row.play?.formation, row.play?.play].filter(Boolean).join(" ") || "Call Sheet play");
-    return `<li class="cs-index-play callsheet-play${family ? " cs-index-play--family" : ""}" draggable="true" data-category="${escapeAttr(bucket.categoryId || "")}" data-hash="${row.hash}" data-index="${row.index}" data-cs-card-bucket="${escapeAttr(bucket.id)}" aria-label="${label}"><span class="cs-index-play-text">${text}</span><span class="cs-index-play-actions"><button data-action="toggleCallSheetIndexFamily" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="${family ? "Make this a normal row" : "Indent beneath the call above"}" aria-label="${family ? "Remove family indent" : "Indent as a related family call"}">↳</button><button data-action="toggleCallSheetIndexCompact" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" ${family ? "" : "disabled"} title="${compact ? "Show repeated components" : "Hide components shared with the call above"}" aria-label="${compact ? "Show repeated components" : "Hide repeated components"}">≈</button><button data-action="removeCallSheetIndexPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="Remove from this Index Card bucket only" aria-label="Remove ${label} from this Index Card bucket">×</button><button data-action="openCallSheetIndexPlayMenu" title="Edit this Call Sheet play" aria-label="Edit ${label}">⋯</button></span></li>`;
+    return `<li class="cs-index-play callsheet-play${family ? " cs-index-play--family" : ""}" draggable="true" data-category="${escapeAttr(bucket.categoryId || "")}" data-hash="${row.hash}" data-index="${row.index}" data-cs-card-bucket="${escapeAttr(bucket.id)}" data-cs-index-play-key="${escapeAttr(_csIndexIdentity(row.play))}" aria-label="${label}"><span class="cs-index-play-text">${text}</span><span class="cs-index-play-actions"><button data-action="toggleCallSheetIndexFamily" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="${family ? "Make this a normal row" : "Indent beneath the call above"}" aria-label="${family ? "Remove family indent" : "Indent as a related family call"}">↳</button><button data-action="toggleCallSheetIndexCompact" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" ${family ? "" : "disabled"} title="${compact ? "Show repeated components" : "Hide components shared with the call above"}" aria-label="${compact ? "Show repeated components" : "Hide repeated components"}">≈</button><button data-action="removeCallSheetIndexPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="Remove from this Index Card bucket only" aria-label="Remove ${label} from this Index Card bucket">×</button><button data-action="openCallSheetIndexPlayMenu" title="Edit this Call Sheet play" aria-label="Edit ${label}">⋯</button></span></li>`;
   }).join("") || (editable && bucket.categoryId
     ? `<li class="cs-index-no-calls"><button class="cs-index-empty-add" data-action="openCallSheetIndexCardBucketPicker" data-arg="${escapeAttr(bucket.id)}">＋ Add a play or drop one here</button></li>`
     : "<li class=\"cs-index-no-calls\">Drop or add plays here</li>");
@@ -174,6 +180,91 @@ function _csBindIndexBucketDragAndDrop() {
 }
 
 document.addEventListener("DOMContentLoaded", _csBindIndexBucketDragAndDrop);
+
+function _csIndexEnsurePlayKeys(bucket) {
+  if (!bucket) return [];
+  if (!Array.isArray(bucket.playKeys)) {
+    bucket.playKeys = _csBucketRows(bucket).map((row) => _csIndexIdentity(row.play)).filter(Boolean);
+  }
+  return bucket.playKeys;
+}
+function _csClearIndexPlayDragFeedback() {
+  document.querySelectorAll(".cs-index-play--dragging, .cs-index-play--drop-before, .cs-index-play--drop-after, .cs-index-bucket--play-drop-end")
+    .forEach((element) => element.classList.remove("cs-index-play--dragging", "cs-index-play--drop-before", "cs-index-play--drop-after", "cs-index-bucket--play-drop-end"));
+}
+function _csReorderIndexBucketPlay(bucketId, sourceKey, targetKey, placeAfter) {
+  const bucket = _csIndexBucketFromArg(bucketId);
+  if (!bucket || !sourceKey) return false;
+  const keys = _csIndexEnsurePlayKeys(bucket);
+  const sourceIndex = keys.indexOf(sourceKey);
+  if (sourceIndex < 0) return false;
+  keys.splice(sourceIndex, 1);
+  let insertIndex = keys.length;
+  if (targetKey) {
+    const targetIndex = keys.indexOf(targetKey);
+    if (targetIndex >= 0) insertIndex = placeAfter ? targetIndex + 1 : targetIndex;
+  }
+  keys.splice(insertIndex, 0, sourceKey);
+  _csPersistCards();
+  return true;
+}
+function _csBindIndexPlayDragAndDrop() {
+  const grid = document.getElementById("callSheetGrid");
+  if (!grid || grid.dataset.csIndexPlayDragBound === "true") return;
+  grid.dataset.csIndexPlayDragBound = "true";
+  grid.addEventListener("dragstart", (event) => {
+    const row = event.target.closest(".cs-index-card--editor .cs-index-play[data-cs-index-play-key]");
+    if (!row || event.target.closest("button, input")) return;
+    _csIndexDraggingPlay = { bucketId: row.dataset.csCardBucket || "", key: row.dataset.csIndexPlayKey || "" };
+    if (!_csIndexDraggingPlay.bucketId || !_csIndexDraggingPlay.key) {
+      _csIndexDraggingPlay = null;
+      return;
+    }
+    event.stopPropagation();
+    event.dataTransfer?.setData("text/plain", `cs-index-play:${_csIndexDraggingPlay.key}`);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    row.classList.add("cs-index-play--dragging");
+  }, true);
+  grid.addEventListener("dragover", (event) => {
+    if (!_csIndexDraggingPlay) return;
+    const bucket = event.target.closest(".cs-index-card--editor .cs-index-bucket[data-cs-card-bucket]");
+    if (!bucket || bucket.dataset.csCardBucket !== _csIndexDraggingPlay.bucketId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+    _csClearIndexPlayDragFeedback();
+    const target = event.target.closest(".cs-index-play[data-cs-index-play-key]");
+    if (!target || target.dataset.csIndexPlayKey === _csIndexDraggingPlay.key) {
+      bucket.classList.add("cs-index-bucket--play-drop-end");
+      return;
+    }
+    const bounds = target.getBoundingClientRect();
+    target.classList.add(event.clientY > bounds.top + bounds.height / 2 ? "cs-index-play--drop-after" : "cs-index-play--drop-before");
+  }, true);
+  grid.addEventListener("drop", (event) => {
+    if (!_csIndexDraggingPlay) return;
+    const bucket = event.target.closest(".cs-index-card--editor .cs-index-bucket[data-cs-card-bucket]");
+    if (!bucket || bucket.dataset.csCardBucket !== _csIndexDraggingPlay.bucketId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const target = event.target.closest(".cs-index-play[data-cs-index-play-key]");
+    const bounds = target?.getBoundingClientRect();
+    const moved = _csReorderIndexBucketPlay(
+      _csIndexDraggingPlay.bucketId,
+      _csIndexDraggingPlay.key,
+      target?.dataset.csIndexPlayKey || "",
+      Boolean(bounds && event.clientY > bounds.top + bounds.height / 2),
+    );
+    _csIndexDraggingPlay = null;
+    _csClearIndexPlayDragFeedback();
+    if (moved) showToast("Play reordered", { type: "success", duration: 1200 });
+  }, true);
+  grid.addEventListener("dragend", () => {
+    _csIndexDraggingPlay = null;
+    _csClearIndexPlayDragFeedback();
+  }, true);
+}
+document.addEventListener("DOMContentLoaded", _csBindIndexPlayDragAndDrop);
 function _csIndexPrintColumns(buckets) {
   const columns = [[], []];
   const weights = [0, 0];

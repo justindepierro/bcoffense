@@ -5481,6 +5481,10 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-bucket .cs-index-list--unsequenced .cs-index-play { padding-left: 0; }
 .cs-index-play { position: relative; display: flex; align-items: flex-start; gap: 3px; min-width: 0; padding: 1px 0; cursor: grab; user-select: none; -webkit-user-select: none; }
 .cs-index-play:active { cursor: grabbing; }
+.cs-index-play--dragging { opacity: .45; }
+.cs-index-play--drop-before { box-shadow: 0 -3px 0 var(--color-primary); }
+.cs-index-play--drop-after { box-shadow: 0 3px 0 var(--color-primary); }
+.cs-index-bucket--play-drop-end ol { box-shadow: inset 0 -3px 0 var(--color-primary); }
 .cs-index-play-text { min-width: 0; flex: 1; }
 .cs-index-wristband-number { display: inline-block; min-width: 2.1em; margin-right: 3px; padding: 0 3px; border: 1px solid #13264d; border-radius: 3px; color: #13264d; font-weight: 900; line-height: 1.25; text-align: center; }
 .cs-index-play-actions { display: inline-flex; position: absolute; z-index: 1; top: 0; right: 0; gap: 2px; padding-left: 3px; background: color-mix(in srgb, white 92%, transparent); opacity: 0; pointer-events: none; }
