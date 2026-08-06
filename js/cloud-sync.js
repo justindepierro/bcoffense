@@ -2324,6 +2324,25 @@
           TEAM_WORKSPACE_LEASE_RETRY_MS,
           Number(err?.retryAfterMs || 0) || 0,
         )));
+      } else if (serviceUnavailable) {
+        // A 503 is a server-side availability signal, not a conflict that a
+        // client retry can resolve. Retrying it three times turned one coach
+        // edit into a wall of identical console errors. Keep the change
+        // safely queued, show the dock state, and make one calm reconnect
+        // attempt after the service cooldown instead.
+        cloudAutoPushServerUnavailableUntil = Date.now() + Math.max(
+          CLOUD_AUTO_PUSH_SERVER_COOLDOWN_MS,
+          getCloudServerRetryDelay(err, cloudAutoPushRetryCount),
+        );
+        cloudAutoPushFirstQueuedAt = Date.now();
+        _cloudQueueJob("cloud", "auto-push", {
+          queuedLabel: "Team service reconnecting — saved on this device",
+          runningLabel: "Publishing team update...",
+          doneLabel: "Team update published",
+          errorLabel: "Publish needs attention — saved on this device",
+        });
+        scheduleCloudAutoPushTimer(cloudAutoPushServerUnavailableUntil - Date.now());
+        return false;
       } else if (cloudAutoPushRetryCount <= CLOUD_AUTO_PUSH_MAX_RETRIES) {
         cloudAutoPushFirstQueuedAt = Date.now();
         _cloudQueueJob("cloud", "auto-push", {
@@ -2346,21 +2365,6 @@
                 : CLOUD_AUTO_PUSH_RETRY_MS,
         );
       } else {
-        if (serviceUnavailable) {
-          cloudAutoPushServerUnavailableUntil = Date.now() + Math.max(
-            CLOUD_AUTO_PUSH_SERVER_COOLDOWN_MS,
-            getCloudServerRetryDelay(err, cloudAutoPushRetryCount),
-          );
-          cloudAutoPushFirstQueuedAt = Date.now();
-          _cloudQueueJob("cloud", "auto-push", {
-            queuedLabel: "Team service reconnecting — saved on this device",
-            runningLabel: "Publishing team update...",
-            doneLabel: "Team update published",
-            errorLabel: "Publish needs attention — saved on this device",
-          });
-          scheduleCloudAutoPushTimer(cloudAutoPushServerUnavailableUntil - Date.now());
-          return false;
-        }
         _cloudFailJob(cloudJobKey, err, { label: "Publish needs attention — saved on this device" });
         if (typeof window.failPlayerPublishJobs === "function") {
           window.failPlayerPublishJobs(err, { label: "Player update needs attention — saved on this device" });

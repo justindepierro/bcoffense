@@ -77,6 +77,11 @@ assert(
   "every player Practice Quiz entry point opens the shared setup screen before the first question",
 );
 assert(
+  /const activeId = String\(typeof activeScriptSaveId/.test(quizRuntime)
+    && /option\.id === activeId/.test(quizRuntime),
+  "the current-practice quiz shortcut resolves its saved script by durable ID before display-name fallbacks",
+);
+assert(
   quiz.includes("function setPlayerQuizSource")
     && quiz.includes("function startPlayerQuizHubSelection")
     && indexHtml.includes('data-action="setPlayerQuizSource"')

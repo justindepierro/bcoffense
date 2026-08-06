@@ -37,9 +37,10 @@ assert.match(
   "a blank device cannot publish over populated canonical team collections",
 );
 assert.match(cloudSync, /CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS/, "revision conflicts retry promptly after reloading the current head");
-assert.match(cloudSync, /function getCloudServerRetryDelay/, "service-unavailable saves use bounded exponential retry rather than a request loop");
-assert.match(cloudSync, /CLOUD_AUTO_PUSH_SERVER_COOLDOWN_MS/, "an unavailable team service enters a local-save cooldown after bounded retries");
+assert.match(cloudSync, /function getCloudServerRetryDelay/, "service-unavailable saves use a bounded reconnect delay rather than a request loop");
+assert.match(cloudSync, /CLOUD_AUTO_PUSH_SERVER_COOLDOWN_MS/, "an unavailable team service enters a local-save cooldown without repeated failed requests");
 assert.match(cloudSync, /cloudAutoPushServerUnavailableUntil/, "new edits respect the service-unavailable cooldown instead of restarting failed requests");
+assert.match(cloudSync, /else if \(serviceUnavailable\) \{[\s\S]*?Team service reconnecting — saved on this device[\s\S]*?\} else if \(cloudAutoPushRetryCount <= CLOUD_AUTO_PUSH_MAX_RETRIES\)/, "a 503 enters cooldown before generic retry handling can repeat the failed request");
 assert.match(cloudSync, /data\.code \? ` \(\$\{data\.code\}\)`/, "workspace errors retain their safe server diagnostic code for the sync dock");
 assert.match(cloudSync, /function refreshTeamWorkspaceOnForeground/, "open devices perform lightweight foreground freshness checks");
 assert.match(cloudSync, /function shouldProtectUntrackedLocalWorkspace/, "only browser-only untracked work is protected from automatic replacement");
@@ -84,4 +85,4 @@ assert.match(
   "the deployment preflight verifies Pages secret bindings without reading their encrypted values",
 );
 
-console.log("workspace revision route and live-sync contract: 51 assertions passed");
+console.log("workspace revision route and live-sync contract: 52 assertions passed");

@@ -863,7 +863,12 @@ function openPlayerQuizHubForCurrentScript() {
   const currentName = document.getElementById("scriptName")?.value || "";
   const currentDate = document.getElementById("scriptDate")?.value || "";
   const options = _getPlayerQuizScriptOptions();
-  const target = options.find((option) => option.playerSelectable && option.name === currentName && option.date === currentDate)
+  // The loaded Script Library record is the source of truth. Names and dates
+  // are coach-facing display fields and can legitimately be duplicated.
+  // Keep the older display-based fallbacks only for an unsaved legacy draft.
+  const activeId = String(typeof activeScriptSaveId !== "undefined" ? activeScriptSaveId || "" : "");
+  const target = options.find((option) => option.playerSelectable && option.id === activeId)
+    || options.find((option) => option.playerSelectable && option.name === currentName && option.date === currentDate)
     || options.find((option) => option.playerSelectable && option.name === currentName)
     || options.find((option) => option.playerSelectable)
     || null;
