@@ -979,27 +979,17 @@ body.shell-phone #callsheet .cs-empty-cat {
   margin-left: auto;
 }
 .cs-index-toolbar-only { display: none; }
-.callsheet-index-mode .cs-toolbar {
-  position: sticky;
-  z-index: 20;
-  top: calc(var(--app-header-height) + var(--app-tabs-height) + 6px);
-  grid-template-columns: minmax(0, 1fr) max-content;
-  min-height: 52px;
-}
-.callsheet-index-mode .cs-toolbar-right {
-  display: flex;
-  grid-template-columns: none;
-  flex-wrap: nowrap;
-  gap: 5px;
-}
-.callsheet-index-mode .cs-toolbar-right > .btn { flex: 0 0 auto; }
 .callsheet-index-mode .orientation-toggle,
 .callsheet-index-mode #callsheetUndoBtn,
 .callsheet-index-mode #callsheetRedoBtn,
 .callsheet-index-mode [data-action="autoPopulateCallSheet"] { display: none; }
 .callsheet-index-mode .cs-index-toolbar-only { display: inline-flex; }
 .callsheet-index-mode > .page-help { display: none; }
-.callsheet-index-mode .cs-source-bar { display: none; }
+.callsheet-index-mode .cs-toolbar { position: sticky; z-index: 20; top: 0; }
+.callsheet-index-mode .cs-source-bar { margin-top: -4px; margin-bottom: 4px; min-height: 30px; padding: 3px 7px; gap: 5px; }
+.callsheet-index-mode .cs-source-bar .csb-kicker { display: none; }
+.callsheet-index-mode .cs-source-bar .csb-source-card { padding: 3px 6px; }
+.callsheet-index-mode .cs-source-bar .csb-source-card small { display: none; }
 
 /* Call Sheet Toggle Groups */
 .cs-toggle-group {
@@ -5474,12 +5464,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-main-actions { justify-content: flex-end; gap: 4px; }
 .cs-index-main-actions .btn, .cs-index-main-strip .btn { min-height: 28px; padding: 3px 7px; font-size: 11px; }
 .cs-index-main-strip { justify-content: space-between; padding: 4px 6px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-muted); box-shadow: var(--shadow-xs); }
-.callsheet-index-mode .cs-index-main-strip {
-  position: sticky;
-  z-index: 19;
-  top: calc(var(--app-header-height) + var(--app-tabs-height) + 64px);
-  margin-top: 0;
-}
+.callsheet-index-mode .cs-index-main-strip { position: relative; z-index: 1; }
 .cs-index-main-tabs { min-width: 0; gap: 4px; }
 .cs-index-main-tabs .btn { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cs-index-main-sides { gap: 2px; color: var(--color-text-muted); font-size: 11px; }
