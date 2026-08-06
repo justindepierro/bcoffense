@@ -111,17 +111,28 @@ function _csCardMarkup(card, side, editable = false) {
 }
 
 function _csUpdateIndexCardFitStatus() {
-  const card = document.querySelector("#callSheetGrid .cs-index-card");
-  const grid = card?.querySelector(".cs-index-grid");
+  const editorCard = document.querySelector("#callSheetGrid .cs-index-card");
   const status = document.getElementById("csIndexCardFitStatus");
-  if (!card || !grid || !status) return;
+  const activeCard = _csActiveCard();
+  if (!editorCard || !status || !activeCard) return;
+  // Measure the same non-editable card markup and physical dimensions used by
+  // printing. The live editor includes Add, reorder, delete, and menu chrome,
+  // which must never count against printable capacity.
+  const probe = document.createElement("div");
+  probe.className = "cs-index-capacity-probe";
+  probe.setAttribute("aria-hidden", "true");
+  probe.innerHTML = _csCardMarkup(activeCard, _csIndexSide, false);
+  document.body.appendChild(probe);
+  const grid = probe.querySelector(".cs-index-grid");
+  if (!grid) { probe.remove(); return; }
   const usedPercent = Math.round((grid.scrollHeight / Math.max(grid.clientHeight, 1)) * 100);
   const overflowPixels = Math.max(0, grid.scrollHeight - grid.clientHeight);
   const lineHeight = Math.max(12, parseFloat(getComputedStyle(grid).fontSize || "12") * 1.35);
   const overflowLines = Math.max(1, Math.ceil(overflowPixels / lineHeight));
   const overflow = overflowPixels > 2;
-  card.classList.toggle("cs-index-card--overfull", overflow);
-  card.style.setProperty("--cs-index-fill", `${usedPercent}%`);
+  editorCard.classList.toggle("cs-index-card--overfull", overflow);
+  editorCard.style.setProperty("--cs-index-fill", `${Math.min(usedPercent, 100)}%`);
+  probe.remove();
   status.classList.toggle("is-overfull", overflow);
   status.innerHTML = overflow
     ? `<strong>⚠️ ${usedPercent}% full</strong><span>Over the 4 × 6 print area by about ${overflowLines} line${overflowLines === 1 ? "" : "s"}.</span>`

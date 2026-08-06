@@ -64,7 +64,7 @@ assert.match(indexCards, /function removeCallSheetIndexPlay\(arg\)/, "each index
 assert.match(indexCards, /openLoadWristbandModal/, "index-card editing can load or replace the Call Sheet wristband directly");
 assert.match(indexCards, /cs-index-wristband-number/, "index-card and print calls show loaded wristband numbers");
 assert.match(indexCards, /function _csUpdateIndexCardFitStatus\(\)/, "index-card editing reports whether the live card fits its 4×6 print area");
-assert.match(indexCards, /usedPercent[\s\S]*?overflowLines[\s\S]*?Over the 4 × 6 print area by about/, "Index Card capacity reports both fill and approximate overflow");
+assert.match(indexCards, /cs-index-capacity-probe[\s\S]*?_csCardMarkup\(activeCard, _csIndexSide, false\)[\s\S]*?usedPercent/, "Index Card capacity measures non-editable print markup instead of editor controls");
 assert.match(indexCards, /function copyCallSheetIndexBucketToOtherSide\(id\)/, "Index Card situations can be copied to the opposite side");
 assert.match(indexCards, /function clearCallSheetIndexCardBucket\(id\)[\s\S]*?bucket\.playKeys = \[\]/, "Index Card situations can be cleared without deleting canonical Call Sheet calls");
 assert.match(indexCards, /function removeEmptyCallSheetIndexBuckets\(\)/, "Index Card editor can remove empty situations in bulk");

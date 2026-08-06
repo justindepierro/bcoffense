@@ -30,6 +30,13 @@
    preview must instead use the physical 4×6 ratio at its scaled width. */
 .cs-index-print-preview-pages .cs-index-card { width: min(100%, 390px); height: min(585px, calc((100vw - 84px) * 1.5)); min-height: 0; aspect-ratio: 2 / 3; margin: 0 auto; font-size: .84em; }
 .cs-index-print-preview-pages .cs-index-grid { overflow: hidden; }
+.cs-index-capacity-probe { position: fixed; z-index: -1; top: -10000px; left: -10000px; width: 3.84in; height: 5.84in; visibility: hidden; pointer-events: none; }
+.cs-index-capacity-probe .cs-index-card { box-sizing: border-box; width: 3.84in; min-height: 5.84in; height: 5.84in; margin: 0; padding: .08in; border-width: 1.5pt; border-radius: 0; box-shadow: none; }
+.cs-index-capacity-probe .cs-index-card-head { padding: .03in .04in; font-size: 7pt; border-bottom-width: 1.5pt; }
+.cs-index-capacity-probe .cs-index-grid { gap: .055in; padding-top: .06in; overflow: hidden; }
+.cs-index-capacity-probe .cs-index-bucket header { padding: .025in .04in; font-size: 6.4pt; }
+.cs-index-capacity-probe .cs-index-bucket ol { padding: .035in .035in .035in .14in; font-size: 6.3pt; line-height: 1.14; }
+.cs-index-capacity-probe .cs-index-bucket li { margin-bottom: .025in; }
 @media print {
   body.cs-index-printing > * { display: none !important; }
   body.cs-index-printing #csIndexCardPrintRoot { display: block !important; }
