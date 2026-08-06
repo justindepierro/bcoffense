@@ -52,6 +52,7 @@ const shellScripts = [...indexHtml.matchAll(/src="(js\/[^"?]+\.js)(?:\?[^\"]*)?"
 const cachedScripts = [...serviceWorker.matchAll(/["']\.\/(js\/[^"']+\.js)["']/g)].map((match) => match[1]);
 const runtimeFiles = jsEntries.filter((name) => name.endsWith(".js")).map((name) => `js/${name}`);
 const featureLoaderSource = await source("js/feature-loader.js");
+const cleanupAuditSource = await source("scripts/cleanup-audit.mjs");
 const deferredScripts = [
   ...featureLoaderSource.matchAll(
     /loadDeferredFeature\("[^"]+", (?:"|deferredFeatureSrc\(")(js\/[^"?]+\.js)(?:\?[^\"]*)?"\)?\)/g,
@@ -64,6 +65,10 @@ const runtimeStyles = cssEntries.filter((name) => name.endsWith(".css")).map((na
 assert.equal(new Set(shellScripts).size, shellScripts.length, "index.html loads each global runtime script once");
 assert.equal(new Set(cachedScripts).size, cachedScripts.length, "sw.js pre-caches each global runtime script once");
 assert.equal(new Set(deferredScripts).size, deferredScripts.length, "each deferred feature is registered once");
+assert.ok(
+  cleanupAuditSource.includes("deferredFeatureSrc\\("),
+  "the cleanup audit recognizes deferred scripts registered through the cache-busting URL helper",
+);
 assert.deepEqual(sort([...shellScripts, ...deferredScripts]), sort(runtimeFiles), "every runtime JS file belongs to either the startup shell or an explicit deferred feature");
 assert.deepEqual(sort(cachedScripts), sort(shellScripts), "the service worker pre-caches the complete startup shell only");
 for (const deferredScript of deferredScripts) {

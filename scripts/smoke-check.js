@@ -1080,7 +1080,7 @@ function checkScriptWorkspaceCommandSurface() {
     !/scriptLibraryPinToggle/.test(html) ||
     !/function maybeAutoCollapseScriptPlayRail\(\)/.test(shared) ||
     !/scriptLibraryPinned/.test(shared) ||
-    !/data-controls-mode="run"/.test(css) ||
+    !/option value="run">Run View<\/option>/.test(html) ||
     !/\.script-tools-drawer/.test(css) ||
     !/\.script-drawer-section/.test(css) ||
     !/data-cluster="output"/.test(html)
@@ -3720,6 +3720,8 @@ function checkCleanupAudit() {
   [
     "missingActions",
     "missingInputHandlers",
+    "jsNotInIndex",
+    "cssNotLinked",
     "indexAssetsMissing",
     "loadedAssetsNotCached",
     "cachedAssetsMissing",

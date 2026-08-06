@@ -40,7 +40,10 @@ function getDeferredFeatureAssets(featureLoader) {
   // precache. Treat their registered script URLs as runtime references so this
   // audit does not report supported, lazy-loaded features as dead files.
   return unique(
-    extractAll(featureLoader, /loadDeferredFeature\([^,]+,\s*["'](js\/[^"'?]+\.js)(?:\?[^"']*)?["']\)/g),
+    extractAll(
+      featureLoader,
+      /loadDeferredFeature\([^,]+,\s*(?:deferredFeatureSrc\(\s*)?["'](js\/[^"'?]+\.js)(?:\?[^"']*)?["']\s*\)?\s*\)/g,
+    ),
   );
 }
 
