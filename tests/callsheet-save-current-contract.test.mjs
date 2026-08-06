@@ -35,7 +35,7 @@ assert.match(filters, /Legacy imports may lack source identity metadata/, "displ
 assert.match(callsheet, /function toggleCallSheetCategoryColumns\(categoryId\)/, "each Call Sheet category can switch between hash and sequence layouts");
 assert.match(render, /cs-single-column/, "the Call Sheet render path exposes the one-column category state");
 assert.match(css, /\.callsheet-category\.cs-single-column .category-content/, "one-column categories use a full-width call layout");
-assert.match(picker, /const otherHash = hash === "left" \? "right" : "left"/, "hash-layout blank spacers are paired for side-by-side alignment");
+assert.doesNotMatch(picker, /const otherHash = hash === "left" \? "right" : "left"/, "a blank spacer stays on the selected hash instead of adding an unrelated partner spacer");
 assert.match(filters, /A saved wristband can change after it was loaded into the call sheet/, "new wristband entries are read live before assigning a Call Sheet number");
 assert.match(render, /const marker = typeof getPersonnelEmoji/, "additional personnel uses the shared marker language rather than raw chip text");
 assert.match(render, /function renderCallSheetPersonnelBadge\(play, className = "personnel-code"\)/, "known personnel markers render as plain emoji instead of colored text chips");

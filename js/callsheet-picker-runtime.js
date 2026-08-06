@@ -650,17 +650,9 @@ function addCsBlankRow(arg) {
   if (!catId || !hash || !callSheet[catId]) return;
   if (!Array.isArray(callSheet[catId][hash])) callSheet[catId][hash] = [];
   callSheet[catId][hash].push({ _blank: true });
-  // Hash layouts use matched spacer pairs, so the two columns remain lined
-  // up while a coach builds a side-by-side call sequence. Single-column
-  // sequence buckets intentionally receive only one blank row.
-  const mode = typeof getCallSheetCategoryColumnMode === "function"
-    ? getCallSheetCategoryColumnMode(catId)
-    : "hashes";
-  const otherHash = hash === "left" ? "right" : "left";
-  if (mode === "hashes") {
-    if (!Array.isArray(callSheet[catId][otherHash])) callSheet[catId][otherHash] = [];
-    callSheet[catId][otherHash].push({ _blank: true });
-  }
+  // A spacer belongs only to the hash where it was inserted. This lets a
+  // one-sided call keep its opposite hash visibly open without adding a
+  // second, unrelated blank to the other side of the category.
   renderCallSheet();
   saveCallSheet();
 }
