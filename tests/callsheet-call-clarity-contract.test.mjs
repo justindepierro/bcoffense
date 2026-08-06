@@ -46,6 +46,7 @@ assert.match(indexCards, /showPlayContextMenu\([\s\S]*?row\.dataset\.category[\s
 assert.match(indexCards, /toggleCallSheetIndexFamily[\s\S]*?toggleCallSheetIndexCompact/, "index cards retain per-row family indentation and repeated-component controls");
 assert.match(indexCards, /function openCallSheetIndexCardPrintModal\(\)[\s\S]*?Cards[\s\S]*?Sides[\s\S]*?Copies[\s\S]*?Preview/, "index cards use a dedicated print suite with card, side, copy, and preview controls");
 assert.match(indexCards, /function previewCurrentCallSheetIndexCard\(\)[\s\S]*?cards: "current", sides: _csIndexSide, copies: 1/, "Index Card editor has a one-click preview for the active side without changing saved print options");
+assert.match(indexCards, /cs-index-commandbar[\s\S]*?cs-index-main-actions[\s\S]*?cs-index-main-strip/, "Index Card command controls are grouped into one persistent editor toolbar");
 assert.match(indexCards, /openCallSheetIndexCardPrintModal\(\)[\s\S]*?requestAnimationFrame\(\(\) => overlay\.classList\.add\("visible"\)\)/, "index-card print options use the normal visible modal lifecycle");
 assert.match(indexCards, /_runCallSheetIndexCardsPrint[\s\S]*?requestAnimationFrame\(\(\) => requestAnimationFrame/, "index-card printing waits for its isolated print root to paint before opening the browser dialog");
 assert.match(indexCards, /function _csIndexPrintSides[\s\S]*?\["front", "back"\][\s\S]*?function renderCallSheetIndexCardPrintPages/, "index-card duplex jobs render front then back for each card");
@@ -81,6 +82,7 @@ assert.match(indexCards, /function copyCallSheetIndexBucketToOtherSide\(id\)/, "
 assert.match(indexCards, /function clearCallSheetIndexCardBucket\(id\)[\s\S]*?bucket\.playKeys = \[\]/, "Index Card situations can be cleared without deleting canonical Call Sheet calls");
 assert.match(indexCards, /function removeEmptyCallSheetIndexBuckets\(\)/, "Index Card editor can remove empty situations in bulk");
 assert.match(css, /\.cs-index-card \{ box-sizing: border-box; display: flex; flex-direction: column; width: min\(100%, 480px\); height:/, "index-card editing uses a fixed 4×6-proportional frame instead of growing with content");
+assert.match(css, /\.cs-index-commandbar \{ position: sticky;[\s\S]*?top: 0;/, "Index Card command toolbar remains available while vertically scrolling the editor");
 assert.match(css, /\.cs-index-grid \{ display: grid;[\s\S]*?flex: 1 1 auto; min-height: 0;[\s\S]*?overflow: auto/, "index-card bucket content stays in a constrained scroll region instead of painting over the next situation");
 assert.match(css, /\.cs-index-play-actions \{ display: inline-flex; position: absolute;[\s\S]*?pointer-events: none/, "editor-only play controls overlay on demand instead of changing the 4×6 capacity");
 assert.match(render, /Index Cards are a fixed physical preview[\s\S]*?card\.scrollIntoView/, "opening Index Cards resets the old Call Sheet scroll position instead of landing mid-card");
