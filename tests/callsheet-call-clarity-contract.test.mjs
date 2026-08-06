@@ -32,6 +32,8 @@ assert.match(indexCards, /data-action="openCallSheetPlayPicker"[\s\S]*?data-drop
 assert.match(indexCards, /showPlayContextMenu\([\s\S]*?row\.dataset\.category[\s\S]*?row\.dataset\.hash/, "index-card play actions open the canonical Call Sheet cell editor");
 assert.match(indexCards, /toggleCallSheetIndexFamily[\s\S]*?toggleCallSheetIndexCompact/, "index cards retain per-row family indentation and repeated-component controls");
 assert.match(indexCards, /function openCallSheetIndexCardPrintModal\(\)[\s\S]*?Cards[\s\S]*?Sides[\s\S]*?Copies[\s\S]*?Preview/, "index cards use a dedicated print suite with card, side, copy, and preview controls");
+assert.match(indexCards, /openCallSheetIndexCardPrintModal\(\)[\s\S]*?requestAnimationFrame\(\(\) => overlay\.classList\.add\("visible"\)\)/, "index-card print options use the normal visible modal lifecycle");
+assert.match(indexCards, /_runCallSheetIndexCardsPrint[\s\S]*?requestAnimationFrame\(\(\) => requestAnimationFrame/, "index-card printing waits for its isolated print root to paint before opening the browser dialog");
 assert.match(indexCards, /function _csIndexPrintSides[\s\S]*?\["front", "back"\][\s\S]*?function renderCallSheetIndexCardPrintPages/, "index-card duplex jobs render front then back for each card");
 assert.match(indexCards, /function _runCallSheetIndexCardsPrint[\s\S]*?setupPrintPageStyle[\s\S]*?@page \{ size: 4in 6in/, "index cards use the shared print-page setup with an exact 4×6 page");
 assert.match(indexCards, /function _csBucketRows\(bucket\)[\s\S]*?bucket\?\.playKeys[\s\S]*?_csIndexIdentity/, "smart index-card buckets stay scoped to their source calls");

@@ -302,6 +302,7 @@ async function openCallSheetIndexCardPrintModal() {
   document.body.appendChild(overlay);
   if (typeof trapFocus === "function") trapFocus(overlay);
   if (typeof openLayer === "function") openLayer(overlay, { id: "cs-index-print-modal", exclusive: false, trapFocus: false });
+  requestAnimationFrame(() => overlay.classList.add("visible"));
   const read = () => ({
     cards: overlay.querySelector("#csIndexPrintCards")?.value || stored.cards,
     sides: overlay.querySelector("#csIndexPrintSides")?.value || stored.sides,
@@ -317,7 +318,8 @@ async function openCallSheetIndexCardPrintModal() {
   };
   const close = () => {
     if (typeof closeLayer === "function") closeLayer("cs-index-print-modal");
-    overlay.remove();
+    overlay.classList.remove("visible");
+    setTimeout(() => overlay.remove(), 200);
   };
   overlay.querySelectorAll("select").forEach((select) => select.addEventListener("change", update));
   overlay.querySelector('[data-index-print="cancel"]').addEventListener("click", close);
@@ -351,7 +353,12 @@ function openCallSheetIndexCardPrintPreview(options = {}) {
   document.body.appendChild(overlay);
   if (typeof trapFocus === "function") trapFocus(overlay);
   if (typeof openLayer === "function") openLayer(overlay, { id: "cs-index-print-preview", exclusive: false, trapFocus: false });
-  const close = () => { if (typeof closeLayer === "function") closeLayer("cs-index-print-preview"); overlay.remove(); };
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+  const close = () => {
+    if (typeof closeLayer === "function") closeLayer("cs-index-print-preview");
+    overlay.classList.remove("visible");
+    setTimeout(() => overlay.remove(), 200);
+  };
   overlay.querySelector('[data-index-preview="back"]').addEventListener("click", close);
   overlay.querySelector('[data-index-preview="print"]').addEventListener("click", () => { close(); _runCallSheetIndexCardsPrint(job); });
   overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
@@ -367,10 +374,26 @@ function _runCallSheetIndexCardsPrint(options = {}) {
   host.innerHTML = pages;
   document.body.classList.add("cs-index-printing");
   if (typeof setupPrintPageStyle === "function") setupPrintPageStyle("@media print { @page { size: 4in 6in; margin: .08in; } }");
-  const cleanup = () => { document.body.classList.remove("cs-index-printing"); window.removeEventListener("afterprint", cleanup); };
+  const restoreTitle = typeof setPrintTitle === "function" ? setPrintTitle("Call Sheet Index Cards") : () => {};
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    document.body.classList.remove("cs-index-printing");
+    try { restoreTitle(); } catch (_) { /* title was already restored */ }
+    window.removeEventListener("afterprint", cleanup);
+  };
   window.addEventListener("afterprint", cleanup);
   setTimeout(cleanup, 60000);
-  setTimeout(() => window.print(), 80);
+  // Let the isolated 4×6 root receive two paint frames before print opens.
+  // This is especially important in Chromium after a modal has just closed.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    try { window.print(); } catch (error) {
+      cleanup();
+      console.error("Index Card print could not open:", error);
+      showToast("Could not open the print dialog. Your Index Card is still saved.", { type: "error" });
+    }
+  }));
 }
 
 function printCallSheetIndexCards() { openCallSheetIndexCardPrintModal(); }
