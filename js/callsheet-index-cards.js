@@ -776,8 +776,19 @@ async function recoverCallSheetIndexCard() {
     const restoreResponse = await fetch("/admin/callsheet-index-card-recovery", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ sourceRevision: selected, cardId: card.id }) });
     const restored = await restoreResponse.json().catch(() => ({}));
     if (!restoreResponse.ok || !restored?.ok) throw new Error(restored?.error || "The Index Card could not be restored.");
-    showToast("Index Card recovered from cloud history. Refreshing the current workspace…", { type: "success", duration: 3500 });
-    setTimeout(() => window.location.reload(), 700);
+    const restoredCard = restored?.restoredCard;
+    if (!restoredCard || typeof restoredCard !== "object" || String(restoredCard.id || "") !== String(card.id)) {
+      throw new Error("The cloud restored the card, but this device did not receive its updated copy. Please retry safely.");
+    }
+    const cards = _csCards();
+    const targetIndex = cards.findIndex((item) => String(item?.id || "") === String(card.id));
+    if (targetIndex >= 0) cards[targetIndex] = restoredCard;
+    else cards.push(restoredCard);
+    callSheetSettings.indexCards = cards;
+    _csIndexCardId = restoredCard.id;
+    _csIndexSide = "front";
+    _csPersistCards();
+    showToast("Index Card recovered from cloud history — Front and Back are now restored on this device.", { type: "success", duration: 4500 });
   } catch (err) {
     showToast(err?.message || "The Index Card could not be restored.", { type: "error", duration: 6000 });
   }

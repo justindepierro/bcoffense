@@ -92,7 +92,10 @@ export async function onRequestPost(context) {
     const release = await buildPlayerRelease(workspace, { teamId: principal.teamId, updatedAt, env: context.env });
     const committed = await commitWorkspaceAndPlayerRelease(context.env, context.env.CLIPS, { teamId: principal.teamId, expectedWorkspaceRevision: current.pointer.workspaceRevision, workspacePayload: JSON.stringify(workspace), playerReleasePayload: serializePlayerRelease(release).text, actorId: principal.session.d1UserId || null, workspaceContentType: "application/json; charset=utf-8", playerReleaseContentType: "application/json; charset=utf-8" });
     if (!committed.committed) return authJson({ ok: false, error: "The workspace changed while restoring. Search again and retry.", current: committed.current || null }, { status: 409 });
-    return authJson({ ok: true, card: cardSummary(nextCard, sourceRevision, 0), workspaceRevision: committed.current.workspaceRevision }, { headers: { "Cache-Control": "private, no-store", Vary: "Cookie" } });
+    // Return the actual card configuration as well as its summary. The caller
+    // must replace its local copy immediately; otherwise a stale browser
+    // workspace can continue displaying (or later republish) the old card.
+    return authJson({ ok: true, card: cardSummary(nextCard, sourceRevision, 0), restoredCard: nextCard, workspaceRevision: committed.current.workspaceRevision }, { headers: { "Cache-Control": "private, no-store", Vary: "Cookie" } });
   } catch (err) {
     console.error("Index Card cloud recovery failed", err);
     return authJson({ ok: false, error: "The Index Card could not be restored. Retry safely." }, { status: 502 });
