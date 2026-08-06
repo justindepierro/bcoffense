@@ -104,7 +104,7 @@ function _csIndexBucketMarkup(bucket, editable) {
     previous = row.play;
     if (!editable) return `<li class="${family ? "cs-index-play--family" : ""}">${text}</li>`;
     const label = escapeHtml([row.play?.formation, row.play?.play].filter(Boolean).join(" ") || "Call Sheet play");
-    return `<li class="cs-index-play callsheet-play${family ? " cs-index-play--family" : ""}" draggable="true" data-category="${escapeAttr(bucket.categoryId || "")}" data-hash="${row.hash}" data-index="${row.index}" data-cs-card-bucket="${escapeAttr(bucket.id)}" data-cs-index-play-key="${escapeAttr(_csIndexIdentity(row.play))}" aria-label="${label}"><span class="cs-index-play-text">${text}</span><span class="cs-index-play-actions"><button data-action="toggleCallSheetIndexFamily" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="${family ? "Make this a normal row" : "Indent beneath the call above"}" aria-label="${family ? "Remove family indent" : "Indent as a related family call"}">↳</button><button data-action="toggleCallSheetIndexCompact" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" ${family ? "" : "disabled"} title="${compact ? "Show repeated components" : "Hide components shared with the call above"}" aria-label="${compact ? "Show repeated components" : "Hide repeated components"}">≈</button><button data-action="removeCallSheetIndexPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="Remove from this Index Card bucket only" aria-label="Remove ${label} from this Index Card bucket">×</button><button data-action="openCallSheetIndexPlayMenu" title="Edit this Call Sheet play" aria-label="Edit ${label}">⋯</button></span></li>`;
+    return `<li class="cs-index-play callsheet-play${family ? " cs-index-play--family" : ""}" data-category="${escapeAttr(bucket.categoryId || "")}" data-hash="${row.hash}" data-index="${row.index}" data-cs-card-bucket="${escapeAttr(bucket.id)}" data-cs-index-play-key="${escapeAttr(_csIndexIdentity(row.play))}" aria-label="${label}"><span class="cs-index-play-grip" draggable="true" title="Drag to reorder this play" aria-label="Drag ${label} to reorder">⠿</span><span class="cs-index-play-text">${text}</span><span class="cs-index-play-actions"><button data-action="moveCallSheetIndexCardPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(_csIndexIdentity(row.play))}|up" title="Move play up" aria-label="Move ${label} up">↑</button><button data-action="moveCallSheetIndexCardPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(_csIndexIdentity(row.play))}|down" title="Move play down" aria-label="Move ${label} down">↓</button><button data-action="toggleCallSheetIndexFamily" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="${family ? "Make this a normal row" : "Indent beneath the call above"}" aria-label="${family ? "Remove family indent" : "Indent as a related family call"}">↳</button><button data-action="toggleCallSheetIndexCompact" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" ${family ? "" : "disabled"} title="${compact ? "Show repeated components" : "Hide components shared with the call above"}" aria-label="${compact ? "Show repeated components" : "Hide repeated components"}">≈</button><button data-action="removeCallSheetIndexPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="Remove from this Index Card bucket only" aria-label="Remove ${label} from this Index Card bucket">×</button><button data-action="openCallSheetIndexPlayMenu" title="Edit this Call Sheet play" aria-label="Edit ${label}">⋯</button></span></li>`;
   }).join("") || (editable && bucket.categoryId
     ? `<li class="cs-index-no-calls"><button class="cs-index-empty-add" data-action="openCallSheetIndexCardBucketPicker" data-arg="${escapeAttr(bucket.id)}">＋ Add a play or drop one here</button></li>`
     : "<li class=\"cs-index-no-calls\">Drop or add plays here</li>");
@@ -213,8 +213,9 @@ function _csBindIndexPlayDragAndDrop() {
   if (!grid || grid.dataset.csIndexPlayDragBound === "true") return;
   grid.dataset.csIndexPlayDragBound = "true";
   grid.addEventListener("dragstart", (event) => {
+    const grip = event.target.closest(".cs-index-play-grip[draggable=\"true\"]");
     const row = event.target.closest(".cs-index-card--editor .cs-index-play[data-cs-index-play-key]");
-    if (!row || event.target.closest("button, input")) return;
+    if (!grip || !row || event.target.closest("button, input")) return;
     _csIndexDraggingPlay = { bucketId: row.dataset.csCardBucket || "", key: row.dataset.csIndexPlayKey || "" };
     if (!_csIndexDraggingPlay.bucketId || !_csIndexDraggingPlay.key) {
       _csIndexDraggingPlay = null;
@@ -265,6 +266,19 @@ function _csBindIndexPlayDragAndDrop() {
   }, true);
 }
 document.addEventListener("DOMContentLoaded", _csBindIndexPlayDragAndDrop);
+function moveCallSheetIndexCardPlay(arg) {
+  const parts = String(arg || "").split("|");
+  const bucketId = parts.shift();
+  const direction = parts.pop();
+  const key = parts.join("|");
+  const bucket = _csIndexBucketFromArg(bucketId);
+  const keys = _csIndexEnsurePlayKeys(bucket);
+  const index = keys.indexOf(key);
+  const nextIndex = direction === "up" ? index - 1 : index + 1;
+  if (index < 0 || nextIndex < 0 || nextIndex >= keys.length) return;
+  [keys[index], keys[nextIndex]] = [keys[nextIndex], keys[index]];
+  _csPersistCards();
+}
 function _csIndexPrintColumns(buckets) {
   const columns = [[], []];
   const weights = [0, 0];

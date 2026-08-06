@@ -67,6 +67,7 @@ assert.match(indexCards, /function _csBindIndexBucketDragAndDrop\(\)[\s\S]*?cs-i
 assert.match(indexCards, /bucket\.playKeys\.map\(\(identity\) => rowsByIdentity\.get\(identity\)\)/, "scoped Index Card rows render in the card's saved manual order instead of reverting to Call Sheet order");
 assert.match(indexCards, /function _csReorderIndexBucketPlay\(bucketId, sourceKey, targetKey, placeAfter\)[\s\S]*?keys\.splice\(insertIndex, 0, sourceKey\)/, "Index Card play drag/drop persists an exact within-bucket row order");
 assert.match(indexCards, /function _csBindIndexPlayDragAndDrop\(\)[\s\S]*?cs-index-bucket--play-drop-end[\s\S]*?Play reordered/, "Index Card play drag/drop supports a visible drop at the bottom of a bucket");
+assert.match(indexCards, /cs-index-play-grip[\s\S]*?Drag to reorder this play[\s\S]*?function moveCallSheetIndexCardPlay\(arg\)/, "Index Card plays have a dedicated drag handle plus an accessible move-button fallback");
 assert.match(indexCards, /function setCallSheetIndexBucketColor\(id\)/, "index-card situations support their own visible header color");
 assert.match(indexCards, /Game Plan Quick[\s\S]*?Game Plan Play Action[\s\S]*?Game Plan RPO[\s\S]*?Game Plan Run Option[\s\S]*?Game Plan Screen[\s\S]*?Game Plan Movement[\s\S]*?Game Plan Pass[\s\S]*?Game Plan Run/, "Index Card header colors include the full Game Plan accent family");
 assert.match(indexCards, /function manageCallSheetIndexCardBucket\(id\)/, "each index-card situation has one complete management surface");
@@ -97,7 +98,7 @@ assert.match(css, /body\.cs-index-printing \.cs-index-bucket header \{ min-heigh
 assert.match(css, /cs-index-list--unsequenced[\s\S]*?list-style: none/, "Index Card buckets suppress ordered list numbers by default");
 assert.match(css, /cs-index-play--family \{[\s\S]*?list-style: none;[\s\S]*?cs-index-play--family \.cs-index-play-text::before \{ content: "↳ ";/, "family calls use a simple indentation arrow instead of alphabetic list numbering");
 assert.match(css, /cs-index-bucket--drop-before[\s\S]*?box-shadow: 0 -4px 0 var\(--color-primary\)[\s\S]*?cs-index-bucket--drop-after/, "Index Card bucket drag targets visibly show whether the drop lands before or after");
-assert.match(css, /cs-index-play--drop-before[\s\S]*?cs-index-bucket--play-drop-end/, "Index Card play drag targets visibly show row insertion and bottom-of-list placement");
+assert.match(css, /cs-index-play--drop-before[\s\S]*?cs-index-bucket--play-drop-end[\s\S]*?Drop at end/, "Index Card play drag targets visibly show row insertion and bottom-of-list placement");
 assert.match(scriptIntegrations, /function sendScriptToIndexCallSheet\(\)[\s\S]*?createSmartCallSheetIndexCard/, "Script can build a smart index card from selected or full script plays");
 assert.match(gamePlanIntegrations, /function sendGamePlanToIndexCallSheet\(\)[\s\S]*?sourceBoxId[\s\S]*?createSmartCallSheetIndexCard/, "Game Plan can build a smart index card while retaining bucket context");
 assert.match(appEvents, /"openCallSheetIndexPlayMenu"/, "delegated event routing passes the index-card play action its source element");

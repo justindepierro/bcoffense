@@ -5491,12 +5491,14 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-bucket ol { padding-left: 22px; }
 .cs-index-bucket .cs-index-list--unsequenced { padding-left: 5px; list-style: none; }
 .cs-index-bucket .cs-index-list--unsequenced .cs-index-play { padding-left: 0; }
-.cs-index-play { position: relative; display: flex; align-items: flex-start; gap: 3px; min-width: 0; padding: 1px 0; cursor: grab; user-select: none; -webkit-user-select: none; }
-.cs-index-play:active { cursor: grabbing; }
+.cs-index-play { position: relative; display: flex; align-items: flex-start; gap: 3px; min-width: 0; padding: 1px 0; user-select: none; -webkit-user-select: none; }
+.cs-index-play-grip { flex: 0 0 auto; cursor: grab; color: #587091; font-size: 12px; line-height: 1.25; touch-action: none; }
+.cs-index-play-grip:active { cursor: grabbing; }
 .cs-index-play--dragging { opacity: .45; }
-.cs-index-play--drop-before { box-shadow: 0 -3px 0 var(--color-primary); }
-.cs-index-play--drop-after { box-shadow: 0 3px 0 var(--color-primary); }
-.cs-index-bucket--play-drop-end ol { box-shadow: inset 0 -3px 0 var(--color-primary); }
+.cs-index-play--drop-before { box-shadow: 0 -3px 0 var(--color-primary); background: color-mix(in srgb, var(--color-primary) 7%, white); }
+.cs-index-play--drop-after { box-shadow: 0 3px 0 var(--color-primary); background: color-mix(in srgb, var(--color-primary) 7%, white); }
+.cs-index-bucket--play-drop-end ol { box-shadow: inset 0 -3px 0 var(--color-primary); background: color-mix(in srgb, var(--color-primary) 6%, white); }
+.cs-index-bucket--play-drop-end ol::after { content: "Drop at end"; display: block; margin-top: 3px; color: var(--color-primary); font-size: 9px; font-weight: 800; text-align: center; }
 .cs-index-play-text { min-width: 0; flex: 1; }
 .cs-index-wristband-number { display: inline-block; min-width: 2.1em; margin-right: 3px; padding: 0 3px; border: 1px solid #13264d; border-radius: 3px; color: #13264d; font-weight: 900; line-height: 1.25; text-align: center; }
 .cs-index-play-actions { display: inline-flex; position: absolute; z-index: 1; top: 0; right: 0; gap: 2px; padding-left: 3px; background: color-mix(in srgb, white 92%, transparent); opacity: 0; pointer-events: none; }
@@ -5513,8 +5515,8 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-card--editor .cs-index-bucket > header[draggable="true"] { cursor: grab; user-select: none; }
 .cs-index-card--editor .cs-index-bucket > header[draggable="true"]:active { cursor: grabbing; }
 .cs-index-bucket--dragging { opacity: .45; }
-.cs-index-bucket--drop-before { box-shadow: 0 -4px 0 var(--color-primary); }
-.cs-index-bucket--drop-after { box-shadow: 0 4px 0 var(--color-primary); }
+.cs-index-bucket--drop-before { box-shadow: 0 -4px 0 var(--color-primary); background: color-mix(in srgb, var(--color-primary) 7%, white); }
+.cs-index-bucket--drop-after { box-shadow: 0 4px 0 var(--color-primary); background: color-mix(in srgb, var(--color-primary) 7%, white); }
 
 @media (max-width: 640px) {
   .cs-index-main { padding: var(--space-sm); }
