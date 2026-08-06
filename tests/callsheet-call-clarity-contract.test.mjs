@@ -33,6 +33,7 @@ assert.match(indexCards, /const addControl = editable[\s\S]*?cs-index-bucket-act
 assert.match(indexCards, /showPlayContextMenu\([\s\S]*?row\.dataset\.category[\s\S]*?row\.dataset\.hash/, "index-card play actions open the canonical Call Sheet cell editor");
 assert.match(indexCards, /toggleCallSheetIndexFamily[\s\S]*?toggleCallSheetIndexCompact/, "index cards retain per-row family indentation and repeated-component controls");
 assert.match(indexCards, /function openCallSheetIndexCardPrintModal\(\)[\s\S]*?Cards[\s\S]*?Sides[\s\S]*?Copies[\s\S]*?Preview/, "index cards use a dedicated print suite with card, side, copy, and preview controls");
+assert.match(indexCards, /function previewCurrentCallSheetIndexCard\(\)[\s\S]*?cards: "current", sides: _csIndexSide, copies: 1/, "Index Card editor has a one-click preview for the active side without changing saved print options");
 assert.match(indexCards, /openCallSheetIndexCardPrintModal\(\)[\s\S]*?requestAnimationFrame\(\(\) => overlay\.classList\.add\("visible"\)\)/, "index-card print options use the normal visible modal lifecycle");
 assert.match(indexCards, /_runCallSheetIndexCardsPrint[\s\S]*?requestAnimationFrame\(\(\) => requestAnimationFrame/, "index-card printing waits for its isolated print root to paint before opening the browser dialog");
 assert.match(indexCards, /function _csIndexPrintSides[\s\S]*?\["front", "back"\][\s\S]*?function renderCallSheetIndexCardPrintPages/, "index-card duplex jobs render front then back for each card");
