@@ -1,5 +1,6 @@
 let _csPickerFiltered = [];
 let draggedCallSheetPlay = null;
+let _csPickerSelectionInFlight = false;
 
 function clearCallSheetDropIndicators() {
   document
@@ -25,6 +26,7 @@ function setCallSheetOverlayVisibility(overlayId, isOpen) {
 function openCallSheetPlayPicker(categoryId, hash) {
   editingCategory = categoryId;
   editingHash = hash;
+  _csPickerSelectionInFlight = false;
 
   document.getElementById("callSheetPlaySearch").value = "";
   [
@@ -437,7 +439,11 @@ function populateCallSheetPlayList() {
 }
 
 function addCallSheetPlayFromPicker(playData) {
-  if (!editingCategory || !editingHash) return;
+  // The picker is a delegated surface and may be reached by more than one
+  // bubbling handler in an older cached shell. Claim the selection before any
+  // data mutation so one coach click can only ever create one call.
+  if (!editingCategory || !editingHash || _csPickerSelectionInFlight) return;
+  _csPickerSelectionInFlight = true;
 
   const play = typeof copyPlayForCallSheet === "function"
     ? copyPlayForCallSheet(playData)
