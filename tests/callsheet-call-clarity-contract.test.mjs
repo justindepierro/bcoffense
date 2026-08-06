@@ -42,6 +42,8 @@ assert.match(indexCards, /function _csBucketRows\(bucket\)[\s\S]*?bucket\?\.play
 assert.match(indexCards, /function _csSmartIndexPlan\(entries\)[\s\S]*?typeof entry\.play === "object"[\s\S]*?CS_INDEX_SMART_CATEGORY_PRIORITY[\s\S]*?three per side/, "smart index cards preserve direct Script plays and wrapped Game Plan plays while balancing logical groups");
 assert.match(indexCards, /function createSmartCallSheetIndexCard\(entries, options = \{\}\)[\s\S]*?saveCallSheet\(\)[\s\S]*?switchCallSheetPage\("index"\)/, "smart generation saves calls then opens the editable index-card workspace");
 assert.match(indexCards, /function renameCallSheetIndexCard\(\)/, "index cards support renaming the active card in place");
+assert.match(indexCards, /cs-index-card-title-input[\s\S]*?data-onchange="setCallSheetIndexCardTitle"/, "the visible Index Card title can be edited in place");
+assert.match(indexCards, /function toggleCallSheetIndexCardHeader\(\)[\s\S]*?card\.hideHeader/, "Index Card title bands can be removed to reclaim printable space");
 assert.match(indexCards, /function moveCallSheetIndexBucket\(arg\)/, "index-card situations can be manually reordered");
 assert.match(indexCards, /function setCallSheetIndexBucketColor\(id\)/, "index-card situations support their own visible header color");
 assert.match(indexCards, /function manageCallSheetIndexCardBucket\(id\)/, "each index-card situation has one complete management surface");
