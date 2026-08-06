@@ -59,6 +59,7 @@ assert.match(indexCards, /function toggleCallSheetIndexCardHeader\(\)[\s\S]*?car
 assert.match(indexCards, /function moveCallSheetIndexBucket\(arg\)/, "index-card situations can be manually reordered");
 assert.match(indexCards, /function setCallSheetIndexBucketColor\(id\)/, "index-card situations support their own visible header color");
 assert.match(indexCards, /function manageCallSheetIndexCardBucket\(id\)/, "each index-card situation has one complete management surface");
+assert.match(indexCards, /Place in shortest column automatically[\s\S]*?Expand into the next row[\s\S]*?Fill remaining column height/, "bucket menu includes dynamic print-column and height controls");
 assert.match(indexCards, /excludedPlayKeys/, "index-card buckets can hide individual calls without deleting their canonical Call Sheet source");
 assert.match(indexCards, /function removeCallSheetIndexPlay\(arg\)/, "each index-card call can be removed from that compact bucket only");
 assert.match(indexCards, /openLoadWristbandModal/, "index-card editing can load or replace the Call Sheet wristband directly");
@@ -66,7 +67,8 @@ assert.match(indexCards, /cs-index-wristband-number/, "index-card and print call
 assert.match(indexCards, /function toggleCallSheetIndexSequenceNumbers\(id\)[\s\S]*?bucket\.showSequenceNumbers/, "Index Card buckets can opt into sequence numbers without affecting wristband numbers");
 assert.match(indexCards, /Turn sequence numbers on[\s\S]*?value: "sequence"/, "Index Card bucket management exposes the sequence-number toggle");
 assert.match(indexCards, /function _csUpdateIndexCardFitStatus\(\)/, "index-card editing reports whether the live card fits its 4×6 print area");
-assert.match(indexCards, /cs-index-capacity-probe[\s\S]*?_csCardMarkup\(activeCard, _csIndexSide, false\)[\s\S]*?usedPercent/, "Index Card capacity measures the non-editable print markup instead of editor controls");
+assert.match(indexCards, /function _csIndexPrintColumns\(buckets\)[\s\S]*?printColumn[\s\S]*?weights\[0\] <= weights\[1\][\s\S]*?cs-index-column/, "Index Card print balances buckets into two equal-width columns by available content space");
+assert.match(indexCards, /cs-index-capacity-probe[\s\S]*?_csCardMarkup\(activeCard, _csIndexSide, false, true\)[\s\S]*?usedPercent/, "Index Card capacity measures the dynamic print flow instead of editor controls");
 assert.match(indexCards, /function copyCallSheetIndexBucketToOtherSide\(id\)/, "Index Card situations can be copied to the opposite side");
 assert.match(indexCards, /function clearCallSheetIndexCardBucket\(id\)[\s\S]*?bucket\.playKeys = \[\]/, "Index Card situations can be cleared without deleting canonical Call Sheet calls");
 assert.match(indexCards, /function removeEmptyCallSheetIndexBuckets\(\)/, "Index Card editor can remove empty situations in bulk");
@@ -76,6 +78,7 @@ assert.match(css, /\.cs-index-play-actions \{ display: inline-flex; position: ab
 assert.match(render, /Index Cards are a fixed physical preview[\s\S]*?card\.scrollIntoView/, "opening Index Cards resets the old Call Sheet scroll position instead of landing mid-card");
 assert.match(css, /\.cs-index-print-preview-pages \.cs-index-card \{ width: min\(100%, 390px\); height: min\(585px,[\s\S]*?aspect-ratio: 2 \/ 3/, "index-card preview uses a fixed 4×6-proportional canvas rather than growing with content");
 assert.match(css, /\.cs-index-print-preview-pages \.cs-index-grid \{ grid-auto-rows: minmax\(max-content, 1fr\); align-content: stretch; gap: 0/, "Index Card preview preserves paired equal-width columns while stretching rows across the physical card");
+assert.match(css, /\.cs-index-card--print-flow \.cs-index-column \{ display: flex;[\s\S]*?height: 100%; flex-direction: column; \}[\s\S]*?cs-index-bucket--fill-column \{ flex: 1 1 auto/, "dynamic Index Card print columns can stack extra buckets and fill remaining physical height");
 assert.match(css, /body\.cs-index-printing \.cs-index-bucket header \{ min-height: 0; padding: \.012in \.035in; font-size: 6pt/, "printed Index Card headers are compacted to reclaim call space");
 assert.match(css, /cs-index-list--unsequenced[\s\S]*?list-style: none/, "Index Card buckets suppress ordered list numbers by default");
 assert.match(scriptIntegrations, /function sendScriptToIndexCallSheet\(\)[\s\S]*?createSmartCallSheetIndexCard/, "Script can build a smart index card from selected or full script plays");

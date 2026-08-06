@@ -37,6 +37,11 @@
 .cs-index-print-preview-pages .cs-index-bucket ol.cs-index-list--unsequenced { padding-left: .035in !important; }
 .cs-index-print-preview-pages .cs-index-bucket li { margin-bottom: .01in !important; }
 .cs-index-print-preview-pages .cs-index-no-calls { display: none; }
+.cs-index-card--print-flow .cs-index-grid { grid-auto-rows: minmax(0, 1fr); height: 100%; }
+.cs-index-card--print-flow .cs-index-column { display: flex; min-width: 0; min-height: 0; height: 100%; flex-direction: column; }
+.cs-index-card--print-flow .cs-index-bucket { flex: 0 0 auto; min-height: 0; }
+.cs-index-card--print-flow .cs-index-bucket--expand-row { min-height: .42in; }
+.cs-index-card--print-flow .cs-index-bucket--fill-column { flex: 1 1 auto; }
 .cs-index-capacity-probe { position: fixed; z-index: -1; top: -10000px; left: -10000px; width: 3.84in; height: 5.84in; visibility: hidden; pointer-events: none; }
 .cs-index-capacity-probe .cs-index-card { box-sizing: border-box; width: 3.84in; min-height: 5.84in; height: 5.84in; margin: 0; padding: .055in; border-width: 1.5pt; border-radius: 0; box-shadow: none; }
 .cs-index-capacity-probe .cs-index-card-head { padding: .015in .035in; font-size: 6.5pt; line-height: 1.05; border-bottom-width: 1.5pt; }
@@ -47,6 +52,7 @@
 .cs-index-capacity-probe .cs-index-bucket ol.cs-index-list--unsequenced { padding-left: .035in; }
 .cs-index-capacity-probe .cs-index-bucket li { margin-bottom: .01in; }
 .cs-index-capacity-probe .cs-index-no-calls { display: none; }
+.cs-index-capacity-probe .cs-index-card--print-flow .cs-index-grid { grid-auto-rows: minmax(0, 1fr); height: 100%; }
 @media print {
   body.cs-index-printing > * { display: none !important; }
   body.cs-index-printing #csIndexCardPrintRoot { display: block !important; }
@@ -62,6 +68,7 @@
   body.cs-index-printing .cs-index-bucket ol.cs-index-list--unsequenced { padding-left: .035in !important; }
   body.cs-index-printing .cs-index-bucket li { margin-bottom: .01in !important; }
   body.cs-index-printing .cs-index-no-calls { display: none; }
+  body.cs-index-printing .cs-index-card--print-flow .cs-index-grid { grid-auto-rows: minmax(0, 1fr); height: 100%; }
 }
 
 /* Tablet tier: keep the print-like grid compact but make toolbar actions

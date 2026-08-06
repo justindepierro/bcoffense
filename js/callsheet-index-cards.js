@@ -79,6 +79,10 @@ function _csIndexCall(play, previous, compact) {
     ? `<span class="cs-index-wristband-number">#${escapeHtml(wristbandNumber)}</span>${call}`
     : call;
 }
+function _csIndexPrintBucketClass(bucket) {
+  const height = String(bucket?.printHeight || "");
+  return height === "row" ? " cs-index-bucket--expand-row" : height === "fill" ? " cs-index-bucket--fill-column" : "";
+}
 function _csIndexBucketMarkup(bucket, editable) {
   const rows = _csBucketRows(bucket);
   const category = CALLSHEET_CATEGORIES.find((item) => item.id === bucket.categoryId);
@@ -99,15 +103,30 @@ function _csIndexBucketMarkup(bucket, editable) {
     : "<li class=\"cs-index-no-calls\">Drop or add plays here</li>");
   const addControl = editable && bucket.categoryId ? `<button class="cs-index-bucket-add" data-action="openCallSheetIndexCardBucketPicker" data-arg="${escapeAttr(bucket.id)}" title="Add a play to ${escapeAttr(bucket.label)}" aria-label="Add a play to ${escapeAttr(bucket.label)}">＋</button>` : "";
   const dropAttrs = bucket.categoryId ? ` data-drop="csHashDrop" data-cat="${escapeAttr(bucket.categoryId)}" data-hash="${bucket.targetHash === "right" ? "right" : "left"}"` : "";
-  return `<section class="cs-index-bucket"${dropAttrs}${editable ? ` data-cs-card-bucket="${escapeAttr(bucket.id)}"` : ""}><header style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading"><b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}<button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|-1" title="Move situation up" aria-label="Move ${escapeAttr(bucket.label)} up">↑</button><button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|1" title="Move situation down" aria-label="Move ${escapeAttr(bucket.label)} down">↓</button><button data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}">⋯</button><button data-action="removeCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Remove situation" aria-label="Remove ${escapeAttr(bucket.label)}">×</button></span>` : ""}</header><ol class="${bucket.showSequenceNumbers ? "" : "cs-index-list--unsequenced"}">${plays}</ol></section>`;
+  return `<section class="cs-index-bucket${_csIndexPrintBucketClass(bucket)}"${dropAttrs}${editable ? ` data-cs-card-bucket="${escapeAttr(bucket.id)}"` : ""}><header style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading"><b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}<button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|-1" title="Move situation up" aria-label="Move ${escapeAttr(bucket.label)} up">↑</button><button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|1" title="Move situation down" aria-label="Move ${escapeAttr(bucket.label)} down">↓</button><button data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}">⋯</button><button data-action="removeCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Remove situation" aria-label="Remove ${escapeAttr(bucket.label)}">×</button></span>` : ""}</header><ol class="${bucket.showSequenceNumbers ? "" : "cs-index-list--unsequenced"}">${plays}</ol></section>`;
 }
-function _csCardMarkup(card, side, editable = false) {
+function _csIndexPrintColumns(buckets) {
+  const columns = [[], []];
+  const weights = [0, 0];
+  (Array.isArray(buckets) ? buckets : []).forEach((bucket) => {
+    const placement = bucket?.printColumn === "right" ? 1 : bucket?.printColumn === "left" ? 0 : weights[0] <= weights[1] ? 0 : 1;
+    columns[placement].push(bucket);
+    weights[placement] += 1 + Math.min(12, _csBucketRows(bucket).length);
+  });
+  return columns.map((column) => {
+    const natural = column.filter((bucket) => bucket?.printHeight !== "fill");
+    const fill = column.filter((bucket) => bucket?.printHeight === "fill");
+    return `<div class="cs-index-column">${[...natural, ...fill].map((bucket) => _csIndexBucketMarkup(bucket, false)).join("")}</div>`;
+  }).join("");
+}
+function _csCardMarkup(card, side, editable = false, printFlow = false) {
   const buckets = card?.[side] || [];
   const title = String(card?.name || "Game Day Card");
   const header = card?.hideHeader ? "" : `<div class="cs-index-card-head">${editable
     ? `<input id="csIndexCardTitle" name="csIndexCardTitle" class="cs-index-card-title-input" value="${escapeAttr(title)}" data-onchange="setCallSheetIndexCardTitle" data-pass="value" aria-label="Index Card title">`
     : `<b>${escapeHtml(title)}</b>`}<span>${side === "front" ? "Front" : "Back"}</span></div>`;
-  return `<article class="cs-index-card${editable ? " cs-index-card--editor" : ""}${card?.hideHeader ? " cs-index-card--no-header" : ""}">${header}<div class="cs-index-grid">${buckets.map((bucket) => _csIndexBucketMarkup(bucket, editable)).join("") || `<div class="cs-index-empty">Use + Add bucket to build this side.</div>`}</div></article>`;
+  const grid = buckets.length ? (printFlow ? _csIndexPrintColumns(buckets) : buckets.map((bucket) => _csIndexBucketMarkup(bucket, editable)).join("")) : `<div class="cs-index-empty">Use + Add bucket to build this side.</div>`;
+  return `<article class="cs-index-card${editable ? " cs-index-card--editor" : ""}${printFlow ? " cs-index-card--print-flow" : ""}${card?.hideHeader ? " cs-index-card--no-header" : ""}">${header}<div class="cs-index-grid">${grid}</div></article>`;
 }
 
 function _csUpdateIndexCardFitStatus() {
@@ -121,7 +140,7 @@ function _csUpdateIndexCardFitStatus() {
   const probe = document.createElement("div");
   probe.className = "cs-index-capacity-probe";
   probe.setAttribute("aria-hidden", "true");
-  probe.innerHTML = _csCardMarkup(activeCard, _csIndexSide, false);
+  probe.innerHTML = _csCardMarkup(activeCard, _csIndexSide, false, true);
   document.body.appendChild(probe);
   const grid = probe.querySelector(".cs-index-grid");
   if (!grid) { probe.remove(); return; }
@@ -383,7 +402,7 @@ function renderCallSheetIndexCardPrintPages(options = {}) {
   const sides = _csIndexPrintSides(job);
   return Array.from({ length: job.copies }, () => cards.flatMap((card) => sides.map((side) => `
     <section class="cs-index-print-page" data-card-id="${escapeAttr(card.id)}" data-card-side="${side}">
-      ${_csCardMarkup(card, side)}
+      ${_csCardMarkup(card, side, false, true)}
     </section>`))).flat().join("");
 }
 
@@ -620,6 +639,12 @@ async function manageCallSheetIndexCardBucket(id) {
       { value: "source", label: "Change Call Sheet source", icon: "↻" },
       { value: "color", label: "Change header color", icon: "🎨" },
       { value: "sequence", label: bucket.showSequenceNumbers ? "Turn sequence numbers off" : "Turn sequence numbers on", icon: "#" },
+      { value: "balance", label: "Place in shortest column automatically", icon: "↕" },
+      { value: "left-column", label: "Place in left column", icon: "←" },
+      { value: "right-column", label: "Place in right column", icon: "→" },
+      { value: "expand-row", label: "Expand into the next row", icon: "↕" },
+      { value: "fill-column", label: "Fill remaining column height", icon: "⇳" },
+      { value: "natural-height", label: "Use natural bucket height", icon: "↥" },
       { value: "other-side", label: `Move to ${_csIndexSide === "front" ? "Back" : "Front"}`, icon: "↔" },
       { value: "copy-other-side", label: `Copy to ${_csIndexSide === "front" ? "Back" : "Front"}`, icon: "⧉" },
       { value: "clear", label: "Clear calls from this card bucket", icon: "⌫" },
@@ -636,6 +661,21 @@ async function manageCallSheetIndexCardBucket(id) {
     await setCallSheetIndexBucketColor(id);
   } else if (action === "sequence") {
     toggleCallSheetIndexSequenceNumbers(id);
+  } else if (action === "balance") {
+    delete bucket.printColumn;
+    _csPersistCards();
+  } else if (action === "left-column" || action === "right-column") {
+    bucket.printColumn = action === "left-column" ? "left" : "right";
+    _csPersistCards();
+  } else if (action === "expand-row") {
+    bucket.printHeight = "row";
+    _csPersistCards();
+  } else if (action === "fill-column") {
+    bucket.printHeight = "fill";
+    _csPersistCards();
+  } else if (action === "natural-height") {
+    delete bucket.printHeight;
+    _csPersistCards();
   } else if (action === "other-side") {
     card[_csIndexSide] = card[_csIndexSide].filter((item) => item.id !== id);
     const otherSide = _csIndexSide === "front" ? "back" : "front";
