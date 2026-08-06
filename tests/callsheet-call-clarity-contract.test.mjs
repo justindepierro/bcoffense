@@ -43,6 +43,8 @@ assert.match(indexCards, /function renameCallSheetIndexCard\(\)/, "index cards s
 assert.match(indexCards, /function moveCallSheetIndexBucket\(arg\)/, "index-card situations can be manually reordered");
 assert.match(indexCards, /function setCallSheetIndexBucketColor\(id\)/, "index-card situations support their own visible header color");
 assert.match(indexCards, /function manageCallSheetIndexCardBucket\(id\)/, "each index-card situation has one complete management surface");
+assert.match(indexCards, /openLoadWristbandModal/, "index-card editing can load or replace the Call Sheet wristband directly");
+assert.match(indexCards, /cs-index-wristband-number/, "index-card and print calls show loaded wristband numbers");
 assert.match(scriptIntegrations, /function sendScriptToIndexCallSheet\(\)[\s\S]*?createSmartCallSheetIndexCard/, "Script can build a smart index card from selected or full script plays");
 assert.match(gamePlanIntegrations, /function sendGamePlanToIndexCallSheet\(\)[\s\S]*?sourceBoxId[\s\S]*?createSmartCallSheetIndexCard/, "Game Plan can build a smart index card while retaining bucket context");
 assert.match(appEvents, /"openCallSheetIndexPlayMenu"/, "delegated event routing passes the index-card play action its source element");

@@ -5431,6 +5431,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-play { display: flex; align-items: flex-start; gap: 3px; min-width: 0; padding: 1px 0; cursor: grab; }
 .cs-index-play:active { cursor: grabbing; }
 .cs-index-play-text { min-width: 0; flex: 1; }
+.cs-index-wristband-number { display: inline-block; min-width: 2.1em; margin-right: 3px; padding: 0 3px; border: 1px solid #13264d; border-radius: 3px; color: #13264d; font-weight: 900; line-height: 1.25; text-align: center; }
 .cs-index-play-actions { display: inline-flex; flex: 0 0 auto; gap: 2px; opacity: .48; }
 .cs-index-play:hover .cs-index-play-actions, .cs-index-play:focus-within .cs-index-play-actions { opacity: 1; }
 .cs-index-play-actions button, .cs-index-add-play { min-width: 18px; min-height: 18px; padding: 0 3px; font-size: 10px; line-height: 1; }

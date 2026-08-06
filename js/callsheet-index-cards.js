@@ -58,7 +58,13 @@ function _csIndexCall(play, previous, compact) {
     ? getCallSheetPlayDisplayOptions(shownPlay, getCallSheetDisplayOptions())
     : {};
   const parts = typeof buildCallSheetPlayParts === "function" ? buildCallSheetPlayParts(shownPlay, options) : [];
-  return parts.join(" ") || escapeHtml([shownPlay?.formation, shownPlay?.protection, shownPlay?.play].filter(Boolean).join(" ")) || "Untitled call";
+  const call = parts.join(" ") || escapeHtml([shownPlay?.formation, shownPlay?.protection, shownPlay?.play].filter(Boolean).join(" ")) || "Untitled call";
+  const wristbandNumber = options.showNumbers
+    ? (shownPlay?.wristbandNumber || (typeof getWristbandNumberForPlay === "function" ? getWristbandNumberForPlay(shownPlay) : null))
+    : null;
+  return wristbandNumber
+    ? `<span class="cs-index-wristband-number">#${escapeHtml(wristbandNumber)}</span>${call}`
+    : call;
 }
 function _csIndexBucketMarkup(bucket, editable) {
   const rows = _csBucketRows(bucket);
@@ -401,7 +407,11 @@ function printCallSheetIndexCards() { openCallSheetIndexCardPrintModal(); }
 function renderCallSheetIndexCardPage() {
   const cards = _csCards(); const card = _csActiveCard();
   if (!card) return `<section class="cs-index-main-empty"><h3>🗂️ Call Sheet Index Cards</h3><p>Build a compact, printable view from the same situations and calls already on your Call Sheet.</p><button class="btn btn-primary" data-action="newCallSheetIndexCard">＋ Create first card</button></section>`;
-  return `<section class="cs-index-main"><div class="cs-index-main-head"><div><span class="cs-index-kicker">CALL SHEET · GAME-DAY CARD · 4 × 6</span><h3>${escapeHtml(card.name || "Game Day Call Card")}</h3></div><div class="cs-index-main-actions"><button class="btn btn-sm btn-outline" data-action="renameCallSheetIndexCard">✏️ Rename</button><button class="btn btn-sm btn-outline" data-action="newCallSheetIndexCard">＋ New card</button><button class="btn btn-sm btn-primary" data-action="openCallSheetIndexCardPrintModal">🖨️ Print options</button></div></div><div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}<button class="btn btn-sm btn-outline cs-index-delete-card" data-action="deleteCallSheetIndexCard" title="Delete current card">🗑️</button></div><div class="cs-index-main-sides"><span class="cs-index-side-label">Side</span><button class="btn ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><span>Use ↑ / ↓ to reorder. ⋯ controls source, label, color, side, and removal.</span></div>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></section>`;
+  const wristband = typeof getCallSheetLoadedWristbandSummary === "function" ? getCallSheetLoadedWristbandSummary() : { loaded: false, name: "", count: 0 };
+  const wristbandAction = wristband.loaded
+    ? `<button class="btn btn-sm btn-outline" data-action="openLoadWristbandModal" title="Change loaded wristband">📟 ${escapeHtml(wristband.name)} · ${wristband.count}</button>`
+    : `<button class="btn btn-sm btn-outline" data-action="openLoadWristbandModal">📟 Load wristband</button>`;
+  return `<section class="cs-index-main"><div class="cs-index-main-head"><div><span class="cs-index-kicker">CALL SHEET · GAME-DAY CARD · 4 × 6</span><h3>${escapeHtml(card.name || "Game Day Call Card")}</h3></div><div class="cs-index-main-actions">${wristbandAction}<button class="btn btn-sm btn-outline" data-action="renameCallSheetIndexCard">✏️ Rename</button><button class="btn btn-sm btn-outline" data-action="newCallSheetIndexCard">＋ New card</button><button class="btn btn-sm btn-primary" data-action="openCallSheetIndexCardPrintModal">🖨️ Print options</button></div></div><div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}<button class="btn btn-sm btn-outline cs-index-delete-card" data-action="deleteCallSheetIndexCard" title="Delete current card">🗑️</button></div><div class="cs-index-main-sides"><span class="cs-index-side-label">Side</span><button class="btn ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><span>Use ↑ / ↓ to reorder. ⋯ controls source, label, color, side, and removal.</span></div>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></section>`;
 }
 function selectCallSheetIndexCard(id) { _csIndexCardId = String(id || ""); renderCallSheet(); }
 function setCallSheetIndexCardSide(side) { _csIndexSide = side === "back" ? "back" : "front"; renderCallSheet(); }
