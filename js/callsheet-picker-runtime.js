@@ -661,7 +661,7 @@ function handleCallSheetDragStart(event, categoryId, hash, index) {
   draggedCallSheetPlay = { categoryId, hash, index };
   event.dataTransfer.setData("source", "callsheet");
   event.dataTransfer.effectAllowed = "move";
-  event.target.closest(".callsheet-play")?.classList.add("dragging");
+  event.target.closest(".callsheet-play, .cs-blank-row")?.classList.add("dragging");
 }
 
 function handleCallSheetDragOver(event) {
@@ -672,7 +672,7 @@ function handleCallSheetDragOver(event) {
   const allowed = event.dataTransfer?.effectAllowed || "";
   event.dataTransfer.dropEffect = allowed === "copy" ? "copy" : "move";
 
-  const target = event.target.closest(".callsheet-play");
+  const target = event.target.closest(".callsheet-play, .cs-blank-row");
   document
     .querySelectorAll(".cs-drop-above")
     .forEach((element) => element.classList.remove("cs-drop-above"));
@@ -685,7 +685,7 @@ function handleCallSheetDrop(event, targetCategory, targetHash) {
     .querySelectorAll(".cs-drop-above")
     .forEach((element) => element.classList.remove("cs-drop-above"));
 
-  const targetPlay = event.target.closest(".callsheet-play");
+  const targetPlay = event.target.closest(".callsheet-play, .cs-blank-row");
   let insertIdx = -1;
   if (targetPlay) insertIdx = parseInt(targetPlay.dataset.index, 10);
 
@@ -727,7 +727,7 @@ function handleCallSheetDrop(event, targetCategory, targetHash) {
     // does NOT bubble to document, so any cleanup deferred to dragend would
     // be lost.
     draggedCallSheetPlay = null;
-    document.querySelectorAll(".callsheet-play.dragging").forEach((el) => el.classList.remove("dragging"));
+    document.querySelectorAll(".callsheet-play.dragging, .cs-blank-row.dragging").forEach((el) => el.classList.remove("dragging"));
     document.querySelectorAll(".cs-drop-above").forEach((el) => el.classList.remove("cs-drop-above"));
 
     renderCallSheet();
@@ -819,7 +819,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     grid.addEventListener("contextmenu", (event) => {
-      const play = event.target.closest(".callsheet-play");
+      const play = event.target.closest(".callsheet-play, .cs-blank-row");
       if (!play) return;
       const { category, hash, index } = play.dataset;
       if (category && hash && index !== undefined) {
@@ -856,7 +856,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       const hashCol = event.target.closest("[data-drop='csHashDrop']");
-      if (hashCol || event.target.closest(".callsheet-play")) {
+      if (hashCol || event.target.closest(".callsheet-play, .cs-blank-row")) {
         handleCallSheetDragOver(event);
       }
     });
@@ -876,7 +876,7 @@ document.addEventListener("DOMContentLoaded", () => {
     grid.addEventListener("dragend", (event) => {
       const catDrag = event.target.closest("[data-drag='catDrag']");
       if (catDrag) handleCatDragEnd(event);
-      const play = event.target.closest(".callsheet-play");
+      const play = event.target.closest(".callsheet-play, .cs-blank-row");
       if (play) {
         play.classList.remove("dragging");
         draggedCallSheetPlay = null;

@@ -349,6 +349,15 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   opacity: 0.5;
   background: var(--color-bg-blue-tint);
 }
+.cs-reorder-grip {
+  color: var(--color-text-muted);
+  cursor: grab;
+  font-size: 13px;
+  line-height: 1;
+  user-select: none;
+}
+.callsheet-play:active .cs-reorder-grip,
+.cs-blank-row:active .cs-reorder-grip { cursor: grabbing; }
 
 .callsheet-play .personnel-code {
   padding: 2px 5px;
@@ -538,12 +547,18 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
 .cs-blank-row {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  gap: 5px;
   min-height: 22px;
   padding: 0 2px;
   border-bottom: 1px dashed var(--color-border-light);
   position: relative;
+  cursor: grab;
+  user-select: none;
 }
+.cs-blank-row.dragging { opacity: .5; background: var(--color-bg-blue-tint); }
+.cs-blank-row.cs-drop-above { border-top: 3px solid var(--color-primary); }
+.cs-blank-row .cs-blank-remove { margin-left: auto; }
 .cs-blank-remove {
   opacity: 0;
   transition: opacity var(--transition-fast);

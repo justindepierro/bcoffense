@@ -1504,8 +1504,9 @@ function getPlayBorderColor(play, options) {
 function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
   // Blank spacer row
   if (play && play._blank) {
-    return `<div class="cs-blank-row" role="row" aria-label="Blank spacer"
+    return `<div class="cs-blank-row" draggable="true" role="row" aria-label="Blank spacer — drag to reorder"
          data-category="${categoryId}" data-hash="${hash}" data-index="${index}">
+      <span class="cs-reorder-grip" aria-hidden="true" title="Drag to reorder">⠿</span>
       <button class="remove-play cs-blank-remove" data-action="removeCallSheetPlay"
         data-category="${categoryId}" data-hash="${hash}" data-index="${index}"
         aria-label="Remove blank row" title="Remove blank spacer">×</button>
@@ -1633,6 +1634,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
          style="${cellStyleStr}"
          role="row" aria-label="${escapeHtml(playLabel.trim())}"
          data-category="${categoryId}" data-hash="${hash}" data-index="${index}"${discAttr}>
+      <span class="cs-reorder-grip" aria-hidden="true" title="Drag to reorder">⠿</span>
       ${wristbandHtml}
       ${personnelHtml}
       ${additionalPersonnelHtml}
