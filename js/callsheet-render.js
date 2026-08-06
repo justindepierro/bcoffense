@@ -1118,9 +1118,20 @@ function applyCallSheetDisplayState(opts) {
  * Switch between front and back page
  */
 function switchCallSheetPage(page) {
+  const previousPage = callSheetSettings.currentPage;
   callSheetSettings.currentPage = normalizeCallSheetPage(page);
   saveCallSheetSettings();
   renderCallSheet();
+  // Index Cards are a fixed physical preview. Do not inherit the scroll
+  // position from a long Front/Back board or land halfway down a 4×6 card.
+  if (callSheetSettings.currentPage === "index" && previousPage !== "index") {
+    requestAnimationFrame(() => {
+      const card = document.querySelector("#callSheetGrid .cs-index-card");
+      const innerGrid = card?.querySelector(".cs-index-grid");
+      if (innerGrid) innerGrid.scrollTop = 0;
+      if (card?.scrollIntoView) card.scrollIntoView({ block: "start", behavior: "auto" });
+    });
+  }
 }
 
 /**
