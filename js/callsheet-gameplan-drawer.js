@@ -77,6 +77,23 @@ function _gpDrawerSourcePlays() {
   return plays.filter((play) => all.has(playSignature(play)));
 }
 
+function _gpDrawerSourceBoxId(play) {
+  const key = _gpDrawerPlayKey(play);
+  if (!key) return "";
+  const boards = [];
+  if (typeof _gpEnsureBoard === "function") boards.push(_gpEnsureBoard());
+  if (_gpDrawerState.scope === "all" && typeof _gpLoadBoards === "function") {
+    boards.push(...Object.values(_gpLoadBoards() || {}));
+  }
+  for (const board of boards) {
+    for (const [boxId, bucket] of Object.entries(board?.assignments || {})) {
+      if (typeof GP_HOLDING_ID !== "undefined" && boxId === GP_HOLDING_ID) continue;
+      if ((bucket || []).some((entry) => _gpDrawerPlayKey(entry) === key)) return boxId;
+    }
+  }
+  return "";
+}
+
 function _gpDrawerFilterAndSort(source, usageMap) {
   let out = source.slice();
 
@@ -523,6 +540,69 @@ function clearGameplanDrawerSearch() {
 
 function refreshGameplanDrawer() {
   if (_gpDrawerState.open) _gpDrawerRender();
+}
+
+// Route exactly what the coach is looking at. Filters are intentional here:
+// narrow to a package, search, or "Not On Call Sheet", then send that scoped
+// set through the same canonical Game Plan → Call Sheet routing engine.
+async function autoRouteGameplanDrawerPlays() {
+  const visible = Array.isArray(window._gpDrawerVisiblePlays)
+    ? window._gpDrawerVisiblePlays.filter((play) => play && !play._blank)
+    : [];
+  if (!visible.length) {
+    showToast("No shown Game Plan plays to route.", { type: "warning" });
+    return;
+  }
+  if (typeof _gpComputeCallSheetTargets !== "function" || typeof _gpPushPlayIntoCategory !== "function") {
+    showToast("Game Plan routing is still loading. Try again in a moment.", { type: "warning" });
+    return;
+  }
+
+  const ok = await showConfirm(
+    `Auto-route the ${visible.length} currently shown Game Plan play${visible.length === 1 ? "" : "s"}? Existing calls stay in place; only missing calls will be added to their matching situations.`,
+    { title: "Auto-route Game Plan", icon: "⚡", confirmText: "Auto-route" },
+  );
+  if (!ok) return;
+
+  let added = 0;
+  let alreadyThere = 0;
+  let unmatched = 0;
+  const routedCategories = new Set();
+  const playerTargets = typeof buildPlayerCategoryAutoFillTargets === "function"
+    ? buildPlayerCategoryAutoFillTargets(visible)
+    : [];
+  visible.forEach((play, index) => {
+    // If the same play appears in several Game Plan boxes, routing remains
+    // idempotent because _gpPushPlayIntoCategory dedupes by canonical identity.
+    const targets = _gpComputeCallSheetTargets(play, _gpDrawerSourceBoxId(play));
+    (playerTargets[index] || new Set()).forEach((id) => targets.add(id));
+    if (!targets.size) {
+      unmatched += 1;
+      return;
+    }
+    targets.forEach((categoryId) => {
+      if (_gpPushPlayIntoCategory(play, categoryId)) {
+        added += 1;
+        routedCategories.add(categoryId);
+      } else {
+        alreadyThere += 1;
+      }
+    });
+  });
+
+  if (!added) {
+    showToast(unmatched
+      ? "No new calls were routed. Some plays need a Game Plan box, preferred situation, or play type."
+      : "Those shown Game Plan plays are already on the Call Sheet.", { type: "warning", duration: 3600 });
+    return;
+  }
+  if (typeof renderCallSheet === "function") renderCallSheet();
+  if (typeof saveCallSheet === "function") saveCallSheet();
+  _gpDrawerRender();
+  const parts = [`Added ${added} call${added === 1 ? "" : "s"} to ${routedCategories.size} situation${routedCategories.size === 1 ? "" : "s"}`];
+  if (alreadyThere) parts.push(`${alreadyThere} already placed`);
+  if (unmatched) parts.push(`${unmatched} need routing details`);
+  showToast(parts.join(" · "), { type: "success", duration: 4200 });
 }
 
 /* ---------- Boot ----------------------------------------------------------- */

@@ -4443,6 +4443,20 @@ body.shell-phone #callsheet .cs-empty-cat {
   border-top: 1px solid var(--color-border);
   background: var(--color-bg-lighter);
 }
+.gp-drawer-auto-route {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+}
+.gp-drawer-auto-route:hover { filter: brightness(1.08); }
 .gp-drawer-hint {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
