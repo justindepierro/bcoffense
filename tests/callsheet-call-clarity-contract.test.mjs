@@ -30,6 +30,9 @@ assert.match(gamePlanRender, /id="gpLibrarySearch"[\s\S]*?placeholder="Search li
 assert.match(notifications, /const matchIndex = plays\.findIndex[\s\S]*?openPlayWorkflowPanel\(matchIndex\)/, "staff question notifications resolve a play then open its workflow panel by index");
 assert.match(indexCards, /data-action="openCallSheetPlayPicker"[\s\S]*?data-drop="csHashDrop"/, "index-card buckets accept the normal Call Sheet drag/drop and picker pipeline");
 assert.match(indexCards, /const addControl = editable[\s\S]*?cs-index-bucket-actions[\s\S]*?\$\{addControl\}/, "index-card add-play control stays in the editor header rather than consuming printable bucket height");
+assert.match(indexCards, /function openCallSheetIndexCardBucketPicker\(id\)[\s\S]*?_csIndexPickerBucketId = bucket\.id[\s\S]*?openCallSheetPlayPicker/, "Index Card add-play buttons retain their specific bucket destination");
+assert.match(indexCards, /function onCallSheetIndexCardPickerPlayAdded\(play\)[\s\S]*?bucket\.playKeys\.push\(identity\)[\s\S]*?saveCallSheetSettings\(\)/, "new picker calls are persisted in smart Index Card bucket scopes");
+assert.match(await readFile(new URL("js/callsheet-picker-runtime.js", `file://${root}/`), "utf8"), /onCallSheetIndexCardPickerPlayAdded\(play, editingCategory, editingHash\)/, "the shared Call Sheet picker reports a selection to the active Index Card bucket");
 assert.match(indexCards, /showPlayContextMenu\([\s\S]*?row\.dataset\.category[\s\S]*?row\.dataset\.hash/, "index-card play actions open the canonical Call Sheet cell editor");
 assert.match(indexCards, /toggleCallSheetIndexFamily[\s\S]*?toggleCallSheetIndexCompact/, "index cards retain per-row family indentation and repeated-component controls");
 assert.match(indexCards, /function openCallSheetIndexCardPrintModal\(\)[\s\S]*?Cards[\s\S]*?Sides[\s\S]*?Copies[\s\S]*?Preview/, "index cards use a dedicated print suite with card, side, copy, and preview controls");

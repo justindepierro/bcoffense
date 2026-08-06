@@ -199,6 +199,7 @@ function closeCallSheetPicker(eventOrOptions) {
   const event = eventOrOptions?.target ? eventOrOptions : null;
   if (event && event.target !== event.currentTarget) return;
   _csPickerSaveFilters();
+  if (typeof onCallSheetIndexCardPickerClosed === "function") onCallSheetIndexCardPickerClosed();
   if (typeof closeLayer === "function") {
     closeLayer("callSheetPickerOverlay", eventOrOptions?.returnFocus === false ? { returnFocus: false } : {});
   }
@@ -444,6 +445,13 @@ function addCallSheetPlayFromPicker(playData) {
   delete play._sourceIdx;
 
   callSheet[editingCategory][editingHash].push(play);
+
+  // Index Card buckets can be a scoped view of a Call Sheet category. Let
+  // that editor retain the newly selected call before the shared renderer
+  // refreshes, otherwise a smart bucket would hide the call it just added.
+  if (typeof onCallSheetIndexCardPickerPlayAdded === "function") {
+    onCallSheetIndexCardPickerPlayAdded(play, editingCategory, editingHash);
+  }
 
   closeCallSheetPicker();
   renderCallSheet();

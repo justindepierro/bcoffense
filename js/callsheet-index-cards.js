@@ -2,6 +2,7 @@
  * the canonical Call Sheet — they never create a second copy of a call. */
 let _csIndexCardId = "";
 let _csIndexSide = "front";
+let _csIndexPickerBucketId = "";
 
 function _csCards() { return Array.isArray(callSheetSettings.indexCards) ? callSheetSettings.indexCards : []; }
 function _csActiveCard() { const cards = _csCards(); const card = cards.find((item) => item.id === _csIndexCardId) || cards[0] || null; if (card) _csIndexCardId = card.id; return card; }
@@ -84,7 +85,7 @@ function _csIndexBucketMarkup(bucket, editable) {
     const label = escapeHtml([row.play?.formation, row.play?.play].filter(Boolean).join(" ") || "Call Sheet play");
     return `<li class="cs-index-play callsheet-play${family ? " cs-index-play--family" : ""}" draggable="true" data-category="${escapeAttr(bucket.categoryId || "")}" data-hash="${row.hash}" data-index="${row.index}" data-cs-card-bucket="${escapeAttr(bucket.id)}" aria-label="${label}"><span class="cs-index-play-text">${text}</span><span class="cs-index-play-actions"><button data-action="toggleCallSheetIndexFamily" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="${family ? "Make this a normal row" : "Indent beneath the call above"}" aria-label="${family ? "Remove family indent" : "Indent as a related family call"}">↳</button><button data-action="toggleCallSheetIndexCompact" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" ${family ? "" : "disabled"} title="${compact ? "Show repeated components" : "Hide components shared with the call above"}" aria-label="${compact ? "Show repeated components" : "Hide repeated components"}">≈</button><button data-action="removeCallSheetIndexPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="Remove from this Index Card bucket only" aria-label="Remove ${label} from this Index Card bucket">×</button><button data-action="openCallSheetIndexPlayMenu" title="Edit this Call Sheet play" aria-label="Edit ${label}">⋯</button></span></li>`;
   }).join("") || "<li class=\"cs-index-no-calls\">Drop or add plays here</li>";
-  const addControl = editable && bucket.categoryId ? `<button data-action="openCallSheetPlayPicker" data-cat="${escapeAttr(bucket.categoryId)}" data-hash="${bucket.targetHash === "right" ? "right" : "left"}" title="Add a play to ${escapeAttr(bucket.label)}" aria-label="Add a play to ${escapeAttr(bucket.label)}">＋</button>` : "";
+  const addControl = editable && bucket.categoryId ? `<button data-action="openCallSheetIndexCardBucketPicker" data-arg="${escapeAttr(bucket.id)}" title="Add a play to ${escapeAttr(bucket.label)}" aria-label="Add a play to ${escapeAttr(bucket.label)}">＋</button>` : "";
   const dropAttrs = bucket.categoryId ? ` data-drop="csHashDrop" data-cat="${escapeAttr(bucket.categoryId)}" data-hash="${bucket.targetHash === "right" ? "right" : "left"}"` : "";
   return `<section class="cs-index-bucket"${dropAttrs}><header style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading"><b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}<button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|-1" title="Move situation up" aria-label="Move ${escapeAttr(bucket.label)} up">↑</button><button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|1" title="Move situation down" aria-label="Move ${escapeAttr(bucket.label)} down">↓</button><button data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}">⋯</button></span>` : ""}</header><ol>${plays}</ol></section>`;
 }
@@ -217,6 +218,27 @@ function createSmartCallSheetIndexCard(entries, options = {}) {
 }
 
 function openCallSheetIndexCards() { switchCallSheetPage("index"); }
+function openCallSheetIndexCardBucketPicker(id) {
+  const bucket = _csIndexBucketFromArg(id);
+  if (!bucket?.categoryId || typeof openCallSheetPlayPicker !== "function") return;
+  _csIndexPickerBucketId = bucket.id;
+  openCallSheetPlayPicker(bucket.categoryId, bucket.targetHash === "right" ? "right" : "left");
+}
+function onCallSheetIndexCardPickerPlayAdded(play) {
+  const bucket = _csIndexBucketFromArg(_csIndexPickerBucketId);
+  if (!bucket) return;
+  const identity = _csIndexIdentity(play);
+  let changed = false;
+  if (identity && Array.isArray(bucket.playKeys) && !bucket.playKeys.includes(identity)) { bucket.playKeys.push(identity); changed = true; }
+  if (identity && Array.isArray(bucket.excludedPlayKeys)) {
+    const nextExcluded = bucket.excludedPlayKeys.filter((key) => key !== identity);
+    changed = changed || nextExcluded.length !== bucket.excludedPlayKeys.length;
+    bucket.excludedPlayKeys = nextExcluded;
+  }
+  if (changed) saveCallSheetSettings();
+  _csIndexPickerBucketId = "";
+}
+function onCallSheetIndexCardPickerClosed() { _csIndexPickerBucketId = ""; }
 async function _csAddBucket() {
   const categoryId = await showListPicker("Pick the Call Sheet situation for this mini-card bucket.", [{ value: "", label: "Blank custom bucket" }, ...CALLSHEET_CATEGORIES.map((category) => ({ value: category.id, label: _csName(category.id), sublabel: `${_csSafeList(callSheet?.[category.id]?.left).length + _csSafeList(callSheet?.[category.id]?.right).length} calls` }))], { title: "Add call-sheet bucket", icon: "＋" });
   if (categoryId === null) return;
