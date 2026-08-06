@@ -1018,6 +1018,14 @@
     line-height: 1.02;
     break-inside: avoid;
   }
+
+  .print-inline-code.cs-personnel-marker {
+    display: inline-block;
+    padding: 0;
+    border: 0;
+    background: transparent !important;
+    line-height: 1;
+  }
   .cs-print-page[data-callsheet-font="condensed"] .print-play {
     font-family: var(--font-callsheet-condensed) !important;
   }

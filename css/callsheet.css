@@ -308,6 +308,15 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   color: inherit;
   cursor: pointer;
 }
+.cs-personnel-marker {
+  display: inline-block;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent !important;
+  color: inherit !important;
+  line-height: 1;
+}
 
 .callsheet-play {
   display: flex;

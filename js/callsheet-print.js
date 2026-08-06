@@ -528,9 +528,6 @@ function renderPrintPlay(play, options, printJob) {
   }
   if (!options) options = getCallSheetDisplayOptions();
   const displayOptions = getCallSheetPlayDisplayOptions(play, options);
-  const code = getPersonnelCode(play.personnel);
-  const bgColor = getPersonnelBgColor(play.personnel);
-  const textColor = getPersonnelTextColor(play.personnel);
   const highlightConfig = getCallSheetHighlightConfig(play);
   const isHighlighted = Boolean(highlightConfig);
   const borderColor = getPlayBorderColor(play, options);
@@ -569,7 +566,9 @@ function renderPrintPlay(play, options, printJob) {
   if (textDeco.length) styles.push(`text-decoration: ${textDeco.join(" ")};`);
 
   const personnelHtml = displayOptions.showPersonnel
-    ? `<span class="print-inline-code" style="background: ${bgColor}; color: ${textColor};">${code}</span>`
+    ? (typeof renderCallSheetPersonnelBadge === "function"
+      ? renderCallSheetPersonnelBadge(play, "print-inline-code")
+      : "")
     : "";
   const additionalPersonnelHtml = typeof renderCallSheetAdditionalPersonnel === "function"
     ? renderCallSheetAdditionalPersonnel(play, "print-extra-personnel")

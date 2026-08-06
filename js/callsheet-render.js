@@ -705,6 +705,20 @@ function getPersonnelTextColor(personnel) {
   return darkText.includes(p) ? UI_COLORS.textBlack : UI_COLORS.textWhite;
 }
 
+function renderCallSheetPersonnelBadge(play, className = "personnel-code") {
+  const personnel = String(play?.personnel || "").trim();
+  if (!personnel) return "";
+  const marker = typeof getPersonnelEmoji === "function" ? getPersonnelEmoji(personnel) : "";
+  // Color/personnel markers are visual language, not status pills. Keep them
+  // next to the call with no chip background; unfamiliar personnel still gets
+  // the readable two-character badge as a safe fallback.
+  if (marker) {
+    return `<span class="${className} cs-personnel-marker" title="${escapeHtml(personnel)}">${marker}</span>`;
+  }
+  const code = getPersonnelCode(personnel);
+  return `<span class="${className}" style="background: ${getPersonnelBgColor(personnel)}; color: ${getPersonnelTextColor(personnel)};">${escapeHtml(code)}</span>`;
+}
+
 function getCategoryHeaderTextColor(color) {
   if (!color) return UI_COLORS.textWhite;
 
@@ -1523,9 +1537,6 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
     textMeta = { displayOptions, displaySummary, visiblePlayText };
     if (textMemo && play && typeof play === "object") textMemo.set(play, textMeta);
   }
-  const code = getPersonnelCode(play.personnel);
-  const bgColor = getPersonnelBgColor(play.personnel);
-  const textColor = getPersonnelTextColor(play.personnel);
   const highlightConfig = getCallSheetHighlightConfig(play);
   const isHighlighted = Boolean(highlightConfig);
   const borderColor = getPlayBorderColor(play, options);
@@ -1578,7 +1589,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
     : "";
 
   const personnelHtml = displayOptions.showPersonnel
-    ? `<span class="personnel-code" style="background: ${bgColor}; color: ${textColor};">${code}</span>`
+    ? renderCallSheetPersonnelBadge(play)
     : "";
   const additionalPersonnelHtml = renderCallSheetAdditionalPersonnel(play);
   const wristbandHtml = displayOptions.showNumbers && play.wristbandNumber
@@ -1684,7 +1695,7 @@ function buildCallSheetPlayParts(play, options) {
     const markerAlreadyInBadge =
       options.showPersonnel &&
       personnelMarker &&
-      getPersonnelCode(play.personnel) === personnelMarker;
+      getPersonnelEmoji(play.personnel) === personnelMarker;
     if (personnelMarker && !markerAlreadyInBadge) {
       playParts.push(personnelMarker);
     }

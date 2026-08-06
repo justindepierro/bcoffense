@@ -38,6 +38,8 @@ assert.match(css, /\.callsheet-category\.cs-single-column .category-content/, "o
 assert.match(picker, /const otherHash = hash === "left" \? "right" : "left"/, "hash-layout blank spacers are paired for side-by-side alignment");
 assert.match(filters, /A saved wristband can change after it was loaded into the call sheet/, "new wristband entries are read live before assigning a Call Sheet number");
 assert.match(render, /const marker = typeof getPersonnelEmoji/, "additional personnel uses the shared marker language rather than raw chip text");
+assert.match(render, /function renderCallSheetPersonnelBadge\(play, className = "personnel-code"\)/, "known personnel markers render as plain emoji instead of colored text chips");
+assert.match(print, /renderCallSheetPersonnelBadge\(play, "print-inline-code"\)/, "print output uses the same plain personnel marker treatment");
 assert.match(print, /print-category--single/, "Call Sheet printing carries the category's sequence layout into the print job");
 assert.match(printCss, /\.print-category--single .print-plays-grid/, "single-column print categories use one full-width play column");
 assert.match(metadata, /function removeCallSheetBlankRows\(categoryId\)/, "category tools can remove accumulated blank spacers in one action");
