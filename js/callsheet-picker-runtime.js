@@ -649,6 +649,21 @@ function removeCallSheetPlay(categoryId, hash, index) {
   saveCallSheet();
 }
 
+// Touch devices do not reliably support HTML drag-and-drop. Keep drag for
+// desktop, but provide a deterministic, accessible move control on phone.
+function moveCallSheetPlay(arg) {
+  const [categoryId, hash, rawIndex, rawDirection] = String(arg || "").split("|");
+  const items = callSheet?.[categoryId]?.[hash];
+  const index = Number(rawIndex);
+  const direction = Number(rawDirection);
+  const nextIndex = index + direction;
+  if (!Array.isArray(items) || !Number.isInteger(index) || !Number.isInteger(direction)
+    || index < 0 || index >= items.length || nextIndex < 0 || nextIndex >= items.length) return;
+  [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+  renderCallSheet();
+  saveCallSheet();
+}
+
 function addCsBlankRow(arg) {
   const parts = String(arg || "").split(":");
   const catId = parts[0];

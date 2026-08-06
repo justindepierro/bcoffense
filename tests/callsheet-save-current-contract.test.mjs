@@ -39,6 +39,11 @@ assert.match(filters, /Legacy imports may lack source identity metadata/, "displ
 assert.match(callsheet, /function toggleCallSheetCategoryColumns\(categoryId\)/, "each Call Sheet category can switch between hash and sequence layouts");
 assert.match(render, /cs-single-column/, "the Call Sheet render path exposes the one-column category state");
 assert.match(css, /\.callsheet-category\.cs-single-column .category-content/, "one-column categories use a full-width call layout");
+assert.match(render, /renderCallSheetPhoneSequenceGroup/, "phone rendering honors a category's one-column sequence layout");
+assert.match(render, /Scripted Calls/, "one-column phone categories have an explicit scripted-call heading");
+assert.match(picker, /function moveCallSheetPlay\(arg\)/, "phone users have a deterministic move control instead of relying on touch drag-and-drop");
+assert.match(render, /cs-mobile-reorder-controls/, "Call Sheet cards render accessible mobile move controls");
+assert.match(css, /body\.shell-phone #callsheet \.cs-mobile-reorder-controls/, "mobile move controls meet the phone-specific Call Sheet layout");
 assert.doesNotMatch(picker, /const otherHash = hash === "left" \? "right" : "left"/, "a blank spacer stays on the selected hash instead of adding an unrelated partner spacer");
 assert.match(picker, /\.callsheet-play, \.cs-blank-row/, "manual Call Sheet drag-and-drop includes blank spacers as well as plays");
 assert.match(picker, /event\.dataTransfer\.setData\("text\/plain"/, "cell drags include a browser-compatible payload");

@@ -1275,6 +1275,9 @@ function renderCallSheetPhoneCategory(cat, data, dupeMap, displayOptions) {
   const isCollapsed = csCollapsed.has(cat.id);
   const headerColor = getCategoryColor(cat);
   const textColor = getCategoryHeaderTextColor(headerColor);
+  const columnMode = typeof getCallSheetCategoryColumnMode === "function"
+    ? getCallSheetCategoryColumnMode(cat.id)
+    : "hashes";
   const playCount = leftPlays.length + rightPlays.length;
   const target = csTargets[cat.id];
   let countDisplay = "";
@@ -1298,7 +1301,7 @@ function renderCallSheetPhoneCategory(cat, data, dupeMap, displayOptions) {
   const note = csNotes[cat.id];
 
   let html = `
-    <section class="cs-mobile-situation-card${isCollapsed ? " cs-collapsed" : ""}" data-category="${cat.id}"
+    <section class="cs-mobile-situation-card${isCollapsed ? " cs-collapsed" : ""}${columnMode === "single" ? " cs-mobile-situation-card--single" : ""}" data-category="${cat.id}"
       aria-label="${escapeHtml(displayName)} — ${playCount} play${playCount !== 1 ? "s" : ""}">
       <div class="cs-mobile-card-header" style="--cs-cat-color: ${headerColor}; --cs-cat-text: ${textColor};">
         <button type="button" class="cs-mobile-card-btn cs-collapse-btn" data-action="toggleCategoryCollapse" data-arg="${cat.id}" title="Collapse/Expand" aria-expanded="${!isCollapsed}">${collapseIcon}</button>
@@ -1318,14 +1321,43 @@ function renderCallSheetPhoneCategory(cat, data, dupeMap, displayOptions) {
     html += buildScoutingBadge(cat.id);
     html += `
       <div class="cs-mobile-card-body" role="list" aria-label="${escapeHtml(displayName)} calls">
-        ${renderCallSheetPhoneHashGroup(cat.id, "left", "Left Hash", leftPlays, dupeMap, displayOptions)}
-        ${renderCallSheetPhoneHashGroup(cat.id, "right", "Right Hash", rightPlays, dupeMap, displayOptions)}
+        ${columnMode === "single"
+          ? renderCallSheetPhoneSequenceGroup(cat.id, leftPlays, rightPlays, dupeMap, displayOptions)
+          : `${renderCallSheetPhoneHashGroup(cat.id, "left", "Left Hash", leftPlays, dupeMap, displayOptions)}
+             ${renderCallSheetPhoneHashGroup(cat.id, "right", "Right Hash", rightPlays, dupeMap, displayOptions)}`}
       </div>`;
   } else if (isPlayerSpecific) {
     html += '<span class="sr-only">Player specific category collapsed</span>';
   }
 
   html += "</section>";
+  return html;
+}
+
+// Single-column categories retain their left/right source arrays so a coach can
+// switch back to hashes without losing organization. On phone we show that
+// canonical sequence as one list while preserving each play's real hash/index
+// for editing, moving, and drag/drop.
+function renderCallSheetPhoneSequenceGroup(categoryId, leftPlays, rightPlays, dupeMap, displayOptions) {
+  const rows = [
+    ...leftPlays.map((play, index) => ({ play, hash: "left", index })),
+    ...rightPlays.map((play, index) => ({ play, hash: "right", index })),
+  ];
+  let html = `
+    <section class="cs-mobile-hash-group cs-mobile-sequence-group" aria-label="Scripted calls">
+      <div class="cs-mobile-hash-head"><span>Scripted Calls</span><span>${rows.length}</span></div>
+      <div class="cs-mobile-play-list">`;
+  rows.forEach((row) => {
+    html += renderCallSheetPlay(row.play, categoryId, row.hash, row.index, dupeMap, displayOptions);
+  });
+  if (!rows.length) html += `<div class="cs-empty-cat">No calls yet</div>`;
+  html += `</div>
+      <div class="cs-mobile-hash-actions cs-mobile-sequence-actions">
+        <button type="button" class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${categoryId}" data-hash="left">+ Add Left</button>
+        <button type="button" class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${categoryId}" data-hash="right">+ Add Right</button>
+        <button type="button" class="cs-add-blank-btn" data-action="addCsBlankRow" data-arg="${categoryId}:left">+ Blank</button>
+      </div>
+    </section>`;
   return html;
 }
 
@@ -1506,6 +1538,10 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
     return `<div class="cs-blank-row" draggable="true" role="row" aria-label="Blank spacer — drag to reorder"
          data-category="${categoryId}" data-hash="${hash}" data-index="${index}">
       <span class="cs-reorder-grip" aria-hidden="true" title="Drag to reorder">⠿</span>
+      <span class="cs-mobile-reorder-controls" aria-label="Move blank spacer">
+        <button data-action="moveCallSheetPlay" data-arg="${categoryId}|${hash}|${index}|-1" aria-label="Move blank spacer up">↑</button>
+        <button data-action="moveCallSheetPlay" data-arg="${categoryId}|${hash}|${index}|1" aria-label="Move blank spacer down">↓</button>
+      </span>
       <button class="remove-play cs-blank-remove" data-action="removeCallSheetPlay"
         data-category="${categoryId}" data-hash="${hash}" data-index="${index}"
         aria-label="Remove blank row" title="Remove blank spacer">×</button>
@@ -1647,6 +1683,10 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
       ${sourceStatusBadge}
       ${deadVsBadgeHtml}
       ${discWarn}
+      <span class="cs-mobile-reorder-controls" aria-label="Move ${escapeHtml(playLabel.trim())}">
+        <button data-action="moveCallSheetPlay" data-arg="${categoryId}|${hash}|${index}|-1" aria-label="Move ${escapeHtml(playLabel.trim())} up">↑</button>
+        <button data-action="moveCallSheetPlay" data-arg="${categoryId}|${hash}|${index}|1" aria-label="Move ${escapeHtml(playLabel.trim())} down">↓</button>
+      </span>
       ${swapBtn}
       <button class="remove-play" data-action="removeCallSheetPlay" data-category="${categoryId}" data-hash="${hash}" data-index="${index}" aria-label="Remove ${escapeHtml(playLabel.trim())}">×</button>
     </div>
