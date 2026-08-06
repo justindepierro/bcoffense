@@ -37,6 +37,10 @@ assert.match(indexCards, /function _runCallSheetIndexCardsPrint[\s\S]*?setupPrin
 assert.match(indexCards, /function _csBucketRows\(bucket\)[\s\S]*?bucket\?\.playKeys[\s\S]*?_csIndexIdentity/, "smart index-card buckets stay scoped to their source calls");
 assert.match(indexCards, /function _csSmartIndexPlan\(entries\)[\s\S]*?typeof entry\.play === "object"[\s\S]*?CS_INDEX_SMART_CATEGORY_PRIORITY[\s\S]*?three per side/, "smart index cards preserve direct Script plays and wrapped Game Plan plays while balancing logical groups");
 assert.match(indexCards, /function createSmartCallSheetIndexCard\(entries, options = \{\}\)[\s\S]*?saveCallSheet\(\)[\s\S]*?switchCallSheetPage\("index"\)/, "smart generation saves calls then opens the editable index-card workspace");
+assert.match(indexCards, /function renameCallSheetIndexCard\(\)/, "index cards support renaming the active card in place");
+assert.match(indexCards, /function moveCallSheetIndexBucket\(arg\)/, "index-card situations can be manually reordered");
+assert.match(indexCards, /function setCallSheetIndexBucketColor\(id\)/, "index-card situations support their own visible header color");
+assert.match(indexCards, /function manageCallSheetIndexCardBucket\(id\)/, "each index-card situation has one complete management surface");
 assert.match(scriptIntegrations, /function sendScriptToIndexCallSheet\(\)[\s\S]*?createSmartCallSheetIndexCard/, "Script can build a smart index card from selected or full script plays");
 assert.match(gamePlanIntegrations, /function sendGamePlanToIndexCallSheet\(\)[\s\S]*?sourceBoxId[\s\S]*?createSmartCallSheetIndexCard/, "Game Plan can build a smart index card while retaining bucket context");
 assert.match(appEvents, /"openCallSheetIndexPlayMenu"/, "delegated event routing passes the index-card play action its source element");

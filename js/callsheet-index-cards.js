@@ -63,7 +63,8 @@ function _csIndexCall(play, previous, compact) {
 function _csIndexBucketMarkup(bucket, editable) {
   const rows = _csBucketRows(bucket);
   const category = CALLSHEET_CATEGORIES.find((item) => item.id === bucket.categoryId);
-  const headerColor = category && typeof getCategoryColor === "function" ? getCategoryColor(category) : "#173768";
+  const configuredColor = /^#[0-9a-fA-F]{3,8}$/.test(String(bucket?.color || "")) ? bucket.color : "";
+  const headerColor = configuredColor || (category && typeof getCategoryColor === "function" ? getCategoryColor(category) : "#173768");
   const headerText = typeof getCategoryHeaderTextColor === "function" ? getCategoryHeaderTextColor(headerColor) : "#fff";
   let previous = null;
   const plays = rows.map((row) => {
@@ -77,7 +78,7 @@ function _csIndexBucketMarkup(bucket, editable) {
   }).join("") || "<li class=\"cs-index-no-calls\">Drop or add plays here</li>";
   const add = editable && bucket.categoryId ? `<button class="cs-index-add-play" data-action="openCallSheetPlayPicker" data-cat="${escapeAttr(bucket.categoryId)}" data-hash="${bucket.targetHash === "right" ? "right" : "left"}">＋ Play</button>` : "";
   const dropAttrs = bucket.categoryId ? ` data-drop="csHashDrop" data-cat="${escapeAttr(bucket.categoryId)}" data-hash="${bucket.targetHash === "right" ? "right" : "left"}"` : "";
-  return `<section class="cs-index-bucket"${dropAttrs}><header style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading"><b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions"><button data-action="changeCallSheetIndexCardSource" data-arg="${escapeAttr(bucket.id)}" title="Change linked Call Sheet situation">↻</button><button data-action="removeCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Remove this index-card bucket">×</button></span>` : ""}</header><ol>${plays}</ol>${add}</section>`;
+  return `<section class="cs-index-bucket"${dropAttrs}><header style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading"><b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions"><button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|-1" title="Move situation up" aria-label="Move ${escapeAttr(bucket.label)} up">↑</button><button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|1" title="Move situation down" aria-label="Move ${escapeAttr(bucket.label)} down">↓</button><button data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}">⋯</button></span>` : ""}</header><ol>${plays}</ol>${add}</section>`;
 }
 function _csCardMarkup(card, side, editable = false) {
   const buckets = card?.[side] || [];
@@ -377,7 +378,7 @@ function printCallSheetIndexCards() { openCallSheetIndexCardPrintModal(); }
 function renderCallSheetIndexCardPage() {
   const cards = _csCards(); const card = _csActiveCard();
   if (!card) return `<section class="cs-index-main-empty"><h3>🗂️ Call Sheet Index Cards</h3><p>Build a compact, printable view from the same situations and calls already on your Call Sheet.</p><button class="btn btn-primary" data-action="newCallSheetIndexCard">＋ Create first card</button></section>`;
-  return `<section class="cs-index-main"><div class="cs-index-main-head"><div><span class="cs-index-kicker">CALL SHEET · GAME-DAY CARD · 4 × 6</span><h3>Compact call sheet, same categories</h3></div><div class="cs-index-main-actions"><button class="btn btn-sm btn-outline" data-action="newCallSheetIndexCard">＋ New card</button><button class="btn btn-sm btn-primary" data-action="openCallSheetIndexCardPrintModal">🖨️ Print options</button></div></div><div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}</div><div class="cs-index-main-sides"><span class="cs-index-side-label">Side</span><button class="btn ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><span>Uses your live Call Sheet calls. Drop from Game Plan, add a play, or open ⋯ to edit it.</span></div>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></section>`;
+  return `<section class="cs-index-main"><div class="cs-index-main-head"><div><span class="cs-index-kicker">CALL SHEET · GAME-DAY CARD · 4 × 6</span><h3>${escapeHtml(card.name || "Game Day Call Card")}</h3></div><div class="cs-index-main-actions"><button class="btn btn-sm btn-outline" data-action="renameCallSheetIndexCard">✏️ Rename</button><button class="btn btn-sm btn-outline" data-action="newCallSheetIndexCard">＋ New card</button><button class="btn btn-sm btn-primary" data-action="openCallSheetIndexCardPrintModal">🖨️ Print options</button></div></div><div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}<button class="btn btn-sm btn-outline cs-index-delete-card" data-action="deleteCallSheetIndexCard" title="Delete current card">🗑️</button></div><div class="cs-index-main-sides"><span class="cs-index-side-label">Side</span><button class="btn ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><span>Use ↑ / ↓ to reorder. ⋯ controls source, label, color, side, and removal.</span></div>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></section>`;
 }
 function selectCallSheetIndexCard(id) { _csIndexCardId = String(id || ""); renderCallSheet(); }
 function setCallSheetIndexCardSide(side) { _csIndexSide = side === "back" ? "back" : "front"; renderCallSheet(); }
@@ -385,3 +386,74 @@ function addCallSheetIndexCardBucket() { return _csAddBucket(); }
 function changeCallSheetIndexCardSource(id) { return _csChangeSource(id); }
 function removeCallSheetIndexCardBucket(id) { const card = _csActiveCard(); if (!card) return; card[_csIndexSide] = card[_csIndexSide].filter((item) => item.id !== id); _csPersistCards(); }
 async function newCallSheetIndexCard() { const name = await showPrompt("Card name:", `Game Day Call Card ${_csCards().length + 1}`, { title: "New index card", icon: "🗂️" }); if (!name?.trim()) return; const card = _csNewCard(name.trim()); callSheetSettings.indexCards.push(card); _csIndexCardId = card.id; _csPersistCards(); }
+async function renameCallSheetIndexCard() {
+  const card = _csActiveCard();
+  if (!card) return;
+  const name = await showPrompt("Card name:", card.name || "Game Day Call Card", { title: "Rename index card", icon: "✏️" });
+  if (!name?.trim()) return;
+  card.name = name.trim();
+  _csPersistCards();
+}
+async function deleteCallSheetIndexCard() {
+  const card = _csActiveCard();
+  if (!card) return;
+  const ok = await showConfirm(`Delete “${card.name || "this Index Card"}”? Its Call Sheet plays will stay untouched.`, { title: "Delete index card", icon: "🗑️", confirmText: "Delete" });
+  if (!ok) return;
+  callSheetSettings.indexCards = _csCards().filter((item) => item.id !== card.id);
+  _csIndexCardId = callSheetSettings.indexCards[0]?.id || "";
+  _csIndexSide = "front";
+  _csPersistCards();
+}
+function moveCallSheetIndexBucket(arg) {
+  const [id, rawDirection] = String(arg || "").split("|");
+  const items = _csActiveCard()?.[_csIndexSide];
+  const index = Array.isArray(items) ? items.findIndex((item) => item.id === id) : -1;
+  const next = index + Number(rawDirection);
+  if (index < 0 || !Number.isInteger(next) || next < 0 || next >= items.length) return;
+  [items[index], items[next]] = [items[next], items[index]];
+  _csPersistCards();
+}
+async function setCallSheetIndexBucketColor(id) {
+  const bucket = _csIndexBucketFromArg(id);
+  if (!bucket) return;
+  const palette = [
+    ["", "Auto — linked Call Sheet category"], ["#173768", "Navy"], ["#168a52", "Green"],
+    ["#d39b18", "Gold"], ["#dc6114", "Orange"], ["#c92e62", "Magenta"],
+    ["#176eaa", "Blue"], ["#6a3db2", "Purple"], ["#4b5563", "Slate"],
+  ];
+  const color = await showListPicker("Choose the situation header color for this Index Card only.", palette.map(([value, label]) => ({ value, label })), { title: "Situation color", icon: "🎨" });
+  if (color === null) return;
+  if (color) bucket.color = color;
+  else delete bucket.color;
+  _csPersistCards();
+}
+async function manageCallSheetIndexCardBucket(id) {
+  const bucket = _csIndexBucketFromArg(id);
+  const card = _csActiveCard();
+  if (!bucket || !card) return;
+  const action = await showChoice(`Manage <strong>${escapeHtml(bucket.label)}</strong>. Calls remain linked to the live Call Sheet.`, {
+    title: "Manage situation", icon: "🗂️", choices: [
+      { value: "rename", label: "Rename situation", icon: "✏️" },
+      { value: "source", label: "Change Call Sheet source", icon: "↻" },
+      { value: "color", label: "Change header color", icon: "🎨" },
+      { value: "other-side", label: `Move to ${_csIndexSide === "front" ? "Back" : "Front"}`, icon: "↔" },
+      { value: "delete", label: "Remove from card", icon: "🗑️" },
+      { value: "cancel", label: "Cancel" },
+    ],
+  });
+  if (action === "rename") {
+    const name = await showPrompt("Situation label:", bucket.label || _csName(bucket.categoryId), { title: "Rename situation", icon: "✏️" });
+    if (name?.trim()) { bucket.label = name.trim(); _csPersistCards(); }
+  } else if (action === "source") {
+    await _csChangeSource(id);
+  } else if (action === "color") {
+    await setCallSheetIndexBucketColor(id);
+  } else if (action === "other-side") {
+    card[_csIndexSide] = card[_csIndexSide].filter((item) => item.id !== id);
+    const otherSide = _csIndexSide === "front" ? "back" : "front";
+    card[otherSide].push(bucket);
+    _csPersistCards();
+  } else if (action === "delete") {
+    removeCallSheetIndexCardBucket(id);
+  }
+}
