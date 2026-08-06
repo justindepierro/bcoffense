@@ -605,7 +605,7 @@ async function openCallSheetIndexCardPrintModal() {
         <div class="gp-print-row"><label for="csIndexPrintCards">Cards</label><select id="csIndexPrintCards"><option value="all">All saved index cards</option><option value="current">Current card only</option></select></div>
         <div class="gp-print-row"><label for="csIndexPrintSides">Sides</label><select id="csIndexPrintSides"><option value="both">Front + Back (duplex)</option><option value="front">Front only</option><option value="back">Back only</option></select></div>
         <div class="gp-print-row"><label for="csIndexPrintCopies">Copies</label><select id="csIndexPrintCopies"><option value="1">1 copy</option><option value="2">2 copies</option><option value="3">3 copies</option><option value="4">4 copies</option></select></div>
-        <p class="cs-print-hint">Index Cards are locked to <strong>portrait 4 × 6 in</strong>. For double-sided cards, select <strong>Flip on short edge</strong> in your printer dialog.</p>
+        <p class="cs-print-hint">Index Cards are locked to <strong>portrait 4 × 6 in</strong>. For double-sided cards, select <strong>Flip on long edge</strong> in your printer dialog.</p>
         <div class="cs-print-preview-summary" id="csIndexPrintSummary" role="status" aria-live="polite"></div>
       </div></div>
       <div class="custom-modal-actions"><button type="button" class="btn custom-modal-btn custom-modal-cancel" data-index-print="cancel">Cancel</button><button type="button" class="btn btn-secondary custom-modal-btn" data-index-print="preview">Preview</button><button type="button" class="btn btn-primary custom-modal-btn" data-index-print="print">Print</button></div>
@@ -682,9 +682,11 @@ function previewCurrentCallSheetIndexCard() {
     showToast("Create an Index Card before previewing.", { type: "warning" });
     return;
   }
-  // This is deliberately a transient job: a quick visual check should not
-  // replace the coach's saved multi-card / duplex print preferences.
-  openCallSheetIndexCardPrintPreview({ cards: "current", sides: _csIndexSide, copies: 1 });
+  // The toolbar Preview button is also the direct route to “Print this job”.
+  // Always pair Front then Back here so that route remains a real duplex job,
+  // rather than silently printing only whichever editing side is visible.
+  // Coaches can still select one side explicitly in Print options.
+  openCallSheetIndexCardPrintPreview({ cards: "current", sides: "both", copies: 1 });
 }
 
 function _runCallSheetIndexCardsPrint(options = {}) {
