@@ -1037,6 +1037,7 @@ function checkScriptPersonnelWorkspaceContract() {
   const shared = read("js/script-shared.js");
   const presentation = read("js/play-presentation.js");
   const css = read("css/script.css");
+  const quizCss = read("css/script-quiz.css");
 
   if (
     !/<details class="script-player-assignment-details">/.test(players) ||
@@ -1044,9 +1045,9 @@ function checkScriptPersonnelWorkspaceContract() {
     !/assignedSlotCount/.test(players) ||
     !/assignmentDetailsWasOpen/.test(players) ||
     !/replacementDetails\.open = true/.test(players) ||
-    !/script-player-assignment-details \{[\s\S]*border-top/.test(css) ||
-    !/script-player-assignment-summary \{[\s\S]*min-height:\s*32px/.test(css) ||
-    !/script-item:not\(\.period-header\):not\(\.script-item--player\)[\s\S]*border-left:\s*3px solid/.test(css) ||
+    !/script-player-assignment-details \{[\s\S]*border-top/.test(quizCss) ||
+    !/script-player-assignment-summary \{[\s\S]*min-height:\s*32px/.test(quizCss) ||
+    !/#script \.play-item\s*\{[\s\S]*border-left:\s*3px solid/.test(css) ||
     !/Lineup On/.test(timeline) ||
     !/Show all lineups/.test(render) ||
     !/Show lineup assignment \(sub package and players\)/.test(shared) ||
@@ -1478,7 +1479,7 @@ function checkCoachGridTeamWorkspaceContract() {
     !/\.team-settings-surface-nav/.test(css) ||
     !/data-team-settings-surface="roster"/.test(css) ||
     !/pa-list-head/.test(playersAdmin) ||
-    !/openLayer\(overlay, \{ id: "players-admin", exclusive: false \}\)/.test(playersAdmin) ||
+    !/openLayer\(overlay, \{[\s\S]*id: "playersAdminOverlay"[\s\S]*scrollElement:[\s\S]*blocking: true/.test(playersAdmin) ||
     !/Team Workspace \(Settings \+ Player Accounts\)/.test(theme)
   ) {
     fail("Coach Grid Team Workspace contract is missing");
@@ -4447,7 +4448,8 @@ function checkWorkspaceSyncContracts() {
   if (
     !/queueWorkspaceSyncJob\("player", kind/.test(scriptPlayer) ||
     !/startWorkspaceSyncJob\(publishJobKey/.test(scriptPlayer) ||
-    !/completeWorkspaceSyncJob\(publishJobKey/.test(scriptPlayer)
+    !/function completePlayerPublishJobs\(opts = \{\}\)/.test(workspaceSync) ||
+    !/window\.completePlayerPublishJobs\(\{ label: playerRelease\.label \}\)/.test(cloudSync)
   ) {
     fail("player publish metadata does not route through workspace sync queue");
   }
@@ -4839,7 +4841,7 @@ function checkPlayerDiagramReadinessContracts() {
     !/function buildCanonicalTeamWorkspace\(backup\)/.test(cloudSync) ||
     !/const CLOUD_AUTO_PUSH_KEYS = new Set\(\["playImages", \.\.\.CANONICAL_TEAM_WORKSPACE_KEYS\]\)/.test(cloudSync) ||
     !/remote\.needsCanonicalRepair && canAutoPushCloudBackup\(\)/.test(cloudSync) ||
-    !/repairCanonicalWorkspace\(remote\)/.test(cloudSync)
+    !/repairCanonicalWorkspace\(remote,/.test(cloudSync)
   ) {
     fail("workspace revision migration boundary is incomplete");
   }
