@@ -5445,18 +5445,18 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 
 .cs-index-main { padding: var(--space-md); }
 .cs-index-main-head, .cs-index-main-actions, .cs-index-main-tabs, .cs-index-main-sides, .cs-index-main-strip { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
-.cs-index-main-head { justify-content: space-between; margin-bottom: 6px; }
+.cs-index-main-head { justify-content: space-between; gap: var(--space-sm); margin-bottom: 4px; padding: 4px 0; }
 .cs-index-main-title { min-width: 0; }
-.cs-index-main-head h3 { margin: 1px 0 0; color: var(--color-text); font-size: 17px; line-height: 1.15; }
+.cs-index-main-head h3 { margin: 1px 0 0; color: var(--color-text); font-size: 16px; line-height: 1.1; }
 .cs-index-kicker { color: var(--color-text-muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; }
-.cs-index-main-actions { justify-content: flex-end; }
-.cs-index-main-actions .btn, .cs-index-main-strip .btn { min-height: 30px; padding: 4px 8px; font-size: 11px; }
-.cs-index-main-strip { position: relative; justify-content: space-between; margin-bottom: 6px; padding: 5px 6px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-muted); }
+.cs-index-main-actions { justify-content: flex-end; gap: 4px; }
+.cs-index-main-actions .btn, .cs-index-main-strip .btn { min-height: 28px; padding: 3px 7px; font-size: 11px; }
+.cs-index-main-strip { position: sticky; z-index: 4; top: 0; justify-content: space-between; margin-bottom: 6px; padding: 4px 6px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-muted); box-shadow: var(--shadow-xs); }
 .cs-index-main-tabs { min-width: 0; gap: 4px; }
-.cs-index-main-tabs .btn { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cs-index-main-sides { gap: 4px; color: var(--color-text-muted); font-size: 11px; }
+.cs-index-main-tabs .btn { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-index-main-sides { gap: 2px; color: var(--color-text-muted); font-size: 11px; }
 .cs-index-main-more { position: relative; }
-.cs-index-main-more > summary { min-height: 30px; padding: 5px 9px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font-size: 12px; font-weight: 900; cursor: pointer; list-style: none; }
+.cs-index-main-more > summary { display: grid; width: 28px; min-height: 28px; place-items: center; padding: 0; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font-size: 16px; font-weight: 900; cursor: pointer; list-style: none; }
 .cs-index-main-more > summary::-webkit-details-marker { display: none; }
 .cs-index-main-more-menu { position: absolute; z-index: 8; top: calc(100% + 4px); right: 0; display: grid; min-width: 150px; gap: 4px; padding: 6px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-lg); }
 .cs-index-main-more-menu .btn { justify-content: flex-start; width: 100%; white-space: nowrap; }
@@ -5471,6 +5471,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-bucket-heading, .cs-index-bucket-actions { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
 .cs-index-bucket-heading { flex: 1 1 auto; }
 .cs-index-bucket-heading b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-index-bucket-grip { flex: 0 0 auto; color: color-mix(in srgb, currentColor 78%, transparent); font-size: 12px; transform: scaleX(.78); transform-origin: left center; }
 .cs-index-bucket-count { min-width: 14px; padding: 0 3px; border-radius: 999px; background: color-mix(in srgb, currentColor 16%, transparent); color: inherit; font-size: 8px; line-height: 14px; text-align: center; }
 .cs-index-bucket header button { border-color: color-mix(in srgb, currentColor 45%, transparent); background: color-mix(in srgb, white 88%, transparent); color: #10234c; }
 .cs-index-bucket-actions { flex: 0 0 auto; gap: 2px; }
@@ -5491,7 +5492,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-play:hover .cs-index-play-actions, .cs-index-play:focus-within .cs-index-play-actions { opacity: 1; pointer-events: auto; }
 .cs-index-play-actions button { min-width: 18px; min-height: 18px; padding: 0 3px; font-size: 10px; line-height: 1; }
 .cs-index-play-actions button:disabled { opacity: .3; cursor: not-allowed; }
-.cs-index-play--family { margin-left: 13px !important; padding-left: 5px !important; border-left: 2px solid #6f83a6; list-style-type: lower-alpha; }
+.cs-index-play--family { margin-left: 13px !important; padding-left: 5px !important; border-left: 2px solid #6f83a6; list-style: none; }
 .cs-index-play--family .cs-index-play-text::before { content: "↳ "; color: #506789; font-weight: 800; }
 .cs-index-no-calls { color: #64748b; font-style: italic; }
 .cs-index-empty-add { width: 100%; padding: 4px; border: 1px dashed #7587a6; border-radius: 3px; background: #f6f8fc; color: #162c59; font: inherit; font-style: italic; cursor: pointer; }
