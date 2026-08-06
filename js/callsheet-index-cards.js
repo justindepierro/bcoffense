@@ -101,21 +101,13 @@ function _csIndexBucketMarkup(bucket, editable) {
   const dropAttrs = bucket.categoryId ? ` data-drop="csHashDrop" data-cat="${escapeAttr(bucket.categoryId)}" data-hash="${bucket.targetHash === "right" ? "right" : "left"}"` : "";
   return `<section class="cs-index-bucket"${dropAttrs}${editable ? ` data-cs-card-bucket="${escapeAttr(bucket.id)}"` : ""}><header style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading"><b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}<button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|-1" title="Move situation up" aria-label="Move ${escapeAttr(bucket.label)} up">↑</button><button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|1" title="Move situation down" aria-label="Move ${escapeAttr(bucket.label)} down">↓</button><button data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}">⋯</button><button data-action="removeCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Remove situation" aria-label="Remove ${escapeAttr(bucket.label)}">×</button></span>` : ""}</header><ol>${plays}</ol></section>`;
 }
-function _csCardMarkup(card, side, editable = false, printFlow = false) {
+function _csCardMarkup(card, side, editable = false) {
   const buckets = card?.[side] || [];
   const title = String(card?.name || "Game Day Card");
   const header = card?.hideHeader ? "" : `<div class="cs-index-card-head">${editable
     ? `<input id="csIndexCardTitle" name="csIndexCardTitle" class="cs-index-card-title-input" value="${escapeAttr(title)}" data-onchange="setCallSheetIndexCardTitle" data-pass="value" aria-label="Index Card title">`
     : `<b>${escapeHtml(title)}</b>`}<span>${side === "front" ? "Front" : "Back"}</span></div>`;
-  // The editable card preserves its paired grid so drag/drop and the bucket
-  // controls stay predictable. Print has no editor chrome, so it can pack
-  // each physical column independently and recover otherwise wasted paper.
-  const grid = !buckets.length
-    ? `<div class="cs-index-empty">Use + Add bucket to build this side.</div>`
-    : printFlow
-      ? `<div class="cs-index-column">${buckets.filter((_bucket, index) => index % 2 === 0).map((bucket) => _csIndexBucketMarkup(bucket, false)).join("")}</div><div class="cs-index-column">${buckets.filter((_bucket, index) => index % 2 === 1).map((bucket) => _csIndexBucketMarkup(bucket, false)).join("")}</div>`
-      : buckets.map((bucket) => _csIndexBucketMarkup(bucket, editable)).join("");
-  return `<article class="cs-index-card${editable ? " cs-index-card--editor" : ""}${printFlow ? " cs-index-card--print-flow" : ""}${card?.hideHeader ? " cs-index-card--no-header" : ""}">${header}<div class="cs-index-grid">${grid}</div></article>`;
+  return `<article class="cs-index-card${editable ? " cs-index-card--editor" : ""}${card?.hideHeader ? " cs-index-card--no-header" : ""}">${header}<div class="cs-index-grid">${buckets.map((bucket) => _csIndexBucketMarkup(bucket, editable)).join("") || `<div class="cs-index-empty">Use + Add bucket to build this side.</div>`}</div></article>`;
 }
 
 function _csUpdateIndexCardFitStatus() {
@@ -129,7 +121,7 @@ function _csUpdateIndexCardFitStatus() {
   const probe = document.createElement("div");
   probe.className = "cs-index-capacity-probe";
   probe.setAttribute("aria-hidden", "true");
-  probe.innerHTML = _csCardMarkup(activeCard, _csIndexSide, false, true);
+  probe.innerHTML = _csCardMarkup(activeCard, _csIndexSide, false);
   document.body.appendChild(probe);
   const grid = probe.querySelector(".cs-index-grid");
   if (!grid) { probe.remove(); return; }
@@ -390,7 +382,7 @@ function renderCallSheetIndexCardPrintPages(options = {}) {
   const sides = _csIndexPrintSides(job);
   return Array.from({ length: job.copies }, () => cards.flatMap((card) => sides.map((side) => `
     <section class="cs-index-print-page" data-card-id="${escapeAttr(card.id)}" data-card-side="${side}">
-      ${_csCardMarkup(card, side, false, true)}
+      ${_csCardMarkup(card, side)}
     </section>`))).flat().join("");
 }
 
