@@ -30,13 +30,16 @@
    preview must instead use the physical 4×6 ratio at its scaled width. */
 .cs-index-print-preview-pages .cs-index-card { width: min(100%, 390px); height: min(585px, calc((100vw - 84px) * 1.5)); min-height: 0; aspect-ratio: 2 / 3; margin: 0 auto; font-size: .84em; }
 .cs-index-print-preview-pages .cs-index-grid { overflow: hidden; }
+.cs-index-card--print-flow .cs-index-grid { column-gap: 7px; row-gap: 0; }
+.cs-index-card--print-flow .cs-index-column { display: flex; min-width: 0; flex-direction: column; align-items: stretch; gap: 7px; }
 .cs-index-capacity-probe { position: fixed; z-index: -1; top: -10000px; left: -10000px; width: 3.84in; height: 5.84in; visibility: hidden; pointer-events: none; }
 .cs-index-capacity-probe .cs-index-card { box-sizing: border-box; width: 3.84in; min-height: 5.84in; height: 5.84in; margin: 0; padding: .08in; border-width: 1.5pt; border-radius: 0; box-shadow: none; }
 .cs-index-capacity-probe .cs-index-card-head { padding: .03in .04in; font-size: 7pt; border-bottom-width: 1.5pt; }
-.cs-index-capacity-probe .cs-index-grid { gap: .055in; padding-top: .06in; overflow: hidden; }
-.cs-index-capacity-probe .cs-index-bucket header { padding: .025in .04in; font-size: 6.4pt; }
-.cs-index-capacity-probe .cs-index-bucket ol { padding: .035in .035in .035in .14in; font-size: 6.3pt; line-height: 1.14; }
-.cs-index-capacity-probe .cs-index-bucket li { margin-bottom: .025in; }
+.cs-index-capacity-probe .cs-index-grid { column-gap: .055in; row-gap: 0; padding-top: .04in; overflow: hidden; }
+.cs-index-capacity-probe .cs-index-column { gap: .035in; }
+.cs-index-capacity-probe .cs-index-bucket header { min-height: 0; padding: .012in .035in; font-size: 6pt; line-height: 1.05; }
+.cs-index-capacity-probe .cs-index-bucket ol { padding: .025in .035in .025in .14in; font-size: 6.3pt; line-height: 1.14; }
+.cs-index-capacity-probe .cs-index-bucket li { margin-bottom: .015in; }
 @media print {
   body.cs-index-printing > * { display: none !important; }
   body.cs-index-printing #csIndexCardPrintRoot { display: block !important; }
@@ -44,11 +47,12 @@
   body.cs-index-printing .cs-index-print-page:last-child { break-after: auto; page-break-after: auto; }
   body.cs-index-printing .cs-index-card { box-sizing: border-box; width: 3.84in; min-height: 5.84in; height: 5.84in; margin: 0; padding: .08in; border-width: 1.5pt; border-radius: 0; box-shadow: none; }
   body.cs-index-printing .cs-index-card-head { padding: .03in .04in; font-size: 7pt; border-bottom-width: 1.5pt; }
-  body.cs-index-printing .cs-index-grid { gap: .055in; padding-top: .06in; }
+  body.cs-index-printing .cs-index-grid { column-gap: .055in; row-gap: 0; padding-top: .04in; }
   body.cs-index-printing .cs-index-grid { flex: 1 1 auto; min-height: 0; height: auto; overflow: hidden; }
-  body.cs-index-printing .cs-index-bucket header { padding: .025in .04in; font-size: 6.4pt; }
-  body.cs-index-printing .cs-index-bucket ol { padding: .035in .035in .035in .14in; font-size: 6.3pt; line-height: 1.14; }
-  body.cs-index-printing .cs-index-bucket li { margin-bottom: .025in; }
+  body.cs-index-printing .cs-index-column { gap: .035in; }
+  body.cs-index-printing .cs-index-bucket header { min-height: 0; padding: .012in .035in; font-size: 6pt; line-height: 1.05; }
+  body.cs-index-printing .cs-index-bucket ol { padding: .025in .035in .025in .14in; font-size: 6.3pt; line-height: 1.14; }
+  body.cs-index-printing .cs-index-bucket li { margin-bottom: .015in; }
 }
 
 /* Tablet tier: keep the print-like grid compact but make toolbar actions
