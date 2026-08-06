@@ -434,6 +434,14 @@ function restoreSavedScriptWorkspace(workspace) {
 }
 
 function scheduleScriptAutosave() {
+  // Legacy full-editor drafts are intentionally retired. The current save
+  // lifecycle owns durable script state and cloud publishing; a stale draft
+  // must not later be offered as a competing restore candidate.
+  if (typeof discardDraftData === "function") {
+    scriptAutosaveTimer = discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT, scriptAutosaveTimer);
+  }
+  return;
+
   scriptAutosaveTimer = queueAutosave(
     scriptAutosaveTimer,
     () => {
@@ -546,6 +554,10 @@ async function clearScript() {
 }
 
 async function checkScriptDraft() {
+  // Compatibility no-op: restoration is deliberately retired. Legacy records
+  // are visible only through Review Legacy Recovery, where they can be safely
+  // inspected and discarded without replacing current work.
+  if (!LEGACY_DRAFT_AUTO_RESTORE_ENABLED) return;
   try {
     const draft = storageManager.get(STORAGE_KEYS.SCRIPT_DRAFT, null);
     if (!draft || !draft.plays || draft.plays.length === 0) return;

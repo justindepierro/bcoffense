@@ -582,6 +582,13 @@ function saveTendenciesSettings() {
 // ============ Autosave Draft ============
 
 function scheduleTendenciesAutosave() {
+  // Retire the legacy per-tab draft writer. Current scout saves remain
+  // module-owned and stale partial forms are no longer restoration sources.
+  if (typeof discardDraftData === "function") {
+    tendenciesAutosaveTimer = discardDraftData(STORAGE_KEYS.TENDENCIES_DRAFT, tendenciesAutosaveTimer);
+  }
+  return;
+
   tendenciesAutosaveTimer = queueAutosave(
     tendenciesAutosaveTimer,
     () => {
@@ -599,6 +606,8 @@ function scheduleTendenciesAutosave() {
 }
 
 async function checkTendenciesDraft() {
+  // Compatibility no-op; stale form drafts are review/discard only.
+  if (!LEGACY_DRAFT_AUTO_RESTORE_ENABLED) return;
   const draft = storageManager.get(STORAGE_KEYS.TENDENCIES_DRAFT, null);
   if (!draft || !draft.play) return;
   if (isDraftExpired(draft)) {

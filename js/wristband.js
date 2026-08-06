@@ -1082,6 +1082,13 @@ let highlightedPlayIndex = -1;
 let wristbandAutosaveTimer = null;
 
 function scheduleWristbandAutosave() {
+  // See script autosave: old per-tab recovery drafts are quarantined/retired
+  // in favor of the normal saved-wristband lifecycle.
+  if (typeof discardDraftData === "function") {
+    wristbandAutosaveTimer = discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT, wristbandAutosaveTimer);
+  }
+  return;
+
   wristbandAutosaveTimer = queueAutosave(
     wristbandAutosaveTimer,
     () => {
@@ -1128,6 +1135,8 @@ function scheduleWristbandAutosave() {
  * Check for and offer to restore a wristband draft
  */
 async function checkWristbandDraft() {
+  // Compatibility no-op; see Review Legacy Recovery in Admin Recovery Tools.
+  if (!LEGACY_DRAFT_AUTO_RESTORE_ENABLED) return;
   try {
     if (typeof traceWristbandAction === "function") {
       traceWristbandAction("draft check start", { action: "checkWristbandDraft" });

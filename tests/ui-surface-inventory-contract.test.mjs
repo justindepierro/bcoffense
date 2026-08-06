@@ -72,6 +72,7 @@ const UI_SURFACES = Object.freeze({
   pbFilterDrawer: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
   pbPrintPanel: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
   pbWorkflowPanel: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
+  recoveryCenterOverlay: { owner: "js/app-session.js", pattern: "blocking-layer", scrollOwner: "layer" },
   playbookBalanceOverlay: { owner: "js/playbook-reports.js", pattern: "blocking-layer", scrollOwner: "layer" },
   playbookCatCleanupOverlay: { owner: "js/playbook-identity.js", pattern: "blocking-layer", scrollOwner: "layer" },
   playbookConstraintOverlay: { owner: "js/playbook-reports-identity.js", pattern: "blocking-layer", scrollOwner: "layer" },

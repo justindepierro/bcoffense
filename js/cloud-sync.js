@@ -2705,74 +2705,23 @@
       <div class="custom-modal custom-modal-wide cloud-sync-modal" role="dialog" aria-modal="true" aria-labelledby="cloudSyncTitle">
         <div class="custom-modal-header">
           <span class="custom-modal-icon">🛟</span>
-          <h3 class="custom-modal-title" id="cloudSyncTitle">Admin Recovery Tools</h3>
+          <h3 class="custom-modal-title" id="cloudSyncTitle">Save & Recovery</h3>
         </div>
         <div class="custom-modal-body cloud-sync-body">
-          <p>Use these tools only to recover a device or investigate a publish problem. Normal player updates are automatic, and normal coach publishing should use the save status and publish readiness surfaces.</p>
-          <p class="cloud-sync-warning">Recovery actions can overwrite this device or republish the current local workspace. Export a backup first if there is any chance this device has work you need to keep.</p>
-          <div class="cloud-sync-explainer" aria-label="Workspace status meanings">
-            <div class="cloud-sync-explainer-item">
-              <span>Saved on this device</span>
-              <strong>Your edits are safe here.</strong>
-              <small>Autosave protects coach work immediately, even before it is live for players.</small>
-            </div>
-            <div class="cloud-sync-explainer-item">
-              <span>Published for team</span>
-              <strong>The team workspace has a cloud version.</strong>
-              <small>Other coach devices and player logins can receive that published update.</small>
-            </div>
-            <div class="cloud-sync-explainer-item">
-              <span>Ready for players</span>
-              <strong>Data and player-visible media are checked.</strong>
-              <small>Scripts, diagrams, clips, quizzes, and status metadata are ready to load quietly.</small>
-            </div>
-          </div>
-          <div class="cloud-sync-flow-grid" aria-label="Team workspace publish actions">
-            <div class="cloud-sync-flow-card">
-              <span>Publish</span>
-              <strong>Send coach changes to the team</strong>
-              <small>${escapeHtml(canPush ? "Publishes playbook, scripts, team tools, and player-visible media status." : "Only admins can publish team workspace changes.")}</small>
-            </div>
-            <div class="cloud-sync-flow-card">
-              <span>Update</span>
-              <strong>Refresh this coach device</strong>
-              <small>${escapeHtml(`${roleLabel || "This login"} can update this device from the latest published workspace.`)}</small>
-            </div>
-            <div class="cloud-sync-flow-card">
-              <span>Last published</span>
-              <strong>${escapeHtml(formatCloudDate(settings.lastRemoteExportDate || settings.lastPushAt || settings.lastPullAt))}</strong>
-              <small>${escapeHtml(settings.lastRemoteSize ? storageManager.formatBytes(settings.lastRemoteSize) : "Cloud size unknown")}</small>
-            </div>
-          </div>
-          <section class="cloud-sync-ledger" aria-label="Publish activity">
-            <div class="cloud-sync-ledger-head">
-              <div>
-                <span>Latest published workspace</span>
-                <strong>${escapeHtml(latestPublish ? `${latestPublish.versionId} · ${formatCloudDate(latestPublish.timestamp)}` : "No publish recorded")}</strong>
-              </div>
-              <small>${escapeHtml(latestPublish ? `${latestPublish.result === "success" ? "Ready" : "Needs retry"} · ${latestPublish.actor || "Coach"}` : "A normal team publish creates the first ledger entry.")}</small>
-            </div>
-            <div class="cloud-sync-ledger-list">
-              ${renderPublishActivityRows(4)}
-            </div>
-          </section>
-          <p class="cloud-sync-warning">${escapeHtml(canPush ? "Daily workflow: edit normally and let the save/publish status show readiness. Recovery workflow: use these buttons only when a device is behind, corrupted, or publish status needs investigation." : "Recovery tools are admin-only. Ask an admin to recover this device or publish team changes.")}</p>
+          <p><strong>You normally do not need this screen.</strong> Your work saves on this device as you go. Use it only if something is missing, a device is behind, or you accidentally restored old work.</p>
           <div id="cloudSyncModalStatus" class="cloud-sync-modal-status cloud-sync-modal-status-info">
-            Recovery tools ready. Last published update: ${escapeHtml(formatCloudDate(settings.lastRemoteExportDate || settings.lastPushAt || settings.lastPullAt))}.
+            Team workspace last published ${escapeHtml(formatCloudDate(settings.lastRemoteExportDate || settings.lastPushAt || settings.lastPullAt))}. This device last updated ${escapeHtml(formatCloudDate(settings.lastPullAt))}.
           </div>
-          <div class="cloud-sync-meta">
-            <span>Last publish: ${escapeHtml(formatCloudDate(settings.lastPushAt))}</span>
-            <span>This device updated: ${escapeHtml(formatCloudDate(settings.lastPullAt))}</span>
-            <span>Cloud size: ${escapeHtml(settings.lastRemoteSize ? storageManager.formatBytes(settings.lastRemoteSize) : "unknown")}</span>
-          </div>
+          <section class="cloud-sync-flow-grid" aria-label="Recovery choices">
+            <div class="cloud-sync-flow-card"><span>Accidentally restored old work?</span><strong>Review old local drafts</strong><small>See and discard old browser-only drafts. They cannot replace current work.</small><button type="button" class="btn btn-secondary custom-modal-btn" data-action="openRecoveryCenter">Review old drafts</button></div>
+            <div class="cloud-sync-flow-card"><span>This device is behind?</span><strong>Recover this device</strong><small>Replace this device with the latest published team workspace.</small><button type="button" class="btn btn-secondary custom-modal-btn" data-action="pullCloudBackup" data-cloud-sync-action="pull">Recover this device</button></div>
+            <div class="cloud-sync-flow-card"><span>A recovery went wrong?</span><strong>Undo a device recovery</strong><small>Return this device to its protected pre-recovery snapshot.</small><button type="button" class="btn btn-secondary custom-modal-btn" data-action="openStagedRestoreHistory">Undo recovery</button></div>
+          </section>
+          <details class="cloud-sync-ledger"><summary>Advanced administrator tools</summary><p class="cloud-sync-warning">These tools can republish data or rebuild the player release. Use them only when you are deliberately repairing the workspace.</p><div class="custom-modal-actions cloud-sync-actions"><button type="button" class="btn btn-secondary custom-modal-btn" data-action="testCloudSyncConnection" data-cloud-sync-action="test">Check connection</button>${canPush ? '<button type="button" class="btn btn-secondary custom-modal-btn" data-action="rebuildPlayerRelease" data-cloud-sync-action="rebuild-release">Rebuild player release</button><button type="button" class="btn btn-primary custom-modal-btn" data-action="pushCloudBackup" data-cloud-sync-action="push" data-auth-admin-only="true">Republish local workspace</button>' : ""}</div></details>
         </div>
           <div class="custom-modal-actions cloud-sync-actions">
           <button type="button" class="btn custom-modal-btn custom-modal-cancel" data-action="closeCloudSyncModal">Close</button>
-          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="testCloudSyncConnection" data-cloud-sync-action="test">Check Recovery Status</button>
-          ${canPush ? '<button type="button" class="btn btn-secondary custom-modal-btn" data-action="rebuildPlayerRelease" data-cloud-sync-action="rebuild-release">Rebuild Player Release</button>' : ""}
-          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="pullCloudBackup" data-cloud-sync-action="pull">Recover This Device</button>
-          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="openStagedRestoreHistory">Undo Device Recovery</button>
-          ${canPush ? '<button type="button" class="btn btn-primary custom-modal-btn" data-action="pushCloudBackup" data-cloud-sync-action="push" data-auth-admin-only="true">Republish Local Workspace</button>' : ""}
+          <span class="cloud-sync-meta">For a missing Index Card, use that card’s ⋯ menu → Recover from cloud history.</span>
         </div>
       </div>
     `;

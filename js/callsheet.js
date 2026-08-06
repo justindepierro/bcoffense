@@ -1251,6 +1251,9 @@ function retireCallSheetRecoveryDraft() {
  * Check for unsaved call sheet draft on init
  */
 async function checkCallSheetDraft() {
+  // Compatibility no-op. Whole-sheet legacy drafts are particularly unsafe
+  // because they can include stale Index Card and settings state.
+  if (!LEGACY_DRAFT_AUTO_RESTORE_ENABLED) return;
   try {
     const draft = storageManager.get(STORAGE_KEYS.CALLSHEET_DRAFT, null);
     if (!draft || !getDraftTimestamp(draft)) return;
