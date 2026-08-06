@@ -708,6 +708,24 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   background: var(--color-bg-hover-row);
 }
 
+.gp-box-play.is-drag-source {
+  opacity: 0.48;
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.gp-box-play-grip {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: grab;
+}
+
+.gp-box-play:active .gp-box-play-grip {
+  cursor: grabbing;
+}
+
 .gp-box-play-call {
   flex: 1;
   min-width: 0;

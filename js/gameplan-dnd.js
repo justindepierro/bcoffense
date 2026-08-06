@@ -24,6 +24,7 @@ function _gpClearDragState() {
   document.body.classList.remove("gp-dragging-from-library");
   document.body.classList.remove("gp-dragging-from-box");
   document.querySelectorAll(".gp-box.is-drop-target").forEach((b) => b.classList.remove("is-drop-target"));
+  document.querySelectorAll(".gp-box-play.is-drag-source").forEach((row) => row.classList.remove("is-drag-source"));
   document.querySelectorAll(".gp-box-body").forEach((dz) => {
     if (typeof _gpClearDropIndicators === "function") _gpClearDropIndicators(dz);
   });
@@ -94,6 +95,10 @@ function _gpWireDnd() {
         rawIdx: _gpNormalizeBoxPlayIndex(boxRow.dataset.rawIdx),
       };
       _gpDragPayload = null;
+      // Leave a visible anchor while the user drags, without changing layout.
+      // This is deferred for the same Chromium/macOS dragstart safety reason
+      // as the body class below.
+      setTimeout(() => boxRow.classList.add("is-drag-source"), 0);
       // Defer body class -- see comment above. Synchronous layout changes
       // during dragstart kill the drag on Chrome/macOS.
       setTimeout(() => { document.body.classList.add("gp-dragging-from-box"); }, 0);
@@ -386,19 +391,26 @@ function _gpClearDropIndicators(dropZone) {
 
 function _gpReorderInBox(boxId, sig, targetIdx, rawIdx) {
   if (!boxId || !sig) return;
+  let moved = false;
   _gpUpdateBoard((board) => {
     const arr = board.assignments[boxId] || [];
     const fromIdx = _gpFindBoxPlayIndex(arr, sig, rawIdx);
     if (fromIdx < 0) return;
     const [item] = arr.splice(fromIdx, 1);
-    let toIdx = Math.max(0, Math.min(arr.length, targetIdx));
-    if (fromIdx < targetIdx) toIdx = Math.max(0, toIdx - 1);
+    // targetIdx is based on the pre-removal row list. Shift it first when
+    // the source was above the target, then clamp against the shorter list.
+    // Clamping before the shift made a bottom drop land one row too high.
+    let toIdx = Number.isFinite(targetIdx) ? targetIdx : arr.length;
+    if (fromIdx < toIdx) toIdx -= 1;
+    toIdx = Math.max(0, Math.min(arr.length, toIdx));
     arr.splice(toIdx, 0, item);
     // Switch to manual sort so the user's order is honored
     if (!board.sort) board.sort = {};
     board.sort[boxId] = "manual";
+    moved = fromIdx !== toIdx;
   });
   requestRenderGamePlan();
+  if (moved) showToast(`Reordered in ${_gpBoxLabel(boxId)}`, { duration: 1200 });
 }
 
 /* -------------------------------------------------------------------------

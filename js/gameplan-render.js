@@ -884,6 +884,7 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx, renderCtx) {
          data-sig="${escapeHtml(sig)}"
          data-idx="${idx}"
          data-raw-idx="${stableRawIdx === null ? "" : stableRawIdx}"${discAttr}>
+      <span class="gp-box-play-grip" aria-hidden="true" title="Drag to reorder">⠿</span>
       <div class="gp-box-play-body">
         <div class="gp-box-play-call">${callHtml}${matchupBadges}${sourceStatusBadge}</div>
         ${meta || scoutBadge || variantControl ? `<div class="gp-box-play-meta">${variantControl || (meta ? escapeHtml(meta) : "")}${addVariantsControl}${scoutBadge}</div>` : ""}
