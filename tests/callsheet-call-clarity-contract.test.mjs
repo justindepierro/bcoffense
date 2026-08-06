@@ -45,6 +45,8 @@ assert.match(indexCards, /function setCallSheetIndexBucketColor\(id\)/, "index-c
 assert.match(indexCards, /function manageCallSheetIndexCardBucket\(id\)/, "each index-card situation has one complete management surface");
 assert.match(indexCards, /openLoadWristbandModal/, "index-card editing can load or replace the Call Sheet wristband directly");
 assert.match(indexCards, /cs-index-wristband-number/, "index-card and print calls show loaded wristband numbers");
+assert.match(indexCards, /function _csUpdateIndexCardFitStatus\(\)/, "index-card editing reports whether the live card fits its 4×6 print area");
+assert.match(css, /\.cs-index-card \{ box-sizing: border-box; width: min\(100%, 480px\); height:/, "index-card editing uses a fixed 4×6-proportional frame instead of growing with content");
 assert.match(scriptIntegrations, /function sendScriptToIndexCallSheet\(\)[\s\S]*?createSmartCallSheetIndexCard/, "Script can build a smart index card from selected or full script plays");
 assert.match(gamePlanIntegrations, /function sendGamePlanToIndexCallSheet\(\)[\s\S]*?sourceBoxId[\s\S]*?createSmartCallSheetIndexCard/, "Game Plan can build a smart index card while retaining bucket context");
 assert.match(appEvents, /"openCallSheetIndexPlayMenu"/, "delegated event routing passes the index-card play action its source element");

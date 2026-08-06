@@ -91,6 +91,19 @@ function _csCardMarkup(card, side, editable = false) {
   return `<article class="cs-index-card"><div class="cs-index-card-head"><b>${escapeHtml(card?.name || "Game Day Card")}</b><span>${side === "front" ? "Front" : "Back"}</span></div><div class="cs-index-grid">${buckets.map((bucket) => _csIndexBucketMarkup(bucket, editable)).join("") || `<div class="cs-index-empty">Use + Add bucket to build this side.</div>`}</div></article>`;
 }
 
+function _csUpdateIndexCardFitStatus() {
+  const card = document.querySelector("#callSheetGrid .cs-index-card");
+  const grid = card?.querySelector(".cs-index-grid");
+  const status = document.getElementById("csIndexCardFitStatus");
+  if (!card || !grid || !status) return;
+  const overflow = grid.scrollHeight > grid.clientHeight + 2;
+  card.classList.toggle("cs-index-card--overfull", overflow);
+  status.classList.toggle("is-overfull", overflow);
+  status.innerHTML = overflow
+    ? "⚠️ Over the 4 × 6 print area — reduce calls or move a situation to the other side."
+    : "✓ Fits inside the 4 × 6 print area.";
+}
+
 const CS_INDEX_SMART_CATEGORY_PRIORITY = [
   "openers", "goal-line", "rz-5", "rz-10", "rz-20", "backed-up", "2-minute", "4-minute",
   "3rd-short-1-3", "3rd-short-2down", "3rd-medium", "3rd-long", "4th-down", "1st-down",
@@ -411,7 +424,8 @@ function renderCallSheetIndexCardPage() {
   const wristbandAction = wristband.loaded
     ? `<button class="btn btn-sm btn-outline" data-action="openLoadWristbandModal" title="Change loaded wristband">📟 ${escapeHtml(wristband.name)} · ${wristband.count}</button>`
     : `<button class="btn btn-sm btn-outline" data-action="openLoadWristbandModal">📟 Load wristband</button>`;
-  return `<section class="cs-index-main"><div class="cs-index-main-head"><div><span class="cs-index-kicker">CALL SHEET · GAME-DAY CARD · 4 × 6</span><h3>${escapeHtml(card.name || "Game Day Call Card")}</h3></div><div class="cs-index-main-actions">${wristbandAction}<button class="btn btn-sm btn-outline" data-action="renameCallSheetIndexCard">✏️ Rename</button><button class="btn btn-sm btn-outline" data-action="newCallSheetIndexCard">＋ New card</button><button class="btn btn-sm btn-primary" data-action="openCallSheetIndexCardPrintModal">🖨️ Print options</button></div></div><div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}<button class="btn btn-sm btn-outline cs-index-delete-card" data-action="deleteCallSheetIndexCard" title="Delete current card">🗑️</button></div><div class="cs-index-main-sides"><span class="cs-index-side-label">Side</span><button class="btn ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><span>Use ↑ / ↓ to reorder. ⋯ controls source, label, color, side, and removal.</span></div>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></section>`;
+  requestAnimationFrame(_csUpdateIndexCardFitStatus);
+  return `<section class="cs-index-main"><div class="cs-index-main-head"><div><span class="cs-index-kicker">CALL SHEET · GAME-DAY CARD · 4 × 6</span><h3>${escapeHtml(card.name || "Game Day Call Card")}</h3></div><div class="cs-index-main-actions">${wristbandAction}<button class="btn btn-sm btn-outline" data-action="renameCallSheetIndexCard">✏️ Rename</button><button class="btn btn-sm btn-outline" data-action="newCallSheetIndexCard">＋ New card</button><button class="btn btn-sm btn-primary" data-action="openCallSheetIndexCardPrintModal">🖨️ Print options</button></div></div><div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}<button class="btn btn-sm btn-outline cs-index-delete-card" data-action="deleteCallSheetIndexCard" title="Delete current card">🗑️</button></div><div class="cs-index-main-sides"><span class="cs-index-side-label">Side</span><button class="btn ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><span>Use ↑ / ↓ to reorder. ⋯ controls source, label, color, side, and removal.</span></div><div id="csIndexCardFitStatus" class="cs-index-fit-status" role="status" aria-live="polite">4 × 6 print area</div>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></section>`;
 }
 function selectCallSheetIndexCard(id) { _csIndexCardId = String(id || ""); renderCallSheet(); }
 function setCallSheetIndexCardSide(side) { _csIndexSide = side === "back" ? "back" : "front"; renderCallSheet(); }
