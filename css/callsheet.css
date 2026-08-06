@@ -986,10 +986,17 @@ body.shell-phone #callsheet .cs-empty-cat {
 .callsheet-index-mode .cs-index-toolbar-only { display: inline-flex; }
 .callsheet-index-mode > .page-help { display: none; }
 .callsheet-index-mode .cs-toolbar { position: sticky; z-index: 20; top: 0; }
-.callsheet-index-mode .cs-source-bar { margin-top: -4px; margin-bottom: 4px; min-height: 30px; padding: 3px 7px; gap: 5px; }
-.callsheet-index-mode .cs-source-bar .csb-kicker { display: none; }
-.callsheet-index-mode .cs-source-bar .csb-source-card { padding: 3px 6px; }
-.callsheet-index-mode .cs-source-bar .csb-source-card small { display: none; }
+.callsheet-index-mode .cs-toolbar-left,
+.callsheet-index-mode .cs-toolbar-right { display: flex; grid-template-columns: none; flex-wrap: nowrap; gap: 6px; }
+.callsheet-index-mode .cs-toolbar-left { min-width: 0; }
+.callsheet-index-mode .cs-toolbar-right { flex: 0 0 auto; }
+.callsheet-index-mode .cs-source-bar { display: none; }
+.cs-index-toolbar-context { display: none; align-items: center; min-width: 0; gap: 5px; }
+.callsheet-index-mode .cs-index-toolbar-context { display: flex; }
+.cs-index-toolbar-context .cs-index-main-tabs,
+.cs-index-toolbar-context .cs-index-main-sides { flex-wrap: nowrap; }
+.cs-index-toolbar-context .cs-index-main-tabs .btn { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-index-toolbar-context .cs-index-main-strip { display: none; }
 
 /* Call Sheet Toggle Groups */
 .cs-toggle-group {

@@ -810,6 +810,13 @@ function renderCallSheet() {
   document.querySelectorAll(".cs-index-toolbar-only").forEach((button) => {
     button.hidden = !isIndexCards;
   });
+  const indexToolbarContext = document.getElementById("csIndexToolbarContext");
+  if (indexToolbarContext) {
+    indexToolbarContext.hidden = !isIndexCards;
+    indexToolbarContext.innerHTML = isIndexCards && typeof renderCallSheetIndexToolbarContext === "function"
+      ? renderCallSheetIndexToolbarContext()
+      : "";
+  }
   container.classList.toggle("callsheet-landscape", isLandscape);
   container.classList.toggle("callsheet-portrait", !isLandscape);
   container.classList.toggle("callsheet-phone-cards", usePhoneCards);
