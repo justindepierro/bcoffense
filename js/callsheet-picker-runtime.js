@@ -850,8 +850,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     grid.addEventListener("dragover", (event) => {
-      const catDrag = event.target.closest("[data-drag='catDrag']");
-      if (catDrag) {
+      const category = event.target.closest(".callsheet-category");
+      if (draggedCatId && category) {
         handleCatDragOver(event);
         return;
       }
@@ -862,9 +862,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     grid.addEventListener("drop", (event) => {
-      const catDrag = event.target.closest("[data-drag='catDrag']");
-      if (catDrag) {
-        handleCatDrop(event, catDrag.dataset.cat);
+      const category = event.target.closest(".callsheet-category");
+      if (draggedCatId && category) {
+        handleCatDrop(event, category.dataset.category);
         return;
       }
       const hashCol = event.target.closest("[data-drop='csHashDrop']");

@@ -1183,11 +1183,10 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
 
   let html = `
     <div class="callsheet-category${isCollapsed ? " cs-collapsed" : ""}${columnMode === "single" ? " cs-single-column" : ""}" data-category="${cat.id}"
-         draggable="true"
-         data-drag="catDrag" data-cat="${cat.id}"
          role="group" aria-label="${escapeHtml(displayName)} — ${playCount} play${playCount !== 1 ? "s" : ""}">
         <div class="category-header cs-cat-header" style="background: ${headerColor}; color: ${textColor};"
           role="heading" aria-level="3">
+        <span class="cs-cat-drag-handle" draggable="true" data-drag="catDrag" data-cat="${cat.id}" title="Drag category to reorder" aria-label="Drag ${escapeHtml(displayName)} category to reorder">⠿</span>
         <span class="cs-collapse-btn" data-action="toggleCategoryCollapse" data-arg="${cat.id}" title="Collapse/Expand" aria-expanded="${!isCollapsed}">${collapseIcon}</span>
         <span class="header-text" data-dblaction="editCategoryName" data-cat="${cat.id}">${escapeHtml(displayName)}</span>
         ${countDisplay}

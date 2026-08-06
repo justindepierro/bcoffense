@@ -40,17 +40,10 @@ function persistCallSheetCategoryOrder() {
 }
 
 function handleCatDragStart(event, categoryId) {
-  if (
-    !event.target.closest(".category-header") &&
-    event.target.closest(".callsheet-play")
-  ) {
-    event.stopPropagation();
-    return;
-  }
   draggedCatId = categoryId;
   event.dataTransfer.effectAllowed = "move";
   setTimeout(() => {
-    event.target.classList.add("cs-cat-dragging");
+    event.target.closest(".callsheet-category")?.classList.add("cs-cat-dragging");
   }, 0);
 }
 
@@ -82,7 +75,7 @@ function handleCatDrop(event, targetCategoryId) {
 }
 
 function handleCatDragEnd(event) {
-  event.target.classList.remove("cs-cat-dragging");
+  event.target.closest(".callsheet-category")?.classList.remove("cs-cat-dragging");
   draggedCatId = null;
 }
 

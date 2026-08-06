@@ -2545,6 +2545,17 @@ body.shell-phone #callsheet .cs-empty-cat {
   opacity: 0.4;
   border: 2px dashed var(--color-primary);
 }
+.cs-cat-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  cursor: grab;
+  font-size: 13px;
+  line-height: 1;
+  opacity: .82;
+  user-select: none;
+}
+.cs-cat-drag-handle:active { cursor: grabbing; }
 
 /* --- Context Menu --- */
 .cs-context-menu {
