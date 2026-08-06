@@ -93,10 +93,12 @@ function _csIndexBucketMarkup(bucket, editable) {
     if (!editable) return `<li class="${family ? "cs-index-play--family" : ""}">${text}</li>`;
     const label = escapeHtml([row.play?.formation, row.play?.play].filter(Boolean).join(" ") || "Call Sheet play");
     return `<li class="cs-index-play callsheet-play${family ? " cs-index-play--family" : ""}" draggable="true" data-category="${escapeAttr(bucket.categoryId || "")}" data-hash="${row.hash}" data-index="${row.index}" data-cs-card-bucket="${escapeAttr(bucket.id)}" aria-label="${label}"><span class="cs-index-play-text">${text}</span><span class="cs-index-play-actions"><button data-action="toggleCallSheetIndexFamily" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="${family ? "Make this a normal row" : "Indent beneath the call above"}" aria-label="${family ? "Remove family indent" : "Indent as a related family call"}">↳</button><button data-action="toggleCallSheetIndexCompact" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" ${family ? "" : "disabled"} title="${compact ? "Show repeated components" : "Hide components shared with the call above"}" aria-label="${compact ? "Show repeated components" : "Hide repeated components"}">≈</button><button data-action="removeCallSheetIndexPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="Remove from this Index Card bucket only" aria-label="Remove ${label} from this Index Card bucket">×</button><button data-action="openCallSheetIndexPlayMenu" title="Edit this Call Sheet play" aria-label="Edit ${label}">⋯</button></span></li>`;
-  }).join("") || "<li class=\"cs-index-no-calls\">Drop or add plays here</li>";
-  const addControl = editable && bucket.categoryId ? `<button data-action="openCallSheetIndexCardBucketPicker" data-arg="${escapeAttr(bucket.id)}" title="Add a play to ${escapeAttr(bucket.label)}" aria-label="Add a play to ${escapeAttr(bucket.label)}">＋</button>` : "";
+  }).join("") || (editable && bucket.categoryId
+    ? `<li class="cs-index-no-calls"><button class="cs-index-empty-add" data-action="openCallSheetIndexCardBucketPicker" data-arg="${escapeAttr(bucket.id)}">＋ Add a play or drop one here</button></li>`
+    : "<li class=\"cs-index-no-calls\">Drop or add plays here</li>");
+  const addControl = editable && bucket.categoryId ? `<button class="cs-index-bucket-add" data-action="openCallSheetIndexCardBucketPicker" data-arg="${escapeAttr(bucket.id)}" title="Add a play to ${escapeAttr(bucket.label)}" aria-label="Add a play to ${escapeAttr(bucket.label)}">＋ Add</button>` : "";
   const dropAttrs = bucket.categoryId ? ` data-drop="csHashDrop" data-cat="${escapeAttr(bucket.categoryId)}" data-hash="${bucket.targetHash === "right" ? "right" : "left"}"` : "";
-  return `<section class="cs-index-bucket"${dropAttrs}><header style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading"><b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}<button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|-1" title="Move situation up" aria-label="Move ${escapeAttr(bucket.label)} up">↑</button><button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|1" title="Move situation down" aria-label="Move ${escapeAttr(bucket.label)} down">↓</button><button data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}">⋯</button></span>` : ""}</header><ol>${plays}</ol></section>`;
+  return `<section class="cs-index-bucket"${dropAttrs}${editable ? ` data-cs-card-bucket="${escapeAttr(bucket.id)}"` : ""}><header style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading"><b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}<button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|-1" title="Move situation up" aria-label="Move ${escapeAttr(bucket.label)} up">↑</button><button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|1" title="Move situation down" aria-label="Move ${escapeAttr(bucket.label)} down">↓</button><button data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}">⋯</button><button data-action="removeCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Remove situation" aria-label="Remove ${escapeAttr(bucket.label)}">×</button></span>` : ""}</header><ol>${plays}</ol></section>`;
 }
 function _csCardMarkup(card, side, editable = false) {
   const buckets = card?.[side] || [];
@@ -254,6 +256,15 @@ function onCallSheetIndexCardPickerPlayAdded(play) {
   _csIndexPickerBucketId = "";
 }
 function onCallSheetIndexCardPickerClosed() { _csIndexPickerBucketId = ""; }
+function onCallSheetIndexCardDroppedPlay(play, bucketId) {
+  const bucket = _csIndexBucketFromArg(bucketId);
+  if (!bucket || !play) return;
+  const identity = _csIndexIdentity(play);
+  if (identity && Array.isArray(bucket.playKeys) && !bucket.playKeys.includes(identity)) {
+    bucket.playKeys.push(identity);
+    saveCallSheetSettings();
+  }
+}
 async function _csAddBucket() {
   const categoryId = await showListPicker("Pick the Call Sheet situation for this mini-card bucket.", [{ value: "", label: "Blank custom bucket" }, ...CALLSHEET_CATEGORIES.map((category) => ({ value: category.id, label: _csName(category.id), sublabel: `${_csSafeList(callSheet?.[category.id]?.left).length + _csSafeList(callSheet?.[category.id]?.right).length} calls` }))], { title: "Add call-sheet bucket", icon: "＋" });
   if (categoryId === null) return;

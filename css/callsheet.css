@@ -5434,6 +5434,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-bucket-count { min-width: 16px; padding: 0 4px; border-radius: 999px; background: color-mix(in srgb, currentColor 16%, transparent); color: inherit; font-size: 9px; line-height: 16px; text-align: center; }
 .cs-index-bucket header button { border-color: color-mix(in srgb, currentColor 45%, transparent); background: color-mix(in srgb, white 88%, transparent); color: #10234c; }
 .cs-index-bucket-actions button { min-width: 22px; min-height: 22px; }
+.cs-index-bucket-actions .cs-index-bucket-add { min-width: auto; padding: 0 5px; font-size: 10px; }
 .cs-index-delete-card { margin-left: auto; color: var(--color-danger, #b42318); }
 .cs-index-bucket ol { padding-left: 22px; }
 .cs-index-play { position: relative; display: flex; align-items: flex-start; gap: 3px; min-width: 0; padding: 1px 0; cursor: grab; }
@@ -5447,6 +5448,9 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-play--family { margin-left: 13px !important; padding-left: 5px !important; border-left: 2px solid #6f83a6; list-style-type: lower-alpha; }
 .cs-index-play--family .cs-index-play-text::before { content: "↳ "; color: #506789; font-weight: 800; }
 .cs-index-no-calls { color: #64748b; font-style: italic; }
+.cs-index-empty-add { width: 100%; padding: 4px; border: 1px dashed #7587a6; border-radius: 3px; background: #f6f8fc; color: #162c59; font: inherit; font-style: italic; cursor: pointer; }
+.cs-index-bucket.cs-drop-target { outline: 3px solid var(--color-primary); outline-offset: 2px; background: color-mix(in srgb, var(--color-primary) 10%, white); }
+.cs-index-bucket.cs-drop-target::after { content: "Drop play into this situation"; display: block; padding: 4px 6px; color: var(--color-primary); font-size: 10px; font-weight: 800; text-align: center; }
 .cs-index-bucket[data-drop="csHashDrop"].gp-drag-over { outline: 2px solid var(--color-primary); outline-offset: 2px; background: color-mix(in srgb, var(--color-primary) 8%, white); }
 
 @media (max-width: 640px) {

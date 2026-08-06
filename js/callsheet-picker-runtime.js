@@ -729,7 +729,7 @@ function handleCallSheetDragOver(event) {
   }
 }
 
-function handleCallSheetDrop(event, targetCategory, targetHash) {
+function handleCallSheetDrop(event, targetCategory, targetHash, indexCardBucketId = "") {
   event.preventDefault();
 
   const targetPlay = event.target.closest(".callsheet-play, .cs-blank-row");
@@ -773,6 +773,8 @@ function handleCallSheetDrop(event, targetCategory, targetHash) {
     } else {
       callSheet[targetCategory][targetHash].push(play);
     }
+
+    if (indexCardBucketId && typeof onCallSheetIndexCardDroppedPlay === "function") onCallSheetIndexCardDroppedPlay(play, indexCardBucketId);
 
     // Clear state + dragging classes BEFORE re-render. renderCallSheet
     // wipes the grid DOM, detaching the source row -- after which dragend
@@ -830,6 +832,8 @@ function handleCallSheetDrop(event, targetCategory, targetHash) {
   } else {
     callSheet[targetCategory][targetHash].push(playToInsert);
   }
+
+  if (indexCardBucketId && typeof onCallSheetIndexCardDroppedPlay === "function") onCallSheetIndexCardDroppedPlay(playToInsert, indexCardBucketId);
 
   renderCallSheet();
   saveCallSheet();
@@ -921,7 +925,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       const hashCol = event.target.closest("[data-drop='csHashDrop']");
       if (hashCol) {
-        handleCallSheetDrop(event, hashCol.dataset.cat, hashCol.dataset.hash);
+        handleCallSheetDrop(event, hashCol.dataset.cat, hashCol.dataset.hash, hashCol.dataset.csCardBucket || "");
       }
     });
 
