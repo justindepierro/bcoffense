@@ -44,6 +44,9 @@ assert.match(render, /const marker = typeof getPersonnelEmoji/, "additional pers
 assert.match(render, /\$\{className\}-marker/, "additional personnel markers render as individual plain markers instead of one pill chip");
 assert.match(render, /function renderCallSheetPersonnelBadge\(play, className = "personnel-code"\)/, "known personnel markers render as plain emoji instead of colored text chips");
 assert.match(print, /const personnelMarker = typeof getPersonnelEmoji/, "print output resolves plain personnel markers without relying on the interactive renderer");
+assert.match(print, /<label for="csPrintPaper">Paper<\/label>/, "print controls use programmatic labels instead of visual-only labels");
+assert.match(templates, /<label class="sr-only" for="csTemplateName">Call sheet name<\/label>/, "saved-sheet naming has an accessible programmatic label");
+assert.match(print, /if \(play\?\._blank\)/, "print output preserves intentional blank spacer cells");
 assert.match(print, /print-category--single/, "Call Sheet printing carries the category's sequence layout into the print job");
 assert.match(printCss, /\.print-category--single .print-plays-grid/, "single-column print categories use one full-width play column");
 assert.match(metadata, /function removeCallSheetBlankRows\(categoryId\)/, "category tools can remove accumulated blank spacers in one action");

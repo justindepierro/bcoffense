@@ -825,8 +825,8 @@ function showPlayContextMenu(event, categoryId, hash, index) {
 
   // ─── Cell Note ───
   const noteVal = escapeHtml(play.cellNote || "");
-  menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Cell Note</span>`;
-  menuHtml += `<div class="cs-ctx-note-row"><input type="text" class="cs-ctx-note-input" value="${noteVal}" placeholder="Add a note..." maxlength="60" />`;
+  menuHtml += `<div class="cs-ctx-section"><label class="cs-ctx-label" for="csCellNote">Cell Note</label>`;
+  menuHtml += `<div class="cs-ctx-note-row"><input type="text" id="csCellNote" name="cellNote" class="cs-ctx-note-input" value="${noteVal}" placeholder="Add a note..." maxlength="60" />`;
   menuHtml += `<button class="cs-ctx-note-save" data-action="saveNote" title="Save note">✓</button></div></div>`;
 
   menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Custom Formation Tags</span>`;

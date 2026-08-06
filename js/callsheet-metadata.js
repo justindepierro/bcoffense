@@ -58,8 +58,8 @@ function setCategoryTarget(categoryId) {
   const overlay = document.createElement("div");
   overlay.className = "cs-target-popup";
   overlay.innerHTML = `
-    <label>Target play count for <strong>${escapeHtml(getCategoryDisplayName(cat))}</strong>:</label>
-    <input type="number" min="0" max="50" value="${current}" class="cs-target-input" placeholder="e.g. 6">
+    <label for="csTargetPlayCount">Target play count for <strong>${escapeHtml(getCategoryDisplayName(cat))}</strong>:</label>
+    <input type="number" id="csTargetPlayCount" name="targetPlayCount" min="0" max="50" value="${current}" class="cs-target-input" placeholder="e.g. 6">
     <div class="cs-target-actions">
       <button class="btn btn-sm btn-primary cs-target-save">Save</button>
       <button class="btn btn-sm cs-target-clear">Clear</button>

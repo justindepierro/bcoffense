@@ -370,7 +370,8 @@ function openTemplatesModal(mode = "manage") {
               </div>
             </div>
             <div class="cs-template-save-row">
-              <input type="text" id="csTemplateName" class="cs-template-name-input" placeholder="Call sheet name (e.g. vs. 4-3 Team)">
+              <label class="sr-only" for="csTemplateName">Call sheet name</label>
+              <input type="text" id="csTemplateName" name="callSheetName" class="cs-template-name-input" placeholder="Call sheet name (e.g. vs. 4-3 Team)">
               <button class="btn btn-sm btn-primary" data-action="saveCallSheetTemplate">💾 Save Current</button>
             </div>
           </div>

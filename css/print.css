@@ -1019,6 +1019,10 @@
     break-inside: avoid;
   }
 
+  .print-play--blank {
+    min-height: 1em;
+  }
+
   .print-inline-code.cs-personnel-marker {
     display: inline-block;
     padding: 0;

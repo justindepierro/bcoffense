@@ -137,23 +137,23 @@ async function openCallSheetPrintModal() {
         <div class="custom-modal-body">
           <div class="gp-print-form">
             <div class="gp-print-row">
-              <label>Paper</label>
-              <select id="csPrintPaper">
+              <label for="csPrintPaper">Paper</label>
+              <select id="csPrintPaper" name="paperSize">
                 <option value="letter" ${o.paperSize === "letter" ? "selected" : ""}>Letter (8.5×11)</option>
                 <option value="legal" ${o.paperSize === "legal" ? "selected" : ""}>Legal (8.5×14)</option>
                 <option value="tabloid" ${o.paperSize === "tabloid" ? "selected" : ""}>Tabloid (11×17)</option>
               </select>
             </div>
             <div class="gp-print-row">
-              <label>Orientation</label>
-              <select id="csPrintOrientation">
+              <label for="csPrintOrientation">Orientation</label>
+              <select id="csPrintOrientation" name="orientation">
                 <option value="portrait" ${o.orientation === "portrait" ? "selected" : ""}>Portrait</option>
                 <option value="landscape" ${o.orientation === "landscape" ? "selected" : ""}>Landscape</option>
               </select>
             </div>
             <div class="gp-print-row">
-              <label>Pages</label>
-              <select id="csPrintPages" title="Front first, then back for two-sided printing">
+              <label for="csPrintPages">Pages</label>
+              <select id="csPrintPages" name="pages" title="Front first, then back for two-sided printing">
                 <option value="both" ${_csNormalizePrintPages(o.pages) === "both" ? "selected" : ""}>Front + Back (2-sided)</option>
                 <option value="all" ${_csNormalizePrintPages(o.pages) === "all" ? "selected" : ""}>Front + Back + Personnel (3 pages)</option>
                 <option value="current" ${_csNormalizePrintPages(o.pages) === "current" ? "selected" : ""}>Current page only</option>
@@ -163,16 +163,16 @@ async function openCallSheetPrintModal() {
               </select>
             </div>
             <div class="gp-print-row">
-              <label>Columns</label>
-              <select id="csPrintColumns" title="Fewer columns = larger, more legible text">
+              <label for="csPrintColumns">Columns</label>
+              <select id="csPrintColumns" name="columns" title="Fewer columns = larger, more legible text">
                 <option value="2" ${o.columns === 2 ? "selected" : ""}>2 columns (largest text)</option>
                 <option value="3" ${o.columns === 3 ? "selected" : ""}>3 columns (default)</option>
                 <option value="4" ${o.columns === 4 ? "selected" : ""}>4 columns (most plays per page)</option>
               </select>
             </div>
             <div class="gp-print-row">
-              <label>Margin</label>
-              <select id="csPrintMargin">
+              <label for="csPrintMargin">Margin</label>
+              <select id="csPrintMargin" name="margin">
                 <option value="tight" ${o.margin === "tight" ? "selected" : ""}>Tight</option>
                 <option value="normal" ${o.margin === "normal" ? "selected" : ""}>Normal</option>
                 <option value="wide" ${o.margin === "wide" ? "selected" : ""}>Wide</option>
@@ -530,6 +530,11 @@ function getCallSheetPrintDensityClass(play, displayOptions, playText, printJob)
  * Render a play for print - matches screen display formatting
  */
 function renderPrintPlay(play, options, printJob) {
+  // Blank cells are intentional layout spacers. Preserve their row height in
+  // preview and print so a one-sided call can stay aligned with its opposite.
+  if (play?._blank) {
+    return '<div class="print-play print-play--blank" aria-hidden="true">&nbsp;</div>';
+  }
   if (typeof getCallSheetEffectivePlay === "function") {
     play = getCallSheetEffectivePlay(play);
   }

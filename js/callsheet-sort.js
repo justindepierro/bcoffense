@@ -192,7 +192,8 @@ function renderCsSortCriteria() {
         <div class="cs-sort-criteria-item" draggable="true" data-idx="${idx}"
              data-drag="csSortDrag">
           <span class="drag-handle">☰</span>
-          <select data-onchange="updateCsSortField" data-key="${idx}" data-pass="value">${fieldOptions}</select>
+          <label class="sr-only" for="csSortField-${idx}">Sort field ${idx + 1}</label>
+          <select id="csSortField-${idx}" name="sortField-${idx}" data-onchange="updateCsSortField" data-key="${idx}" data-pass="value">${fieldOptions}</select>
           <button class="sort-dir-btn" data-action="toggleCsSortDirection" data-idx="${idx}" title="${dirTitle}">${dirIcon}</button>
           <button class="custom-order-btn custom-order-btn-compact" data-action="openCsCustomOrderModal" data-arg="${criteria.field}" title="${customTitle}">${customIcon}</button>
           <button class="remove-sort-btn" data-action="removeCsSortCriteria" data-idx="${idx}">✕</button>
