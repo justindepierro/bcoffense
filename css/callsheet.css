@@ -170,6 +170,9 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
 }
 .cs-print-preview-pages .print-hash-headers > div:last-child,
 .cs-print-preview-pages .print-hash-column:last-child { border-right: 0; }
+.cs-print-preview-pages .print-category--single .print-hash-headers,
+.cs-print-preview-pages .print-category--single .print-plays-grid { grid-template-columns: 1fr; }
+.cs-print-preview-pages .print-category--single .print-hash-column { border-right: 0; }
 .cs-print-preview-pages .print-hash-headers > div { padding: 0.75px 0.5px; }
 .cs-print-preview-pages .print-hash-column { padding: 0.5px; }
 .cs-print-preview-pages .print-play {

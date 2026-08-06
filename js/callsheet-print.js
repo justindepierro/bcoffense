@@ -435,6 +435,9 @@ function renderCallSheetPrintPage(page, opts) {
 function renderPrintCategory(cat, data, options, printJob) {
   const leftPlays = data.left || [];
   const rightPlays = data.right || [];
+  const columnMode = typeof getCallSheetCategoryColumnMode === "function"
+    ? getCallSheetCategoryColumnMode(cat.id)
+    : "hashes";
   const displayName = getCategoryDisplayName(cat);
   // options passed through from printCallSheet to avoid per-play DOM reads
   if (!options) options = getCallSheetDisplayOptions();
@@ -445,13 +448,23 @@ function renderPrintCategory(cat, data, options, printJob) {
   const note = csNotes[cat.id];
 
   let html = `
-    <div class="print-category">
+    <div class="print-category${columnMode === "single" ? " print-category--single" : ""}">
       <div class="print-category-header" style="background: ${headerColor}; color: ${textColor};">
         ${escapeHtml(displayName)}
       </div>`;
 
   if (note) {
     html += `<div class="print-cat-note">${escapeHtml(note)}</div>`;
+  }
+
+  if (columnMode === "single") {
+    html += `
+      <div class="print-hash-headers"><div>Scripted Calls</div></div>
+      <div class="print-plays-grid"><div class="print-hash-column">`;
+    [...leftPlays, ...rightPlays].forEach((play) => {
+      html += renderPrintPlay(play, options, printJob);
+    });
+    return `${html}</div></div></div>`;
   }
 
   html += `

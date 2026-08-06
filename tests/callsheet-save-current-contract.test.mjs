@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const [callsheet, templates, pageActions, filters, render, picker, css] = await Promise.all([
+const [callsheet, templates, pageActions, filters, render, picker, css, print, metadata, printCss] = await Promise.all([
   readFile(new URL("js/callsheet.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/callsheet-templates.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/page-actions.js", `file://${root}/`), "utf8"),
@@ -11,6 +11,9 @@ const [callsheet, templates, pageActions, filters, render, picker, css] = await 
   readFile(new URL("js/callsheet-render.js", `file://${root}/`), "utf8"),
   readFile(new URL("js/callsheet-picker-runtime.js", `file://${root}/`), "utf8"),
   readFile(new URL("css/callsheet.css", `file://${root}/`), "utf8"),
+  readFile(new URL("js/callsheet-print.js", `file://${root}/`), "utf8"),
+  readFile(new URL("js/callsheet-metadata.js", `file://${root}/`), "utf8"),
+  readFile(new URL("css/print.css", `file://${root}/`), "utf8"),
 ]);
 
 assert.match(callsheet, /activeSavedCallSheetId/, "Call Sheet settings retain the active saved-sheet identity");
@@ -35,5 +38,8 @@ assert.match(css, /\.callsheet-category\.cs-single-column .category-content/, "o
 assert.match(picker, /const otherHash = hash === "left" \? "right" : "left"/, "hash-layout blank spacers are paired for side-by-side alignment");
 assert.match(filters, /A saved wristband can change after it was loaded into the call sheet/, "new wristband entries are read live before assigning a Call Sheet number");
 assert.match(render, /const marker = typeof getPersonnelEmoji/, "additional personnel uses the shared marker language rather than raw chip text");
+assert.match(print, /print-category--single/, "Call Sheet printing carries the category's sequence layout into the print job");
+assert.match(printCss, /\.print-category--single .print-plays-grid/, "single-column print categories use one full-width play column");
+assert.match(metadata, /function removeCallSheetBlankRows\(categoryId\)/, "category tools can remove accumulated blank spacers in one action");
 
 console.log("call sheet current-save contract: layout, live wristband, and save identity contracts passed");

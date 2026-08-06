@@ -127,6 +127,10 @@ function openCategoryMenu(event, categoryId) {
 
   const hasNote = csNotes[categoryId];
   const hasTarget = csTargets[categoryId];
+  const blankCount = ["left", "right"].reduce(
+    (count, hash) => count + (callSheet[categoryId]?.[hash] || []).filter((play) => play?._blank).length,
+    0,
+  );
 
   menu.innerHTML = `
     <button class="cs-ctx-item" data-action="editCategoryNote" data-arg="${categoryId}" data-ctx-close="true">
@@ -145,6 +149,7 @@ function openCategoryMenu(event, categoryId) {
     <button class="cs-ctx-item" data-action="clearCategoryDisplayOverrides" data-arg="${categoryId}" data-ctx-close="true">
       🧹 Clear Side Display Overrides
     </button>
+    ${blankCount ? `<button class="cs-ctx-item" data-action="removeCallSheetBlankRows" data-arg="${categoryId}" data-ctx-close="true">↕️ Remove ${blankCount} spacer${blankCount === 1 ? "" : "s"}</button>` : ""}
     ${cat.custom ? `<button class="cs-ctx-item cs-ctx-clear" data-action="deleteCustomCallSheetCategory" data-arg="${categoryId}" data-ctx-close="true">🗑️ Delete Category</button>` : ""}
     <div class="cs-ctx-divider"></div>
     <button class="cs-ctx-item" data-action="clearCategory" data-arg="${categoryId}" data-ctx-close="true">
@@ -153,6 +158,21 @@ function openCategoryMenu(event, categoryId) {
   `;
 
   showContextMenu(event, menu);
+}
+
+function removeCallSheetBlankRows(categoryId) {
+  if (!categoryId || !callSheet[categoryId]) return;
+  let removed = 0;
+  ["left", "right"].forEach((hash) => {
+    const list = Array.isArray(callSheet[categoryId][hash]) ? callSheet[categoryId][hash] : [];
+    const next = list.filter((play) => !play?._blank);
+    removed += list.length - next.length;
+    callSheet[categoryId][hash] = next;
+  });
+  if (!removed) return;
+  scheduleRenderCallSheet();
+  saveCallSheet();
+  showToast(`Removed ${removed} spacer${removed === 1 ? "" : "s"}`);
 }
 
 function clearCategory(categoryId) {
