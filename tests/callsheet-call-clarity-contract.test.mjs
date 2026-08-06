@@ -43,6 +43,8 @@ assert.match(indexCards, /function renameCallSheetIndexCard\(\)/, "index cards s
 assert.match(indexCards, /function moveCallSheetIndexBucket\(arg\)/, "index-card situations can be manually reordered");
 assert.match(indexCards, /function setCallSheetIndexBucketColor\(id\)/, "index-card situations support their own visible header color");
 assert.match(indexCards, /function manageCallSheetIndexCardBucket\(id\)/, "each index-card situation has one complete management surface");
+assert.match(indexCards, /excludedPlayKeys/, "index-card buckets can hide individual calls without deleting their canonical Call Sheet source");
+assert.match(indexCards, /function removeCallSheetIndexPlay\(arg\)/, "each index-card call can be removed from that compact bucket only");
 assert.match(indexCards, /openLoadWristbandModal/, "index-card editing can load or replace the Call Sheet wristband directly");
 assert.match(indexCards, /cs-index-wristband-number/, "index-card and print calls show loaded wristband numbers");
 assert.match(indexCards, /function _csUpdateIndexCardFitStatus\(\)/, "index-card editing reports whether the live card fits its 4×6 print area");
