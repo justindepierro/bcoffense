@@ -1533,6 +1533,9 @@ function refreshGamePlanFromPlaybook() {
           // here silently turns a selected variant back into the primary call.
           const preserved = {};
           if (snap._gpFlags) preserved._gpFlags = { ...snap._gpFlags };
+          if (String(snap.gamePlanPersonnelOverride || "").trim()) {
+            preserved.gamePlanPersonnelOverride = String(snap.gamePlanPersonnelOverride).trim();
+          }
           const requestedVariantId = _gpAssignmentVariantId(snap);
           if (
             requestedVariantId !== "base" &&

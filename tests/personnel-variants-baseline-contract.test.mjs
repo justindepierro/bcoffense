@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
 const fixture = JSON.parse(await read("tests/fixtures/personnel-variants-baseline.json"));
-const [utils, scriptShared, scriptAvailable, scriptAdd, wristband, wristbandPopup, wristbandExport, callSheet, callSheetRender, callSheetPrint, callSheetExport, gamePlan, gamePlanRender, gamePlanIntegrations, editor] = await Promise.all([
+const [utils, scriptShared, scriptAvailable, scriptAdd, wristband, wristbandPopup, wristbandExport, callSheet, callSheetRender, callSheetPrint, callSheetExport, gamePlan, gamePlanRender, gamePlanActions, gamePlanIntegrations, editor] = await Promise.all([
   read("js/utils.js"),
   read("js/script-shared.js"),
   read("js/script-available.js"),
@@ -19,6 +19,7 @@ const [utils, scriptShared, scriptAvailable, scriptAdd, wristband, wristbandPopu
   read("js/callsheet-export.js"),
   read("js/gameplan.js"),
   read("js/gameplan-render.js"),
+  read("js/gameplan-actions.js"),
   read("js/gameplan-integrations.js"),
   read("js/playbook-editor.js"),
 ]);
@@ -42,8 +43,10 @@ assert.match(wristbandPopup, /extraPersonnel/,
   "existing wristband extra-personnel text remains readable during the migration");
 assert.match(callSheetExport, /esc\(p\.personnel\)/,
   "call-sheet export continues to use primary personnel until variant export is explicitly added");
-assert.match(gamePlanIntegrations, /copyPlayForCallSheet\(play, \{ wristbandNumber: wb \}\)/,
-  "Game Plan continues to copy the original play identity into Call Sheet entries");
+assert.match(gamePlanIntegrations, /function _gpExternalPlayCopy\(play\)[\s\S]*?delete copy\.gamePlanPersonnelOverride/,
+  "Game Plan-only personnel labels are removed before any cross-workspace handoff");
+assert.match(gamePlanIntegrations, /copyPlayForCallSheet\(externalPlay, \{ wristbandNumber: wb \}\)/,
+  "Game Plan continues to copy the canonical play identity into Call Sheet entries");
 
 const helpers = new Function(`${utils}
 return {
@@ -180,8 +183,14 @@ assert.match(gamePlan, /_gpPersonnelFilterMatches\(p, _gpFilters\.personnel\)/,
   "Game Plan personnel filtering matches approved variants without rewriting primary personnel");
 assert.match(gamePlanRender, /_gpPersonnelChoicesForPlay\(play\)/,
   "Game Plan shows approved personnel values in its existing filter menu");
-assert.match(gamePlanRender, /effectivePlay\.personnel.*\*/,
+assert.match(gamePlanRender, /displayPlay\.personnel.*\*/,
   "Game Plan visibly marks a selected approved personnel variant");
+assert.match(gamePlanActions, /Game Plan-only personnel label[\s\S]*?Neither choice changes the master play or the approved team list/,
+  "Game Plan offers a local custom personnel label without touching approved personnel");
+assert.match(gamePlanActions, /gamePlanPersonnelOverride = value\.trim\(\)/,
+  "a custom Game Plan personnel label is saved on only the board assignment");
+assert.match(gamePlan, /snap\.gamePlanPersonnelOverride[\s\S]*?preserved\.gamePlanPersonnelOverride/,
+  "Game Plan refresh retains its local personnel override");
 assert.match(await read("js/gameplan.js"), /function _gpAssignmentIdentity\(play\)/,
   "Game Plan distinguishes same-call personnel versions only at box duplicate boundaries");
 assert.match(await read("js/gameplan-dnd.js"), /openGamePlanDuplicatePersonnelVariant\(boxId, duplicateSig\)/,

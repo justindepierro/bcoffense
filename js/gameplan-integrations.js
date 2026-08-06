@@ -7,6 +7,14 @@
    Push to call sheet
    ------------------------------------------------------------------------- */
 
+// Board assignments can carry presentation-only fields.  Keep those local to
+// the Game Plan when a call is handed to another workspace.
+function _gpExternalPlayCopy(play) {
+  const copy = { ...(play || {}) };
+  delete copy.gamePlanPersonnelOverride;
+  return copy;
+}
+
 /**
  * Build the set of call sheet category ids a single play should fan-out to.
  * - findMatchingCategories() handles all auto categories (front-page situations,
@@ -44,21 +52,22 @@ function _gpComputeCallSheetTargets(play, sourceBoxId) {
  * Returns true if pushed, false if it was a duplicate.
  */
 function _gpPushPlayIntoCategory(play, categoryId) {
+  const externalPlay = _gpExternalPlayCopy(play);
   if (!callSheet[categoryId]) callSheet[categoryId] = { left: [], right: [] };
   const bucket = callSheet[categoryId];
   const exists =
-    (bucket.left || []).some((x) => _gpAssignmentIdentity(x) === _gpAssignmentIdentity(play)) ||
-    (bucket.right || []).some((x) => _gpAssignmentIdentity(x) === _gpAssignmentIdentity(play));
+    (bucket.left || []).some((x) => _gpAssignmentIdentity(x) === _gpAssignmentIdentity(externalPlay)) ||
+    (bucket.right || []).some((x) => _gpAssignmentIdentity(x) === _gpAssignmentIdentity(externalPlay));
   if (exists) return false;
   const wb =
     typeof getWristbandNumberForPlay === "function"
-      ? getWristbandNumberForPlay(play)
+      ? getWristbandNumberForPlay(externalPlay)
       : null;
   const entry = typeof copyPlayForCallSheet === "function"
-    ? copyPlayForCallSheet(play, { wristbandNumber: wb })
+    ? copyPlayForCallSheet(externalPlay, { wristbandNumber: wb })
     : {
-      ...play,
-      playType: play.type,
+      ...externalPlay,
+      playType: externalPlay.type,
       wristbandNumber: wb,
       highlighted: false,
       highlightColor: null,
@@ -72,7 +81,7 @@ function _gpPushPlayIntoCategory(play, categoryId) {
       cellFontSize: null,
       cellNote: null,
     };
-  const hash = (play.preferredHash || "").toLowerCase().trim();
+  const hash = (externalPlay.preferredHash || "").toLowerCase().trim();
   if (hash === "left" || hash === "l") {
     bucket.left.push(entry);
   } else if (hash === "right" || hash === "r") {
@@ -492,11 +501,11 @@ async function pushGamePlanToScript() {
       if (sig) existingSigs.add(sig);
       script.push(
         typeof createScriptPlayFromGamePlan === "function"
-          ? createScriptPlayFromGamePlan(p, { board, box: b })
+          ? createScriptPlayFromGamePlan(_gpExternalPlayCopy(p), { board, box: b })
           : (typeof copyPlayWithSourceIdentity === "function"
-            ? copyPlayWithSourceIdentity(p, { _gpSource: true, id: Date.now() + Math.random() })
+            ? copyPlayWithSourceIdentity(_gpExternalPlayCopy(p), { _gpSource: true, id: Date.now() + Math.random() })
             : {
-              ...p,
+              ..._gpExternalPlayCopy(p),
               playbookId: p.playbookId || p.sourcePlayId || p.id || null,
               mediaId: typeof getPlayMediaId === "function"
                 ? getPlayMediaId(p)
@@ -598,9 +607,10 @@ async function pushGamePlanToWristband() {
     for (let ci = 0; ci < card.data.length && pi < plays.length; ci++) {
       if (card.data[ci] === null) {
         const play = plays[pi++];
+        const externalPlay = _gpExternalPlayCopy(play);
         card.data[ci] = typeof copyPlayWithSourceIdentity === "function"
-          ? copyPlayWithSourceIdentity(play, { _gpSource: true })
-          : { ...play, _gpSource: true };
+          ? copyPlayWithSourceIdentity(externalPlay, { _gpSource: true })
+          : { ...externalPlay, _gpSource: true };
         added++;
       }
     }
@@ -681,11 +691,11 @@ async function createScriptFromGamePlan() {
       if (sig) existingSigs.add(sig);
       script.push(
         typeof createScriptPlayFromGamePlan === "function"
-          ? createScriptPlayFromGamePlan(p, { board, box: b })
+          ? createScriptPlayFromGamePlan(_gpExternalPlayCopy(p), { board, box: b })
           : (typeof copyPlayWithSourceIdentity === "function"
-            ? copyPlayWithSourceIdentity(p, { _gpSource: true, id: Date.now() + Math.random() })
+            ? copyPlayWithSourceIdentity(_gpExternalPlayCopy(p), { _gpSource: true, id: Date.now() + Math.random() })
             : {
-              ...p,
+              ..._gpExternalPlayCopy(p),
               playbookId: p.id || null,
               mediaId: typeof getPlayMediaId === "function"
                 ? getPlayMediaId(p)

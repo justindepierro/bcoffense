@@ -838,14 +838,14 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx, renderCtx) {
   const effectivePlay = variantId !== "base" && typeof getEffectivePlayVariant === "function"
     ? getEffectivePlayVariant(sourcePlay, variantId) || play
     : play;
-  const callHtml = _gpRenderCallHtml(effectivePlay, renderCtx);
-  const meta = [effectivePlay.formation, effectivePlay.personnel].filter(Boolean).join(" • ");
+  const gamePlanPersonnelOverride = String(play.gamePlanPersonnelOverride || "").trim();
+  const displayPlay = gamePlanPersonnelOverride ? { ...effectivePlay, personnel: gamePlanPersonnelOverride } : effectivePlay;
+  const callHtml = _gpRenderCallHtml(displayPlay, renderCtx);
+  const meta = [displayPlay.formation, displayPlay.personnel].filter(Boolean).join(" • ");
   const variantOptions = typeof getPlayPersonnelOptions === "function"
     ? getPlayPersonnelOptions(sourcePlay)
     : [];
-  const variantControl = variantOptions.length > 1
-    ? `<button type="button" class="gp-box-play-personnel${variantId !== "base" ? " is-variant" : ""}" data-action="openGamePlanPersonnelVariant" data-arg="${escapeHtml(actionArg)}" title="Choose the approved personnel variant for this Game Plan call">${escapeHtml(getPersonnelEmoji(effectivePlay.personnel) || "●")} ${escapeHtml(effectivePlay.personnel || "Personnel")}${variantId !== "base" ? " *" : ""} ▾</button>`
-    : "";
+  const variantControl = `<button type="button" class="gp-box-play-personnel${variantId !== "base" || gamePlanPersonnelOverride ? " is-variant" : ""}" data-action="openGamePlanPersonnelVariant" data-arg="${escapeHtml(actionArg)}" title="Choose approved or Game Plan-only personnel for this call">${escapeHtml(getPersonnelEmoji(displayPlay.personnel) || "●")} ${escapeHtml(displayPlay.personnel || "Personnel")}${gamePlanPersonnelOverride ? " · GP" : variantId !== "base" ? " *" : ""} ▾</button>`;
   const addVariantsControl = variantOptions.length > 1
     ? `<button type="button" class="gp-box-play-variants" data-action="openGamePlanPersonnelVariantsPicker" data-arg="${escapeHtml(actionArg)}" title="Choose which unused approved personnel versions to add to this box">+ variants</button>`
     : "";

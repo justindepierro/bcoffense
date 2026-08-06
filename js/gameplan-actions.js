@@ -78,6 +78,9 @@ async function sendGamePlanToWristbandCard() {
   flagged.slice(0, cellsPerCard).forEach((p, i) => {
     const copy = { ...p };
     delete copy._gpFlags;
+    // A custom personnel label is planning context only. A wristband is a
+    // separate artifact and must continue to use the approved play record.
+    delete copy.gamePlanPersonnelOverride;
     data[i] = copy;
   });
   if (typeof mutateWristbandState === "function") {
@@ -725,20 +728,42 @@ async function openGamePlanPersonnelVariant(combined) {
   if (!boardPlay) return;
   const source = _gpFindPlayBySig(ref.sig) || boardPlay;
   const options = typeof getPlayPersonnelOptions === "function" ? getPlayPersonnelOptions(source) : [];
-  if (options.length < 2) {
-    showToast("Add an approved personnel variant in Playbook first.", { type: "info" });
-    return;
-  }
   const current = String(boardPlay.personnelVariantId || "base").trim() || "base";
+  const customPersonnel = String(boardPlay.gamePlanPersonnelOverride || "").trim();
+  const choices = options.map((option) => ({
+    value: option.id,
+    label: `${getPersonnelEmoji(option.personnel)} ${option.personnel}${option.isBase ? " · Primary" : ""}`,
+  }));
+  choices.push({ value: "__custom__", label: "✎ Use custom Game Plan-only personnel" });
+  if (customPersonnel) choices.push({ value: "__clear_custom__", label: "↺ Restore approved personnel" });
   const selected = await showListPicker(
-    "Choose the personnel version for this Game Plan call. The master play stays unchanged.",
-    options.map((option) => ({
-      value: option.id,
-      label: `${getPersonnelEmoji(option.personnel)} ${option.personnel}${option.isBase ? " · Primary" : ""}`,
-    })),
+    "Choose an approved package or enter a Game Plan-only personnel label. Neither choice changes the master play or the approved team list.",
+    choices,
     { title: "Game Plan Personnel", icon: "👥", selectedValue: current },
   );
   if (!selected) return;
+  if (selected === "__custom__") {
+    const value = await showPrompt("Personnel label for this Game Plan call only:", customPersonnel || String(boardPlay.personnel || ""), { title: "Custom Game Plan Personnel", icon: "👥" });
+    if (!value?.trim()) return;
+    _gpUpdateBoard((nextBoard) => {
+      const nextList = nextBoard.assignments?.[ref.boxId] || [];
+      const nextIndex = _gpFindBoxPlayIndex(nextList, ref.sig, ref.rawIdx);
+      if (nextIndex >= 0) nextList[nextIndex].gamePlanPersonnelOverride = value.trim();
+    });
+    requestRenderGamePlan();
+    showToast(`Using ${value.trim()} for this Game Plan call only.`, { type: "success" });
+    return;
+  }
+  if (selected === "__clear_custom__") {
+    _gpUpdateBoard((nextBoard) => {
+      const nextList = nextBoard.assignments?.[ref.boxId] || [];
+      const nextIndex = _gpFindBoxPlayIndex(nextList, ref.sig, ref.rawIdx);
+      if (nextIndex >= 0) delete nextList[nextIndex].gamePlanPersonnelOverride;
+    });
+    requestRenderGamePlan();
+    showToast("Restored approved personnel for this Game Plan call.", { type: "success" });
+    return;
+  }
   const selectedIdentity = `${ref.sig}::personnel=${String(selected || "base")}`;
   const hasExactDuplicate = list.some((candidate, candidateIndex) =>
     candidateIndex !== index && _gpAssignmentIdentity(candidate) === selectedIdentity,
@@ -754,6 +779,7 @@ async function openGamePlanPersonnelVariant(combined) {
     const nextList = nextBoard.assignments?.[ref.boxId] || [];
     const nextIndex = _gpFindBoxPlayIndex(nextList, ref.sig, ref.rawIdx);
     if (nextIndex < 0) return;
+    delete nextList[nextIndex].gamePlanPersonnelOverride;
     if (selected === "base") delete nextList[nextIndex].personnelVariantId;
     else nextList[nextIndex].personnelVariantId = selected;
   });
