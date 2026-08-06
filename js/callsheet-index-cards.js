@@ -29,7 +29,16 @@ function _csBucketRows(bucket) {
   const keys = Array.isArray(bucket?.playKeys) ? new Set(bucket.playKeys) : null;
   const excluded = new Set(Array.isArray(bucket?.excludedPlayKeys) ? bucket.excludedPlayKeys : []);
   const scoped = keys?.size ? rows.filter((row) => keys.has(_csIndexIdentity(row.play))) : rows;
-  return scoped.filter((row) => !excluded.has(_csIndexIdentity(row.play)));
+  // A scoped bucket represents a call, not every accidental duplicate copy of
+  // that call in the full Call Sheet. Keep the first canonical occurrence so
+  // one picker selection always occupies one row on the compact card.
+  const seen = new Set();
+  return scoped.filter((row) => {
+    const identity = _csIndexIdentity(row.play);
+    if (excluded.has(identity) || seen.has(identity)) return false;
+    seen.add(identity);
+    return true;
+  });
 }
 function _csIndexFamily(bucket, row) { return Boolean(bucket?.family?.[row.key]?.indent); }
 function _csIndexCompact(bucket, row) { return Boolean(bucket?.family?.[row.key]?.compact); }
@@ -223,6 +232,12 @@ function openCallSheetIndexCardBucketPicker(id) {
   if (!bucket?.categoryId || typeof openCallSheetPlayPicker !== "function") return;
   _csIndexPickerBucketId = bucket.id;
   openCallSheetPlayPicker(bucket.categoryId, bucket.targetHash === "right" ? "right" : "left");
+}
+function resolveCallSheetIndexCardPickerPlay(play, categoryId, hash) {
+  const bucket = _csIndexBucketFromArg(_csIndexPickerBucketId);
+  if (!bucket || bucket.categoryId !== categoryId || (bucket.targetHash === "right" ? "right" : "left") !== hash) return null;
+  const identity = _csIndexIdentity(play);
+  return _csSafeList(callSheet?.[categoryId]?.[hash]).find((candidate) => _csIndexIdentity(candidate) === identity) || null;
 }
 function onCallSheetIndexCardPickerPlayAdded(play) {
   const bucket = _csIndexBucketFromArg(_csIndexPickerBucketId);

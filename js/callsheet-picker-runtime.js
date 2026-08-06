@@ -450,13 +450,20 @@ function addCallSheetPlayFromPicker(playData) {
     : { ...playData };
   delete play._sourceIdx;
 
-  callSheet[editingCategory][editingHash].push(play);
+  // On an Index Card, re-use an existing canonical Call Sheet call when this
+  // exact play is already present in the target column. The card can then add
+  // it to its scoped view without creating another duplicate source row.
+  const existing = typeof resolveCallSheetIndexCardPickerPlay === "function"
+    ? resolveCallSheetIndexCardPickerPlay(play, editingCategory, editingHash)
+    : null;
+  const selectedPlay = existing || play;
+  if (!existing) callSheet[editingCategory][editingHash].push(play);
 
   // Index Card buckets can be a scoped view of a Call Sheet category. Let
   // that editor retain the newly selected call before the shared renderer
   // refreshes, otherwise a smart bucket would hide the call it just added.
   if (typeof onCallSheetIndexCardPickerPlayAdded === "function") {
-    onCallSheetIndexCardPickerPlayAdded(play, editingCategory, editingHash);
+    onCallSheetIndexCardPickerPlayAdded(selectedPlay, editingCategory, editingHash);
   }
 
   closeCallSheetPicker();
