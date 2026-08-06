@@ -233,7 +233,14 @@ async function openCallSheetPrintModal() {
     overlay.querySelector("#csPrintPreview").addEventListener("click", () => {
       const previewJob = setCallSheetPrintOptions(readModalOptions());
       close(null);
-      setTimeout(() => openCallSheetPrintPreview(previewJob), 50);
+      setTimeout(() => {
+        try {
+          openCallSheetPrintPreview(previewJob);
+        } catch (error) {
+          console.error("Call Sheet print preview could not be built:", error);
+          showToast("Could not build the print preview. Your Call Sheet is still saved.", "error");
+        }
+      }, 50);
     });
     const updateSummary = () => {
       const summary = _csDescribePrintSelection(readModalOptions());
@@ -565,10 +572,16 @@ function renderPrintPlay(play, options, printJob) {
   if (play.cellStrikethrough) textDeco.push("line-through");
   if (textDeco.length) styles.push(`text-decoration: ${textDeco.join(" ")};`);
 
-  const personnelHtml = displayOptions.showPersonnel
-    ? (typeof renderCallSheetPersonnelBadge === "function"
-      ? renderCallSheetPersonnelBadge(play, "print-inline-code")
-      : "")
+  // Keep preview rendering self-contained. Print rendering can be invoked before
+  // the interactive Call Sheet renderer is available (for example, during a
+  // restored session), so it must not depend on that renderer's helper.
+  const personnel = String(play?.personnel || "").trim();
+  const personnelMarker = typeof getPersonnelEmoji === "function" ? getPersonnelEmoji(personnel) : "";
+  const personnelCode = typeof getPersonnelCode === "function" ? getPersonnelCode(personnel) : personnel;
+  const personnelHtml = displayOptions.showPersonnel && personnel
+    ? (personnelMarker
+      ? `<span class="print-inline-code cs-personnel-marker" title="${escapeHtml(personnel)}">${personnelMarker}</span>`
+      : `<span class="print-inline-code" style="background: ${getPersonnelBgColor(personnel)}; color: ${getPersonnelTextColor(personnel)};">${escapeHtml(personnelCode)}</span>`)
     : "";
   const additionalPersonnelHtml = typeof renderCallSheetAdditionalPersonnel === "function"
     ? renderCallSheetAdditionalPersonnel(play, "print-extra-personnel")

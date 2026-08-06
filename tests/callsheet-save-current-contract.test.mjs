@@ -39,7 +39,7 @@ assert.match(picker, /const otherHash = hash === "left" \? "right" : "left"/, "h
 assert.match(filters, /A saved wristband can change after it was loaded into the call sheet/, "new wristband entries are read live before assigning a Call Sheet number");
 assert.match(render, /const marker = typeof getPersonnelEmoji/, "additional personnel uses the shared marker language rather than raw chip text");
 assert.match(render, /function renderCallSheetPersonnelBadge\(play, className = "personnel-code"\)/, "known personnel markers render as plain emoji instead of colored text chips");
-assert.match(print, /renderCallSheetPersonnelBadge\(play, "print-inline-code"\)/, "print output uses the same plain personnel marker treatment");
+assert.match(print, /const personnelMarker = typeof getPersonnelEmoji/, "print output resolves plain personnel markers without relying on the interactive renderer");
 assert.match(print, /print-category--single/, "Call Sheet printing carries the category's sequence layout into the print job");
 assert.match(printCss, /\.print-category--single .print-plays-grid/, "single-column print categories use one full-width play column");
 assert.match(metadata, /function removeCallSheetBlankRows\(categoryId\)/, "category tools can remove accumulated blank spacers in one action");
