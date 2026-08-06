@@ -699,8 +699,8 @@ function addCsBlankRow(arg) {
   saveCallSheet();
 }
 
-function handleCallSheetDragStart(event, categoryId, hash, index) {
-  draggedCallSheetPlay = { categoryId, hash, index };
+function handleCallSheetDragStart(event, categoryId, hash, index, indexCardBucketId = "") {
+  draggedCallSheetPlay = { categoryId, hash, index, indexCardBucketId };
   event.dataTransfer.setData("source", "callsheet");
   // Chromium and Safari both require a text payload for a reliable internal
   // drag, even though the source data above is what our drop handler uses.
@@ -749,7 +749,7 @@ function handleCallSheetDrop(event, targetCategory, targetHash, indexCardBucketI
   }
 
   if (draggedCallSheetPlay) {
-    const { categoryId, hash, index } = draggedCallSheetPlay;
+    const { categoryId, hash, index, indexCardBucketId: sourceIndexCardBucketId } = draggedCallSheetPlay;
 
     if (
       categoryId === targetCategory &&
@@ -775,6 +775,9 @@ function handleCallSheetDrop(event, targetCategory, targetHash, indexCardBucketI
     }
 
     if (indexCardBucketId && typeof onCallSheetIndexCardDroppedPlay === "function") onCallSheetIndexCardDroppedPlay(play, indexCardBucketId);
+    if (sourceIndexCardBucketId && typeof onCallSheetIndexCardMovedPlay === "function") {
+      onCallSheetIndexCardMovedPlay(play, sourceIndexCardBucketId, indexCardBucketId);
+    }
 
     // Clear state + dragging classes BEFORE re-render. renderCallSheet
     // wipes the grid DOM, detaching the source row -- after which dragend
@@ -902,7 +905,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const play = event.target.closest(".callsheet-play");
       if (!play) return;
       const { category, hash, index } = play.dataset;
-      handleCallSheetDragStart(event, category, hash, parseInt(index, 10));
+      handleCallSheetDragStart(event, category, hash, parseInt(index, 10), play.dataset.csCardBucket || "");
     });
 
     grid.addEventListener("dragover", (event) => {

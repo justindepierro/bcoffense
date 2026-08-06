@@ -5439,7 +5439,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-bucket-actions .cs-index-bucket-add { min-width: auto; padding: 0 5px; font-size: 10px; }
 .cs-index-delete-card { margin-left: auto; color: var(--color-danger, #b42318); }
 .cs-index-bucket ol { padding-left: 22px; }
-.cs-index-play { position: relative; display: flex; align-items: flex-start; gap: 3px; min-width: 0; padding: 1px 0; cursor: grab; }
+.cs-index-play { position: relative; display: flex; align-items: flex-start; gap: 3px; min-width: 0; padding: 1px 0; cursor: grab; user-select: none; -webkit-user-select: none; }
 .cs-index-play:active { cursor: grabbing; }
 .cs-index-play-text { min-width: 0; flex: 1; }
 .cs-index-wristband-number { display: inline-block; min-width: 2.1em; margin-right: 3px; padding: 0 3px; border: 1px solid #13264d; border-radius: 3px; color: #13264d; font-weight: 900; line-height: 1.25; text-align: center; }

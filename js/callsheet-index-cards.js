@@ -271,6 +271,19 @@ function onCallSheetIndexCardDroppedPlay(play, bucketId) {
     saveCallSheetSettings();
   }
 }
+function onCallSheetIndexCardMovedPlay(play, sourceBucketId, targetBucketId) {
+  if (!sourceBucketId || sourceBucketId === targetBucketId || !play) return;
+  const source = _csIndexBucketFromArg(sourceBucketId);
+  const identity = _csIndexIdentity(play);
+  if (!source || !identity) return;
+  if (Array.isArray(source.playKeys)) source.playKeys = source.playKeys.filter((key) => key !== identity);
+  else {
+    const hidden = new Set(Array.isArray(source.excludedPlayKeys) ? source.excludedPlayKeys : []);
+    hidden.add(identity);
+    source.excludedPlayKeys = [...hidden];
+  }
+  saveCallSheetSettings();
+}
 async function _csAddBucket() {
   const categoryId = await showListPicker("Pick the Call Sheet situation for this mini-card bucket.", [{ value: "", label: "Blank custom bucket" }, ...CALLSHEET_CATEGORIES.map((category) => ({ value: category.id, label: _csName(category.id), sublabel: `${_csSafeList(callSheet?.[category.id]?.left).length + _csSafeList(callSheet?.[category.id]?.right).length} calls` }))], { title: "Add call-sheet bucket", icon: "＋" });
   if (categoryId === null) return;
