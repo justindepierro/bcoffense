@@ -107,7 +107,15 @@ function _csCardMarkup(card, side, editable = false) {
   const header = card?.hideHeader ? "" : `<div class="cs-index-card-head">${editable
     ? `<input id="csIndexCardTitle" name="csIndexCardTitle" class="cs-index-card-title-input" value="${escapeAttr(title)}" data-onchange="setCallSheetIndexCardTitle" data-pass="value" aria-label="Index Card title">`
     : `<b>${escapeHtml(title)}</b>`}<span>${side === "front" ? "Front" : "Back"}</span></div>`;
-  return `<article class="cs-index-card${editable ? " cs-index-card--editor" : ""}${card?.hideHeader ? " cs-index-card--no-header" : ""}">${header}<div class="cs-index-grid">${buckets.map((bucket) => _csIndexBucketMarkup(bucket, editable)).join("") || `<div class="cs-index-empty">Use + Add bucket to build this side.</div>`}</div></article>`;
+  // Each side of a physical card is two independently stacked columns. A
+  // single CSS grid makes every row as tall as its tallest neighboring bucket,
+  // wasting print space whenever one situation has more calls than the other.
+  const leftBuckets = buckets.filter((_bucket, index) => index % 2 === 0);
+  const rightBuckets = buckets.filter((_bucket, index) => index % 2 === 1);
+  const grid = buckets.length
+    ? `<div class="cs-index-column">${leftBuckets.map((bucket) => _csIndexBucketMarkup(bucket, editable)).join("")}</div><div class="cs-index-column">${rightBuckets.map((bucket) => _csIndexBucketMarkup(bucket, editable)).join("")}</div>`
+    : `<div class="cs-index-empty">Use + Add bucket to build this side.</div>`;
+  return `<article class="cs-index-card${editable ? " cs-index-card--editor" : ""}${card?.hideHeader ? " cs-index-card--no-header" : ""}">${header}<div class="cs-index-grid">${grid}</div></article>`;
 }
 
 function _csUpdateIndexCardFitStatus() {

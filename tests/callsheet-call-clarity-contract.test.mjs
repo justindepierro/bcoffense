@@ -65,11 +65,14 @@ assert.match(indexCards, /openLoadWristbandModal/, "index-card editing can load 
 assert.match(indexCards, /cs-index-wristband-number/, "index-card and print calls show loaded wristband numbers");
 assert.match(indexCards, /function _csUpdateIndexCardFitStatus\(\)/, "index-card editing reports whether the live card fits its 4×6 print area");
 assert.match(indexCards, /cs-index-capacity-probe[\s\S]*?_csCardMarkup\(activeCard, _csIndexSide, false\)[\s\S]*?usedPercent/, "Index Card capacity measures non-editable print markup instead of editor controls");
+assert.match(indexCards, /const leftBuckets = buckets\.filter[\s\S]*?const rightBuckets = buckets\.filter[\s\S]*?cs-index-column/, "Index Card print uses independently stacked columns instead of shared-height grid rows");
 assert.match(indexCards, /function copyCallSheetIndexBucketToOtherSide\(id\)/, "Index Card situations can be copied to the opposite side");
 assert.match(indexCards, /function clearCallSheetIndexCardBucket\(id\)[\s\S]*?bucket\.playKeys = \[\]/, "Index Card situations can be cleared without deleting canonical Call Sheet calls");
 assert.match(indexCards, /function removeEmptyCallSheetIndexBuckets\(\)/, "Index Card editor can remove empty situations in bulk");
 assert.match(css, /\.cs-index-card \{ box-sizing: border-box; display: flex; flex-direction: column; width: min\(100%, 480px\); height:/, "index-card editing uses a fixed 4×6-proportional frame instead of growing with content");
 assert.match(css, /\.cs-index-grid \{ display: grid;[\s\S]*?flex: 1 1 auto; min-height: 0;[\s\S]*?overflow: auto/, "index-card bucket content stays in a constrained scroll region instead of painting over the next situation");
+assert.match(css, /\.cs-index-column \{ display: flex;[\s\S]*?flex-direction: column[\s\S]*?gap: 7px/, "index-card editor stacks each printed column independently to avoid dead row space");
+assert.match(css, /body\.cs-index-printing \.cs-index-column \{ gap: \.035in; \}[\s\S]*?body\.cs-index-printing \.cs-index-bucket header \{ min-height: 0; padding: \.012in \.035in; font-size: 6pt/, "printed Index Card headers and column gaps are compacted for maximum call space");
 assert.match(css, /\.cs-index-play-actions \{ display: inline-flex; position: absolute;[\s\S]*?pointer-events: none/, "editor-only play controls overlay on demand instead of changing the 4×6 capacity");
 assert.match(render, /Index Cards are a fixed physical preview[\s\S]*?card\.scrollIntoView/, "opening Index Cards resets the old Call Sheet scroll position instead of landing mid-card");
 assert.match(css, /\.cs-index-print-preview-pages \.cs-index-card \{ width: min\(100%, 390px\); height: min\(585px,[\s\S]*?aspect-ratio: 2 \/ 3/, "index-card preview uses a fixed 4×6-proportional canvas rather than growing with content");
