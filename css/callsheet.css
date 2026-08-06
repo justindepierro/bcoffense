@@ -5434,18 +5434,17 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-bucket-actions button { min-width: 22px; min-height: 22px; }
 .cs-index-delete-card { margin-left: auto; color: var(--color-danger, #b42318); }
 .cs-index-bucket ol { padding-left: 22px; }
-.cs-index-play { display: flex; align-items: flex-start; gap: 3px; min-width: 0; padding: 1px 0; cursor: grab; }
+.cs-index-play { position: relative; display: flex; align-items: flex-start; gap: 3px; min-width: 0; padding: 1px 0; cursor: grab; }
 .cs-index-play:active { cursor: grabbing; }
 .cs-index-play-text { min-width: 0; flex: 1; }
 .cs-index-wristband-number { display: inline-block; min-width: 2.1em; margin-right: 3px; padding: 0 3px; border: 1px solid #13264d; border-radius: 3px; color: #13264d; font-weight: 900; line-height: 1.25; text-align: center; }
-.cs-index-play-actions { display: inline-flex; flex: 0 0 auto; gap: 2px; opacity: .48; }
-.cs-index-play:hover .cs-index-play-actions, .cs-index-play:focus-within .cs-index-play-actions { opacity: 1; }
-.cs-index-play-actions button, .cs-index-add-play { min-width: 18px; min-height: 18px; padding: 0 3px; font-size: 10px; line-height: 1; }
+.cs-index-play-actions { display: inline-flex; position: absolute; z-index: 1; top: 0; right: 0; gap: 2px; padding-left: 3px; background: color-mix(in srgb, white 92%, transparent); opacity: 0; pointer-events: none; }
+.cs-index-play:hover .cs-index-play-actions, .cs-index-play:focus-within .cs-index-play-actions { opacity: 1; pointer-events: auto; }
+.cs-index-play-actions button { min-width: 18px; min-height: 18px; padding: 0 3px; font-size: 10px; line-height: 1; }
 .cs-index-play-actions button:disabled { opacity: .3; cursor: not-allowed; }
 .cs-index-play--family { margin-left: 13px !important; padding-left: 5px !important; border-left: 2px solid #6f83a6; list-style-type: lower-alpha; }
 .cs-index-play--family .cs-index-play-text::before { content: "↳ "; color: #506789; font-weight: 800; }
 .cs-index-no-calls { color: #64748b; font-style: italic; }
-.cs-index-add-play { align-self: stretch; margin: 3px; border: 1px dashed #7587a6; border-radius: 3px; background: #f6f8fc; color: #162c59; font-weight: 700; cursor: pointer; }
 .cs-index-bucket[data-drop="csHashDrop"].gp-drag-over { outline: 2px solid var(--color-primary); outline-offset: 2px; background: color-mix(in srgb, var(--color-primary) 8%, white); }
 
 @media (max-width: 640px) {

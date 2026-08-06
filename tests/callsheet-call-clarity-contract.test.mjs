@@ -29,6 +29,7 @@ assert.match(print, /safePage === "personnel"[\s\S]*?renderPersonnelCallSheet\(o
 assert.match(gamePlanRender, /id="gpLibrarySearch"[\s\S]*?placeholder="Search library…"/, "Game Plan library always exposes its search field");
 assert.match(notifications, /const matchIndex = plays\.findIndex[\s\S]*?openPlayWorkflowPanel\(matchIndex\)/, "staff question notifications resolve a play then open its workflow panel by index");
 assert.match(indexCards, /data-action="openCallSheetPlayPicker"[\s\S]*?data-drop="csHashDrop"/, "index-card buckets accept the normal Call Sheet drag/drop and picker pipeline");
+assert.match(indexCards, /const addControl = editable[\s\S]*?cs-index-bucket-actions[\s\S]*?\$\{addControl\}/, "index-card add-play control stays in the editor header rather than consuming printable bucket height");
 assert.match(indexCards, /showPlayContextMenu\([\s\S]*?row\.dataset\.category[\s\S]*?row\.dataset\.hash/, "index-card play actions open the canonical Call Sheet cell editor");
 assert.match(indexCards, /toggleCallSheetIndexFamily[\s\S]*?toggleCallSheetIndexCompact/, "index cards retain per-row family indentation and repeated-component controls");
 assert.match(indexCards, /function openCallSheetIndexCardPrintModal\(\)[\s\S]*?Cards[\s\S]*?Sides[\s\S]*?Copies[\s\S]*?Preview/, "index cards use a dedicated print suite with card, side, copy, and preview controls");
@@ -50,6 +51,7 @@ assert.match(indexCards, /cs-index-wristband-number/, "index-card and print call
 assert.match(indexCards, /function _csUpdateIndexCardFitStatus\(\)/, "index-card editing reports whether the live card fits its 4×6 print area");
 assert.match(css, /\.cs-index-card \{ box-sizing: border-box; display: flex; flex-direction: column; width: min\(100%, 480px\); height:/, "index-card editing uses a fixed 4×6-proportional frame instead of growing with content");
 assert.match(css, /\.cs-index-grid \{ display: grid;[\s\S]*?flex: 1 1 auto; min-height: 0;[\s\S]*?overflow: auto/, "index-card bucket content stays in a constrained scroll region instead of painting over the next situation");
+assert.match(css, /\.cs-index-play-actions \{ display: inline-flex; position: absolute;[\s\S]*?pointer-events: none/, "editor-only play controls overlay on demand instead of changing the 4×6 capacity");
 assert.match(render, /Index Cards are a fixed physical preview[\s\S]*?card\.scrollIntoView/, "opening Index Cards resets the old Call Sheet scroll position instead of landing mid-card");
 assert.match(css, /\.cs-index-print-preview-pages \.cs-index-card \{ width: min\(100%, 390px\); height: auto;[\s\S]*?aspect-ratio: 2 \/ 3/, "index-card preview overrides the editor height and keeps the real 4×6 ratio");
 assert.match(scriptIntegrations, /function sendScriptToIndexCallSheet\(\)[\s\S]*?createSmartCallSheetIndexCard/, "Script can build a smart index card from selected or full script plays");
