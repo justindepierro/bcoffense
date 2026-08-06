@@ -13,6 +13,7 @@ const indexCards = await readFile(new URL("js/callsheet-index-cards.js", `file:/
 const appEvents = await readFile(new URL("js/app-events.js", `file://${root}/`), "utf8");
 const scriptIntegrations = await readFile(new URL("js/script-integrations.js", `file://${root}/`), "utf8");
 const gamePlanIntegrations = await readFile(new URL("js/gameplan-integrations.js", `file://${root}/`), "utf8");
+const indexHtml = await readFile(new URL("index.html", `file://${root}/`), "utf8");
 
 assert.match(render, /const wristbandHtml = displayOptions\.showNumbers[\s\S]*?cs-wristband-number[\s\S]*?\$\{wristbandHtml\}[\s\S]*?\$\{personnelHtml\}/, "screen rows render wristband number before personnel and call text");
 assert.match(print, /const wristbandHtml = displayOptions\.showNumbers[\s\S]*?print-wristband-number[\s\S]*?\$\{wristbandHtml\}\$\{personnelHtml\}/, "print rows preserve wristband-first order");
@@ -46,7 +47,8 @@ assert.match(indexCards, /showPlayContextMenu\([\s\S]*?row\.dataset\.category[\s
 assert.match(indexCards, /toggleCallSheetIndexFamily[\s\S]*?toggleCallSheetIndexCompact/, "index cards retain per-row family indentation and repeated-component controls");
 assert.match(indexCards, /function openCallSheetIndexCardPrintModal\(\)[\s\S]*?Cards[\s\S]*?Sides[\s\S]*?Copies[\s\S]*?Preview/, "index cards use a dedicated print suite with card, side, copy, and preview controls");
 assert.match(indexCards, /function previewCurrentCallSheetIndexCard\(\)[\s\S]*?cards: "current", sides: _csIndexSide, copies: 1/, "Index Card editor has a one-click preview for the active side without changing saved print options");
-assert.match(indexCards, /cs-index-commandbar[\s\S]*?cs-index-main-actions[\s\S]*?cs-index-main-strip/, "Index Card command controls are grouped into one persistent editor toolbar");
+assert.match(indexCards, /function renderCallSheetIndexToolbarContext\(\)[\s\S]*?cs-index-main-tabs[\s\S]*?cs-index-main-sides[\s\S]*?cs-index-main-more/, "Index Card card, side, and overflow controls share one toolbar context");
+assert.doesNotMatch(indexCards, /cs-index-commandbar|cs-index-main-actions|cs-index-main-strip/, "Index Card card content does not retain a second legacy command toolbar");
 assert.match(indexCards, /openCallSheetIndexCardPrintModal\(\)[\s\S]*?requestAnimationFrame\(\(\) => overlay\.classList\.add\("visible"\)\)/, "index-card print options use the normal visible modal lifecycle");
 assert.match(indexCards, /_runCallSheetIndexCardsPrint[\s\S]*?requestAnimationFrame\(\(\) => requestAnimationFrame/, "index-card printing waits for its isolated print root to paint before opening the browser dialog");
 assert.match(indexCards, /function _csIndexPrintSides[\s\S]*?\["front", "back"\][\s\S]*?function renderCallSheetIndexCardPrintPages/, "index-card duplex jobs render front then back for each card");
@@ -71,7 +73,7 @@ assert.match(indexCards, /function manageCallSheetIndexCardBucket\(id\)/, "each 
 assert.match(indexCards, /Place in shortest column automatically[\s\S]*?Expand into the next row[\s\S]*?Fill remaining column height/, "bucket menu includes dynamic print-column and height controls");
 assert.match(indexCards, /excludedPlayKeys/, "index-card buckets can hide individual calls without deleting their canonical Call Sheet source");
 assert.match(indexCards, /function removeCallSheetIndexPlay\(arg\)/, "each index-card call can be removed from that compact bucket only");
-assert.match(indexCards, /openLoadWristbandModal/, "index-card editing can load or replace the Call Sheet wristband directly");
+assert.match(indexHtml, /cs-load-wristband-btn[\s\S]*?data-action="openLoadWristbandModal"/, "index-card editing can load or replace the Call Sheet wristband from the shared Call Sheet toolbar");
 assert.match(indexCards, /cs-index-wristband-number/, "index-card and print calls show loaded wristband numbers");
 assert.match(indexCards, /function toggleCallSheetIndexSequenceNumbers\(id\)[\s\S]*?bucket\.showSequenceNumbers/, "Index Card buckets can opt into sequence numbers without affecting wristband numbers");
 assert.match(indexCards, /value: "sequence", label: bucket\.showSequenceNumbers \? "Turn sequence numbers off" : "Turn sequence numbers on"/, "Index Card bucket management exposes the sequence-number toggle");
@@ -82,7 +84,9 @@ assert.match(indexCards, /function copyCallSheetIndexBucketToOtherSide\(id\)/, "
 assert.match(indexCards, /function clearCallSheetIndexCardBucket\(id\)[\s\S]*?bucket\.playKeys = \[\]/, "Index Card situations can be cleared without deleting canonical Call Sheet calls");
 assert.match(indexCards, /function removeEmptyCallSheetIndexBuckets\(\)/, "Index Card editor can remove empty situations in bulk");
 assert.match(css, /\.cs-index-card \{ box-sizing: border-box; display: flex; flex-direction: column; width: min\(100%, 480px\); height:/, "index-card editing uses a fixed 4×6-proportional frame instead of growing with content");
-assert.match(css, /\.cs-index-commandbar \{ position: sticky;[\s\S]*?top: 0;/, "Index Card command toolbar remains available while vertically scrolling the editor");
+assert.match(render, /panel\?\.classList\.toggle\("callsheet-index-mode", isIndexCards\)[\s\S]*?csIndexToolbarContext[\s\S]*?renderCallSheetIndexToolbarContext/, "Call Sheet rendering mounts Index Card context in the shared toolbar");
+assert.match(css, /\.callsheet-index-mode \.cs-toolbar \{ position: sticky; z-index: 20; top: 0; overflow: visible; \}/, "The shared Index Card toolbar remains sticky and allows its overflow menu to open");
+assert.match(css, /\.callsheet-index-mode \.cs-source-bar \{ display: none; \}/, "Index Card mode removes the redundant source toolbar from the editing canvas");
 assert.match(css, /\.cs-index-grid \{ display: grid;[\s\S]*?flex: 1 1 auto; min-height: 0;[\s\S]*?overflow: auto/, "index-card bucket content stays in a constrained scroll region instead of painting over the next situation");
 assert.match(css, /\.cs-index-play-actions \{ display: inline-flex; position: absolute;[\s\S]*?pointer-events: none/, "editor-only play controls overlay on demand instead of changing the 4×6 capacity");
 assert.match(render, /Index Cards are a fixed physical preview[\s\S]*?card\.scrollIntoView/, "opening Index Cards resets the old Call Sheet scroll position instead of landing mid-card");
