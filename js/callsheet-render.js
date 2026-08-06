@@ -805,6 +805,11 @@ function renderCallSheet() {
   const isIndexCards = callSheetSettings.currentPage === "index";
   const isLandscape = !isIndexCards && callSheetSettings.orientation === "landscape";
   const usePhoneCards = shouldRenderCallSheetPhoneCards();
+  const panel = document.getElementById("callsheet");
+  panel?.classList.toggle("callsheet-index-mode", isIndexCards);
+  document.querySelectorAll(".cs-index-toolbar-only").forEach((button) => {
+    button.hidden = !isIndexCards;
+  });
   container.classList.toggle("callsheet-landscape", isLandscape);
   container.classList.toggle("callsheet-portrait", !isLandscape);
   container.classList.toggle("callsheet-phone-cards", usePhoneCards);
