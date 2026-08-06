@@ -34,6 +34,7 @@
 .cs-index-print-preview-pages .cs-index-card-head { padding: .015in .035in !important; font-size: 6.5pt !important; line-height: 1.05; border-bottom-width: 1.5pt; }
 .cs-index-print-preview-pages .cs-index-bucket header { min-height: 0 !important; padding: .012in .035in !important; font-size: 6pt !important; line-height: 1.05 !important; }
 .cs-index-print-preview-pages .cs-index-bucket ol { padding: .025in .035in .025in .14in !important; font-size: 6.3pt !important; line-height: 1.14 !important; }
+.cs-index-print-preview-pages .cs-index-bucket ol.cs-index-list--unsequenced { padding-left: .035in !important; }
 .cs-index-print-preview-pages .cs-index-bucket li { margin-bottom: .015in !important; }
 .cs-index-capacity-probe { position: fixed; z-index: -1; top: -10000px; left: -10000px; width: 3.84in; height: 5.84in; visibility: hidden; pointer-events: none; }
 .cs-index-capacity-probe .cs-index-card { box-sizing: border-box; width: 3.84in; min-height: 5.84in; height: 5.84in; margin: 0; padding: .08in; border-width: 1.5pt; border-radius: 0; box-shadow: none; }
@@ -42,6 +43,7 @@
 .cs-index-capacity-probe .cs-index-bucket { align-self: stretch; }
 .cs-index-capacity-probe .cs-index-bucket header { min-height: 0; padding: .012in .035in; font-size: 6pt; line-height: 1.05; }
 .cs-index-capacity-probe .cs-index-bucket ol { padding: .025in .035in .025in .14in; font-size: 6.3pt; line-height: 1.14; }
+.cs-index-capacity-probe .cs-index-bucket ol.cs-index-list--unsequenced { padding-left: .035in; }
 .cs-index-capacity-probe .cs-index-bucket li { margin-bottom: .015in; }
 @media print {
   body.cs-index-printing > * { display: none !important; }
@@ -55,6 +57,7 @@
   body.cs-index-printing .cs-index-bucket { align-self: stretch; }
   body.cs-index-printing .cs-index-bucket header { min-height: 0 !important; padding: .012in .035in !important; font-size: 6pt !important; line-height: 1.05 !important; }
   body.cs-index-printing .cs-index-bucket ol { padding: .025in .035in .025in .14in !important; font-size: 6.3pt !important; line-height: 1.14 !important; }
+  body.cs-index-printing .cs-index-bucket ol.cs-index-list--unsequenced { padding-left: .035in !important; }
   body.cs-index-printing .cs-index-bucket li { margin-bottom: .015in !important; }
 }
 
@@ -5464,6 +5467,8 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-bucket-actions button, .cs-index-bucket-actions .cs-index-bucket-add { min-width: 18px; width: 18px; min-height: 18px; height: 18px; padding: 0; font-size: 10px; line-height: 1; }
 .cs-index-delete-card { margin-left: auto; color: var(--color-danger, #b42318); }
 .cs-index-bucket ol { padding-left: 22px; }
+.cs-index-bucket .cs-index-list--unsequenced { padding-left: 5px; list-style: none; }
+.cs-index-bucket .cs-index-list--unsequenced .cs-index-play { padding-left: 0; }
 .cs-index-play { position: relative; display: flex; align-items: flex-start; gap: 3px; min-width: 0; padding: 1px 0; cursor: grab; user-select: none; -webkit-user-select: none; }
 .cs-index-play:active { cursor: grabbing; }
 .cs-index-play-text { min-width: 0; flex: 1; }

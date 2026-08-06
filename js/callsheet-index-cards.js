@@ -99,7 +99,7 @@ function _csIndexBucketMarkup(bucket, editable) {
     : "<li class=\"cs-index-no-calls\">Drop or add plays here</li>");
   const addControl = editable && bucket.categoryId ? `<button class="cs-index-bucket-add" data-action="openCallSheetIndexCardBucketPicker" data-arg="${escapeAttr(bucket.id)}" title="Add a play to ${escapeAttr(bucket.label)}" aria-label="Add a play to ${escapeAttr(bucket.label)}">＋</button>` : "";
   const dropAttrs = bucket.categoryId ? ` data-drop="csHashDrop" data-cat="${escapeAttr(bucket.categoryId)}" data-hash="${bucket.targetHash === "right" ? "right" : "left"}"` : "";
-  return `<section class="cs-index-bucket"${dropAttrs}${editable ? ` data-cs-card-bucket="${escapeAttr(bucket.id)}"` : ""}><header style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading"><b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}<button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|-1" title="Move situation up" aria-label="Move ${escapeAttr(bucket.label)} up">↑</button><button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|1" title="Move situation down" aria-label="Move ${escapeAttr(bucket.label)} down">↓</button><button data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}">⋯</button><button data-action="removeCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Remove situation" aria-label="Remove ${escapeAttr(bucket.label)}">×</button></span>` : ""}</header><ol>${plays}</ol></section>`;
+  return `<section class="cs-index-bucket"${dropAttrs}${editable ? ` data-cs-card-bucket="${escapeAttr(bucket.id)}"` : ""}><header style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading"><b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}<button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|-1" title="Move situation up" aria-label="Move ${escapeAttr(bucket.label)} up">↑</button><button data-action="moveCallSheetIndexBucket" data-arg="${escapeAttr(bucket.id)}|1" title="Move situation down" aria-label="Move ${escapeAttr(bucket.label)} down">↓</button><button data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}">⋯</button><button data-action="removeCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Remove situation" aria-label="Remove ${escapeAttr(bucket.label)}">×</button></span>` : ""}</header><ol class="${bucket.showSequenceNumbers ? "" : "cs-index-list--unsequenced"}">${plays}</ol></section>`;
 }
 function _csCardMarkup(card, side, editable = false) {
   const buckets = card?.[side] || [];
@@ -323,6 +323,7 @@ function _csIndexRowFromArg(arg) {
 }
 function toggleCallSheetIndexFamily(arg) { const { bucket, row } = _csIndexRowFromArg(arg); if (!bucket || !row || _csBucketRows(bucket).findIndex((item) => item.key === row.key) < 1) return; _csIndexSetFamily(bucket, row, "indent"); _csPersistCards(); }
 function toggleCallSheetIndexCompact(arg) { const { bucket, row } = _csIndexRowFromArg(arg); if (!bucket || !row || !_csIndexFamily(bucket, row)) return; _csIndexSetFamily(bucket, row, "compact"); _csPersistCards(); }
+function toggleCallSheetIndexSequenceNumbers(id) { const bucket = _csIndexBucketFromArg(id); if (!bucket) return; bucket.showSequenceNumbers = !bucket.showSequenceNumbers; _csPersistCards(); }
 function removeCallSheetIndexPlay(arg) {
   const { bucket, row } = _csIndexRowFromArg(arg);
   if (!bucket || !row) return;
@@ -618,6 +619,7 @@ async function manageCallSheetIndexCardBucket(id) {
       { value: "rename", label: "Rename situation", icon: "✏️" },
       { value: "source", label: "Change Call Sheet source", icon: "↻" },
       { value: "color", label: "Change header color", icon: "🎨" },
+      { value: "sequence", label: bucket.showSequenceNumbers ? "Turn sequence numbers off" : "Turn sequence numbers on", icon: "#" },
       { value: "other-side", label: `Move to ${_csIndexSide === "front" ? "Back" : "Front"}`, icon: "↔" },
       { value: "copy-other-side", label: `Copy to ${_csIndexSide === "front" ? "Back" : "Front"}`, icon: "⧉" },
       { value: "clear", label: "Clear calls from this card bucket", icon: "⌫" },
@@ -632,6 +634,8 @@ async function manageCallSheetIndexCardBucket(id) {
     await _csChangeSource(id);
   } else if (action === "color") {
     await setCallSheetIndexBucketColor(id);
+  } else if (action === "sequence") {
+    toggleCallSheetIndexSequenceNumbers(id);
   } else if (action === "other-side") {
     card[_csIndexSide] = card[_csIndexSide].filter((item) => item.id !== id);
     const otherSide = _csIndexSide === "front" ? "back" : "front";

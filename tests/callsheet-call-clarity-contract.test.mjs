@@ -63,6 +63,8 @@ assert.match(indexCards, /excludedPlayKeys/, "index-card buckets can hide indivi
 assert.match(indexCards, /function removeCallSheetIndexPlay\(arg\)/, "each index-card call can be removed from that compact bucket only");
 assert.match(indexCards, /openLoadWristbandModal/, "index-card editing can load or replace the Call Sheet wristband directly");
 assert.match(indexCards, /cs-index-wristband-number/, "index-card and print calls show loaded wristband numbers");
+assert.match(indexCards, /function toggleCallSheetIndexSequenceNumbers\(id\)[\s\S]*?bucket\.showSequenceNumbers/, "Index Card buckets can opt into sequence numbers without affecting wristband numbers");
+assert.match(indexCards, /Turn sequence numbers on[\s\S]*?value: "sequence"/, "Index Card bucket management exposes the sequence-number toggle");
 assert.match(indexCards, /function _csUpdateIndexCardFitStatus\(\)/, "index-card editing reports whether the live card fits its 4×6 print area");
 assert.match(indexCards, /cs-index-capacity-probe[\s\S]*?_csCardMarkup\(activeCard, _csIndexSide, false\)[\s\S]*?usedPercent/, "Index Card capacity measures the non-editable print markup instead of editor controls");
 assert.match(indexCards, /function copyCallSheetIndexBucketToOtherSide\(id\)/, "Index Card situations can be copied to the opposite side");
@@ -75,6 +77,7 @@ assert.match(render, /Index Cards are a fixed physical preview[\s\S]*?card\.scro
 assert.match(css, /\.cs-index-print-preview-pages \.cs-index-card \{ width: min\(100%, 390px\); height: min\(585px,[\s\S]*?aspect-ratio: 2 \/ 3/, "index-card preview uses a fixed 4×6-proportional canvas rather than growing with content");
 assert.match(css, /\.cs-index-print-preview-pages \.cs-index-grid \{ grid-auto-rows: minmax\(max-content, 1fr\); align-content: stretch; gap: 0/, "Index Card preview preserves paired equal-width columns while stretching rows across the physical card");
 assert.match(css, /body\.cs-index-printing \.cs-index-bucket header \{ min-height: 0; padding: \.012in \.035in; font-size: 6pt/, "printed Index Card headers are compacted to reclaim call space");
+assert.match(css, /cs-index-list--unsequenced[\s\S]*?list-style: none/, "Index Card buckets suppress ordered list numbers by default");
 assert.match(scriptIntegrations, /function sendScriptToIndexCallSheet\(\)[\s\S]*?createSmartCallSheetIndexCard/, "Script can build a smart index card from selected or full script plays");
 assert.match(gamePlanIntegrations, /function sendGamePlanToIndexCallSheet\(\)[\s\S]*?sourceBoxId[\s\S]*?createSmartCallSheetIndexCard/, "Game Plan can build a smart index card while retaining bucket context");
 assert.match(appEvents, /"openCallSheetIndexPlayMenu"/, "delegated event routing passes the index-card play action its source element");
