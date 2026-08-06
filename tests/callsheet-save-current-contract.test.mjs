@@ -37,6 +37,8 @@ assert.match(render, /cs-single-column/, "the Call Sheet render path exposes the
 assert.match(css, /\.callsheet-category\.cs-single-column .category-content/, "one-column categories use a full-width call layout");
 assert.doesNotMatch(picker, /const otherHash = hash === "left" \? "right" : "left"/, "a blank spacer stays on the selected hash instead of adding an unrelated partner spacer");
 assert.match(picker, /\.callsheet-play, \.cs-blank-row/, "manual Call Sheet drag-and-drop includes blank spacers as well as plays");
+assert.match(picker, /event\.dataTransfer\.setData\("text\/plain"/, "cell drags include a browser-compatible payload");
+assert.match(picker, /cs-drop-after/, "cell reordering shows a precise before-or-after insertion target");
 assert.match(render, /cs-blank-row" draggable="true"/, "blank spacers are draggable cells");
 assert.match(render, /cs-cat-drag-handle" draggable="true" data-drag="catDrag"/, "category moves use an explicit drag handle instead of competing with cell drags");
 assert.match(filters, /A saved wristband can change after it was loaded into the call sheet/, "new wristband entries are read live before assigning a Call Sheet number");

@@ -1,6 +1,12 @@
 let _csPickerFiltered = [];
 let draggedCallSheetPlay = null;
 
+function clearCallSheetDropIndicators() {
+  document
+    .querySelectorAll(".cs-drop-before, .cs-drop-after, .cs-drop-target, .cs-drop-at-end")
+    .forEach((element) => element.classList.remove("cs-drop-before", "cs-drop-after", "cs-drop-target", "cs-drop-at-end"));
+}
+
 function setCallSheetOverlayVisibility(overlayId, isOpen) {
   const overlay = document.getElementById(overlayId);
   if (!overlay) return null;
@@ -660,6 +666,9 @@ function addCsBlankRow(arg) {
 function handleCallSheetDragStart(event, categoryId, hash, index) {
   draggedCallSheetPlay = { categoryId, hash, index };
   event.dataTransfer.setData("source", "callsheet");
+  // Chromium and Safari both require a text payload for a reliable internal
+  // drag, even though the source data above is what our drop handler uses.
+  event.dataTransfer.setData("text/plain", `${categoryId}:${hash}:${index}`);
   event.dataTransfer.effectAllowed = "move";
   event.target.closest(".callsheet-play, .cs-blank-row")?.classList.add("dragging");
 }
@@ -673,21 +682,28 @@ function handleCallSheetDragOver(event) {
   event.dataTransfer.dropEffect = allowed === "copy" ? "copy" : "move";
 
   const target = event.target.closest(".callsheet-play, .cs-blank-row");
-  document
-    .querySelectorAll(".cs-drop-above")
-    .forEach((element) => element.classList.remove("cs-drop-above"));
-  if (target) target.classList.add("cs-drop-above");
+  const hashColumn = event.target.closest("[data-drop='csHashDrop']");
+  clearCallSheetDropIndicators();
+  if (target) {
+    const bounds = target.getBoundingClientRect();
+    const placeAfter = event.clientY > bounds.top + (bounds.height / 2);
+    target.classList.add("cs-drop-target", placeAfter ? "cs-drop-after" : "cs-drop-before");
+  } else if (hashColumn) {
+    hashColumn.classList.add("cs-drop-target", "cs-drop-at-end");
+  }
 }
 
 function handleCallSheetDrop(event, targetCategory, targetHash) {
   event.preventDefault();
-  document
-    .querySelectorAll(".cs-drop-above")
-    .forEach((element) => element.classList.remove("cs-drop-above"));
 
   const targetPlay = event.target.closest(".callsheet-play, .cs-blank-row");
+  const placeAfter = Boolean(targetPlay?.classList.contains("cs-drop-after"));
   let insertIdx = -1;
-  if (targetPlay) insertIdx = parseInt(targetPlay.dataset.index, 10);
+  if (targetPlay) {
+    insertIdx = parseInt(targetPlay.dataset.index, 10);
+    if (!Number.isNaN(insertIdx) && placeAfter) insertIdx += 1;
+  }
+  clearCallSheetDropIndicators();
 
   if (!callSheet[targetCategory]) {
     callSheet[targetCategory] = { left: [], right: [] };
@@ -728,7 +744,7 @@ function handleCallSheetDrop(event, targetCategory, targetHash) {
     // be lost.
     draggedCallSheetPlay = null;
     document.querySelectorAll(".callsheet-play.dragging, .cs-blank-row.dragging").forEach((el) => el.classList.remove("dragging"));
-    document.querySelectorAll(".cs-drop-above").forEach((el) => el.classList.remove("cs-drop-above"));
+    clearCallSheetDropIndicators();
 
     renderCallSheet();
     saveCallSheet();
@@ -882,8 +898,9 @@ document.addEventListener("DOMContentLoaded", () => {
         draggedCallSheetPlay = null;
       }
       document
-        .querySelectorAll(".cs-drop-above")
-        .forEach((element) => element.classList.remove("cs-drop-above"));
+        .querySelectorAll(".callsheet-play.dragging, .cs-blank-row.dragging")
+        .forEach((element) => element.classList.remove("dragging"));
+      clearCallSheetDropIndicators();
     });
 
     grid.addEventListener("dblclick", (event) => {

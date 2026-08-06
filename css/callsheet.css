@@ -558,7 +558,6 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   user-select: none;
 }
 .cs-blank-row.dragging { opacity: .5; background: var(--color-bg-blue-tint); }
-.cs-blank-row.cs-drop-above { border-top: 3px solid var(--color-primary); }
 .cs-blank-row .cs-blank-remove { margin-left: auto; }
 .cs-blank-remove {
   opacity: 0;
@@ -2537,8 +2536,22 @@ body.shell-phone #callsheet .cs-empty-cat {
 }
 
 /* --- Drag Insertion Indicator --- */
-.callsheet-play.cs-drop-above {
+.callsheet-play.cs-drop-target,
+.cs-blank-row.cs-drop-target {
+  background: var(--color-bg-blue-tint);
+}
+.callsheet-play.cs-drop-before,
+.cs-blank-row.cs-drop-before {
   border-top: 3px solid var(--color-primary) !important;
+}
+.callsheet-play.cs-drop-after,
+.cs-blank-row.cs-drop-after {
+  border-bottom: 3px solid var(--color-primary) !important;
+}
+.hash-column.cs-drop-at-end {
+  background: color-mix(in srgb, var(--color-primary) 7%, transparent);
+  outline: 2px dashed var(--color-primary);
+  outline-offset: -3px;
 }
 
 /* --- Category Drag --- */
