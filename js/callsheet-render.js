@@ -1032,7 +1032,8 @@ function renderCallSheetAdditionalPersonnel(play, className = "cs-extra-personne
   if (!labels.length) return "";
   const markers = labels.map((label) => {
     const marker = typeof getPersonnelEmoji === "function" ? getPersonnelEmoji(label) : "";
-    return marker || escapeHtml(label);
+    const content = marker || escapeHtml(label);
+    return `<span class="${className}-marker" title="${escapeHtml(label)}">${content}</span>`;
   });
   return `<span class="${className}" title="Also available in ${escapeHtml(labels.join(", "))}">${markers.join(" ")}</span>`;
 }

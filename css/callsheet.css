@@ -2748,10 +2748,13 @@ body.shell-phone #callsheet .cs-empty-cat {
 .cs-ctx-personnel-options label { display:inline-flex; align-items:center; gap:3px; color:var(--color-text); font-size:11px; cursor:pointer; }
 .cs-extra-personnel,
 .cs-personnel-play-options,
-.print-extra-personnel { display:inline-flex; align-items:center; max-width:100%; padding:1px 4px; border:1px solid var(--color-border); border-radius:999px; color:var(--color-text-muted); background:var(--color-bg-subtle); font-size:9px; font-weight:700; line-height:1.2; white-space:nowrap; }
+.print-extra-personnel { display:inline; max-width:100%; color:var(--color-text-muted); font-size:9px; font-weight:700; line-height:1.2; white-space:nowrap; }
+.cs-extra-personnel-marker,
+.cs-personnel-play-options-marker,
+.print-extra-personnel-marker { display:inline; }
 .cs-extra-personnel { margin-left:2px; }
 .cs-personnel-play-options { margin-left:auto; }
-.print-extra-personnel { margin-right:3px; border-color:#94a3b8; color:#334155; background:#f8fafc; }
+.print-extra-personnel { margin-right:3px; color:#334155; }
 
 .cs-ctx-tag-actions {
   display: flex;
