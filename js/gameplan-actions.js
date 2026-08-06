@@ -1009,6 +1009,21 @@ function _gpOpenPlayContextMenu(e, boxId, sig, rawIdx) {
   }
   items.push({ separator: true });
   items.push({
+    label: "👥 Change personnel / Game Plan-only override…",
+    onClick: () => openGamePlanPersonnelVariant(playArg),
+  });
+  const source = _gpFindPlayBySig(sig) || play;
+  const personnelOptions = typeof getPlayPersonnelOptions === "function"
+    ? getPlayPersonnelOptions(source)
+    : [];
+  if (personnelOptions.length > 1) {
+    items.push({
+      label: "＋ Add approved personnel version…",
+      onClick: () => openGamePlanPersonnelVariantsPicker(playArg),
+    });
+  }
+  items.push({ separator: true });
+  items.push({
     label: "▲ Move up",
     onClick: () => moveGamePlanPlayUp(playArg),
   });
