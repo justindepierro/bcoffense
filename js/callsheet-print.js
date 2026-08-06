@@ -588,7 +588,7 @@ function renderPrintPlay(play, options, printJob) {
       ? `<span class="print-inline-code cs-personnel-marker" title="${escapeHtml(personnel)}">${personnelMarker}</span>`
       : `<span class="print-inline-code" style="background: ${getPersonnelBgColor(personnel)}; color: ${getPersonnelTextColor(personnel)};">${escapeHtml(personnelCode)}</span>`)
     : "";
-  const additionalPersonnelHtml = typeof renderCallSheetAdditionalPersonnel === "function"
+  const additionalPersonnelHtml = displayOptions.showPersonnel && typeof renderCallSheetAdditionalPersonnel === "function"
     ? renderCallSheetAdditionalPersonnel(play, "print-extra-personnel")
     : "";
   const wristbandHtml = displayOptions.showNumbers && play.wristbandNumber

@@ -1592,7 +1592,9 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
   const personnelHtml = displayOptions.showPersonnel
     ? renderCallSheetPersonnelBadge(play)
     : "";
-  const additionalPersonnelHtml = renderCallSheetAdditionalPersonnel(play);
+  const additionalPersonnelHtml = displayOptions.showPersonnel
+    ? renderCallSheetAdditionalPersonnel(play)
+    : "";
   const wristbandHtml = displayOptions.showNumbers && play.wristbandNumber
     ? `<span class="cs-wristband-number" title="Wristband ${escapeHtml(play.wristbandNumber)}">#${escapeHtml(play.wristbandNumber)}</span>`
     : "";

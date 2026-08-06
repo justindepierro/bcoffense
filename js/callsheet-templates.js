@@ -157,6 +157,18 @@ function hasAmbiguousCurrentCallSheetName(templates) {
   ).length > 1;
 }
 
+function setCurrentCallSheetSaveTarget(template) {
+  callSheetSettings.activeSavedCallSheetId = String(template?.id || "");
+  callSheetSettings.activeSavedCallSheetName = String(template?.name || "").trim();
+  saveCallSheetSettings();
+}
+
+function clearCurrentCallSheetSaveTarget() {
+  callSheetSettings.activeSavedCallSheetId = "";
+  callSheetSettings.activeSavedCallSheetName = "";
+  saveCallSheetSettings();
+}
+
 function saveCurrentCallSheet() {
   try {
     // Persist the working state first; the library snapshot is an additional
@@ -172,13 +184,11 @@ function saveCurrentCallSheet() {
     const name = String(existing?.name || callSheetSettings?.activeSavedCallSheetName || defaultName).trim() || defaultName;
     const id = String(existing?.id || callSheetSettings?.activeSavedCallSheetId || (typeof createPlayId === "function" ? createPlayId("callsheet") : `callsheet-${Date.now()}`));
 
-    callSheetSettings.activeSavedCallSheetId = id;
-    callSheetSettings.activeSavedCallSheetName = name;
     const replacement = buildCallSheetTemplate(name, { includePlays: true, id });
     if (existing) Object.assign(existing, replacement);
     else templates.unshift(replacement);
     storageManager.set(STORAGE_KEYS.CALLSHEET_TEMPLATES, templates);
-    saveCallSheetSettings();
+    setCurrentCallSheetSaveTarget(replacement);
     showToast(`💾 Saved ${name}`);
     return true;
   } catch (err) {
@@ -250,8 +260,10 @@ async function saveCallSheetTemplate() {
       );
 
       if (choice === "option1") {
-        Object.assign(existing, buildCallSheetTemplate(name, { includePlays }));
+        const replacement = buildCallSheetTemplate(name, { includePlays, id: existing.id });
+        Object.assign(existing, replacement);
         storageManager.set(STORAGE_KEYS.CALLSHEET_TEMPLATES, templates);
+        if (includePlays) setCurrentCallSheetSaveTarget(existing);
         if (document.getElementById("csTemplateOverlay")) {
           closeTemplateModal();
           openTemplatesModal();
@@ -265,8 +277,10 @@ async function saveCallSheetTemplate() {
       }
     }
 
-    templates.unshift(buildCallSheetTemplate(name, { includePlays }));
+    const created = buildCallSheetTemplate(name, { includePlays });
+    templates.unshift(created);
     storageManager.set(STORAGE_KEYS.CALLSHEET_TEMPLATES, templates);
+    if (includePlays) setCurrentCallSheetSaveTarget(created);
 
     if (document.getElementById("csTemplateOverlay")) {
       closeTemplateModal();
@@ -524,7 +538,8 @@ async function applyCallSheetTemplate(template) {
 
 async function deleteTemplate(idx) {
   const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
-  const name = templates[idx]?.name || "template";
+  const template = templates[idx];
+  const name = template?.name || "template";
   const ok = await showConfirm(`Delete "${name}"?`, {
     title: "Delete Template",
     icon: "🗑️",
@@ -535,6 +550,9 @@ async function deleteTemplate(idx) {
 
   templates.splice(idx, 1);
   storageManager.set(STORAGE_KEYS.CALLSHEET_TEMPLATES, templates);
+  if (String(template?.id || "") === String(callSheetSettings.activeSavedCallSheetId || "")) {
+    clearCurrentCallSheetSaveTarget();
+  }
   closeTemplateModal();
   openTemplatesModal(csTemplateModalMode);
   showToast(`🗑️ Deleted "${name}"`);

@@ -19,6 +19,9 @@ const [callsheet, templates, pageActions, filters, render, picker, css, print, m
 assert.match(callsheet, /activeSavedCallSheetId/, "Call Sheet settings retain the active saved-sheet identity");
 assert.match(templates, /function saveCurrentCallSheet\(\)/, "Call Sheet has a prompt-free current-sheet save path");
 assert.match(templates, /function getCurrentCallSheetSaveTarget/, "normal save resolves an existing sheet before creating one");
+assert.match(templates, /function setCurrentCallSheetSaveTarget\(template\)/, "all full-sheet save flows share one active-sheet identity update");
+assert.match(templates, /if \(includePlays\) setCurrentCallSheetSaveTarget\(created\)/, "saving a full sheet makes that exact saved record the next Save target");
+assert.match(templates, /clearCurrentCallSheetSaveTarget\(\)/, "deleting the active saved sheet clears its stale save identity");
 assert.match(templates, /function hasAmbiguousCurrentCallSheetName/, "a duplicate display name cannot silently choose a saved Call Sheet");
 assert.match(templates, /More than one saved call sheet has this name/, "ambiguous legacy Call Sheet identity asks the coach to load the intended record");
 assert.match(templates, /saveCallSheet\(\);/, "current-sheet save persists the working sheet first");
@@ -45,7 +48,9 @@ assert.match(filters, /A saved wristband can change after it was loaded into the
 assert.match(render, /const marker = typeof getPersonnelEmoji/, "additional personnel uses the shared marker language rather than raw chip text");
 assert.match(render, /\$\{className\}-marker/, "additional personnel markers render as individual plain markers instead of one pill chip");
 assert.match(render, /function renderCallSheetPersonnelBadge\(play, className = "personnel-code"\)/, "known personnel markers render as plain emoji instead of colored text chips");
+assert.match(render, /const additionalPersonnelHtml = displayOptions\.showPersonnel/, "the personnel display setting controls all personnel markers on screen");
 assert.match(print, /const personnelMarker = typeof getPersonnelEmoji/, "print output resolves plain personnel markers without relying on the interactive renderer");
+assert.match(print, /const additionalPersonnelHtml = displayOptions\.showPersonnel/, "the personnel display setting controls all personnel markers in print");
 assert.match(print, /<label for="csPrintPaper">Paper<\/label>/, "print controls use programmatic labels instead of visual-only labels");
 assert.match(templates, /<label class="sr-only" for="csTemplateName">Call sheet name<\/label>/, "saved-sheet naming has an accessible programmatic label");
 assert.match(print, /if \(play\?\._blank\)/, "print output preserves intentional blank spacer cells");
