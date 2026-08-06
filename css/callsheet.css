@@ -28,37 +28,40 @@
 .cs-index-print-preview-pages .cs-index-print-page { min-width: 0; }
 /* The editor has an explicit pixel height so it can report capacity. The
    preview must instead use the physical 4×6 ratio at its scaled width. */
-.cs-index-print-preview-pages .cs-index-card { width: min(100%, 390px); height: min(585px, calc((100vw - 84px) * 1.5)); min-height: 0; aspect-ratio: 2 / 3; margin: 0 auto; font-size: .84em; }
-.cs-index-print-preview-pages .cs-index-grid { grid-auto-rows: minmax(max-content, 1fr); align-content: stretch; gap: 0; overflow: hidden; }
+.cs-index-print-preview-pages .cs-index-card { width: min(100%, 390px); height: min(585px, calc((100vw - 84px) * 1.5)); min-height: 0; aspect-ratio: 2 / 3; margin: 0 auto; padding: .055in; border-width: 1.5pt; border-radius: 0; box-shadow: none; font-size: .84em; }
+.cs-index-print-preview-pages .cs-index-grid { grid-auto-rows: minmax(max-content, 1fr); align-content: stretch; gap: 0; padding-top: .025in; overflow: hidden; }
 .cs-index-print-preview-pages .cs-index-bucket { align-self: stretch; }
 .cs-index-print-preview-pages .cs-index-card-head { padding: .015in .035in !important; font-size: 6.5pt !important; line-height: 1.05; border-bottom-width: 1.5pt; }
 .cs-index-print-preview-pages .cs-index-bucket header { min-height: 0 !important; padding: .012in .035in !important; font-size: 6pt !important; line-height: 1.05 !important; }
-.cs-index-print-preview-pages .cs-index-bucket ol { padding: .025in .035in .025in .14in !important; font-size: 6.3pt !important; line-height: 1.14 !important; }
+.cs-index-print-preview-pages .cs-index-bucket ol { padding: .018in .03in .018in .11in !important; font-size: 6.2pt !important; line-height: 1.1 !important; }
 .cs-index-print-preview-pages .cs-index-bucket ol.cs-index-list--unsequenced { padding-left: .035in !important; }
-.cs-index-print-preview-pages .cs-index-bucket li { margin-bottom: .015in !important; }
+.cs-index-print-preview-pages .cs-index-bucket li { margin-bottom: .01in !important; }
+.cs-index-print-preview-pages .cs-index-no-calls { display: none; }
 .cs-index-capacity-probe { position: fixed; z-index: -1; top: -10000px; left: -10000px; width: 3.84in; height: 5.84in; visibility: hidden; pointer-events: none; }
-.cs-index-capacity-probe .cs-index-card { box-sizing: border-box; width: 3.84in; min-height: 5.84in; height: 5.84in; margin: 0; padding: .08in; border-width: 1.5pt; border-radius: 0; box-shadow: none; }
+.cs-index-capacity-probe .cs-index-card { box-sizing: border-box; width: 3.84in; min-height: 5.84in; height: 5.84in; margin: 0; padding: .055in; border-width: 1.5pt; border-radius: 0; box-shadow: none; }
 .cs-index-capacity-probe .cs-index-card-head { padding: .015in .035in; font-size: 6.5pt; line-height: 1.05; border-bottom-width: 1.5pt; }
-.cs-index-capacity-probe .cs-index-grid { grid-auto-rows: minmax(max-content, 1fr); align-content: stretch; gap: 0; padding-top: .04in; overflow: hidden; }
+.cs-index-capacity-probe .cs-index-grid { grid-auto-rows: minmax(max-content, 1fr); align-content: stretch; gap: 0; padding-top: .025in; overflow: hidden; }
 .cs-index-capacity-probe .cs-index-bucket { align-self: stretch; }
 .cs-index-capacity-probe .cs-index-bucket header { min-height: 0; padding: .012in .035in; font-size: 6pt; line-height: 1.05; }
-.cs-index-capacity-probe .cs-index-bucket ol { padding: .025in .035in .025in .14in; font-size: 6.3pt; line-height: 1.14; }
+.cs-index-capacity-probe .cs-index-bucket ol { padding: .018in .03in .018in .11in; font-size: 6.2pt; line-height: 1.1; }
 .cs-index-capacity-probe .cs-index-bucket ol.cs-index-list--unsequenced { padding-left: .035in; }
-.cs-index-capacity-probe .cs-index-bucket li { margin-bottom: .015in; }
+.cs-index-capacity-probe .cs-index-bucket li { margin-bottom: .01in; }
+.cs-index-capacity-probe .cs-index-no-calls { display: none; }
 @media print {
   body.cs-index-printing > * { display: none !important; }
   body.cs-index-printing #csIndexCardPrintRoot { display: block !important; }
   body.cs-index-printing .cs-index-print-page { width: 3.84in; height: 5.84in; break-after: page; page-break-after: always; }
   body.cs-index-printing .cs-index-print-page:last-child { break-after: auto; page-break-after: auto; }
-  body.cs-index-printing .cs-index-card { box-sizing: border-box; width: 3.84in; min-height: 5.84in; height: 5.84in; margin: 0; padding: .08in; border-width: 1.5pt; border-radius: 0; box-shadow: none; }
+  body.cs-index-printing .cs-index-card { box-sizing: border-box; width: 3.84in; min-height: 5.84in; height: 5.84in; margin: 0; padding: .055in; border-width: 1.5pt; border-radius: 0; box-shadow: none; }
   body.cs-index-printing .cs-index-card-head { padding: .015in .035in !important; font-size: 6.5pt !important; line-height: 1.05; border-bottom-width: 1.5pt; }
-  body.cs-index-printing .cs-index-grid { grid-auto-rows: minmax(max-content, 1fr); align-content: stretch; gap: 0; padding-top: .04in; }
+  body.cs-index-printing .cs-index-grid { grid-auto-rows: minmax(max-content, 1fr); align-content: stretch; gap: 0; padding-top: .025in; }
   body.cs-index-printing .cs-index-grid { flex: 1 1 auto; min-height: 0; height: auto; overflow: hidden; }
   body.cs-index-printing .cs-index-bucket { align-self: stretch; }
   body.cs-index-printing .cs-index-bucket header { min-height: 0 !important; padding: .012in .035in !important; font-size: 6pt !important; line-height: 1.05 !important; }
-  body.cs-index-printing .cs-index-bucket ol { padding: .025in .035in .025in .14in !important; font-size: 6.3pt !important; line-height: 1.14 !important; }
+  body.cs-index-printing .cs-index-bucket ol { padding: .018in .03in .018in .11in !important; font-size: 6.2pt !important; line-height: 1.1 !important; }
   body.cs-index-printing .cs-index-bucket ol.cs-index-list--unsequenced { padding-left: .035in !important; }
-  body.cs-index-printing .cs-index-bucket li { margin-bottom: .015in !important; }
+  body.cs-index-printing .cs-index-bucket li { margin-bottom: .01in !important; }
+  body.cs-index-printing .cs-index-no-calls { display: none; }
 }
 
 /* Tablet tier: keep the print-like grid compact but make toolbar actions
