@@ -2,6 +2,58 @@ let _csPickerFiltered = [];
 let draggedCallSheetPlay = null;
 let _csPickerSelectionInFlight = false;
 
+function _csPickerWristbandKey(play) {
+  return [play?.formation, play?.play, play?.personnel]
+    .map((value) => String(value || "").trim().toLowerCase())
+    .join("\u001f");
+}
+
+function _csPickerBuildRefreshContext({ gamePlanOnly = false, jvOnly = false } = {}) {
+  const wristbandNumbers = new Map();
+  (callSheetSettings.loadedWristbandPlays || []).forEach((play) => {
+    const key = _csPickerWristbandKey(play);
+    if (key && play?.wristbandNumber && !wristbandNumbers.has(key)) {
+      wristbandNumbers.set(key, play.wristbandNumber);
+    }
+  });
+
+  const usedKeys = typeof getCallSheetUsedPlayKeys === "function"
+    ? getCallSheetUsedPlayKeys()
+    : new Set();
+  const locationsByKey = new Map();
+  CALLSHEET_CATEGORIES.forEach((category) => {
+    const data = callSheet?.[category.id];
+    ["left", "right"].forEach((hash) => {
+      (data?.[hash] || []).forEach((play) => {
+        if (!play || play._blank || typeof csPlayKey !== "function") return;
+        const key = csPlayKey(play);
+        const location = `${getCategoryDisplayName(category)} - ${hash === "left" ? "Left" : "Right"}`;
+        const locations = locationsByKey.get(key) || [];
+        if (!locations.includes(location)) locations.push(location);
+        locationsByKey.set(key, locations);
+      });
+    });
+  });
+
+  const gamePlanMembership = gamePlanOnly && typeof getGamePlanBoardMembership === "function"
+    ? getGamePlanBoardMembership()
+    : null;
+  const jvSignatures = (jvOnly || document.getElementById("csPickerJvCount")) && typeof _gpFlaggedSigs === "function"
+    ? _gpFlaggedSigs("jv")
+    : new Set();
+
+  return { wristbandNumbers, usedKeys, locationsByKey, gamePlanMembership, jvSignatures };
+}
+
+function _csPickerIsInGamePlan(play, membership) {
+  if (!membership || !play) return false;
+  const signature = typeof _gpPlaySignature === "function" ? _gpPlaySignature(play) : "";
+  const sourceId = typeof getStablePlaySourceId === "function"
+    ? getStablePlaySourceId(play)
+    : String(play.playbookId || play.sourcePlayId || play.originalPlayId || play.id || "").trim();
+  return membership.signatures.has(signature) || Boolean(sourceId && membership.sourceIds.has(sourceId));
+}
+
 function clearCallSheetDropIndicators() {
   document
     .querySelectorAll(".cs-drop-before, .cs-drop-after, .cs-drop-target, .cs-drop-at-end")
@@ -221,17 +273,21 @@ function debouncedPopulateCallSheetPlayList() {
 function populateCallSheetPlayList() {
   updatePickerSourceUI();
 
+  const gamePlanOnly = document.getElementById("csPickerGamePlanFilter")?.checked || false;
+  const jvOnly = document.getElementById("csPickerJvFilter")?.checked || false;
+  const notOnSheetOnly = document.getElementById("csPickerNotOnSheetFilter")?.checked || false;
+  const refreshContext = _csPickerBuildRefreshContext({ gamePlanOnly, jvOnly });
+
   // Update chip count badges
   const gpCountEl = document.getElementById("csPickerGamePlanCount");
   if (gpCountEl) {
-    const n = (typeof getGamePlanBoardSignatures === "function")
-      ? getGamePlanBoardSignatures().size : 0;
+    const membership = refreshContext.gamePlanMembership || (typeof getGamePlanBoardMembership === "function" ? getGamePlanBoardMembership() : null);
+    const n = membership?.signatures?.size || 0;
     gpCountEl.textContent = n > 0 ? ` (${n})` : "";
   }
   const jvCountEl = document.getElementById("csPickerJvCount");
   if (jvCountEl) {
-    const n = (typeof getGamePlanFlaggedCount === "function")
-      ? getGamePlanFlaggedCount("jv") : 0;
+    const n = refreshContext.jvSignatures.size;
     jvCountEl.textContent = n > 0 ? ` (${n})` : "";
   }
 
@@ -271,26 +327,13 @@ function populateCallSheetPlayList() {
   } else {
     sourceList = plays.map((play, index) => {
       const copy = { ...play, _sourceIdx: index };
-      if (
-        callSheetSettings.loadedWristbandPlays &&
-        callSheetSettings.loadedWristbandPlays.length > 0
-      ) {
-        const match = callSheetSettings.loadedWristbandPlays.find(
-          (wristbandPlay) =>
-            wristbandPlay.formation === play.formation &&
-            wristbandPlay.play === play.play &&
-            wristbandPlay.personnel === play.personnel,
-        );
-        if (match) copy.wristbandNumber = match.wristbandNumber;
-      }
+      const wristbandNumber = refreshContext.wristbandNumbers.get(_csPickerWristbandKey(play));
+      if (wristbandNumber) copy.wristbandNumber = wristbandNumber;
       return copy;
     });
   }
 
-  const usedCallSheetKeys =
-    typeof getCallSheetUsedPlayKeys === "function"
-      ? getCallSheetUsedPlayKeys()
-      : new Set();
+  const usedCallSheetKeys = refreshContext.usedKeys;
   const notOnSheetCountEl = document.getElementById("csPickerNotOnSheetCount");
   if (notOnSheetCountEl) {
     const n =
@@ -348,14 +391,11 @@ function populateCallSheetPlayList() {
   if (backFilter) filtered = filtered.filter((play) => (play.back || "") === backFilter);
   if (tempoFilter) filtered = filtered.filter((play) => (play.tempo || "") === tempoFilter);
 
-  const gamePlanOnly = document.getElementById("csPickerGamePlanFilter")?.checked || false;
-  const jvOnly = document.getElementById("csPickerJvFilter")?.checked || false;
-  const notOnSheetOnly = document.getElementById("csPickerNotOnSheetFilter")?.checked || false;
-  if (gamePlanOnly && typeof isPlayInGamePlanBoard === "function") {
-    filtered = filtered.filter((play) => isPlayInGamePlanBoard(play));
+  if (gamePlanOnly && refreshContext.gamePlanMembership) {
+    filtered = filtered.filter((play) => _csPickerIsInGamePlan(play, refreshContext.gamePlanMembership));
   }
-  if (jvOnly && typeof isPlayFlaggedInGamePlan === "function") {
-    filtered = filtered.filter((play) => isPlayFlaggedInGamePlan(play, "jv"));
+  if (jvOnly) {
+    filtered = filtered.filter((play) => refreshContext.jvSignatures.has(typeof _gpPlaySignature === "function" ? _gpPlaySignature(play) : ""));
   }
   if (notOnSheetOnly && typeof csPlayKey === "function") {
     filtered = filtered.filter((play) => !usedCallSheetKeys.has(csPlayKey(play)));
@@ -409,7 +449,9 @@ function populateCallSheetPlayList() {
       }
       if (play.back) chips.push(`<span class="cs-picker-chip">${escapeHtml(play.back)}</span>`);
       if (play.tempo) chips.push(`<span class="cs-picker-chip">${escapeHtml(play.tempo)}</span>`);
-      const locations = getCallSheetPlayLocations(play);
+      const locations = typeof csPlayKey === "function"
+        ? (refreshContext.locationsByKey.get(csPlayKey(play)) || [])
+        : [];
       if (locations.length) {
         locations.forEach((location) => {
           chips.push(
