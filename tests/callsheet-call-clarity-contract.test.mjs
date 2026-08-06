@@ -65,6 +65,7 @@ assert.match(indexCards, /bucket\.playKeys\.map\(\(identity\) => rowsByIdentity\
 assert.match(indexCards, /function _csReorderIndexBucketPlay\(bucketId, sourceKey, targetKey, placeAfter\)[\s\S]*?keys\.splice\(insertIndex, 0, sourceKey\)/, "Index Card play drag/drop persists an exact within-bucket row order");
 assert.match(indexCards, /function _csBindIndexPlayDragAndDrop\(\)[\s\S]*?cs-index-bucket--play-drop-end[\s\S]*?Play reordered/, "Index Card play drag/drop supports a visible drop at the bottom of a bucket");
 assert.match(indexCards, /function setCallSheetIndexBucketColor\(id\)/, "index-card situations support their own visible header color");
+assert.match(indexCards, /Game Plan Quick[\s\S]*?Game Plan Play Action[\s\S]*?Game Plan RPO[\s\S]*?Game Plan Run Option[\s\S]*?Game Plan Screen[\s\S]*?Game Plan Movement[\s\S]*?Game Plan Pass[\s\S]*?Game Plan Run/, "Index Card header colors include the full Game Plan accent family");
 assert.match(indexCards, /function manageCallSheetIndexCardBucket\(id\)/, "each index-card situation has one complete management surface");
 assert.match(indexCards, /Place in shortest column automatically[\s\S]*?Expand into the next row[\s\S]*?Fill remaining column height/, "bucket menu includes dynamic print-column and height controls");
 assert.match(indexCards, /excludedPlayKeys/, "index-card buckets can hide individual calls without deleting their canonical Call Sheet source");

@@ -779,9 +779,16 @@ async function setCallSheetIndexBucketColor(id) {
   const bucket = _csIndexBucketFromArg(id);
   if (!bucket) return;
   const palette = [
-    ["", "Auto — linked Call Sheet category"], ["#173768", "Navy"], ["#168a52", "Green"],
-    ["#d39b18", "Gold"], ["#dc6114", "Orange"], ["#c92e62", "Magenta"],
-    ["#176eaa", "Blue"], ["#6a3db2", "Purple"], ["#4b5563", "Slate"],
+    ["", "Auto — linked Call Sheet category"],
+    ["#173768", "Navy"], ["#4b5563", "Slate"], ["#6c757d", "Gray"],
+    ["#dc3545", "Call Sheet Red"], ["#ffc107", "Call Sheet Yellow"], ["#fd7e14", "Call Sheet Orange"],
+    ["#28a745", "Call Sheet Green"], ["#007bff", "Call Sheet Blue"], ["#6f42c1", "Call Sheet Purple"], ["#17a2b8", "Call Sheet Teal"],
+    ["#c92e62", "Magenta"], ["#176eaa", "Royal Blue"], ["#168a52", "Deep Green"],
+    ["#d39b18", "Gold"], ["#dc6114", "Burnt Orange"], ["#6a3db2", "Violet"],
+    ["#7c3aed", "Game Plan Quick"], ["#db2777", "Game Plan Play Action"],
+    ["#16a34a", "Game Plan RPO"], ["#65a30d", "Game Plan Run Option"],
+    ["#0891b2", "Game Plan Screen"], ["#9333ea", "Game Plan Movement"],
+    ["#2563eb", "Game Plan Pass"], ["#d97706", "Game Plan Run"],
   ];
   const color = await showListPicker("Choose the situation header color for this Index Card only.", palette.map(([value, label]) => ({ value, label })), { title: "Situation color", icon: "🎨" });
   if (color === null) return;
