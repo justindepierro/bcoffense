@@ -24,7 +24,9 @@
 .cs-index-print-preview-modal { width: min(980px, calc(100vw - 28px)); max-width: none; }
 .cs-index-print-preview-pages { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; max-height: min(68vh, 700px); overflow: auto; padding: 18px; background: var(--color-bg-dark, #334155); }
 .cs-index-print-preview-pages .cs-index-print-page { min-width: 0; }
-.cs-index-print-preview-pages .cs-index-card { width: min(100%, 390px); min-height: 0; aspect-ratio: 2 / 3; margin: 0 auto; font-size: .84em; }
+/* The editor has an explicit pixel height so it can report capacity. The
+   preview must instead use the physical 4×6 ratio at its scaled width. */
+.cs-index-print-preview-pages .cs-index-card { width: min(100%, 390px); height: auto; min-height: 0; aspect-ratio: 2 / 3; margin: 0 auto; font-size: .84em; }
 @media print {
   body.cs-index-printing > * { display: none !important; }
   body.cs-index-printing #csIndexCardPrintRoot { display: block !important; }
