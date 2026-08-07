@@ -86,7 +86,7 @@ assert.match(indexCards, /function clearCallSheetIndexCardBucket\(id\)[\s\S]*?bu
 assert.match(indexCards, /function removeEmptyCallSheetIndexBuckets\(\)/, "Index Card editor can remove empty situations in bulk");
 assert.match(css, /\.cs-index-card \{ box-sizing: border-box; display: flex; flex-direction: column; width: min\(100%, 480px\); height:/, "index-card editing uses a fixed 4×6-proportional frame instead of growing with content");
 assert.match(render, /panel\?\.classList\.toggle\("callsheet-index-mode", isIndexCards\)[\s\S]*?csIndexToolbarContext[\s\S]*?renderCallSheetIndexToolbarContext/, "Call Sheet rendering mounts Index Card context in the shared toolbar");
-assert.match(css, /\.callsheet-index-mode \.cs-toolbar \{ position: sticky; z-index: var\(--z-panel-sticky, 5\); top: calc\(var\(--app-header-height, 52px\) \+ var\(--app-tabs-height, 44px\)\); overflow: visible; \}/, "The shared Index Card toolbar remains sticky below the app header and allows its overflow menu to open");
+assert.match(css, /\.callsheet-index-mode \.cs-toolbar \{ position: relative; z-index: auto; overflow: visible; \}/, "The shared Index Card toolbar stays in the normal document flow so it cannot pin midway through the card canvas");
 assert.match(css, /\.callsheet-index-mode \.cs-source-bar \{ display: none; \}/, "Index Card mode removes the redundant source toolbar from the editing canvas");
 assert.match(css, /\.cs-index-grid \{ display: grid;[\s\S]*?flex: 1 1 auto; min-height: 0;[\s\S]*?overflow: auto/, "index-card bucket content stays in a constrained scroll region instead of painting over the next situation");
 assert.match(css, /\.cs-index-play-actions \{ display: inline-flex; position: absolute;[\s\S]*?pointer-events: none/, "editor-only play controls overlay on demand instead of changing the 4×6 capacity");
@@ -100,7 +100,6 @@ assert.match(css, /cs-index-play--family \{[\s\S]*?list-style: none;[\s\S]*?cs-i
 assert.match(css, /cs-index-bucket--drop-before[\s\S]*?box-shadow: 0 -4px 0 var\(--color-primary\)[\s\S]*?cs-index-bucket--drop-after/, "Index Card bucket drag targets visibly show whether the drop lands before or after");
 assert.match(css, /cs-index-play--drop-before[\s\S]*?cs-index-bucket--play-drop-end[\s\S]*?Drop at end/, "Index Card play drag targets visibly show row insertion and bottom-of-list placement");
 assert.match(indexCards, /application\/x-bcoffense-index-play/, "Index Card play reordering uses its own drag payload instead of the full Call Sheet mover");
-assert.match(indexCards, /cs-index-reorder-hint/, "Index Card editing explains the visible drag/drop feedback and precise fallback controls");
 assert.match(indexCards, /_csIndexPickerAddingKey/, "Index Card picker selections have a card-scoped duplicate-add guard");
 assert.match(scriptIntegrations, /function sendScriptToIndexCallSheet\(\)[\s\S]*?createSmartCallSheetIndexCard/, "Script can build a smart index card from selected or full script plays");
 assert.match(gamePlanIntegrations, /function sendGamePlanToIndexCallSheet\(\)[\s\S]*?sourceBoxId[\s\S]*?createSmartCallSheetIndexCard/, "Game Plan can build a smart index card while retaining bucket context");

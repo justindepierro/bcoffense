@@ -985,7 +985,7 @@ body.shell-phone #callsheet .cs-empty-cat {
 .callsheet-index-mode [data-action="autoPopulateCallSheet"] { display: none; }
 .callsheet-index-mode .cs-index-toolbar-only { display: inline-flex; }
 .callsheet-index-mode > .page-help { display: none; }
-.callsheet-index-mode .cs-toolbar { position: sticky; z-index: var(--z-panel-sticky, 5); top: calc(var(--app-header-height, 52px) + var(--app-tabs-height, 44px)); overflow: visible; }
+.callsheet-index-mode .cs-toolbar { position: relative; z-index: auto; overflow: visible; }
 .callsheet-index-mode .cs-toolbar-left,
 .callsheet-index-mode .cs-toolbar-right { display: flex; grid-template-columns: none; flex-wrap: nowrap; gap: 6px; }
 .callsheet-index-mode .cs-toolbar-left { min-width: 0; }
@@ -5474,7 +5474,6 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-side-label { color: var(--color-text); font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
 .cs-index-fit-status { width: min(100%, 480px); margin: var(--space-sm) auto 0; padding: 6px 8px; border: 1px solid var(--color-success, #168a52); border-radius: var(--radius-sm); background: linear-gradient(90deg, color-mix(in srgb, var(--color-success, #168a52) 16%, white) var(--cs-index-fill, 0%), color-mix(in srgb, var(--color-success, #168a52) 4%, white) var(--cs-index-fill, 0%)); color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: 700; text-align: center; }
 .cs-index-fit-status strong, .cs-index-fit-status span { display: block; }
-.cs-index-reorder-hint { width: min(100%, 480px); margin: 4px auto 0; color: var(--color-text-muted); font-size: 11px; line-height: 1.25; text-align: center; }
 .cs-index-fit-status.is-overfull { border-color: var(--color-warning, #d39b18); background: color-mix(in srgb, var(--color-warning, #d39b18) 12%, white); color: var(--color-text); }
 .cs-index-card--overfull { border-color: var(--color-warning, #d39b18); }
 .cs-index-main-empty { display: grid; min-height: 340px; place-content: center; gap: var(--space-sm); text-align: center; }

@@ -746,7 +746,7 @@ function renderCallSheetIndexCardPage() {
     _csBindIndexPlayDragAndDrop();
     _csUpdateIndexCardFitStatus();
   });
-  return `<section class="cs-index-main"><div id="csIndexCardFitStatus" class="cs-index-fit-status" role="status" aria-live="polite">4 × 6 print area</div><p class="cs-index-reorder-hint">Drag <strong>⠿</strong> to reorder a situation or a play. The blue line is the drop position; arrows remain available for precise moves.</p>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></section>`;
+  return `<section class="cs-index-main"><div id="csIndexCardFitStatus" class="cs-index-fit-status" role="status" aria-live="polite">4 × 6 print area</div>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></section>`;
 }
 function selectCallSheetIndexCard(id) { _csIndexCardId = String(id || ""); renderCallSheet(); }
 function setCallSheetIndexCardSide(side) { _csIndexSide = side === "back" ? "back" : "front"; renderCallSheet(); }
