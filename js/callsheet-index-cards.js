@@ -3,8 +3,10 @@
 let _csIndexCardId = "";
 let _csIndexSide = "front";
 let _csIndexPickerBucketId = "";
+let _csIndexPickerAddingKey = "";
 let _csIndexDraggingBucketId = "";
 let _csIndexDraggingPlay = null;
+let _csIndexRecoverySearchInFlight = false;
 
 function _csCards() { return Array.isArray(callSheetSettings.indexCards) ? callSheetSettings.indexCards : []; }
 function _csActiveCard() { const cards = _csCards(); const card = cards.find((item) => item.id === _csIndexCardId) || cards[0] || null; if (card) _csIndexCardId = card.id; return card; }
@@ -146,6 +148,7 @@ function _csBindIndexBucketDragAndDrop() {
     _csIndexDraggingBucketId = handle.dataset.csIndexBucketDrag || "";
     if (!_csIndexDraggingBucketId) return;
     event.dataTransfer?.setData("text/plain", `cs-index-bucket:${_csIndexDraggingBucketId}`);
+    event.dataTransfer?.setData("application/x-bcoffense-index-bucket", _csIndexDraggingBucketId);
     if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
     handle.closest(".cs-index-bucket")?.classList.add("cs-index-bucket--dragging");
   });
@@ -223,6 +226,7 @@ function _csBindIndexPlayDragAndDrop() {
     }
     event.stopPropagation();
     event.dataTransfer?.setData("text/plain", `cs-index-play:${_csIndexDraggingPlay.key}`);
+    event.dataTransfer?.setData("application/x-bcoffense-index-play", JSON.stringify(_csIndexDraggingPlay));
     if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
     row.classList.add("cs-index-play--dragging");
   }, true);
@@ -443,6 +447,7 @@ function openCallSheetIndexCardBucketPicker(id) {
   const bucket = _csIndexBucketFromArg(id);
   if (!bucket?.categoryId || typeof openCallSheetPlayPicker !== "function") return;
   _csIndexPickerBucketId = bucket.id;
+  _csIndexPickerAddingKey = "";
   openCallSheetPlayPicker(bucket.categoryId, bucket.targetHash === "right" ? "right" : "left");
 }
 function resolveCallSheetIndexCardPickerPlay(play, categoryId, hash) {
@@ -455,6 +460,11 @@ function onCallSheetIndexCardPickerPlayAdded(play) {
   const bucket = _csIndexBucketFromArg(_csIndexPickerBucketId);
   if (!bucket) return;
   const identity = _csIndexIdentity(play);
+  // A picker row is delegated through a few historical Call Sheet surfaces.
+  // Claim the selected play here as a second guard so one click cannot add it
+  // to the compact card more than once while the picker closes and rerenders.
+  if (!identity || _csIndexPickerAddingKey === identity) return;
+  _csIndexPickerAddingKey = identity;
   let changed = false;
   if (identity && Array.isArray(bucket.playKeys) && !bucket.playKeys.includes(identity)) { bucket.playKeys.push(identity); changed = true; }
   if (identity && Array.isArray(bucket.excludedPlayKeys)) {
@@ -465,7 +475,7 @@ function onCallSheetIndexCardPickerPlayAdded(play) {
   if (changed) saveCallSheetSettings();
   _csIndexPickerBucketId = "";
 }
-function onCallSheetIndexCardPickerClosed() { _csIndexPickerBucketId = ""; }
+function onCallSheetIndexCardPickerClosed() { _csIndexPickerBucketId = ""; _csIndexPickerAddingKey = ""; }
 function onCallSheetIndexCardDroppedPlay(play, bucketId) {
   const bucket = _csIndexBucketFromArg(bucketId);
   if (!bucket || !play) return;
@@ -731,8 +741,12 @@ function renderCallSheetIndexToolbarContext() {
 function renderCallSheetIndexCardPage() {
   const cards = _csCards(); const card = _csActiveCard();
   if (!card) return `<section class="cs-index-main-empty"><h3>🗂️ Call Sheet Index Cards</h3><p>Build a compact, printable view from the same situations and calls already on your Call Sheet.</p><button class="btn btn-primary" data-action="newCallSheetIndexCard">＋ Create first card</button></section>`;
-  requestAnimationFrame(_csUpdateIndexCardFitStatus);
-  return `<section class="cs-index-main"><div id="csIndexCardFitStatus" class="cs-index-fit-status" role="status" aria-live="polite">4 × 6 print area</div>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></section>`;
+  requestAnimationFrame(() => {
+    _csBindIndexBucketDragAndDrop();
+    _csBindIndexPlayDragAndDrop();
+    _csUpdateIndexCardFitStatus();
+  });
+  return `<section class="cs-index-main"><div id="csIndexCardFitStatus" class="cs-index-fit-status" role="status" aria-live="polite">4 × 6 print area</div><p class="cs-index-reorder-hint">Drag <strong>⠿</strong> to reorder a situation or a play. The blue line is the drop position; arrows remain available for precise moves.</p>${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></section>`;
 }
 function selectCallSheetIndexCard(id) { _csIndexCardId = String(id || ""); renderCallSheet(); }
 function setCallSheetIndexCardSide(side) { _csIndexSide = side === "back" ? "back" : "front"; renderCallSheet(); }
@@ -762,9 +776,18 @@ async function deleteCallSheetIndexCard() {
 }
 async function recoverCallSheetIndexCard() {
   const card = _csActiveCard();
-  if (!card) return;
+  if (!card || _csIndexRecoverySearchInFlight) return;
+  _csIndexRecoverySearchInFlight = true;
   try {
-    const response = await fetch(`/admin/callsheet-index-card-recovery?cardId=${encodeURIComponent(card.id)}`, { credentials: "same-origin", headers: { Accept: "application/json" } });
+    let response;
+    // Cloud history is a recovery tool, not a destructive action. A short
+    // retry handles an occasional waking 503 without ever retrying the POST
+    // that actually restores a card.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      response = await fetch(`/admin/callsheet-index-card-recovery?cardId=${encodeURIComponent(card.id)}`, { credentials: "same-origin", headers: { Accept: "application/json" } });
+      if (response.status !== 503 || attempt === 2) break;
+      await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+    }
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result?.ok) throw new Error(result?.error || "Cloud history could not be searched.");
     const candidates = (result.candidates || []).filter((item) => Number(item.backBuckets || 0) > 0);
@@ -791,6 +814,8 @@ async function recoverCallSheetIndexCard() {
     showToast("Index Card recovered from cloud history — Front and Back are now restored on this device.", { type: "success", duration: 4500 });
   } catch (err) {
     showToast(err?.message || "The Index Card could not be restored.", { type: "error", duration: 6000 });
+  } finally {
+    _csIndexRecoverySearchInFlight = false;
   }
 }
 function moveCallSheetIndexBucket(arg) {

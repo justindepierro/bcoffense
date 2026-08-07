@@ -946,11 +946,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       const play = event.target.closest(".callsheet-play");
       if (!play) return;
+      // Index Cards own their compact ordering. Their dedicated drag handler
+      // has already claimed this event in capture phase; never turn that drag
+      // into a mutation of the underlying Call Sheet array.
+      if (event.dataTransfer?.getData("application/x-bcoffense-index-play")) return;
       const { category, hash, index } = play.dataset;
       handleCallSheetDragStart(event, category, hash, parseInt(index, 10), play.dataset.csCardBucket || "");
     });
 
     grid.addEventListener("dragover", (event) => {
+      const dragTypes = Array.from(event.dataTransfer?.types || []);
+      if (dragTypes.includes("application/x-bcoffense-index-play")
+        || dragTypes.includes("application/x-bcoffense-index-bucket")) return;
       const category = event.target.closest(".callsheet-category");
       if (draggedCatId && category) {
         handleCatDragOver(event);
@@ -963,6 +970,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     grid.addEventListener("drop", (event) => {
+      const dragTypes = Array.from(event.dataTransfer?.types || []);
+      if (dragTypes.includes("application/x-bcoffense-index-play")
+        || dragTypes.includes("application/x-bcoffense-index-bucket")) return;
       const category = event.target.closest(".callsheet-category");
       if (draggedCatId && category) {
         handleCatDrop(event, category.dataset.category);

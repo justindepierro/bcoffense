@@ -19,5 +19,6 @@ assert.match(cards, /data-action="recoverCallSheetIndexCard"/, "the active card 
 assert.match(cards, /Only this card will change; the rest of the workspace stays current/, "the recovery UI explains its narrow scope");
 assert.match(cards, /confirmText: "Restore card"/, "restoring a historical card requires an explicit confirmation");
 assert.match(cards, /callSheetSettings\.indexCards = cards;/, "the recovery UI replaces the active device's local card immediately");
+assert.match(cards, /response\.status !== 503 \|\| attempt === 2/, "cloud history search tolerates transient wake-up responses without retrying a restore write");
 
 console.log("call sheet index-card recovery contract: passed");

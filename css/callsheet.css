@@ -31,8 +31,8 @@
 .cs-index-print-preview-pages .cs-index-card { width: min(100%, 390px); height: min(585px, calc((100vw - 84px) * 1.5)); min-height: 0; aspect-ratio: 2 / 3; margin: 0 auto; padding: .055in; border-width: 1.5pt; border-radius: 0; box-shadow: none; font-size: .84em; }
 .cs-index-print-preview-pages .cs-index-grid { grid-auto-rows: minmax(max-content, 1fr); align-content: stretch; gap: 0; padding-top: .025in; overflow: hidden; }
 .cs-index-print-preview-pages .cs-index-bucket { align-self: stretch; }
-.cs-index-print-preview-pages .cs-index-card-head { padding: .015in .035in !important; font-size: 6.5pt !important; line-height: 1.05; border-bottom-width: 1.5pt; }
-.cs-index-print-preview-pages .cs-index-bucket header { min-height: 0 !important; padding: .012in .035in !important; font-size: 6pt !important; line-height: 1.05 !important; }
+.cs-index-print-preview-pages .cs-index-card-head { padding: .01in .035in !important; font-size: 6pt !important; line-height: 1.02; border-bottom-width: 1.5pt; }
+.cs-index-print-preview-pages .cs-index-bucket header { min-height: 0 !important; padding: .009in .035in !important; font-size: 5.7pt !important; line-height: 1.02 !important; }
 .cs-index-print-preview-pages .cs-index-bucket ol { padding: .018in .03in .018in .11in !important; font-size: 6.2pt !important; line-height: 1.1 !important; }
 .cs-index-print-preview-pages .cs-index-bucket ol.cs-index-list--unsequenced { padding-left: .035in !important; }
 .cs-index-print-preview-pages .cs-index-bucket li { margin-bottom: .01in !important; }
@@ -44,10 +44,10 @@
 .cs-index-card--print-flow .cs-index-bucket--fill-column { flex: 1 1 auto; }
 .cs-index-capacity-probe { position: fixed; z-index: -1; top: -10000px; left: -10000px; width: 3.84in; height: 5.84in; visibility: hidden; pointer-events: none; }
 .cs-index-capacity-probe .cs-index-card { box-sizing: border-box; width: 3.84in; min-height: 5.84in; height: 5.84in; margin: 0; padding: .055in; border-width: 1.5pt; border-radius: 0; box-shadow: none; }
-.cs-index-capacity-probe .cs-index-card-head { padding: .015in .035in; font-size: 6.5pt; line-height: 1.05; border-bottom-width: 1.5pt; }
+.cs-index-capacity-probe .cs-index-card-head { padding: .01in .035in; font-size: 6pt; line-height: 1.02; border-bottom-width: 1.5pt; }
 .cs-index-capacity-probe .cs-index-grid { grid-auto-rows: minmax(max-content, 1fr); align-content: stretch; gap: 0; padding-top: .025in; overflow: hidden; }
 .cs-index-capacity-probe .cs-index-bucket { align-self: stretch; }
-.cs-index-capacity-probe .cs-index-bucket header { min-height: 0; padding: .012in .035in; font-size: 6pt; line-height: 1.05; }
+.cs-index-capacity-probe .cs-index-bucket header { min-height: 0; padding: .009in .035in; font-size: 5.7pt; line-height: 1.02; }
 .cs-index-capacity-probe .cs-index-bucket ol { padding: .018in .03in .018in .11in; font-size: 6.2pt; line-height: 1.1; }
 .cs-index-capacity-probe .cs-index-bucket ol.cs-index-list--unsequenced { padding-left: .035in; }
 .cs-index-capacity-probe .cs-index-bucket li { margin-bottom: .01in; }
@@ -59,11 +59,11 @@
   body.cs-index-printing .cs-index-print-page { width: 3.84in; height: 5.84in; break-after: page; page-break-after: always; }
   body.cs-index-printing .cs-index-print-page:last-child { break-after: auto; page-break-after: auto; }
   body.cs-index-printing .cs-index-card { box-sizing: border-box; width: 3.84in; min-height: 5.84in; height: 5.84in; margin: 0; padding: .055in; border-width: 1.5pt; border-radius: 0; box-shadow: none; }
-  body.cs-index-printing .cs-index-card-head { padding: .015in .035in !important; font-size: 6.5pt !important; line-height: 1.05; border-bottom-width: 1.5pt; }
+  body.cs-index-printing .cs-index-card-head { padding: .01in .035in !important; font-size: 6pt !important; line-height: 1.02; border-bottom-width: 1.5pt; }
   body.cs-index-printing .cs-index-grid { grid-auto-rows: minmax(max-content, 1fr); align-content: stretch; gap: 0; padding-top: .025in; }
   body.cs-index-printing .cs-index-grid { flex: 1 1 auto; min-height: 0; height: auto; overflow: hidden; }
   body.cs-index-printing .cs-index-bucket { align-self: stretch; }
-  body.cs-index-printing .cs-index-bucket header { min-height: 0 !important; padding: .012in .035in !important; font-size: 6pt !important; line-height: 1.05 !important; }
+  body.cs-index-printing .cs-index-bucket header { min-height: 0 !important; padding: .009in .035in !important; font-size: 5.7pt !important; line-height: 1.02 !important; }
   body.cs-index-printing .cs-index-bucket ol { padding: .018in .03in .018in .11in !important; font-size: 6.2pt !important; line-height: 1.1 !important; }
   body.cs-index-printing .cs-index-bucket ol.cs-index-list--unsequenced { padding-left: .035in !important; }
   body.cs-index-printing .cs-index-bucket li { margin-bottom: .01in !important; }
@@ -985,7 +985,7 @@ body.shell-phone #callsheet .cs-empty-cat {
 .callsheet-index-mode [data-action="autoPopulateCallSheet"] { display: none; }
 .callsheet-index-mode .cs-index-toolbar-only { display: inline-flex; }
 .callsheet-index-mode > .page-help { display: none; }
-.callsheet-index-mode .cs-toolbar { position: sticky; z-index: 20; top: 0; overflow: visible; }
+.callsheet-index-mode .cs-toolbar { position: sticky; z-index: var(--z-panel-sticky, 5); top: calc(var(--app-header-height, 52px) + var(--app-tabs-height, 44px)); overflow: visible; }
 .callsheet-index-mode .cs-toolbar-left,
 .callsheet-index-mode .cs-toolbar-right { display: flex; grid-template-columns: none; flex-wrap: nowrap; gap: 6px; }
 .callsheet-index-mode .cs-toolbar-left { min-width: 0; }
@@ -5474,6 +5474,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-side-label { color: var(--color-text); font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
 .cs-index-fit-status { width: min(100%, 480px); margin: var(--space-sm) auto 0; padding: 6px 8px; border: 1px solid var(--color-success, #168a52); border-radius: var(--radius-sm); background: linear-gradient(90deg, color-mix(in srgb, var(--color-success, #168a52) 16%, white) var(--cs-index-fill, 0%), color-mix(in srgb, var(--color-success, #168a52) 4%, white) var(--cs-index-fill, 0%)); color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: 700; text-align: center; }
 .cs-index-fit-status strong, .cs-index-fit-status span { display: block; }
+.cs-index-reorder-hint { width: min(100%, 480px); margin: 4px auto 0; color: var(--color-text-muted); font-size: 11px; line-height: 1.25; text-align: center; }
 .cs-index-fit-status.is-overfull { border-color: var(--color-warning, #d39b18); background: color-mix(in srgb, var(--color-warning, #d39b18) 12%, white); color: var(--color-text); }
 .cs-index-card--overfull { border-color: var(--color-warning, #d39b18); }
 .cs-index-main-empty { display: grid; min-height: 340px; place-content: center; gap: var(--space-sm); text-align: center; }
@@ -5492,7 +5493,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-bucket .cs-index-list--unsequenced { padding-left: 5px; list-style: none; }
 .cs-index-bucket .cs-index-list--unsequenced .cs-index-play { padding-left: 0; }
 .cs-index-play { position: relative; display: flex; align-items: flex-start; gap: 3px; min-width: 0; padding: 1px 0; user-select: none; -webkit-user-select: none; }
-.cs-index-play-grip { flex: 0 0 auto; cursor: grab; color: #587091; font-size: 12px; line-height: 1.25; touch-action: none; }
+.cs-index-play-grip { flex: 0 0 auto; min-width: 15px; cursor: grab; color: #587091; font-size: 12px; line-height: 1.25; touch-action: none; -webkit-user-drag: element; }
 .cs-index-play-grip:active { cursor: grabbing; }
 .cs-index-play--dragging { opacity: .45; }
 .cs-index-play--drop-before { box-shadow: 0 -3px 0 var(--color-primary); background: color-mix(in srgb, var(--color-primary) 7%, white); }
