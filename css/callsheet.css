@@ -985,10 +985,18 @@ body.shell-phone #callsheet .cs-empty-cat {
 .callsheet-index-mode [data-action="autoPopulateCallSheet"] { display: none; }
 .callsheet-index-mode .cs-index-toolbar-only { display: inline-flex; }
 .callsheet-index-mode > .page-help { display: none; }
-.callsheet-index-mode .cs-toolbar { position: relative; z-index: auto; overflow: visible; }
+.callsheet-index-mode .cs-toolbar {
+  position: relative;
+  z-index: auto;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  min-height: 42px;
+  margin-bottom: 6px;
+  padding: 5px 8px;
+  overflow: visible;
+}
 .callsheet-index-mode .cs-toolbar-left,
 .callsheet-index-mode .cs-toolbar-right { display: flex; grid-template-columns: none; flex-wrap: nowrap; gap: 6px; }
-.callsheet-index-mode .cs-toolbar-left { min-width: 0; }
+.callsheet-index-mode .cs-toolbar-left { min-width: 0; overflow-x: auto; scrollbar-width: thin; }
 .callsheet-index-mode .cs-toolbar-right { flex: 0 0 auto; }
 .callsheet-index-mode .cs-source-bar { display: none; }
 .cs-index-toolbar-context { display: none; align-items: center; min-width: 0; gap: 5px; }
@@ -996,6 +1004,17 @@ body.shell-phone #callsheet .cs-empty-cat {
 .cs-index-toolbar-context .cs-index-main-tabs,
 .cs-index-toolbar-context .cs-index-main-sides { flex-wrap: nowrap; }
 .cs-index-toolbar-context .cs-index-main-tabs .btn { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.callsheet-index-mode .cs-title { margin-right: 2px; font-size: var(--font-size-lg); white-space: nowrap; }
+.callsheet-index-mode .cs-toggle,
+.callsheet-index-mode .cs-toolbar .btn,
+.callsheet-index-mode .cs-index-main-more > summary {
+  min-height: 30px;
+  padding: 3px 8px;
+  font-size: var(--font-size-xs);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.callsheet-index-mode .cs-index-main-more > summary { width: 30px; padding: 0; font-size: 16px; }
 
 /* Call Sheet Toggle Groups */
 .cs-toggle-group {
@@ -5461,7 +5480,10 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   }
 }
 
-.cs-index-main { padding: var(--space-sm) var(--space-md) var(--space-md); }
+.cs-index-main { padding: 8px var(--space-md) var(--space-md); }
+.cs-index-editor-stage { width: min(100%, 520px); margin: 8px auto 0; padding: 8px; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 3%, white), #fff 42%); box-shadow: var(--shadow-xs); }
+.cs-index-editor-stage .cs-index-card { margin: 0 auto; }
+.cs-index-editor-stage .cs-index-add { margin: 8px auto 0; }
 .cs-index-main-tabs, .cs-index-main-sides { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
 .cs-index-main-tabs { min-width: 0; gap: 4px; }
 .cs-index-main-tabs .btn { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -5472,7 +5494,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-main-more-menu { position: absolute; z-index: 8; top: calc(100% + 4px); right: 0; display: grid; min-width: 150px; gap: 4px; padding: 6px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-lg); }
 .cs-index-main-more-menu .btn { justify-content: flex-start; width: 100%; white-space: nowrap; }
 .cs-index-side-label { color: var(--color-text); font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
-.cs-index-fit-status { width: min(100%, 480px); margin: var(--space-sm) auto 0; padding: 6px 8px; border: 1px solid var(--color-success, #168a52); border-radius: var(--radius-sm); background: linear-gradient(90deg, color-mix(in srgb, var(--color-success, #168a52) 16%, white) var(--cs-index-fill, 0%), color-mix(in srgb, var(--color-success, #168a52) 4%, white) var(--cs-index-fill, 0%)); color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: 700; text-align: center; }
+.cs-index-fit-status { width: min(100%, 504px); margin: 0 auto; padding: 6px 8px; border: 1px solid var(--color-success, #168a52); border-radius: var(--radius-sm); background: linear-gradient(90deg, color-mix(in srgb, var(--color-success, #168a52) 16%, white) var(--cs-index-fill, 0%), color-mix(in srgb, var(--color-success, #168a52) 4%, white) var(--cs-index-fill, 0%)); color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: 700; text-align: center; }
 .cs-index-fit-status strong, .cs-index-fit-status span { display: block; }
 .cs-index-fit-status.is-overfull { border-color: var(--color-warning, #d39b18); background: color-mix(in srgb, var(--color-warning, #d39b18) 12%, white); color: var(--color-text); }
 .cs-index-card--overfull { border-color: var(--color-warning, #d39b18); }
@@ -5520,4 +5542,5 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 
 @media (max-width: 640px) {
   .cs-index-main { padding: var(--space-sm); }
+  .cs-index-editor-stage { padding: 5px; }
 }
