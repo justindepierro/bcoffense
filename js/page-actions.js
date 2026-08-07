@@ -52,6 +52,7 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "💾", label: "Save", sublabel: "Updates current sheet", run: () => _paCall("saveCurrentCallSheet") },
       { icon: "🖨️", label: "Print", run: () => _paCall("printCallSheet") },
       { icon: "🗂️", label: "Index Cards", sublabel: "4×6 front / back", run: () => _paCall("switchCallSheetPage", "index") },
+      { icon: "🗃️", label: "Index Card Library", sublabel: "Save or load card copies", run: () => _paCall("openCallSheetIndexCardLibrary") },
       { icon: "⚙️", label: "Display", sublabel: _paCallsheetDisplayStatus, run: () => _paCall("openDisplayPanel") },
     ],
     // The primary Templates & saves action owns browsing existing sheets. A

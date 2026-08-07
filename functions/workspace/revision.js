@@ -27,7 +27,7 @@ const TEAM_WORKSPACE_KEYS = new Set([
   "sortPresets", "customSortOrders", "scriptCustomSortOrders", "periodTemplates",
   "scriptTemplates", "callSheet", "callSheetSettings", "columnVisibility",
   "playbookState", "scriptDisplayOptions", "scriptControlsMode", "playReadiness",
-  "callSheetDisplayOptions", "callSheetDisplayPresets", "callSheetTemplates",
+  "callSheetDisplayOptions", "callSheetDisplayPresets", "callSheetTemplates", "callSheetIndexCardLibrary",
   "callSheetCategoryOrder", "callSheetNotes", "callSheetTargets", "callSheetSnapshots",
   "defensiveTendencies", "tendenciesSettings", "gameWeek", "installationData",
   "installationTemplates", "playCollections", "callSheetConstraints", "ob_playRatings",

@@ -5493,6 +5493,22 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-main-more > summary::-webkit-details-marker { display: none; }
 .cs-index-main-more-menu { position: absolute; z-index: 8; top: calc(100% + 4px); right: 0; display: grid; min-width: 150px; gap: 4px; padding: 6px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-lg); }
 .cs-index-main-more-menu .btn { justify-content: flex-start; width: 100%; white-space: nowrap; }
+.cs-index-library-modal { width: min(720px, calc(100vw - 28px)); max-height: min(84vh, 760px); }
+.cs-index-library-save { padding: var(--space-md); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); background: var(--color-bg-light); }
+.cs-index-library-save h4, .cs-index-library-list h4 { margin: 0; }
+.cs-index-library-save p, .cs-index-library-list p { margin: 4px 0 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.cs-index-library-list { display: grid; gap: 8px; margin-top: var(--space-md); }
+.cs-index-library-item { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); padding: 10px 12px; border: 1px solid var(--color-border-light); border-radius: var(--radius-sm); background: var(--color-surface); }
+.cs-index-library-item-copy { display: grid; min-width: 0; gap: 2px; }
+.cs-index-library-item-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-index-library-item-copy span, .cs-index-library-item-copy small { color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.cs-index-library-item-actions { display: inline-flex; flex: 0 0 auto; gap: 6px; }
+.cs-index-library-empty { padding: var(--space-lg); }
+@media (max-width: 640px) {
+  .cs-index-library-item { align-items: stretch; flex-direction: column; }
+  .cs-index-library-item-actions { width: 100%; }
+  .cs-index-library-item-actions .btn { flex: 1; }
+}
 .cs-index-side-label { color: var(--color-text); font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
 .cs-index-fit-status { width: min(100%, 504px); margin: 0 auto; padding: 6px 8px; border: 1px solid var(--color-success, #168a52); border-radius: var(--radius-sm); background: linear-gradient(90deg, color-mix(in srgb, var(--color-success, #168a52) 16%, white) var(--cs-index-fill, 0%), color-mix(in srgb, var(--color-success, #168a52) 4%, white) var(--cs-index-fill, 0%)); color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: 700; text-align: center; }
 .cs-index-fit-status strong, .cs-index-fit-status span { display: block; }

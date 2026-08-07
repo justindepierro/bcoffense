@@ -732,10 +732,101 @@ function _runCallSheetIndexCardsPrint(options = {}) {
 
 function printCallSheetIndexCards() { openCallSheetIndexCardPrintModal(); }
 
+// The library holds card layouts only: bucket setup, order, color, and scoped
+// call identities. It deliberately never copies the full Call Sheet or its
+// plays, so loading an item cannot replace a coach's active sheet.
+function _csIndexCardLibrary() {
+  const library = storageManager.get(STORAGE_KEYS.CALLSHEET_INDEX_CARD_LIBRARY, []);
+  return Array.isArray(library) ? library.filter((item) => item && typeof item === "object" && item.card && typeof item.card === "object") : [];
+}
+function _csNewIndexLibraryId() {
+  return typeof createPlayId === "function"
+    ? createPlayId("index-card-library")
+    : `index-card-library-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+function _csCloneIndexCard(card, name = "") {
+  const clone = safeDeepClone(card || {});
+  clone.id = _csNewCard("x").id;
+  clone.name = String(name || clone.name || "Game Day Call Card").trim() || "Game Day Call Card";
+  clone.front = _csSafeList(clone.front);
+  clone.back = _csSafeList(clone.back);
+  return clone;
+}
+function _csIndexLibrarySummary(item) {
+  const card = item?.card || {};
+  const buckets = _csSafeList(card.front).length + _csSafeList(card.back).length;
+  const scopedCalls = [..._csSafeList(card.front), ..._csSafeList(card.back)]
+    .reduce((count, bucket) => count + _csSafeList(bucket?.playKeys).length, 0);
+  return `${buckets} situation${buckets === 1 ? "" : "s"} · ${scopedCalls} selected call${scopedCalls === 1 ? "" : "s"}`;
+}
+function closeCallSheetIndexCardLibrary() {
+  const overlay = document.getElementById("csIndexCardLibraryOverlay");
+  if (typeof closeLayer === "function") closeLayer("csIndexCardLibraryOverlay");
+  overlay?.remove();
+}
+function openCallSheetIndexCardLibrary() {
+  const active = _csActiveCard();
+  const library = _csIndexCardLibrary();
+  const items = library.length
+    ? library.map((item) => {
+      const saved = item.savedAt ? new Date(item.savedAt).toLocaleString() : "Saved earlier";
+      return `<div class="cs-index-library-item"><div class="cs-index-library-item-copy"><strong>${escapeHtml(item.name || item.card?.name || "Untitled card")}</strong><span>${escapeHtml(_csIndexLibrarySummary(item))}</span><small>${escapeHtml(saved)}</small></div><div class="cs-index-library-item-actions"><button class="btn btn-sm btn-primary" data-action="loadCallSheetIndexCardFromLibrary" data-arg="${escapeAttr(item.id)}">Load copy</button><button class="btn btn-sm btn-danger" data-action="deleteCallSheetIndexCardLibraryItem" data-arg="${escapeAttr(item.id)}" aria-label="Delete ${escapeAttr(item.name || "Index Card")}">Delete</button></div></div>`;
+    }).join("")
+    : '<div class="empty-state cs-index-library-empty">No saved Index Cards yet. Save the current card here and it will be available on every Call Sheet.</div>';
+  const overlay = document.createElement("div");
+  overlay.id = "csIndexCardLibraryOverlay";
+  overlay.className = "cs-sort-overlay";
+  overlay.innerHTML = `<div class="cs-sort-modal cs-index-library-modal" role="dialog" aria-modal="true" aria-labelledby="csIndexLibraryTitle"><div class="cs-sort-header"><div><h3 id="csIndexLibraryTitle">🗃️ Index Card Library</h3><p>Saved cards keep their layout and selected call references. Loading always creates a new editable copy on this Call Sheet.</p></div><button class="cs-sort-close" data-action="closeCallSheetIndexCardLibrary" aria-label="Close Index Card Library">×</button></div><div class="cs-sort-body"><section class="cs-index-library-save"><h4>Save current card</h4><p>${active ? `Save “${escapeHtml(active.name || "Untitled card")}” as a reusable copy.` : "Create an Index Card before saving it to the library."}</p><div class="cs-template-save-row"><label class="sr-only" for="csIndexLibraryName">Index Card name</label><input id="csIndexLibraryName" name="indexCardLibraryName" type="text" value="${escapeAttr(active?.name || "")}" placeholder="Index Card name" ${active ? "" : "disabled"}><button class="btn btn-primary" data-action="saveCallSheetIndexCardToLibrary" ${active ? "" : "disabled"}>💾 Save copy</button></div></section><section class="cs-index-library-list"><div class="cs-template-section-head"><div><h4>Saved cards</h4><p>${library.length} reusable card${library.length === 1 ? "" : "s"}. They travel with the team workspace.</p></div></div>${items}</section></div><div class="cs-sort-actions"><button class="btn btn-sm" data-action="closeCallSheetIndexCardLibrary">Close</button></div></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener("click", (event) => { if (event.target === overlay) closeCallSheetIndexCardLibrary(); });
+  if (typeof openLayer === "function") openLayer(overlay, { id: "csIndexCardLibraryOverlay", scrollElement: overlay.querySelector(".cs-sort-modal") || overlay, blocking: true, onEscape: () => closeCallSheetIndexCardLibrary() });
+  requestAnimationFrame(() => document.getElementById("csIndexLibraryName")?.focus());
+}
+async function saveCallSheetIndexCardToLibrary() {
+  const active = _csActiveCard();
+  const input = document.getElementById("csIndexLibraryName");
+  const name = String(input?.value || active?.name || "").trim();
+  if (!active || !name) { showToast("Give this Index Card a name before saving.", { type: "warning" }); return; }
+  const library = _csIndexCardLibrary();
+  const sameName = library.filter((item) => String(item.name || "").trim().toLowerCase() === name.toLowerCase());
+  let replace = null;
+  if (sameName.length) {
+    const choice = await showChoice(`“${name}” is already in the Index Card Library.`, { title: "Save Index Card", icon: "🗃️", option1: "Update saved copy", option2: "Keep both" });
+    if (!choice) return;
+    replace = choice === "option1" ? sameName[0] : null;
+  }
+  const saved = { id: replace?.id || _csNewIndexLibraryId(), name, savedAt: new Date().toISOString(), card: _csCloneIndexCard(active, name) };
+  const next = replace ? library.map((item) => item.id === replace.id ? saved : item) : [saved, ...library];
+  storageManager.set(STORAGE_KEYS.CALLSHEET_INDEX_CARD_LIBRARY, next);
+  closeCallSheetIndexCardLibrary();
+  showToast(`💾 Saved “${name}” to the Index Card Library.`);
+}
+function loadCallSheetIndexCardFromLibrary(id) {
+  const item = _csIndexCardLibrary().find((entry) => String(entry.id) === String(id));
+  if (!item) { showToast("That saved Index Card is no longer available.", { type: "warning" }); return; }
+  const card = _csCloneIndexCard(item.card, item.name || item.card?.name);
+  callSheetSettings.indexCards = [..._csCards(), card];
+  _csIndexCardId = card.id;
+  _csIndexSide = "front";
+  _csPersistCards();
+  closeCallSheetIndexCardLibrary();
+  showToast(`🗂️ Loaded “${card.name}” as a new editable card.`);
+}
+async function deleteCallSheetIndexCardLibraryItem(id) {
+  const library = _csIndexCardLibrary();
+  const item = library.find((entry) => String(entry.id) === String(id));
+  if (!item) return;
+  const confirmed = await showConfirm(`Delete “${item.name || "this saved card"}” from the Index Card Library? Existing Call Sheets and cards will not change.`, { title: "Delete saved card", icon: "🗑️", confirmText: "Delete" });
+  if (!confirmed) return;
+  storageManager.set(STORAGE_KEYS.CALLSHEET_INDEX_CARD_LIBRARY, library.filter((entry) => entry.id !== item.id));
+  closeCallSheetIndexCardLibrary();
+  openCallSheetIndexCardLibrary();
+}
+
 function renderCallSheetIndexToolbarContext() {
   const cards = _csCards(); const card = _csActiveCard();
   if (!card) return "";
-  return `<div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}" title="${escapeAttr(item.name || `Card ${index + 1}`)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}</div><div class="cs-index-main-sides" aria-label="Card side"><span class="cs-index-side-label">Side</span><button class="btn btn-sm ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn btn-sm ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><details class="cs-index-main-more"><summary title="More card actions">⋯</summary><div class="cs-index-main-more-menu"><button class="btn btn-sm btn-outline" data-action="renameCallSheetIndexCard">✏️ Rename card</button><button class="btn btn-sm btn-outline" data-action="recoverCallSheetIndexCard">☁️ Recover from cloud history</button><button class="btn btn-sm btn-outline" data-action="toggleCallSheetIndexCardHeader">${card.hideHeader ? "Show title band" : "Hide title band"}</button><button class="btn btn-sm btn-outline" data-action="removeEmptyCallSheetIndexBuckets">Remove empty</button><button class="btn btn-sm btn-outline cs-index-delete-card" data-action="deleteCallSheetIndexCard">🗑️ Delete card</button></div></details></div>`;
+  return `<div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}" title="${escapeAttr(item.name || `Card ${index + 1}`)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}</div><div class="cs-index-main-sides" aria-label="Card side"><span class="cs-index-side-label">Side</span><button class="btn btn-sm ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn btn-sm ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><details class="cs-index-main-more"><summary title="More card actions">⋯</summary><div class="cs-index-main-more-menu"><button class="btn btn-sm btn-outline" data-action="saveCallSheetIndexCardToLibrary">💾 Save to card library</button><button class="btn btn-sm btn-outline" data-action="openCallSheetIndexCardLibrary">🗃️ Open card library</button><button class="btn btn-sm btn-outline" data-action="renameCallSheetIndexCard">✏️ Rename card</button><button class="btn btn-sm btn-outline" data-action="recoverCallSheetIndexCard">☁️ Recover from cloud history</button><button class="btn btn-sm btn-outline" data-action="toggleCallSheetIndexCardHeader">${card.hideHeader ? "Show title band" : "Hide title band"}</button><button class="btn btn-sm btn-outline" data-action="removeEmptyCallSheetIndexBuckets">Remove empty</button><button class="btn btn-sm btn-outline cs-index-delete-card" data-action="deleteCallSheetIndexCard">🗑️ Delete card</button></div></details></div>`;
 }
 
 function renderCallSheetIndexCardPage() {

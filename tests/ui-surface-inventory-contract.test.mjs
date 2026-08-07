@@ -39,6 +39,7 @@ const UI_SURFACES = Object.freeze({
   csAddCategoryOverlay: { owner: "js/callsheet-categories.js", pattern: "blocking-layer", scrollOwner: "layer" },
   csDisplayPanel: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
   csLayoutOverlay: { owner: "js/callsheet-layout.js", pattern: "blocking-layer", scrollOwner: "layer" },
+  csIndexCardLibraryOverlay: { owner: "js/callsheet-index-cards.js", pattern: "blocking-layer", scrollOwner: "layer" },
   csManagePresetsOverlay: { owner: "js/callsheet-display.js", pattern: "blocking-layer", scrollOwner: "layer" },
   csNotOnSheetPanel: { owner: "index.html", pattern: "embedded-panel", scrollOwner: "workspace" },
   csSortOverlay: { owner: "js/callsheet-sort.js", pattern: "blocking-layer", scrollOwner: "layer" },
