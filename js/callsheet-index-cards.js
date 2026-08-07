@@ -7,6 +7,8 @@ let _csIndexPickerAddingKey = "";
 let _csIndexDraggingBucketId = "";
 let _csIndexDraggingPlay = null;
 let _csIndexRecoverySearchInFlight = false;
+let _csIndexBucketDragBound = false;
+let _csIndexPlayDragBound = false;
 
 function _csCards() { return Array.isArray(callSheetSettings.indexCards) ? callSheetSettings.indexCards : []; }
 function _csActiveCard() { const cards = _csCards(); const card = cards.find((item) => item.id === _csIndexCardId) || cards[0] || null; if (card) _csIndexCardId = card.id; return card; }
@@ -130,6 +132,16 @@ function _csClearIndexBucketDropFeedback() {
   document.querySelectorAll(".cs-index-bucket--drop-before, .cs-index-bucket--drop-after")
     .forEach((element) => element.classList.remove("cs-index-bucket--drop-before", "cs-index-bucket--drop-after"));
 }
+function _csIndexDropTarget(event, selector) {
+  const direct = event.target instanceof Element ? event.target.closest(selector) : null;
+  if (direct) return direct;
+  if (typeof document.elementsFromPoint !== "function") return null;
+  return document.elementsFromPoint(event.clientX, event.clientY)
+    .find((element) => element instanceof Element && element.closest(selector))?.closest(selector) || null;
+}
+function _csIndexIsInsideGrid(event) {
+  return Boolean(_csIndexDropTarget(event, "#callSheetGrid"));
+}
 
 function _csReorderIndexBuckets(sourceId, targetId, placeAfter) {
   const buckets = _csActiveCard()?.[_csIndexSide];
@@ -145,10 +157,10 @@ function _csReorderIndexBuckets(sourceId, targetId, placeAfter) {
 }
 
 function _csBindIndexBucketDragAndDrop() {
-  const grid = document.getElementById("callSheetGrid");
-  if (!grid || grid.dataset.csIndexBucketDragBound === "true") return;
-  grid.dataset.csIndexBucketDragBound = "true";
-  grid.addEventListener("dragstart", (event) => {
+  if (_csIndexBucketDragBound) return;
+  _csIndexBucketDragBound = true;
+  document.addEventListener("dragstart", (event) => {
+    if (!_csIndexIsInsideGrid(event)) return;
     const handle = event.target.closest("[data-cs-index-bucket-drag]");
     if (!handle || event.target.closest("button, input")) return;
     _csIndexDraggingBucketId = handle.dataset.csIndexBucketDrag || "";
@@ -157,10 +169,10 @@ function _csBindIndexBucketDragAndDrop() {
     event.dataTransfer?.setData("application/x-bcoffense-index-bucket", _csIndexDraggingBucketId);
     if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
     handle.closest(".cs-index-bucket")?.classList.add("cs-index-bucket--dragging");
-  });
-  grid.addEventListener("dragover", (event) => {
+  }, true);
+  document.addEventListener("dragover", (event) => {
     if (!_csIndexDraggingBucketId) return;
-    const target = event.target.closest(".cs-index-card--editor .cs-index-bucket[data-cs-card-bucket]");
+    const target = _csIndexDropTarget(event, ".cs-index-card--editor .cs-index-bucket[data-cs-card-bucket]");
     if (!target || target.dataset.csCardBucket === _csIndexDraggingBucketId) return;
     event.preventDefault();
     if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
@@ -169,10 +181,10 @@ function _csBindIndexBucketDragAndDrop() {
     if (typeof clearCallSheetDropIndicators === "function") clearCallSheetDropIndicators();
     _csClearIndexBucketDropFeedback();
     target.classList.add(placeAfter ? "cs-index-bucket--drop-after" : "cs-index-bucket--drop-before");
-  });
-  grid.addEventListener("drop", (event) => {
+  }, true);
+  document.addEventListener("drop", (event) => {
     if (!_csIndexDraggingBucketId) return;
-    const target = event.target.closest(".cs-index-card--editor .cs-index-bucket[data-cs-card-bucket]");
+    const target = _csIndexDropTarget(event, ".cs-index-card--editor .cs-index-bucket[data-cs-card-bucket]");
     if (!target) return;
     event.preventDefault();
     event.stopPropagation();
@@ -181,11 +193,11 @@ function _csBindIndexBucketDragAndDrop() {
     _csIndexDraggingBucketId = "";
     _csClearIndexBucketDragFeedback();
     if (moved) showToast("Situation reordered", { type: "success", duration: 1200 });
-  });
-  grid.addEventListener("dragend", () => {
+  }, true);
+  document.addEventListener("dragend", () => {
     _csIndexDraggingBucketId = "";
     _csClearIndexBucketDragFeedback();
-  });
+  }, true);
 }
 
 document.addEventListener("DOMContentLoaded", _csBindIndexBucketDragAndDrop);
@@ -218,10 +230,10 @@ function _csReorderIndexBucketPlay(bucketId, sourceKey, targetKey, placeAfter) {
   return true;
 }
 function _csBindIndexPlayDragAndDrop() {
-  const grid = document.getElementById("callSheetGrid");
-  if (!grid || grid.dataset.csIndexPlayDragBound === "true") return;
-  grid.dataset.csIndexPlayDragBound = "true";
-  grid.addEventListener("dragstart", (event) => {
+  if (_csIndexPlayDragBound) return;
+  _csIndexPlayDragBound = true;
+  document.addEventListener("dragstart", (event) => {
+    if (!_csIndexIsInsideGrid(event)) return;
     const grip = event.target.closest(".cs-index-play-grip[draggable=\"true\"]");
     const row = event.target.closest(".cs-index-card--editor .cs-index-play[data-cs-index-play-key]");
     if (!grip || !row || event.target.closest("button, input")) return;
@@ -236,15 +248,15 @@ function _csBindIndexPlayDragAndDrop() {
     if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
     row.classList.add("cs-index-play--dragging");
   }, true);
-  grid.addEventListener("dragover", (event) => {
+  document.addEventListener("dragover", (event) => {
     if (!_csIndexDraggingPlay) return;
-    const bucket = event.target.closest(".cs-index-card--editor .cs-index-bucket[data-cs-card-bucket]");
+    const bucket = _csIndexDropTarget(event, ".cs-index-card--editor .cs-index-bucket[data-cs-card-bucket]");
     if (!bucket || bucket.dataset.csCardBucket !== _csIndexDraggingPlay.bucketId) return;
     event.preventDefault();
     event.stopPropagation();
     if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
     _csClearIndexPlayDragFeedback();
-    const target = event.target.closest(".cs-index-play[data-cs-index-play-key]");
+    const target = _csIndexDropTarget(event, ".cs-index-play[data-cs-index-play-key]");
     if (!target || target.dataset.csIndexPlayKey === _csIndexDraggingPlay.key) {
       bucket.classList.add("cs-index-bucket--play-drop-end");
       return;
@@ -252,13 +264,13 @@ function _csBindIndexPlayDragAndDrop() {
     const bounds = target.getBoundingClientRect();
     target.classList.add(event.clientY > bounds.top + bounds.height / 2 ? "cs-index-play--drop-after" : "cs-index-play--drop-before");
   }, true);
-  grid.addEventListener("drop", (event) => {
+  document.addEventListener("drop", (event) => {
     if (!_csIndexDraggingPlay) return;
-    const bucket = event.target.closest(".cs-index-card--editor .cs-index-bucket[data-cs-card-bucket]");
+    const bucket = _csIndexDropTarget(event, ".cs-index-card--editor .cs-index-bucket[data-cs-card-bucket]");
     if (!bucket || bucket.dataset.csCardBucket !== _csIndexDraggingPlay.bucketId) return;
     event.preventDefault();
     event.stopPropagation();
-    const target = event.target.closest(".cs-index-play[data-cs-index-play-key]");
+    const target = _csIndexDropTarget(event, ".cs-index-play[data-cs-index-play-key]");
     const bounds = target?.getBoundingClientRect();
     const moved = _csReorderIndexBucketPlay(
       _csIndexDraggingPlay.bucketId,
@@ -270,7 +282,7 @@ function _csBindIndexPlayDragAndDrop() {
     _csClearIndexPlayDragFeedback();
     if (moved) showToast("Play reordered", { type: "success", duration: 1200 });
   }, true);
-  grid.addEventListener("dragend", () => {
+  document.addEventListener("dragend", () => {
     _csIndexDraggingPlay = null;
     _csClearIndexPlayDragFeedback();
   }, true);
