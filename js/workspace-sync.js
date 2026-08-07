@@ -242,6 +242,14 @@
       _wsSetConnectivity({ browserOnline: false, reachability: "unknown", lastError: "" });
       return getWorkspaceSyncConnectivity();
     }
+    // A signed-out device has no team service to probe. More importantly, do
+    // not keep asking /auth/me after auth.js has already locked an expired
+    // session; one definitive auth response is enough to enter the sign-in
+    // state and avoids a noisy trail of expected 401s in DevTools.
+    if (typeof window.getCurrentAuthUser === "function" && !window.getCurrentAuthUser()) {
+      _wsSetConnectivity({ browserOnline: true, reachability: "unknown", service: "unknown", lastError: "" });
+      return getWorkspaceSyncConnectivity();
+    }
     if (workspaceConnectivityProbe && !opts.force) return workspaceConnectivityProbe;
     const controller = typeof AbortController === "undefined" ? null : new AbortController();
     const timeout = controller ? setTimeout(() => controller.abort(), 5000) : 0;
@@ -567,6 +575,15 @@
     ensureWorkspaceSyncDock();
     renderWorkspaceSyncDock();
     checkWorkspaceSyncConnectivity();
+    // The first DOM-ready pass commonly runs while auth.js is still checking
+    // the HttpOnly cookie. Re-check once that one authoritative auth request
+    // finishes so a signed-in coach receives a real service status without
+    // probing a signed-out session first.
+    if (typeof window.whenAuthReady === "function") {
+      window.whenAuthReady()
+        .then((user) => user ? checkWorkspaceSyncConnectivity({ force: true }) : null)
+        .catch(() => null);
+    }
   });
 
   window.addEventListener("offline", () => {

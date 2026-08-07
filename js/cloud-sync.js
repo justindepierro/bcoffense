@@ -1246,6 +1246,10 @@
       const err = new Error(`${data.error || `Workspace request failed with ${response.status}`}${detail}`);
       err.status = response.status;
       err.data = data;
+      // Callers can distinguish an intentionally-ended secure session from
+      // a transient workspace outage. auth.js owns the one clear re-login
+      // transition; background freshness checks must never surface it again.
+      if (response.status === 401) err.code = "BC_AUTH_SESSION_ENDED";
       err.retryable = response.status === 429 || (response.status >= 500 && response.status < 600);
       throw err;
     }
@@ -2410,6 +2414,10 @@
     if (!opts.force && now - teamForegroundRefreshAt < TEAM_FOREGROUND_REFRESH_MIN_MS) return null;
     teamForegroundRefreshAt = now;
 
+    // Put the recovery handler on the stored promise itself. Several browser
+    // resume signals (focus, visibilitychange, pageshow) intentionally call
+    // this without awaiting it. A handler only around a later `await` leaves
+    // a narrow path for DevTools to report a rejected background promise.
     teamForegroundRefreshPromise = (async () => {
       const currentUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
       if (!currentUser) return null;
@@ -2466,26 +2474,31 @@
         }
       }
       return { ...remote, restored };
-    })();
-
-    try {
-      return await teamForegroundRefreshPromise;
-    } catch (err) {
+    })().catch((err) => {
       // Freshness checks are enhancement work. Do not compete with an open
       // practice screen or present a recovery error for a transient poll.
       // A 401 is handled centrally by auth.js, which locks the workspace and
       // opens one clear sign-in prompt. Do not add a misleading sync warning
       // after that deliberate security transition.
-      if (err?.status === 401) return null;
-      const deferred = window.workspaceSync?.recordBackgroundRequestFailure?.("team-workspace-refresh", err);
+      if (err?.status === 401 || err?.code === "BC_AUTH_SESSION_ENDED") return null;
+      let deferred = null;
+      try {
+        deferred = window.workspaceSync?.recordBackgroundRequestFailure?.("team-workspace-refresh", err);
+      } catch (statusError) {
+        // Status reporting must never turn a recoverable background failure
+        // into a second unhandled rejection.
+        console.warn("Could not record team refresh status:", statusError);
+      }
       // Expected transient failures are deliberately quiet: their retry
       // timing and the saved-local status live in the shared sync dock.
       // Preserve a diagnostic warning only for unexpected data/logic faults.
       if (!deferred && !opts.quiet) console.warn("Team foreground refresh deferred:", err);
       return null;
-    } finally {
+    }).finally(() => {
       teamForegroundRefreshPromise = null;
-    }
+    });
+
+    return teamForegroundRefreshPromise;
   }
 
   async function autoPullLatestCloudBackup(opts = {}) {
