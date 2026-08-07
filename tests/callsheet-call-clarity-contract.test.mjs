@@ -84,9 +84,11 @@ assert.match(indexCards, /cs-index-capacity-probe[\s\S]*?_csCardMarkup\(activeCa
 assert.match(indexCards, /function copyCallSheetIndexBucketToOtherSide\(id\)/, "Index Card situations can be copied to the opposite side");
 assert.match(indexCards, /function clearCallSheetIndexCardBucket\(id\)[\s\S]*?bucket\.playKeys = \[\]/, "Index Card situations can be cleared without deleting canonical Call Sheet calls");
 assert.match(indexCards, /function removeEmptyCallSheetIndexBuckets\(\)/, "Index Card editor can remove empty situations in bulk");
-assert.match(indexCards, /function openCallSheetIndexCardLibrary\(\)[\s\S]*?Loading always creates a new editable copy/, "Index Cards expose a named library with an explicit non-destructive load contract");
+assert.match(indexCards, /function openCallSheetIndexCardLibrary\(\)[\s\S]*?Loading adds a linked editable card[\s\S]*?automatically update that same saved card/, "Index Cards explain their linked library-save contract");
 assert.match(indexCards, /function saveCallSheetIndexCardToLibrary\(\)[\s\S]*?CALLSHEET_INDEX_CARD_LIBRARY/, "saving an Index Card writes to its dedicated library key rather than overwriting the Call Sheet");
-assert.match(indexCards, /function loadCallSheetIndexCardFromLibrary\(id\)[\s\S]*?callSheetSettings\.indexCards = \[\.\.\._csCards\(\), card\]/, "loading an Index Card always appends a new editable copy to the active Call Sheet");
+assert.match(indexCards, /function _csPersistCards\(options = \{\}\)[\s\S]*?_csSyncActiveIndexCardToLibrary\(\)/, "ordinary Index Card saves synchronize a linked library record");
+assert.match(indexCards, /function _csSyncActiveIndexCardToLibrary\(\)[\s\S]*?CALLSHEET_INDEX_CARD_LIBRARY/, "linked Index Card autosaves write through to the dedicated library key");
+assert.match(indexCards, /function loadCallSheetIndexCardFromLibrary\(id\)[\s\S]*?_csCloneIndexCard\(item\.card, item\.name \|\| item\.card\?\.name, item\.id\)[\s\S]*?callSheetSettings\.indexCards = \[\.\.\._csCards\(\), card\]/, "loading an Index Card appends a linked editable card to the active Call Sheet");
 assert.match(indexCards, /data-action="openCallSheetIndexCardLibrary"/, "the card toolbar exposes the reusable Index Card library");
 assert.match(css, /\.cs-index-card \{ box-sizing: border-box; display: flex; flex-direction: column; width: min\(100%, 480px\); height:/, "index-card editing uses a fixed 4×6-proportional frame instead of growing with content");
 assert.match(render, /panel\?\.classList\.toggle\("callsheet-index-mode", isIndexCards\)[\s\S]*?csIndexToolbarContext[\s\S]*?renderCallSheetIndexToolbarContext/, "Call Sheet rendering mounts Index Card context in the shared toolbar");
