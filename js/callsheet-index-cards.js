@@ -7,6 +7,7 @@ let _csIndexPickerAddingKey = "";
 let _csIndexDraggingBucketId = "";
 let _csIndexDraggingPlay = null;
 let _csIndexRecoverySearchInFlight = false;
+let _csIndexCardMoreMenuTrigger = null;
 
 function _csCards() { return Array.isArray(callSheetSettings.indexCards) ? callSheetSettings.indexCards : []; }
 function _csActiveCard() { const cards = _csCards(); const card = cards.find((item) => item.id === _csIndexCardId) || cards[0] || null; if (card) _csIndexCardId = card.id; return card; }
@@ -893,11 +894,29 @@ function renderCallSheetIndexCardPage() {
   const cards = _csCards(); const card = _csActiveCard();
   if (!card) return `<section class="cs-index-main-empty"><h3>🗂️ Call Sheet Index Cards</h3><p>Build a compact, printable view from the same situations and calls already on your Call Sheet.</p><button class="btn btn-primary" data-action="newCallSheetIndexCard">＋ Create first card</button></section>`;
   requestAnimationFrame(() => {
+    _csBindIndexCardMoreMenuTrigger();
     _csBindIndexBucketDragAndDrop();
     _csBindIndexPlayDragAndDrop();
     _csUpdateIndexCardFitStatus();
   });
   return `<section class="cs-index-main"><div id="csIndexCardFitStatus" class="cs-index-fit-status" role="status" aria-live="polite">4 × 6 print area</div><div class="cs-index-editor-stage">${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></div></section>`;
+}
+function _csBindIndexCardMoreMenuTrigger() {
+  const trigger = document.querySelector("#csIndexToolbarContext .cs-index-main-more-trigger");
+  if (!trigger || trigger === _csIndexCardMoreMenuTrigger) return;
+  _csIndexCardMoreMenuTrigger = trigger;
+  trigger.addEventListener("click", (event) => {
+    // The shared app router also receives this click. Consume it here so a
+    // second toggle cannot immediately undo the visible menu state.
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const wrap = trigger.closest(".tool-menu-wrap");
+    if (!wrap) return;
+    const willOpen = !wrap.classList.contains("open");
+    if (typeof _closeAllOpenMenus === "function") _closeAllOpenMenus(wrap);
+    wrap.classList.toggle("open", willOpen);
+    trigger.setAttribute("aria-expanded", willOpen ? "true" : "false");
+  });
 }
 function selectCallSheetIndexCard(id) { _csIndexCardId = String(id || ""); renderCallSheet(); }
 function setCallSheetIndexCardSide(side) { _csIndexSide = side === "back" ? "back" : "front"; renderCallSheet(); }
