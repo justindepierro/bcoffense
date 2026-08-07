@@ -1007,14 +1007,14 @@ body.shell-phone #callsheet .cs-empty-cat {
 .callsheet-index-mode .cs-title { margin-right: 2px; font-size: var(--font-size-lg); white-space: nowrap; }
 .callsheet-index-mode .cs-toggle,
 .callsheet-index-mode .cs-toolbar .btn,
-.callsheet-index-mode .cs-index-main-more > summary {
+.callsheet-index-mode .cs-index-main-more-trigger {
   min-height: 30px;
   padding: 3px 8px;
   font-size: var(--font-size-xs);
   line-height: 1.1;
   white-space: nowrap;
 }
-.callsheet-index-mode .cs-index-main-more > summary { width: 30px; padding: 0; font-size: 16px; }
+.callsheet-index-mode .cs-index-main-more-trigger { width: 30px; padding: 0; font-size: 16px; }
 
 /* Call Sheet Toggle Groups */
 .cs-toggle-group {
@@ -5489,8 +5489,8 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-main-tabs .btn { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cs-index-main-sides { gap: 2px; color: var(--color-text-muted); font-size: 11px; }
 .cs-index-main-more { position: relative; }
-.cs-index-main-more > summary { display: grid; width: 28px; min-height: 28px; place-items: center; padding: 0; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font-size: 16px; font-weight: 900; cursor: pointer; list-style: none; }
-.cs-index-main-more > summary::-webkit-details-marker { display: none; }
+.cs-index-main-more-trigger { display: grid; width: 28px; min-height: 28px; place-items: center; padding: 0; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font-size: 16px; font-weight: 900; cursor: pointer; }
+.cs-index-main-more-trigger[aria-expanded="true"] { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary-dark); }
 .cs-index-main-more-menu { position: absolute; z-index: 8; top: calc(100% + 4px); right: 0; display: grid; min-width: 150px; gap: 4px; padding: 6px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-lg); }
 .cs-index-main-more-menu .btn { justify-content: flex-start; width: 100%; white-space: nowrap; }
 .cs-index-library-modal { width: min(720px, calc(100vw - 28px)); max-height: min(84vh, 760px); }
