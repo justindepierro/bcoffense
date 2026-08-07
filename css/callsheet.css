@@ -996,7 +996,7 @@ body.shell-phone #callsheet .cs-empty-cat {
 }
 .callsheet-index-mode .cs-toolbar-left,
 .callsheet-index-mode .cs-toolbar-right { display: flex; grid-template-columns: none; flex-wrap: nowrap; gap: 6px; }
-.callsheet-index-mode .cs-toolbar-left { min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+.callsheet-index-mode .cs-toolbar-left { min-width: 0; overflow: visible; }
 .callsheet-index-mode .cs-toolbar-right { flex: 0 0 auto; }
 .callsheet-index-mode .cs-source-bar { display: none; }
 .cs-index-toolbar-context { display: none; align-items: center; min-width: 0; gap: 5px; }

@@ -96,6 +96,7 @@ assert.match(indexCards, /document\.addEventListener\("click", \(event\) => \{[\
 assert.match(css, /\.cs-index-card \{ box-sizing: border-box; display: flex; flex-direction: column; width: min\(100%, 480px\); height:/, "index-card editing uses a fixed 4×6-proportional frame instead of growing with content");
 assert.match(render, /panel\?\.classList\.toggle\("callsheet-index-mode", isIndexCards\)[\s\S]*?csIndexToolbarContext[\s\S]*?renderCallSheetIndexToolbarContext/, "Call Sheet rendering mounts Index Card context in the shared toolbar");
 assert.match(css, /\.callsheet-index-mode \.cs-toolbar \{[\s\S]*?position: relative;[\s\S]*?z-index: 30;[\s\S]*?overflow: visible;/, "The shared Index Card toolbar stays in the normal document flow while its menus render above the card canvas");
+assert.match(css, /\.callsheet-index-mode \.cs-toolbar-left \{ min-width: 0; overflow: visible; \}/, "the Index Card toolbar context does not become a scroll container that clips its open overflow menu");
 assert.match(css, /\.tool-menu-wrap\.open \.cs-index-main-more-menu \{ display: grid; \}/, "the Index Card overflow menu uses the shared open state and remains visible when active");
 assert.match(indexCards, /cs-index-editor-stage/, "Index Card editing uses a bounded editor stage instead of leaving the card adrift in the full Call Sheet canvas");
 assert.match(css, /\.callsheet-index-mode \.cs-source-bar \{ display: none; \}/, "Index Card mode removes the redundant source toolbar from the editing canvas");
