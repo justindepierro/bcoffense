@@ -565,7 +565,7 @@ function openCallSheetIndexPlayMenu(element) {
   const rect = element.getBoundingClientRect();
   showPlayContextMenu({ preventDefault() {}, clientX: rect.left, clientY: rect.bottom + 4 }, row.dataset.category, row.dataset.hash, parseInt(row.dataset.index, 10));
 }
-const CS_INDEX_PRINT_DEFAULTS = { cards: "all", sides: "both", copies: 1 };
+const CS_INDEX_PRINT_DEFAULTS = { cards: "all", sides: "both", copies: 1, delivery: "printer" };
 
 function normalizeCallSheetIndexCardPrintOptions(options = {}) {
   const raw = { ...CS_INDEX_PRINT_DEFAULTS, ...(options && typeof options === "object" ? options : {}) };
@@ -573,7 +573,47 @@ function normalizeCallSheetIndexCardPrintOptions(options = {}) {
     cards: raw.cards === "current" ? "current" : "all",
     sides: ["both", "front", "back"].includes(raw.sides) ? raw.sides : "both",
     copies: Math.max(1, Math.min(4, Number.parseInt(raw.copies, 10) || 1)),
+    delivery: raw.delivery === "manual" ? "manual" : "printer",
   };
+}
+
+// A number of compact photo printers advertise duplex in the operating-system
+// dialog but cannot turn a 4 × 6 card over internally. Keep the two physical
+// passes explicit so a failed device duplex attempt never looks like lost data.
+function _csIndexManualDuplexPrompt(job) {
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay";
+  overlay.innerHTML = `
+    <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="csIndexManualDuplexTitle">
+      <div class="custom-modal-header"><span class="custom-modal-icon">🗂️</span><h3 class="custom-modal-title" id="csIndexManualDuplexTitle">Fronts are ready</h3></div>
+      <div class="custom-modal-body">
+        <p>Your <strong>front</strong> pass was sent as ${escapeHtml(_csIndexPrintSummary({ ...job, sides: "front" }).detail)}.</p>
+        <p>After those cards finish, put them back in the same feed in the orientation your printer requires, then print the back pass. Start with one card if you have not tested the feed direction yet.</p>
+        <p class="cs-print-hint">This is the reliable route for 4 × 6 cards on printers that cannot automatically duplex photo media.</p>
+      </div>
+      <div class="custom-modal-actions"><button type="button" class="btn custom-modal-btn custom-modal-cancel" data-index-manual-duplex="done">Done for now</button><button type="button" class="btn btn-primary custom-modal-btn" data-index-manual-duplex="backs">Print backs</button></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+  if (typeof openLayer === "function") openLayer(overlay, { id: "cs-index-manual-duplex", exclusive: false, trapFocus: false });
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+  const close = () => {
+    if (typeof closeLayer === "function") closeLayer("cs-index-manual-duplex");
+    overlay.classList.remove("visible");
+    setTimeout(() => overlay.remove(), 200);
+  };
+  overlay.querySelector('[data-index-manual-duplex="done"]').addEventListener("click", close);
+  overlay.querySelector('[data-index-manual-duplex="backs"]').addEventListener("click", () => {
+    close();
+    _runCallSheetIndexCardsPrint({ ...job, sides: "back", delivery: "printer" });
+  });
+  overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
+  overlay.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.preventDefault(); close(); } });
+}
+
+function _csIndexStartManualDuplex(job) {
+  const frontJob = { ...job, sides: "front", delivery: "printer" };
+  _runCallSheetIndexCardsPrint(frontJob, () => _csIndexManualDuplexPrompt(job));
 }
 
 function getCallSheetIndexCardPrintOptions() {
@@ -631,9 +671,10 @@ async function openCallSheetIndexCardPrintModal() {
       <div class="custom-modal-header"><span class="custom-modal-icon">🗂️</span><h3 class="custom-modal-title" id="csIndexPrintTitle">Print Index Cards</h3></div>
       <div class="custom-modal-body"><div class="gp-print-form">
         <div class="gp-print-row"><label for="csIndexPrintCards">Cards</label><select id="csIndexPrintCards"><option value="all">All saved index cards</option><option value="current">Current card only</option></select></div>
-        <div class="gp-print-row"><label for="csIndexPrintSides">Sides</label><select id="csIndexPrintSides"><option value="both">Front + Back (duplex)</option><option value="front">Front only</option><option value="back">Back only</option></select></div>
+        <div class="gp-print-row"><label for="csIndexPrintSides">Sides</label><select id="csIndexPrintSides"><option value="both">Front + Back</option><option value="front">Front only</option><option value="back">Back only</option></select></div>
+        <div class="gp-print-row"><label for="csIndexPrintDelivery">Print method</label><select id="csIndexPrintDelivery"><option value="printer">One printer duplex job</option><option value="manual">Manual 4 × 6 two-pass (recommended)</option></select></div>
         <div class="gp-print-row"><label for="csIndexPrintCopies">Copies</label><select id="csIndexPrintCopies"><option value="1">1 copy</option><option value="2">2 copies</option><option value="3">3 copies</option><option value="4">4 copies</option></select></div>
-        <p class="cs-print-hint">Index Cards are locked to <strong>portrait 4 × 6 in</strong>. For double-sided cards, select <strong>Flip on long edge</strong> in your printer dialog.</p>
+        <p class="cs-print-hint" id="csIndexPrintHint">Index Cards are locked to <strong>portrait 4 × 6 in</strong>.</p>
         <div class="cs-print-preview-summary" id="csIndexPrintSummary" role="status" aria-live="polite"></div>
       </div></div>
       <div class="custom-modal-actions"><button type="button" class="btn custom-modal-btn custom-modal-cancel" data-index-print="cancel">Cancel</button><button type="button" class="btn btn-secondary custom-modal-btn" data-index-print="preview">Preview</button><button type="button" class="btn btn-primary custom-modal-btn" data-index-print="print">Print</button></div>
@@ -645,15 +686,22 @@ async function openCallSheetIndexCardPrintModal() {
   const read = () => ({
     cards: overlay.querySelector("#csIndexPrintCards")?.value || stored.cards,
     sides: overlay.querySelector("#csIndexPrintSides")?.value || stored.sides,
+    delivery: overlay.querySelector("#csIndexPrintDelivery")?.value || stored.delivery,
     copies: overlay.querySelector("#csIndexPrintCopies")?.value || stored.copies,
   });
   overlay.querySelector("#csIndexPrintCards").value = stored.cards;
   overlay.querySelector("#csIndexPrintSides").value = stored.sides;
+  overlay.querySelector("#csIndexPrintDelivery").value = stored.delivery;
   overlay.querySelector("#csIndexPrintCopies").value = String(stored.copies);
   const update = () => {
     const summary = _csIndexPrintSummary(read());
     const target = overlay.querySelector("#csIndexPrintSummary");
-    if (target) target.innerHTML = `<strong>${escapeHtml(summary.title)}</strong><span>${escapeHtml(summary.detail)}</span>${read().sides === "both" ? "<small>Pages print in Front → Back order for each card.</small>" : ""}`;
+    const manual = read().delivery === "manual" && read().sides === "both";
+    const hint = overlay.querySelector("#csIndexPrintHint");
+    if (hint) hint.innerHTML = manual
+      ? "Index Cards are locked to <strong>portrait 4 × 6 in</strong>. This prints every front first, then pauses so you can reinsert the cards and print every back."
+      : "Index Cards are locked to <strong>portrait 4 × 6 in</strong>. Use one printer duplex job only when your printer supports duplexing this media size; choose <strong>Flip on long edge</strong> in that printer dialog.";
+    if (target) target.innerHTML = `<strong>${escapeHtml(summary.title)}</strong><span>${escapeHtml(summary.detail)}</span>${manual ? "<small>Two separate print passes: fronts, then backs after reinserting the cards.</small>" : read().sides === "both" ? "<small>Pages are ordered Front → Back for each card.</small>" : ""}`;
   };
   const close = () => {
     if (typeof closeLayer === "function") closeLayer("cs-index-print-modal");
@@ -670,7 +718,8 @@ async function openCallSheetIndexCardPrintModal() {
   overlay.querySelector('[data-index-print="print"]').addEventListener("click", () => {
     const job = setCallSheetIndexCardPrintOptions(read());
     close();
-    _runCallSheetIndexCardsPrint(job);
+    if (job.delivery === "manual" && job.sides === "both") _csIndexStartManualDuplex(job);
+    else _runCallSheetIndexCardsPrint(job);
   });
   overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
   overlay.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.preventDefault(); close(); } });
@@ -717,7 +766,7 @@ function previewCurrentCallSheetIndexCard() {
   openCallSheetIndexCardPrintPreview({ cards: "current", sides: "both", copies: 1 });
 }
 
-function _runCallSheetIndexCardsPrint(options = {}) {
+function _runCallSheetIndexCardsPrint(options = {}, onComplete = null) {
   const job = normalizeCallSheetIndexCardPrintOptions(options);
   const pages = renderCallSheetIndexCardPrintPages(job);
   if (!pages) { showToast("There are no Index Card pages to print.", { type: "warning" }); return; }
@@ -734,6 +783,7 @@ function _runCallSheetIndexCardsPrint(options = {}) {
     document.body.classList.remove("cs-index-printing");
     try { restoreTitle(); } catch (_) { /* title was already restored */ }
     window.removeEventListener("afterprint", cleanup);
+    if (typeof onComplete === "function") setTimeout(onComplete, 0);
   };
   window.addEventListener("afterprint", cleanup);
   setTimeout(cleanup, 60000);
