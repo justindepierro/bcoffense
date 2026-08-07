@@ -8,6 +8,7 @@ let _csIndexDraggingBucketId = "";
 let _csIndexDraggingPlay = null;
 let _csIndexRecoverySearchInFlight = false;
 let _csIndexCardMoreOpen = false;
+let _csIndexCardMoreMenuBound = false;
 
 function _csCards() { return Array.isArray(callSheetSettings.indexCards) ? callSheetSettings.indexCards : []; }
 function _csActiveCard() { const cards = _csCards(); const card = cards.find((item) => item.id === _csIndexCardId) || cards[0] || null; if (card) _csIndexCardId = card.id; return card; }
@@ -894,13 +895,34 @@ function renderCallSheetIndexCardPage() {
   const cards = _csCards(); const card = _csActiveCard();
   if (!card) return `<section class="cs-index-main-empty"><h3>🗂️ Call Sheet Index Cards</h3><p>Build a compact, printable view from the same situations and calls already on your Call Sheet.</p><button class="btn btn-primary" data-action="newCallSheetIndexCard">＋ Create first card</button></section>`;
   requestAnimationFrame(() => {
+    _csBindIndexCardMoreMenu();
     _csBindIndexBucketDragAndDrop();
     _csBindIndexPlayDragAndDrop();
     _csUpdateIndexCardFitStatus();
   });
   return `<section class="cs-index-main"><div id="csIndexCardFitStatus" class="cs-index-fit-status" role="status" aria-live="polite">4 × 6 print area</div><div class="cs-index-editor-stage">${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></div></section>`;
 }
-function toggleCallSheetIndexCardMoreMenu() { _csIndexCardMoreOpen = !_csIndexCardMoreOpen; renderCallSheet(); }
+function _csSetIndexCardMoreMenuOpen(open) {
+  _csIndexCardMoreOpen = Boolean(open);
+  if (typeof renderCallSheet === "function") renderCallSheet();
+}
+function _csBindIndexCardMoreMenu() {
+  if (_csIndexCardMoreMenuBound) return;
+  _csIndexCardMoreMenuBound = true;
+  // This toolbar is re-rendered frequently. Bind once at the document level so
+  // the overflow button never depends on a stale element or another router.
+  document.addEventListener("click", (event) => {
+    const trigger = event.target.closest(".cs-index-main-more-trigger");
+    if (trigger) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      _csSetIndexCardMoreMenuOpen(trigger.getAttribute("aria-expanded") !== "true");
+      return;
+    }
+    if (_csIndexCardMoreOpen && !event.target.closest(".cs-index-main-more")) _csSetIndexCardMoreMenuOpen(false);
+  }, true);
+}
+function toggleCallSheetIndexCardMoreMenu() { _csSetIndexCardMoreMenuOpen(!_csIndexCardMoreOpen); }
 function selectCallSheetIndexCard(id) { _csIndexCardMoreOpen = false; _csIndexCardId = String(id || ""); renderCallSheet(); }
 function setCallSheetIndexCardSide(side) { _csIndexCardMoreOpen = false; _csIndexSide = side === "back" ? "back" : "front"; renderCallSheet(); }
 function setCallSheetIndexCardTitle(name) { const card = _csActiveCard(); if (!card) return; card.name = String(name || "").trim() || "Game Day Call Card"; _csPersistCards(); }

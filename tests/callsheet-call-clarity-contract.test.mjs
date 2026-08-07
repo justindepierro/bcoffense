@@ -92,9 +92,10 @@ assert.match(indexCards, /function loadCallSheetIndexCardFromLibrary\(id\)[\s\S]
 assert.match(indexCards, /data-action="openCallSheetIndexCardLibrary"/, "the card toolbar exposes the reusable Index Card library");
 assert.match(indexCards, /function toggleCallSheetIndexCardMoreMenu\(\)[\s\S]*?_csIndexCardMoreOpen[\s\S]*?renderCallSheet\(\)/, "the Index Card overflow menu uses an explicit reliable button toggle");
 assert.match(indexCards, /cs-index-main-more-trigger[\s\S]*?data-action="toggleCallSheetIndexCardMoreMenu"/, "the Index Card overflow trigger is a delegated button rather than a fragile native details summary");
+assert.match(indexCards, /function _csBindIndexCardMoreMenu\(\)[\s\S]*?cs-index-main-more-trigger[\s\S]*?stopImmediatePropagation\(\)/, "the re-rendered Index Card overflow trigger has its own durable document-level binding");
 assert.match(css, /\.cs-index-card \{ box-sizing: border-box; display: flex; flex-direction: column; width: min\(100%, 480px\); height:/, "index-card editing uses a fixed 4×6-proportional frame instead of growing with content");
 assert.match(render, /panel\?\.classList\.toggle\("callsheet-index-mode", isIndexCards\)[\s\S]*?csIndexToolbarContext[\s\S]*?renderCallSheetIndexToolbarContext/, "Call Sheet rendering mounts Index Card context in the shared toolbar");
-assert.match(css, /\.callsheet-index-mode \.cs-toolbar \{[\s\S]*?position: relative;[\s\S]*?z-index: auto;[\s\S]*?overflow: visible;/, "The shared Index Card toolbar stays in the normal document flow so it cannot pin midway through the card canvas");
+assert.match(css, /\.callsheet-index-mode \.cs-toolbar \{[\s\S]*?position: relative;[\s\S]*?z-index: 30;[\s\S]*?overflow: visible;/, "The shared Index Card toolbar stays in the normal document flow while its menus render above the card canvas");
 assert.match(indexCards, /cs-index-editor-stage/, "Index Card editing uses a bounded editor stage instead of leaving the card adrift in the full Call Sheet canvas");
 assert.match(css, /\.callsheet-index-mode \.cs-source-bar \{ display: none; \}/, "Index Card mode removes the redundant source toolbar from the editing canvas");
 assert.match(css, /\.cs-index-grid \{ display: grid;[\s\S]*?flex: 1 1 auto; min-height: 0;[\s\S]*?overflow: auto/, "index-card bucket content stays in a constrained scroll region instead of painting over the next situation");
