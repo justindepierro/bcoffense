@@ -7,8 +7,6 @@ let _csIndexPickerAddingKey = "";
 let _csIndexDraggingBucketId = "";
 let _csIndexDraggingPlay = null;
 let _csIndexRecoverySearchInFlight = false;
-let _csIndexCardMoreOpen = false;
-let _csIndexCardMoreMenuBound = false;
 
 function _csCards() { return Array.isArray(callSheetSettings.indexCards) ? callSheetSettings.indexCards : []; }
 function _csActiveCard() { const cards = _csCards(); const card = cards.find((item) => item.id === _csIndexCardId) || cards[0] || null; if (card) _csIndexCardId = card.id; return card; }
@@ -887,44 +885,22 @@ function renderCallSheetIndexToolbarContext() {
   const cards = _csCards(); const card = _csActiveCard();
   if (!card) return "";
   const saveLabel = card.libraryId ? "💾 Save linked card now" : "💾 Save & link to card library";
-  const moreMenu = _csIndexCardMoreOpen ? `<div class="cs-index-main-more-menu"><button class="btn btn-sm btn-outline" data-action="saveCallSheetIndexCardToLibrary">${saveLabel}</button><button class="btn btn-sm btn-outline" data-action="openCallSheetIndexCardLibrary">🗃️ Open card library</button><button class="btn btn-sm btn-outline" data-action="renameCallSheetIndexCard">✏️ Rename card</button><button class="btn btn-sm btn-outline" data-action="recoverCallSheetIndexCard">☁️ Recover from cloud history</button><button class="btn btn-sm btn-outline" data-action="toggleCallSheetIndexCardHeader">${card.hideHeader ? "Show title band" : "Hide title band"}</button><button class="btn btn-sm btn-outline" data-action="removeEmptyCallSheetIndexBuckets">Remove empty</button><button class="btn btn-sm btn-outline cs-index-delete-card" data-action="deleteCallSheetIndexCard">🗑️ Delete card</button></div>` : "";
-  return `<div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}" title="${escapeAttr(item.name || `Card ${index + 1}`)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}</div><div class="cs-index-main-sides" aria-label="Card side"><span class="cs-index-side-label">Side</span><button class="btn btn-sm ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn btn-sm ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><div class="cs-index-main-more"><button class="cs-index-main-more-trigger" type="button" data-action="toggleCallSheetIndexCardMoreMenu" title="More card actions" aria-label="More card actions" aria-expanded="${_csIndexCardMoreOpen ? "true" : "false"}">⋯</button>${moreMenu}</div></div>`;
+  const moreMenu = `<div class="tool-menu cs-index-main-more-menu" data-action="removeParentOpen"><button data-action="saveCallSheetIndexCardToLibrary">${saveLabel}</button><button data-action="openCallSheetIndexCardLibrary">🗃️ Open card library</button><button data-action="renameCallSheetIndexCard">✏️ Rename card</button><button data-action="recoverCallSheetIndexCard">☁️ Recover from cloud history</button><button data-action="toggleCallSheetIndexCardHeader">${card.hideHeader ? "Show title band" : "Hide title band"}</button><button data-action="removeEmptyCallSheetIndexBuckets">Remove empty</button><button class="tool-menu-danger" data-action="deleteCallSheetIndexCard">🗑️ Delete card</button></div>`;
+  return `<div class="cs-index-main-tabs" aria-label="Index cards">${cards.map((item, index) => `<button class="btn btn-sm ${item.id === card.id ? "btn-primary" : "btn-outline"}" data-action="selectCallSheetIndexCard" data-arg="${escapeAttr(item.id)}" title="${escapeAttr(item.name || `Card ${index + 1}`)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("")}</div><div class="cs-index-main-sides" aria-label="Card side"><span class="cs-index-side-label">Side</span><button class="btn btn-sm ${_csIndexSide === "front" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="front">Front</button><button class="btn btn-sm ${_csIndexSide === "back" ? "btn-primary" : "btn-outline"}" data-action="setCallSheetIndexCardSide" data-arg="back">Back</button><div class="tool-menu-wrap cs-index-main-more"><button class="cs-index-main-more-trigger" type="button" data-action="toggleParentOpen" title="More card actions" aria-label="More card actions" aria-expanded="false">⋯</button>${moreMenu}</div></div>`;
 }
 
 function renderCallSheetIndexCardPage() {
   const cards = _csCards(); const card = _csActiveCard();
   if (!card) return `<section class="cs-index-main-empty"><h3>🗂️ Call Sheet Index Cards</h3><p>Build a compact, printable view from the same situations and calls already on your Call Sheet.</p><button class="btn btn-primary" data-action="newCallSheetIndexCard">＋ Create first card</button></section>`;
   requestAnimationFrame(() => {
-    _csBindIndexCardMoreMenu();
     _csBindIndexBucketDragAndDrop();
     _csBindIndexPlayDragAndDrop();
     _csUpdateIndexCardFitStatus();
   });
   return `<section class="cs-index-main"><div id="csIndexCardFitStatus" class="cs-index-fit-status" role="status" aria-live="polite">4 × 6 print area</div><div class="cs-index-editor-stage">${_csCardMarkup(card, _csIndexSide, true)}<button class="btn btn-outline cs-index-add" data-action="addCallSheetIndexCardBucket">＋ Add situation</button></div></section>`;
 }
-function _csSetIndexCardMoreMenuOpen(open) {
-  _csIndexCardMoreOpen = Boolean(open);
-  if (typeof renderCallSheet === "function") renderCallSheet();
-}
-function _csBindIndexCardMoreMenu() {
-  if (_csIndexCardMoreMenuBound) return;
-  _csIndexCardMoreMenuBound = true;
-  // This toolbar is re-rendered frequently. Bind once at the document level so
-  // the overflow button never depends on a stale element or another router.
-  document.addEventListener("click", (event) => {
-    const trigger = event.target.closest(".cs-index-main-more-trigger");
-    if (trigger) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      _csSetIndexCardMoreMenuOpen(trigger.getAttribute("aria-expanded") !== "true");
-      return;
-    }
-    if (_csIndexCardMoreOpen && !event.target.closest(".cs-index-main-more")) _csSetIndexCardMoreMenuOpen(false);
-  }, true);
-}
-function toggleCallSheetIndexCardMoreMenu() { _csSetIndexCardMoreMenuOpen(!_csIndexCardMoreOpen); }
-function selectCallSheetIndexCard(id) { _csIndexCardMoreOpen = false; _csIndexCardId = String(id || ""); renderCallSheet(); }
-function setCallSheetIndexCardSide(side) { _csIndexCardMoreOpen = false; _csIndexSide = side === "back" ? "back" : "front"; renderCallSheet(); }
+function selectCallSheetIndexCard(id) { _csIndexCardId = String(id || ""); renderCallSheet(); }
+function setCallSheetIndexCardSide(side) { _csIndexSide = side === "back" ? "back" : "front"; renderCallSheet(); }
 function setCallSheetIndexCardTitle(name) { const card = _csActiveCard(); if (!card) return; card.name = String(name || "").trim() || "Game Day Call Card"; _csPersistCards(); }
 function toggleCallSheetIndexCardHeader() { const card = _csActiveCard(); if (!card) return; card.hideHeader = !card.hideHeader; _csPersistCards(); }
 function addCallSheetIndexCardBucket() { return _csAddBucket(); }

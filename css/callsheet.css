@@ -5491,8 +5491,8 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-main-more { position: relative; z-index: 40; }
 .cs-index-main-more-trigger { display: grid; width: 28px; min-height: 28px; place-items: center; padding: 0; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font-size: 16px; font-weight: 900; cursor: pointer; }
 .cs-index-main-more-trigger[aria-expanded="true"] { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary-dark); }
-.cs-index-main-more-menu { position: absolute; z-index: 100; top: calc(100% + 4px); right: 0; display: grid; min-width: 150px; gap: 4px; padding: 6px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-lg); }
-.cs-index-main-more-menu .btn { justify-content: flex-start; width: 100%; white-space: nowrap; }
+.cs-index-main-more-menu { z-index: 100; min-width: 190px; }
+.tool-menu-wrap.open .cs-index-main-more-menu { display: grid; }
 .cs-index-library-modal { width: min(720px, calc(100vw - 28px)); max-height: min(84vh, 760px); }
 .cs-index-library-save { padding: var(--space-md); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); background: var(--color-bg-light); }
 .cs-index-library-save h4, .cs-index-library-list h4 { margin: 0; }
