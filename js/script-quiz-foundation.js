@@ -668,9 +668,6 @@ function _savePlayerRewardEvents(events) {
     .filter((event) => event && typeof event === "object")
     .slice(-400);
   storageManager.set(_getPlayerRewardStorageKey(), normalized);
-  if (typeof window !== "undefined" && typeof window.queuePlayerLeaderboardSync === "function") {
-    window.queuePlayerLeaderboardSync("rewards");
-  }
 }
 
 function _getPlayerHelmetStickers() {
@@ -685,8 +682,19 @@ function _savePlayerHelmetStickers(stickers) {
     .filter((sticker) => sticker && typeof sticker === "object")
     .slice(-500);
   storageManager.set(_getPlayerHelmetStickerStorageKey(), normalized);
-  if (typeof window !== "undefined" && typeof window.queuePlayerLeaderboardSync === "function") {
-    window.queuePlayerLeaderboardSync("stickers");
+}
+
+async function _submitCoachLeaderboardMutation(kind, action, record) {
+  if (typeof window === "undefined" || typeof window.mutateStaffLeaderboardRecord !== "function") {
+    showToast("Secure award service is unavailable. Reload and try again.", { type: "warning" });
+    return null;
+  }
+  try {
+    return await window.mutateStaffLeaderboardRecord({ kind, action, record });
+  } catch (err) {
+    console.warn("[quiz leaderboard award]", err);
+    showToast("Could not save that award securely. Check your connection and try again.", { type: "warning" });
+    return null;
   }
 }
 
@@ -1306,8 +1314,16 @@ function _normalizeQuizPlayerName(name) {
   return _getQuizPlayerName();
 }
 
+let _quizEventSequence = 0;
 function _quizEventId(prefix) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const kind = String(prefix || "record").replace(/[^a-z0-9_-]/gi, "").slice(0, 24) || "record";
+  if (globalThis.crypto?.randomUUID) return `${kind}-${globalThis.crypto.randomUUID()}`;
+  if (globalThis.crypto?.getRandomValues) {
+    const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16));
+    return `${kind}-${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+  }
+  _quizEventSequence += 1;
+  return `${kind}-${Date.now().toString(36)}-${_quizEventSequence.toString(36)}`;
 }
 
 function _quizCurrentCoachName() {
@@ -3833,7 +3849,7 @@ async function coachAwardQuestionPoints(type = "question") {
     })
     : "";
   if (note === null) return;
-  events.push({
+  const draftReward = {
     id: _quizEventId("reward"),
     player,
     type: safeType,
@@ -3844,7 +3860,10 @@ async function coachAwardQuestionPoints(type = "question") {
     createdAt: now.toISOString(),
     dateKey,
     weekKey,
-  });
+  };
+  const mutation = await _submitCoachLeaderboardMutation("reward", "create", draftReward);
+  if (!mutation?.record) return;
+  events.push(mutation.record);
   _savePlayerRewardEvents(events);
   _leaderboardSelectedPlayer = player;
   renderCoachQuizSetupPage();
@@ -3904,7 +3923,7 @@ async function coachStageDiscussionReward(arg = "") {
   const now = new Date();
   const playId = postEl.closest("[data-play-id]")?.dataset?.playId || "";
   const events = _getPlayerRewardEvents();
-  events.push({
+  const draftReward = {
     id: _quizEventId("reward"),
     player,
     type: safeType,
@@ -3919,7 +3938,10 @@ async function coachStageDiscussionReward(arg = "") {
     createdAt: now.toISOString(),
     dateKey: _quizDateKey(now),
     weekKey: _quizWeekKey(now),
-  });
+  };
+  const mutation = await _submitCoachLeaderboardMutation("reward", "create", draftReward);
+  if (!mutation?.record) return;
+  events.push(mutation.record);
   _savePlayerRewardEvents(events);
   _leaderboardSelectedPlayer = player;
   postEl.classList.add("disc-post--reward-pending");
@@ -3955,15 +3977,19 @@ async function coachApproveQuizReward(rewardId = "") {
     })
     : true;
   if (!ok) return;
-  reward.status = "approved";
-  reward.points = approvedPoints;
-  reward.approvedAt = new Date().toISOString();
-  reward.approvedBy = _quizCurrentCoachName();
+  const mutation = await _submitCoachLeaderboardMutation("reward", "approve", {
+    ...reward,
+    points: approvedPoints,
+  });
+  if (!mutation?.record) return;
+  const rewardIndex = events.findIndex((event) => String(event.id || "") === String(rewardId || ""));
+  if (rewardIndex < 0) return;
+  events[rewardIndex] = mutation.record;
   _savePlayerRewardEvents(events);
-  _leaderboardSelectedPlayer = _normalizeQuizPlayerName(reward.player);
+  _leaderboardSelectedPlayer = _normalizeQuizPlayerName(mutation.record.player);
   renderCoachQuizSetupPage();
   if (isQuizPageActive()) renderQuizPage();
-  showToast(`Approved ${approvedPoints} points for ${_normalizeQuizPlayerName(reward.player)}${approvedPoints < originalPoints ? " after cap" : ""}.`, { type: "success" });
+  showToast(`Approved ${approvedPoints} points for ${_normalizeQuizPlayerName(mutation.record.player)}${approvedPoints < originalPoints ? " after cap" : ""}.`, { type: "success" });
 }
 
 async function coachRevokeQuizReward(rewardId = "") {
@@ -3981,9 +4007,11 @@ async function coachRevokeQuizReward(rewardId = "") {
       confirmText: "Revoke",
       cancelText: "Keep",
       danger: true,
-    })
+  })
     : false;
   if (!ok) return;
+  const mutation = await _submitCoachLeaderboardMutation("reward", "revoke", reward);
+  if (!mutation?.deleted) return;
   _savePlayerRewardEvents(events.filter((event) => String(event.id || "") !== String(rewardId || "")));
   _leaderboardSelectedPlayer = player;
   renderCoachQuizSetupPage();
@@ -4005,7 +4033,7 @@ async function coachAwardHelmetSticker(stickerKey = "") {
   if (note === null) return;
   const now = new Date();
   const stickers = _getPlayerHelmetStickers();
-  stickers.push({
+  const draftSticker = {
     id: _quizEventId("sticker"),
     player,
     stickerKey: sticker.key,
@@ -4019,7 +4047,10 @@ async function coachAwardHelmetSticker(stickerKey = "") {
     createdAt: now.toISOString(),
     dateKey: _quizDateKey(now),
     weekKey: _quizWeekKey(now),
-  });
+  };
+  const mutation = await _submitCoachLeaderboardMutation("sticker", "create", draftSticker);
+  if (!mutation?.record) return;
+  stickers.push(mutation.record);
   _savePlayerHelmetStickers(stickers);
   _leaderboardSelectedPlayer = player;
   renderCoachQuizSetupPage();
@@ -4042,9 +4073,11 @@ async function coachRevokeHelmetStickerAward(stickerId = "") {
       confirmText: "Revoke",
       cancelText: "Keep",
       danger: true,
-    })
+  })
     : false;
   if (!ok) return;
+  const mutation = await _submitCoachLeaderboardMutation("sticker", "revoke", sticker);
+  if (!mutation?.deleted) return;
   _savePlayerHelmetStickers(stickers.filter((event) => String(event.id || "") !== String(stickerId || "")));
   _leaderboardSelectedPlayer = player;
   renderCoachQuizSetupPage();

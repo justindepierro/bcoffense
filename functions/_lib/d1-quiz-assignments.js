@@ -114,9 +114,13 @@ function mapAssignment(row, recipient = {}) {
       name: recipient.display_name || "Player",
       assignedAt: Number(recipient.assigned_at || 0),
       startedAt: recipient.started_at ? Number(recipient.started_at) : null,
-      completedAt: recipient.completed_at ? Number(recipient.completed_at) : null,
-      bestPercent: Number(recipient.best_percent || 0),
-      attemptsCount: Number(recipient.attempts_count || 0),
+      // Historic client-reported attempt data was never verified server-side.
+      // Until authoritative quiz sessions exist, it must not appear as an
+      // assignment score or completion state to either players or staff.
+      completedAt: null,
+      bestPercent: 0,
+      verificationState: "authoritative-session-required",
+      attemptsCount: 0,
       lastRemindedAt: recipient.last_reminded_at ? Number(recipient.last_reminded_at) : null,
       notificationCount: Number(recipient.notification_count || 0),
     } : null,
@@ -174,7 +178,7 @@ export async function getPlayerQuizAssignments(db, teamId, userId) {
      JOIN quiz_assignments a ON a.id = r.assignment_id
      JOIN users u ON u.id = r.user_id
      WHERE r.user_id = ? AND a.team_id = ? AND a.status = 'published'
-     ORDER BY CASE WHEN r.completed_at IS NULL THEN 0 ELSE 1 END, a.due_at ASC, a.created_at DESC LIMIT 100`,
+     ORDER BY a.due_at ASC, a.created_at DESC LIMIT 100`,
   ).bind(userId, teamId).all();
   return (result.results || []).map((row) => mapAssignment(row, row));
 }
@@ -396,32 +400,47 @@ export async function publishQuizAssignment(db, teamId, session, input = {}) {
   return { assignment: { ...assignment, status: "published" }, recipientIds: recipients };
 }
 
-export async function recordQuizAssignmentAttempt(db, teamId, userId, input = {}) {
+/**
+ * Legacy browser quiz summaries are practice-only. They have no signed server
+ * question flow, so client-provided attempt IDs and percentages cannot update
+ * best_percent, latest_attempt_id, attempts_count, or completed_at.
+ */
+export async function recordLegacyQuizAssignmentPractice(db, teamId, userId, input = {}) {
   const assignmentId = cleanText(input.assignmentId, 128);
-  const attemptId = cleanText(input.attemptId, 160);
-  if (!assignmentId || !attemptId) throw new Error("Assignment attempt is missing its identity.");
+  if (!assignmentId) throw new Error("Homework assignment is missing its identity.");
   const assignment = await db.prepare(
     `SELECT a.id, a.required_score FROM quiz_assignments a
      JOIN quiz_assignment_recipients r ON r.assignment_id = a.id
      WHERE a.id = ? AND a.team_id = ? AND a.status = 'published' AND r.user_id = ? LIMIT 1`,
   ).bind(assignmentId, teamId, userId).first();
   if (!assignment) throw new Error("This homework assignment is unavailable.");
-  const percent = cleanInt(input.percent, 0, 100);
   const now = nowUnix();
-  const meetsRequirement = percent >= Number(assignment.required_score || 0);
   await db.batch([
     db.prepare(
       `UPDATE quiz_assignment_recipients
-       SET started_at = COALESCE(started_at, ?), latest_attempt_id = ?,
-         attempts_count = attempts_count + 1,
-         best_percent = MAX(best_percent, ?),
-         completed_at = CASE WHEN ? THEN COALESCE(completed_at, ?) ELSE completed_at END
+       SET started_at = COALESCE(started_at, ?)
        WHERE assignment_id = ? AND user_id = ?`,
-    ).bind(now, attemptId, percent, meetsRequirement ? 1 : 0, now, assignmentId, userId),
+    ).bind(now, assignmentId, userId),
     db.prepare(
       `INSERT INTO quiz_assignment_delivery_events (id, assignment_id, user_id, event_type, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
-    ).bind(crypto.randomUUID(), assignmentId, userId, meetsRequirement ? "completed" : "attempted", now),
+       SELECT ?, ?, ?, 'attempted', ?
+       WHERE NOT EXISTS (
+         SELECT 1 FROM quiz_assignment_delivery_events
+          WHERE assignment_id = ? AND user_id = ? AND event_type = 'attempted'
+       )`,
+    ).bind(crypto.randomUUID(), assignmentId, userId, now, assignmentId, userId),
   ]);
-  return { assignmentId, percent, completed: meetsRequirement, requiredScore: Number(assignment.required_score || 0) };
+  return {
+    assignmentId,
+    practiceOnly: true,
+    verified: false,
+    completed: false,
+    requiredScore: Number(assignment.required_score || 0),
+  };
+}
+
+// Retain the former helper export for any in-flight code, while making its
+// behavior safe until the authoritative session work is shipped.
+export async function recordQuizAssignmentAttempt(db, teamId, userId, input = {}) {
+  return recordLegacyQuizAssignmentPractice(db, teamId, userId, input);
 }

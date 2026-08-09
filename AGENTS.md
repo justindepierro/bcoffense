@@ -413,6 +413,7 @@ window.isActionAllowedForRole
 window.isAdminUser
 window.logoutAuth
 window.mediaUploadOutbox
+window.mutateStaffLeaderboardRecord
 window.nextScriptQuizPlay
 window.openAboutBCOffense
 window.openAccountSecurity

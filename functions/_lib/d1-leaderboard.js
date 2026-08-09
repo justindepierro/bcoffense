@@ -5,49 +5,74 @@
 import { getTeamId } from "./d1-threads.js";
 
 const MAX_ATTEMPTS_PER_SYNC = 150;
-const MAX_REWARDS_PER_SYNC = 400;
-const MAX_STICKERS_PER_SYNC = 500;
+const MAX_REVIEW_BYTES = 8 * 1024;
+const MAX_STAFF_NOTE_LENGTH = 1000;
+const MAX_STAFF_POINTS = 500;
+const ATTEMPT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/;
+const REWARD_TYPES = new Set(["question", "answer", "gift"]);
+const STICKER_COLORS = new Set(["green", "blue", "red", "gold", "purple", "navy"]);
 
-function nowUnix() {
-  return Math.floor(Date.now() / 1000);
+// The client stores rich review data with an attempt, so this must leave room
+// for a normal offline queue while still bounding a Function request body.
+export const MAX_LEADERBOARD_PAYLOAD_BYTES = 128 * 1024;
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function cleanText(value, max = 240) {
-  return String(value ?? "").trim().slice(0, max);
+  return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-function cleanId(value) {
-  const id = cleanText(value, 128);
-  return id || crypto.randomUUID();
+function requiredText(value, name, max) {
+  if (typeof value !== "string") throw new TypeError(`${name} must be text.`);
+  const text = value.trim();
+  if (!text) throw new TypeError(`${name} is required.`);
+  if (text.length > max) throw new RangeError(`${name} is too long.`);
+  return text;
 }
 
-function cleanPlayerName(value, session) {
-  return cleanText(value || session?.label || session?.username || "Player", 120) || "Player";
+function optionalText(value, name, max) {
+  if (value === undefined || value === null || value === "") return "";
+  if (typeof value !== "string") throw new TypeError(`${name} must be text.`);
+  const text = value.trim();
+  if (text.length > max) throw new RangeError(`${name} is too long.`);
+  return text;
 }
 
-function intValue(value, min = 0, max = 1000000) {
+function requiredId(value, name = "Record ID") {
+  const id = requiredText(value, name, 128);
+  if (!ATTEMPT_ID_PATTERN.test(id)) {
+    throw new TypeError(`${name} must be a stable client-generated ID.`);
+  }
+  return id;
+}
+
+function boundedInteger(value, name, min, max, fallback = 0) {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value !== "number" || !Number.isSafeInteger(value)) {
+    throw new TypeError(`${name} must be an integer.`);
+  }
+  if (value < min || value > max) throw new RangeError(`${name} is out of range.`);
+  return value;
+}
+
+function jsonText(value, name, max = MAX_REVIEW_BYTES) {
+  if (value === undefined || value === null) return null;
+  if (!isPlainObject(value) && !Array.isArray(value)) {
+    throw new TypeError(`${name} must be an object or list.`);
+  }
+  const serialized = JSON.stringify(value);
+  if (new TextEncoder().encode(serialized).byteLength > max) {
+    throw new RangeError(`${name} is too large.`);
+  }
+  return serialized;
+}
+
+function summaryInt(value, min = 0, max = 1000000) {
   const number = Math.round(Number(value || 0));
   if (!Number.isFinite(number)) return min;
   return Math.min(max, Math.max(min, number));
-}
-
-function unixValue(value) {
-  if (value === null || value === undefined || value === "") return null;
-  if (Number.isFinite(Number(value))) {
-    const number = Number(value);
-    return number > 100000000000 ? Math.floor(number / 1000) : Math.floor(number);
-  }
-  const time = Date.parse(String(value));
-  return Number.isFinite(time) ? Math.floor(time / 1000) : null;
-}
-
-function jsonText(value, max = 8000) {
-  if (!value) return null;
-  try {
-    return JSON.stringify(value).slice(0, max);
-  } catch (_) {
-    return null;
-  }
 }
 
 function safeParseJson(value, fallback) {
@@ -59,8 +84,7 @@ function safeParseJson(value, fallback) {
   }
 }
 
-function currentWeekKey() {
-  const date = new Date();
+function currentWeekKey(date = new Date()) {
   const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const day = utcDate.getUTCDay() || 7;
   utcDate.setUTCDate(utcDate.getUTCDate() + 4 - day);
@@ -77,221 +101,427 @@ export async function getLeaderboardTeamId(db, session) {
   return getTeamId(db, session);
 }
 
-function normalizeAttempt(input, teamId, session) {
-  return {
-    id: cleanId(input.id),
-    teamId,
-    userId: session?.d1UserId || null,
-    playerName: cleanPlayerName(input.player || input.playerName, session),
-    sourceType: cleanText(input.sourceType, 40),
-    sourceId: cleanText(input.sourceId, 160),
-    title: cleanText(input.title, 180),
-    positionKey: cleanText(input.positionKey, 40),
-    positionLabel: cleanText(input.positionLabel, 80),
-    score: intValue(input.score),
-    bonusPoints: intValue(input.bonusPoints),
-    totalPoints: intValue(input.totalPoints),
-    answered: intValue(input.answered, 0, 500),
-    correct: intValue(input.correct, 0, 500),
-    wrong: intValue(input.wrong, 0, 500),
-    totalQuestions: intValue(input.totalQuestions, 0, 500),
-    remaining: intValue(input.remaining, 0, 500),
-    percent: intValue(input.percent, 0, 100),
-    badge: cleanText(input.badge, 80),
-    bestStreak: intValue(input.bestStreak, 0, 500),
-    questionBreakdown: jsonText(input.questionBreakdown),
-    review: jsonText(input.review),
-    completed: input.completed === false ? 0 : 1,
-    dateKey: cleanText(input.dateKey, 20),
-    weekKey: cleanText(input.weekKey, 20),
-    completedAt: unixValue(input.completedAt || input.finishedAt || input.createdAt),
-    clientUpdatedAt: unixValue(input.updatedAt || input.savedAt || input.createdAt),
-  };
-}
-
-function normalizeReward(input, teamId, session) {
-  const status = cleanText(input.status || "approved", 40) || "approved";
-  return {
-    id: cleanId(input.id),
-    teamId,
-    userId: session?.d1UserId || null,
-    playerName: cleanPlayerName(input.player || input.playerName, session),
-    type: cleanText(input.type, 40),
-    label: cleanText(input.label, 160),
-    points: intValue(input.points, -100000, 100000),
-    note: cleanText(input.note, 1000),
-    awardedBy: cleanText(input.awardedBy || session?.label || session?.username, 120),
-    source: cleanText(input.source, 80),
-    sourcePostId: cleanText(input.sourcePostId || input.postId, 160),
-    sourcePlayId: cleanText(input.sourcePlayId || input.playId, 160),
-    status,
-    dateKey: cleanText(input.dateKey, 20),
-    weekKey: cleanText(input.weekKey, 20),
-    createdAtClient: unixValue(input.createdAt),
-    approvedAt: unixValue(input.approvedAt),
-    approvedBy: cleanText(input.approvedBy, 120),
-  };
-}
-
-function normalizeSticker(input, teamId, session) {
-  return {
-    id: cleanId(input.id),
-    teamId,
-    userId: session?.d1UserId || null,
-    playerName: cleanPlayerName(input.player || input.playerName, session),
-    stickerKey: cleanText(input.stickerKey || input.key, 80),
-    label: cleanText(input.label, 160),
-    icon: cleanText(input.icon, 24),
-    color: cleanText(input.color, 40),
-    description: cleanText(input.description, 800),
-    note: cleanText(input.note, 1000),
-    awardedBy: cleanText(input.awardedBy || session?.label || session?.username, 120),
-    context: cleanText(input.context, 160),
-    dateKey: cleanText(input.dateKey, 20),
-    weekKey: cleanText(input.weekKey, 20),
-    createdAtClient: unixValue(input.createdAt),
-  };
-}
-
-export async function syncLeaderboardPayload(db, teamId, session, payload = {}) {
-  const now = nowUnix();
-  const attempts = Array.isArray(payload.attempts) ? payload.attempts.slice(-MAX_ATTEMPTS_PER_SYNC) : [];
-  const rewards = Array.isArray(payload.rewards) ? payload.rewards.slice(-MAX_REWARDS_PER_SYNC) : [];
-  const stickers = Array.isArray(payload.stickers) ? payload.stickers.slice(-MAX_STICKERS_PER_SYNC) : [];
-  let attemptCount = 0;
-  let rewardCount = 0;
-  let stickerCount = 0;
-
-  for (const item of attempts) {
-    if (!item || typeof item !== "object") continue;
-    const a = normalizeAttempt(item, teamId, session);
-    await db.prepare(
-      `INSERT INTO player_quiz_attempts (
-        id, team_id, user_id, player_name, source_type, source_id, title,
-        position_key, position_label, score, bonus_points, total_points,
-        answered, correct, wrong, total_questions, remaining, percent,
-        badge, best_streak, question_breakdown, review, completed,
-        date_key, week_key, completed_at, client_updated_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(team_id, id) DO UPDATE SET
-        user_id = excluded.user_id,
-        player_name = excluded.player_name,
-        source_type = excluded.source_type,
-        source_id = excluded.source_id,
-        title = excluded.title,
-        position_key = excluded.position_key,
-        position_label = excluded.position_label,
-        score = excluded.score,
-        bonus_points = excluded.bonus_points,
-        total_points = excluded.total_points,
-        answered = excluded.answered,
-        correct = excluded.correct,
-        wrong = excluded.wrong,
-        total_questions = excluded.total_questions,
-        remaining = excluded.remaining,
-        percent = excluded.percent,
-        badge = excluded.badge,
-        best_streak = excluded.best_streak,
-        question_breakdown = excluded.question_breakdown,
-        review = excluded.review,
-        completed = excluded.completed,
-        date_key = excluded.date_key,
-        week_key = excluded.week_key,
-        completed_at = excluded.completed_at,
-        client_updated_at = excluded.client_updated_at,
-        updated_at = excluded.updated_at`,
-    )
-      .bind(
-        a.id, a.teamId, a.userId, a.playerName, a.sourceType, a.sourceId, a.title,
-        a.positionKey, a.positionLabel, a.score, a.bonusPoints, a.totalPoints,
-        a.answered, a.correct, a.wrong, a.totalQuestions, a.remaining, a.percent,
-        a.badge, a.bestStreak, a.questionBreakdown, a.review, a.completed,
-        a.dateKey, a.weekKey, a.completedAt, a.clientUpdatedAt, now,
-      )
-      .run();
-    attemptCount += 1;
+/** Read a finite JSON object without buffering an unbounded request body. */
+export async function readLeaderboardPayload(request) {
+  const advertisedLength = String(request.headers.get("content-length") || "").trim();
+  if (/^\d+$/.test(advertisedLength) && Number(advertisedLength) > MAX_LEADERBOARD_PAYLOAD_BYTES) {
+    throw new RangeError("Leaderboard payload is too large.");
   }
 
-  for (const item of rewards) {
-    if (!item || typeof item !== "object") continue;
-    const r = normalizeReward(item, teamId, session);
+  const reader = request.body?.getReader();
+  if (!reader) return {};
+  const chunks = [];
+  let size = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > MAX_LEADERBOARD_PAYLOAD_BYTES) {
+      throw new RangeError("Leaderboard payload is too large.");
+    }
+    chunks.push(value);
+  }
+
+  if (!size) return {};
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  const payload = JSON.parse(new TextDecoder().decode(bytes));
+  if (!isPlainObject(payload)) throw new TypeError("Leaderboard payload must be an object.");
+  return payload;
+}
+
+function payloadArray(payload, key, max) {
+  const value = payload[key];
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) throw new TypeError(`${key} must be a list.`);
+  if (value.length > max) throw new RangeError(`${key} has too many records.`);
+  if (!value.every(isPlainObject)) throw new TypeError(`${key} contains an invalid record.`);
+  return value;
+}
+
+function canonicalDateKey(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function canonicalPlayerName(user) {
+  return cleanText(user?.display_name, 120) || "Player";
+}
+
+async function resolveSessionPlayer(db, teamId, session) {
+  const userId = requiredText(session?.d1UserId, "Player account", 128);
+  const player = await db.prepare(
+    `SELECT id AS user_id, display_name
+       FROM users
+      WHERE id = ? AND team_id = ? AND role = 'player' AND status = 'active'
+      LIMIT 1`,
+  ).bind(userId, teamId).first();
+  if (!player) throw new Error("The active player account could not be resolved.");
+  return { userId: String(player.user_id), playerName: canonicalPlayerName(player) };
+}
+
+function normalizeAttempt(input, teamId, player, now) {
+  if (!isPlainObject(input)) throw new TypeError("Each quiz attempt must be an object.");
+  const score = boundedInteger(input.score, "score", 0, 100000, 0);
+  const bonusPoints = boundedInteger(input.bonusPoints, "bonusPoints", 0, 100000, 0);
+  const totalPoints = boundedInteger(input.totalPoints, "totalPoints", 0, 100000, 0);
+  const answered = boundedInteger(input.answered, "answered", 0, 500, 0);
+  const correct = boundedInteger(input.correct, "correct", 0, 500, 0);
+  const wrong = boundedInteger(input.wrong, "wrong", 0, 500, 0);
+  const totalQuestions = boundedInteger(input.totalQuestions, "totalQuestions", 0, 500, 0);
+  const remaining = boundedInteger(input.remaining, "remaining", 0, 500, 0);
+  const percent = boundedInteger(input.percent, "percent", 0, 100, 0);
+  const bestStreak = boundedInteger(input.bestStreak, "bestStreak", 0, 500, 0);
+  if (totalPoints !== score + bonusPoints) throw new TypeError("totalPoints must equal score plus bonusPoints.");
+  if (answered !== correct + wrong || answered + remaining !== totalQuestions) {
+    throw new TypeError("Quiz counts do not describe one attempt.");
+  }
+  if (percent !== (answered ? Math.round((correct / answered) * 100) : 0)) {
+    throw new TypeError("percent does not match the answer counts.");
+  }
+  if (input.completed !== undefined && typeof input.completed !== "boolean") {
+    throw new TypeError("completed must be true or false.");
+  }
+  return {
+    id: requiredId(input.id, "Attempt ID"),
+    teamId,
+    userId: player.userId,
+    playerName: player.playerName,
+    sourceType: optionalText(input.sourceType, "sourceType", 40),
+    sourceId: optionalText(input.sourceId, "sourceId", 160),
+    title: optionalText(input.title, "title", 180),
+    positionKey: optionalText(input.positionKey, "positionKey", 40),
+    positionLabel: optionalText(input.positionLabel, "positionLabel", 80),
+    score,
+    bonusPoints,
+    totalPoints,
+    answered,
+    correct,
+    wrong,
+    totalQuestions,
+    remaining,
+    percent,
+    badge: optionalText(input.badge, "badge", 80),
+    bestStreak,
+    questionBreakdown: jsonText(input.questionBreakdown, "questionBreakdown"),
+    review: jsonText(input.review, "review"),
+    completed: input.completed === false ? 0 : 1,
+    // Date and week determine rankings. They must be server-stamped rather
+    // than selected by an untrusted browser payload.
+    dateKey: canonicalDateKey(now),
+    weekKey: currentWeekKey(now),
+    completedAt: Math.floor(now.getTime() / 1000),
+    clientUpdatedAt: Math.floor(now.getTime() / 1000),
+  };
+}
+
+function normalizeStaffTarget(input) {
+  const target = isPlainObject(input?.target) ? input.target : {};
+  return {
+    userId: optionalText(target.userId, "target.userId", 128),
+    email: optionalText(target.email, "target.email", 320).toLowerCase(),
+    name: optionalText(target.name || input?.player || input?.playerName, "target.name", 120),
+  };
+}
+
+async function resolveActiveTeamPlayer(db, teamId, target) {
+  if (target.userId) {
+    return db.prepare(
+      `SELECT id AS user_id, display_name
+         FROM users
+        WHERE id = ? AND team_id = ? AND role = 'player' AND status = 'active'
+        LIMIT 1`,
+    ).bind(target.userId, teamId).first();
+  }
+  if (target.email) {
+    const matches = await db.prepare(
+      `SELECT id AS user_id, display_name
+         FROM users
+        WHERE LOWER(email) = ? AND team_id = ? AND role = 'player' AND status = 'active'
+        LIMIT 2`,
+    ).bind(target.email, teamId).all();
+    return (matches.results || []).length === 1 ? matches.results[0] : null;
+  }
+  if (!target.name) throw new TypeError("An active player target is required.");
+  const matches = await db.prepare(
+    `SELECT DISTINCT u.id AS user_id, u.display_name
+       FROM users u
+       LEFT JOIN roster_players r ON r.user_id = u.id AND r.team_id = u.team_id
+      WHERE u.team_id = ? AND u.role = 'player' AND u.status = 'active'
+        AND (LOWER(u.display_name) = LOWER(?) OR LOWER(r.display_name) = LOWER(?))
+      LIMIT 2`,
+  ).bind(teamId, target.name, target.name).all();
+  if ((matches.results || []).length !== 1) {
+    throw new Error("The active player target could not be resolved uniquely.");
+  }
+  return matches.results[0];
+}
+
+async function requireActiveTeamPlayer(db, teamId, target) {
+  const player = await resolveActiveTeamPlayer(db, teamId, target);
+  if (!player) throw new Error("The active player target could not be resolved uniquely.");
+  return player;
+}
+
+function staffActorName(session) {
+  return cleanText(session?.label || session?.username, 120) || "Coach";
+}
+
+function normalizeRewardForCreate(input, target, session, now) {
+  const type = requiredText(input.type, "reward type", 40).toLowerCase();
+  if (!REWARD_TYPES.has(type)) throw new TypeError("Unsupported reward type.");
+  const status = input.status === undefined ? "approved" : requiredText(input.status, "reward status", 40);
+  if (status !== "approved" && status !== "pending_approval") {
+    throw new TypeError("Unsupported reward status.");
+  }
+  const timestamp = Math.floor(now.getTime() / 1000);
+  return {
+    id: requiredId(input.id, "Reward ID"),
+    userId: String(target.user_id),
+    playerName: canonicalPlayerName(target),
+    type,
+    label: requiredText(input.label, "reward label", 160),
+    points: boundedInteger(input.points, "reward points", 0, MAX_STAFF_POINTS, 0),
+    note: optionalText(input.note, "reward note", MAX_STAFF_NOTE_LENGTH),
+    awardedBy: staffActorName(session),
+    source: optionalText(input.source, "reward source", 80),
+    sourcePostId: optionalText(input.sourcePostId || input.postId, "sourcePostId", 160),
+    sourcePlayId: optionalText(input.sourcePlayId || input.playId, "sourcePlayId", 160),
+    status,
+    dateKey: canonicalDateKey(now),
+    weekKey: currentWeekKey(now),
+    createdAt: timestamp,
+    approvedAt: status === "approved" ? timestamp : null,
+    approvedBy: status === "approved" ? staffActorName(session) : null,
+  };
+}
+
+function normalizeStickerForCreate(input, target, session, now) {
+  const color = requiredText(input.color, "sticker color", 40).toLowerCase();
+  if (!STICKER_COLORS.has(color)) throw new TypeError("Unsupported sticker color.");
+  const timestamp = Math.floor(now.getTime() / 1000);
+  return {
+    id: requiredId(input.id, "Sticker ID"),
+    userId: String(target.user_id),
+    playerName: canonicalPlayerName(target),
+    stickerKey: requiredText(input.stickerKey || input.key, "sticker key", 80),
+    label: requiredText(input.label, "sticker label", 160),
+    icon: requiredText(input.icon, "sticker icon", 24),
+    color,
+    description: optionalText(input.description, "sticker description", 800),
+    note: optionalText(input.note, "sticker note", MAX_STAFF_NOTE_LENGTH),
+    awardedBy: staffActorName(session),
+    context: optionalText(input.context, "sticker context", 160),
+    dateKey: canonicalDateKey(now),
+    weekKey: currentWeekKey(now),
+    createdAt: timestamp,
+  };
+}
+
+function mapRewardRecord(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    player: row.player_name,
+    targetUserId: row.user_id,
+    type: row.type,
+    label: row.label,
+    points: Number(row.points || 0),
+    note: row.note || "",
+    awardedBy: row.awarded_by || "",
+    source: row.source || "",
+    sourcePostId: row.source_post_id || "",
+    sourcePlayId: row.source_play_id || "",
+    status: row.status || "approved",
+    dateKey: row.date_key || "",
+    weekKey: row.week_key || "",
+    createdAt: row.created_at_client ? new Date(Number(row.created_at_client) * 1000).toISOString() : "",
+    approvedAt: row.approved_at ? new Date(Number(row.approved_at) * 1000).toISOString() : "",
+    approvedBy: row.approved_by || "",
+  };
+}
+
+function mapStickerRecord(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    player: row.player_name,
+    targetUserId: row.user_id,
+    stickerKey: row.sticker_key,
+    label: row.label,
+    icon: row.icon,
+    color: row.color,
+    description: row.description || "",
+    note: row.note || "",
+    awardedBy: row.awarded_by || "",
+    context: row.context || "",
+    dateKey: row.date_key || "",
+    weekKey: row.week_key || "",
+    createdAt: row.created_at_client ? new Date(Number(row.created_at_client) * 1000).toISOString() : "",
+  };
+}
+
+async function getTeamReward(db, teamId, id) {
+  return db.prepare(
+    `SELECT * FROM player_reward_events WHERE team_id = ? AND id = ? LIMIT 1`,
+  ).bind(teamId, id).first();
+}
+
+async function getTeamSticker(db, teamId, id) {
+  return db.prepare(
+    `SELECT * FROM player_helmet_stickers WHERE team_id = ? AND id = ? LIMIT 1`,
+  ).bind(teamId, id).first();
+}
+
+async function requireActiveRecordTarget(db, teamId, row) {
+  // Older leaderboard rows may predate user_id. A staff member can still
+  // revoke those records only when the stored display name maps to exactly
+  // one current active player on this team; ambiguity is deliberately denied.
+  const target = await requireActiveTeamPlayer(db, teamId, row?.user_id
+    ? { userId: String(row.user_id) }
+    : { name: String(row?.player_name || "") });
+  return target;
+}
+
+/**
+ * Only named D1 players may upload quiz attempts. Attempts are insert-only:
+ * retries with the same client-generated ID are harmless and cannot rewrite
+ * a score or identity after the first accepted submission.
+ */
+export async function syncLeaderboardPayload(db, teamId, session, payload = {}) {
+  if (session?.role !== "player" || !session?.d1UserId) {
+    throw new Error("Player account required for quiz attempt sync.");
+  }
+  const rewards = payloadArray(payload, "rewards", 0);
+  const stickers = payloadArray(payload, "stickers", 0);
+  if (rewards.length || stickers.length) {
+    throw new TypeError("Player quiz sync cannot submit rewards or stickers.");
+  }
+  const attempts = payloadArray(payload, "attempts", MAX_ATTEMPTS_PER_SYNC);
+  const now = new Date();
+  const player = await resolveSessionPlayer(db, teamId, session);
+  const normalized = attempts.map((attempt) => normalizeAttempt(attempt, teamId, player, now));
+  const statements = normalized.map((attempt) => db.prepare(
+    `INSERT INTO player_quiz_attempts (
+      id, team_id, user_id, player_name, source_type, source_id, title,
+      position_key, position_label, score, bonus_points, total_points,
+      answered, correct, wrong, total_questions, remaining, percent,
+      badge, best_streak, question_breakdown, review, completed,
+      date_key, week_key, completed_at, client_updated_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(team_id, id) DO NOTHING`,
+  ).bind(
+    attempt.id, attempt.teamId, attempt.userId, attempt.playerName, attempt.sourceType, attempt.sourceId, attempt.title,
+    attempt.positionKey, attempt.positionLabel, attempt.score, attempt.bonusPoints, attempt.totalPoints,
+    attempt.answered, attempt.correct, attempt.wrong, attempt.totalQuestions, attempt.remaining, attempt.percent,
+    attempt.badge, attempt.bestStreak, attempt.questionBreakdown, attempt.review, attempt.completed,
+    attempt.dateKey, attempt.weekKey, attempt.completedAt, attempt.clientUpdatedAt, Math.floor(now.getTime() / 1000),
+  ));
+  const results = !statements.length
+    ? []
+    : (typeof db.batch === "function"
+      ? await db.batch(statements)
+      : await Promise.all(statements.map((statement) => statement.run())));
+  const inserted = results.reduce((count, result) => count + (Number(result?.meta?.changes || 0) > 0 ? 1 : 0), 0);
+  return { attempts: inserted, duplicates: normalized.length - inserted, rewards: 0, stickers: 0 };
+}
+
+/**
+ * Staff records are single, idempotent mutations rather than an untrusted
+ * browser snapshot. Create, approve, and revoke all resolve the target inside
+ * the active team before D1 is changed.
+ */
+export async function mutateStaffLeaderboardRecord(db, teamId, session, payload = {}) {
+  if (!session || !["admin", "coach"].includes(session.role)) {
+    throw new Error("Staff account required for leaderboard awards.");
+  }
+  if (!isPlainObject(payload)) throw new TypeError("Award request must be an object.");
+  const kind = requiredText(payload.kind, "award kind", 20);
+  const action = requiredText(payload.action, "award action", 20);
+  if (!new Set(["reward", "sticker"]).has(kind)) throw new TypeError("Unsupported award kind.");
+  if (!new Set(["create", "approve", "revoke"]).has(action)) throw new TypeError("Unsupported award action.");
+  if (kind === "sticker" && action === "approve") throw new TypeError("Stickers cannot be approved.");
+  const record = isPlainObject(payload.record) ? payload.record : {};
+  const id = requiredId(record.id || payload.id, `${kind === "reward" ? "Reward" : "Sticker"} ID`);
+  const now = new Date();
+  const timestamp = Math.floor(now.getTime() / 1000);
+
+  if (kind === "reward" && action === "create") {
+    const target = await requireActiveTeamPlayer(db, teamId, normalizeStaffTarget({ ...record, target: payload.target }));
+    const reward = normalizeRewardForCreate(record, target, session, now);
     await db.prepare(
       `INSERT INTO player_reward_events (
         id, team_id, user_id, player_name, type, label, points, note,
         awarded_by, source, source_post_id, source_play_id, status,
         date_key, week_key, created_at_client, approved_at, approved_by, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(team_id, id) DO UPDATE SET
-        user_id = excluded.user_id,
-        player_name = excluded.player_name,
-        type = excluded.type,
-        label = excluded.label,
-        points = excluded.points,
-        note = excluded.note,
-        awarded_by = excluded.awarded_by,
-        source = excluded.source,
-        source_post_id = excluded.source_post_id,
-        source_play_id = excluded.source_play_id,
-        status = excluded.status,
-        date_key = excluded.date_key,
-        week_key = excluded.week_key,
-        created_at_client = excluded.created_at_client,
-        approved_at = excluded.approved_at,
-        approved_by = excluded.approved_by,
-        updated_at = excluded.updated_at`,
-    )
-      .bind(
-        r.id, r.teamId, r.userId, r.playerName, r.type, r.label, r.points, r.note,
-        r.awardedBy, r.source, r.sourcePostId, r.sourcePlayId, r.status,
-        r.dateKey, r.weekKey, r.createdAtClient, r.approvedAt, r.approvedBy, now,
-      )
-      .run();
-    rewardCount += 1;
+      ON CONFLICT(team_id, id) DO NOTHING`,
+    ).bind(
+      reward.id, teamId, reward.userId, reward.playerName, reward.type, reward.label, reward.points, reward.note,
+      reward.awardedBy, reward.source, reward.sourcePostId, reward.sourcePlayId, reward.status,
+      reward.dateKey, reward.weekKey, reward.createdAt, reward.approvedAt, reward.approvedBy, timestamp,
+    ).run();
+    return { kind, action, record: mapRewardRecord(await getTeamReward(db, teamId, reward.id)) };
   }
 
-  for (const item of stickers) {
-    if (!item || typeof item !== "object") continue;
-    const s = normalizeSticker(item, teamId, session);
+  if (kind === "sticker" && action === "create") {
+    const target = await requireActiveTeamPlayer(db, teamId, normalizeStaffTarget({ ...record, target: payload.target }));
+    const sticker = normalizeStickerForCreate(record, target, session, now);
     await db.prepare(
       `INSERT INTO player_helmet_stickers (
         id, team_id, user_id, player_name, sticker_key, label, icon, color,
         description, note, awarded_by, context, date_key, week_key,
         created_at_client, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(team_id, id) DO UPDATE SET
-        user_id = excluded.user_id,
-        player_name = excluded.player_name,
-        sticker_key = excluded.sticker_key,
-        label = excluded.label,
-        icon = excluded.icon,
-        color = excluded.color,
-        description = excluded.description,
-        note = excluded.note,
-        awarded_by = excluded.awarded_by,
-        context = excluded.context,
-        date_key = excluded.date_key,
-        week_key = excluded.week_key,
-        created_at_client = excluded.created_at_client,
-        updated_at = excluded.updated_at`,
-    )
-      .bind(
-        s.id, s.teamId, s.userId, s.playerName, s.stickerKey, s.label, s.icon, s.color,
-        s.description, s.note, s.awardedBy, s.context, s.dateKey, s.weekKey,
-        s.createdAtClient, now,
-      )
-      .run();
-    stickerCount += 1;
+      ON CONFLICT(team_id, id) DO NOTHING`,
+    ).bind(
+      sticker.id, teamId, sticker.userId, sticker.playerName, sticker.stickerKey, sticker.label, sticker.icon, sticker.color,
+      sticker.description, sticker.note, sticker.awardedBy, sticker.context, sticker.dateKey, sticker.weekKey,
+      sticker.createdAt, timestamp,
+    ).run();
+    return { kind, action, record: mapStickerRecord(await getTeamSticker(db, teamId, sticker.id)) };
   }
 
-  return { attempts: attemptCount, rewards: rewardCount, stickers: stickerCount };
+  if (kind === "reward") {
+    const reward = await getTeamReward(db, teamId, id);
+    if (!reward) return { kind, action, id, deleted: action === "revoke", record: null };
+    await requireActiveRecordTarget(db, teamId, reward);
+    if (action === "approve" && reward.status !== "approved") {
+      const approvedPoints = record.points === undefined
+        ? Number(reward.points || 0)
+        : boundedInteger(record.points, "reward points", 0, MAX_STAFF_POINTS, 0);
+      await db.prepare(
+        `UPDATE player_reward_events
+            SET points = ?, status = 'approved', approved_at = ?, approved_by = ?, updated_at = ?
+          WHERE team_id = ? AND id = ?`,
+      ).bind(approvedPoints, timestamp, staffActorName(session), timestamp, teamId, id).run();
+    }
+    if (action === "revoke") {
+      await db.prepare("DELETE FROM player_reward_events WHERE team_id = ? AND id = ?")
+        .bind(teamId, id).run();
+      return { kind, action, id, deleted: true, record: null };
+    }
+    return { kind, action, record: mapRewardRecord(await getTeamReward(db, teamId, id)) };
+  }
+
+  const sticker = await getTeamSticker(db, teamId, id);
+  if (!sticker) return { kind, action, id, deleted: true, record: null };
+  await requireActiveRecordTarget(db, teamId, sticker);
+  await db.prepare("DELETE FROM player_helmet_stickers WHERE team_id = ? AND id = ?")
+    .bind(teamId, id).run();
+  return { kind, action, id, deleted: true, record: null };
 }
 
 function mergeRows(attemptRows = [], rewardRows = [], stickerRows = []) {
   const rows = new Map();
-  const ensure = (name) => {
-    const playerName = cleanPlayerName(name, null);
-    if (!rows.has(playerName)) {
-      rows.set(playerName, {
+  const ensure = (row) => {
+    const playerName = cleanText(row?.player_name, 120) || "Player";
+    const identity = cleanText(row?.player_identity, 180) || `name:${playerName.toLowerCase()}`;
+    if (!rows.has(identity)) {
+      rows.set(identity, {
         name: playerName,
         player: playerName,
         quizPoints: 0,
@@ -306,29 +536,29 @@ function mergeRows(attemptRows = [], rewardRows = [], stickerRows = []) {
         stickers: 0,
       });
     }
-    return rows.get(playerName);
+    return rows.get(identity);
   };
 
   attemptRows.forEach((row) => {
-    const target = ensure(row.player_name);
-    target.quizPoints += intValue(row.quiz_points);
-    target.attempts += intValue(row.attempts);
-    target.answered += intValue(row.answered);
-    target.correct += intValue(row.correct);
-    target.wrong += intValue(row.wrong);
+    const target = ensure(row);
+    target.quizPoints += summaryInt(row.quiz_points);
+    target.attempts += summaryInt(row.attempts);
+    target.answered += summaryInt(row.answered);
+    target.correct += summaryInt(row.correct);
+    target.wrong += summaryInt(row.wrong);
   });
 
   rewardRows.forEach((row) => {
-    const target = ensure(row.player_name);
-    const points = intValue(row.reward_points, -1000000, 1000000);
+    const target = ensure(row);
+    const points = summaryInt(row.reward_points, -1000000, 1000000);
     target.rewardPoints += points;
-    target.questionPoints += intValue(row.question_points, -1000000, 1000000);
-    target.answerPoints += intValue(row.answer_points, -1000000, 1000000);
-    target.giftPoints += intValue(row.gift_points, -1000000, 1000000);
+    target.questionPoints += summaryInt(row.question_points, -1000000, 1000000);
+    target.answerPoints += summaryInt(row.answer_points, -1000000, 1000000);
+    target.giftPoints += summaryInt(row.gift_points, -1000000, 1000000);
   });
 
   stickerRows.forEach((row) => {
-    ensure(row.player_name).stickers += intValue(row.stickers);
+    ensure(row).stickers += summaryInt(row.stickers);
   });
 
   return Array.from(rows.values())
@@ -350,7 +580,8 @@ async function loadSummaryRows(db, teamId, weekKey = "", season = false) {
   const stickerBinds = season ? [teamId] : [teamId, weekKey];
 
   const attempts = await db.prepare(
-    `SELECT player_name,
+    `SELECT COALESCE(user_id, 'legacy:' || LOWER(player_name)) AS player_identity,
+        MAX(player_name) AS player_name,
         SUM(total_points) AS quiz_points,
         COUNT(*) AS attempts,
         SUM(answered) AS answered,
@@ -358,25 +589,27 @@ async function loadSummaryRows(db, teamId, weekKey = "", season = false) {
         SUM(wrong) AS wrong
      FROM player_quiz_attempts
      WHERE ${attemptWhere}
-     GROUP BY player_name`,
+     GROUP BY COALESCE(user_id, 'legacy:' || LOWER(player_name))`,
   ).bind(...attemptBinds).all();
 
   const rewards = await db.prepare(
-    `SELECT player_name,
+    `SELECT COALESCE(user_id, 'legacy:' || LOWER(player_name)) AS player_identity,
+        MAX(player_name) AS player_name,
         SUM(points) AS reward_points,
         SUM(CASE WHEN type = 'question' THEN points ELSE 0 END) AS question_points,
         SUM(CASE WHEN type = 'answer' THEN points ELSE 0 END) AS answer_points,
         SUM(CASE WHEN type = 'gift' THEN points ELSE 0 END) AS gift_points
      FROM player_reward_events
      WHERE ${rewardWhere}
-     GROUP BY player_name`,
+     GROUP BY COALESCE(user_id, 'legacy:' || LOWER(player_name))`,
   ).bind(...rewardBinds).all();
 
   const stickers = await db.prepare(
-    `SELECT player_name, COUNT(*) AS stickers
+    `SELECT COALESCE(user_id, 'legacy:' || LOWER(player_name)) AS player_identity,
+        MAX(player_name) AS player_name, COUNT(*) AS stickers
      FROM player_helmet_stickers
      WHERE ${stickerWhere}
-     GROUP BY player_name`,
+     GROUP BY COALESCE(user_id, 'legacy:' || LOWER(player_name))`,
   ).bind(...stickerBinds).all();
 
   return mergeRows(attempts.results || [], rewards.results || [], stickers.results || []);

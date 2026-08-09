@@ -2826,7 +2826,9 @@ function _buildQuizAttemptSummary(options = {}) {
     averageReactionMs,
   };
   return {
-    id: _quizSavedAttemptId || `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    // A stable cryptographic ID lets the server make retrying this saved
+    // attempt idempotent without ever accepting a later score rewrite.
+    id: _quizSavedAttemptId || _quizEventId("quiz"),
     player: _getQuizPlayerName(),
     sourceType: _quizSourceType,
     sourceId: _quizSourceId,

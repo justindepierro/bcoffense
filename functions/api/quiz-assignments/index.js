@@ -7,7 +7,7 @@ import { sendPushToUser } from "../../_lib/d1-push.js";
 import { hasCoachPermission } from "../../_lib/staff-access.js";
 import {
   archiveQuizAssignment, createQuizAssignment, getAssignmentPlayers, getCoachQuizAssignments,
-  getPlayerQuizAssignments, getQuizAssignmentForStaff, isQuizAssignmentStaff, recordQuizAssignmentAttempt,
+  getPlayerQuizAssignments, getQuizAssignmentForStaff, isQuizAssignmentStaff, recordLegacyQuizAssignmentPractice,
   markQuizAssignmentOpened, publishQuizAssignment, recordQuizAssignmentDelivery, saveQuizAssignmentDraft,
 } from "../../_lib/d1-quiz-assignments.js";
 
@@ -49,10 +49,13 @@ export async function onRequestPost(context) {
   if (ctx.error) return ctx.error;
   let body = {};
   try { body = await context.request.json(); } catch (_) { return authJson({ ok: false, error: "Invalid JSON." }, { status: 400 }); }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return authJson({ ok: false, error: "Invalid request." }, { status: 400 });
+  }
   try {
-    if (body.action === "record-attempt") {
+    if (body.action === "record-practice" || body.action === "record-attempt") {
       if (ctx.session.role !== "player" || !ctx.session.d1UserId) return authJson({ ok: false, error: "Player access required." }, { status: 403 });
-      const result = await recordQuizAssignmentAttempt(context.env.DB, ctx.teamId, ctx.session.d1UserId, body);
+      const result = await recordLegacyQuizAssignmentPractice(context.env.DB, ctx.teamId, ctx.session.d1UserId, body);
       return withSecurityHeaders(authJson({ ok: true, result }));
     }
     if (body.action === "record-open") {
