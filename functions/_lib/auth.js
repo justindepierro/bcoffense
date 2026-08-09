@@ -1,7 +1,7 @@
 import { verifyD1Credentials, verifyPassword } from "./d1-auth.js";
 import { getPrimaryTeamId } from "./team-context.js";
 import { parseCoachPermissions } from "./staff-access.js";
-import { readBoundedJsonOrFormObject } from "./request-body.js";
+import { RequestBodyError, readBoundedJsonOrFormObject } from "./request-body.js";
 
 // The __Host- prefix is enforced by browsers: Secure, Path=/, and no Domain
 // attribute are mandatory. That prevents a subdomain from setting a competing
@@ -15,6 +15,8 @@ const PLAYER_SESSION_TTL_SECONDS = 72 * 60 * 60;  // players: 72h
 // 128-character passwords and normal browser form encoding.
 export const PUBLIC_AUTH_BODY_MAX_BYTES = 8 * 1024;
 const LOGIN_DUPLICATE_FIELDS = ["username", "password"];
+const LOGIN_MAX_USERNAME_LENGTH = 254;
+const LOGIN_MAX_PASSWORD_LENGTH = 1024;
 
 const USERS = {
   admin: {
@@ -707,10 +709,20 @@ export function renderLoginPage(opts = {}) {
 }
 
 export async function parseLoginBody(request) {
-  return readBoundedJsonOrFormObject(request, {
+  const body = await readBoundedJsonOrFormObject(request, {
     maxBytes: PUBLIC_AUTH_BODY_MAX_BYTES,
     rejectDuplicateFields: LOGIN_DUPLICATE_FIELDS,
   });
+  // JSON credentials do not get the form parser's text-only guarantee.
+  // Validate them here, before the rate limiter or password verifier can
+  // coerce objects into strings or perform unnecessary expensive work.
+  if (typeof body.username !== "string" || typeof body.password !== "string") {
+    throw new RequestBodyError("Login credentials must be text.", 400, "invalid_login_credentials");
+  }
+  if (body.username.length > LOGIN_MAX_USERNAME_LENGTH || body.password.length > LOGIN_MAX_PASSWORD_LENGTH) {
+    throw new RequestBodyError("Login credentials are too long.", 413, "login_credentials_too_large");
+  }
+  return body;
 }
 
 export function loginFailure(request, message, status = 401) {

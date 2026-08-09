@@ -18,6 +18,7 @@ const RESET_ISSUE_IP_WINDOW_SECONDS = 15 * 60;
 const RESET_ISSUE_EMAIL_WINDOW_SECONDS = 60 * 60;
 const RESET_ISSUE_MAX_IP = 10;
 const RESET_ISSUE_MAX_EMAIL = 3;
+const RESET_LEDGER_RETENTION_SECONDS = 24 * 60 * 60;
 const RESET_DUPLICATE_FIELDS = ["email"];
 
 function getClientIp(request) {
@@ -33,6 +34,20 @@ function passwordResetIssueKeys(request, email) {
     ip: `password-reset:ip:${getClientIp(request)}`,
     email: `password-reset:email:${String(email).slice(0, 254)}`,
   };
+}
+
+async function prunePasswordResetIssueLedger(db, now) {
+  try {
+    // login_attempts is also the login throttle ledger, whose existing
+    // retention policy is 24 hours. Keep reset reservations on that same
+    // bounded horizon, including unknown-address requests.
+    await db.prepare("DELETE FROM login_attempts WHERE attempted_at < ?")
+      .bind(now - RESET_LEDGER_RETENTION_SECONDS)
+      .run();
+  } catch (_) {
+    // Retention is best-effort. A successful reservation must remain valid
+    // even if maintenance is temporarily unavailable.
+  }
 }
 
 async function reservePasswordResetIssue(db, request, email) {
@@ -61,7 +76,9 @@ async function reservePasswordResetIssue(db, request, email) {
         RESET_ISSUE_MAX_EMAIL,
       )
       .run();
-    return { available: Number(result?.meta?.changes || 0) === 1, id };
+    const available = Number(result?.meta?.changes || 0) === 1;
+    if (available) await prunePasswordResetIssueLedger(db, now);
+    return { available, id };
   } catch (_) {
     // Keep reset responses generic even when the durable quota ledger is down.
     return { available: false, unavailable: true };

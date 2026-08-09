@@ -8,6 +8,7 @@ if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const { RequestBodyError, readBoundedFormObject } = await import("../functions/_lib/request-body.js");
 const { parseLoginBody } = await import("../functions/_lib/auth.js");
+const { onRequestPost: postLogin } = await import("../functions/auth/login.js");
 const { onRequest: requestPasswordReset } = await import("../functions/auth/reset-password.js");
 const { onRequest: acceptInvite } = await import("../functions/auth/accept-invite.js");
 const { onRequest: confirmPasswordReset } = await import("../functions/auth/reset-confirm.js");
@@ -115,6 +116,34 @@ await assert.rejects(
   "login rejects an oversized credential form before form parsing",
 );
 
+await assert.rejects(
+  () => parseLoginBody(new Request("https://bcoffense.example/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: { email: "player@example.test" }, password: "secret" }),
+  })),
+  (error) => error instanceof RequestBodyError && error.status === 400 && error.code === "invalid_login_credentials",
+  "login rejects non-text JSON credentials before rate-limit lookups can coerce them",
+);
+
+const oversizedLoginResponse = await postLogin({
+  request: new Request("https://bcoffense.example/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-BC-Auth-Mode": "json",
+    },
+    body: JSON.stringify({ username: "player@example.test", password: "x".repeat(1025) }),
+  }),
+  env: {},
+});
+assert.equal(oversizedLoginResponse.status, 413, "an oversized login keeps the JSON auth envelope but reports the correct status");
+assert.deepEqual(
+  await oversizedLoginResponse.json(),
+  { ok: false, error: "Login request is too large." },
+  "login body-limit errors remain safe and machine-readable for the app client",
+);
+
 function makeResetRequest(email, ip = "203.0.113.77", body = null) {
   return new Request("https://bcoffense.example/auth/reset-password", {
     method: "POST",
@@ -216,6 +245,28 @@ assert.equal(
   "an exhausted IP quota prevents a new issuance reservation",
 );
 ipLimitDb.raw.close();
+
+const retentionIp = "203.0.113.90";
+const retentionAddress = "retention@example.test";
+const retentionDb = makeLedgerDb();
+seedResetAttempt(
+  retentionDb,
+  "stale-reset-attempt",
+  retentionIp,
+  "stale@example.test",
+  Math.floor(Date.now() / 1000) - (24 * 60 * 60) - 1,
+);
+const retentionResponse = await requestPasswordReset({
+  request: makeResetRequest(retentionAddress, retentionIp),
+  env: { DB: retentionDb },
+});
+assert.match(await retentionResponse.text(), genericSuccess, "an unknown reset request remains generic while performing ledger maintenance");
+assert.equal(
+  retentionDb.raw.prepare("SELECT COUNT(*) AS n FROM login_attempts WHERE id = ?").get("stale-reset-attempt").n,
+  0,
+  "a successful reset reservation prunes expired throttle entries",
+);
+retentionDb.raw.close();
 
 const concurrentIp = "203.0.113.80";
 const concurrentDb = makeLedgerDb();
