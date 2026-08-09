@@ -24,6 +24,7 @@ const APPROVED_SCROLL_OWNERS = new Set(["layer", "panel", "workspace", "document
 // id: { owner, pattern, scrollOwner }
 // The owner is the only file permitted to create the named surface.
 const UI_SURFACES = Object.freeze({
+  accountSecurityOverlay: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
   adminBootstrapOverlay: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
   aboutBCOffenseOverlay: { owner: "js/auth.js", pattern: "blocking-layer", scrollOwner: "layer" },
   authLoginOverlay: { owner: "js/auth.js", pattern: "blocking-layer", scrollOwner: "layer" },
@@ -238,6 +239,10 @@ assert.match(scriptHealth, /closeLayer\("scriptShortcutsModal"/, "Script shortcu
 const playersAdmin = await source("js/players-admin.js");
 assert.match(playersAdmin, /openLayer\(overlay, \{[\s\S]*?id: "adminBootstrapOverlay"[\s\S]*?scrollElement: overlay\.querySelector[\s\S]*?blocking: true[\s\S]*?onEscape:/, "Admin bootstrap uses the shared blocking-layer lifecycle");
 assert.match(playersAdmin, /closeLayer\("adminBootstrapOverlay"/, "Admin bootstrap releases its blocking layer when it closes");
+
+const authClient = await source("js/auth.js");
+assert.match(authClient, /openLayer\(overlay, \{[\s\S]*?id: "accountSecurityOverlay"[\s\S]*?scrollElement: overlay\.querySelector[\s\S]*?blocking: true[\s\S]*?onEscape:/, "Account security uses the shared blocking-layer lifecycle");
+assert.match(authClient, /closeLayer\("accountSecurityOverlay"/, "Account security releases its blocking layer when it closes");
 
 const gamePlanSmart = await source("js/gameplan-smart.js");
 for (const [name, surfaceId] of [

@@ -2360,6 +2360,69 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
   flex-direction: column;
   gap: var(--space-md);
 }
+.account-security-panel {
+  width: min(96vw, 500px);
+}
+.account-security-header {
+  align-items: flex-start;
+}
+.account-security-header p {
+  margin: 5px 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.account-security-intro {
+  display: grid;
+  gap: 3px;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-hover-row);
+}
+.account-security-intro strong {
+  font-size: var(--font-size-sm);
+}
+.account-security-intro span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.account-security-form {
+  display: grid;
+  gap: var(--space-sm);
+}
+.account-security-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+.account-security-status {
+  min-height: 1.3em;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.account-security-status.is-error {
+  color: var(--color-danger);
+}
+.account-security-status.is-success {
+  color: var(--color-success);
+}
+.account-security-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  padding-top: var(--space-xs);
+}
+@media (max-width: 520px) {
+  .account-security-actions {
+    flex-direction: column-reverse;
+  }
+  .account-security-actions .btn {
+    width: 100%;
+  }
+}
 .pa-stats {
   display: flex;
   gap: var(--space-sm);

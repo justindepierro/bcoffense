@@ -368,6 +368,9 @@
   const pendingAuthRoots = new Set();
   let authFetchBoundaryInstalled = false;
   let authSessionRecoverySignaled = false;
+  let accountSecuritySubmitting = false;
+  let accountSecurityRequestGeneration = 0;
+  let accountSecurityAbortController = null;
 
   if (document.body) {
     document.body.classList.add("auth-locked");
@@ -647,6 +650,158 @@
       type: "warning",
       duration: 3000,
     });
+  }
+
+  function getAccountSecurityOverlay() {
+    return document.getElementById("accountSecurityOverlay");
+  }
+
+  function hasPersonalAccount() {
+    return Boolean(currentAuthUser?.d1UserId);
+  }
+
+  function setAccountSecurityStatus(message = "", type = "") {
+    const status = document.getElementById("accountSecurityStatus");
+    if (!status) return;
+    status.textContent = message;
+    status.classList.toggle("is-error", type === "error");
+    status.classList.toggle("is-success", type === "success");
+  }
+
+  function setAccountSecuritySubmitting(isSubmitting) {
+    accountSecuritySubmitting = Boolean(isSubmitting);
+    const submit = document.getElementById("accountSecuritySubmit");
+    if (submit) submit.disabled = accountSecuritySubmitting;
+  }
+
+  // Closing and reopening this form must create a fresh async boundary. A
+  // password response from an earlier dialog can otherwise reset fields or
+  // overwrite the status of the newly opened dialog.
+  function invalidateAccountSecurityRequest() {
+    accountSecurityRequestGeneration += 1;
+    const controller = accountSecurityAbortController;
+    accountSecurityAbortController = null;
+    setAccountSecuritySubmitting(false);
+    controller?.abort();
+  }
+
+  function isCurrentAccountSecurityRequest(generation) {
+    return (
+      generation === accountSecurityRequestGeneration &&
+      hasPersonalAccount() &&
+      getAccountSecurityOverlay()?.classList.contains("visible")
+    );
+  }
+
+  function syncAccountSecurityUi() {
+    const trigger = document.getElementById("accountSecurityMenuItem");
+    if (trigger) trigger.hidden = !hasPersonalAccount();
+    const overlay = getAccountSecurityOverlay();
+    if (!hasPersonalAccount()) {
+      if (overlay?.classList.contains("visible")) {
+        closeAccountSecurity({ returnFocus: false });
+      } else {
+        invalidateAccountSecurityRequest();
+      }
+    }
+  }
+
+  function openAccountSecurity() {
+    if (!hasPersonalAccount()) {
+      showToast("Password changes are available through personal BCOffense accounts.", {
+        type: "warning",
+        duration: 3500,
+      });
+      return false;
+    }
+    const overlay = getAccountSecurityOverlay();
+    if (!overlay) return false;
+    const form = document.getElementById("accountSecurityForm");
+    invalidateAccountSecurityRequest();
+    form?.reset();
+    setAccountSecurityStatus();
+    overlay.classList.add("visible");
+    overlay.removeAttribute("inert");
+    overlay.setAttribute("aria-hidden", "false");
+    if (typeof openLayer === "function") {
+      openLayer(overlay, {
+        id: "accountSecurityOverlay",
+        scrollElement: overlay.querySelector(".pa-panel") || overlay,
+        blocking: true,
+        onEscape: () => closeAccountSecurity(),
+      });
+    }
+    requestAnimationFrame(() => document.getElementById("accountSecurityCurrentPassword")?.focus());
+    return true;
+  }
+
+  function closeAccountSecurity(options = {}) {
+    const overlay = getAccountSecurityOverlay();
+    invalidateAccountSecurityRequest();
+    if (!overlay) return;
+    document.getElementById("accountSecurityForm")?.reset();
+    setAccountSecurityStatus();
+    overlay.classList.remove("visible");
+    overlay.setAttribute("inert", "");
+    overlay.setAttribute("aria-hidden", "true");
+    if (typeof closeLayer === "function") closeLayer("accountSecurityOverlay", options);
+  }
+
+  async function submitAccountSecurityPassword(event) {
+    event.preventDefault();
+    if (accountSecuritySubmitting || !hasPersonalAccount()) return;
+
+    const currentPassword = String(document.getElementById("accountSecurityCurrentPassword")?.value || "");
+    const newPassword = String(document.getElementById("accountSecurityNewPassword")?.value || "");
+    const confirmPassword = String(document.getElementById("accountSecurityConfirmPassword")?.value || "");
+    if (newPassword !== confirmPassword) {
+      setAccountSecurityStatus("The new passwords do not match.", "error");
+      document.getElementById("accountSecurityConfirmPassword")?.focus();
+      return;
+    }
+    if (newPassword.length < 10 || newPassword.length > 128) {
+      setAccountSecurityStatus("Your new password must be between 10 and 128 characters.", "error");
+      document.getElementById("accountSecurityNewPassword")?.focus();
+      return;
+    }
+
+    const requestGeneration = ++accountSecurityRequestGeneration;
+    const controller =
+      typeof AbortController === "function" ? new AbortController() : null;
+    accountSecurityAbortController = controller;
+    setAccountSecuritySubmitting(true);
+    setAccountSecurityStatus("Updating password…");
+    try {
+      const response = await fetch("/api/account/password", {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+        signal: controller?.signal,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || "Unable to update your password.");
+      }
+      if (!isCurrentAccountSecurityRequest(requestGeneration)) return;
+      document.getElementById("accountSecurityForm")?.reset();
+      setAccountSecurityStatus("Password updated. Other signed-in devices have been signed out.", "success");
+    } catch (error) {
+      if (!isCurrentAccountSecurityRequest(requestGeneration) || error?.name === "AbortError") return;
+      setAccountSecurityStatus(String(error?.message || "Unable to update your password."), "error");
+    } finally {
+      if (!isCurrentAccountSecurityRequest(requestGeneration)) return;
+      if (accountSecurityAbortController === controller) {
+        accountSecurityAbortController = null;
+      }
+      setAccountSecuritySubmitting(false);
+    }
+  }
+
+  function initAccountSecurityUi() {
+    document.getElementById("accountSecurityForm")?.addEventListener("submit", submitAccountSecurityPassword);
+    syncAccountSecurityUi();
   }
 
   function closeAboutBCOffense() {
@@ -941,6 +1096,7 @@
 
     const logoutBtn = document.getElementById("authLogoutBtn");
     if (logoutBtn) logoutBtn.hidden = !currentAuthUser;
+    syncAccountSecurityUi();
 
     if (currentAuthUser && typeof currentActiveTab !== "undefined" && !canAccessTab(currentActiveTab)) {
       showTab(getDefaultAuthTab());
@@ -1510,6 +1666,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     installAuthFetchBoundary();
+    initAccountSecurityUi();
     // Item 39: hide auth loading skeleton once auth resolves
     const _authSkeleton = document.getElementById("authLoadingSkeleton");
     initServerAuth().finally(() => {
@@ -1551,4 +1708,6 @@
   window.closeAboutBCOffense = closeAboutBCOffense;
   window.openBCOffenseTerms = openBCOffenseTerms;
   window.closeBCOffenseTerms = closeBCOffenseTerms;
+  window.openAccountSecurity = openAccountSecurity;
+  window.closeAccountSecurity = closeAccountSecurity;
 })();

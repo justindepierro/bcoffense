@@ -13,8 +13,13 @@ assert.match(
 );
 assert.match(
   authHelpers,
-  /await setD1SessionInvalidBefore\(db, userId, now\)/,
-  "a password reset invalidates existing sessions",
+  /await db\.batch\(\[passwordUpdate, sessionState, epochState\]\)/,
+  "a password reset atomically replaces the password and both session fences",
+);
+assert.match(
+  authHelpers,
+  /INSERT INTO account_session_epochs \(user_id, session_epoch, updated_at\)/,
+  "a password reset rotates the exact session epoch as well as the timestamp fence",
 );
 assert.match(
   resetRoute,
@@ -22,4 +27,4 @@ assert.match(
   "the reset-confirm route uses the shared safe password-update path",
 );
 
-console.log("auth password reset contract: 3 assertions passed");
+console.log("auth password reset contract: 4 assertions passed");

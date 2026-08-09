@@ -31,5 +31,10 @@ assert.match(
   /if \(!activated\)/,
   "invite route fails closed after a stale or duplicate activation",
 );
+assert.match(
+  inviteRoute,
+  /session_epoch: user\.session_epoch/,
+  "an invitation-created session carries an existing account session epoch",
+);
 
-console.log("auth token contract: 5 assertions passed");
+console.log("auth token contract: 6 assertions passed");

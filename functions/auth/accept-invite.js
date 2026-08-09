@@ -171,6 +171,7 @@ export async function onRequest(context) {
     role: user.role,
     label: user.display_name,
     d1: true,
+    session_epoch: user.session_epoch,
   };
 
   const cookie = await createSessionCookie(sessionUser, env);

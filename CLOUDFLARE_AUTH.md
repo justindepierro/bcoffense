@@ -75,6 +75,19 @@ once the season rotation is complete.
 Session cookies use the host-only __Host-bc_auth prefix. An auth/session rollout
 can sign out existing browsers once; that is expected.
 
+### Personal account password changes
+
+Named D1-backed Admin, Coach, and Player accounts can use the header menu's
+**Account security** dialog to change their own password. It requires the
+current password and keeps the browser that completed the change signed in;
+other named-account sessions are revoked. Shared legacy credentials intentionally
+do not receive this self-service path.
+
+Migration `0027_account_session_epochs.sql` adds the exact per-account session
+epoch used for that revocation. Apply it before deploying the corresponding
+Pages Functions; the guarded deploy script will stop if the D1 ledger has not
+been reconciled first.
+
 ## Controlled named-staff transition
 
 The shared environment-backed `admin` and `coach` sign-ins are temporary

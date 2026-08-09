@@ -23,6 +23,13 @@ function bytesToHex(bytes) {
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function requireSuccessfulD1Batch(results) {
+  if (!Array.isArray(results) || results.some((result) => result?.success === false)) {
+    throw new Error("D1 password/session transaction did not commit.");
+  }
+  return results;
+}
+
 // ── Token helpers ─────────────────────────────────────────────────────────────
 
 export async function generateSecureToken() {
@@ -88,13 +95,24 @@ export async function verifyPassword(password, stored) {
 export async function findUserByEmail(db, email) {
   const clean = String(email || "").trim().toLowerCase();
   return db
-    .prepare("SELECT * FROM users WHERE LOWER(email) = ? AND status != 'archived' LIMIT 1")
+    .prepare(`SELECT users.*, COALESCE(account_session_epochs.session_epoch, '') AS session_epoch
+      FROM users
+      LEFT JOIN account_session_epochs ON account_session_epochs.user_id = users.id
+      WHERE LOWER(users.email) = ? AND users.status != 'archived'
+      LIMIT 1`)
     .bind(clean)
     .first() || null;
 }
 
 export async function findUserById(db, id) {
-  return db.prepare("SELECT * FROM users WHERE id = ? LIMIT 1").bind(id).first() || null;
+  return db
+    .prepare(`SELECT users.*, COALESCE(account_session_epochs.session_epoch, '') AS session_epoch
+      FROM users
+      LEFT JOIN account_session_epochs ON account_session_epochs.user_id = users.id
+      WHERE users.id = ?
+      LIMIT 1`)
+    .bind(id)
+    .first() || null;
 }
 
 /**
@@ -164,25 +182,30 @@ export async function verifyD1Credentials(email, password, db) {
     managedCoach: user.role === "coach",
     permissions,
     iat: now,
+    session_epoch: String(user.session_epoch || ""),
   };
 }
 
 /**
- * Change a D1 player's password after verifying the current one.
- * Returns null on success, or an error string on failure.
+ * Change a D1-backed account password after verifying the current one.
+ * A structured result lets the caller distinguish validation failure from the
+ * freshly generated session epoch required for its replacement cookie.
  */
 export async function changeD1Password(db, userId, currentPassword, newPassword) {
   const user = await findUserById(db, userId);
-  if (!user || !user.password_hash) return "Account not found.";
+  if (!user || !user.password_hash) return { error: "Account not found." };
 
   const ok = await verifyPassword(currentPassword, user.password_hash);
-  if (!ok) return "Current password is incorrect.";
+  if (!ok) return { error: "Current password is incorrect." };
 
   const err = validatePassword(newPassword);
-  if (err) return err;
+  if (err) return { error: err };
 
-  await updateD1Password(db, userId, newPassword);
-  return null;
+  // The conditional update makes two requests verified against the same old
+  // password mutually exclusive: only the first can replace that hash.
+  const sessionEpoch = await updateD1Password(db, userId, newPassword, user.password_hash);
+  if (!sessionEpoch) return { error: "Password changed in another session." };
+  return { ok: true, sessionEpoch };
 }
 
 /**
@@ -202,14 +225,34 @@ export async function invalidateAllD1Sessions(db, userId) {
 export async function setD1SessionInvalidBefore(db, userId, invalidBefore) {
   const value = Math.max(0, Number(invalidBefore) || 0);
   const now = Math.floor(Date.now() / 1000);
-  await db
+  const sessionEpoch = crypto.randomUUID();
+  const sessionState = db
     .prepare(`INSERT INTO account_session_state (user_id, invalid_before, updated_at)
       VALUES (?, ?, ?)
       ON CONFLICT(user_id) DO UPDATE SET
         invalid_before = excluded.invalid_before,
         updated_at = excluded.updated_at`)
-    .bind(userId, value, now)
-    .run();
+    .bind(userId, value, now);
+  const epochState = db
+    .prepare(`INSERT INTO account_session_epochs (user_id, session_epoch, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(user_id) DO UPDATE SET
+        session_epoch = excluded.session_epoch,
+        updated_at = excluded.updated_at`)
+    .bind(userId, sessionEpoch, now);
+
+  // D1 batches are transactions. A forced logout must never update only one
+  // of the legacy timestamp fence and the exact epoch fence in production.
+  if (typeof db.batch === "function") {
+    requireSuccessfulD1Batch(await db.batch([sessionState, epochState]));
+  }
+  else {
+    // Lightweight in-memory test doubles predate D1 batch support. Pages D1
+    // always takes the atomic branch above.
+    await sessionState.run();
+    await epochState.run();
+  }
+  return sessionEpoch;
 }
 
 /**
@@ -250,23 +293,70 @@ export async function activateD1User(db, userId, password) {
 }
 
 /**
- * Update password only (for reset + change flows).
- * Bumps sessions_invalid_before so every session issued before now is rejected
- * at the API boundary — a password change/reset must evict existing sessions
- * (e.g. an attacker's live cookie after a compromise). The current user should
- * be re-issued a fresh cookie by the caller if they must stay signed in.
+ * Update a password for reset/change flows and atomically rotate every session
+ * fence. Supplying `expectedPasswordHash` makes the change conditional on the
+ * password that was actually verified, preventing concurrent last-writer-wins
+ * updates. Returns the new opaque epoch, or null when the conditional update
+ * lost its race. Database errors propagate so callers can fail closed.
  */
-export async function updateD1Password(db, userId, password) {
+export async function updateD1Password(db, userId, password, expectedPasswordHash = null) {
   const hash = await hashPassword(password);
   const now = Math.floor(Date.now() / 1000);
-  await db
+  const sessionEpoch = crypto.randomUUID();
+  const expectedHashClause = expectedPasswordHash ? " AND password_hash = ?" : "";
+  const passwordUpdate = db
     .prepare(`UPDATE users
       SET password_hash = ?, password_changed_at = ?,
           failed_login_count = 0, lockout_until = NULL, updated_at = ?
-      WHERE id = ?`)
-    .bind(hash, now, now, userId)
-    .run();
-  await setD1SessionInvalidBefore(db, userId, now);
+      WHERE id = ?${expectedHashClause}`)
+    .bind(hash, now, now, userId, ...(expectedPasswordHash ? [expectedPasswordHash] : []));
+  // Both fences are guarded by the new hash, which exists only when the
+  // conditional password UPDATE above succeeded. D1 executes batches in order
+  // and rolls back the entire transaction on a statement error.
+  const sessionState = db
+    .prepare(`INSERT INTO account_session_state (user_id, invalid_before, updated_at)
+      SELECT ?, ?, ?
+      WHERE EXISTS (SELECT 1 FROM users WHERE id = ? AND password_hash = ?)
+      ON CONFLICT(user_id) DO UPDATE SET
+        invalid_before = excluded.invalid_before,
+        updated_at = excluded.updated_at`)
+    .bind(userId, now, now, userId, hash);
+  const epochState = db
+    .prepare(`INSERT INTO account_session_epochs (user_id, session_epoch, updated_at)
+      SELECT ?, ?, ?
+      WHERE EXISTS (SELECT 1 FROM users WHERE id = ? AND password_hash = ?)
+      ON CONFLICT(user_id) DO UPDATE SET
+        session_epoch = excluded.session_epoch,
+        updated_at = excluded.updated_at`)
+    .bind(userId, sessionEpoch, now, userId, hash);
+
+  let passwordResult;
+  let sessionStateResult;
+  let epochStateResult;
+  if (typeof db.batch === "function") {
+    const results = requireSuccessfulD1Batch(
+      await db.batch([passwordUpdate, sessionState, epochState]),
+    );
+    passwordResult = results?.[0];
+    sessionStateResult = results?.[1];
+    epochStateResult = results?.[2];
+  } else {
+    // Only compatibility test doubles lack `batch`; real D1 uses the atomic
+    // path above. Keep the fallback conditional so its semantics stay safe.
+    passwordResult = await passwordUpdate.run();
+    if (Number(passwordResult?.meta?.changes || 0) !== 1) return null;
+    sessionStateResult = await sessionState.run();
+    epochStateResult = await epochState.run();
+  }
+
+  if (Number(passwordResult?.meta?.changes || 0) !== 1) return null;
+  if (
+    Number(sessionStateResult?.meta?.changes || 0) !== 1 ||
+    Number(epochStateResult?.meta?.changes || 0) !== 1
+  ) {
+    throw new Error("D1 password/session transaction did not update every fence.");
+  }
+  return sessionEpoch;
 }
 
 // ── Verification tokens ───────────────────────────────────────────────────────

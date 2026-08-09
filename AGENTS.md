@@ -358,6 +358,7 @@ window.canEditUser
 window.canManageSettings
 window.closeAnchoredMenu
 window.closeAboutBCOffense
+window.closeAccountSecurity
 window.closeBCOffenseTerms
 window.closeCloudSyncModal
 window.closeStagedRestoreModal
@@ -414,6 +415,7 @@ window.logoutAuth
 window.mediaUploadOutbox
 window.nextScriptQuizPlay
 window.openAboutBCOffense
+window.openAccountSecurity
 window.openBCOffenseTerms
 window.openCloudSyncModal
 window.openStagedRestoreHistory

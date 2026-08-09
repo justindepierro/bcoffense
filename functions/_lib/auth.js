@@ -266,7 +266,17 @@ export async function createSessionCookie(user, env) {
   const isD1User = !!user.d1;
   const isPlayer = isD1User && user.role === "player";
   const ttl = isPlayer ? PLAYER_SESSION_TTL_SECONDS : SESSION_TTL_SECONDS;
-  const extra = isD1User ? { d1: true, d1_user_id: user.d1_user_id } : {};
+  // The opaque epoch is changed whenever an account's sessions are revoked.
+  // Empty is the backwards-compatible epoch for D1 cookies and users created
+  // before the epoch table existed; a first invalidation replaces it with a
+  // random value, immediately rejecting every older signed cookie.
+  const extra = isD1User
+    ? {
+      d1: true,
+      d1_user_id: user.d1_user_id,
+      se: String(user.session_epoch || ""),
+    }
+    : {};
   const payload = base64UrlEncodeJson({
     username: user.username,
     role: user.role,
@@ -326,9 +336,11 @@ export async function getSessionFromRequest(request, env) {
         const row = await env.DB
           .prepare(`SELECT users.role, users.status, users.team_id,
               staff_access.permissions_json,
-              COALESCE(account_session_state.invalid_before, 0) AS sessions_invalid_before
+              COALESCE(account_session_state.invalid_before, 0) AS sessions_invalid_before,
+              COALESCE(account_session_epochs.session_epoch, '') AS session_epoch
             FROM users
             LEFT JOIN account_session_state ON account_session_state.user_id = users.id
+            LEFT JOIN account_session_epochs ON account_session_epochs.user_id = users.id
             LEFT JOIN staff_access ON staff_access.user_id = users.id AND staff_access.team_id = users.team_id
             WHERE users.id = ?
             LIMIT 1`)
@@ -341,6 +353,13 @@ export async function getSessionFromRequest(request, env) {
         permissions = managedCoach ? parseCoachPermissions(row.permissions_json) : [];
         if (row.sessions_invalid_before && session.iat < row.sessions_invalid_before) {
           return null; // session was invalidated by logout-all
+        }
+        // A timestamp-only boundary cannot distinguish two sessions issued in
+        // the same second. The signed epoch is therefore the authority after
+        // a revocation, while `invalid_before` remains for legacy cookies and
+        // historic revocations created before the epoch rollout.
+        if (String(session.se || "") !== String(row.session_epoch || "")) {
+          return null;
         }
       } catch (_) {
         return null;
