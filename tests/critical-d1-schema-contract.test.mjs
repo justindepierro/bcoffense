@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import {
   CRITICAL_D1_SCHEMA,
   criticalSchemaProbeSql,
+  criticalSchemaProbeStatements,
   formatCriticalSchemaReport,
   parseD1ExecuteJson,
   verifyCriticalSchemaRows,
@@ -37,7 +38,7 @@ for (const migration of migrations) {
   db.exec(await readFile(path.join(migrationsDir, migration), "utf8"));
 }
 
-const localRows = db.prepare(probeSql).all();
+const localRows = criticalSchemaProbeStatements().flatMap((statement) => db.prepare(statement).all());
 const freshSchemaResult = verifyCriticalSchemaRows(localRows);
 assert.equal(freshSchemaResult.ok, true, formatCriticalSchemaReport(freshSchemaResult));
 assert.equal(

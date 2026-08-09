@@ -79,10 +79,13 @@ function isExactList(left, right) {
 }
 
 /**
- * One SELECT-only statement suitable for `wrangler d1 execute --remote`.
+ * SELECT-only metadata statements suitable for `wrangler d1 execute --remote`.
  * `pragma_*` table-valued functions are SQLite metadata readers, not writes.
+ * Keep them as separate statements: remote D1 limits the number of terms in
+ * one compound SELECT, while Wrangler safely returns one result batch per
+ * statement.
  */
-export function criticalSchemaProbeSql() {
+export function criticalSchemaProbeStatements() {
   const tableNames = Object.keys(CRITICAL_D1_SCHEMA.tables);
   const indexNames = Object.keys(CRITICAL_D1_SCHEMA.indexes);
   const statements = [
@@ -99,7 +102,11 @@ export function criticalSchemaProbeSql() {
          FROM pragma_index_info(${sqlString(index)})`,
     ),
   ];
-  return statements.join("\nUNION ALL\n");
+  return statements;
+}
+
+export function criticalSchemaProbeSql() {
+  return `${criticalSchemaProbeStatements().join(";\n")};`;
 }
 
 /** Parse the JSON shape returned by `wrangler d1 execute --json`. */
