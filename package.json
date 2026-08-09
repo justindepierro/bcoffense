@@ -22,6 +22,7 @@
     "test:e2e:screenshots": "npm --prefix tests run screenshots",
     "playwright": "cd tests && npm exec -- playwright",
     "release:quality": "bash scripts/release-quality-gate.sh",
-    "release:package": "bash scripts/package-source.sh"
+    "release:package": "bash scripts/package-source.sh",
+    "doctor": "bash scripts/release-doctor.sh"
   }
 }
