@@ -197,6 +197,53 @@
   color: var(--color-warning);
 }
 
+.sq-game-pill--accent {
+  border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-border));
+  background: color-mix(in srgb, var(--color-success-light) 70%, var(--color-surface));
+  color: var(--color-success);
+}
+
+.sq-live-mission {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 10%, var(--color-surface)),
+    color-mix(in srgb, var(--color-info) 8%, var(--color-surface))
+  );
+}
+
+.sq-live-mission span {
+  width: fit-content;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-primary) 16%, var(--color-bg-light));
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.sq-live-mission strong {
+  font-size: var(--font-size-lg);
+  line-height: 1.1;
+}
+
+.sq-live-mission small {
+  color: var(--color-text-secondary);
+  font-weight: 700;
+}
+
+.sq-live-mission b {
+  color: var(--color-success);
+  font-size: var(--font-size-sm);
+}
+
 .sq-result-sprint {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2118,6 +2165,13 @@
   font-size: var(--font-size-xs);
   font-weight: 750;
   line-height: 1.25;
+}
+
+.player-quiz-mode-card__reward {
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  line-height: 1.3;
 }
 
 .player-quiz-weak-area-panel {

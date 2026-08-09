@@ -2491,6 +2491,89 @@
     };
   }
 
+  function _detectSmartDiagramTitleBand(context, width, height) {
+    if (!context || width <= 0 || height <= 0) return null;
+    const scanHeight = Math.max(16, Math.min(height * 0.24, 120));
+    let imageData;
+    try {
+      imageData = context.getImageData(0, 0, width, Math.round(scanHeight));
+    } catch (_err) {
+      return null;
+    }
+    const rows = [];
+    for (let y = 0; y < imageData.height; y += 1) {
+      let darkPixels = 0;
+      for (let x = 0; x < imageData.width; x += 1) {
+        const idx = (y * imageData.width + x) * 4;
+        const alpha = imageData.data[idx + 3];
+        if (alpha < 180) continue;
+        const luminance = (
+          imageData.data[idx] * 0.2126 +
+          imageData.data[idx + 1] * 0.7152 +
+          imageData.data[idx + 2] * 0.0722
+        );
+        if (luminance < 214) darkPixels += 1;
+      }
+      rows.push(darkPixels / imageData.width);
+    }
+    const threshold = 0.018;
+    let start = -1;
+    let end = -1;
+    let gap = 0;
+    for (let y = 0; y < rows.length; y += 1) {
+      const rowRatio = rows[y];
+      if (rowRatio >= threshold) {
+        if (start < 0) start = y;
+        end = y;
+        gap = 0;
+        continue;
+      }
+      if (start >= 0 && end >= 0) {
+        gap += 1;
+        if (gap >= 4) break;
+      }
+    }
+    if (start < 0 || end < 0) return null;
+    return {
+      top: Math.max(0, start - 6),
+      height: Math.min(height * 0.24, end - start + 16),
+    };
+  }
+
+  function _applySmartDiagramTitleRedaction(canvas, context, options = {}) {
+    if (!canvas || !context) return null;
+    const fallbackHeight = Math.max(18, Math.min(canvas.height * 0.12, 44));
+    const band = _detectSmartDiagramTitleBand(context, canvas.width, canvas.height) || {
+      top: 0,
+      height: fallbackHeight,
+    };
+    const y = Math.max(0, Math.round(band.top || 0));
+    const h = Math.max(12, Math.min(canvas.height - y, Math.round(band.height || fallbackHeight)));
+    const blurredSource = document.createElement("canvas");
+    blurredSource.width = canvas.width;
+    blurredSource.height = canvas.height;
+    const blurContext = blurredSource.getContext("2d");
+    if (!blurContext) return band;
+    blurContext.drawImage(canvas, 0, 0);
+    context.save();
+    context.filter = "blur(10px)";
+    context.drawImage(blurredSource, 0, y, canvas.width, h, 0, y, canvas.width, h);
+    context.restore();
+    context.save();
+    context.fillStyle = options.redactFill || "rgba(255,255,255,0.82)";
+    context.fillRect(0, y, canvas.width, h);
+    context.strokeStyle = options.redactStroke || "rgba(72,108,152,0.32)";
+    context.lineWidth = Math.max(1, Math.round(canvas.height * 0.004));
+    context.setLineDash([8, 6]);
+    context.beginPath();
+    context.moveTo(0, y + h);
+    context.lineTo(canvas.width, y + h);
+    context.stroke();
+    context.restore();
+    canvas.dataset.redactedTitleBand = `${y}:${h}`;
+    return band;
+  }
+
   function drawSmartDiagram(canvas, frame, image, options = {}) {
     const size = _smartDiagramCanvasSize(frame);
     if (canvas.width !== size.pixelWidth || canvas.height !== size.pixelHeight) {
@@ -2521,6 +2604,9 @@
       drawY = (canvas.height - drawHeight) / 2;
     }
     context.drawImage(image, crop.x, crop.y, crop.width, crop.height, drawX, drawY, drawWidth, drawHeight);
+    if (options.redactTitle === "auto") {
+      _applySmartDiagramTitleRedaction(canvas, context, options);
+    }
     context.filter = "none";
     canvas.dataset.smartFit = crop.smartFit
       ? "fill"
@@ -2544,7 +2630,10 @@
     canvas.setAttribute("role", "img");
     canvas.setAttribute("aria-label", alt);
     canvas.dataset.smartDiagramCanvas = "true";
-    drawSmartDiagram(canvas, frame, image, options);
+    drawSmartDiagram(canvas, frame, image, {
+      ...options,
+      redactTitle: options.redactTitle || img.dataset.smartDiagramRedact || "",
+    });
     const previous = frame.querySelector(":scope > canvas[data-smart-diagram-canvas='true']");
     if (previous) previous.remove();
     img.dataset.smartDiagramSource = "true";

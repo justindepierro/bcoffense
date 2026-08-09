@@ -344,7 +344,7 @@ function _getPlayerQuizModes(context = {}) {
       key: "quick",
       label: "Quick Hits",
       time: "5 plays",
-      note: "Fast mixed reps from the selected source.",
+      note: "Fast mixed reps from the selected source with smart retry on misses.",
       source: "script",
       disabled: !scriptItems.length,
     },
@@ -444,34 +444,131 @@ function _renderPlayerQuizModeCards() {
     _playerQuizSelectedMode = modes.find((mode) => !mode.disabled)?.key || "quick";
   }
   const visibleModes = modes.filter((mode) => !mode.disabled);
-  return visibleModes.map((mode) => `
+  const summary = _summarizeQuizAttempts();
+  return visibleModes.map((mode) => {
+    const flavor = _getPlayerQuizModeFlavor(mode, summary);
+    return `
     <button type="button"
       class="player-quiz-mode-card${mode.key === _playerQuizSelectedMode ? " is-selected" : ""}${mode.disabled ? " is-disabled" : ""}"
       data-action="setPlayerQuizMode"
       data-arg="${escapeAttr(mode.key)}"
       aria-pressed="${mode.key === _playerQuizSelectedMode ? "true" : "false"}"
       ${mode.disabled ? "disabled" : ""}>
-      <span>${escapeHtml(mode.time)}</span>
+      <span>${escapeHtml(flavor.icon)} · ${escapeHtml(mode.time)}</span>
       <strong>${escapeHtml(mode.label)}</strong>
-      <small>${escapeHtml(mode.note)}</small>
+      <small>${escapeHtml(flavor.detail)}</small>
+      <b class="player-quiz-mode-card__reward">${escapeHtml(flavor.reward)}</b>
     </button>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function _getPlayerQuizRecommendation(options = _getPlayerQuizScriptOptions()) {
+  const summary = _summarizeQuizAttempts();
   const selected = options.find((option) => option.id === _playerQuizSelectedScriptId && option.playerSelectable) ||
     options.find((option) => option.playerSelectable) || null;
   if (!selected) return null;
   const modes = _getPlayerQuizModes({ scriptSource: _getPlayerQuizSelectedScriptRecord() });
-  const quick = modes.find((mode) => mode.key === "quick" && !mode.disabled);
-  const mode = quick;
+  const weakType = String(summary.weakAreas?.[0]?.type || "").toLowerCase();
+  const preferredModeKey = weakType === "responsibility" || weakType === "play_from_rule"
+    ? "job"
+    : weakType === "diagram"
+      ? "diagram"
+      : "quick";
+  const mode = modes.find((entry) => entry.key === preferredModeKey && !entry.disabled)
+    || modes.find((entry) => entry.key === "quick" && !entry.disabled)
+    || modes.find((entry) => !entry.disabled);
   if (!mode) return null;
+  const challenge = _getPlayerQuizModeFlavor(mode, summary);
   return {
     script: selected,
     mode,
-    title: "Best next rep: Quick Hits",
-    detail: `${selected.name} is ready for a fast five-play check. Choose another challenge type below if you want a focused rep.`,
-    actionLabel: "Use Quick Hits",
+    title: `Today's study: ${challenge.title}`,
+    detail: `${selected.name} is ready for ${challenge.detail.toLowerCase()} ${challenge.reward || ""}`.trim(),
+    actionLabel: challenge.actionLabel,
+  };
+}
+
+function _getPlayerQuizModeFlavor(mode, summary = _summarizeQuizAttempts()) {
+  const weak = summary.weakAreas?.[0] || null;
+  const map = {
+    quick: {
+      icon: "Combo",
+      title: "Quick Hits",
+      detail: weak ? `a mixed rep set that attacks ${weak.label}` : "a mixed rep set to keep your call speed up",
+      reward: "Fast points and live retry on misses.",
+      actionLabel: "Start Quick Hits",
+    },
+    diagram: {
+      icon: "Vision",
+      title: "Diagram Drill",
+      detail: "a visual rep set built around picture recognition",
+      reward: "Best when you need cleaner eyes before practice.",
+      actionLabel: "Start Diagram Drill",
+    },
+    "diagram-flash": {
+      icon: "Flash",
+      title: "Diagram Flash Cards",
+      detail: "a flip-card study round for raw recognition speed",
+      reward: "No guessing pressure, just study and confirm.",
+      actionLabel: "Start Flash Cards",
+    },
+    job: {
+      icon: "Assignment",
+      title: "Know Your Job",
+      detail: weak ? `a rule-heavy round to clean up ${weak.label}` : "a rule-heavy round to tighten your assignment work",
+      reward: "Best for turning weak rules into automatic answers.",
+      actionLabel: "Start Job Quiz",
+    },
+    gameplan: {
+      icon: "Game Plan",
+      title: "Game Plan Check",
+      detail: "the week's calls in one pressure round",
+      reward: "Higher-value reps on the plan that matters most.",
+      actionLabel: "Start Game Plan Check",
+    },
+    missed: {
+      icon: "Redemption",
+      title: "Missed Plays",
+      detail: "a cleanup round that comes right back at your recent misses",
+      reward: "Best for finishing unfinished business fast.",
+      actionLabel: "Run Missed Plays",
+    },
+    "signal-study": {
+      icon: "Signals",
+      title: "Signal Study",
+      detail: "a short clip recognition round for signal language",
+      reward: "Clean signal eyes before team period.",
+      actionLabel: "Start Signal Study",
+    },
+    "signal-sprint": {
+      icon: "Sprint",
+      title: "100 Second Sprint",
+      detail: "a speed run with as many answers as you can stack in 100 seconds",
+      reward: "Best for tempo, streaks, and leaderboard pressure.",
+      actionLabel: "Start Sprint",
+    },
+    "signal-battle": {
+      icon: "Battle",
+      title: "6 Seconds of Battle",
+      detail: "a pressure round where the clip disappears before you answer",
+      reward: "Best for game-speed recall under stress.",
+      actionLabel: "Start Battle",
+    },
+    "signal-heat": {
+      icon: "Heat",
+      title: "Heat Check",
+      detail: "a sudden-death streak run that ends on the first miss",
+      reward: "Pure streak pressure and fast bragging rights.",
+      actionLabel: "Start Heat Check",
+    },
+  };
+  return map[mode?.key] || {
+    icon: "Quiz",
+    title: mode?.label || "Quiz",
+    detail: mode?.note || "a practice rep set",
+    reward: "",
+    actionLabel: "Start Quiz",
   };
 }
 
@@ -576,6 +673,27 @@ function _prepareQuizItemsForMode(items, modeKey = _quizMode) {
     return [...normalized.filter((item) => !item.customQuestion).slice(0, 5), ...coachWritten];
   }
   return normalized;
+}
+
+function _quizRetryDepth(item) {
+  const scriptIndex = String(item?.scriptIndex ?? "");
+  const match = scriptIndex.match(/::retry:(\d+)$/);
+  return match ? Number(match[1] || 0) : 0;
+}
+
+function _queueQuizRetryItem(item) {
+  if (!item?.play || _quizTimeLimitMs || _isSignalAutoAdvanceMode()) return false;
+  const retryDepth = _quizRetryDepth(item);
+  if (retryDepth >= 1) return false;
+  const baseScriptIndex = String(item.scriptIndex ?? _quizIndex).replace(/::retry:\d+$/, "");
+  const retryItem = {
+    ...item,
+    period: item.period || "Review",
+    scriptIndex: `${baseScriptIndex}::retry:${retryDepth + 1}`,
+  };
+  const insertAt = Math.min(_quizPlays.length, _quizIndex + 3);
+  _quizPlays.splice(insertAt, 0, retryItem);
+  return true;
 }
 
 function _quizModeTitle(baseTitle, modeKey = _playerQuizSelectedMode) {
@@ -1335,7 +1453,65 @@ function _quizShortCall(play) {
   ].filter(Boolean).join(" ")) || _quizPlainCall(play);
 }
 
-function _quizQuestionChoiceLabel(item, question) {
+function _quizCoreCallLabel(play) {
+  return _quizCleanText([
+    play?.play,
+    play?.playTag1,
+    play?.playTag2,
+  ].filter(Boolean).join(" ")) || _quizPlainCall(play);
+}
+
+function _quizCallAnswerLabelVariants(play) {
+  const core = _quizCoreCallLabel(play);
+  const formation = _quizCleanText([
+    play?.formation,
+    play?.formTag1,
+    play?.formTag2,
+    core,
+  ].filter(Boolean).join(" "));
+  const personnelFormation = _quizCleanText([
+    play?.personnel,
+    formation,
+  ].filter(Boolean).join(" "));
+  const full = _quizPlainCall(play);
+  return [...new Set([core, formation, personnelFormation, full].filter(Boolean))];
+}
+
+const QUIZ_CLUE_STOP_WORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "the",
+  "this",
+  "that",
+  "what",
+  "which",
+  "your",
+  "play",
+  "call",
+  "down",
+  "left",
+  "right",
+  "middle",
+  "short",
+  "long",
+  "medium",
+]);
+
+function _quizChoiceSignature(label = "") {
+  return _quizCleanText(label)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function _quizQuestionNeedsExpandedCallLabels(question) {
+  return ["play_from_rule", "diagram", "formation_to_play", "call"].includes(
+    String(question?.type || ""),
+  );
+}
+
+function _quizChoiceLabelBase(item, question) {
   const play = item?.play || item;
   if (!play) return "";
   switch (question?.type) {
@@ -1356,10 +1532,363 @@ function _quizQuestionChoiceLabel(item, question) {
     case "diagram":
     case "formation_to_play":
     case "call":
-      return _quizShortCall(play);
+      return _quizCoreCallLabel(play);
     default:
       return _quizShortCall(play);
   }
+}
+
+function _quizResolveChoiceLabelEntries(items, question) {
+  const entries = _normalizeQuizItems(items).map((item) => ({
+    item,
+    key: _quizChoiceKey(item),
+    baseLabel: _quizChoiceLabelBase(item, question),
+    variants: _quizCallAnswerLabelVariants(item?.play || item),
+    fullLabel: _quizPlainCall(item?.play || item),
+  }));
+  if (!_quizQuestionNeedsExpandedCallLabels(question)) {
+    return entries.map((entry) => ({
+      ...entry,
+      label: _quizCleanText(entry.baseLabel),
+    }));
+  }
+  const resolved = entries.map((entry) => ({
+    ...entry,
+    label: _quizCleanText(entry.baseLabel),
+  }));
+  const maxDepth = Math.max(...resolved.map((entry) => Math.max(0, entry.variants.length - 1)), 0);
+  for (let depth = 0; depth <= maxDepth; depth += 1) {
+    const groups = new Map();
+    resolved.forEach((entry) => {
+      const signature = _quizChoiceSignature(entry.label);
+      if (!signature) return;
+      if (!groups.has(signature)) groups.set(signature, []);
+      groups.get(signature).push(entry);
+    });
+    let promoted = false;
+    resolved.forEach((entry) => {
+      const signature = _quizChoiceSignature(entry.label);
+      const duplicates = signature ? groups.get(signature) || [] : [];
+      if (duplicates.length <= 1) return;
+      const nextLabel = _quizCleanText(entry.variants[Math.min(depth + 1, entry.variants.length - 1)] || entry.fullLabel || entry.label);
+      if (nextLabel && nextLabel !== entry.label) {
+        entry.label = nextLabel;
+        promoted = true;
+      }
+    });
+    if (!promoted) break;
+  }
+  return resolved;
+}
+
+function _quizResolveChoiceLabel(item, question, choices) {
+  const entries = _quizResolveChoiceLabelEntries(choices, question);
+  const match = entries.find((entry) => entry.key === _quizChoiceKey(item));
+  return match?.label || _quizCleanText(_quizChoiceLabelBase(item, question));
+}
+
+function _quizTypeQuestionClue(play) {
+  return _quizCleanText([
+    play?.personnel,
+    play?.formation,
+    play?.formTag1,
+    play?.formTag2,
+    play?.shift,
+    play?.motion,
+    play?.tempo,
+  ].filter(Boolean).join(" "));
+}
+
+function _quizMeaningfulTokens(value = "") {
+  return _quizCleanText(value)
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2 && !QUIZ_CLUE_STOP_WORDS.has(token));
+}
+
+function _quizQuestionClueText(question, item) {
+  const play = item?.play || item;
+  const profile = _quizQuestionScenarioProfile(question);
+  const downLabel = play?.preferredDown ? `${_ordinalDown(play.preferredDown)} Down` : "";
+  const distLabel = play?.preferredDistance ? `& ${play.preferredDistance}` : "";
+  const situationParts = profile.showSituation
+    ? [downLabel && distLabel ? `${downLabel} ${distLabel}` : downLabel || distLabel, play?.preferredFieldPosition, play?.preferredHash, play?.preferredSituation]
+    : [];
+  const callContextParts = profile.showCallMeta
+    ? [play?.personnel, play?.tempo, profile.callMetaIncludesType ? play?.type : ""]
+    : [];
+  const defenseParts = profile.showDefense
+    ? [play?.practiceFront, play?.practiceCoverage, play?.practiceBlitz, play?.practiceStunt]
+    : [];
+  return _quizCleanText([
+    question?.detailValue,
+    ...situationParts,
+    ...callContextParts,
+    ...defenseParts,
+  ].filter(Boolean).join(" "));
+}
+
+function _quizHasClueLeak(question, item, correctLabel) {
+  if (!["call", "diagram", "formation_to_play", "play_from_rule"].includes(String(question?.type || ""))) {
+    return false;
+  }
+  const answerTokens = _quizMeaningfulTokens(correctLabel);
+  if (answerTokens.length < 1) return false;
+  const clueTokens = new Set(_quizMeaningfulTokens(_quizQuestionClueText(question, item)));
+  if (!clueTokens.size) return false;
+  const overlap = answerTokens.filter((token) => clueTokens.has(token)).length;
+  return overlap > 0 && overlap / answerTokens.length >= 0.5;
+}
+
+function _quizHasMultipleValidAnswers(question, item) {
+  const source = _quizPlays.filter((candidate) => candidate && candidate !== item && candidate?.play);
+  if (question?.type === "play_from_rule") {
+    const positionKey = question?.position?.key || item?.positionKey || _quizPositionKey;
+    const targetRule = _quizCleanText(positionKey ? item?.play?.[positionKey] : "").toLowerCase();
+    if (!targetRule) return false;
+    return source.some((candidate) => _quizCleanText(candidate?.play?.[positionKey] || "").toLowerCase() === targetRule);
+  }
+  if (question?.type === "formation_to_play") {
+    const targetFormation = _quizFormationLabel(item?.play).toLowerCase();
+    if (!targetFormation) return false;
+    return source.some((candidate) => _quizFormationLabel(candidate?.play).toLowerCase() === targetFormation);
+  }
+  return false;
+}
+
+function _quizHasUnresolvedChoiceCollisions(entries = []) {
+  const seen = new Set();
+  for (const entry of entries) {
+    const key = _quizChoiceSignature(entry?.label || "");
+    if (!key) continue;
+    if (seen.has(key)) return true;
+    seen.add(key);
+  }
+  return false;
+}
+
+function _quizQualityReasonLabel(reason = "") {
+  const labels = {
+    blank: "Blank answer",
+    "too-long": "Answer too long",
+    "not-enough-choices": "Too few fair choices",
+    "clue-leak": "Question leaks answer",
+    "multiple-valid-answers": "Multiple valid answers",
+    "ambiguous-answers": "Answers still collide",
+    "diagram-required": "Needs diagram",
+    "missing-question": "Missing question",
+    "no-candidates": "No viable question",
+  };
+  return labels[reason] || "Needs review";
+}
+
+function _quizModeQuestionBaseScore(mode, type) {
+  const normalizedMode = String(mode || _quizMode || "quick");
+  const tables = {
+    quick: {
+      responsibility: 8,
+      play_from_rule: 7,
+      diagram: 7,
+      diagram_formation: 5,
+      formation_to_play: 6,
+      signal: 5,
+      play_type: 4,
+      call: 5,
+    },
+    diagram: {
+      diagram: 10,
+      diagram_formation: 8,
+      formation_to_play: 6,
+      call: 5,
+      signal: 3,
+      responsibility: 3,
+      play_from_rule: 2,
+      play_type: 2,
+    },
+    job: {
+      responsibility: 10,
+      play_from_rule: 8,
+      call: 4,
+      diagram: 4,
+      diagram_formation: 3,
+      signal: 3,
+      formation_to_play: 2,
+      play_type: 2,
+    },
+    gameplan: {
+      responsibility: 8,
+      play_from_rule: 8,
+      diagram: 7,
+      formation_to_play: 6,
+      signal: 5,
+      call: 6,
+      play_type: 4,
+      diagram_formation: 4,
+    },
+    missed: {
+      responsibility: 8,
+      play_from_rule: 8,
+      diagram: 7,
+      formation_to_play: 6,
+      signal: 5,
+      call: 6,
+      play_type: 4,
+      diagram_formation: 4,
+    },
+    "signal-study": {
+      signal: 12,
+    },
+  };
+  const table = tables[normalizedMode] || tables.quick;
+  return Number(table[type] || 0);
+}
+
+function _getQuizRecentSessionTypeCounts(windowSize = QUIZ_PLANNER_RECENT_TYPES_WINDOW) {
+  const answers = Array.from(_quizAnswers.values()).slice(-Math.max(1, Number(windowSize || 0)));
+  const counts = Object.create(null);
+  answers.forEach((answer) => {
+    const type = String(answer?.questionType || "call");
+    counts[type] = (counts[type] || 0) + 1;
+  });
+  return counts;
+}
+
+function _getQuizPlayerQuestionTypePerformance() {
+  const player = _getQuizPlayerName();
+  const attempts = _getPlayerQuizAttempts()
+    .filter((attempt) => _quizPlayerNameFromAttempt(attempt, player) === player)
+    .filter((attempt) => !attempt.sourceType || attempt.sourceType === _quizSourceType)
+    .sort((a, b) => String(b.completedAt || "").localeCompare(String(a.completedAt || "")))
+    .slice(0, QUIZ_PLANNER_HISTORY_WINDOW);
+  const totals = Object.create(null);
+  attempts.forEach((attempt) => _quizAddQuestionBreakdown(totals, attempt.questionBreakdown || {}));
+  return Object.fromEntries(Object.entries(totals).map(([type, stats]) => {
+    const total = Number(stats?.total || 0);
+    const correct = Number(stats?.correct || 0);
+    const wrong = Number(stats?.wrong || 0);
+    const percent = total ? Math.round((correct / total) * 100) : 0;
+    return [type, { total, correct, wrong, percent }];
+  }));
+}
+
+function _getQuizWeakAreaBias(type, performance = _getQuizPlayerQuestionTypePerformance()) {
+  const stats = performance[String(type || "")];
+  if (!stats || stats.total < 2) return { score: 0, reason: "" };
+  if (stats.percent >= 90) return { score: -1, reason: "strong area" };
+  if (stats.percent >= 80) return { score: 1, reason: "slight weak area" };
+  if (stats.percent >= 65) return { score: 3, reason: "weak area" };
+  return { score: 5, reason: "priority weak area" };
+}
+
+function _scoreQuizCandidate(question, item, quality, context = {}) {
+  if (!question || !quality || quality.state === "study_only") {
+    return {
+      score: -999,
+      reasons: [quality?.reason ? _quizQualityReasonLabel(quality.reason) : "Not playable"],
+    };
+  }
+  const type = String(question.type || "call");
+  const recentCounts = context.recentCounts || _getQuizRecentSessionTypeCounts();
+  const performance = context.performance || _getQuizPlayerQuestionTypePerformance();
+  const reasons = [];
+  let score = _quizModeQuestionBaseScore(_quizMode, type);
+  if (score) reasons.push(`mode fit ${score}`);
+  const weakBias = _getQuizWeakAreaBias(type, performance);
+  score += weakBias.score;
+  if (weakBias.reason) reasons.push(weakBias.reason);
+  if (quality.state === "playable") {
+    score += 2;
+    reasons.push("full choice pool");
+  } else if (quality.state === "thin") {
+    score -= 1;
+    reasons.push("thin choice pool");
+  }
+  const repeatCount = Number(recentCounts[type] || 0);
+  if (repeatCount) {
+    score -= repeatCount * 2;
+    reasons.push(`recent ${repeatCount}x`);
+  }
+  if (type === "diagram" && question.diagramUrl) {
+    score += 1;
+    reasons.push("visual rep");
+  }
+  if (type === "responsibility" && _quizCleanText(question.rule)) {
+    score += 1;
+    reasons.push("position rule present");
+  }
+  if (type === "signal" && question.signal?.componentType) {
+    score += 1;
+    reasons.push("signal clip ready");
+  }
+  if (_quizRetryDepth(item) > 0) {
+    score += 2;
+    reasons.push("retry reinforcement");
+  }
+  return { score, reasons };
+}
+
+function _buildQuizQuestionPlan(candidates, item) {
+  const recentCounts = _getQuizRecentSessionTypeCounts();
+  const performance = _getQuizPlayerQuestionTypePerformance();
+  return candidates
+    .filter(Boolean)
+    .map((candidate) => {
+      const quality = _quizQuestionQuality(candidate, item, {
+        minimumDistractors: candidate.type === "responsibility" ? 3 : 1,
+      });
+      const planner = _scoreQuizCandidate(candidate, item, quality, {
+        recentCounts,
+        performance,
+      });
+      return {
+        ...candidate,
+        quality,
+        planner,
+      };
+    })
+    .sort((a, b) => b.planner.score - a.planner.score);
+}
+
+function _getQuizLiveMission(question, item) {
+  const planner = question?.planner || { score: 0, reasons: [] };
+  const score = Number(planner.score || 0);
+  const reasons = Array.isArray(planner.reasons) ? planner.reasons : [];
+  const primaryReason = reasons[0] || "";
+  const weakReason = reasons.find((entry) => String(entry).includes("weak area")) || "";
+  const nextPoints = _getQuizCorrectAnswerPoints(Math.max(1, _quizStreak + 1));
+  const typeLabel = _quizQuestionTypeLabel(question?.type || "call");
+  const status = score >= 12 ? "pressure rep" : score >= 8 ? "focus rep" : "clean-up rep";
+  const title = weakReason
+    ? `Attack ${typeLabel}`
+    : _quizRetryDepth(item) > 0
+      ? "Finish The Correction"
+      : score >= 12
+        ? "Pressure Rep"
+        : "Stack The Routine";
+  const detail = weakReason
+    ? `Planner picked this because ${weakReason}.`
+    : primaryReason
+      ? `Planner picked this for ${primaryReason}.`
+      : `This ${typeLabel.toLowerCase()} rep keeps the round moving.`;
+  const reward = _quizStreak >= 2
+    ? `Hit this for ${nextPoints} points and keep the streak alive.`
+    : `Hit this for ${nextPoints} points.`;
+  return { status, title, detail, reward };
+}
+
+function _quizQuestionScenarioProfile(question) {
+  const type = String(question?.type || "");
+  return {
+    showSituation: !["diagram", "diagram_formation", "diagram_flash"].includes(type),
+    showCallMeta: ["responsibility", "play_from_rule", "play_type", "signal", "call"].includes(type),
+    showDefense: ["responsibility", "play_type", "signal", "call"].includes(type),
+    callMetaIncludesType: type === "responsibility",
+  };
+}
+
+function _quizQuestionChoiceLabel(item, question) {
+  return _quizResolveChoiceLabel(item, question, [item]);
 }
 
 function _quizSignalRecordsForPlay(play) {
@@ -1677,14 +2206,31 @@ function _quizQuestionQuality(question, item, opts = {}) {
   if (!question || !item?.play) return { state: "study_only", reason: "missing-question" };
   if (question.type === "study_card") return { state: "study_only", reason: "study-card" };
 
-  const correctLabel = _quizQuestionChoiceLabel(item, question);
+  const distractorItems = _quizQuestionDistractorItems(item, question);
+  const labeledEntries = _quizResolveChoiceLabelEntries([item, ...distractorItems], question);
+  const correctLabel = labeledEntries.find((entry) => entry.key === _quizChoiceKey(item))?.label || "";
   const correctQuality = _quizChoiceQuality(correctLabel, question.type);
   if (!correctQuality.ok) return { state: "study_only", reason: correctQuality.reason };
+  if (_quizHasMultipleValidAnswers(question, item)) {
+    return { state: "study_only", reason: "multiple-valid-answers" };
+  }
+  if (_quizHasClueLeak(question, item, correctLabel)) {
+    return { state: "study_only", reason: "clue-leak" };
+  }
+  if (_quizHasUnresolvedChoiceCollisions(labeledEntries)) {
+    return { state: "study_only", reason: "ambiguous-answers" };
+  }
 
-  const pool = _quizUniqueChoices(
-    _quizQuestionDistractorItems(item, question),
-    (candidate) => _quizQuestionChoiceLabel(candidate, question),
-  ).filter((entry) => _quizChoiceQuality(entry.label, question.type).ok);
+  const labels = new Set([correctLabel.toLowerCase()]);
+  const pool = labeledEntries
+    .filter((entry) => entry.key !== _quizChoiceKey(item))
+    .filter((entry) => {
+      const labelKey = entry.label.toLowerCase();
+      if (!labelKey || labels.has(labelKey)) return false;
+      if (!_quizChoiceQuality(entry.label, question.type).ok) return false;
+      labels.add(labelKey);
+      return true;
+    });
   const minimumDistractors = Number(opts.minimumDistractors ?? (question.type === "responsibility" ? 3 : 1));
   if (pool.length < minimumDistractors) {
     return { state: "study_only", reason: "not-enough-choices", choices: pool.length };
@@ -1704,7 +2250,13 @@ function _buildQuizStudyCardQuestion(item, position, reason = "") {
     detailLabel: "No fair multiple choice",
     detailValue: reason === "not-enough-choices"
       ? "Not enough clean answer choices yet. Review the play, then keep going."
-      : "Review the call, diagram, and rule without guessing.",
+      : reason === "clue-leak"
+        ? "The clue gives away too much of the answer. Review the play instead of guessing."
+        : reason === "multiple-valid-answers"
+          ? "More than one answer could be correct from this clue. Review the play before retrying."
+          : reason === "ambiguous-answers"
+            ? "The possible answers are still too close together to score fairly."
+            : "Review the call, diagram, and rule without guessing.",
     diagramUrl,
     rule: _quizCleanText(position?.key ? item?.play?.[position.key] : ""),
     position,
@@ -1713,16 +2265,8 @@ function _buildQuizStudyCardQuestion(item, position, reason = "") {
 }
 
 function _selectQuizQuestion(candidates, item) {
-  for (const candidate of candidates) {
-    if (!candidate) continue;
-    const quality = _quizQuestionQuality(candidate, item, {
-      minimumDistractors: candidate.type === "responsibility" ? 3 : 1,
-    });
-    if (quality.state !== "study_only") {
-      return { ...candidate, quality };
-    }
-  }
-  return null;
+  const plan = _buildQuizQuestionPlan(candidates, item);
+  return plan.find((candidate) => candidate.quality.state !== "study_only") || null;
 }
 
 function _buildQuizQuestion(item) {
@@ -1816,8 +2360,8 @@ function _buildQuizQuestion(item) {
   const typeQuestion = canAskRecognition && _quizCleanText(item.play.type) ? {
     type: "play_type",
     prompt: "What type of play is this?",
-    detailLabel: "Call clue",
-    detailValue: _quizShortCall(item.play),
+    detailLabel: "Look",
+    detailValue: _quizTypeQuestionClue(item.play),
     rule: positionRule,
     position,
   } : null;
@@ -1906,7 +2450,8 @@ function _buildQuizChoices(item) {
     _quizChoiceCache.set(questionKey, { question, choices });
     return choices;
   }
-  const correctLabel = _quizQuestionChoiceLabel(item, question);
+  const labeledEntries = _quizResolveChoiceLabelEntries([item, ..._quizQuestionDistractorItems(item, question)], question);
+  const correctLabel = labeledEntries.find((entry) => entry.key === _quizChoiceKey(item))?.label || "";
   if (question.type === "study_card") {
     _quizChoiceCache.set(questionKey, { question, choices: [] });
     return [];
@@ -1923,17 +2468,15 @@ function _buildQuizChoices(item) {
   // believable look-alikes first) instead of shuffling the whole pool. Take a
   // plausibility window, then shuffle within it so wrong answers stay
   // convincing while repeated quizzes still vary which ones appear.
-  const pool = _quizQuestionDistractorItems(item, question)
-    .map((candidate) => {
-      const label = _quizQuestionChoiceLabel(candidate, question);
-      return {
-        key: `${_quizChoiceKey(candidate)}::${question.type}`,
-        play: candidate.play,
-        label,
-        correct: false,
-        questionType: question.type,
-      };
-    })
+  const pool = labeledEntries
+    .filter((entry) => entry.key !== _quizChoiceKey(item))
+    .map((entry) => ({
+      key: `${entry.key}::${question.type}`,
+      play: entry.item.play,
+      label: entry.label,
+      correct: false,
+      questionType: question.type,
+    }))
     .filter((choice) => {
       const labelKey = choice.label.toLowerCase();
       if (!labelKey || labels.has(labelKey)) return false;
@@ -2020,7 +2563,7 @@ function _renderQuizRedactedDiagram(play, diagramUrl = _quizDiagramUrl(play)) {
   return `
     <figure class="sq-diagram-prompt" aria-label="Redacted play diagram">
       <div class="sq-diagram-prompt__stage">
-        <img src="${escapeAttr(diagramUrl)}" alt="Redacted diagram for quiz question" loading="lazy" decoding="async" data-smart-diagram="true" data-smart-diagram-keep-visible="true">
+        <img src="${escapeAttr(diagramUrl)}" alt="Redacted diagram for quiz question" loading="lazy" decoding="async" data-smart-diagram="true" data-smart-diagram-redact="auto" data-smart-diagram-keep-visible="true">
         <span class="sq-diagram-redaction-band" aria-hidden="true"></span>
       </div>
       <figcaption>Top title band hidden for quiz</figcaption>
@@ -2532,6 +3075,7 @@ function answerScriptQuizChoice(choiceKey) {
     _quizScore += _getQuizCorrectAnswerPoints(_quizStreak);
   } else {
     _quizStreak = 0;
+    _queueQuizRetryItem(item);
   }
   const reactionMs = _isSignalBattleMode()
     ? Math.max(0, Math.min(SIGNAL_BATTLE_ANSWER_MS, Date.now() - _quizRoundClipUntil))
@@ -3227,6 +3771,8 @@ function renderScriptQuizPlay() {
   const sourceLabel = _getQuizSourceLabel(_quizSourceType);
   const weightLabel = _quizSourceWeight === 1 ? "1.0x" : `${_quizSourceWeight}x`;
   const detailValue = _quizCleanText(question.detailValue);
+  const scenarioProfile = _quizQuestionScenarioProfile(question);
+  const mission = _getQuizLiveMission(question, item);
   const diagramPromptHtml = ["diagram", "diagram_formation", "diagram_flash", "study_card"].includes(question.type)
     ? _renderQuizRedactedDiagram(play, question.diagramUrl)
     : "";
@@ -3254,8 +3800,19 @@ function renderScriptQuizPlay() {
         </figure>`
       : "";
 
-  const situationParts = [downLabel && distLabel ? `${downLabel} ${distLabel}` : downLabel || distLabel, posLabel, hashLabel, situationLabel].filter(Boolean);
-  const callContextParts = [personnelLabel, tempoLabel, typeLabel].filter(Boolean);
+  const situationParts = scenarioProfile.showSituation
+    ? [downLabel && distLabel ? `${downLabel} ${distLabel}` : downLabel || distLabel, posLabel, hashLabel, situationLabel].filter(Boolean)
+    : [];
+  const callContextParts = scenarioProfile.showCallMeta
+    ? [
+      personnelLabel,
+      tempoLabel,
+      scenarioProfile.callMetaIncludesType ? typeLabel : "",
+    ].filter(Boolean)
+    : [];
+  const defenseParts = scenarioProfile.showDefense
+    ? [play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean)
+    : [];
   const choicesHtml = gameMode
     ? `<div class="script-quiz-choices${battleLocked ? " is-battle-locked" : ""}" role="group" aria-label="Answer choices">
         ${_quizCurrentChoices.map((choice) => _renderQuizChoice(choice, answer)).join("")}
@@ -3277,10 +3834,18 @@ function renderScriptQuizPlay() {
     <div class="sq-game-topline">
       <span class="sq-game-pill">Score ${_quizScore}</span>
       <span class="sq-game-pill">Streak ${_quizStreak}</span>
+      <span class="sq-game-pill sq-game-pill--accent">+${_getQuizCorrectAnswerPoints(Math.max(1, _quizStreak + 1))} next</span>
       ${clockLabel ? `<span class="sq-game-pill sq-game-pill--timer" id="scriptQuizTimerPill">${escapeHtml(clockLabel)}</span>` : ""}
       <span class="sq-game-pill">${escapeHtml(sourceLabel)} · ${escapeHtml(weightLabel)}</span>
       ${_quizSourceType === "signal" && _quizSignalCategories.length ? `<span class="sq-game-pill">${escapeHtml(_formatSignalCategories(_quizSignalCategories))}</span>` : ""}
       <span class="sq-game-pill">${escapeHtml(_quizQuestionTypeLabel(question.type))}</span>
+    </div>` : ""}
+    ${gameMode ? `
+    <div class="sq-live-mission sq-live-mission--${escapeAttr(mission.status.replace(/\s+/g, "-"))}">
+      <span>${escapeHtml(mission.status)}</span>
+      <strong>${escapeHtml(mission.title)}</strong>
+      <small>${escapeHtml(mission.detail)}</small>
+      <b>${escapeHtml(mission.reward)}</b>
     </div>` : ""}
     <div class="sq-scenario-hint">${escapeHtml(question.prompt)}</div>
     ${diagramPromptHtml}
@@ -3290,19 +3855,19 @@ function renderScriptQuizPlay() {
       <div class="sq-scenario-label">${escapeHtml(question.detailLabel)}</div>
       <div class="sq-scenario-value">${escapeHtml(detailValue)}</div>
     </div>` : ""}
-    <div class="sq-scenario-block sq-scenario-block--situation">
+    ${scenarioProfile.showSituation ? `<div class="sq-scenario-block sq-scenario-block--situation">
       <div class="sq-scenario-label">Situation</div>
       <div class="sq-scenario-value sq-situation">${situationParts.length ? situationParts.map(escapeHtml).join(" · ") : "<em style='opacity:.5'>No situation set</em>"}</div>
-    </div>
+    </div>` : ""}
     ${callContextParts.length ? `
     <div class="sq-scenario-block sq-scenario-block--call-meta">
       <div class="sq-scenario-label">Tags</div>
       <div class="sq-scenario-value">${callContextParts.map(escapeHtml).join(" · ")}</div>
     </div>` : ""}
-    ${play.practiceFront || play.practiceCoverage || play.practiceBlitz ? `
+    ${defenseParts.length ? `
     <div class="sq-scenario-block sq-scenario-block--defense">
       <div class="sq-scenario-label">Defense</div>
-      <div class="sq-scenario-value sq-defense">${[play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean).map(escapeHtml).join(" / ")}</div>
+      <div class="sq-scenario-value sq-defense">${defenseParts.map(escapeHtml).join(" / ")}</div>
     </div>` : ""}
     ${choicesHtml}
     ${inlineFeedbackHtml}

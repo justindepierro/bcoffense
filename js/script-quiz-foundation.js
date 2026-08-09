@@ -2922,6 +2922,7 @@ function _coachQuizGeneratorPreview(source, kind = "script") {
     currentQuestion: _quizCurrentQuestion,
   };
   const counts = {};
+  const reasonCounts = {};
   const examples = [];
   try {
     _quizMode = modeKey;
@@ -2933,14 +2934,20 @@ function _coachQuizGeneratorPreview(source, kind = "script") {
       const data = _getQuizQuestionAndChoices(item);
       const type = data?.question?.type || "study_card";
       counts[type] = (counts[type] || 0) + 1;
+      const reason = data?.question?.quality?.reason || "";
+      if (reason) reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
       if (examples.length < 3) {
-        const correctLabel = _quizQuestionChoiceLabel(item, data.question);
+        const correctLabel = Array.isArray(data?.choices)
+          ? data.choices.find((choice) => choice.correct)?.label || _quizQuestionChoiceLabel(item, data.question)
+          : _quizQuestionChoiceLabel(item, data.question);
         examples.push({
           type,
           label: _quizQuestionTypeLabel(type),
           prompt: data?.question?.prompt || "Study this one.",
           answer: correctLabel || _quizShortCall(item.play),
           playable: Array.isArray(data?.choices) && data.choices.length >= 2,
+          reason,
+          plan: Array.isArray(data?.question?.planner?.reasons) ? data.question.planner.reasons.slice(0, 2).join(", ") : "",
         });
       }
     });
@@ -2962,6 +2969,7 @@ function _coachQuizGeneratorPreview(source, kind = "script") {
     modeKey,
     total,
     counts,
+    reasonCounts,
     examples,
     studyCards,
     studyCardPct,
@@ -2989,11 +2997,15 @@ function _renderCoachQuizQuestionPreview(source, kind = "script") {
     : preview.playsWithSignals
       ? `Needs at least 2 distinct signal answers; currently ${preview.uniqueSignals}.`
       : "Publish signal clips before signal questions can work.";
+  const blockingReasons = Object.entries(actual.reasonCounts || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([reason, count]) => `${count} ${_quizQualityReasonLabel(reason).toLowerCase()}`);
   const actualRows = actual.examples.length
     ? actual.examples.map((example) => _coachQuizPreviewRow(
       example.label,
       example.playable ? "Play" : "Study",
-      `${example.prompt}${example.answer ? ` Answer: ${example.answer}.` : ""}`,
+      `${example.prompt}${example.answer ? ` Answer: ${example.answer}.` : ""}${example.plan ? ` Chosen for: ${example.plan}.` : ""}${example.reason ? ` Blocked: ${_quizQualityReasonLabel(example.reason)}.` : ""}`,
       example.playable ? "ready" : "needs",
     )).join("")
     : _coachQuizPreviewRow("Study Card", "Study", "No fair generated examples yet.", "needs");
@@ -3006,6 +3018,11 @@ function _renderCoachQuizQuestionPreview(source, kind = "script") {
       ${actual.mostlyStudyCards ? `
         <div class="coach-quiz-study-card-warning">
           Mostly Study Cards: ${actual.studyCardPct}% of sampled reps are not fair multiple-choice yet.
+        </div>
+      ` : ""}
+      ${blockingReasons.length ? `
+        <div class="coach-quiz-study-card-warning">
+          Main blockers: ${escapeHtml(blockingReasons.join(" · "))}.
         </div>
       ` : ""}
       <div class="coach-quiz-preview-grid coach-quiz-preview-grid--actual">
