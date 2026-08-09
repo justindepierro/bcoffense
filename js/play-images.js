@@ -165,6 +165,14 @@
     return null;
   }
 
+  // A 429/408/5xx from the manifest service means it is temporarily overloaded,
+  // not that a diagram is missing. Callers back off on this instead of fanning
+  // out one request per play, which would amplify the overload into a cascade.
+  function _isTransientOverloadStatus(status) {
+    const code = Number(status) || 0;
+    return code === 408 || code === 429 || (code >= 500 && code <= 599);
+  }
+
   function _openDB() {
     const databaseName = _ensureActiveDatabase();
     const existing = _dbPromises.get(databaseName);
@@ -1092,6 +1100,7 @@
     }
     const missing = identityKeys.filter((identityKey) => !_getCachedRemoteManifest(identityKey));
     let method = missing.length ? "fallback" : "cache";
+    let serverBusy = false;
     if (missing.length > 1 && typeof fetch === "function") {
       try {
         // The API intentionally limits each request to 100 media IDs. Split
@@ -1113,6 +1122,9 @@
               },
               body: JSON.stringify({ sigs: batch }),
             });
+            if (!response.ok && _isTransientOverloadStatus(response.status)) {
+              serverBusy = true;
+            }
             responses.push({ batch, data: response.ok ? await response.json().catch(() => null) : null });
           } catch (_err) {
             // Leave this batch uncached. The bounded fallback below can make a
@@ -1142,6 +1154,31 @@
         requested: identityKeys.length,
         missing: missing.length,
         method: "auth-expired",
+        published: Object.values(result).filter((item) => item?.published).length,
+      });
+      return result;
+    }
+    if (serverBusy && unresolvedIdentityKeys.length) {
+      // The batch manifest endpoint returned a transient overload (HTTP 429/5xx).
+      // Fanning out one /images/manifest request per play would amplify that into
+      // a cascade of 503s, so record a short-lived transient error and let the
+      // 2.5s negative TTL retry once the service recovers.
+      unresolvedIdentityKeys.forEach((identityKey) => {
+        _cacheRemoteManifest(identityKey, {
+          ok: false,
+          status: "error",
+          published: false,
+          sig: identityKey,
+          reason: "server-busy",
+        });
+      });
+      identityKeys.forEach((identityKey) => {
+        result[identityKey] = _getCachedRemoteManifest(identityKey);
+      });
+      _recordPerf("media:image-batch-manifest", startedAt, {
+        requested: identityKeys.length,
+        missing: missing.length,
+        method: "server-busy",
         published: Object.values(result).filter((item) => item?.published).length,
       });
       return result;
