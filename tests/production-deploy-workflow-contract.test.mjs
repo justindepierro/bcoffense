@@ -26,8 +26,8 @@ assert.match(workflow, /concurrency:\s*\n\s+group:\s+bcoffense-production-deploy
 assert.match(deployJob, /needs:\s+verify/, "the protected deployment waits for the credential-free verification job");
 assert.match(deployJob, /environment:\s*\n\s+name:\s+production/, "the deployment job is protected by the GitHub production Environment");
 assert.doesNotMatch(verifyJob, /environment:|CLOUDFLARE_(?:ACCOUNT_ID|API_TOKEN)/, "the verification job cannot receive production environment credentials");
-assert.match(workflow, /uses:\s+actions\/checkout@[a-f0-9]{40}\s+#\s+v4\.4\.0[\s\S]*?fetch-depth:\s+0/, "checkout is pinned to an immutable release and preserves history for the exact-main guard");
-assert.match(workflow, /uses:\s+actions\/setup-node@[a-f0-9]{40}\s+#\s+v4\.4\.0[\s\S]*?node-version:\s+22/, "Node setup is pinned to an immutable release and uses the supported runtime");
+assert.match(workflow, /uses:\s+actions\/checkout@[a-f0-9]{40}\s+#\s+v\d+\.\d+\.\d+[\s\S]*?fetch-depth:\s+0/, "checkout is pinned to an immutable release and preserves history for the exact-main guard");
+assert.match(workflow, /uses:\s+actions\/setup-node@[a-f0-9]{40}\s+#\s+v\d+\.\d+\.\d+[\s\S]*?node-version:\s+22/, "Node setup is pinned to an immutable release and uses the supported runtime");
 assert.doesNotMatch(workflow, /uses:\s+actions\/(?:checkout|setup-node)@v/, "the production workflow does not rely on mutable action tags");
 assert.match(verifyJob, /npm --prefix tests ci/, "the credential-free verification job installs the locked browser-test dependencies");
 assert.match(verifyJob, /npm --prefix tests exec -- playwright install --with-deps chromium/, "the credential-free verification job installs Chromium required by the canonical release-quality gate");

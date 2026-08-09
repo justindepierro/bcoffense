@@ -26,8 +26,8 @@ assert.match(workflow, /concurrency:\s*\n\s+group:\s+bcoffense-notification-work
 assert.match(deployJob, /needs:\s+verify/, "the protected Worker deployment waits for credential-free verification");
 assert.match(deployJob, /environment:\s*\n\s+name:\s+production/, "the Worker deployment is protected by the production Environment");
 assert.doesNotMatch(verifyJob, /environment:|CLOUDFLARE_(?:ACCOUNT_ID|API_TOKEN|NOTIFICATION_WORKER_API_TOKEN)/, "the verification job cannot receive Cloudflare credentials");
-assert.match(workflow, /uses:\s+actions\/checkout@[a-f0-9]{40}\s+#\s+v4\.4\.0[\s\S]*?fetch-depth:\s+0/, "checkout is pinned to an immutable revision and preserves history");
-assert.match(workflow, /uses:\s+actions\/setup-node@[a-f0-9]{40}\s+#\s+v4\.4\.0[\s\S]*?node-version:\s+22/, "Node setup is pinned to an immutable revision");
+assert.match(workflow, /uses:\s+actions\/checkout@[a-f0-9]{40}\s+#\s+v\d+\.\d+\.\d+[\s\S]*?fetch-depth:\s+0/, "checkout is pinned to an immutable revision and preserves history");
+assert.match(workflow, /uses:\s+actions\/setup-node@[a-f0-9]{40}\s+#\s+v\d+\.\d+\.\d+[\s\S]*?node-version:\s+22/, "Node setup is pinned to an immutable revision");
 assert.doesNotMatch(workflow, /uses:\s+actions\/(?:checkout|setup-node)@v/, "the Worker workflow avoids mutable action tags");
 assert.match(verifyJob, /npm --prefix tests ci/, "the credential-free verification job installs locked test dependencies");
 assert.match(verifyJob, /\.\/scripts\/release-quality-gate\.sh/, "the credential-free verification job runs the canonical quality gate");
