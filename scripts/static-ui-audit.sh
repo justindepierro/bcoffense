@@ -51,7 +51,13 @@ USAGE
 done
 
 if ! command -v rg >/dev/null 2>&1; then
-  echo "static-ui-audit: ripgrep (rg) is required" >&2
+  echo "static-ui-audit: ripgrep (rg) not found — install with 'brew install ripgrep'." >&2
+  # In warn-only mode this heuristic must never block a run just because the
+  # optional tool is absent; skip cleanly. A strict gate still fails closed.
+  if [[ "$WARN_ONLY" == "true" ]]; then
+    echo "static-ui-audit: skipped (warn-only, ripgrep unavailable)." >&2
+    exit 0
+  fi
   exit 2
 fi
 
