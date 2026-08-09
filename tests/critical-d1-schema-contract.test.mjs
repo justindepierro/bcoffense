@@ -27,6 +27,7 @@ assert.match(probeSql, /^SELECT\s+'object'\s+AS\s+kind/im, "critical schema prob
 assert.match(probeSql, /FROM sqlite_master/, "critical schema probe reads sqlite_master");
 assert.match(probeSql, /pragma_table_info\('authoritative_quiz_sessions'\)/, "critical schema probe reads authoritative session columns");
 assert.match(probeSql, /pragma_table_info\('authoritative_quiz_questions'\)/, "critical schema probe reads authoritative question columns");
+assert.match(probeSql, /pragma_index_info\('idx_login_attempts_attempted_at'\)/, "critical schema probe reads the login-ledger cleanup index definition");
 assert.match(probeSql, /pragma_index_info\('idx_authoritative_quiz_sessions_active_player'\)/, "critical schema probe reads the active-session index definition");
 assert.doesNotMatch(probeSql, /\b(?:ALTER|CREATE|DELETE|DROP|INSERT|REPLACE|UPDATE|VACUUM)\b/i, "critical schema probe contains no write or DDL verb");
 
@@ -51,6 +52,11 @@ assert.equal(
   true,
   "critical schema contract names the authoritative question index",
 );
+assert.equal(
+  Object.keys(CRITICAL_D1_SCHEMA.indexes).includes("idx_login_attempts_attempted_at"),
+  true,
+  "critical schema contract names the login-ledger cleanup index",
+);
 
 const parsedRemoteRows = parseD1ExecuteJson(JSON.stringify([{ success: true, results: localRows }]));
 assert.equal(
@@ -68,6 +74,17 @@ assert.match(
   formatCriticalSchemaReport(missingIndexResult),
   /missing index idx_authoritative_quiz_sessions_active_player/,
   "the failure identifies the missing critical index",
+);
+
+const missingLoginCleanupIndexRows = localRows.filter((row) => !(
+  row.kind === "object" && row.scope === "index" && row.name === "idx_login_attempts_attempted_at"
+));
+const missingLoginCleanupIndexResult = verifyCriticalSchemaRows(missingLoginCleanupIndexRows);
+assert.equal(missingLoginCleanupIndexResult.ok, false, "a missing login-ledger cleanup index fails closed");
+assert.match(
+  formatCriticalSchemaReport(missingLoginCleanupIndexResult),
+  /missing index idx_login_attempts_attempted_at/,
+  "the failure identifies the missing login-ledger cleanup index",
 );
 
 const missingColumnRows = localRows.filter((row) => !(

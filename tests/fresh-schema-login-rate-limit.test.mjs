@@ -35,6 +35,14 @@ const usernameCount = db.prepare(
 assert.equal(ipCount.n, 1, "login IP rate-limit query must execute against a fresh schema");
 assert.equal(usernameCount.n, 1, "login username rate-limit query must execute against a fresh schema");
 
+const cleanupPlan = db.prepare(
+  "EXPLAIN QUERY PLAN DELETE FROM login_attempts WHERE attempted_at < ?",
+).all(now - 86400);
+assert.ok(
+  cleanupPlan.some((step) => /USING INDEX idx_login_attempts_attempted_at/i.test(String(step.detail || ""))),
+  `fresh schema must index login-ledger cleanup by attempted_at: ${JSON.stringify(cleanupPlan)}`,
+);
+
 db.prepare("DELETE FROM login_attempts WHERE attempted_at < ?").run(now - 86400);
 db.close();
 
