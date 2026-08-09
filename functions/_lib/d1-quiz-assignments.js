@@ -198,6 +198,33 @@ export async function getQuizAssignmentForStaff(db, teamId, assignmentId) {
   return { ...mapAssignment(row), recipients: (recipients.results || []).map((recipient) => mapAssignment({ items_json: "[]" }, recipient).recipient) };
 }
 
+/**
+ * Re-check the current account boundary immediately before a staff resend.
+ *
+ * Assignment recipient rows are historical: a player may have been disabled,
+ * moved to another team, or had their account role changed after the original
+ * homework was published. Delivery must use the present users row rather than
+ * treating that old recipient record as ongoing authorization.
+ */
+export async function getActiveQuizAssignmentRecipientIds(db, teamId, assignmentId) {
+  const id = cleanText(assignmentId, 128);
+  if (!id) return [];
+  const result = await db.prepare(
+    `SELECT r.user_id
+     FROM quiz_assignment_recipients r
+     JOIN quiz_assignments a ON a.id = r.assignment_id
+     JOIN users u ON u.id = r.user_id
+     WHERE r.assignment_id = ?
+       AND a.team_id = ?
+       AND u.team_id = ?
+       AND u.role = 'player'
+       AND u.status = 'active'
+     ORDER BY r.assigned_at ASC
+     LIMIT 300`,
+  ).bind(id, teamId, teamId).all();
+  return [...new Set((result.results || []).map((row) => cleanText(row.user_id, 128)).filter(Boolean))];
+}
+
 export async function archiveQuizAssignment(db, teamId, assignmentId) {
   const id = cleanText(assignmentId, 128);
   const now = nowUnix();

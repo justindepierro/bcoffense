@@ -5,11 +5,19 @@ import { getTeamId } from "../../_lib/d1-threads.js";
 import { createNotification } from "../../_lib/d1-notifications.js";
 import { sendPushToUser } from "../../_lib/d1-push.js";
 import { hasCoachPermission } from "../../_lib/staff-access.js";
+import { RequestBodyError, readBoundedJsonObject } from "../../_lib/request-body.js";
 import {
   archiveQuizAssignment, createQuizAssignment, getAssignmentPlayers, getCoachQuizAssignments,
-  getPlayerQuizAssignments, getQuizAssignmentForStaff, isQuizAssignmentStaff, recordLegacyQuizAssignmentPractice,
+  getActiveQuizAssignmentRecipientIds, getPlayerQuizAssignments, getQuizAssignmentForStaff, isQuizAssignmentStaff, recordLegacyQuizAssignmentPractice,
   markQuizAssignmentOpened, publishQuizAssignment, recordQuizAssignmentDelivery, saveQuizAssignmentDraft,
 } from "../../_lib/d1-quiz-assignments.js";
+
+// Quiz payloads include a frozen set of up to 60 full play records and
+// coach-authored questions. Keep enough headroom for the largest supported
+// assignment snapshot, while still placing a firm finite bound before JSON
+// parsing can buffer an attacker-controlled body.
+const MAX_QUIZ_ASSIGNMENT_BODY_BYTES = 2 * 1024 * 1024;
+const MAX_QUIZ_ASSIGNMENT_ACTION_LENGTH = 32;
 
 function canManageQuizAssignments(session) {
   return isQuizAssignmentStaff(session) && hasCoachPermission(session, "feature:quiz_assignments");
@@ -22,6 +30,26 @@ async function sessionContext(request, env) {
   const teamId = await getTeamId(env.DB, session);
   if (!teamId) return { error: authJson({ ok: false, error: "Team access is not configured." }, { status: 503 }) };
   return { session, teamId };
+}
+
+function quizAssignmentBodyError(error) {
+  if (error instanceof RequestBodyError && error.status === 413) {
+    return authJson({ ok: false, error: "Homework request is too large." }, { status: 413 });
+  }
+  if (error instanceof RequestBodyError && ["invalid_object", "invalid_action"].includes(error.code)) {
+    return authJson({ ok: false, error: "Invalid request." }, { status: 400 });
+  }
+  return authJson({ ok: false, error: "Invalid JSON." }, { status: 400 });
+}
+
+async function readQuizAssignmentBody(request) {
+  const body = await readBoundedJsonObject(request, { maxBytes: MAX_QUIZ_ASSIGNMENT_BODY_BYTES });
+  if (Object.prototype.hasOwnProperty.call(body, "action")) {
+    if (typeof body.action !== "string" || body.action.length > MAX_QUIZ_ASSIGNMENT_ACTION_LENGTH) {
+      throw new RequestBodyError("Invalid homework action.", 400, "invalid_action");
+    }
+  }
+  return body;
 }
 
 export async function onRequestGet(context) {
@@ -47,11 +75,8 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   const ctx = await sessionContext(context.request, context.env);
   if (ctx.error) return ctx.error;
-  let body = {};
-  try { body = await context.request.json(); } catch (_) { return authJson({ ok: false, error: "Invalid JSON." }, { status: 400 }); }
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return authJson({ ok: false, error: "Invalid request." }, { status: 400 });
-  }
+  let body;
+  try { body = await readQuizAssignmentBody(context.request); } catch (error) { return quizAssignmentBodyError(error); }
   try {
     if (body.action === "record-practice" || body.action === "record-attempt") {
       if (ctx.session.role !== "player" || !ctx.session.d1UserId) return authJson({ ok: false, error: "Player access required." }, { status: 403 });
@@ -71,7 +96,12 @@ export async function onRequestPost(context) {
     if (body.action === "resend") {
       const assignment = await getQuizAssignmentForStaff(context.env.DB, ctx.teamId, body.assignmentId);
       if (assignment.status !== "published") throw new Error("Only active homework can be resent.");
-      const recipients = (assignment.recipients || []).filter((recipient) => !recipient.completedAt).map((recipient) => recipient.userId);
+      const activeRecipientIds = new Set(
+        await getActiveQuizAssignmentRecipientIds(context.env.DB, ctx.teamId, assignment.id),
+      );
+      const recipients = (assignment.recipients || [])
+        .filter((recipient) => !recipient.completedAt && activeRecipientIds.has(recipient.userId))
+        .map((recipient) => recipient.userId);
       if (!recipients.length) throw new Error("Everyone has completed this homework.");
       const bodyCopy = `${assignment.items.length + (assignment.customQuestions?.length || 0)} questions${assignment.dueAt ? " · check the due date" : ""}`;
       await Promise.allSettled(recipients.map(async (userId) => {
