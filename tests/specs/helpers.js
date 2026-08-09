@@ -249,6 +249,19 @@ function isIgnoredRuntimeIssue(issue, extraPatterns = []) {
   return [...RUNTIME_IGNORE_PATTERNS, ...extraPatterns].some((pattern) => pattern.test(text));
 }
 
+function isExpectedReloadCancellation(request) {
+  if (
+    request.method() !== "GET" ||
+    request.failure()?.errorText !== "net::ERR_ABORTED"
+  ) return false;
+
+  const url = request.url();
+  return (
+    /\/auth\/me(?:\?|$)/.test(url) ||
+    /^https:\/\/fonts\.(?:gstatic|googleapis)\.com\//i.test(url)
+  );
+}
+
 async function installRuntimeErrorGuards(page) {
   page.__bcRuntimeIssues = [];
   page.__bcMainFrameNavigations = 0;
@@ -291,16 +304,11 @@ async function installRuntimeErrorGuards(page) {
   page.on("requestfailed", (request) => {
     const url = request.url();
     if (/^(data|blob|about):/i.test(url)) return;
-    // A test-issued page.reload() intentionally cancels the prior document's
-    // session probe. Chromium reports that cancellation as ERR_ABORTED even
-    // when the replacement document immediately starts and completes its own
-    // /auth/me request. Keep the exception deliberately narrow: a failed auth
-    // request with any other error, method, or route remains a test failure.
-    if (
-      request.method() === "GET" &&
-      /\/auth\/me(?:\?|$)/.test(url) &&
-      request.failure()?.errorText === "net::ERR_ABORTED"
-    ) return;
+    // A test-issued page.reload() intentionally cancels prior-document work.
+    // Chromium reports those cancellations as ERR_ABORTED. Only the prior
+    // /auth/me probe and Google font GETs are exempt; any app/API/local asset,
+    // other host, method, or error class remains a test failure.
+    if (isExpectedReloadCancellation(request)) return;
     page.__bcRuntimeIssues.push({
       type: "requestfailed",
       message: request.failure()?.errorText || "request failed",

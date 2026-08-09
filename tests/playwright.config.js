@@ -37,7 +37,10 @@ module.exports = defineConfig({
     ? {
         command: `node ../scripts/e2e-local-server.mjs --port=${LOCAL_PORT}`,
         url: BASE_URL,
-        reuseExistingServer: true,
+        // Local test launchers choose a fresh loopback port for every run.
+        // Never attach to an unknown process on that port: it may be an old
+        // server from a different worktree with different app code.
+        reuseExistingServer: false,
         timeout: 15_000,
       }
     : undefined,

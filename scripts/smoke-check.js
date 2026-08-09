@@ -3797,6 +3797,7 @@ function checkE2eLocalHarness() {
   const helpers = read("tests/specs/helpers.js");
   const dataIntegritySpec = read("tests/specs/08-data-integrity.spec.js");
   const hydrationSpec = read("tests/specs/09-first-load-hydration.spec.js");
+  const hydrationLauncher = read("tests/run-local-hydration.mjs");
   const server = read("scripts/e2e-local-server.mjs");
 
   if (pkg.scripts?.["test:e2e:local"] !== "npm --prefix tests run test:local") {
@@ -3817,16 +3818,27 @@ function checkE2eLocalHarness() {
     !/test:local:phone/.test(JSON.stringify(testsPkg.scripts || {})) ||
     !/--project=ipad-portrait --project=ipad-landscape/.test(testsPkg.scripts?.["test:local:ipad"] || "") ||
     !/--project=chromium-desktop --project=ipad-portrait --project=ipad-landscape --project=iphone --project=phone-narrow/.test(testsPkg.scripts?.["test:local:all"] || "") ||
-    !/specs\/09-first-load-hydration\.spec\.js/.test(testsPkg.scripts?.["test:local:hydration"] || "")
+    testsPkg.scripts?.["test:local:hydration"] !== "node run-local-hydration.mjs"
   ) {
     fail("tests package does not expose the local viewport E2E matrix");
   }
   if (
     !/BCOFFENSE_E2E_LOCAL/.test(config) ||
     !/webServer: E2E_LOCAL/.test(config) ||
-    !/scripts\/e2e-local-server\.mjs/.test(config)
+    !/scripts\/e2e-local-server\.mjs/.test(config) ||
+    !/reuseExistingServer:\s*false/.test(config)
   ) {
     fail("Playwright config is not wired to the local auth server");
+  }
+  if (
+    !/findFreeLoopbackPort/.test(hydrationLauncher) ||
+    !/port:\s*0/.test(hydrationLauncher) ||
+    !/BCOFFENSE_E2E_LOCAL:\s*"1"/.test(hydrationLauncher) ||
+    !/BCOFFENSE_E2E_PORT/.test(hydrationLauncher) ||
+    !/BASE_URL:\s*baseUrl/.test(hydrationLauncher) ||
+    !/09-first-load-hydration\.spec\.js/.test(hydrationLauncher)
+  ) {
+    fail("local hydration launcher does not isolate its Playwright server");
   }
   if (
     !/appLogin\.isVisible\(\)/.test(helpers) ||
@@ -3834,6 +3846,10 @@ function checkE2eLocalHarness() {
     !/installRuntimeErrorGuards/.test(helpers) ||
     !/assertRuntimeClean/.test(helpers) ||
     !/requestfailed/.test(helpers) ||
+    !/function isExpectedReloadCancellation\(request\)/.test(helpers) ||
+    !/request\.method\(\) !== "GET"/.test(helpers) ||
+    !/request\.failure\(\)\?\.errorText !== "net::ERR_ABORTED"/.test(helpers) ||
+    !/\^https:\\\/\\\/fonts\\\.\(\?:gstatic\|googleapis\)\\\.com\\\//.test(helpers) ||
     !/framenavigated/.test(helpers) ||
     !/Login did not complete/.test(helpers) ||
     !/test:e2e:local/.test(helpers)
