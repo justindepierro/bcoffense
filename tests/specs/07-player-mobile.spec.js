@@ -669,7 +669,22 @@ test.describe("Player mobile experience", () => {
 
     const hub = page.locator("#playerQuizHubOverlay");
     const startButton = hub.locator("#authoritativeQuizStartBtn");
+    const verifiedLaunch = hub.locator("#authoritativeQuizLaunch");
+    const practiceLaunch = hub.locator("#playerQuizPracticeLaunch");
     await expect.poll(() => page.evaluate(() => window.getCurrentAuthUser?.()?.d1UserId || "")).toBe("player-e2e");
+    await expect(verifiedLaunch).toContainText("Team standings");
+    await expect(verifiedLaunch).toContainText("only quiz result that can change team standings");
+    await expect(practiceLaunch).toContainText("Local practice");
+    await expect(practiceLaunch).toContainText("works offline");
+    await expect(practiceLaunch).toContainText("never changes team standings");
+    await expect(hub.locator(".player-quiz-source-card--signals")).toContainText("practice-only");
+    await expect(hub.locator("#playerQuizStartSelectedBtn")).toHaveText("Start local practice");
+    await expect.poll(() => page.evaluate(() => {
+      const verified = document.getElementById("authoritativeQuizLaunch");
+      const practice = document.getElementById("playerQuizPracticeLaunch");
+      return Boolean(verified && practice && (verified.compareDocumentPosition(practice) & Node.DOCUMENT_POSITION_FOLLOWING));
+    })).toBe(true);
+    await assertNoHorizontalOverflow(page);
     // The launcher refreshes when a player changes sources. Re-select the
     // already chosen script so this test exercises the named-account gate,
     // rather than retaining the local-dev fixture's initial anonymous copy.

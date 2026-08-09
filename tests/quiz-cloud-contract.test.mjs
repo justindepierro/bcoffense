@@ -20,7 +20,7 @@ async function source(relativePath) {
 
 console.log("\n▸ Quiz Cloudflare data path");
 
-const [release, storage, quizFoundation, quizRuntime, scriptPlayer, sync, releaseClient, revision, syncRoute, indexHtml] = await Promise.all([
+const [release, storage, quizFoundation, quizRuntime, scriptPlayer, sync, releaseClient, revision, syncRoute, authoritativeQuiz, indexHtml] = await Promise.all([
   source("../functions/_lib/player-release.js"),
   source("../js/storage.js"),
   source("../js/script-quiz-foundation.js"),
@@ -30,6 +30,7 @@ const [release, storage, quizFoundation, quizRuntime, scriptPlayer, sync, releas
   source("../js/cloud-sync.js"),
   source("../functions/workspace/revision.js"),
   source("../functions/api/leaderboard/sync.js"),
+  source("../js/player-quiz-authoritative.js"),
   source("../index.html"),
 ]);
 const quiz = `${quizFoundation}\n${quizRuntime}\n${scriptPlayer}`;
@@ -88,6 +89,16 @@ assert(
     && indexHtml.includes('data-action="setPlayerQuizSource"')
     && indexHtml.includes('data-action="startPlayerQuizHubSelection"'),
   "quiz setup selects the source, challenge, and position before one explicit start action",
+);
+assert(
+  indexHtml.indexOf('id="authoritativeQuizLaunch"') < indexHtml.indexOf('id="playerQuizPracticeLaunch"')
+    && indexHtml.includes("Team standings · online")
+    && indexHtml.includes("Local practice · works offline")
+    && indexHtml.includes("Signal Study is practice-only")
+    && quizRuntime.includes('"Start local practice"')
+    && authoritativeQuiz.includes("Signals and homework stay practice-only.")
+    && /else if \(source\?\.error\) \{[\s\S]*?disabled = true;/.test(authoritativeQuiz),
+  "eligible players see the verified team-standings path before explicit local practice, while signals and homework remain practice-only",
 );
 assert(
   scriptPlayer.includes("keepCurrentTab: opts.keepCurrentTab === true")

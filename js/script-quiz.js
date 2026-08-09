@@ -815,8 +815,8 @@ function _renderPlayerQuizHub() {
         : _getPlayerQuizScriptOptions().some((option) => option.id === _playerQuizSelectedScriptId && option.playerSelectable);
     startBtn.disabled = !sourceReady || !mode || mode.disabled;
     startBtn.textContent = !sourceReady
-      ? "Choose an available quiz source"
-      : `Start ${mode?.label || "Quiz"}`;
+      ? "Choose a local practice source"
+      : "Start local practice";
   }
 
   // This function owns refreshes inside the existing hub. Re-entering the page
