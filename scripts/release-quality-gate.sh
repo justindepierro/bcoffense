@@ -10,4 +10,5 @@ node tests/fresh-schema-login-rate-limit.test.mjs
 node tests/critical-d1-schema-contract.test.mjs
 node tests/admin-bootstrap-contract.test.mjs
 node tests/admin-bootstrap-runtime.test.mjs
+node tests/account-management-request-body-contract.test.mjs
 npm run test:quality

@@ -24,6 +24,7 @@ function canManagedCoachUseWriteRoute(session, pathname) {
     return hasCoachPermission(session, "feature:comments");
   }
   if (pathname.startsWith("/api/posts/") && !pathname.includes("/official")) return hasCoachPermission(session, "feature:comments");
+  if (pathname === "/api/notifications/broadcast") return hasCoachPermission(session, "feature:publish_team");
   if (pathname.startsWith("/api/notifications/") && !pathname.includes("/broadcast")) return true;
 
   return canManagedCoachWrite(session);

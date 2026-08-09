@@ -5,8 +5,9 @@
  * Public route.
  */
 
-import { withSecurityHeaders } from "../_lib/auth.js";
+import { PUBLIC_AUTH_BODY_MAX_BYTES, withSecurityHeaders } from "../_lib/auth.js";
 import { verifyAndConsumeToken, updateD1Password, validatePassword } from "../_lib/d1-auth.js";
+import { readBoundedFormObject } from "../_lib/request-body.js";
 
 function escHtml(s) {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -98,8 +99,10 @@ export async function onRequest(context) {
   // ── POST — update password ────────────────────────────────────────────────
   let body = {};
   try {
-    const fd = await request.formData();
-    body = Object.fromEntries(fd.entries());
+    body = await readBoundedFormObject(request, {
+      maxBytes: PUBLIC_AUTH_BODY_MAX_BYTES,
+      rejectDuplicateFields: ["token", "password", "confirmPassword"],
+    });
   } catch (_) {
     return errorPage("Invalid form submission.");
   }

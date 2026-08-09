@@ -7,6 +7,7 @@
 
 import {
   createSessionCookie,
+  PUBLIC_AUTH_BODY_MAX_BYTES,
   withSecurityHeaders,
 } from "../_lib/auth.js";
 import {
@@ -15,6 +16,7 @@ import {
   activateD1User,
   validatePassword,
 } from "../_lib/d1-auth.js";
+import { readBoundedFormObject } from "../_lib/request-body.js";
 
 function renderForm(opts = {}) {
   const err = opts.error ? `<p class="error">${escHtml(opts.error)}</p>` : "";
@@ -133,8 +135,10 @@ export async function onRequest(context) {
 
   let body = {};
   try {
-    const fd = await request.formData();
-    body = Object.fromEntries(fd.entries());
+    body = await readBoundedFormObject(request, {
+      maxBytes: PUBLIC_AUTH_BODY_MAX_BYTES,
+      rejectDuplicateFields: ["token", "password", "confirmPassword"],
+    });
   } catch (_) {
     return errorPage("Invalid form submission.");
   }

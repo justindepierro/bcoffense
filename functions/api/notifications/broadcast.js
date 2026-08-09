@@ -7,6 +7,7 @@
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
 import { getTeamId } from "../../_lib/d1-threads.js";
 import { notifyTeamPlayers } from "../../_lib/d1-notifications.js";
+import { hasCoachPermission, isManagedCoachSession } from "../../_lib/staff-access.js";
 import { RequestBodyError, readBoundedJsonObject } from "../../_lib/request-body.js";
 
 const STAFF_ROLES = new Set(["admin", "coach", "assistant", "assistant_coach"]);
@@ -45,6 +46,12 @@ export async function onRequestPost(context) {
   if (!session) return authJson({ ok: false, error: "Authentication required." }, { status: 401 });
   if (!STAFF_ROLES.has(session.role)) {
     return authJson({ ok: false, error: "Coach access required." }, { status: 403 });
+  }
+  // A legacy/full coach remains able to publish exactly as before. A D1-backed
+  // managed coach, however, only gets this team-wide fan-out after an admin
+  // grants the explicit publishing capability.
+  if (isManagedCoachSession(session) && !hasCoachPermission(session, "feature:publish_team")) {
+    return authJson({ ok: false, error: "Coach publishing access required." }, { status: 403 });
   }
   if (!env.DB) return authJson({ ok: false, error: "Database not configured." }, { status: 503 });
 

@@ -32,6 +32,7 @@ export const CRITICAL_D1_SCHEMA = Object.freeze({
   indexes: Object.freeze({
     idx_login_attempts_ip: Object.freeze({ table: "login_attempts", columns: Object.freeze(["ip_addr", "attempted_at"]) }),
     idx_login_attempts_user: Object.freeze({ table: "login_attempts", columns: Object.freeze(["username", "attempted_at"]) }),
+    idx_login_attempts_attempted_at: Object.freeze({ table: "login_attempts", columns: Object.freeze(["attempted_at"]) }),
     idx_account_session_state_invalid_before: Object.freeze({
       table: "account_session_state", columns: Object.freeze(["invalid_before"]),
     }),

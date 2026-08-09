@@ -13,6 +13,33 @@
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../_lib/auth.js";
 import { createD1User, createVerificationToken, findUserByEmail, validateEmail } from "../_lib/d1-auth.js";
 import { sendEmail, inviteEmailHtml, inviteEmailText } from "../_lib/email.js";
+import { RequestBodyError, readBoundedJsonOrFormObject } from "../_lib/request-body.js";
+
+const MAX_INVITE_REQUEST_BYTES = 8 * 1024;
+const MAX_EMAIL_LENGTH = 254;
+const MAX_DISPLAY_NAME_LENGTH = 160;
+const MAX_NAME_PART_LENGTH = 80;
+
+function textField(body, fieldNames, label, maxLength) {
+  for (const fieldName of fieldNames) {
+    const value = body[fieldName];
+    // Keep the legacy camelCase-first fallback behavior, but never coerce a
+    // JSON object or array into an account identity string.
+    if (value === undefined || value === null || value === "") continue;
+    if (typeof value !== "string") return { error: `${label} must be text.` };
+    const text = value.trim();
+    if (text.length > maxLength) return { error: `${label} is too long.` };
+    return { value: text };
+  }
+  return { value: "" };
+}
+
+function inviteBodyError(error) {
+  if (error instanceof RequestBodyError && error.status === 413) {
+    return authJson({ ok: false, error: "Request body is too large." }, { status: 413 });
+  }
+  return authJson({ ok: false, error: "Invalid request body." }, { status: 400 });
+}
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -39,24 +66,26 @@ export async function onRequest(context) {
     return authJson({ ok: false, error: "Team access is not configured for this coach account." }, { status: 503 });
   }
 
-  // Parse body
-  let body = {};
+  // Parse only a bounded, text-only JSON or form object before reading any
+  // account fields. These staff writes must not buffer attacker-sized bodies.
+  let body;
   try {
-    const ct = request.headers.get("Content-Type") || "";
-    if (ct.includes("application/json")) {
-      body = await request.json();
-    } else {
-      const fd = await request.formData();
-      body = Object.fromEntries(fd.entries());
-    }
-  } catch (_) {
-    return authJson({ ok: false, error: "Invalid request body." }, { status: 400 });
+    body = await readBoundedJsonOrFormObject(request, { maxBytes: MAX_INVITE_REQUEST_BYTES });
+  } catch (error) {
+    return inviteBodyError(error);
   }
 
-  const email = String(body.email || "").trim().toLowerCase();
-  const displayName = String(body.displayName || body.display_name || "").trim();
-  const firstName = String(body.firstName || body.first_name || "").trim();
-  const lastName = String(body.lastName || body.last_name || "").trim();
+  const emailField = textField(body, ["email"], "Email", MAX_EMAIL_LENGTH);
+  const displayNameField = textField(body, ["displayName", "display_name"], "Display name", MAX_DISPLAY_NAME_LENGTH);
+  const firstNameField = textField(body, ["firstName", "first_name"], "First name", MAX_NAME_PART_LENGTH);
+  const lastNameField = textField(body, ["lastName", "last_name"], "Last name", MAX_NAME_PART_LENGTH);
+  const invalidField = [emailField, displayNameField, firstNameField, lastNameField].find((field) => field.error);
+  if (invalidField?.error) return authJson({ ok: false, error: invalidField.error }, { status: 422 });
+
+  const email = emailField.value.toLowerCase();
+  const displayName = displayNameField.value;
+  const firstName = firstNameField.value;
+  const lastName = lastNameField.value;
 
   // Validate
   const emailErr = validateEmail(email);

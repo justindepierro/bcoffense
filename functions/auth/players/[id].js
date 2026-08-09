@@ -14,6 +14,37 @@ import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib
 import { findUserById, createVerificationToken, setD1SessionInvalidBefore } from "../../_lib/d1-auth.js";
 import { sendEmail, inviteEmailHtml, inviteEmailText } from "../../_lib/email.js";
 import { hasCoachPermission, parseCoachPermissions } from "../../_lib/staff-access.js";
+import { RequestBodyError, readBoundedJsonOrFormObject } from "../../_lib/request-body.js";
+
+const MAX_PLAYER_ACTION_REQUEST_BYTES = 4 * 1024;
+const MAX_PLAYER_ACTION_LENGTH = 32;
+const MAX_COACH_PERMISSION_ENTRIES = 32;
+const MAX_COACH_PERMISSION_KEY_LENGTH = 64;
+
+function requestedCoachPermissions(value) {
+  let source = value;
+  if (typeof source === "string") {
+    try {
+      source = JSON.parse(source);
+    } catch (_) {
+      source = null;
+    }
+  }
+  if (!Array.isArray(source)) return [];
+  return parseCoachPermissions(
+    source
+      .slice(0, MAX_COACH_PERMISSION_ENTRIES)
+      .filter((key) => typeof key === "string" && key.length <= MAX_COACH_PERMISSION_KEY_LENGTH),
+    [],
+  );
+}
+
+function playerActionBodyError(error) {
+  if (error instanceof RequestBodyError && error.status === 413) {
+    return authJson({ ok: false, error: "Request body is too large." }, { status: 413 });
+  }
+  return authJson({ ok: false, error: "Invalid request body." }, { status: 400 });
+}
 
 export async function onRequest(context) {
   const { request, env, params } = context;
@@ -30,15 +61,16 @@ export async function onRequest(context) {
   const userId = String(params.id || "").trim();
   if (!userId) return authJson({ ok: false, error: "User ID required." }, { status: 400 });
 
-  let body = {};
+  let body;
   try {
-    const ct = request.headers.get("Content-Type") || "";
-    body = ct.includes("application/json") ? await request.json() : Object.fromEntries(await request.formData());
-  } catch (_) {
-    return authJson({ ok: false, error: "Invalid request body." }, { status: 400 });
+    body = await readBoundedJsonOrFormObject(request, { maxBytes: MAX_PLAYER_ACTION_REQUEST_BYTES });
+  } catch (error) {
+    return playerActionBodyError(error);
   }
 
-  const action = String(body.action || "").trim();
+  const action = typeof body.action === "string" && body.action.trim().length <= MAX_PLAYER_ACTION_LENGTH
+    ? body.action.trim()
+    : "";
   if (!["resend", "copy-link", "disable", "enable", "set-coach-access"].includes(action)) {
     return authJson({ ok: false, error: "Unknown action." }, { status: 400 });
   }
@@ -77,7 +109,7 @@ export async function onRequest(context) {
     if (user.role !== "coach") {
       return authJson({ ok: false, error: "Coach access can only be set for a coach account." }, { status: 409 });
     }
-    const permissions = parseCoachPermissions(body.permissions, []);
+    const permissions = requestedCoachPermissions(body.permissions);
     const now = Math.floor(Date.now() / 1000);
     await env.DB
       .prepare(`INSERT INTO staff_access (user_id, team_id, permissions_json, updated_by, updated_at)

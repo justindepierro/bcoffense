@@ -7,6 +7,7 @@ import {
   verifyCredentials,
   withSecurityHeaders,
 } from "../_lib/auth.js";
+import { RequestBodyError } from "../_lib/request-body.js";
 import { getPrimaryTeamId } from "../_lib/team-context.js";
 
 // ── Rate limit config ─────────────────────────────────────────────────────────
@@ -87,8 +88,13 @@ export async function onRequestPost(context) {
   let body;
   try {
     body = await parseLoginBody(request);
-  } catch (_err) {
-    return loginFailure(request, "Could not read login form.", 400);
+  } catch (error) {
+    const bodyTooLarge = error instanceof RequestBodyError && error.status === 413;
+    return loginFailure(
+      request,
+      bodyTooLarge ? "Login request is too large." : "Could not read login form.",
+      bodyTooLarge ? 413 : 400,
+    );
   }
 
   // ── IP + username rate limit ──────────────────────────────────────────────
