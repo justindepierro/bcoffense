@@ -40,6 +40,10 @@ routes.forEach((route, index) => {
 
 assert.match(routes[0], /function textField\([\s\S]*?typeof value !== "string"/, "invite rejects non-text identity fields instead of coercing them");
 assert.match(routes[1], /function textField\([\s\S]*?typeof value !== "string"/, "player creation rejects non-text identity fields instead of coercing them");
+assert.match(routes[0], /MAX_EMAIL_LENGTH = 254[\s\S]*?MAX_DISPLAY_NAME_LENGTH = 160[\s\S]*?MAX_NAME_PART_LENGTH = 80/, "invite declares compact identity field ceilings");
+assert.match(routes[1], /MAX_EMAIL_LENGTH = 254[\s\S]*?MAX_DISPLAY_NAME_LENGTH = 160[\s\S]*?MAX_NAME_PART_LENGTH = 80[\s\S]*?MAX_ROLE_LENGTH = 16/, "player creation declares compact identity and role ceilings");
+assert.match(routes[0], /text\.length > maxLength[\s\S]*?is too long/, "invite rejects oversized individual identity fields");
+assert.match(routes[1], /text\.length > maxLength[\s\S]*?is too long/, "player creation rejects oversized individual identity fields");
 assert.doesNotMatch(routes[0], /String\(body\.(?:email|displayName|firstName|lastName)/, "invite does not coerce identity fields through String()");
 assert.doesNotMatch(routes[1], /String\(body\.(?:email|displayName|firstName|lastName|role)/, "player creation does not coerce account fields through String()");
 assert.match(routes[2], /MAX_PLAYER_ACTION_LENGTH = 32/, "player actions have a compact action-name ceiling");
@@ -48,4 +52,4 @@ assert.match(routes[2], /MAX_COACH_PERMISSION_ENTRIES = 32/, "coach access submi
 assert.match(routes[2], /typeof source === "string"[\s\S]*?JSON\.parse\(source\)[\s\S]*?Array\.isArray\(source\)/, "coach access accepts the normal JSON permissions array and compatible form encoding");
 assert.match(routes[2], /parseCoachPermissions\([\s\S]*?slice\(0, MAX_COACH_PERMISSION_ENTRIES\)[\s\S]*?typeof key === "string"/, "coach access bounds entries and filters them through the existing allowlist");
 
-console.log("account-management request body contract: 27 assertions passed");
+console.log("account-management request body contract: 31 assertions passed");

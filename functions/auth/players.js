@@ -10,13 +10,19 @@ import { DEFAULT_MANAGED_COACH_PERMISSIONS, hasCoachPermission, parseCoachPermis
 import { RequestBodyError, readBoundedJsonOrFormObject } from "../_lib/request-body.js";
 
 const MAX_PLAYER_CREATE_REQUEST_BYTES = 8 * 1024;
+const MAX_EMAIL_LENGTH = 254;
+const MAX_DISPLAY_NAME_LENGTH = 160;
+const MAX_NAME_PART_LENGTH = 80;
+const MAX_ROLE_LENGTH = 16;
 
-function textField(body, fieldNames, label) {
+function textField(body, fieldNames, label, maxLength) {
   for (const fieldName of fieldNames) {
     const value = body[fieldName];
     if (value === undefined || value === null || value === "") continue;
     if (typeof value !== "string") return { error: `${label} must be text.` };
-    return { value: value.trim() };
+    const text = value.trim();
+    if (text.length > maxLength) return { error: `${label} is too long.` };
+    return { value: text };
   }
   return { value: "" };
 }
@@ -114,11 +120,11 @@ export async function onRequest(context) {
       return playerCreateBodyError(error);
     }
 
-    const emailField = textField(body, ["email"], "Email");
-    const displayNameField = textField(body, ["displayName", "display_name"], "Display name");
-    const firstNameField = textField(body, ["firstName"], "First name");
-    const lastNameField = textField(body, ["lastName"], "Last name");
-    const roleField = textField(body, ["role"], "Role");
+    const emailField = textField(body, ["email"], "Email", MAX_EMAIL_LENGTH);
+    const displayNameField = textField(body, ["displayName", "display_name"], "Display name", MAX_DISPLAY_NAME_LENGTH);
+    const firstNameField = textField(body, ["firstName"], "First name", MAX_NAME_PART_LENGTH);
+    const lastNameField = textField(body, ["lastName"], "Last name", MAX_NAME_PART_LENGTH);
+    const roleField = textField(body, ["role"], "Role", MAX_ROLE_LENGTH);
     const invalidField = [emailField, displayNameField, firstNameField, lastNameField, roleField].find((field) => field.error);
     if (invalidField?.error) return authJson({ ok: false, error: invalidField.error }, { status: 422 });
 
