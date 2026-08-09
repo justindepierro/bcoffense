@@ -77,8 +77,8 @@ can sign out existing browsers once; that is expected.
 
 ### Personal account password changes
 
-Named D1-backed Admin, Coach, and Player accounts can use the header menu's
-**Account security** dialog to change their own password. It requires the
+Named D1-backed Admin, Coach, and Player accounts can use the header's
+**Account security** control to change their own password. It requires the
 current password and keeps the browser that completed the change signed in;
 other named-account sessions are revoked. Shared legacy credentials intentionally
 do not receive this self-service path.

@@ -35,10 +35,12 @@ assert.match(route, /SELECT COUNT\(\*\) FROM login_attempts WHERE username = \?/
 assert.match(route, /session_epoch: result\.sessionEpoch/, "the replacement session receives the committed session epoch");
 
 assert.match(index, /id="accountSecurityMenuItem"[^>]*data-action="openAccountSecurity"/, "personal-account security is reachable from the signed-in menu");
+assert.match(index, /id="accountSecurityHeaderTrigger"[^>]*data-action="openAccountSecurity"/, "personal-account security is reachable from the desktop header");
 assert.match(index, /id="accountSecurityOverlay"/, "the account-security form is present in the application shell");
 assert.match(index, /autocomplete="current-password"/, "the current-password field has the browser-safe autocomplete hint");
 assert.match(index, /autocomplete="new-password"/, "the new-password fields have the browser-safe autocomplete hint");
-assert.match(authClient, /trigger\.hidden = !hasPersonalAccount\(\)/, "the menu entry is hidden for shared static credentials");
+assert.match(authClient, /#accountSecurityHeaderTrigger, #accountSecurityMenuItem/, "both account-security entries share one personal-account visibility gate");
+assert.match(authClient, /trigger\.hidden = !hasPersonalAccount\(\)/, "account-security entries are hidden for shared static credentials");
 assert.match(authClient, /fetch\("\/api\/account\/password", \{[\s\S]*?credentials: "same-origin",[\s\S]*?cache: "no-store",[\s\S]*?body: JSON\.stringify\(\{ currentPassword, newPassword \}\)/, "the form uses the protected self-service endpoint without caching secrets");
 assert.match(authClient, /newPassword !== confirmPassword/, "the client requires confirmation before submitting a new password");
 assert.match(authClient, /document\.getElementById\("accountSecurityForm"\)\?\.reset\(\);[\s\S]*?Other signed-in devices have been signed out\./, "successful changes clear password fields and explain the session effect");

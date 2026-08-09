@@ -694,8 +694,9 @@
   }
 
   function syncAccountSecurityUi() {
-    const trigger = document.getElementById("accountSecurityMenuItem");
-    if (trigger) trigger.hidden = !hasPersonalAccount();
+    document.querySelectorAll("#accountSecurityHeaderTrigger, #accountSecurityMenuItem").forEach((trigger) => {
+      trigger.hidden = !hasPersonalAccount();
+    });
     const overlay = getAccountSecurityOverlay();
     if (!hasPersonalAccount()) {
       if (overlay?.classList.contains("visible")) {
