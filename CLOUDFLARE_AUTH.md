@@ -129,10 +129,29 @@ After that approved release is live, make the transition in this order:
 When the value is `false`, the static `admin` and `coach` passwords are no
 longer accepted, and existing static Admin/Coach sessions stop being accepted
 at their next protected request. Named D1 administrators and coaches remain
-valid. The static `player` sign-in is deliberately untouched by this switch.
-The setting does not delete the old password secrets or any D1 accounts; retain
+valid. The shared `player` sign-in has its own separate switch (below). The
+setting does not delete the old password secrets or any D1 accounts; retain
 the rollback procedure and only remove obsolete secrets after a separate,
 verified recovery decision.
+
+### Retiring the shared player login
+
+The shared `player` credential (`AUTH_PLAYER_PASSWORD_SHA256`) has its own
+deliberate cutoff, independent of staff. Only after every player is confirmed on
+a personal invited account, retire the shared login by adding this
+**production** Pages environment variable:
+
+~~~text
+AUTH_LEGACY_STATIC_PLAYER_ENABLED=false
+~~~
+
+Its value must be the literal `false` (case-insensitive); unset or any other
+value keeps the shared player fallback enabled (the safe default). When `false`,
+the shared `player` password is rejected and any existing shared-player session
+stops being accepted at its next protected request. Personal (D1) player
+accounts are never affected. The setting does not delete
+`AUTH_PLAYER_PASSWORD_SHA256`; keep it until a separate, verified decision to
+remove the secret, so the cutoff stays reversible.
 
 ## Pages settings
 

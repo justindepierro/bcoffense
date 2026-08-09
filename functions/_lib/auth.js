@@ -40,20 +40,33 @@ const USERS = {
 // environment-variable admin/coach accounts remain available during the
 // transition unless this explicit runtime switch is set to "false". Keep the
 // default permissive so an existing deployment is never changed merely by
-// shipping this code. The static player account intentionally does not use
-// this switch and remains available for its separate transition path.
+// shipping this code.
 export function isLegacyStaticStaffEnabled(env) {
   return String(env?.AUTH_LEGACY_STATIC_STAFF_ENABLED ?? "true").trim().toLowerCase() !== "false";
+}
+
+// The shared static player credential has its own deliberate cutoff, separate
+// from staff. Default permissive so shipping this code never retires it; a
+// deployment sets AUTH_LEGACY_STATIC_PLAYER_ENABLED=false once every player is
+// on a personal D1 account. Personal (D1) player logins are never affected.
+export function isLegacyStaticPlayerEnabled(env) {
+  return String(env?.AUTH_LEGACY_STATIC_PLAYER_ENABLED ?? "true").trim().toLowerCase() !== "false";
 }
 
 function isLegacyStaticStaffUser(user) {
   return user?.role === "admin" || user?.role === "coach";
 }
 
+function isLegacyStaticPlayerUser(user) {
+  return user?.role === "player";
+}
+
 function isEnabledStaticUser(username, env) {
   const user = USERS[username];
   if (!user) return false;
-  return !isLegacyStaticStaffUser(user) || isLegacyStaticStaffEnabled(env);
+  if (isLegacyStaticStaffUser(user)) return isLegacyStaticStaffEnabled(env);
+  if (isLegacyStaticPlayerUser(user)) return isLegacyStaticPlayerEnabled(env);
+  return true;
 }
 
 // Content-Security-Policy backstop for the innerHTML-heavy app.

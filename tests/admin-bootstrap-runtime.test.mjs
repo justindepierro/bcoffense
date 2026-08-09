@@ -73,6 +73,30 @@ assert.equal(
   "player",
   "the static player credential remains usable after legacy staff retirement",
 );
+assert.equal(
+  await getSessionFromRequest(cookieRequest(staticPlayerCookie), {
+    ...shared,
+    AUTH_LEGACY_STATIC_PLAYER_ENABLED: "false",
+  }),
+  null,
+  "the player retirement switch invalidates an already-issued static player session",
+);
+assert.equal(
+  await verifyCredentials("player", "player-password", {
+    AUTH_LEGACY_STATIC_PLAYER_ENABLED: "false",
+    AUTH_PLAYER_PASSWORD_SHA256: await sha256Hex("player:player-password"),
+  }),
+  null,
+  "retired static player credentials are rejected even with a valid password hash",
+);
+assert.equal(
+  (await getSessionFromRequest(cookieRequest(staticAdminCookie), {
+    ...shared,
+    AUTH_LEGACY_STATIC_PLAYER_ENABLED: "false",
+  }))?.role,
+  "admin",
+  "the player retirement switch does not invalidate static staff sessions",
+);
 
 const namedAdminDb = {
   prepare() {
@@ -111,4 +135,4 @@ assert.equal(
   "a D1-backed admin remains authenticated after static staff retirement",
 );
 
-console.log("admin bootstrap runtime: 7 checks passed");
+console.log("admin bootstrap runtime: 10 checks passed");

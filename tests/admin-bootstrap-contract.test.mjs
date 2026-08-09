@@ -26,8 +26,13 @@ assert.match(
 );
 assert.match(
   auth,
-  /return !isLegacyStaticStaffUser\(user\) \|\| isLegacyStaticStaffEnabled\(env\);/,
-  "the retirement switch applies to static admin/coach only, not the static player account",
+  /export function isLegacyStaticPlayerEnabled\(env\)[\s\S]*?AUTH_LEGACY_STATIC_PLAYER_ENABLED[\s\S]*?!== "false"/,
+  "the shared static player credential has its own default-enabled, false-only cutoff switch",
+);
+assert.match(
+  auth,
+  /if \(isLegacyStaticStaffUser\(user\)\) return isLegacyStaticStaffEnabled\(env\);[\s\S]*?if \(isLegacyStaticPlayerUser\(user\)\) return isLegacyStaticPlayerEnabled\(env\);/,
+  "static staff and player accounts are each gated by their own retirement switch",
 );
 assert.match(
   auth,

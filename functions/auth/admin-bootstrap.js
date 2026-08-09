@@ -10,6 +10,7 @@
 import {
   authJson,
   getSessionFromRequest,
+  isLegacyStaticPlayerEnabled,
   isLegacyStaticStaffEnabled,
   withSecurityHeaders,
 } from "../_lib/auth.js";
@@ -57,6 +58,7 @@ function statusPayload(namedAdmins, env, options = {}) {
     // Cloudflare environment variable so it cannot be toggled by an ordinary
     // browser request.
     legacyStaffEnabled: isLegacyStaticStaffEnabled(env),
+    legacyPlayerEnabled: isLegacyStaticPlayerEnabled(env),
     namedAdminCount: namedAdmins.length,
   };
   const pending = namedAdmins.length === 1 && namedAdmins[0]?.status === "invited";
