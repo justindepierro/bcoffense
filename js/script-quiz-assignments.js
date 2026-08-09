@@ -2,7 +2,7 @@
 // one focused assignment from an immutable snapshot of a script, game plan, or
 // selected Playbook plays.
 
-const _quizAssignmentState = { assignments: [], players: [], loading: false, loaded: false, draft: null, autosaveTimer: 0, autosaving: false, lastDraftSaveAt: 0 };
+const _quizAssignmentState = { assignments: [], players: [], loading: false, loaded: false, draft: null, autosaveTimer: 0, autosaving: false, draftSavePromise: null, publishing: false, lastDraftSaveAt: 0 };
 const QUIZ_ASSIGNMENT_QUESTION_TYPES = [
   ["responsibility", "My responsibility"],
   ["diagram", "What play is this diagram?"],
@@ -330,39 +330,82 @@ async function archiveQuizAssignment(id) { const assignment = _quizAssignmentByI
 
 async function saveQuizAssignmentDraft(options = {}) {
   const draft = _quizAssignmentState.draft;
-  if (!draft || _quizAssignmentState.autosaving) return null;
+  // Do not start a second save while one payload is in flight. More
+  // importantly, Send homework awaits this exact promise before it chooses its
+  // idempotency key, so a late autosave response cannot replace that key.
+  if (!draft || _quizAssignmentState.publishing) return null;
+  if (_quizAssignmentState.autosaving) return _quizAssignmentState.draftSavePromise;
   if (!_quizAssignmentHasDraftContent(draft)) {
     if (!options.quiet) showToast("Add a title, source play, recipient, or question before saving a draft.", { type: "warning" });
     return null;
   }
   clearTimeout(_quizAssignmentState.autosaveTimer);
   _quizAssignmentState.autosaving = true;
-  try {
-    const data = await _quizAssignmentRequest("/api/quiz-assignments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-draft", ..._quizAssignmentPayload(draft) }) });
-    draft.assignmentId = data.assignment?.id || draft.assignmentId;
-    draft.status = "draft";
-    draft.lastSavedAt = Date.now();
-    _quizAssignmentState.lastDraftSaveAt = draft.lastSavedAt;
-    // The server keeps its own immutable snapshot, but the open builder stays
-    // editable. A saved draft is frozen only when it is reopened later.
-    const status = document.getElementById("quizAssignmentReadyCount");
-    if (status) status.textContent = `Draft saved · ${draft.recipientIds.size} players · ${_quizAssignmentSourceItems(draft).length + (draft.customQuestions || []).filter((question) => String(question.prompt || "").trim()).length} questions`;
-    if (!options.quiet) {
-      _renderQuizAssignmentModal();
-      showToast("Homework draft saved. It has not been sent to players.", { type: "success" });
+  const requestAssignmentId = String(draft.assignmentId || "");
+  const payload = _quizAssignmentPayload(draft);
+  const work = (async () => {
+    try {
+      const data = await _quizAssignmentRequest("/api/quiz-assignments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-draft", ...payload }) });
+      // A save begun before Send may finish after it. Only apply its returned
+      // draft identity if this is still the same open draft and no later
+      // action has assigned a different publish/retry UUID.
+      const canApplySaveResult = _quizAssignmentState.draft === draft
+        && (!draft.assignmentId || draft.assignmentId === requestAssignmentId);
+      if (canApplySaveResult) {
+        draft.assignmentId = data.assignment?.id || draft.assignmentId;
+        draft.status = "draft";
+        draft.lastSavedAt = Date.now();
+        _quizAssignmentState.lastDraftSaveAt = draft.lastSavedAt;
+        // The server keeps its own immutable snapshot, but the open builder
+        // stays editable. A saved draft is frozen only when reopened later.
+        const status = document.getElementById("quizAssignmentReadyCount");
+        if (status) status.textContent = `Draft saved · ${draft.recipientIds.size} players · ${_quizAssignmentSourceItems(draft).length + (draft.customQuestions || []).filter((question) => String(question.prompt || "").trim()).length} questions`;
+        if (!options.quiet) {
+          _renderQuizAssignmentModal();
+          showToast("Homework draft saved. It has not been sent to players.", { type: "success" });
+        }
+      }
+      return data.assignment;
+    } catch (err) {
+      if (!options.quiet) showToast(err?.message || "Homework draft could not be saved.", { type: "warning" });
+      return null;
+    } finally {
+      _quizAssignmentState.autosaving = false;
+      if (_quizAssignmentState.draftSavePromise === work) _quizAssignmentState.draftSavePromise = null;
     }
-    return data.assignment;
-  } catch (err) {
-    if (!options.quiet) showToast(err?.message || "Homework draft could not be saved.", { type: "warning" });
-    return null;
-  } finally { _quizAssignmentState.autosaving = false; }
+  })();
+  _quizAssignmentState.draftSavePromise = work;
+  return work;
 }
 
 async function createQuizAssignment() {
-  const draft = _quizAssignmentState.draft; if (!draft) return; const health = getQuizAssignmentSourceHealth(draft); if (!String(draft.title || "").trim()) { showToast("Give the homework a title before sending it.", { type: "warning" }); return; } if (!draft.recipientIds.size) { showToast("Choose at least one player before sending homework.", { type: "warning" }); return; } if (!health.ready) { showToast(health.issues[0] || "Fix the question health before sending homework.", { type: "warning" }); return; }
+  const draft = _quizAssignmentState.draft; if (!draft || _quizAssignmentState.publishing) return; const health = getQuizAssignmentSourceHealth(draft); if (!String(draft.title || "").trim()) { showToast("Give the homework a title before sending it.", { type: "warning" }); return; } if (!draft.recipientIds.size) { showToast("Choose at least one player before sending homework.", { type: "warning" }); return; } if (!health.ready) { showToast(health.issues[0] || "Fix the question health before sending homework.", { type: "warning" }); return; }
   clearTimeout(_quizAssignmentState.autosaveTimer);
-  try { const data = await _quizAssignmentRequest("/api/quiz-assignments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "publish", ..._quizAssignmentPayload(draft) }) }); closeQuizAssignmentManager(); await refreshQuizAssignments({ quiet: true }); showToast(`Homework sent to ${data.recipients} player${data.recipients === 1 ? "" : "s"}.`, { type: "success" }); }
-  catch (err) { showToast(err?.message || "Homework could not be sent.", { type: "warning" }); }
+  _quizAssignmentState.publishing = true;
+  try {
+    // If a quiet autosave began while this draft was still anonymous, use its
+    // completed server ID before publishing. That serializes the two requests
+    // and avoids both a stale response overwrite and a second assignment after
+    // a lost publish response.
+    if (_quizAssignmentState.draftSavePromise) await _quizAssignmentState.draftSavePromise;
+    if (_quizAssignmentState.draft !== draft) return;
+    const currentHealth = getQuizAssignmentSourceHealth(draft);
+    if (!String(draft.title || "").trim() || !draft.recipientIds.size || !currentHealth.ready) {
+      showToast(currentHealth.issues[0] || "Homework changed before it could be sent. Review it and try again.", { type: "warning" });
+      return;
+    }
+    // Keep one idempotency key across a response-loss retry. This UUID is only
+    // needed when no prior autosave supplied the draft's durable identity.
+    if (!draft.assignmentId) draft.assignmentId = crypto.randomUUID();
+    const data = await _quizAssignmentRequest("/api/quiz-assignments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "publish", ..._quizAssignmentPayload(draft) }) });
+    closeQuizAssignmentManager();
+    await refreshQuizAssignments({ quiet: true });
+    showToast(`Homework sent to ${data.recipients} player${data.recipients === 1 ? "" : "s"}.`, { type: "success" });
+  } catch (err) {
+    showToast(err?.message || "Homework could not be sent.", { type: "warning" });
+  } finally {
+    _quizAssignmentState.publishing = false;
+  }
 }
 async function startPlayerQuizAssignment(id) { if (!_quizAssignmentState.loaded) await refreshQuizAssignments({ quiet: true }); const assignment = (_quizAssignmentState.assignments || []).find((entry) => String(entry.id) === String(id)); const items = Array.isArray(assignment?.items) ? assignment.items.slice() : []; const customItems = (assignment?.customQuestions || []).map((customQuestion, index) => ({ play: { _id: `assignment-custom-${assignment.id}-${index}`, play: "Coach question" }, scriptIndex: items.length + index, customQuestion })); if (!items.length && !customItems.length) { showToast("That homework assignment is not available right now.", { type: "warning" }); return; } try { await _quizAssignmentRequest("/api/quiz-assignments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "record-open", assignmentId: assignment.id }) }); } catch (_) { /* The practice can still run offline; an optional later receipt is non-verifying until authoritative sessions ship. */ } closePlayerQuizHub({ keepQuizPage: true }); startScriptQuiz({ items: [...items, ...customItems], sourceType: "assignment", sourceId: assignment.id, assignmentId: assignment.id, title: assignment.title, positionKey: assignment.positionKey || "", positionMode: assignment.positionKey ? "manual" : "primary", mode: assignment.quizMode || "quick", questionTypes: assignment.questionTypes || [] }); }
 async function recordQuizAssignmentAttempt(assignmentId, _summary) { const data = await _quizAssignmentRequest("/api/quiz-assignments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "record-practice", assignmentId }) }); await refreshQuizAssignments({ quiet: true }); return data?.result || null; }

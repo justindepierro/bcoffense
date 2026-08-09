@@ -193,44 +193,149 @@ async function createVapidJwt(privateKeyB64u, endpoint, subject) {
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /**
+ * A delivery result is deliberately endpoint-scoped. The caller can aggregate
+ * it without retaining the subscription URL (which can contain a device token).
+ */
+export const WEB_PUSH_OUTCOMES = Object.freeze({
+  SENT: "sent",
+  PERMANENT: "permanent",
+  RETRYABLE: "retryable",
+  TERMINAL: "terminal",
+  CONFIGURATION: "configuration",
+});
+
+function pushResult(outcome, { status = null, retryAfterSeconds = null } = {}) {
+  return {
+    ok: outcome === WEB_PUSH_OUTCOMES.SENT,
+    // Kept for existing callers that retire subscriptions after a 404/410.
+    gone: outcome === WEB_PUSH_OUTCOMES.PERMANENT,
+    outcome,
+    retryable: outcome === WEB_PUSH_OUTCOMES.RETRYABLE,
+    status,
+    retryAfterSeconds,
+  };
+}
+
+function hasText(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function retryAfterSeconds(response) {
+  const raw = String(response?.headers?.get?.("Retry-After") || "").trim();
+  if (!raw) return null;
+
+  if (/^\d+$/.test(raw)) {
+    // A malformed or extreme header should not create an unbounded retry delay.
+    return Math.min(Number(raw), 24 * 60 * 60);
+  }
+
+  const retryAt = Date.parse(raw);
+  if (!Number.isFinite(retryAt)) return null;
+  return Math.min(Math.max(0, Math.ceil((retryAt - Date.now()) / 1000)), 24 * 60 * 60);
+}
+
+function classifyPushResponse(response) {
+  const status = Number.isInteger(response?.status) ? response.status : null;
+
+  if (response?.ok) return pushResult(WEB_PUSH_OUTCOMES.SENT, { status });
+
+  // 410 Gone / 404 Not Found means this subscription endpoint cannot be used
+  // again. It is safe for the caller to retire only this endpoint.
+  if (status === 404 || status === 410) {
+    return pushResult(WEB_PUSH_OUTCOMES.PERMANENT, { status });
+  }
+
+  // Push services use 401/403 when the VAPID signing key, public key, or
+  // subject is rejected. That is deployment configuration—not evidence that
+  // this particular device endpoint is bad—so leave subscriptions intact and
+  // let the durable Worker retry after an operator restores the known keypair.
+  if (status === 401 || status === 403) {
+    return pushResult(WEB_PUSH_OUTCOMES.CONFIGURATION, { status });
+  }
+
+  // Push services use 429 for rate limits; a few also surface transient
+  // gateway/time-out failures as 408/425/5xx. Those are the only HTTP classes
+  // we retry automatically.
+  if (status === 408 || status === 425 || status === 429 || (status >= 500 && status <= 599)) {
+    return pushResult(WEB_PUSH_OUTCOMES.RETRYABLE, {
+      status,
+      retryAfterSeconds: retryAfterSeconds(response),
+    });
+  }
+
+  // Other non-success responses reject this message or its authorization. The
+  // endpoint is not necessarily dead, so do not mark it failed, but a queue
+  // should not spin forever retrying the same terminal client failure.
+  return pushResult(WEB_PUSH_OUTCOMES.TERMINAL, { status });
+}
+
+/**
  * Send a Web Push notification to a single subscription endpoint.
  *
  * @param {object} env - Cloudflare env (VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY, VAPID_SUBJECT)
  * @param {{ endpoint: string, p256dh: string, auth: string }} subscription
  * @param {{ title: string, body: string, url?: string, deepLink?: string, tag?: string }} notification
- * @returns {Promise<{ ok: boolean, gone: boolean }>}
- *   gone=true when endpoint is permanently invalid (410/404) — caller should delete it.
+ * @returns {Promise<{ ok: boolean, gone: boolean, outcome: string, retryable: boolean, status: number|null, retryAfterSeconds: number|null }>}
+ *   `gone` remains the legacy compatibility flag for 404/410. `outcome` is
+ *   safe to aggregate for durable delivery: sent, permanent, retryable,
+ *   terminal, or configuration.
  */
 export async function sendWebPush(env, subscription, notification) {
   const {
     VAPID_PRIVATE_KEY,
     VAPID_PUBLIC_KEY,
     VAPID_SUBJECT = "mailto:noreply@bcoffense.com",
-  } = env;
+  } = env || {};
 
   if (!VAPID_PRIVATE_KEY || !VAPID_PUBLIC_KEY) {
     console.warn("[web-push] VAPID keys not configured — skipping push");
-    return { ok: false, gone: false };
+    return pushResult(WEB_PUSH_OUTCOMES.CONFIGURATION);
   }
 
+  if (!hasText(subscription?.endpoint) || !hasText(subscription?.p256dh) || !hasText(subscription?.auth)) {
+    return pushResult(WEB_PUSH_OUTCOMES.TERMINAL);
+  }
+
+  const endpoint = subscription.endpoint.trim();
   try {
-    const payload = JSON.stringify({
-      title: notification.title || "BCOffense",
-      body: notification.body || "",
-      url: notification.url || "/",
-      deepLink: notification.deepLink || "",
-      tag: notification.tag || "bcoffense",
-      badge: notification.badge || "./icons/icon-192.png",
-    });
+    const parsedEndpoint = new URL(endpoint);
+    if (parsedEndpoint.protocol !== "https:") {
+      return pushResult(WEB_PUSH_OUTCOMES.TERMINAL);
+    }
+  } catch {
+    return pushResult(WEB_PUSH_OUTCOMES.TERMINAL);
+  }
 
-    const body = await encryptPayload(subscription.p256dh, subscription.auth, payload);
-    const jwt = await createVapidJwt(
-      VAPID_PRIVATE_KEY,
-      subscription.endpoint,
-      VAPID_SUBJECT,
-    );
+  const payload = JSON.stringify({
+    title: notification.title || "BCOffense",
+    body: notification.body || "",
+    url: notification.url || "/",
+    deepLink: notification.deepLink || "",
+    tag: notification.tag || "bcoffense",
+    badge: notification.badge || "./icons/icon-192.png",
+  });
 
-    const res = await fetch(subscription.endpoint, {
+  let body;
+  try {
+    // Bad subscriber keys are endpoint-specific and will not become valid by
+    // retrying this same delivery.
+    body = await encryptPayload(subscription.p256dh, subscription.auth, payload);
+  } catch {
+    return pushResult(WEB_PUSH_OUTCOMES.TERMINAL);
+  }
+
+  let jwt;
+  try {
+    // A malformed VAPID private key is deployment configuration, not a bad
+    // device subscription. Do not retire any endpoints in this case.
+    jwt = await createVapidJwt(VAPID_PRIVATE_KEY, endpoint, VAPID_SUBJECT);
+  } catch {
+    return pushResult(WEB_PUSH_OUTCOMES.CONFIGURATION);
+  }
+
+  let response;
+  try {
+    response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/octet-stream",
@@ -241,21 +346,11 @@ export async function sendWebPush(env, subscription, notification) {
       },
       body,
     });
-
-    // 410 Gone / 404 Not Found = subscription is dead, caller must delete it
-    if (res.status === 410 || res.status === 404) {
-      return { ok: false, gone: true };
-    }
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.error(`[web-push] Push failed ${res.status}:`, errText);
-      return { ok: false, gone: false };
-    }
-
-    return { ok: true, gone: false };
-  } catch (err) {
-    console.error("[web-push] Unexpected error:", err);
-    return { ok: false, gone: false };
+  } catch {
+    // Network and transport errors have no stable HTTP status and are safe to
+    // retry. Keep the caught error private because it can embed endpoint data.
+    return pushResult(WEB_PUSH_OUTCOMES.RETRYABLE);
   }
+
+  return classifyPushResponse(response);
 }

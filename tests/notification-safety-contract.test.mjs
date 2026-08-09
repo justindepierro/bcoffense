@@ -9,7 +9,10 @@ if (!globalThis.crypto) globalThis.crypto = webcrypto;
 const { createSessionCookie } = await import("../functions/_lib/auth.js");
 const { onRequest: authMiddleware } = await import("../functions/_middleware.js");
 const { onRequestPost: broadcastNotification } = await import("../functions/api/notifications/broadcast.js");
-const { onRequestPost: postQuizAssignment } = await import("../functions/api/quiz-assignments/index.js");
+const {
+  onRequestGet: getQuizAssignments,
+  onRequestPost: postQuizAssignment,
+} = await import("../functions/api/quiz-assignments/index.js");
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
@@ -48,6 +51,9 @@ function makeD1() {
       id TEXT PRIMARY KEY,
       email TEXT,
       display_name TEXT,
+      first_name TEXT,
+      last_name TEXT,
+      roster_player_id TEXT,
       role TEXT NOT NULL,
       status TEXT NOT NULL,
       team_id TEXT NOT NULL
@@ -77,6 +83,43 @@ function makeD1() {
       read_at INTEGER,
       created_at INTEGER NOT NULL,
       expires_at INTEGER
+    );
+    CREATE TABLE notification_outbox (
+      id TEXT PRIMARY KEY,
+      event_key TEXT NOT NULL,
+      team_id TEXT NOT NULL,
+      recipient_user_id TEXT NOT NULL,
+      delivery_kind TEXT NOT NULL,
+      notification_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      body TEXT,
+      deep_link TEXT,
+      tag TEXT,
+      homework_assignment_id TEXT,
+      homework_delivery_event_type TEXT,
+      state TEXT NOT NULL DEFAULT 'pending',
+      attempt_count INTEGER NOT NULL DEFAULT 0,
+      available_at INTEGER NOT NULL,
+      lease_token TEXT,
+      lease_expires_at INTEGER,
+      last_error TEXT,
+      push_sent INTEGER NOT NULL DEFAULT 0,
+      push_total INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      queued_at INTEGER,
+      delivered_at INTEGER,
+      cancelled_at INTEGER,
+      dead_at INTEGER,
+      updated_at INTEGER NOT NULL,
+      UNIQUE (event_key, recipient_user_id)
+    );
+    CREATE TABLE notification_outbox_events (
+      event_key TEXT PRIMARY KEY,
+      team_id TEXT NOT NULL,
+      delivery_kind TEXT NOT NULL,
+      homework_assignment_id TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
     );
     CREATE TABLE push_subscriptions (
       id TEXT PRIMARY KEY,
@@ -126,11 +169,57 @@ function makeD1() {
       assignment_id TEXT NOT NULL,
       user_id TEXT NOT NULL,
       event_type TEXT NOT NULL,
-      created_at INTEGER NOT NULL
+      created_at INTEGER NOT NULL,
+      notification_outbox_id TEXT
     );
+    CREATE TABLE quiz_assignment_initial_notification_dispatches (
+      assignment_id TEXT PRIMARY KEY,
+      team_id TEXT NOT NULL,
+      event_key TEXT NOT NULL UNIQUE,
+      payload_fingerprint TEXT NOT NULL,
+      state TEXT NOT NULL DEFAULT 'pending',
+      outbox_persisted_at INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+    CREATE UNIQUE INDEX idx_quiz_assignment_delivery_events_outbox
+      ON quiz_assignment_delivery_events(notification_outbox_id)
+      WHERE notification_outbox_id IS NOT NULL;
+    CREATE TRIGGER trg_notification_outbox_insert_notification
+    AFTER INSERT ON notification_outbox
+    BEGIN
+      INSERT OR IGNORE INTO notifications
+        (id, user_id, type, title, body, deep_link, created_at, expires_at)
+      VALUES
+        (NEW.id, NEW.recipient_user_id, NEW.notification_type, NEW.title,
+         NEW.body, NEW.deep_link, NEW.created_at, NEW.created_at + 2592000);
+    END;
+    CREATE TRIGGER trg_notification_outbox_insert_homework_receipt
+    AFTER INSERT ON notification_outbox
+    WHEN NEW.delivery_kind = 'quiz_homework'
+     AND NEW.homework_delivery_event_type IN ('assigned', 'reminded')
+    BEGIN
+      INSERT OR IGNORE INTO quiz_assignment_delivery_events
+        (id, assignment_id, user_id, event_type, created_at, notification_outbox_id)
+      VALUES
+        (lower(hex(randomblob(16))), NEW.homework_assignment_id,
+         NEW.recipient_user_id, NEW.homework_delivery_event_type,
+         NEW.created_at, NEW.id);
+    END;
+    CREATE TRIGGER trg_notification_outbox_reminder_receipt
+    AFTER INSERT ON quiz_assignment_delivery_events
+    WHEN NEW.notification_outbox_id IS NOT NULL AND NEW.event_type = 'reminded'
+    BEGIN
+      UPDATE quiz_assignment_recipients
+         SET last_reminded_at = NEW.created_at,
+             notification_count = notification_count + 1
+       WHERE assignment_id = NEW.assignment_id
+         AND user_id = NEW.user_id;
+    END;
   `);
 
   const calls = [];
+  const faults = { failOutboxInsert: false };
   function run(statement, values) {
     const result = statement.run(...values);
     return { success: true, meta: { changes: Number(result.changes || 0) } };
@@ -151,6 +240,7 @@ function makeD1() {
             },
             run: async () => run(statement, values),
             __run: () => run(statement, values),
+            __sql: sql,
           };
         },
       };
@@ -158,6 +248,11 @@ function makeD1() {
     async batch(statements) {
       raw.exec("BEGIN IMMEDIATE");
       try {
+        if (faults.failOutboxInsert && statements.some((statement) => (
+          String(statement?.__sql || "").includes("INSERT OR IGNORE INTO notification_outbox")
+        ))) {
+          throw new Error("forced notification outbox failure");
+        }
         const results = statements.map((statement) => statement.__run());
         raw.exec("COMMIT");
         return results;
@@ -166,6 +261,7 @@ function makeD1() {
         throw error;
       }
     },
+    faults,
   };
 }
 
@@ -178,6 +274,16 @@ function request(path, cookie, body, { rawBody } = {}) {
       "X-BC-Auth-Mode": "json",
     },
     body: rawBody ?? JSON.stringify(body),
+  });
+}
+
+function getRequest(path, cookie) {
+  return new Request(`https://bcoffense.example${path}`, {
+    method: "GET",
+    headers: {
+      Cookie: cookie.split(";")[0],
+      "X-BC-Auth-Mode": "json",
+    },
   });
 }
 
@@ -298,8 +404,118 @@ const resendPushLookups = db.calls.slice(callsBeforeResend)
   .map((call) => call.values[0]);
 assert.deepEqual(
   resendPushLookups,
-  ["active-player"],
-  "push delivery is not even attempted for disabled or cross-team recipients",
+  [],
+  "homework requests write durable outbox rows instead of sending push inline",
+);
+assert.deepEqual(
+  db.raw.prepare("SELECT recipient_user_id FROM notification_outbox WHERE delivery_kind = 'quiz_homework' ORDER BY recipient_user_id")
+    .all().map((row) => ({ ...row })),
+  [{ recipient_user_id: "active-player" }],
+  "only a still-active same-team player receives a durable homework delivery intent",
+);
+
+const responseLossPublish = {
+  action: "publish",
+  assignmentId: "response-loss-assignment",
+  title: "Response-loss recovery homework",
+  items: [{ play: { play: "Counter" } }],
+  questionTypes: ["call"],
+  recipientIds: ["active-player"],
+  quizMode: "quick",
+};
+db.faults.failOutboxInsert = true;
+const interruptedPublish = await postQuizAssignment({
+  request: request("/api/quiz-assignments", adminCookie, responseLossPublish), env,
+});
+assert.equal(interruptedPublish.status, 500, "an injected outbox failure surfaces after the domain publish transaction");
+assert.equal(
+  db.raw.prepare("SELECT status FROM quiz_assignments WHERE id = ?").get("response-loss-assignment").status,
+  "published",
+  "the domain publication and its durable dispatch marker commit together before a recoverable fanout fault",
+);
+assert.equal(
+  db.raw.prepare("SELECT state FROM quiz_assignment_initial_notification_dispatches WHERE assignment_id = ?")
+    .get("response-loss-assignment").state,
+  "pending",
+  "a failed initial fanout leaves a durable pending-dispatch marker",
+);
+assert.equal(
+  db.raw.prepare("SELECT COUNT(*) AS count FROM notification_outbox WHERE homework_assignment_id = ?")
+    .get("response-loss-assignment").count,
+  0,
+  "the forced failure leaves no partial outbox row that could look delivered",
+);
+
+db.faults.failOutboxInsert = false;
+const recoveredPublish = await postQuizAssignment({
+  request: request("/api/quiz-assignments", adminCookie, responseLossPublish), env,
+});
+assert.equal(recoveredPublish.status, 200, "retrying the same client-assigned assignment id reconciles a published pending dispatch");
+assert.equal((await recoveredPublish.json()).recovered, true, "the retry response identifies the recovered publish path");
+assert.equal(
+  db.raw.prepare("SELECT COUNT(*) AS count FROM quiz_assignments WHERE id = ?").get("response-loss-assignment").count,
+  1,
+  "response-loss retry does not create a duplicate published assignment",
+);
+assert.equal(
+  db.raw.prepare("SELECT state FROM quiz_assignment_initial_notification_dispatches WHERE assignment_id = ?")
+    .get("response-loss-assignment").state,
+  "outbox_persisted",
+  "the marker is acknowledged only after the retry's outbox transaction succeeds",
+);
+assert.equal(
+  db.raw.prepare("SELECT COUNT(*) AS count FROM notification_outbox WHERE homework_assignment_id = ?")
+    .get("response-loss-assignment").count,
+  1,
+  "retry reconciliation creates exactly one recipient outbox intent",
+);
+assert.equal(
+  db.raw.prepare("SELECT COUNT(*) AS count FROM notifications WHERE deep_link = ?")
+    .get("quiz-assignment:response-loss-assignment").count,
+  1,
+  "retry reconciliation restores the matching player inbox notification once",
+);
+
+const changedRetry = await postQuizAssignment({
+  request: request("/api/quiz-assignments", adminCookie, {
+    ...responseLossPublish,
+    title: "Changed after publish must not be accepted as recovery",
+  }), env,
+});
+assert.equal(changedRetry.status, 500, "a changed payload cannot impersonate a publish retry");
+assert.equal(
+  db.raw.prepare("SELECT COUNT(*) AS count FROM notification_outbox WHERE homework_assignment_id = ?")
+    .get("response-loss-assignment").count,
+  1,
+  "rejected changed retry leaves the original outbox fanout unchanged",
+);
+
+const backgroundRecoveryPublish = {
+  ...responseLossPublish,
+  assignmentId: "background-marker-recovery",
+  title: "Background marker recovery homework",
+};
+db.faults.failOutboxInsert = true;
+const interruptedBackgroundPublish = await postQuizAssignment({
+  request: request("/api/quiz-assignments", adminCookie, backgroundRecoveryPublish), env,
+});
+assert.equal(interruptedBackgroundPublish.status, 500, "a second forced fanout failure leaves work for autonomous reconciliation");
+db.faults.failOutboxInsert = false;
+const backgroundRecovery = await getQuizAssignments({
+  request: getRequest("/api/quiz-assignments", adminCookie), env,
+});
+assert.equal(backgroundRecovery.status, 200, "staff assignment refresh reconciles pending initial-dispatch markers");
+assert.equal(
+  db.raw.prepare("SELECT state FROM quiz_assignment_initial_notification_dispatches WHERE assignment_id = ?")
+    .get("background-marker-recovery").state,
+  "outbox_persisted",
+  "background reconciliation advances the stored marker after durable fanout",
+);
+assert.equal(
+  db.raw.prepare("SELECT COUNT(*) AS count FROM notification_outbox WHERE homework_assignment_id = ?")
+    .get("background-marker-recovery").count,
+  1,
+  "background reconciliation creates the missing notification intent exactly once",
 );
 
 const arrayBody = await postQuizAssignment({

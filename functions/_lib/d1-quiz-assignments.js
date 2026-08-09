@@ -1,7 +1,12 @@
 /** Private, team-scoped player quiz assignments. */
 
+import { createNotificationOutboxDeliveries } from "./notification-outbox.js";
+
 const MAX_ITEMS = 60;
+const MAX_RECIPIENTS = 300;
 const STAFF_ROLES = new Set(["admin", "coach", "assistant", "assistant_coach"]);
+const PUBLISHED_SOURCE_KINDS = new Set(["playbook", "script", "gameplan"]);
+const QUIZ_MODES = new Set(["quick", "full", "job", "diagram"]);
 const PLAY_FIELDS = new Set([
   "_id", "id", "type", "personnel", "formation", "formTag1", "formTag2", "under", "back",
   "shift", "motion", "protection", "lineCall", "play", "playTag1", "playTag2", "basePlay",
@@ -27,6 +32,103 @@ function cleanUnix(value) {
 }
 
 function nowUnix() { return Math.floor(Date.now() / 1000); }
+
+function cleanRecipientIds(value) {
+  return [...new Set((Array.isArray(value) ? value : [])
+    .map((id) => cleanText(id, 128)).filter(Boolean))].slice(0, MAX_RECIPIENTS);
+}
+
+function cleanPublishedSourceKind(value) {
+  const kind = cleanText(value, 20);
+  return PUBLISHED_SOURCE_KINDS.has(kind) ? kind : "playbook";
+}
+
+function cleanQuizMode(value) {
+  const mode = cleanText(value, 20);
+  return QUIZ_MODES.has(mode) ? mode : "quick";
+}
+
+// Object key order is not meaningful in incoming JSON. Canonicalizing the
+// immutable published payload means an interrupted publish can be retried
+// safely without accepting a changed assignment as the same dispatch.
+function stableJson(value) {
+  if (Array.isArray(value)) return `[${value.map((entry) => stableJson(entry)).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+async function sha256Hex(value) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(value)));
+  return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function publishedAssignmentInput(teamId, session, input, id, now) {
+  return {
+    id, teamId,
+    title: cleanText(input.title, 120),
+    instructions: cleanText(input.instructions, 800),
+    items: safeItems(input.items),
+    questionTypes: safeQuestionTypes(input.questionTypes),
+    customQuestions: safeCustomQuestions(input.customQuestions),
+    sourceKind: cleanPublishedSourceKind(input.sourceKind),
+    sourceId: cleanText(input.sourceId, 180) || null,
+    quizMode: cleanQuizMode(input.quizMode),
+    positionKey: cleanText(input.positionKey, 40),
+    requiredScore: cleanInt(input.requiredScore, 0, 100),
+    dueAt: cleanUnix(input.dueAt),
+    createdBy: session?.d1UserId || null,
+    now,
+  };
+}
+
+async function initialDispatchFor(assignment, requestedRecipientIds) {
+  const eventKey = `quiz-homework:assigned:${await sha256Hex(`${assignment.teamId}\u0000${assignment.id}`)}`;
+  const payloadFingerprint = await sha256Hex(stableJson({
+    assignmentId: assignment.id,
+    teamId: assignment.teamId,
+    title: assignment.title,
+    instructions: assignment.instructions,
+    items: assignment.items,
+    questionTypes: assignment.questionTypes,
+    customQuestions: assignment.customQuestions,
+    sourceKind: assignment.sourceKind,
+    sourceId: assignment.sourceId,
+    quizMode: assignment.quizMode,
+    positionKey: assignment.positionKey,
+    requiredScore: assignment.requiredScore,
+    dueAt: assignment.dueAt,
+    recipientIds: [...requestedRecipientIds].sort(),
+  }));
+  return { assignmentId: assignment.id, teamId: assignment.teamId, eventKey, payloadFingerprint };
+}
+
+function initialDispatchStatement(db, dispatch, now) {
+  return db.prepare(
+    `INSERT INTO quiz_assignment_initial_notification_dispatches
+      (assignment_id, team_id, event_key, payload_fingerprint, state, created_at, updated_at)
+     VALUES (?, ?, ?, ?, 'pending', ?, ?)`,
+  ).bind(
+    dispatch.assignmentId,
+    dispatch.teamId,
+    dispatch.eventKey,
+    dispatch.payloadFingerprint,
+    now,
+    now,
+  );
+}
+
+function mapInitialDispatch(row) {
+  if (!row) return null;
+  return {
+    assignmentId: row.assignment_id,
+    teamId: row.team_id,
+    eventKey: row.event_key,
+    state: row.state,
+    outboxPersistedAt: row.outbox_persisted_at ? Number(row.outbox_persisted_at) : null,
+  };
+}
 
 function safePlay(input) {
   if (!input || typeof input !== "object" || input.playerHidden === true) return null;
@@ -225,6 +327,114 @@ export async function getActiveQuizAssignmentRecipientIds(db, teamId, assignment
   return [...new Set((result.results || []).map((row) => cleanText(row.user_id, 128)).filter(Boolean))];
 }
 
+/**
+ * The marker is written in the same transaction as `status = 'published'`.
+ * Its pending state is deliberately durable until an inbox/outbox fan-out has
+ * committed, so a later request can reconcile an interrupted notification
+ * without changing the published assignment itself.
+ */
+export async function getQuizAssignmentInitialDispatch(db, teamId, assignmentId) {
+  const id = cleanText(assignmentId, 128);
+  if (!id) return null;
+  const row = await db.prepare(
+    `SELECT d.assignment_id, d.team_id, d.event_key, d.payload_fingerprint,
+            d.state, d.outbox_persisted_at
+       FROM quiz_assignment_initial_notification_dispatches d
+       JOIN quiz_assignments a ON a.id = d.assignment_id
+      WHERE d.assignment_id = ?
+        AND d.team_id = ?
+        AND a.team_id = ?
+        AND a.status = 'published'
+      LIMIT 1`,
+  ).bind(id, teamId, teamId).first();
+  return mapInitialDispatch(row);
+}
+
+export async function getPendingQuizAssignmentInitialDispatches(db, teamId = null, limit = 25) {
+  const boundedLimit = Math.max(1, Math.min(100, Math.floor(Number(limit) || 25)));
+  const scopedTeamId = cleanText(teamId, 180);
+  const teamScope = scopedTeamId
+    ? "AND d.team_id = ? AND a.team_id = ?"
+    : "";
+  const bindings = scopedTeamId
+    ? [scopedTeamId, scopedTeamId, boundedLimit]
+    : [boundedLimit];
+  const result = await db.prepare(
+    `SELECT d.assignment_id, d.team_id, d.event_key, d.payload_fingerprint,
+            d.state, d.outbox_persisted_at
+       FROM quiz_assignment_initial_notification_dispatches d
+       JOIN quiz_assignments a ON a.id = d.assignment_id
+      WHERE a.status = 'published'
+        ${teamScope}
+        AND d.state = 'pending'
+      ORDER BY d.created_at ASC
+      LIMIT ?`,
+  ).bind(...bindings).all();
+  return (result.results || []).map(mapInitialDispatch).filter(Boolean);
+}
+
+/** Mark after (not before) the matching D1 outbox transaction has committed. */
+export async function markQuizAssignmentInitialDispatchPersisted(db, teamId, assignmentId, eventKey, now = nowUnix()) {
+  const id = cleanText(assignmentId, 128);
+  const key = cleanText(eventKey, 240);
+  if (!id || !key) return false;
+  const timestamp = Math.max(0, Math.floor(Number(now) || nowUnix()));
+  const result = await db.prepare(
+    `UPDATE quiz_assignment_initial_notification_dispatches
+        SET state = 'outbox_persisted',
+            outbox_persisted_at = COALESCE(outbox_persisted_at, ?),
+            updated_at = ?
+      WHERE assignment_id = ?
+        AND team_id = ?
+        AND event_key = ?`,
+  ).bind(timestamp, timestamp, id, teamId, key).run();
+  return Number(result?.meta?.changes || result?.changes || 0) === 1;
+}
+
+function homeworkDispatchBody(assignment) {
+  const questionCount = Number(assignment?.items?.length || 0) + Number(assignment?.customQuestions?.length || 0);
+  return `${questionCount} question${questionCount === 1 ? "" : "s"}${assignment?.dueAt ? " · check the due date" : ""}`;
+}
+
+/**
+ * Reconcile exactly one durable initial-publish marker. This helper owns only
+ * D1 state: callers publish its returned opaque IDs to Queue using their own
+ * binding. If fan-out fails, the marker remains pending; if the final marker
+ * update fails after fan-out, replaying the stored event key is idempotent.
+ */
+export async function reconcileQuizAssignmentInitialDispatch(db, teamId, assignmentId, now = nowUnix()) {
+  const dispatch = await getQuizAssignmentInitialDispatch(db, teamId, assignmentId);
+  if (!dispatch) return { state: "missing", assignmentId: cleanText(assignmentId, 128) };
+  if (dispatch.state === "outbox_persisted") {
+    return { state: "outbox_persisted", assignmentId: dispatch.assignmentId, pendingOutboxIds: [] };
+  }
+  const assignment = await getQuizAssignmentForStaff(db, teamId, dispatch.assignmentId);
+  const recipientIds = await getActiveQuizAssignmentRecipientIds(db, teamId, assignment.id);
+  const outbox = await createNotificationOutboxDeliveries(db, {
+    teamId,
+    eventKey: dispatch.eventKey,
+    deliveryKind: "quiz_homework",
+    homeworkAssignmentId: assignment.id,
+    homeworkDeliveryEventType: "assigned",
+    recipientUserIds: recipientIds,
+    notification: {
+      type: "quiz_homework",
+      title: `Homework: ${assignment.title}`,
+      body: homeworkDispatchBody(assignment),
+      deepLink: `quiz-assignment:${assignment.id}`,
+      tag: `quiz-homework-${assignment.id}`,
+    },
+    now,
+  });
+  await markQuizAssignmentInitialDispatchPersisted(db, teamId, assignment.id, dispatch.eventKey, now);
+  return {
+    state: "outbox_persisted",
+    assignmentId: assignment.id,
+    recipientIds: outbox.recipientIds,
+    pendingOutboxIds: outbox.pendingIds,
+  };
+}
+
 export async function archiveQuizAssignment(db, teamId, assignmentId) {
   const id = cleanText(assignmentId, 128);
   const now = nowUnix();
@@ -283,53 +493,51 @@ export async function markQuizAssignmentOpened(db, teamId, userId, assignmentId)
   return { id, startedAt: now };
 }
 
-export async function createQuizAssignment(db, teamId, session, input = {}) {
-  const title = cleanText(input.title, 120);
-  const items = safeItems(input.items);
-  const questionTypes = safeQuestionTypes(input.questionTypes);
-  const customQuestions = safeCustomQuestions(input.customQuestions);
-  const recipientIds = [...new Set((Array.isArray(input.recipientIds) ? input.recipientIds : [])
-    .map((id) => cleanText(id, 128)).filter(Boolean))].slice(0, 300);
-  if (!title) throw new Error("Give the homework a title.");
-  if (!items.length && !customQuestions.length) throw new Error("Add a play or a complete custom question.");
-  if (!questionTypes.length && !customQuestions.length) throw new Error("Choose a question type or add a complete custom question.");
-  if (!recipientIds.length) throw new Error("Choose at least one player.");
+export async function createQuizAssignment(db, teamId, session, input = {}, options = {}) {
+  const requestedRecipientIds = cleanRecipientIds(input.recipientIds);
+  if (!requestedRecipientIds.length) throw new Error("Choose at least one player.");
   const allowed = await db.prepare(
     `SELECT id FROM users WHERE team_id = ? AND role = 'player' AND status = 'active'`,
   ).bind(teamId).all();
   const allowedIds = new Set((allowed.results || []).map((row) => row.id));
-  const recipients = recipientIds.filter((id) => allowedIds.has(id));
+  const recipients = requestedRecipientIds.filter((id) => allowedIds.has(id));
   if (!recipients.length) throw new Error("None of the selected players are active on this team.");
-  const id = crypto.randomUUID();
+  // The browser assigns a UUID immediately before its first publish request.
+  // Retaining it here makes a response-loss retry resolve to the same durable
+  // publish marker rather than creating a second assignment.
+  const requestedId = cleanText(options.assignmentId ?? input.assignmentId, 128);
+  const id = requestedId || crypto.randomUUID();
   const now = nowUnix();
-  const mode = ["quick", "full", "job", "diagram"].includes(input.quizMode) ? input.quizMode : "quick";
-  const dueAt = cleanUnix(input.dueAt);
-  const assignment = {
-    id, teamId, title, instructions: cleanText(input.instructions, 800), items,
-    questionTypes, customQuestions,
-    quizMode: mode, positionKey: cleanText(input.positionKey, 40),
-    requiredScore: cleanInt(input.requiredScore, 0, 100), dueAt,
-    createdBy: session?.d1UserId || null, now,
-  };
+  const assignment = publishedAssignmentInput(teamId, session, input, id, now);
+  if (!assignment.title) throw new Error("Give the homework a title.");
+  if (!assignment.items.length && !assignment.customQuestions.length) throw new Error("Add a play or a complete custom question.");
+  if (!assignment.questionTypes.length && !assignment.customQuestions.length) throw new Error("Choose a question type or add a complete custom question.");
+  const initialDispatch = await initialDispatchFor(assignment, requestedRecipientIds);
   const statements = [db.prepare(
     `INSERT INTO quiz_assignments (id, team_id, title, instructions, items_json, question_types_json, custom_questions_json, source_kind, source_id, quiz_mode, position_key, required_score, due_at, status, created_by, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, ?)`,
-  ).bind(id, teamId, title, assignment.instructions || null, JSON.stringify(items), JSON.stringify(questionTypes), JSON.stringify(customQuestions),
-    ["playbook", "script", "gameplan"].includes(cleanText(input.sourceKind, 20)) ? cleanText(input.sourceKind, 20) : "playbook", cleanText(input.sourceId, 180) || null, mode,
-    assignment.positionKey || null, assignment.requiredScore, dueAt, assignment.createdBy, now, now)];
+  ).bind(id, teamId, assignment.title, assignment.instructions || null, JSON.stringify(assignment.items), JSON.stringify(assignment.questionTypes), JSON.stringify(assignment.customQuestions),
+    assignment.sourceKind, assignment.sourceId, assignment.quizMode,
+    assignment.positionKey || null, assignment.requiredScore, assignment.dueAt, assignment.createdBy, now, now)];
   for (const userId of recipients) {
     statements.push(db.prepare(
       `INSERT INTO quiz_assignment_recipients (assignment_id, user_id, assigned_by, assigned_at)
        VALUES (?, ?, ?, ?)`,
     ).bind(id, userId, assignment.createdBy, now));
   }
+  // The marker is part of the publish transaction, not a follow-up best
+  // effort write. A later reconciliation can safely create its outbox rows.
+  statements.push(initialDispatchStatement(db, initialDispatch, now));
   await db.batch(statements);
-  return { assignment, recipientIds: recipients };
+  return {
+    assignment: { ...assignment, status: "published" },
+    recipientIds: recipients,
+    initialDispatch: { ...initialDispatch, state: "pending", outboxPersistedAt: null },
+  };
 }
 
 async function validRecipientIds(db, teamId, value) {
-  const requested = [...new Set((Array.isArray(value) ? value : [])
-    .map((id) => cleanText(id, 128)).filter(Boolean))].slice(0, 300);
+  const requested = cleanRecipientIds(value);
   if (!requested.length) return [];
   const allowed = await db.prepare(
     `SELECT id FROM users WHERE team_id = ? AND role = 'player' AND status = 'active'`,
@@ -393,38 +601,62 @@ export async function publishQuizAssignment(db, teamId, session, input = {}) {
   const existing = await db.prepare(
     `SELECT id, status FROM quiz_assignments WHERE id = ? AND team_id = ? LIMIT 1`,
   ).bind(draftId, teamId).first();
-  if (!existing || existing.status !== "draft") throw new Error("Homework draft is unavailable.");
+  if (!existing) return createQuizAssignment(db, teamId, session, input, { assignmentId: draftId });
+  if (!["draft", "published"].includes(existing.status)) throw new Error("Homework draft is unavailable.");
 
-  const title = cleanText(input.title, 120);
-  const items = safeItems(input.items);
-  const questionTypes = safeQuestionTypes(input.questionTypes);
-  const customQuestions = safeCustomQuestions(input.customQuestions);
-  const recipients = await validRecipientIds(db, teamId, input.recipientIds);
-  if (!title) throw new Error("Give the homework a title.");
-  if (!items.length && !customQuestions.length) throw new Error("Add a play or a complete custom question.");
-  if (!questionTypes.length && !customQuestions.length) throw new Error("Choose a question type or add a complete custom question.");
-  if (!recipients.length) throw new Error("Choose at least one player.");
+  const requestedRecipientIds = cleanRecipientIds(input.recipientIds);
   const now = nowUnix();
-  const mode = ["quick", "full", "job", "diagram"].includes(input.quizMode) ? input.quizMode : "quick";
-  const dueAt = cleanUnix(input.dueAt);
-  const assignment = {
-    id: draftId, teamId, title, instructions: cleanText(input.instructions, 800), items, questionTypes, customQuestions,
-    quizMode: mode, positionKey: cleanText(input.positionKey, 40), requiredScore: cleanInt(input.requiredScore, 0, 100),
-    dueAt, createdBy: session?.d1UserId || null, now,
-  };
+  const assignment = publishedAssignmentInput(teamId, session, input, draftId, now);
+  if (!assignment.title) throw new Error("Give the homework a title.");
+  if (!assignment.items.length && !assignment.customQuestions.length) throw new Error("Add a play or a complete custom question.");
+  if (!assignment.questionTypes.length && !assignment.customQuestions.length) throw new Error("Choose a question type or add a complete custom question.");
+  if (!requestedRecipientIds.length) throw new Error("Choose at least one player.");
+
+  const initialDispatch = await initialDispatchFor(assignment, requestedRecipientIds);
+  if (existing.status === "published") {
+    // An interrupted request may be retried, but only with the exact same
+    // normalized immutable payload captured in the atomic publish marker.
+    // This is deliberately not a general edit path for published homework.
+    const existingDispatch = await db.prepare(
+      `SELECT assignment_id, team_id, event_key, payload_fingerprint, state, outbox_persisted_at
+         FROM quiz_assignment_initial_notification_dispatches
+        WHERE assignment_id = ? AND team_id = ? LIMIT 1`,
+    ).bind(draftId, teamId).first();
+    if (!existingDispatch || existingDispatch.payload_fingerprint !== initialDispatch.payloadFingerprint) {
+      throw new Error("Homework is already published and cannot be changed.");
+    }
+    const persistedRecipients = await db.prepare(
+      `SELECT user_id FROM quiz_assignment_recipients
+        WHERE assignment_id = ? ORDER BY assigned_at ASC LIMIT ?`,
+    ).bind(draftId, MAX_RECIPIENTS).all();
+    return {
+      assignment: { ...assignment, status: "published" },
+      recipientIds: (persistedRecipients.results || []).map((row) => cleanText(row.user_id, 128)).filter(Boolean),
+      initialDispatch: mapInitialDispatch(existingDispatch),
+      recoveredPublish: true,
+    };
+  }
+
+  const recipients = await validRecipientIds(db, teamId, input.recipientIds);
+  if (!recipients.length) throw new Error("Choose at least one player.");
   const statements = [db.prepare(
     `UPDATE quiz_assignments SET title = ?, instructions = ?, items_json = ?, question_types_json = ?, custom_questions_json = ?,
       source_kind = ?, source_id = ?, quiz_mode = ?, position_key = ?, required_score = ?, due_at = ?, status = 'published', updated_at = ?
      WHERE id = ? AND team_id = ? AND status = 'draft'`,
-  ).bind(title, assignment.instructions || null, JSON.stringify(items), JSON.stringify(questionTypes), JSON.stringify(customQuestions),
-    ["playbook", "script", "gameplan"].includes(cleanText(input.sourceKind, 20)) ? cleanText(input.sourceKind, 20) : "playbook", cleanText(input.sourceId, 180) || null,
-    mode, assignment.positionKey || null, assignment.requiredScore, dueAt, now, draftId, teamId),
+  ).bind(assignment.title, assignment.instructions || null, JSON.stringify(assignment.items), JSON.stringify(assignment.questionTypes), JSON.stringify(assignment.customQuestions),
+    assignment.sourceKind, assignment.sourceId,
+    assignment.quizMode, assignment.positionKey || null, assignment.requiredScore, assignment.dueAt, now, draftId, teamId),
   db.prepare(`DELETE FROM quiz_assignment_recipients WHERE assignment_id = ?`).bind(draftId)];
   recipients.forEach((userId) => statements.push(db.prepare(
     `INSERT INTO quiz_assignment_recipients (assignment_id, user_id, assigned_by, assigned_at) VALUES (?, ?, ?, ?)`,
   ).bind(draftId, userId, assignment.createdBy, now)));
+  statements.push(initialDispatchStatement(db, initialDispatch, now));
   await db.batch(statements);
-  return { assignment: { ...assignment, status: "published" }, recipientIds: recipients };
+  return {
+    assignment: { ...assignment, status: "published" },
+    recipientIds: recipients,
+    initialDispatch: { ...initialDispatch, state: "pending", outboxPersistedAt: null },
+  };
 }
 
 /**

@@ -1,10 +1,13 @@
 /**
  * d1-notifications.js
  * CRUD helpers for in-app notifications stored in D1.
- * Also fires Web Push when env is provided.
+ * Team-wide announcements use the durable notification outbox; smaller
+ * person-to-person discussion alerts retain their existing direct behavior.
  */
 
 import { sendPushToUser } from "./d1-push.js";
+import { createNotificationOutboxDeliveries } from "./notification-outbox.js";
+import { enqueueNotificationOutboxDeliveries } from "./notification-outbox-queue.js";
 import { getReactorsByKey } from "./d1-threads.js";
 
 const NOTIF_EXPIRY_DAYS = 30;
@@ -23,6 +26,9 @@ const TEAM_UPDATE_DEDUPE_WINDOWS = Object.freeze({
 
 const STAFF_NOTIFICATION_ROLES = Object.freeze(["admin", "coach", "assistant", "assistant_coach"]);
 const DISCUSSION_COMMENT_DEDUPE_SECONDS = 15 * 60;
+// A coalesced refresh uses two bound values per target (notification id and
+// user id) plus five shared update values. Keep below D1's 100-parameter cap.
+const MAX_NOTIFICATION_REFRESH_TARGETS = 47;
 
 function pushUrlForDeepLink(deepLink) {
   const target = String(deepLink || "").trim();
@@ -98,44 +104,97 @@ export async function createNotification(db, { userId, type, title, body = null,
   return id;
 }
 
-async function createOrRefreshTeamNotification(db, { userId, type, title, body, deepLink }) {
-  const now = Math.floor(Date.now() / 1000);
+function nowUnix() {
+  return Math.floor(Date.now() / 1000);
+}
+
+function splitRows(values, size = 80) {
+  const chunks = [];
+  for (let index = 0; index < values.length; index += size) chunks.push(values.slice(index, index + size));
+  return chunks;
+}
+
+async function eventKeyDigest(value) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(bytes)].slice(0, 16).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function buildTeamNotificationEventKey(teamId, notification, deepLink, now) {
+  const type = String(notification.type || "").trim();
   const windowSeconds = TEAM_UPDATE_DEDUPE_WINDOWS[type] || 0;
-  if (windowSeconds > 0) {
-    // One team update can contain a script, media, and quiz handoff. It is
-    // intentionally coalesced across destinations; legacy event types retain
-    // their exact deep-link grouping.
-    const existing = await db.prepare(
-      type === "team_update"
-        ? `SELECT id FROM notifications
-           WHERE user_id = ? AND type = ? AND created_at >= ?
-           ORDER BY created_at DESC LIMIT 1`
-        : `SELECT id FROM notifications
-           WHERE user_id = ? AND type = ? AND COALESCE(deep_link, '') = COALESCE(?, '')
-             AND created_at >= ?
-           ORDER BY created_at DESC LIMIT 1`,
-    ).bind(
-      ...(type === "team_update"
-        ? [userId, type, now - windowSeconds]
-        : [userId, type, deepLink, now - windowSeconds]),
-    ).first();
-    if (existing?.id) {
-      await db.prepare(
-        `UPDATE notifications
-         SET title = ?, body = ?, read_at = NULL, created_at = ?, expires_at = ?
-         WHERE id = ? AND user_id = ?`,
-      ).bind(title, body, now, now + NOTIF_EXPIRY_DAYS * 86400, existing.id, userId).run();
-      return { id: existing.id, coalesced: true };
+  // A team broadcast request does not currently carry a caller idempotency
+  // key. The same dedupe window that governs the in-app alert supplies a
+  // stable server key for network retries and accidental double-clicks.
+  const windowBucket = windowSeconds > 0 ? Math.floor(now / windowSeconds) : now;
+  const digest = await eventKeyDigest(`${teamId}\u0000${type}\u0000${deepLink || ""}\u0000${windowBucket}`);
+  return `team-broadcast:${type}:${digest}`;
+}
+
+async function currentTeamNotificationIds(db, recipientIds, { type, deepLink, now }) {
+  const windowSeconds = TEAM_UPDATE_DEDUPE_WINDOWS[type] || 0;
+  if (!windowSeconds || !recipientIds.length) return new Map();
+  const matches = new Map();
+  for (const ids of splitRows(recipientIds)) {
+    const placeholders = ids.map(() => "?").join(", ");
+    const sql = type === "team_update"
+      ? `SELECT id, user_id FROM notifications
+          WHERE user_id IN (${placeholders}) AND type = ? AND created_at >= ?
+          ORDER BY created_at DESC`
+      : `SELECT id, user_id FROM notifications
+          WHERE user_id IN (${placeholders}) AND type = ?
+            AND COALESCE(deep_link, '') = COALESCE(?, '') AND created_at >= ?
+          ORDER BY created_at DESC`;
+    const params = type === "team_update"
+      ? [...ids, type, now - windowSeconds]
+      : [...ids, type, deepLink || null, now - windowSeconds];
+    const result = await db.prepare(sql).bind(...params).all();
+    for (const row of result.results || []) {
+      const userId = String(row?.user_id || "");
+      if (userId && row?.id && !matches.has(userId)) matches.set(userId, String(row.id));
     }
   }
-  return { id: await createNotification(db, { userId, type, title, body, deepLink }), coalesced: false };
+  return matches;
+}
+
+async function refreshCurrentTeamNotifications(db, currentIds, { title, body, deepLink, now }) {
+  const entries = [...currentIds.entries()];
+  for (const group of splitRows(entries, MAX_NOTIFICATION_REFRESH_TARGETS)) {
+    if (!group.length) continue;
+    const targetValues = group.map(() => "(?, ?)").join(", ");
+    const targetBindings = group.flatMap(([userId, id]) => [id, userId]);
+    // Refresh a whole coalesced group in one statement. Besides being simpler
+    // than a per-player D1 batch, this preserves enough query budget for a
+    // 500-player team announcement on D1 Free.
+    await db.prepare(
+      `WITH target(id, user_id) AS (VALUES ${targetValues})
+       UPDATE notifications
+          SET title = ?, body = ?, deep_link = ?, read_at = NULL, created_at = ?, expires_at = ?
+        WHERE EXISTS (
+          SELECT 1 FROM target
+           WHERE target.id = notifications.id
+             AND target.user_id = notifications.user_id
+        )`,
+    ).bind(
+      ...targetBindings,
+      title,
+      body,
+      deepLink,
+      now,
+      now + NOTIF_EXPIRY_DAYS * 86400,
+    ).run();
+  }
 }
 
 /**
  * Notify every active player on a team. Used when staff publish player-facing
  * work that lives in local/cloud backup data rather than D1 rows.
+ *
+ * The request writes the inbox notification and matching outbox row in a
+ * bounded D1 batch. Queue delivery is intentionally background work: if it
+ * cannot be sent right away, the dedicated worker's repair sweep picks up the
+ * pending row without making a coach's publish action fail.
  */
-export async function notifyTeamPlayers(db, teamId, notification = {}, env = null) {
+export async function notifyTeamPlayers(db, teamId, notification = {}, env = null, context = null) {
   if (!teamId || !notification?.type || !notification?.title) {
     return { recipients: 0, pushSent: 0, pushTotal: 0 };
   }
@@ -151,43 +210,41 @@ export async function notifyTeamPlayers(db, teamId, notification = {}, env = nul
     .bind(teamId)
     .all();
 
-  let recipients = 0;
-  let pushSent = 0;
-  let pushTotal = 0;
-  let coalesced = 0;
+  const recipientIds = (rows.results || []).map((row) => String(row?.id || "")).filter(Boolean);
+  const now = nowUnix();
   const body = notification.body ? String(notification.body).slice(0, 240) : null;
   const deepLink = notification.deepLink ? String(notification.deepLink).slice(0, 512) : null;
+  const type = String(notification.type || "").trim();
+  const title = String(notification.title || "").slice(0, 160);
+  const currentIds = await currentTeamNotificationIds(db, recipientIds, { type, deepLink, now });
+  await refreshCurrentTeamNotifications(db, currentIds, { title, body, deepLink, now });
 
-  for (const row of rows.results || []) {
-    const notificationResult = await createOrRefreshTeamNotification(db, {
-      userId: row.id,
-      type: notification.type,
-      title: String(notification.title).slice(0, 160),
+  const freshRecipientIds = recipientIds.filter((id) => !currentIds.has(id));
+  const outbox = await createNotificationOutboxDeliveries(db, {
+    teamId,
+    eventKey: await buildTeamNotificationEventKey(teamId, notification, deepLink, now),
+    deliveryKind: "team_broadcast",
+    recipientUserIds: freshRecipientIds,
+    notification: {
+      type,
+      title,
       body,
       deepLink,
-    });
-    recipients += 1;
-    if (notificationResult.coalesced) {
-      coalesced += 1;
-      continue;
-    }
+      tag: notification.tag || `${type}-${deepLink || "team"}`,
+    },
+    now,
+  });
+  const queue = await enqueueNotificationOutboxDeliveries(context, env, outbox.pendingIds);
 
-    if (env) {
-      const result = await sendPushToUser(env, db, row.id, {
-        title: String(notification.title).slice(0, 160),
-        body: body || "",
-        url: pushUrlForDeepLink(deepLink),
-        deepLink,
-        tag: notification.tag || `${notification.type}-${deepLink || "team"}`,
-      }).catch(() => null);
-      if (result) {
-        pushSent += result.sent || 0;
-        pushTotal += result.total || 0;
-      }
-    }
-  }
-
-  return { recipients, coalesced, pushSent, pushTotal };
+  return {
+    recipients: recipientIds.length,
+    coalesced: currentIds.size,
+    pushSent: 0,
+    pushTotal: 0,
+    outboxQueued: Number(queue?.queued || 0) || 0,
+    outboxPending: Number(queue?.pending || 0) || 0,
+    outboxScheduled: Boolean(queue?.scheduled),
+  };
 }
 
 /**

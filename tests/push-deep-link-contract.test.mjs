@@ -12,17 +12,19 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (relativePath) => readFile(new URL(relativePath, `file://${root}/`), "utf8");
 
-const [webPush, notifications, worker, client, threadRoute] = await Promise.all([
+const [webPush, notifications, worker, deliveryWorker, client, threadRoute] = await Promise.all([
   source("functions/_lib/web-push.js"),
   source("functions/_lib/d1-notifications.js"),
   source("sw.js"),
+  source("workers/notification-delivery-worker.js"),
   source("js/app-notifications.js"),
   source("functions/api/threads/[playId].js"),
 ]);
 
 assert.match(webPush, /deepLink: notification\.deepLink \|\| ""/, "the encrypted push payload retains its in-app destination");
 assert.match(notifications, /function pushUrlForDeepLink\(deepLink\)/, "server notifications create one safe cold-launch URL shape");
-assert.match(notifications, /url: pushUrlForDeepLink\(deepLink\),[\s\S]*deepLink,/, "team publish pushes retain their released destination");
+assert.match(notifications, /deliveryKind: "team_broadcast"[\s\S]*?deepLink,[\s\S]*?tag:/, "team publishes persist their released destination in the durable outbox");
+assert.match(deliveryWorker, /function buildPushNotification\(delivery\)[\s\S]*?url: pushUrlForDeepLink\(deepLink\),[\s\S]*?deepLink,/, "the durable delivery Worker restores a team publish destination into its push payload");
 assert.match(notifications, /url: pushUrlForDeepLink\(notification\.deepLink\),[\s\S]*deepLink: notification\.deepLink/, "staff comment pushes retain the exact comment destination");
 assert.match(threadRoute, /postId: result\.id,[\s\S]*\}, env\)/, "a new player comment authorizes its staff push at the durable-post boundary");
 assert.match(worker, /function safePushTarget\(rawUrl\)/, "the service worker refuses external click targets");

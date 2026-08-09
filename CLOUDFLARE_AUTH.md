@@ -221,6 +221,83 @@ by the workflow. Keep the Pages runtime secrets listed above in Cloudflare;
 they are not duplicated in GitHub because the guarded deploy script verifies
 their bindings remotely.
 
+## Durable notification outbox Worker rollout
+
+The notification queue has a separate Worker deployment boundary. Keep it
+separate from the Pages release: the Pages Functions only enqueue opaque D1
+outbox IDs, while `bcoffense-notification-delivery` owns retries and Web Push
+delivery.
+
+Never generate, rotate, or overwrite the VAPID key pair during this rollout.
+Existing browser push subscriptions are tied to the current public key. Copy
+the existing production values to the Worker securely; do not create a new key
+pair, place values in GitHub, commit them, or paste them into a shell command.
+A future VAPID rotation needs a dedicated resubscribe rollout.
+
+Perform the first production rollout in this exact order:
+
+1. **Apply migration 0030**
+
+   Review the migration, back up production if appropriate, then apply it
+   intentionally. The guarded deploy scripts do not apply migrations.
+
+   ~~~bash
+   npx --yes wrangler@4.112.0 d1 migrations apply bcoffense-db --remote
+   ./scripts/cloudflare-preflight.sh
+   ~~~
+
+2. **Create the production queue and DLQ**
+
+   Create both queues exactly once. Do not enable the Pages producer yet.
+
+   ~~~bash
+   npx --yes wrangler@4.112.0 queues create bcoffense-notifications
+   npx --yes wrangler@4.112.0 queues create bcoffense-notifications-dlq
+   ~~~
+
+3. **Bootstrap the Worker and preserve its VAPID secrets**
+
+   The Worker config is `wrangler.notifications.toml`. Add the three existing
+   production VAPID values as Worker secrets through secure interactive
+   prompts. On a first setup, setting a secret can create the named Worker
+   shell; that is expected. Do not supply a value as a command-line argument
+   and do not use `echo` to pipe it.
+
+   ~~~bash
+   npx --yes wrangler@4.112.0 secret put VAPID_PRIVATE_KEY --config wrangler.notifications.toml
+   npx --yes wrangler@4.112.0 secret put VAPID_PUBLIC_KEY --config wrangler.notifications.toml
+   npx --yes wrangler@4.112.0 secret put VAPID_SUBJECT --config wrangler.notifications.toml
+   ./scripts/deploy-notification-worker.sh
+   ~~~
+
+   The guarded Worker script requires an exact, clean `origin/main`, runs the
+   full release-quality gate with Cloudflare credentials removed from its test
+   child processes, performs the read-only D1 preflight, checks only the three
+   Worker secret names, and then deploys with pinned Wrangler 4.112.0.
+
+   For GitHub Actions, use the separate manual **Deploy Notification Worker**
+   workflow. In the protected `production` environment, add
+   `CLOUDFLARE_NOTIFICATION_WORKER_API_TOKEN` in addition to the existing
+   account ID. Scope this token to the one Cloudflare account with only the
+   permissions the Worker path needs: **Workers Scripts: Edit**, **Queues:
+   Edit**, and **D1: Read**. It must not replace or broaden the Pages
+   `CLOUDFLARE_API_TOKEN`, which remains scoped to Pages deployment and D1
+   preflight only. Keep VAPID values as Cloudflare Worker secrets, never as
+   GitHub secrets.
+
+4. **Deploy Pages last**
+
+   Once the queues, Worker, and its existing VAPID secret bindings are ready,
+   deploy the Pages producer release through its existing guard:
+
+   ~~~bash
+   ./scripts/deploy-cloudflare.sh
+   ~~~
+
+   This final step makes Pages Functions enqueue delivery intents. Because the
+   Worker and queue already exist, coaches never need to wait for push fanout
+   in their publish request.
+
 ## Daily media workflow after the containment release
 
 ### Diagrams
