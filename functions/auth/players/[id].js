@@ -49,6 +49,27 @@ export async function onRequest(context) {
     return authJson({ ok: false, error: "User not found." }, { status: 404 });
   }
 
+  // Admin principals are deliberately outside the player-management surface.
+  // The list endpoint already omits them, but this direct-route guard is the
+  // authority: no caller can disable, re-enable, resend, or otherwise mutate
+  // a named administrator through a guessed account ID.
+  if (user.role === "admin") {
+    return authJson(
+      { ok: false, error: "Administrator accounts cannot be changed through player management." },
+      { status: 403 },
+    );
+  }
+
+  // A managed D1 coach may administer players when granted that permission,
+  // but must not change peer staff accounts. Legacy static coaches retain the
+  // established full-staff behavior until their separate retirement path.
+  if (session.managedCoach && user.role !== "player") {
+    return authJson(
+      { ok: false, error: "Managed coach accounts cannot change staff accounts." },
+      { status: 403 },
+    );
+  }
+
   if (action === "set-coach-access") {
     if (session.role !== "admin") {
       return authJson({ ok: false, error: "Only an administrator can change coach access." }, { status: 403 });

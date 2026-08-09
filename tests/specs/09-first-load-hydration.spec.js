@@ -34,9 +34,10 @@ const HYDRATION_TABS = [
   {
     tab: "script",
     assert: async (page) => {
-      await restoreScriptDraftIfPrompted(page);
       await expect(page.locator("#script.panel.active")).toContainText("Hydration Practice");
-      await expect(page.locator("#scriptPlays")).toContainText("Hydration Buck");
+      await expect(page.locator("#savedScriptsList")).toContainText("Hydration Practice");
+      await expect(page.locator("#scriptPlays")).toContainText("Add plays from the left panel");
+      await expect(page.locator("#scriptPlays")).not.toContainText("Legacy Hydration Draft");
     },
   },
   {
@@ -97,16 +98,6 @@ async function waitForHydratedTab(page, tabName) {
     });
 }
 
-async function restoreScriptDraftIfPrompted(page) {
-  const modal = page.locator(".custom-modal-overlay.visible, .modal-overlay.visible").first();
-  if ((await modal.count()) === 0 || !(await modal.isVisible().catch(() => false))) return;
-  const restore = modal.getByRole("button", { name: /restore/i }).first();
-  if (await restore.count()) {
-    await restore.click();
-    await expect(modal).toBeHidden({ timeout: 5_000 }).catch(() => {});
-  }
-}
-
 async function seedHydrationFixture(page, lastTab) {
   await page.evaluate(async (targetTab) => {
     const authSession = storageManager.get(STORAGE_KEYS.AUTH_SESSION, null);
@@ -128,12 +119,11 @@ async function seedHydrationFixture(page, lastTab) {
     );
 
     storageManager.set(STORAGE_KEYS.SCRIPT_DRAFT, {
-      name: "Hydration Practice",
+      name: "Legacy Hydration Draft",
       date: "2026-07-08",
       plays: [
         { isSeparator: true, id: "hydration-period-1", label: "Team", minutes: 10 },
-        copied[0],
-        copied[1],
+        { ...copied[0], id: "legacy-hydration-draft-play", play: "Legacy Hydration Draft" },
       ],
       savedAt: new Date().toISOString(),
     });

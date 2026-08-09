@@ -590,9 +590,11 @@ function checkStorageKeyUsage() {
     !/function formatDiagramSyncSummary\(result\)/.test(cloudSync) ||
     !/function formatDiagramSyncDetails\(result\)/.test(cloudSync) ||
     !/diagramSyncResult = await window\.playImages\.syncToRemote\(_playsRef\)/.test(cloudSync) ||
-    !/Admin Recovery Tools/.test(cloudSync) ||
-    !/Republish Local Workspace/.test(cloudSync) ||
-    !/Recover This Device/.test(cloudSync)
+    // The recovery UI deliberately uses plain-language, sentence-case labels.
+    // Keep the contract on the actions themselves rather than stale title case.
+    !/Advanced administrator tools/.test(cloudSync) ||
+    !/Republish local workspace/.test(cloudSync) ||
+    !/Recover this device/.test(cloudSync)
   ) {
     fail("cloud sync push does not wait for and report diagram sync results");
   }
@@ -1275,7 +1277,7 @@ function checkScriptGamePlanProvenanceContract() {
     !/function createScriptPlayFromGamePlan\(play, options = \{\}\)/.test(scriptAdd) ||
     !/function getScriptGamePlanSourceDisplay\(play\)/.test(scriptAdd) ||
     !/createScriptPlayFromGamePlan\(play/.test(scriptAdd) ||
-    !/createScriptPlayFromGamePlan\(p, \{ board, box: b \}\)/.test(gamePlanIntegrations) ||
+    !/(?:createScriptPlayFromGamePlan\(p, \{ board, box: b \}|createScriptPlayFromGamePlan\(_gpExternalPlayCopy\(p\), \{ board, box: b \})/.test(gamePlanIntegrations) ||
     !/createScriptPlayFromGamePlan\(p, \{[\s\S]*?boxes: allBoxes\.filter/.test(scriptIntegrations) ||
     !/script-gp-jv-badge/.test(scriptRender) ||
     !/script-gp-jv-badge \{[\s\S]*border: 1px solid var\(--color-warning\)/.test(css) ||
@@ -1737,7 +1739,9 @@ function checkPlayPresentationContracts() {
     !/copyPlayWithSourceIdentity\(p, \{ _gpSource: true/.test(
       scriptIntegrations,
     ) ||
-    !/copyPlayWithSourceIdentity\(p, \{ _gpSource: true/.test(
+    // Game Plan strips board-only display fields before preserving canonical
+    // source identity. Either direct or sanitized copies are valid handoffs.
+    !/(?:copyPlayWithSourceIdentity\(p, \{ _gpSource: true|copyPlayWithSourceIdentity\(_gpExternalPlayCopy\(p\), \{ _gpSource: true)/.test(
       gameplanIntegrations,
     ) ||
     !/copyPlayWithSourceIdentity\(p, \{[\s\S]*?_gpSource:/.test(
@@ -1940,7 +1944,8 @@ function checkPlayIdentityHandoffFixtures() {
     !/copyPlayForCallSheet\(playData\)/.test(callsheetPicker) ||
     !/copyPlayForCallSheet\(play, \{ wristbandNumber/.test(callsheetPicker) ||
     !/copyPlayForCallSheet\(s\.play\)/.test(callsheetSmart) ||
-    !/copyPlayForCallSheet\(play, \{ wristbandNumber: wb \}\)/.test(gameplanIntegrations) ||
+    // Game Plan removes board-only fields before creating a Call Sheet record.
+    !/(?:copyPlayForCallSheet\(play, \{ wristbandNumber: wb \}|copyPlayForCallSheet\(externalPlay, \{ wristbandNumber: wb \})/.test(gameplanIntegrations) ||
     !/copyPlayForCallSheet\(play\)/.test(scriptPeriodSync) ||
     !/copyPlayWithSourceIdentity\(play\)/.test(gameplanDnd) ||
     !/copyPlayWithSourceIdentity\(play\)/.test(gameplanSmart) ||
@@ -4467,9 +4472,9 @@ function checkWorkspaceSyncContracts() {
     !/saveTeamWorkspacePullSummary\(\{ \.\.\.remote, backup, summary \}, \{ restoredImages, imageWarning \}\)/.test(cloudSync) ||
     !/window\.getTeamWorkspacePullSummary = getTeamWorkspacePullSummary/.test(cloudSync) ||
     !/window\.dismissTeamWorkspacePullSummary = dismissTeamWorkspacePullSummary/.test(cloudSync) ||
-    !/Admin Recovery Tools/.test(cloudSync) ||
-    !/Republish Local Workspace/.test(cloudSync) ||
-    !/Recover This Device/.test(cloudSync)
+    !/Advanced administrator tools/.test(cloudSync) ||
+    !/Republish local workspace/.test(cloudSync) ||
+    !/Recover this device/.test(cloudSync)
   ) {
     fail("team workspace sync modal and pull summary are incomplete");
   }

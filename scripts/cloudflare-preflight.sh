@@ -19,20 +19,18 @@ if [[ ! -d "$MIGRATIONS_DIR" ]]; then
   fail "local migrations directory was not found: $MIGRATIONS_DIR"
 fi
 
-if command -v wrangler >/dev/null 2>&1; then
-  WRANGLER=(wrangler)
-elif command -v npx >/dev/null 2>&1; then
-  WRANGLER=(npx wrangler)
-else
-  fail "Wrangler v4 is required. Install it, authenticate, then rerun the deploy."
+if ! command -v npx >/dev/null 2>&1; then
+  fail "npx is required to run the pinned Wrangler v4 release CLI."
 fi
+
+WRANGLER=(npx --yes wrangler@4.112.0)
 
 if ! wrangler_version="$("${WRANGLER[@]}" --version 2>/dev/null)"; then
   fail "could not run Wrangler. Install Wrangler v4 and authenticate before deploying."
 fi
 
-if [[ ! "$wrangler_version" =~ ^4\. ]]; then
-  fail "Wrangler v4 is required (found ${wrangler_version:-unknown})."
+if [[ "$wrangler_version" != 4.112.0* ]]; then
+  fail "Wrangler 4.112.0 is required (found ${wrangler_version:-unknown})."
 fi
 
 local_migrations=()

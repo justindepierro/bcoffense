@@ -2579,6 +2579,168 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
   font-weight: 700;
 }
 
+/* ── One-time named administrator bootstrap ────────────────────────── */
+.admin-bootstrap-panel {
+  width: min(96vw, 620px);
+}
+.admin-bootstrap-header {
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+.admin-bootstrap-header > div {
+  min-width: 0;
+}
+.admin-bootstrap-header p {
+  margin: 3px 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.35;
+}
+.admin-bootstrap-intro {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 38%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: var(--color-bg-blue-tint, var(--color-bg-light));
+}
+.admin-bootstrap-eyebrow {
+  color: var(--color-primary);
+  font-size: var(--font-size-2xs);
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.admin-bootstrap-intro h4,
+.admin-bootstrap-complete h4 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+}
+.admin-bootstrap-intro p,
+.admin-bootstrap-complete p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+.admin-bootstrap-steps {
+  display: grid;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: admin-bootstrap-step;
+}
+.admin-bootstrap-steps li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: var(--space-sm);
+  align-items: start;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+.admin-bootstrap-steps li::before {
+  counter-increment: admin-bootstrap-step;
+  content: counter(admin-bootstrap-step);
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+.admin-bootstrap-form {
+  display: grid;
+  gap: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+}
+.admin-bootstrap-form-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+.admin-bootstrap-form label {
+  display: grid;
+  gap: 5px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+.admin-bootstrap-form .pa-input {
+  width: 100%;
+  min-width: 0;
+}
+.admin-bootstrap-form-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+.admin-bootstrap-form-actions small {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.35;
+}
+.admin-bootstrap-notice {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+.admin-bootstrap-notice--error {
+  border: 1px solid color-mix(in srgb, var(--color-danger) 38%, var(--color-border));
+  background: var(--color-danger-light, #fef2f2);
+  color: var(--color-danger);
+}
+.admin-bootstrap-notice--success {
+  border: 1px solid color-mix(in srgb, var(--color-success) 38%, var(--color-border));
+  background: var(--color-success-light, #ecfdf5);
+  color: var(--color-success);
+}
+.admin-bootstrap-complete {
+  display: grid;
+  gap: var(--space-md);
+}
+.admin-bootstrap-invite-link {
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+}
+.admin-bootstrap-invite-link strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+.admin-bootstrap-invite-link a {
+  overflow-wrap: anywhere;
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+}
+.admin-bootstrap-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+@media (max-width: 560px) {
+  .admin-bootstrap-form-fields {
+    grid-template-columns: 1fr;
+  }
+  .admin-bootstrap-header {
+    padding: var(--space-md);
+  }
+}
+
 /* ── Coach Grid: Team Workspace ──────────────────────────────────────
    This is desktop-only coach chrome. Player portal controls and phone layouts
    keep their existing behavior and spacing. */

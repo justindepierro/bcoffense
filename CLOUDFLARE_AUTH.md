@@ -47,6 +47,11 @@ Generate a long random session secret:
 openssl rand -hex 32
 ~~~
 
+### Authenticator MFA
+
+Authenticator MFA is intentionally deferred and is not part of the named-account
+transition. Revisit it only through a separately reviewed rollout.
+
 Player accounts are stored in D1 with PBKDF2 hashes. Rotate the static staff
 secrets to PBKDF2 as well; their historic SHA256 names remain only for
 configuration compatibility. Each value hashes:
@@ -69,6 +74,51 @@ once the season rotation is complete.
 
 Session cookies use the host-only __Host-bc_auth prefix. An auth/session rollout
 can sign out existing browsers once; that is expected.
+
+## Controlled named-staff transition
+
+The shared environment-backed `admin` and `coach` sign-ins are temporary
+break-glass accounts. Establish and test a personal D1-backed administrator
+account before retiring those shared staff credentials.
+
+This is a future operator runbook, not authorization to deploy or migrate
+production as part of the current task. Do not apply a D1 migration or deploy
+production code until the named-account release has been independently reviewed
+and passed the release-quality gate.
+
+After that approved release is live, make the transition in this order:
+
+1. Sign in using the existing shared **Admin** account and open **Team
+   Settings → Admin security**.
+2. Choose **Send my admin invitation**, entering your own email address and
+   display name. This creates the one initial named D1 administrator and does
+   not change the shared Admin sign-in.
+3. Open the invitation yourself in a private window or separate browser
+   profile, set a personal password, and sign in as that named administrator.
+   Treat the invitation URL as a password-reset link: do not forward it. If
+   email delivery is unavailable, copy the private link shown only in the
+   still-authenticated legacy Admin session and use it yourself.
+4. Verify the named account can open Team Settings, use admin and recovery
+   controls, and invite a named coach through the normal staff invitation
+   workflow. Keep the recovery details in the team password manager.
+5. Only after that separate-login test succeeds, retire shared staff access by
+   adding this **production** Pages environment variable in **Workers & Pages
+   → _project_ → Settings → Variables and Secrets**:
+
+   ~~~text
+   AUTH_LEGACY_STATIC_STAFF_ENABLED=false
+   ~~~
+
+   Its value must be the literal `false` (case-insensitive). Leaving it unset
+   or using another value keeps the legacy staff fallback enabled.
+
+When the value is `false`, the static `admin` and `coach` passwords are no
+longer accepted, and existing static Admin/Coach sessions stop being accepted
+at their next protected request. Named D1 administrators and coaches remain
+valid. The static `player` sign-in is deliberately untouched by this switch.
+The setting does not delete the old password secrets or any D1 accounts; retain
+the rollback procedure and only remove obsolete secrets after a separate,
+verified recovery decision.
 
 ## Pages settings
 

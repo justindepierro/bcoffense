@@ -27,6 +27,26 @@ const USERS = {
   },
 };
 
+// Named D1 staff accounts are the long-term identity model. The legacy
+// environment-variable admin/coach accounts remain available during the
+// transition unless this explicit runtime switch is set to "false". Keep the
+// default permissive so an existing deployment is never changed merely by
+// shipping this code. The static player account intentionally does not use
+// this switch and remains available for its separate transition path.
+export function isLegacyStaticStaffEnabled(env) {
+  return String(env?.AUTH_LEGACY_STATIC_STAFF_ENABLED ?? "true").trim().toLowerCase() !== "false";
+}
+
+function isLegacyStaticStaffUser(user) {
+  return user?.role === "admin" || user?.role === "coach";
+}
+
+function isEnabledStaticUser(username, env) {
+  const user = USERS[username];
+  if (!user) return false;
+  return !isLegacyStaticStaffUser(user) || isLegacyStaticStaffEnabled(env);
+}
+
 // Content-Security-Policy backstop for the innerHTML-heavy app.
 // - script-src keeps 'unsafe-inline' because index.html ships a pre-paint theme
 //   bootstrap inline <script> and there is no build step to inject nonces.
@@ -221,6 +241,10 @@ export async function verifyCredentials(username, password, env) {
   // 1. Hardcoded staff accounts (admin / coach) — env-var hash, no D1 needed
   const user = USERS[cleanUsername];
   if (user) {
+    // The retirement switch applies only to legacy staff. Do this before
+    // reading the password secret so deployments can remove those secrets
+    // after retirement without breaking named D1 administrators or players.
+    if (!isEnabledStaticUser(cleanUsername, env)) return null;
     const expectedHash = getRequiredEnv(env, user.hashEnv);
     if (!(await verifyStaticPasswordHash(cleanUsername, password, expectedHash))) return null;
     return { username: cleanUsername, role: user.role, label: user.label };
@@ -281,8 +305,13 @@ export async function getSessionFromRequest(request, env) {
 
     // D1 player sessions have d1: true and d1_user_id
     const isD1Session = session.d1 === true && !!session.d1_user_id;
-    // Static staff sessions must match the USERS map
-    const isStaticSession = !isD1Session && USERS[session.username] && USERS[session.username].role === session.role;
+    // Static staff sessions must match the USERS map and are invalidated
+    // immediately when the controlled legacy-staff retirement switch is off.
+    // Static player sessions deliberately remain valid through that change.
+    const isStaticSession = !isD1Session
+      && USERS[session.username]
+      && USERS[session.username].role === session.role
+      && isEnabledStaticUser(session.username, env);
     if (!isD1Session && !isStaticSession) return null;
 
     let teamId = "";

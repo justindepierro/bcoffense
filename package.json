@@ -20,6 +20,8 @@
     "test:e2e:ipad": "npm --prefix tests run test:ipad",
     "test:e2e:headers": "npm --prefix tests run test:headers",
     "test:e2e:screenshots": "npm --prefix tests run screenshots",
-    "playwright": "cd tests && npm exec -- playwright"
+    "playwright": "cd tests && npm exec -- playwright",
+    "release:quality": "bash scripts/release-quality-gate.sh",
+    "release:package": "bash scripts/package-source.sh"
   }
 }

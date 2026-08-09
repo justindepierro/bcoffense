@@ -493,3 +493,373 @@ async function _playerAction(userId, action, onSuccess) {
     await showModal("Network error — try again.", { title: "Error", icon: "⚠️" });
   }
 }
+
+// ── One-time named administrator bootstrap ──────────────────────────────────
+//
+// This stays alongside the account-management UI because it is a one-time
+// invitation flow, not a new authorization system. The server is the authority
+// for whether the current session is the legacy static admin and whether a
+// first named administrator can still be created.
+
+let _adminBootstrapStatus = null;
+let _adminBootstrapInvite = null;
+let _adminBootstrapDraft = { email: "", displayName: "" };
+let _adminBootstrapLoadController = null;
+let _adminBootstrapSubmitController = null;
+let _adminBootstrapSubmitting = false;
+
+function getAdminBootstrapOverlay() {
+  return document.getElementById("adminBootstrapOverlay");
+}
+
+function isLegacyStaticAdminSession() {
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  return user?.role === "admin" && !String(user.d1UserId || "").trim();
+}
+
+function adminBootstrapErrorMessage(error, fallback = "Unable to check administrator setup.") {
+  const message = String(error?.message || fallback).trim();
+  return message || fallback;
+}
+
+function getSafeAdminBootstrapInviteUrl(value) {
+  try {
+    const url = new URL(String(value || ""), window.location.origin);
+    if (url.origin !== window.location.origin || url.pathname !== "/auth/accept-invite") return "";
+    return url.href;
+  } catch (_err) {
+    return "";
+  }
+}
+
+function renderAdminBootstrapLoading() {
+  const body = document.getElementById("adminBootstrapBody");
+  if (!body) return;
+  body.innerHTML = '<p class="pa-loading">Checking administrator setup…</p>';
+}
+
+function renderAdminBootstrapError(message) {
+  const body = document.getElementById("adminBootstrapBody");
+  if (!body) return;
+  body.innerHTML = `
+    <section class="admin-bootstrap-complete">
+      <div class="admin-bootstrap-intro">
+        <span class="admin-bootstrap-eyebrow">Admin security</span>
+        <h4>Administrator setup could not be checked</h4>
+        <p>BCOffense did not change any account access.</p>
+      </div>
+      <p class="admin-bootstrap-notice admin-bootstrap-notice--error" role="alert">${escapeHtml(message)}</p>
+      <div class="admin-bootstrap-actions">
+        <button type="button" class="btn btn-outline" data-admin-bootstrap="retry">Try again</button>
+      </div>
+    </section>`;
+}
+
+function renderAdminBootstrapComplete() {
+  const body = document.getElementById("adminBootstrapBody");
+  if (!body || !_adminBootstrapInvite) return;
+  const invite = _adminBootstrapInvite;
+  const inviteUrl = getSafeAdminBootstrapInviteUrl(invite.inviteUrl);
+  const email = String(invite.email || "your email address").trim();
+  const delivery = invite.inviteSent
+    ? `An invitation was sent to ${email}.`
+    : inviteUrl
+      ? "An invitation was created. Use the private link below to finish setup."
+      : `An invitation was created for ${email}. Check that inbox for the setup link.`;
+
+  body.innerHTML = `
+    <section class="admin-bootstrap-complete">
+      <div class="admin-bootstrap-intro">
+        <span class="admin-bootstrap-eyebrow">Invitation ready</span>
+        <h4>Create your personal admin password next</h4>
+        <p>${escapeHtml(delivery)} Your current legacy Admin session stays active while you complete this in a separate browser window.</p>
+      </div>
+      <ol class="admin-bootstrap-steps">
+        <li>Open the invitation in a private window or a different browser profile.</li>
+        <li>Choose a strong password, then sign in with the new personal account.</li>
+        <li>Confirm that the new account opens the full admin workspace.</li>
+        <li>Keep the legacy shared Admin login until you deliberately retire it later.</li>
+      </ol>
+      ${inviteUrl ? `
+        <div class="admin-bootstrap-invite-link">
+          <strong>Private invitation link</strong>
+          <a href="${escapeAttr(inviteUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(inviteUrl)}</a>
+          <div><button type="button" class="btn btn-sm btn-outline" data-admin-bootstrap="copy-invite">Copy invitation link</button></div>
+        </div>` : ""}
+      <p class="admin-bootstrap-notice admin-bootstrap-notice--success">The shared sign-in has not changed. Do not forward an invitation link; it lets its recipient create an administrator password.</p>
+      <div class="admin-bootstrap-actions">
+        <button type="button" class="btn btn-outline" data-admin-bootstrap="refresh">Check setup again</button>
+      </div>
+    </section>`;
+}
+
+function renderAdminBootstrapSetup() {
+  const body = document.getElementById("adminBootstrapBody");
+  if (!body) return;
+  const email = escapeAttr(_adminBootstrapDraft.email);
+  const displayName = escapeAttr(_adminBootstrapDraft.displayName);
+  const submitting = _adminBootstrapSubmitting;
+
+  body.innerHTML = `
+    <section class="admin-bootstrap-intro">
+      <span class="admin-bootstrap-eyebrow">One-time protection</span>
+      <h4>Create your personal administrator account</h4>
+      <p>This sends an invitation for an individual D1-backed admin login. It does not disable or change the legacy shared Admin sign-in.</p>
+    </section>
+    <ol class="admin-bootstrap-steps">
+      <li>Enter the email address and name you want tied to your personal administrator login.</li>
+      <li>Open the invitation yourself and create a new password.</li>
+      <li>Test that login before retiring any shared staff credentials.</li>
+    </ol>
+    <form id="adminBootstrapForm" class="admin-bootstrap-form">
+      <div class="admin-bootstrap-form-fields">
+        <label for="adminBootstrapEmail">Your email address
+          <input id="adminBootstrapEmail" class="pa-input" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="${email}" required ${submitting ? "disabled" : ""}>
+        </label>
+        <label for="adminBootstrapDisplayName">Your display name
+          <input id="adminBootstrapDisplayName" class="pa-input" type="text" autocomplete="name" placeholder="e.g. Coach DePierro" value="${displayName}" required ${submitting ? "disabled" : ""}>
+        </label>
+      </div>
+      <div class="admin-bootstrap-form-actions">
+        <button type="submit" class="btn btn-primary" ${submitting ? "disabled" : ""}>${submitting ? "Creating invitation…" : "Send my admin invitation"}</button>
+        <small>The invitation is for you only. It creates a separate password; it does not use your current shared password.</small>
+      </div>
+    </form>`;
+}
+
+function renderAdminBootstrapReadyStatus() {
+  const body = document.getElementById("adminBootstrapBody");
+  if (!body) return;
+  const legacyStaffEnabled = _adminBootstrapStatus?.legacyStaffEnabled !== false;
+  const pendingEmail = String(_adminBootstrapStatus?.pendingInvite?.email || "").trim();
+  const hasPendingInvite = Boolean(pendingEmail);
+  const submitting = _adminBootstrapSubmitting;
+  body.innerHTML = `
+    <section class="admin-bootstrap-complete">
+      <div class="admin-bootstrap-intro">
+        <span class="admin-bootstrap-eyebrow">Named admin ready</span>
+        <h4>${hasPendingInvite ? "Your administrator invitation is still pending" : "Your personal administrator account has already been started"}</h4>
+        <p>${legacyStaffEnabled
+    ? "The legacy shared Admin login is still available as a temporary fallback. Test the personal account before retiring it."
+    : "The legacy shared Admin login is no longer enabled."}</p>
+      </div>
+      ${hasPendingInvite ? `
+        <p class="admin-bootstrap-notice">A setup invitation is pending for <strong>${escapeHtml(pendingEmail)}</strong>. If it has not arrived, send a fresh one; the prior link will stop working.</p>` : ""}
+      <ol class="admin-bootstrap-steps">
+        <li>${hasPendingInvite ? "Open the invitation yourself and set a personal administrator password." : "Sign in with the personal administrator email and password you set from the invitation."}</li>
+        <li>Confirm that you can reach Team Settings, admin tools, and recovery controls.</li>
+        <li>Keep recovery details in your password manager; do not share personal credentials.</li>
+      </ol>
+      <div class="admin-bootstrap-actions">
+        ${hasPendingInvite ? `<button type="button" class="btn btn-primary" data-admin-bootstrap="resend-pending" ${submitting ? "disabled" : ""}>${submitting ? "Sending invitation…" : "Send a fresh invitation"}</button>` : ""}
+        <button type="button" class="btn btn-outline" data-admin-bootstrap="refresh">Check setup again</button>
+      </div>
+    </section>`;
+}
+
+function renderAdminBootstrapAccessNotice() {
+  const body = document.getElementById("adminBootstrapBody");
+  if (!body) return;
+  body.innerHTML = `
+    <section class="admin-bootstrap-complete">
+      <div class="admin-bootstrap-intro">
+        <span class="admin-bootstrap-eyebrow">Admin security</span>
+        <h4>This setup is only for the legacy Admin login</h4>
+        <p>A named administrator account cannot create another first-admin invitation from this screen.</p>
+      </div>
+    </section>`;
+}
+
+function renderAdminBootstrapBody() {
+  if (_adminBootstrapInvite) {
+    renderAdminBootstrapComplete();
+    return;
+  }
+  if (_adminBootstrapStatus?.bootstrapRequired === true) {
+    renderAdminBootstrapSetup();
+    return;
+  }
+  renderAdminBootstrapReadyStatus();
+}
+
+async function loadAdminBootstrapStatus() {
+  const overlay = getAdminBootstrapOverlay();
+  if (!overlay) return;
+  _adminBootstrapLoadController?.abort();
+  const controller = new AbortController();
+  _adminBootstrapLoadController = controller;
+  renderAdminBootstrapLoading();
+
+  try {
+    const response = await fetch("/auth/admin-bootstrap", {
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    if (_adminBootstrapLoadController !== controller || !overlay.classList.contains("visible")) return;
+    _adminBootstrapStatus = data;
+    renderAdminBootstrapBody();
+  } catch (error) {
+    if (error?.name === "AbortError" || _adminBootstrapLoadController !== controller) return;
+    if (!overlay.classList.contains("visible")) return;
+    renderAdminBootstrapError(adminBootstrapErrorMessage(error));
+  } finally {
+    if (_adminBootstrapLoadController === controller) _adminBootstrapLoadController = null;
+  }
+}
+
+function openAdminBootstrap() {
+  if (typeof isAdminUser !== "function" || !isAdminUser()) {
+    if (typeof showBlockedToast === "function") showBlockedToast();
+    return;
+  }
+  const overlay = getAdminBootstrapOverlay();
+  if (!overlay) return;
+  overlay.hidden = false;
+  overlay.classList.add("visible");
+  overlay.removeAttribute("inert");
+  overlay.removeAttribute("aria-hidden");
+  _adminBootstrapStatus = null;
+  _adminBootstrapInvite = null;
+  _adminBootstrapDraft = { email: "", displayName: "" };
+  _adminBootstrapSubmitting = false;
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "adminBootstrapOverlay",
+      scrollElement: overlay.querySelector(".pa-panel") || overlay,
+      blocking: true,
+      onEscape: () => closeAdminBootstrap(),
+    });
+  }
+  if (!isLegacyStaticAdminSession()) {
+    renderAdminBootstrapAccessNotice();
+    return;
+  }
+  loadAdminBootstrapStatus();
+}
+
+function closeAdminBootstrap(options = {}) {
+  const overlay = getAdminBootstrapOverlay();
+  if (!overlay) return;
+  _adminBootstrapLoadController?.abort();
+  _adminBootstrapSubmitController?.abort();
+  _adminBootstrapLoadController = null;
+  _adminBootstrapSubmitController = null;
+  _adminBootstrapSubmitting = false;
+  overlay.classList.remove("visible");
+  overlay.setAttribute("inert", "");
+  overlay.setAttribute("aria-hidden", "true");
+  if (typeof closeLayer === "function") closeLayer("adminBootstrapOverlay", options);
+}
+
+async function submitAdminBootstrap(options = {}) {
+  const reissuePending = options.reissuePending === true;
+  if (_adminBootstrapSubmitting || (!_adminBootstrapStatus?.bootstrapRequired && !reissuePending)) return;
+  const emailInput = document.getElementById("adminBootstrapEmail");
+  const displayNameInput = document.getElementById("adminBootstrapDisplayName");
+  const pendingEmail = String(_adminBootstrapStatus?.pendingInvite?.email || "").trim().toLowerCase();
+  const email = reissuePending ? pendingEmail : String(emailInput?.value || "").trim().toLowerCase();
+  const displayName = reissuePending ? "" : String(displayNameInput?.value || "").trim();
+  _adminBootstrapDraft = { email, displayName };
+
+  if (!email || !email.includes("@") || (!reissuePending && !displayName)) {
+    renderAdminBootstrapError("Enter your display name and a valid email address to create an administrator invitation.");
+    return;
+  }
+
+  const overlay = getAdminBootstrapOverlay();
+  if (!overlay || !isLegacyStaticAdminSession()) {
+    renderAdminBootstrapAccessNotice();
+    return;
+  }
+
+  _adminBootstrapSubmitting = true;
+  if (reissuePending) renderAdminBootstrapReadyStatus();
+  else renderAdminBootstrapSetup();
+  const controller = new AbortController();
+  _adminBootstrapSubmitController = controller;
+  try {
+    const response = await fetch("/auth/admin-bootstrap", {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reissuePending ? { email } : { email, displayName }),
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok) throw new Error(data.error || "Unable to create administrator invitation.");
+    if (_adminBootstrapSubmitController !== controller || !overlay.classList.contains("visible")) return;
+    _adminBootstrapStatus = { ...(_adminBootstrapStatus || {}), bootstrapRequired: false };
+    _adminBootstrapInvite = {
+      email: data.email || data.user?.email || email,
+      inviteSent: data.inviteSent === true || data.emailSent === true,
+      inviteUrl: getSafeAdminBootstrapInviteUrl(data.inviteUrl),
+    };
+    _adminBootstrapDraft = { email: "", displayName: "" };
+    renderAdminBootstrapComplete();
+  } catch (error) {
+    if (error?.name === "AbortError" || _adminBootstrapSubmitController !== controller) return;
+    renderAdminBootstrapError(adminBootstrapErrorMessage(error, "Unable to create administrator invitation."));
+  } finally {
+    if (_adminBootstrapSubmitController === controller) _adminBootstrapSubmitController = null;
+    _adminBootstrapSubmitting = false;
+  }
+}
+
+async function copyAdminBootstrapInvite() {
+  const inviteUrl = getSafeAdminBootstrapInviteUrl(_adminBootstrapInvite?.inviteUrl);
+  if (!inviteUrl) return;
+  try {
+    await navigator.clipboard.writeText(inviteUrl);
+    showToast("Administrator invitation link copied.", { type: "success", duration: 2800 });
+  } catch (_error) {
+    await showModal(inviteUrl, { title: "Copy Administrator Invitation", icon: "🔐" });
+  }
+}
+
+function initAdminBootstrapUi() {
+  const trigger = document.getElementById("adminBootstrapTrigger");
+  const overlay = getAdminBootstrapOverlay();
+  const body = document.getElementById("adminBootstrapBody");
+  if (!trigger || !overlay || !body || trigger.dataset.adminBootstrapBound === "true") return;
+  trigger.dataset.adminBootstrapBound = "true";
+
+  trigger.addEventListener("click", openAdminBootstrap);
+  document.getElementById("adminBootstrapClose")?.addEventListener("click", () => closeAdminBootstrap());
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeAdminBootstrap();
+  });
+  body.addEventListener("submit", (event) => {
+    if (!event.target.matches("#adminBootstrapForm")) return;
+    event.preventDefault();
+    submitAdminBootstrap();
+  });
+  body.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-admin-bootstrap]");
+    if (!button) return;
+    const action = button.dataset.adminBootstrap;
+    if (action === "retry" || action === "refresh") {
+      _adminBootstrapInvite = null;
+      _adminBootstrapStatus = null;
+      if (isLegacyStaticAdminSession()) loadAdminBootstrapStatus();
+      else renderAdminBootstrapAccessNotice();
+    } else if (action === "resend-pending") {
+      submitAdminBootstrap({ reissuePending: true });
+    } else if (action === "copy-invite") {
+      copyAdminBootstrapInvite();
+    }
+  });
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initAdminBootstrapUi, { once: true });
+} else {
+  initAdminBootstrapUi();
+}

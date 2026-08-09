@@ -2734,6 +2734,11 @@
           <div id="cloudSyncModalStatus" class="cloud-sync-modal-status cloud-sync-modal-status-info">
             Team workspace last published ${escapeHtml(formatCloudDate(settings.lastRemoteExportDate || settings.lastPushAt || settings.lastPullAt))}. This device last updated ${escapeHtml(formatCloudDate(settings.lastPullAt))}.
           </div>
+          <section class="cloud-sync-explainer" aria-label="How team saving works">
+            <div class="cloud-sync-explainer-item"><span>1</span><strong>Saved on this device</strong><small>Your edit is safe here immediately, even when you are offline.</small></div>
+            <div class="cloud-sync-explainer-item"><span>2</span><strong>Published for team</strong><small>The latest team workspace is available to other staff devices.</small></div>
+            <div class="cloud-sync-explainer-item"><span>3</span><strong>Ready for players</strong><small>Player-safe media and study data have finished publishing.</small></div>
+          </section>
           <section class="cloud-sync-flow-grid" aria-label="Recovery choices">
             <div class="cloud-sync-flow-card"><span>Accidentally restored old work?</span><strong>Review old local drafts</strong><small>See and discard old browser-only drafts. They cannot replace current work.</small><button type="button" class="btn btn-secondary custom-modal-btn" data-action="openRecoveryCenter">Review old drafts</button></div>
             <div class="cloud-sync-flow-card"><span>This device is behind?</span><strong>Recover this device</strong><small>Replace this device with the latest published team workspace.</small><button type="button" class="btn btn-secondary custom-modal-btn" data-action="pullCloudBackup" data-cloud-sync-action="pull">Recover this device</button></div>

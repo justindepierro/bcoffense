@@ -24,6 +24,7 @@ const APPROVED_SCROLL_OWNERS = new Set(["layer", "panel", "workspace", "document
 // id: { owner, pattern, scrollOwner }
 // The owner is the only file permitted to create the named surface.
 const UI_SURFACES = Object.freeze({
+  adminBootstrapOverlay: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
   aboutBCOffenseOverlay: { owner: "js/auth.js", pattern: "blocking-layer", scrollOwner: "layer" },
   authLoginOverlay: { owner: "js/auth.js", pattern: "blocking-layer", scrollOwner: "layer" },
   bcOffenseTermsOverlay: { owner: "js/auth.js", pattern: "blocking-layer", scrollOwner: "layer" },
@@ -233,6 +234,10 @@ for (const [name, content, surfaceId] of [
 assert.match(scriptShared, /function wireScriptOverlayDismiss\(overlay\)[\s\S]*?closeLayer\(overlay\.dataset\.layerId \|\| overlay\.id\)[\s\S]*?overlay\.remove\(\)/, "legacy Script backdrop and Escape dismissal releases a registered layer first");
 assert.match(scriptHealth, /openLayer\(overlay, \{[\s\S]*?id: "scriptShortcutsModal"[\s\S]*?scrollElement: overlay\.querySelector[\s\S]*?blocking: true[\s\S]*?onEscape:/, "Script shortcuts use the shared focus, safe-area, and Escape lifecycle");
 assert.match(scriptHealth, /closeLayer\("scriptShortcutsModal"/, "Script shortcuts release their layer state before their closing animation");
+
+const playersAdmin = await source("js/players-admin.js");
+assert.match(playersAdmin, /openLayer\(overlay, \{[\s\S]*?id: "adminBootstrapOverlay"[\s\S]*?scrollElement: overlay\.querySelector[\s\S]*?blocking: true[\s\S]*?onEscape:/, "Admin bootstrap uses the shared blocking-layer lifecycle");
+assert.match(playersAdmin, /closeLayer\("adminBootstrapOverlay"/, "Admin bootstrap releases its blocking layer when it closes");
 
 const gamePlanSmart = await source("js/gameplan-smart.js");
 for (const [name, surfaceId] of [

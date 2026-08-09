@@ -1,4 +1,5 @@
 *.backup
+bcoffense-source-*.tar.gz
 .DS_Store
 .tmp_*.py
 .dev.vars

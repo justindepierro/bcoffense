@@ -328,6 +328,9 @@
             <button type="button" class="team-settings-surface-nav__item" data-action="openCoachAccessManager" data-auth-admin-only="true">
               <span>🧭</span><strong>Coach access</strong><small>View-only permissions</small>
             </button>
+            <button type="button" class="team-settings-surface-nav__item" id="adminBootstrapTrigger" data-auth-admin-only="true">
+              <span>🔐</span><strong>Admin security</strong><small>Set up your personal admin login</small>
+            </button>
             <button type="button" class="team-settings-surface-nav__item" data-action="openCloudSyncModal" data-auth-admin-only="true">
               <span>🛟</span><strong>Admin &amp; recovery</strong><small>Draft review, device repair &amp; diagnostics</small>
             </button>
@@ -4114,6 +4117,23 @@
       </div>
       <div class="pa-body" id="coachAccessBody">
         <p class="pa-loading">Loading coach access…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- One-time named administrator bootstrap (legacy static admin only) -->
+  <div class="pa-overlay admin-bootstrap-overlay" id="adminBootstrapOverlay" role="dialog" aria-modal="true" aria-labelledby="adminBootstrapTitle"
+    aria-hidden="true" inert data-auth-admin-only="true">
+    <div class="pa-panel admin-bootstrap-panel">
+      <div class="pa-header admin-bootstrap-header">
+        <div>
+          <h3 id="adminBootstrapTitle">🔐 Admin Security</h3>
+          <p>Set up a personal administrator login before retiring any shared access.</p>
+        </div>
+        <button class="pa-close-btn" id="adminBootstrapClose" type="button" aria-label="Close admin security">×</button>
+      </div>
+      <div class="pa-body" id="adminBootstrapBody">
+        <p class="pa-loading">Checking administrator setup…</p>
       </div>
     </div>
   </div>

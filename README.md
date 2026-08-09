@@ -67,7 +67,19 @@ npm run test:e2e:local:all
 Deploy through:
 
 ```sh
+git switch main
+git pull --ff-only origin main
+npm run release:quality
 ./scripts/deploy-cloudflare.sh
+```
+
+Production deployment never stages, commits, or pushes local work. It accepts
+only a clean checkout whose `HEAD` exactly matches `origin/main`.
+
+Create a safe source archive from a clean commit with:
+
+```sh
+npm run release:package -- --output /tmp/bcoffense-source.tar.gz
 ```
 
 ## Editing rules
