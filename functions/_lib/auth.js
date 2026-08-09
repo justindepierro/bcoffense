@@ -1,6 +1,7 @@
 import { verifyD1Credentials, verifyPassword } from "./d1-auth.js";
 import { getPrimaryTeamId } from "./team-context.js";
 import { parseCoachPermissions } from "./staff-access.js";
+import { readBoundedJsonOrFormObject } from "./request-body.js";
 
 // The __Host- prefix is enforced by browsers: Secure, Path=/, and no Domain
 // attribute are mandatory. That prevents a subdomain from setting a competing
@@ -8,6 +9,12 @@ import { parseCoachPermissions } from "./staff-access.js";
 const SESSION_COOKIE = "__Host-bc_auth";
 const SESSION_TTL_SECONDS = 12 * 60 * 60;       // staff: 12h
 const PLAYER_SESSION_TTL_SECONDS = 72 * 60 * 60;  // players: 72h
+
+// Login, password reset, and invitation forms carry only a few short text
+// fields. Keep their request parsing bounded while leaving room for valid
+// 128-character passwords and normal browser form encoding.
+export const PUBLIC_AUTH_BODY_MAX_BYTES = 8 * 1024;
+const LOGIN_DUPLICATE_FIELDS = ["username", "password"];
 
 const USERS = {
   admin: {
@@ -700,15 +707,10 @@ export function renderLoginPage(opts = {}) {
 }
 
 export async function parseLoginBody(request) {
-  const contentType = request.headers.get("Content-Type") || "";
-  if (contentType.includes("application/json")) {
-    return request.json();
-  }
-  const form = await request.formData();
-  return {
-    username: form.get("username"),
-    password: form.get("password"),
-  };
+  return readBoundedJsonOrFormObject(request, {
+    maxBytes: PUBLIC_AUTH_BODY_MAX_BYTES,
+    rejectDuplicateFields: LOGIN_DUPLICATE_FIELDS,
+  });
 }
 
 export function loginFailure(request, message, status = 401) {

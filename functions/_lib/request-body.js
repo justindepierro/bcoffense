@@ -121,7 +121,11 @@ export async function readBoundedJsonObject(request, { maxBytes, allowEmpty = fa
 }
 
 /** Read a finite text-only HTML form without using unbounded request.formData(). */
-export async function readBoundedFormObject(request, { maxBytes, allowEmpty = false }) {
+export async function readBoundedFormObject(request, {
+  maxBytes,
+  allowEmpty = false,
+  rejectDuplicateFields = [],
+}) {
   const bytes = await readBoundedBodyBytes(request, { maxBytes });
   if (!bytes.byteLength && !allowEmpty) {
     throw new RequestBodyError("A form request body is required.", 400, "missing_body");
@@ -146,12 +150,22 @@ export async function readBoundedFormObject(request, { maxBytes, allowEmpty = fa
     throw new RequestBodyError("Invalid form request body.", 400, "invalid_form");
   }
 
+  // Keep the historical Object.fromEntries final-value behavior by default.
+  // Public credential forms can opt in to rejecting duplicate sensitive fields
+  // instead of silently allowing a second value to replace the first.
+  const duplicateFields = new Set(
+    Array.isArray(rejectDuplicateFields)
+      ? rejectDuplicateFields.map((field) => String(field || "")).filter(Boolean)
+      : [],
+  );
   const value = Object.create(null);
   for (const [key, field] of form.entries()) {
     if (typeof field !== "string") {
       throw new RequestBodyError("Form fields must be text.", 400, "invalid_form_field");
     }
-    // Object.fromEntries(formData) historically kept the final duplicate key.
+    if (duplicateFields.has(key) && Object.prototype.hasOwnProperty.call(value, key)) {
+      throw new RequestBodyError("Duplicate form field.", 400, "duplicate_form_field");
+    }
     value[key] = field;
   }
   return value;

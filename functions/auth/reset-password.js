@@ -6,9 +6,78 @@
  * Public route.
  */
 
-import { withSecurityHeaders } from "../_lib/auth.js";
+import { PUBLIC_AUTH_BODY_MAX_BYTES, withSecurityHeaders } from "../_lib/auth.js";
 import { findUserByEmail, createVerificationToken } from "../_lib/d1-auth.js";
 import { sendEmail, resetEmailHtml, resetEmailText } from "../_lib/email.js";
+import { readBoundedFormObject } from "../_lib/request-body.js";
+
+// Password reset issuance is deliberately separate from sign-in rate limits.
+// These scoped ledger keys protect email delivery without consuming a user's
+// normal login budget.
+const RESET_ISSUE_IP_WINDOW_SECONDS = 15 * 60;
+const RESET_ISSUE_EMAIL_WINDOW_SECONDS = 60 * 60;
+const RESET_ISSUE_MAX_IP = 10;
+const RESET_ISSUE_MAX_EMAIL = 3;
+const RESET_DUPLICATE_FIELDS = ["email"];
+
+function getClientIp(request) {
+  return String(
+    request.headers.get("CF-Connecting-IP") ||
+    request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ||
+    "unknown",
+  ).slice(0, 64);
+}
+
+function passwordResetIssueKeys(request, email) {
+  return {
+    ip: `password-reset:ip:${getClientIp(request)}`,
+    email: `password-reset:email:${String(email).slice(0, 254)}`,
+  };
+}
+
+async function reservePasswordResetIssue(db, request, email) {
+  const now = Math.floor(Date.now() / 1000);
+  const keys = passwordResetIssueKeys(request, email);
+  const id = crypto.randomUUID();
+
+  try {
+    // SQLite evaluates this INSERT as one write transaction. Reserving before
+    // lookup/token creation closes the check-then-record race during a burst
+    // of reset requests, including requests for accounts that do not exist.
+    const result = await db.prepare(`INSERT INTO login_attempts (id, ip_addr, username, success, attempted_at)
+      SELECT ?, ?, ?, 0, ?
+      WHERE (SELECT COUNT(*) FROM login_attempts WHERE ip_addr = ? AND attempted_at > ?) < ?
+        AND (SELECT COUNT(*) FROM login_attempts WHERE username = ? AND attempted_at > ?) < ?`)
+      .bind(
+        id,
+        keys.ip,
+        keys.email,
+        now,
+        keys.ip,
+        now - RESET_ISSUE_IP_WINDOW_SECONDS,
+        RESET_ISSUE_MAX_IP,
+        keys.email,
+        now - RESET_ISSUE_EMAIL_WINDOW_SECONDS,
+        RESET_ISSUE_MAX_EMAIL,
+      )
+      .run();
+    return { available: Number(result?.meta?.changes || 0) === 1, id };
+  } catch (_) {
+    // Keep reset responses generic even when the durable quota ledger is down.
+    return { available: false, unavailable: true };
+  }
+}
+
+async function markPasswordResetIssueSuccess(db, id) {
+  try {
+    await db.prepare("UPDATE login_attempts SET success = 1 WHERE id = ?")
+      .bind(id)
+      .run();
+  } catch (_) {
+    // The token was already issued; audit annotation must not alter the safe
+    // generic response or cause a second issuance attempt.
+  }
+}
 
 function escHtml(s) {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -81,26 +150,45 @@ export async function onRequest(context) {
 
   let email = "";
   try {
-    const fd = await request.formData();
-    email = String(fd.get("email") || "").trim().toLowerCase();
+    const body = await readBoundedFormObject(request, {
+      maxBytes: PUBLIC_AUTH_BODY_MAX_BYTES,
+      rejectDuplicateFields: RESET_DUPLICATE_FIELDS,
+    });
+    email = String(body.email || "").trim().toLowerCase();
   } catch (_) {
     return renderForm({ error: "Invalid submission." });
   }
 
-  if (!email || !email.includes("@")) return renderForm({ error: "Valid email required." });
+  if (!email || !email.includes("@") || email.length > 254) {
+    return renderForm({ error: "Valid email required." });
+  }
+
+  const reservation = await reservePasswordResetIssue(env.DB, request, email);
+  if (!reservation.available) {
+    // Quota exhaustion and ledger outages deliberately look exactly like an
+    // unknown address: no token/email is issued and no account state leaks.
+    return renderForm({ success: true });
+  }
 
   // Look up — don't reveal existence
   const user = await findUserByEmail(env.DB, email).catch(() => null);
   if (user && user.status === "active" && user.password_hash) {
-    const rawToken = await createVerificationToken(env.DB, user.id, "password_reset", 3_600 /* 1h */);
-    const origin = new URL(request.url).origin;
-    const resetUrl = `${origin}/auth/reset-confirm?token=${encodeURIComponent(rawToken)}`;
-    await sendEmail(env, {
-      to: email,
-      subject: "Reset your BCOffense password",
-      html: resetEmailHtml(user.display_name, resetUrl),
-      text: resetEmailText(user.display_name, resetUrl),
-    });
+    try {
+      const rawToken = await createVerificationToken(env.DB, user.id, "password_reset", 3_600 /* 1h */);
+      await markPasswordResetIssueSuccess(env.DB, reservation.id);
+      const origin = new URL(request.url).origin;
+      const resetUrl = `${origin}/auth/reset-confirm?token=${encodeURIComponent(rawToken)}`;
+      await sendEmail(env, {
+        to: email,
+        subject: "Reset your BCOffense password",
+        html: resetEmailHtml(user.display_name, resetUrl),
+        text: resetEmailText(user.display_name, resetUrl),
+      });
+    } catch (_) {
+      // Never disclose reset delivery or storage failures to an unauthenticated
+      // caller. A generic response avoids both enumeration and retry abuse.
+      console.error("Password reset issuance failed.");
+    }
   }
 
   // Always show success (prevents enumeration)
