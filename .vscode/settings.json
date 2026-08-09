@@ -54,6 +54,12 @@
     "editor.tabSize": 2
   },
 
+  // ─── Terminal ─────────────────────────────────────────────────────────────
+  // Pin the integrated terminal to this workspace root. Overrides a broken
+  // user-level terminal.integrated.cwd (~/Developer) that VS Code resolves
+  // relative to the workspace, producing an invalid launch directory.
+  "terminal.integrated.cwd": "${workspaceFolder}",
+
   // ─── File Associations ────────────────────────────────────────────────────
   "files.associations": {
     "sw.js": "javascript"
