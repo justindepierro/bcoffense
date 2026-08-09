@@ -1,0 +1,94 @@
+name: Deploy Notification Worker
+
+# This Worker deploy is intentionally separate from the Pages release. The
+# protected production environment supplies only the Worker-specific token.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcoffense-notification-worker-deploy
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify notification Worker release candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # This job intentionally has no production Environment or Cloudflare
+    # credentials, so package install and release-quality testing are isolated.
+    steps:
+      - name: Check out dispatched revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+
+      - name: Install browser-test dependencies
+        run: npm --prefix tests ci
+
+      - name: Install Chromium
+        run: npm --prefix tests exec -- playwright install --with-deps chromium
+
+      - name: Run the canonical release-quality gate
+        run: ./scripts/release-quality-gate.sh
+
+  deploy:
+    name: Deploy verified notification Worker to production
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+
+    steps:
+      # Preserve the dispatched SHA. The guarded script independently verifies
+      # that it is exactly the current tip of origin/main before deployment.
+      - name: Check out dispatched revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+
+      # Keep credentials off these dependency-install steps. The token is
+      # scoped only to the two final guarded deployment steps below.
+      - name: Install browser-test dependencies
+        run: npm --prefix tests ci
+
+      - name: Install Chromium
+        run: npm --prefix tests exec -- playwright install --with-deps chromium
+
+      - name: Confirm dedicated notification Worker credentials are configured
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_NOTIFICATION_WORKER_API_TOKEN: ${{ secrets.CLOUDFLARE_NOTIFICATION_WORKER_API_TOKEN }}
+        run: |
+          if [[ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
+            printf '%s\n' 'CLOUDFLARE_ACCOUNT_ID must be configured as a production environment secret.' >&2
+            exit 1
+          fi
+          if [[ -z "${CLOUDFLARE_NOTIFICATION_WORKER_API_TOKEN:-}" ]]; then
+            printf '%s\n' 'CLOUDFLARE_NOTIFICATION_WORKER_API_TOKEN must be configured as a production environment secret.' >&2
+            exit 1
+          fi
+
+      - name: Deploy through the guarded notification Worker script
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_NOTIFICATION_WORKER_API_TOKEN: ${{ secrets.CLOUDFLARE_NOTIFICATION_WORKER_API_TOKEN }}
+        run: ./scripts/deploy-notification-worker.sh

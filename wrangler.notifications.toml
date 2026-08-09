@@ -1,0 +1,39 @@
+# Dedicated asynchronous notification-delivery worker. It has no HTTP route:
+# Pages Functions write opaque outbox IDs to the queue, and this worker owns
+# all later delivery/retry work.
+name = "bcoffense-notification-delivery"
+main = "workers/notification-delivery-worker.js"
+compatibility_date = "2026-08-09"
+workers_dev = false
+
+# Set VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY, and VAPID_SUBJECT separately with
+# `wrangler secret put ... --config wrangler.notifications.toml`; values never
+# belong in this tracked configuration file.
+
+[triggers]
+# Repairs rows whose initial queue publish failed or whose lease expired.
+crons = [ "*/5 * * * *" ]
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bcoffense-db"
+database_id = "5def1774-55ad-4c92-afed-5b1f7f199f26"
+
+# The consumer also produces to this queue from the repair sweep. Messages
+# intentionally contain only `{ v: 1, id }`; notification content stays in D1.
+[[queues.producers]]
+binding = "NOTIFICATION_QUEUE"
+queue = "bcoffense-notifications"
+
+[[queues.consumers]]
+queue = "bcoffense-notifications"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 8
+retry_delay = 60
+max_concurrency = 4
+dead_letter_queue = "bcoffense-notifications-dlq"

@@ -28,6 +28,23 @@ export const CRITICAL_D1_SCHEMA = Object.freeze({
       "session_id", "ordinal", "prompt_json", "choices_json", "correct_choice_id",
       "answered_choice_id", "answered_at", "is_correct",
     ]),
+    notification_outbox: Object.freeze([
+      "id", "event_key", "team_id", "recipient_user_id", "delivery_kind",
+      "notification_type", "title", "body", "deep_link", "tag",
+      "homework_assignment_id", "homework_delivery_event_type", "state", "attempt_count", "available_at",
+      "lease_token", "lease_expires_at", "last_error", "push_sent", "push_total",
+      "created_at", "queued_at", "delivered_at", "cancelled_at", "dead_at", "updated_at",
+    ]),
+    notification_outbox_events: Object.freeze([
+      "event_key", "team_id", "delivery_kind", "homework_assignment_id", "created_at", "updated_at",
+    ]),
+    quiz_assignment_delivery_events: Object.freeze([
+      "id", "assignment_id", "user_id", "event_type", "created_at", "notification_outbox_id",
+    ]),
+    quiz_assignment_initial_notification_dispatches: Object.freeze([
+      "assignment_id", "team_id", "event_key", "payload_fingerprint", "state",
+      "outbox_persisted_at", "created_at", "updated_at",
+    ]),
   }),
   indexes: Object.freeze({
     idx_login_attempts_ip: Object.freeze({ table: "login_attempts", columns: Object.freeze(["ip_addr", "attempted_at"]) }),
@@ -63,6 +80,25 @@ export const CRITICAL_D1_SCHEMA = Object.freeze({
     }),
     idx_authoritative_quiz_questions_unanswered: Object.freeze({
       table: "authoritative_quiz_questions", columns: Object.freeze(["session_id", "answered_choice_id", "ordinal"]),
+    }),
+    idx_notification_outbox_event_recipient: Object.freeze({
+      table: "notification_outbox", columns: Object.freeze(["event_key", "recipient_user_id"]), unique: true,
+    }),
+    idx_notification_outbox_due: Object.freeze({
+      table: "notification_outbox", columns: Object.freeze(["state", "available_at", "created_at"]),
+    }),
+    idx_notification_outbox_lease: Object.freeze({
+      table: "notification_outbox", columns: Object.freeze(["state", "lease_expires_at"]),
+    }),
+    idx_quiz_assignment_delivery_events_outbox: Object.freeze({
+      table: "quiz_assignment_delivery_events",
+      columns: Object.freeze(["notification_outbox_id"]),
+      unique: true,
+      where: "where notification_outbox_id is not null",
+    }),
+    idx_quiz_assignment_initial_dispatches_pending: Object.freeze({
+      table: "quiz_assignment_initial_notification_dispatches",
+      columns: Object.freeze(["team_id", "state", "created_at"]),
     }),
   }),
 });

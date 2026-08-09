@@ -12,10 +12,11 @@ async function source(relativePath) {
 }
 
 console.log("\n▸ Private quiz homework contract");
-const [migration, migrationQuestionConfig, migrationLifecycle, helper, route, client, quizFoundation, quizRuntime, notifications, playersAdmin, storage, workspaceRoute, index, sw] = await Promise.all([
+const [migration, migrationQuestionConfig, migrationLifecycle, migrationOutbox, helper, route, client, quizFoundation, quizRuntime, notifications, playersAdmin, storage, workspaceRoute, index, sw] = await Promise.all([
   source("../migrations/0020_quiz_assignments.sql"),
   source("../migrations/0021_quiz_assignment_question_config.sql"),
   source("../migrations/0022_quiz_assignment_delivery_lifecycle.sql"),
+  source("../migrations/0030_notification_outbox.sql"),
   source("../functions/_lib/d1-quiz-assignments.js"),
   source("../functions/api/quiz-assignments/index.js"),
   source("../js/script-quiz-assignments.js"),
@@ -62,8 +63,12 @@ assert(
     && route.includes("record-open") && route.includes("body.action === \"resend\"")
     && route.includes("body.action === \"archive\"")
     && route.includes("body.action === \"save-draft\"") && route.includes("publishQuizAssignment")
-    && route.includes("createNotification") && route.includes("sendPushToUser"),
-  "coach delivery is permission-gated, auditable, and supports drafts, resend, plus archive",
+    && route.includes("queueHomeworkDelivery")
+    && route.includes("createNotificationOutboxDeliveries")
+    && route.includes("enqueueNotificationOutboxDeliveries")
+    && migrationOutbox.includes("notification_outbox_id")
+    && !route.includes("sendPushToUser") && !route.includes("recordQuizAssignmentDelivery"),
+  "coach delivery is permission-gated, durably queued/auditable, and supports drafts, resend, plus archive",
 );
 assert(
   client.includes("startPlayerQuizAssignment") && client.includes("recordQuizAssignmentAttempt")

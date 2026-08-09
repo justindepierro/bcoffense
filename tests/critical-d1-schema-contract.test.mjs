@@ -27,7 +27,13 @@ assert.match(probeSql, /^SELECT\s+'object'\s+AS\s+kind/im, "critical schema prob
 assert.match(probeSql, /FROM sqlite_master/, "critical schema probe reads sqlite_master");
 assert.match(probeSql, /pragma_table_info\('authoritative_quiz_sessions'\)/, "critical schema probe reads authoritative session columns");
 assert.match(probeSql, /pragma_table_info\('authoritative_quiz_questions'\)/, "critical schema probe reads authoritative question columns");
+assert.match(probeSql, /pragma_table_info\('notification_outbox'\)/, "critical schema probe reads durable notification outbox columns");
+assert.match(probeSql, /pragma_table_info\('quiz_assignment_delivery_events'\)/, "critical schema probe reads outbox-keyed homework receipt columns");
+assert.match(probeSql, /pragma_table_info\('quiz_assignment_initial_notification_dispatches'\)/, "critical schema probe reads homework initial-dispatch recovery columns");
 assert.match(probeSql, /pragma_index_info\('idx_login_attempts_attempted_at'\)/, "critical schema probe reads the login-ledger cleanup index definition");
+assert.match(probeSql, /pragma_index_info\('idx_notification_outbox_event_recipient'\)/, "critical schema probe reads notification outbox idempotency index definition");
+assert.match(probeSql, /pragma_index_info\('idx_quiz_assignment_delivery_events_outbox'\)/, "critical schema probe reads outbox-keyed homework receipt index definition");
+assert.match(probeSql, /pragma_index_info\('idx_quiz_assignment_initial_dispatches_pending'\)/, "critical schema probe reads homework initial-dispatch repair index definition");
 assert.match(probeSql, /pragma_index_info\('idx_authoritative_quiz_sessions_active_player'\)/, "critical schema probe reads the active-session index definition");
 assert.doesNotMatch(probeSql, /\b(?:ALTER|CREATE|DELETE|DROP|INSERT|REPLACE|UPDATE|VACUUM)\b/i, "critical schema probe contains no write or DDL verb");
 
@@ -57,6 +63,31 @@ assert.equal(
   true,
   "critical schema contract names the login-ledger cleanup index",
 );
+assert.equal(
+  Object.keys(CRITICAL_D1_SCHEMA.tables).includes("notification_outbox"),
+  true,
+  "critical schema contract names the durable notification outbox table",
+);
+assert.equal(
+  Object.keys(CRITICAL_D1_SCHEMA.indexes).includes("idx_notification_outbox_event_recipient"),
+  true,
+  "critical schema contract names the notification outbox idempotency index",
+);
+assert.equal(
+  Object.keys(CRITICAL_D1_SCHEMA.indexes).includes("idx_quiz_assignment_delivery_events_outbox"),
+  true,
+  "critical schema contract names the outbox-keyed homework receipt index",
+);
+assert.equal(
+  Object.keys(CRITICAL_D1_SCHEMA.tables).includes("quiz_assignment_initial_notification_dispatches"),
+  true,
+  "critical schema contract names the durable homework initial-dispatch marker",
+);
+assert.equal(
+  Object.keys(CRITICAL_D1_SCHEMA.indexes).includes("idx_quiz_assignment_initial_dispatches_pending"),
+  true,
+  "critical schema contract names the homework initial-dispatch repair index",
+);
 
 const parsedRemoteRows = parseD1ExecuteJson(JSON.stringify([{ success: true, results: localRows }]));
 assert.equal(
@@ -85,6 +116,39 @@ assert.match(
   formatCriticalSchemaReport(missingLoginCleanupIndexResult),
   /missing index idx_login_attempts_attempted_at/,
   "the failure identifies the missing login-ledger cleanup index",
+);
+
+const missingOutboxIndexRows = localRows.filter((row) => !(
+  row.kind === "object" && row.scope === "index" && row.name === "idx_notification_outbox_event_recipient"
+));
+const missingOutboxIndexResult = verifyCriticalSchemaRows(missingOutboxIndexRows);
+assert.equal(missingOutboxIndexResult.ok, false, "a missing notification outbox idempotency index fails closed");
+assert.match(
+  formatCriticalSchemaReport(missingOutboxIndexResult),
+  /missing index idx_notification_outbox_event_recipient/,
+  "the failure identifies the missing notification outbox index",
+);
+
+const missingOutboxReceiptIndexRows = localRows.filter((row) => !(
+  row.kind === "object" && row.scope === "index" && row.name === "idx_quiz_assignment_delivery_events_outbox"
+));
+const missingOutboxReceiptIndexResult = verifyCriticalSchemaRows(missingOutboxReceiptIndexRows);
+assert.equal(missingOutboxReceiptIndexResult.ok, false, "a missing outbox-keyed homework receipt index fails closed");
+assert.match(
+  formatCriticalSchemaReport(missingOutboxReceiptIndexResult),
+  /missing index idx_quiz_assignment_delivery_events_outbox/,
+  "the failure identifies the missing outbox-keyed homework receipt index",
+);
+
+const missingHomeworkDispatchIndexRows = localRows.filter((row) => !(
+  row.kind === "object" && row.scope === "index" && row.name === "idx_quiz_assignment_initial_dispatches_pending"
+));
+const missingHomeworkDispatchIndexResult = verifyCriticalSchemaRows(missingHomeworkDispatchIndexRows);
+assert.equal(missingHomeworkDispatchIndexResult.ok, false, "a missing homework initial-dispatch repair index fails closed");
+assert.match(
+  formatCriticalSchemaReport(missingHomeworkDispatchIndexResult),
+  /missing index idx_quiz_assignment_initial_dispatches_pending/,
+  "the failure identifies the missing homework initial-dispatch repair index",
 );
 
 const missingColumnRows = localRows.filter((row) => !(

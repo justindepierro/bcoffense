@@ -3997,8 +3997,11 @@ function checkStartupDiagnosticsAndRenderQueue() {
   }
   if (
     !/TEAM_UPDATE_DEDUPE_WINDOWS/.test(notificationStore) ||
-    !/createOrRefreshTeamNotification/.test(notificationStore) ||
-    !/notificationResult\.coalesced/.test(notificationStore) ||
+    !/currentTeamNotificationIds/.test(notificationStore) ||
+    !/refreshCurrentTeamNotifications/.test(notificationStore) ||
+    !/createNotificationOutboxDeliveries/.test(notificationStore) ||
+    !/enqueueNotificationOutboxDeliveries/.test(notificationStore) ||
+    !/outboxPending/.test(notificationStore) ||
     !/Practice media updated/.test(appNotifications) ||
     !/MAX_AUTOMATIC_ATTEMPTS/.test(mediaOutbox) ||
     !/async function getHealth\(\)/.test(mediaOutbox) ||

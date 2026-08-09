@@ -82,7 +82,7 @@ export async function onRequestPost(context) {
       body: message.value,
       deepLink: deepLink.value,
       tag: tag.value,
-    }, env);
+    }, env, context);
     return withSecurityHeaders(authJson({ ok: true, ...result }));
   } catch (err) {
     console.error("[POST /api/notifications/broadcast]", err);
