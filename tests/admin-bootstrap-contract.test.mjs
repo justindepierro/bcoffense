@@ -82,8 +82,8 @@ assert.match(
 );
 assert.match(
   bootstrap,
-  /if \(!body \|\| typeof body !== "object" \|\| Array\.isArray\(body\)\)/,
-  "a malformed JSON primitive is rejected before account fields are read",
+  /readBoundedJsonOrFormObject\(request, \{ maxBytes: MAX_ADMIN_BOOTSTRAP_BODY_BYTES \}\)/,
+  "a bounded JSON-or-form reader rejects malformed primitives before account fields are read",
 );
 
 const adminGuard = accountActions.indexOf('if (user.role === "admin")');
