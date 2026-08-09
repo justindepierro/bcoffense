@@ -82,34 +82,24 @@ function _buildCoachQuizLeaderboardSummary() {
     .forEach((sticker) => {
       ensureRow(sticker.player || "Player").stickers += 1;
     });
-  const remoteRows = typeof window !== "undefined" && typeof window.getRemotePlayerLeaderboardRows === "function"
-    ? window.getRemotePlayerLeaderboardRows(isSeason ? "season" : "week")
+  const verifiedRows = typeof _getVerifiedQuizLeaderboardRows === "function"
+    ? _getVerifiedQuizLeaderboardRows(isSeason ? "season" : "week")
     : [];
-  remoteRows.forEach((remote) => {
-    const row = ensureRow(remote.name || remote.player || "Player");
-    const remoteTotal = Number(remote.totalPoints ?? remote.points ?? 0);
-    const remoteQuiz = Number(remote.quizPoints ?? 0);
-    const remoteReward = Number(remote.rewardPoints ?? Math.max(0, remoteTotal - remoteQuiz));
-    row.quizPoints = Math.max(row.quizPoints, remoteQuiz || Math.max(0, remoteTotal - remoteReward));
-    row.rewardPoints = Math.max(row.rewardPoints, remoteReward);
-    row.questionPoints = Math.max(row.questionPoints, Number(remote.questionPoints || 0));
-    row.answerPoints = Math.max(row.answerPoints, Number(remote.answerPoints || 0));
-    row.giftPoints = Math.max(row.giftPoints, Number(remote.giftPoints || 0));
-    row.attempts = Math.max(row.attempts, Number(remote.attempts || 0));
-    row.answered = Math.max(row.answered, Number(remote.answered || 0));
-    row.correct = Math.max(row.correct, Number(remote.correct || 0));
-    row.stickers = Math.max(row.stickers, Number(remote.stickers || 0));
-  });
   _getQuizRosterPlayers().forEach((player) => ensureRow(player.name));
 
-  const leaderboardRows = Array.from(rows.values())
+  const practiceRows = Array.from(rows.values())
     .map((row) => {
       const totalPoints = row.quizPoints + row.rewardPoints;
       const percent = row.answered ? Math.round((row.correct / row.answered) * 100) : 0;
-      return { ...row, totalPoints, percent, tier: _getQuizTier(totalPoints, settings) };
+      return { ...row, totalPoints, percent, tier: _getQuizTier(totalPoints, settings), verified: false };
     })
     .sort((a, b) => b.totalPoints - a.totalPoints || b.percent - a.percent || a.name.localeCompare(b.name))
     .map((row, idx) => ({ ...row, rank: idx + 1 }));
+  // Never combine browser practice totals with server-issued standings. The
+  // former remain useful locally for coaching review; only the latter are a
+  // verified leaderboard when they exist.
+  const leaderboardRows = verifiedRows.length ? verifiedRows : practiceRows;
+  const usesVerifiedRows = verifiedRows.length > 0;
 
   const weakPositions = Array.from(positionTotals.values())
     .filter((item) => item.answered > 0 && Math.round((item.correct / item.answered) * 100) < 85)
@@ -148,8 +138,10 @@ function _buildCoachQuizLeaderboardSummary() {
     isSeason,
     weekKey,
     label: isSeason ? "Season" : `Week ${weekKey}`,
+    verified: usesVerifiedRows,
     attempts: viewAttempts,
     rewards: viewRewards,
+    practiceRows,
     rows: leaderboardRows,
     weakPositions,
     weakQuestionTypes,
@@ -159,7 +151,9 @@ function _buildCoachQuizLeaderboardSummary() {
     signalHeatRows: _buildSignalHeatCheckLeaderboardRows(viewAttempts, _getQuizPlayerName()),
     totals: {
       players: leaderboardRows.length,
-      attempts: viewAttempts.length,
+      attempts: usesVerifiedRows
+        ? leaderboardRows.reduce((sum, row) => sum + Number(row.attempts || 0), 0)
+        : viewAttempts.length,
       quizPoints: leaderboardRows.reduce((sum, row) => sum + row.quizPoints, 0),
       questionPoints: leaderboardRows.reduce((sum, row) => sum + row.questionPoints, 0),
       answerPoints: leaderboardRows.reduce((sum, row) => sum + row.answerPoints, 0),
@@ -197,6 +191,12 @@ function _summarizeQuizAttempts() {
   const weeklyStreak = _quizCurrentStreak(_quizActivityWeekKeys(playerAttempts, playerRewards, player), weekKey, _quizPreviousWeekKey);
   const bestPercent = playerAttempts.reduce((best, attempt) => Math.max(best, Number(attempt.percent || 0)), 0);
   const bestBadge = _getQuizBadge(bestPercent);
+  const weeklyVerifiedRows = typeof _getVerifiedQuizLeaderboardRows === "function"
+    ? _getVerifiedQuizLeaderboardRows("week")
+    : [];
+  const seasonVerifiedRows = typeof _getVerifiedQuizLeaderboardRows === "function"
+    ? _getVerifiedQuizLeaderboardRows("season")
+    : [];
   return {
     attempts,
     rewards,
@@ -223,8 +223,14 @@ function _summarizeQuizAttempts() {
     bestPercent,
     bestBadge,
     tier: _getQuizTier(weeklyPoints, settings),
-    weeklyLeaderboardRows: _buildQuizLeaderboardRows(attempts, rewards, player, weekKey),
-    seasonLeaderboardRows: _buildQuizLeaderboardRows(attempts, rewards, player),
+    weeklyLeaderboardRows: weeklyVerifiedRows.length
+      ? weeklyVerifiedRows
+      : _buildQuizLeaderboardRows(attempts, rewards, player, weekKey),
+    seasonLeaderboardRows: seasonVerifiedRows.length
+      ? seasonVerifiedRows
+      : _buildQuizLeaderboardRows(attempts, rewards, player),
+    weeklyLeaderboardVerified: weeklyVerifiedRows.length > 0,
+    seasonLeaderboardVerified: seasonVerifiedRows.length > 0,
     weeklySignalSprintRows: _buildSignalSprintLeaderboardRows(attempts, player, weekKey),
     seasonSignalSprintRows: _buildSignalSprintLeaderboardRows(attempts, player),
     weeklySignalBattleRows: _buildSignalBattleLeaderboardRows(attempts, player, weekKey),

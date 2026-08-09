@@ -536,9 +536,176 @@ test.describe("Player mobile experience", () => {
     await expect(resultHub.locator("#playerQuizBestBadge")).toContainText("Coaches List");
     await expect(resultHub.locator("#playerQuizLeaderboardPreview")).toContainText("46 pts");
     await resultHub.getByRole("button", { name: /Close Quiz Center/i }).click();
-    await goToTab(page, "leaderboard");
+    // Player standings live inside the unified Quiz workspace; there is no
+    // separate player-accessible "leaderboard" tab.
+    await goToTab(page, "quiz");
+    await expect(page.locator("#quiz.panel.active")).toBeVisible();
     await expect(page.locator("#playerLeaderboardPage")).toContainText("46 / 1000");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("46 pts");
+  });
+
+  test("runs a named player's server-verified call quiz without early score feedback", async ({ page }) => {
+    const startPayloads = [];
+    const answerPayloads = [];
+    const legacyLeaderboardSyncPosts = [];
+    const session = {
+      id: "aqz-session-e2e",
+      sourceType: "script",
+      sourceId: "verified-script-e2e",
+      title: "Friday Verified Calls",
+      total: 1,
+      status: "active",
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    };
+
+    page.on("request", (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === "/api/leaderboard/sync" && request.method() === "POST") {
+        legacyLeaderboardSyncPosts.push(request.postData() || "");
+      }
+    });
+
+    await page.route("**/api/quiz-sessions**", async (route) => {
+      const request = route.request();
+      const url = new URL(request.url());
+      const payload = () => JSON.parse(request.postData() || "{}");
+      if (url.pathname === "/api/quiz-sessions" && request.method() === "POST") {
+        startPayloads.push(payload());
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ok: true,
+            session,
+            question: {
+              ordinal: 1,
+              prompt: {
+                kind: "call-recognition",
+                text: "What is the released call?",
+                personnel: "11",
+                formation: "Trips Rt",
+                motion: "Jet",
+                period: "Team",
+              },
+              choices: [
+                { id: "opaque-choice-7f2d", label: "Buck Sweep" },
+                { id: "opaque-choice-53ac", label: "Four Verts" },
+              ],
+            },
+          }),
+        });
+        return;
+      }
+      if (url.pathname === "/api/quiz-sessions/aqz-session-e2e/answers" && request.method() === "POST") {
+        answerPayloads.push(payload());
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ok: true,
+            session,
+            ordinal: 1,
+            choiceId: "opaque-choice-7f2d",
+            recorded: true,
+            idempotent: false,
+            completeReady: true,
+            isComplete: false,
+          }),
+        });
+        return;
+      }
+      if (url.pathname === "/api/quiz-sessions/aqz-session-e2e/complete" && request.method() === "POST") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ok: true,
+            session: { ...session, status: "completed" },
+            summary: {
+              title: "Friday Verified Calls",
+              percent: 100,
+              correct: 1,
+              total: 1,
+              totalPoints: 25,
+            },
+          }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await page.evaluate(() => {
+      // Local E2E login intentionally has no D1 identity. The verified-quiz
+      // gate must see a named player, just as it does after a real server
+      // session, without changing the app's local-dev auth fixture.
+      const localUser = window.getCurrentAuthUser?.() || {};
+      window.getCurrentAuthUser = () => ({
+        ...localUser,
+        username: "named.player@example.test",
+        label: "Named Player",
+        role: "player",
+        teamId: "team-e2e",
+        d1UserId: "player-e2e",
+      });
+      storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, [{
+        id: "verified-script-e2e",
+        name: "Friday Verified Calls",
+        date: new Date().toISOString().slice(0, 10),
+        playerVisible: true,
+        savedAt: new Date().toISOString(),
+        plays: [
+          { personnel: "11", formation: "Trips Rt", play: "Buck Sweep", respQ: "Read force." },
+          { personnel: "10", formation: "Doubles", play: "Four Verts", respQ: "Win leverage." },
+        ],
+      }]);
+      _playerQuizSelectedSource = "script";
+      _playerQuizSelectedScriptId = "verified-script-e2e";
+      renderQuizPage();
+    });
+    await goToTab(page, "quiz");
+
+    const hub = page.locator("#playerQuizHubOverlay");
+    const startButton = hub.locator("#authoritativeQuizStartBtn");
+    await expect.poll(() => page.evaluate(() => window.getCurrentAuthUser?.()?.d1UserId || "")).toBe("player-e2e");
+    // The launcher refreshes when a player changes sources. Re-select the
+    // already chosen script so this test exercises the named-account gate,
+    // rather than retaining the local-dev fixture's initial anonymous copy.
+    await hub.locator("#playerQuizSelectScriptBtn").click();
+    await expect(hub.locator("#authoritativeQuizLaunchStatus")).toContainText("Friday Verified Calls is ready");
+    await expect(startButton).toBeEnabled();
+    await startButton.click();
+
+    const quiz = page.locator("#authoritativeQuizOverlay");
+    await expect(quiz).toBeVisible();
+    await expect(quiz).toContainText("What is the released call?");
+    await expect(quiz).toContainText("Trips Rt");
+    await quiz.getByRole("button", { name: /Buck Sweep/i }).click();
+
+    await expect.poll(() => answerPayloads.length).toBe(1);
+    expect(startPayloads).toHaveLength(1);
+    expect(startPayloads[0]).toMatchObject({
+      sourceType: "script",
+      sourceId: "verified-script-e2e",
+    });
+    expect(startPayloads[0].idempotencyKey).toMatch(/\S+/);
+    // The browser submits the opaque choice handle—not a call label, score,
+    // or correctness hint—and the server response reveals none of those.
+    expect(answerPayloads).toEqual([{ ordinal: 1, choiceId: "opaque-choice-7f2d" }]);
+    await expect(quiz).toContainText("All answers recorded");
+    await expect(quiz).toContainText("Finish verified quiz");
+    await expect(quiz).not.toContainText(/\bcorrect\b|\bwrong\b|100%|25 verified points/i);
+
+    await quiz.getByRole("button", { name: /Finish verified quiz/i }).click();
+    const result = quiz.locator(".aqz-result-card");
+    await expect(result).toContainText("100%");
+    await expect(result.locator(".aqz-result-card__grid span", { hasText: "correct" }).locator("strong")).toHaveText("1");
+    await expect(result.locator(".aqz-result-card__grid span", { hasText: "verified points" }).locator("strong")).toHaveText("25");
+    await page.waitForTimeout(150);
+    expect(legacyLeaderboardSyncPosts).toEqual([]);
+    await assertNoHorizontalOverflow(page);
   });
 
   test("shows wrong-answer review and recap guidance", async ({ page }) => {
@@ -1176,8 +1343,10 @@ test.describe("Player mobile experience", () => {
     await assertNoHorizontalOverflow(page);
   });
 
-  test("syncs local leaderboard data and merges team-wide ranks", async ({ page }) => {
-    let syncBody = null;
+  test("keeps practice local and refreshes only server-verified team ranks", async ({ page }) => {
+    let summaryRequests = 0;
+    let syncRequests = 0;
+    const summaryMethods = [];
     const buildRemoteSummary = (weekKey = "2026-W27") => ({
       weekKey,
       updatedAt: new Date().toISOString(),
@@ -1260,6 +1429,8 @@ test.describe("Player mobile experience", () => {
 
     await page.route("**/api/leaderboard/summary?**", async (route) => {
       const url = new URL(route.request().url());
+      summaryRequests += 1;
+      summaryMethods.push(route.request().method());
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -1267,19 +1438,11 @@ test.describe("Player mobile experience", () => {
       });
     });
     await page.route("**/api/leaderboard/sync", async (route) => {
-      syncBody = JSON.parse(route.request().postData() || "{}");
+      syncRequests += 1;
       await route.fulfill({
-        status: 200,
+        status: 500,
         contentType: "application/json",
-        body: JSON.stringify({
-          ok: true,
-          synced: {
-            attempts: syncBody.attempts?.length || 0,
-            rewards: syncBody.rewards?.length || 0,
-            stickers: syncBody.stickers?.length || 0,
-          },
-          summary: buildRemoteSummary(syncBody.weekKey || "2026-W27"),
-        }),
+        body: JSON.stringify({ ok: false, error: "Practice attempts must not be uploaded." }),
       });
     });
 
@@ -1301,8 +1464,10 @@ test.describe("Player mobile experience", () => {
         sourceType: "script",
         sourceId: "player-script-today",
         title: "Friday Walkthrough",
-        totalPoints: 1110,
-        score: 1080,
+        // Deliberately larger than the remote player's verified score. This
+        // catches any future return to max()/merged local standings.
+        totalPoints: 9000,
+        score: 8970,
         bonusPoints: 30,
         correct: 5,
         wrong: 1,
@@ -1334,22 +1499,30 @@ test.describe("Player mobile experience", () => {
 
     await expect.poll(async () => page.evaluate(async () => {
       const result = await syncPlayerLeaderboardNow({ quiet: false });
-      return result?.ok === true;
-    })).toBe(true);
-    expect(syncBody).toBeTruthy();
-    expect(syncBody.attempts).toHaveLength(1);
-    expect(syncBody.rewards).toHaveLength(3);
-    expect(syncBody.stickers).toHaveLength(1);
+      return result?.week?.rows?.map((row) => row.name) || [];
+    })).toEqual(["Marco", "Lucas"]);
+    expect(summaryRequests).toBeGreaterThan(0);
+    expect(summaryMethods).toContain("GET");
+    expect(syncRequests).toBe(0);
 
-    await goToTab(page, "leaderboard");
+    await goToTab(page, "quiz");
+    await expect(page.locator("#quiz.panel.active")).toBeVisible();
     const leaderboard = page.locator("#playerLeaderboardPage");
-    await expect(leaderboard).toContainText("Team synced");
+    await expect(leaderboard).toContainText("Practice progress");
+    await expect(leaderboard).toContainText("Practice Weekly Goal");
+    await expect(leaderboard).toContainText("9165 / 1000");
+    await expect(leaderboard).toContainText("Practice-only point sources");
+    await expect(leaderboard).toContainText("Server-verified board");
+    await expect(leaderboard).toContainText("Verified weekly board");
     await expect(leaderboard).toContainText("Marco");
     await expect(leaderboard).toContainText("1400 pts");
     await expect(leaderboard).toContainText("Lucas");
     await expect(leaderboard).toContainText("1275 pts");
-    await expect(leaderboard).not.toContainText("2550 pts");
+    // The practice-only recap legitimately shows the local 9165 total; the
+    // verified row list must not be inflated by it.
+    await expect(leaderboard.locator(".player-quiz-leaderboard-preview").first()).not.toContainText("9165 pts");
     await leaderboard.getByRole("button", { name: /^Season$/i }).click();
+    await expect(leaderboard).toContainText("Verified season board");
     await expect(leaderboard).toContainText("1725 pts");
     await expect(leaderboard).toContainText("1500 pts");
     await assertNoHorizontalOverflow(page);

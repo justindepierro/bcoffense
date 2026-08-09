@@ -84,6 +84,7 @@ js/
   script-quiz-foundation.js ← Quiz settings, roster health, awards, and coach setup
   script-quiz.js        ← Player quiz runtime and question/answer flow
   script-quiz-media.js  ← Quiz diagram warmup and signal-video preparation
+  player-quiz-authoritative.js ← Online-only server-authoritative Call Recognition session UI
   media-inventory.js    ← Cross-media inventory report for diagrams, clips, signals, and quiz readiness
   play-readiness.js     ← Coach-only play readiness scoring model, rep/action report storage, and script row widgets
   play-presentation.js  ← Shared landscape play presentation viewer
@@ -219,84 +220,85 @@ The startup shell uses `defer` and loads in this exact order from index.html. Ex
 59.   js/script-quiz-progress.js
 60.   js/script-quiz-leaderboard.js
 61.   js/player-quiz-sync.js
-62.   js/script-quiz-assignments.js
-63.   js/script-health.js
-64.   js/script-periods.js
-65.   js/script-period-sync.js
-66.   js/script-smart.js
-67.   js/script-storage.js
-68.   js/script-player.js
-69.   js/script-integrations.js
-69.   js/play-presentation.js
-70.   js/wristband.js
-71.   js/wristband-library.js
-72.   js/wristband-render.js
-73.   js/wristband-cards.js
-74.   js/wristband-export.js
-75.   js/wristband-chrome.js
-76.   js/wristband-logo.js
-77.   js/wristband-search.js
-78.   js/wristband-modals.js
-79.   js/wristband-cell-popup.js
-80.   js/wristband-cell-actions.js
-81.   js/wristband-sort.js
-82.   js/wristband-storage.js
-83.   js/wristband-runtime.js
-84.   js/callsheet-render.js
-85.   js/callsheet.js
-86.   js/callsheet-print.js
-87.   js/callsheet-sort.js
-88.   js/callsheet-filters.js
-89.   js/callsheet-smart.js
-90.   js/callsheet-export.js
-91.   js/callsheet-display.js
-92.   js/callsheet-categories.js
-93.   js/callsheet-metadata.js
-94.   js/callsheet-layout.js
-95.   js/callsheet-templates.js
-96.   js/callsheet-picker-runtime.js
-97.   js/callsheet-index-cards.js
-98.   js/callsheet-gameplan-drawer.js
-98.   js/constraints.js
-99.   js/constraints-ui.js
-100.   js/script-vision.js
-101.   js/tendencies-render.js
-102.   js/tendencies.js
-103.   js/tendencies-print.js
-104.   js/installation-render.js
-105.   js/installation.js
-106.   js/installation-print.js
-107.   js/identity.js
-108.   js/offensebuilder.js
-109.   js/help.js
-110.   js/dashboard-render.js
-111.   js/dashboard.js
-112.   js/gameplan.js
-113.   js/gameplan-render.js
-114.   js/gameplan-dnd.js
-115.   js/gameplan-actions.js
-116.   js/gameplan-smart.js
-117.   js/gameplan-health.js
-118.   js/gameplan-print.js
-119.   js/gameplan-index-cards.js
-120.   js/gameplan-integrations.js
-120.   js/gameplan-snapshots.js
-121.   js/script-events.js
-122.   js/anchored-menu.js
-123.   js/app-events.js
-124.   js/app-command.js
-125.   js/page-actions.js
-126.   js/app-notifications.js
-127.   js/push-notifications.js
-128.   js/player-portal.js
-129.   js/dashboard-questions.js
-130.   js/app-shell.js
-131.   js/app-session.js
-132.   js/app-navigation.js
-133.   js/app-module-init.js
-134.   js/app-bootstrap.js
-135.   js/app-init.js
-136.   js/app.js
+62.   js/player-quiz-authoritative.js
+63.   js/script-quiz-assignments.js
+64.   js/script-health.js
+65.   js/script-periods.js
+66.   js/script-period-sync.js
+67.   js/script-smart.js
+68.   js/script-storage.js
+69.   js/script-player.js
+70.   js/script-integrations.js
+71.   js/play-presentation.js
+72.   js/wristband.js
+73.   js/wristband-library.js
+74.   js/wristband-render.js
+75.   js/wristband-cards.js
+76.   js/wristband-export.js
+77.   js/wristband-chrome.js
+78.   js/wristband-logo.js
+79.   js/wristband-search.js
+80.   js/wristband-modals.js
+81.   js/wristband-cell-popup.js
+82.   js/wristband-cell-actions.js
+83.   js/wristband-sort.js
+84.   js/wristband-storage.js
+85.   js/wristband-runtime.js
+86.   js/callsheet-render.js
+87.   js/callsheet.js
+88.   js/callsheet-print.js
+89.   js/callsheet-sort.js
+90.   js/callsheet-filters.js
+91.   js/callsheet-smart.js
+92.   js/callsheet-export.js
+93.   js/callsheet-display.js
+94.   js/callsheet-categories.js
+95.   js/callsheet-metadata.js
+96.   js/callsheet-layout.js
+97.   js/callsheet-templates.js
+98.   js/callsheet-picker-runtime.js
+99.   js/callsheet-index-cards.js
+100.  js/callsheet-gameplan-drawer.js
+101.  js/constraints.js
+102.  js/constraints-ui.js
+103.  js/script-vision.js
+104.  js/tendencies-render.js
+105.  js/tendencies.js
+106.  js/tendencies-print.js
+107.  js/installation-render.js
+108.  js/installation.js
+109.  js/installation-print.js
+110.  js/identity.js
+111.  js/offensebuilder.js
+112.  js/help.js
+113.  js/dashboard-render.js
+114.  js/dashboard.js
+115.  js/gameplan.js
+116.  js/gameplan-render.js
+117.  js/gameplan-dnd.js
+118.  js/gameplan-actions.js
+119.  js/gameplan-smart.js
+120.  js/gameplan-health.js
+121.  js/gameplan-print.js
+122.  js/gameplan-index-cards.js
+123.  js/gameplan-integrations.js
+124.  js/gameplan-snapshots.js
+125.  js/script-events.js
+126.  js/anchored-menu.js
+127.  js/app-events.js
+128.  js/app-command.js
+129.  js/page-actions.js
+130.  js/app-notifications.js
+131.  js/push-notifications.js
+132.  js/player-portal.js
+133.  js/dashboard-questions.js
+134.  js/app-shell.js
+135.  js/app-session.js
+136.  js/app-navigation.js
+137.  js/app-module-init.js
+138.  js/app-bootstrap.js
+139.  js/app-init.js
+140.  js/app.js
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -327,6 +329,7 @@ window._reorderSave
 window.appDiagnostics
 window.appStartup
 window.addPlayPersonnelVariant
+window.answerAuthoritativeQuiz
 window.answerScriptQuizChoice
 window.applyCloudBackupImmediately
 window.applyPendingRestoredStartupTab
@@ -357,6 +360,7 @@ window.canAccessTab
 window.canEditUser
 window.canManageSettings
 window.closeAnchoredMenu
+window.closeAuthoritativeQuiz
 window.closeAboutBCOffense
 window.closeAccountSecurity
 window.closeBCOffenseTerms
@@ -367,6 +371,7 @@ window.closeMediaInventoryReport
 window.closeSignalClipModal
 window.closeSignalUploadModal
 window.closeSignalUploadReviewModal
+window.completeAuthoritativeQuiz
 window.completePlayerPublishJobs
 window.completeWorkspaceSyncJob
 window.confirmSignalReviewedUpload
@@ -470,6 +475,7 @@ window.saveCloudSyncSettings
 window.saveSignalDetails
 window.setWorkspaceSyncStatus
 window.runWorkspaceSyncJob
+window.startAuthoritativePlayerQuiz
 window.startWorkspaceSyncJob
 window.stagedRestore
 window.STORAGE_KEYS
@@ -1059,6 +1065,7 @@ page-actions:_pa
 playbook:pb,_pb
 script:script,_script
 player-quiz:quiz,playerQuiz,_quiz,_playerQuiz
+authoritative-quiz:aqz,_aqz
 call-sheet:cs,_cs
 constraints:cr,_cr
 game-plan:gp,_gp

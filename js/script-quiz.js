@@ -636,7 +636,7 @@ function _renderPlayerQuizHub() {
   }
   const weeklyMetaEl = document.getElementById("playerQuizWeeklyMeta");
   if (weeklyMetaEl) {
-    weeklyMetaEl.textContent = `${summary.weeklyAttempts.length} attempt${summary.weeklyAttempts.length === 1 ? "" : "s"} this week`;
+    weeklyMetaEl.textContent = `${summary.weeklyAttempts.length} practice attempt${summary.weeklyAttempts.length === 1 ? "" : "s"} this week`;
   }
   const tierEl = document.getElementById("playerQuizCurrentTier");
   if (tierEl) tierEl.textContent = summary.tier;
@@ -646,18 +646,18 @@ function _renderPlayerQuizHub() {
     const achievement = _getQuizAchievementSummary(summary.weeklyPoints, settings);
     const championName = _getQuizTierName("champion", settings);
     tierMetaEl.textContent = remaining
-      ? `${Math.round(remaining)} to ${championName}`
-      : (achievement.stars ? `${achievement.shortLabel} · ${Math.round(achievement.overGoal)} above` : `${championName} standard met`);
+      ? `Practice pace: ${Math.round(remaining)} to ${championName}`
+      : (achievement.stars ? `Practice: ${achievement.shortLabel} · ${Math.round(achievement.overGoal)} above` : `Practice ${championName} standard met`);
   }
   const bestBadgeEl = document.getElementById("playerQuizBestBadge");
   if (bestBadgeEl) {
-    bestBadgeEl.textContent = summary.bestPercent ? summary.bestBadge.label : "No attempts";
+    bestBadgeEl.textContent = summary.bestPercent ? summary.bestBadge.label : "No practice attempts";
   }
   const badgeMetaEl = document.getElementById("playerQuizBadgeMeta");
   if (badgeMetaEl) {
     badgeMetaEl.textContent = summary.bestPercent
-      ? `Best ${Math.round(summary.bestPercent)}% · season ${Math.round(summary.seasonPoints)} pts`
-      : `${badgeFloor} / ${settings.highHonorRollMin} / ${settings.coachesListMin} unlock bonuses`;
+      ? `Practice best ${Math.round(summary.bestPercent)}% · season ${Math.round(summary.seasonPoints)} pts`
+      : `${badgeFloor} / ${settings.highHonorRollMin} / ${settings.coachesListMin} practice bonuses`;
   }
   const leaderboardEl = document.getElementById("playerQuizLeaderboardPreview");
   if (leaderboardEl) {

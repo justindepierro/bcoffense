@@ -10,20 +10,27 @@ const { createSessionCookie } = await import("../functions/_lib/auth.js");
 const { onRequestPost: syncLeaderboard } = await import("../functions/api/leaderboard/sync.js");
 const { onRequestPost: mutateAward } = await import("../functions/api/leaderboard/awards.js");
 const { onRequestPost: recordAssignment } = await import("../functions/api/quiz-assignments/index.js");
+const { getLeaderboardSummary } = await import("../functions/_lib/d1-leaderboard.js");
 const { getPlayerQuizAssignments } = await import("../functions/_lib/d1-quiz-assignments.js");
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
-const [leaderboardHelper, syncRoute, awardsRoute, assignmentHelper, assignmentClient] = await Promise.all([
+const [leaderboardHelper, syncRoute, awardsRoute, assignmentHelper, assignmentClient, authoritativeQuizMigration] = await Promise.all([
   source("functions/_lib/d1-leaderboard.js"),
   source("functions/api/leaderboard/sync.js"),
   source("functions/api/leaderboard/awards.js"),
   source("functions/_lib/d1-quiz-assignments.js"),
   source("js/script-quiz-assignments.js"),
+  source("migrations/0028_authoritative_quiz_sessions.sql"),
 ]);
 
-assert.match(leaderboardHelper, /ON CONFLICT\(team_id, id\) DO NOTHING/, "attempt and staff record IDs are insert-only/idempotent");
+assert.match(leaderboardHelper, /ON CONFLICT\(team_id, id\) DO NOTHING/, "staff record IDs are insert-only/idempotent");
 assert.match(syncRoute, /readLeaderboardPayload\(request\)/, "player sync streams a bounded request body");
+assert.match(leaderboardHelper, /score_origin = 'server'/, "verified summary filters browser-origin scores");
+assert.match(authoritativeQuizMigration, /reward_origin TEXT NOT NULL DEFAULT 'legacy_client'/, "0028 makes historic reward rows explicitly untrusted");
+assert.match(authoritativeQuizMigration, /sticker_origin TEXT NOT NULL DEFAULT 'legacy_client'/, "0028 makes historic sticker rows explicitly untrusted");
+assert.match(leaderboardHelper, /reward_origin = 'staff'/, "verified summary filters rewards to protected staff mutations");
+assert.match(leaderboardHelper, /sticker_origin = 'staff'/, "verified summary filters stickers to protected staff mutations");
 assert.match(awardsRoute, /hasCoachPermission\(session, "tab:leaderboard"\)/, "award mutations require coach/admin leaderboard access");
 assert.match(assignmentHelper, /recordLegacyQuizAssignmentPractice/, "legacy homework results have an explicitly practice-only server path");
 assert.match(assignmentClient, /action: "record-practice", assignmentId/, "the browser no longer sends a client score to homework");
@@ -52,20 +59,22 @@ function makeD1() {
       total_questions INTEGER NOT NULL DEFAULT 0, remaining INTEGER NOT NULL DEFAULT 0, percent INTEGER NOT NULL DEFAULT 0,
       badge TEXT, best_streak INTEGER NOT NULL DEFAULT 0, question_breakdown TEXT, review TEXT,
       completed INTEGER NOT NULL DEFAULT 1, date_key TEXT, week_key TEXT, completed_at INTEGER,
-      client_updated_at INTEGER, updated_at INTEGER NOT NULL, PRIMARY KEY (team_id, id)
+      client_updated_at INTEGER, updated_at INTEGER NOT NULL,
+      score_origin TEXT NOT NULL DEFAULT 'legacy_client', authoritative_session_id TEXT,
+      PRIMARY KEY (team_id, id)
     );
     CREATE TABLE player_reward_events (
       id TEXT NOT NULL, team_id TEXT NOT NULL, user_id TEXT, player_name TEXT NOT NULL,
       type TEXT, label TEXT, points INTEGER NOT NULL DEFAULT 0, note TEXT, awarded_by TEXT,
       source TEXT, source_post_id TEXT, source_play_id TEXT, status TEXT NOT NULL DEFAULT 'approved',
       date_key TEXT, week_key TEXT, created_at_client INTEGER, approved_at INTEGER, approved_by TEXT,
-      updated_at INTEGER NOT NULL, PRIMARY KEY (team_id, id)
+      updated_at INTEGER NOT NULL, reward_origin TEXT NOT NULL DEFAULT 'legacy_client', PRIMARY KEY (team_id, id)
     );
     CREATE TABLE player_helmet_stickers (
       id TEXT NOT NULL, team_id TEXT NOT NULL, user_id TEXT, player_name TEXT NOT NULL,
       sticker_key TEXT, label TEXT, icon TEXT, color TEXT, description TEXT, note TEXT,
       awarded_by TEXT, context TEXT, date_key TEXT, week_key TEXT, created_at_client INTEGER,
-      updated_at INTEGER NOT NULL, PRIMARY KEY (team_id, id)
+      updated_at INTEGER NOT NULL, sticker_origin TEXT NOT NULL DEFAULT 'legacy_client', PRIMARY KEY (team_id, id)
     );
 
     CREATE TABLE quiz_assignments (
@@ -193,27 +202,26 @@ const coachCookie = await createSessionCookie({
 }, env);
 const staticPlayerCookie = await createSessionCookie({ username: "player", role: "player", label: "Player" }, env);
 
-const acceptedAttempt = await syncLeaderboard({
+const browserAttempt = await syncLeaderboard({
   request: request("/api/leaderboard/sync", playerCookie, { attempts: [quizAttempt("quiz-00000001")] }),
   env,
 });
-assert.equal(acceptedAttempt.status, 200, "an active D1 player can submit a well-formed own attempt");
-assert.equal((await acceptedAttempt.json()).synced.attempts, 1, "the accepted attempt is reported as inserted");
-let storedAttempt = db.raw.prepare("SELECT user_id, player_name, total_points FROM player_quiz_attempts WHERE team_id = ? AND id = ?")
-  .get("team-a", "quiz-00000001");
-assert.deepEqual({ ...storedAttempt }, { user_id: "player-one", player_name: "Player One", total_points: 100 }, "the server ignores a forged player name and uses the D1 player identity");
-
-const retryAttempt = await syncLeaderboard({
-  request: request("/api/leaderboard/sync", playerCookie, {
-    attempts: [quizAttempt("quiz-00000001", { score: 200, totalPoints: 200 })],
-  }),
-  env,
-});
-assert.equal(retryAttempt.status, 200, "retrying a stable attempt ID succeeds safely");
-assert.equal((await retryAttempt.json()).synced.duplicates, 1, "the retry is recognized as an idempotent duplicate");
-storedAttempt = db.raw.prepare("SELECT total_points FROM player_quiz_attempts WHERE team_id = ? AND id = ?")
-  .get("team-a", "quiz-00000001");
-assert.equal(storedAttempt.total_points, 100, "a duplicate ID cannot rewrite an accepted score");
+assert.equal(browserAttempt.status, 400, "a browser cannot submit a quiz score after authoritative sessions ship");
+assert.equal(
+  db.raw.prepare("SELECT COUNT(*) AS count FROM player_quiz_attempts WHERE team_id = ?").get("team-a").count,
+  0,
+  "rejected browser attempts create no leaderboard rows",
+);
+const refreshOnly = await syncLeaderboard({ request: request("/api/leaderboard/sync", playerCookie, { attempts: [] }), env });
+assert.equal(refreshOnly.status, 200, "an empty player sync remains a summary refresh");
+assert.equal((await refreshOnly.json()).synced.refreshOnly, true, "empty sync reports its non-writing contract");
+db.raw.prepare(`INSERT INTO player_quiz_attempts (
+  id, team_id, user_id, player_name, score, total_points, answered, correct, wrong,
+  total_questions, remaining, percent, completed, date_key, week_key, updated_at, score_origin
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, 'legacy_client')`)
+  .run("legacy-client-attempt", "team-a", "player-one", "Player One", 500, 500, 1, 1, 0, 1, 0, 100, "2026-01-01", "2026-W01", 1);
+const verifiedOnlySummary = await getLeaderboardSummary(db, "team-a", { weekKey: "2026-W01" });
+assert.equal(verifiedOnlySummary.week.totals.quizPoints, 0, "historic browser scores stay out of verified standings");
 
 const forgedReward = await syncLeaderboard({
   request: request("/api/leaderboard/sync", playerCookie, { attempts: [], rewards: [{ id: "reward-00000001" }] }),
@@ -252,10 +260,17 @@ const createdAward = await mutateAward({
   env,
 });
 assert.equal(createdAward.status, 200, "an admin can create a staff-owned reward for an active same-team player");
-let storedAward = db.raw.prepare("SELECT user_id, player_name, awarded_by, points, status FROM player_reward_events WHERE team_id = ? AND id = ?")
+let storedAward = db.raw.prepare("SELECT user_id, player_name, awarded_by, points, status, reward_origin, week_key FROM player_reward_events WHERE team_id = ? AND id = ?")
   .get("team-a", "reward-00000001");
-assert.deepEqual({ ...storedAward }, {
-  user_id: "player-one", player_name: "Player One", awarded_by: "Head Coach", points: 40, status: "approved",
+assert.deepEqual({
+  user_id: storedAward.user_id,
+  player_name: storedAward.player_name,
+  awarded_by: storedAward.awarded_by,
+  points: storedAward.points,
+  status: storedAward.status,
+  reward_origin: storedAward.reward_origin,
+}, {
+  user_id: "player-one", player_name: "Player One", awarded_by: "Head Coach", points: 40, status: "approved", reward_origin: "staff",
 }, "the staff route resolves canonical player and staff identities instead of trusting the browser");
 
 const createdSticker = await mutateAward({
@@ -266,11 +281,44 @@ const createdSticker = await mutateAward({
   env,
 });
 assert.equal(createdSticker.status, 200, "an admin can create a staff-owned sticker for an active same-team player");
-const storedSticker = db.raw.prepare("SELECT user_id, player_name, awarded_by, color FROM player_helmet_stickers WHERE team_id = ? AND id = ?")
+const storedSticker = db.raw.prepare("SELECT user_id, player_name, awarded_by, color, sticker_origin, week_key FROM player_helmet_stickers WHERE team_id = ? AND id = ?")
   .get("team-a", "sticker-00000001");
-assert.deepEqual({ ...storedSticker }, {
-  user_id: "player-one", player_name: "Player One", awarded_by: "Head Coach", color: "gold",
+assert.deepEqual({
+  user_id: storedSticker.user_id,
+  player_name: storedSticker.player_name,
+  awarded_by: storedSticker.awarded_by,
+  color: storedSticker.color,
+  sticker_origin: storedSticker.sticker_origin,
+}, {
+  user_id: "player-one", player_name: "Player One", awarded_by: "Head Coach", color: "gold", sticker_origin: "staff",
 }, "sticker identity and author are also resolved by the server");
+assert.equal(storedAward.week_key, storedSticker.week_key, "staff reward and sticker share the server-issued current week");
+
+db.raw.prepare(`INSERT INTO player_reward_events (
+  id, team_id, user_id, player_name, type, label, points, status, date_key, week_key, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+  .run("legacy-forged-reward", "team-a", "player-one", "Player One", "gift", "Forged legacy reward", 999, "approved", "2026-01-01", storedAward.week_key, 1);
+db.raw.prepare(`INSERT INTO player_helmet_stickers (
+  id, team_id, user_id, player_name, sticker_key, label, icon, color, date_key, week_key, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+  .run("legacy-forged-sticker", "team-a", "player-one", "Player One", "forged", "Forged legacy sticker", "!", "gold", "2026-01-01", storedAward.week_key, 1);
+assert.equal(
+  db.raw.prepare("SELECT reward_origin FROM player_reward_events WHERE team_id = ? AND id = ?").get("team-a", "legacy-forged-reward").reward_origin,
+  "legacy_client",
+  "historical reward rows retain the untrusted default",
+);
+assert.equal(
+  db.raw.prepare("SELECT sticker_origin FROM player_helmet_stickers WHERE team_id = ? AND id = ?").get("team-a", "legacy-forged-sticker").sticker_origin,
+  "legacy_client",
+  "historical sticker rows retain the untrusted default",
+);
+const staffOnlySummary = await getLeaderboardSummary(db, "team-a", { weekKey: storedAward.week_key });
+const staffOnlyRow = staffOnlySummary.week.rows.find((row) => row.player === "Player One");
+assert.equal(staffOnlyRow?.rewardPoints, 40, "legacy forged reward points do not alter verified standings");
+assert.equal(staffOnlyRow?.stickers, 1, "legacy forged stickers do not alter verified standings");
+const staffOnlySeasonRow = staffOnlySummary.season.rows.find((row) => row.player === "Player One");
+assert.equal(staffOnlySeasonRow?.rewardPoints, 40, "season standings also exclude legacy forged reward points");
+assert.equal(staffOnlySeasonRow?.stickers, 1, "season standings also exclude legacy forged stickers");
 const revokedSticker = await mutateAward({
   request: request("/api/leaderboard/awards", coachCookie, {
     kind: "sticker", action: "revoke", record: { id: "sticker-00000001" },

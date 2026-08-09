@@ -54,8 +54,9 @@ assert(
 assert(
   quiz.includes("_getReleasedGamePlanQuizSource")
     && quiz.includes("_getPlayerGamePlanQuizStorageKey")
-    && quiz.includes('window.queuePlayerLeaderboardSync("attempts")'),
-  "player quiz reads the immutable release source and queues attempts for D1 sync",
+    && quiz.includes("Generic quizzes are study/practice records only.")
+    && !quiz.includes('window.queuePlayerLeaderboardSync("attempts")'),
+  "player quiz reads the immutable release source while generic practice results stay local-only",
 );
 assert(
   quiz.includes("function getPlayerQuizSourceAvailability")
@@ -158,10 +159,13 @@ assert(
   "coach workspace revision retains every shared quiz and signal configuration key",
 );
 assert(
-  sync.includes('requestJson("/api/leaderboard/sync"')
+  sync.includes("requestJson(`/api/leaderboard/summary?weekKey=${weekKey}`)")
     && sync.includes("credentials: \"same-origin\"")
-    && sync.includes("SYNC_DELAY_MS = 8000"),
-  "quiz progress uses the authenticated, debounced leaderboard sync path",
+    && sync.includes("SYNC_DELAY_MS = 8000")
+    && sync.includes("attempts: []")
+    && sync.includes("Local practice attempts are intentionally never uploaded.")
+    && !sync.includes('requestJson("/api/leaderboard/sync"'),
+  "quiz progress uses an authenticated, debounced verified-summary refresh without uploading practice attempts",
 );
 assert(
   syncRoute.includes("getSessionFromRequest")

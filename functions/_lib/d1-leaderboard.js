@@ -4,8 +4,6 @@
 
 import { getTeamId } from "./d1-threads.js";
 
-const MAX_ATTEMPTS_PER_SYNC = 150;
-const MAX_REVIEW_BYTES = 8 * 1024;
 const MAX_STAFF_NOTE_LENGTH = 1000;
 const MAX_STAFF_POINTS = 500;
 const ATTEMPT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/;
@@ -55,18 +53,6 @@ function boundedInteger(value, name, min, max, fallback = 0) {
   }
   if (value < min || value > max) throw new RangeError(`${name} is out of range.`);
   return value;
-}
-
-function jsonText(value, name, max = MAX_REVIEW_BYTES) {
-  if (value === undefined || value === null) return null;
-  if (!isPlainObject(value) && !Array.isArray(value)) {
-    throw new TypeError(`${name} must be an object or list.`);
-  }
-  const serialized = JSON.stringify(value);
-  if (new TextEncoder().encode(serialized).byteLength > max) {
-    throw new RangeError(`${name} is too large.`);
-  }
-  return serialized;
 }
 
 function summaryInt(value, min = 0, max = 1000000) {
@@ -161,61 +147,6 @@ async function resolveSessionPlayer(db, teamId, session) {
   ).bind(userId, teamId).first();
   if (!player) throw new Error("The active player account could not be resolved.");
   return { userId: String(player.user_id), playerName: canonicalPlayerName(player) };
-}
-
-function normalizeAttempt(input, teamId, player, now) {
-  if (!isPlainObject(input)) throw new TypeError("Each quiz attempt must be an object.");
-  const score = boundedInteger(input.score, "score", 0, 100000, 0);
-  const bonusPoints = boundedInteger(input.bonusPoints, "bonusPoints", 0, 100000, 0);
-  const totalPoints = boundedInteger(input.totalPoints, "totalPoints", 0, 100000, 0);
-  const answered = boundedInteger(input.answered, "answered", 0, 500, 0);
-  const correct = boundedInteger(input.correct, "correct", 0, 500, 0);
-  const wrong = boundedInteger(input.wrong, "wrong", 0, 500, 0);
-  const totalQuestions = boundedInteger(input.totalQuestions, "totalQuestions", 0, 500, 0);
-  const remaining = boundedInteger(input.remaining, "remaining", 0, 500, 0);
-  const percent = boundedInteger(input.percent, "percent", 0, 100, 0);
-  const bestStreak = boundedInteger(input.bestStreak, "bestStreak", 0, 500, 0);
-  if (totalPoints !== score + bonusPoints) throw new TypeError("totalPoints must equal score plus bonusPoints.");
-  if (answered !== correct + wrong || answered + remaining !== totalQuestions) {
-    throw new TypeError("Quiz counts do not describe one attempt.");
-  }
-  if (percent !== (answered ? Math.round((correct / answered) * 100) : 0)) {
-    throw new TypeError("percent does not match the answer counts.");
-  }
-  if (input.completed !== undefined && typeof input.completed !== "boolean") {
-    throw new TypeError("completed must be true or false.");
-  }
-  return {
-    id: requiredId(input.id, "Attempt ID"),
-    teamId,
-    userId: player.userId,
-    playerName: player.playerName,
-    sourceType: optionalText(input.sourceType, "sourceType", 40),
-    sourceId: optionalText(input.sourceId, "sourceId", 160),
-    title: optionalText(input.title, "title", 180),
-    positionKey: optionalText(input.positionKey, "positionKey", 40),
-    positionLabel: optionalText(input.positionLabel, "positionLabel", 80),
-    score,
-    bonusPoints,
-    totalPoints,
-    answered,
-    correct,
-    wrong,
-    totalQuestions,
-    remaining,
-    percent,
-    badge: optionalText(input.badge, "badge", 80),
-    bestStreak,
-    questionBreakdown: jsonText(input.questionBreakdown, "questionBreakdown"),
-    review: jsonText(input.review, "review"),
-    completed: input.completed === false ? 0 : 1,
-    // Date and week determine rankings. They must be server-stamped rather
-    // than selected by an untrusted browser payload.
-    dateKey: canonicalDateKey(now),
-    weekKey: currentWeekKey(now),
-    completedAt: Math.floor(now.getTime() / 1000),
-    clientUpdatedAt: Math.floor(now.getTime() / 1000),
-  };
 }
 
 function normalizeStaffTarget(input) {
@@ -387,9 +318,9 @@ async function requireActiveRecordTarget(db, teamId, row) {
 }
 
 /**
- * Only named D1 players may upload quiz attempts. Attempts are insert-only:
- * retries with the same client-generated ID are harmless and cannot rewrite
- * a score or identity after the first accepted submission.
+ * Player sync is now a summary refresh only. Browser-generated scores are
+ * deliberately rejected: verified attempt rows can be created only by the
+ * server-authoritative quiz completion transaction.
  */
 export async function syncLeaderboardPayload(db, teamId, session, payload = {}) {
   if (session?.role !== "player" || !session?.d1UserId) {
@@ -400,33 +331,15 @@ export async function syncLeaderboardPayload(db, teamId, session, payload = {}) 
   if (rewards.length || stickers.length) {
     throw new TypeError("Player quiz sync cannot submit rewards or stickers.");
   }
-  const attempts = payloadArray(payload, "attempts", MAX_ATTEMPTS_PER_SYNC);
-  const now = new Date();
-  const player = await resolveSessionPlayer(db, teamId, session);
-  const normalized = attempts.map((attempt) => normalizeAttempt(attempt, teamId, player, now));
-  const statements = normalized.map((attempt) => db.prepare(
-    `INSERT INTO player_quiz_attempts (
-      id, team_id, user_id, player_name, source_type, source_id, title,
-      position_key, position_label, score, bonus_points, total_points,
-      answered, correct, wrong, total_questions, remaining, percent,
-      badge, best_streak, question_breakdown, review, completed,
-      date_key, week_key, completed_at, client_updated_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(team_id, id) DO NOTHING`,
-  ).bind(
-    attempt.id, attempt.teamId, attempt.userId, attempt.playerName, attempt.sourceType, attempt.sourceId, attempt.title,
-    attempt.positionKey, attempt.positionLabel, attempt.score, attempt.bonusPoints, attempt.totalPoints,
-    attempt.answered, attempt.correct, attempt.wrong, attempt.totalQuestions, attempt.remaining, attempt.percent,
-    attempt.badge, attempt.bestStreak, attempt.questionBreakdown, attempt.review, attempt.completed,
-    attempt.dateKey, attempt.weekKey, attempt.completedAt, attempt.clientUpdatedAt, Math.floor(now.getTime() / 1000),
-  ));
-  const results = !statements.length
-    ? []
-    : (typeof db.batch === "function"
-      ? await db.batch(statements)
-      : await Promise.all(statements.map((statement) => statement.run())));
-  const inserted = results.reduce((count, result) => count + (Number(result?.meta?.changes || 0) > 0 ? 1 : 0), 0);
-  return { attempts: inserted, duplicates: normalized.length - inserted, rewards: 0, stickers: 0 };
+  const attempts = payloadArray(payload, "attempts", 150);
+  if (attempts.length) {
+    throw new TypeError("Browser-submitted quiz attempts are no longer accepted.");
+  }
+  // Re-resolve the active principal even though no row is written. This keeps
+  // the summary-refresh route fail-closed if a named player was disabled or
+  // moved to another team after their signed session was issued.
+  await resolveSessionPlayer(db, teamId, session);
+  return { attempts: 0, duplicates: 0, rewards: 0, stickers: 0, refreshOnly: true };
 }
 
 /**
@@ -456,13 +369,13 @@ export async function mutateStaffLeaderboardRecord(db, teamId, session, payload 
       `INSERT INTO player_reward_events (
         id, team_id, user_id, player_name, type, label, points, note,
         awarded_by, source, source_post_id, source_play_id, status,
-        date_key, week_key, created_at_client, approved_at, approved_by, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        reward_origin, date_key, week_key, created_at_client, approved_at, approved_by, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(team_id, id) DO NOTHING`,
     ).bind(
       reward.id, teamId, reward.userId, reward.playerName, reward.type, reward.label, reward.points, reward.note,
       reward.awardedBy, reward.source, reward.sourcePostId, reward.sourcePlayId, reward.status,
-      reward.dateKey, reward.weekKey, reward.createdAt, reward.approvedAt, reward.approvedBy, timestamp,
+      "staff", reward.dateKey, reward.weekKey, reward.createdAt, reward.approvedAt, reward.approvedBy, timestamp,
     ).run();
     return { kind, action, record: mapRewardRecord(await getTeamReward(db, teamId, reward.id)) };
   }
@@ -474,13 +387,13 @@ export async function mutateStaffLeaderboardRecord(db, teamId, session, payload 
       `INSERT INTO player_helmet_stickers (
         id, team_id, user_id, player_name, sticker_key, label, icon, color,
         description, note, awarded_by, context, date_key, week_key,
-        created_at_client, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        sticker_origin, created_at_client, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(team_id, id) DO NOTHING`,
     ).bind(
       sticker.id, teamId, sticker.userId, sticker.playerName, sticker.stickerKey, sticker.label, sticker.icon, sticker.color,
       sticker.description, sticker.note, sticker.awardedBy, sticker.context, sticker.dateKey, sticker.weekKey,
-      sticker.createdAt, timestamp,
+      "staff", sticker.createdAt, timestamp,
     ).run();
     return { kind, action, record: mapStickerRecord(await getTeamSticker(db, teamId, sticker.id)) };
   }
@@ -572,11 +485,21 @@ function mergeRows(attemptRows = [], rewardRows = [], stickerRows = []) {
 }
 
 async function loadSummaryRows(db, teamId, weekKey = "", season = false) {
-  const attemptWhere = season ? "team_id = ?" : "team_id = ? AND week_key = ?";
+  // Historic browser-origin rows stay in D1 for audit/recovery, but never
+  // contribute to verified standings. 0028 stamps the only eligible quiz rows
+  // during authoritative completion and staff-created award records during the
+  // protected award mutation.
+  const attemptWhere = season
+    ? "team_id = ? AND score_origin = 'server'"
+    : "team_id = ? AND week_key = ? AND score_origin = 'server'";
   const attemptBinds = season ? [teamId] : [teamId, weekKey];
-  const rewardWhere = season ? `team_id = ? AND ${activeRewardClause()}` : `team_id = ? AND week_key = ? AND ${activeRewardClause()}`;
+  const rewardWhere = season
+    ? `team_id = ? AND reward_origin = 'staff' AND ${activeRewardClause()}`
+    : `team_id = ? AND week_key = ? AND reward_origin = 'staff' AND ${activeRewardClause()}`;
   const rewardBinds = season ? [teamId] : [teamId, weekKey];
-  const stickerWhere = season ? "team_id = ?" : "team_id = ? AND week_key = ?";
+  const stickerWhere = season
+    ? "team_id = ? AND sticker_origin = 'staff'"
+    : "team_id = ? AND week_key = ? AND sticker_origin = 'staff'";
   const stickerBinds = season ? [teamId] : [teamId, weekKey];
 
   const attempts = await db.prepare(

@@ -1,8 +1,10 @@
 /**
  * POST /api/leaderboard/sync
  *
- * Syncs a signed-in D1 player's local quiz attempts into D1. Coach-owned
- * rewards and stickers use /api/leaderboard/awards instead.
+ * Returns a signed-in D1 player's current verified leaderboard summary.
+ * Browser-owned attempts are rejected; only server-authoritative quiz session
+ * completion can insert a trusted attempt. Coach-owned rewards and stickers
+ * use /api/leaderboard/awards instead.
  */
 
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";

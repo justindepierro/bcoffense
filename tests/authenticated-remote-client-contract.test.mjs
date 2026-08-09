@@ -65,12 +65,27 @@ assert.match(
 assert.match(
   leaderboard,
   /const user = await _getVerifiedLeaderboardUser\(\);\s*if \(user\?\.role !== "player"\) return null;/,
-  "only player accounts can submit player leaderboard sync payloads",
+  "only player accounts can initiate a player leaderboard summary refresh",
 );
 assert.match(
   leaderboard,
-  /if \(user\.role === "player"\)[\s\S]*syncPlayerLeaderboardNow/,
-  "initial leaderboard sync avoids needless staff writes",
+  /async function refreshPlayerLeaderboardSummary[\s\S]*requestJson\(`\/api\/leaderboard\/summary\?weekKey=\$\{weekKey\}`\)/,
+  "leaderboard refreshes use the authenticated GET summary endpoint",
+);
+assert.match(
+  leaderboard,
+  /function buildPlayerLeaderboardSyncPayload\(\)[\s\S]*attempts: \[\]/,
+  "the compatibility sync payload is explicitly empty and cannot upload local practice attempts",
+);
+assert.doesNotMatch(
+  leaderboard,
+  /requestJson\(["']\/api\/leaderboard\/sync/,
+  "the player client never POSTs mutable local attempts to the leaderboard endpoint",
+);
+assert.match(
+  leaderboard,
+  /document\.addEventListener\("DOMContentLoaded"[\s\S]*if \(!user\) return;[\s\S]*refreshPlayerLeaderboardSummary\(\{ quiet: true \}\)/,
+  "initial authenticated leaderboard work is a quiet read-only summary refresh",
 );
 
 console.log("authenticated remote client contract: session gating and 401 containment passed");

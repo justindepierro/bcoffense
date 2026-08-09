@@ -13,13 +13,6 @@
       : "playerLeaderboardRemote";
   }
 
-  function readArray(key, fallbackKey) {
-    if (typeof storageManager === "undefined" || typeof storageManager.get !== "function") return [];
-    const storageKey = typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS[key] ? STORAGE_KEYS[key] : fallbackKey;
-    const value = storageManager.get(storageKey, []);
-    return Array.isArray(value) ? value.filter((item) => item && typeof item === "object") : [];
-  }
-
   function currentWeekKey() {
     if (typeof _quizWeekKey === "function") return _quizWeekKey(new Date());
     const date = new Date();
@@ -99,45 +92,16 @@
     return response.json();
   }
 
-  // Persisted attempts include local-only presentation data such as reviewRows
-  // (which can embed an entire play). Send only the bounded server contract;
-  // player identity, timestamps, and ranking week are supplied by the server.
-  function buildPlayerAttemptPayload(attempt = {}) {
-    return {
-      id: attempt.id,
-      sourceType: attempt.sourceType,
-      sourceId: attempt.sourceId,
-      title: attempt.title,
-      positionKey: attempt.positionKey,
-      positionLabel: attempt.positionLabel,
-      score: attempt.score,
-      bonusPoints: attempt.bonusPoints,
-      totalPoints: attempt.totalPoints,
-      answered: attempt.answered,
-      correct: attempt.correct,
-      wrong: attempt.wrong,
-      totalQuestions: attempt.totalQuestions,
-      remaining: attempt.remaining,
-      percent: attempt.percent,
-      badge: attempt.badge,
-      bestStreak: attempt.bestStreak,
-      questionBreakdown: attempt.questionBreakdown,
-      review: attempt.review,
-      completed: attempt.completed,
-    };
-  }
-
   function buildPlayerLeaderboardSyncPayload() {
+    // Local practice attempts are intentionally never uploaded. Verified
+    // attempts are created only by the server-authoritative quiz session
+    // endpoint after it has checked every answer against its own snapshot.
+    // Keep this public compatibility shape for diagnostics and older callers,
+    // but an empty attempt list cannot become a leaderboard write.
     return {
       weekKey: currentWeekKey(),
-      attempts: readArray("PLAYER_QUIZ_RESULTS", "playerQuizResults")
-        .slice(-150)
-        .map(buildPlayerAttemptPayload),
+      attempts: [],
     };
-  }
-
-  function shouldSkipPayload(payload) {
-    return !payload.attempts.length;
   }
 
   function normalizeIdentity(value) {
@@ -188,22 +152,12 @@
     const user = await _getVerifiedLeaderboardUser();
     if (user?.role !== "player") return null;
     if (syncInFlight) return null;
-    const payload = buildPlayerLeaderboardSyncPayload();
-    if (shouldSkipPayload(payload)) {
-      return refreshPlayerLeaderboardSummary({ quiet: true });
-    }
     syncInFlight = true;
     try {
-      const data = await requestJson("/api/leaderboard/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (data?.summary) {
-        saveRemoteSummary(data.summary, "sync");
-        if (!options.quiet) rerenderLeaderboardSurfaces();
-      }
-      return data || null;
+      // The name remains for compatibility with existing callers, but it is a
+      // summary refresh now—not a client score upload. Generic practice quizzes
+      // stay local-only and cannot create a verified leaderboard result.
+      return await refreshPlayerLeaderboardSummary(options);
     } catch (err) {
       saveRemoteError(err?.message || err);
       return null;
@@ -241,6 +195,8 @@
   function queuePlayerLeaderboardSync(_reason = "") {
     window.clearTimeout(syncTimer);
     syncTimer = window.setTimeout(() => {
+      // Queue only a read of server-issued standings. Do not send local quiz
+      // history, even after a practice quiz or a retry while reconnecting.
       syncPlayerLeaderboardNow({ quiet: true });
     }, SYNC_DELAY_MS);
   }
@@ -278,9 +234,6 @@
       const user = await _getVerifiedLeaderboardUser();
       if (!user) return;
       window.setTimeout(() => refreshPlayerLeaderboardSummary({ quiet: true }), SUMMARY_REFRESH_MS);
-      if (user.role === "player") {
-        window.setTimeout(() => syncPlayerLeaderboardNow({ quiet: true }), SUMMARY_REFRESH_MS + 2500);
-      }
     })();
   });
 })();

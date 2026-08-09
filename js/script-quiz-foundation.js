@@ -651,9 +651,9 @@ function _savePlayerQuizAttempts(attempts) {
     .filter((attempt) => attempt && typeof attempt === "object")
     .slice(-150);
   storageManager.set(_getPlayerQuizStorageKey(), normalized);
-  if (typeof window !== "undefined" && typeof window.queuePlayerLeaderboardSync === "function") {
-    window.queuePlayerLeaderboardSync("attempts");
-  }
+  // Generic quizzes are study/practice records only. Server-verified results
+  // are created by the dedicated authoritative session path, never by
+  // uploading this mutable local history.
 }
 
 function _getPlayerRewardEvents() {
@@ -1440,16 +1440,59 @@ function _quizActivityWeekKeys(attempts, rewards, player) {
   return keys;
 }
 
+// Server summaries are the only source for verified standings. Local quiz
+// history is useful for a player's study review, but it is mutable browser
+// data and must never be merged into or inflate an authoritative board.
+function _getVerifiedQuizLeaderboardRows(view = "week") {
+  const remoteRows = typeof window !== "undefined" && typeof window.getRemotePlayerLeaderboardRows === "function"
+    ? window.getRemotePlayerLeaderboardRows(view === "season" ? "season" : "week")
+    : [];
+  const settings = _getPlayerQuizSettings();
+  const normalized = (Array.isArray(remoteRows) ? remoteRows : [])
+    .map((row, index) => {
+      const name = _normalizeQuizPlayerName(row?.name || row?.player || "");
+      if (!name) return null;
+      const totalPoints = Math.max(0, Number(row.totalPoints ?? row.points ?? 0) || 0);
+      const rewardPoints = Math.max(0, Number(row.rewardPoints ?? 0) || 0);
+      const quizPoints = Math.max(0, Number(row.quizPoints ?? (totalPoints - rewardPoints)) || 0);
+      const answered = Math.max(0, Number(row.answered ?? 0) || 0);
+      const correct = Math.max(0, Number(row.correct ?? 0) || 0);
+      const percent = Number.isFinite(Number(row.percent))
+        ? Math.max(0, Math.min(100, Math.round(Number(row.percent))))
+        : (answered ? Math.round((correct / answered) * 100) : 0);
+      const rank = Number(row.rank);
+      return {
+        name,
+        points: totalPoints,
+        totalPoints,
+        quizPoints,
+        rewardPoints,
+        questionPoints: Math.max(0, Number(row.questionPoints ?? 0) || 0),
+        answerPoints: Math.max(0, Number(row.answerPoints ?? 0) || 0),
+        giftPoints: Math.max(0, Number(row.giftPoints ?? 0) || 0),
+        attempts: Math.max(0, Number(row.attempts ?? 0) || 0),
+        answered,
+        correct,
+        stickers: Math.max(0, Number(row.stickers ?? 0) || 0),
+        percent,
+        rank: Number.isInteger(rank) && rank > 0 ? rank : index + 1,
+        tier: _quizCleanText(row.tier || "", 80) || _getQuizTier(totalPoints, settings),
+        verified: true,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.rank - b.rank || b.totalPoints - a.totalPoints || a.name.localeCompare(b.name));
+  return normalized.map((row, index) => ({ ...row, rank: row.rank || index + 1 }));
+}
+
 function _buildQuizLeaderboardRows(attempts, rewards, player, weekKey = "") {
+  const verifiedRows = _getVerifiedQuizLeaderboardRows(weekKey ? "week" : "season");
+  if (verifiedRows.length) return verifiedRows;
   const settings = _getPlayerQuizSettings();
   const totals = new Map();
   const addPoints = (name, points) => {
     const playerName = _normalizeQuizPlayerName(name);
     totals.set(playerName, (totals.get(playerName) || 0) + Number(points || 0));
-  };
-  const mergeRemotePoints = (name, points) => {
-    const playerName = _normalizeQuizPlayerName(name);
-    totals.set(playerName, Math.max(totals.get(playerName) || 0, Number(points || 0)));
   };
   (Array.isArray(attempts) ? attempts : []).forEach((attempt) => {
     if (weekKey && attempt.weekKey !== weekKey) return;
@@ -1460,18 +1503,19 @@ function _buildQuizLeaderboardRows(attempts, rewards, player, weekKey = "") {
     if (weekKey && event.weekKey !== weekKey) return;
     addPoints(event.player || player, event.points || 0);
   });
-  const remoteRows = typeof window !== "undefined" && typeof window.getRemotePlayerLeaderboardRows === "function"
-    ? window.getRemotePlayerLeaderboardRows(weekKey ? "week" : "season")
-    : [];
-  remoteRows.forEach((row) => {
-    mergeRemotePoints(row.name || row.player, row.points ?? row.totalPoints ?? 0);
-  });
   _getQuizRosterPlayers().forEach((rosterPlayer) => addPoints(rosterPlayer.name, 0));
   if (!totals.size) totals.set(_normalizeQuizPlayerName(player), 0);
   return Array.from(totals.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8)
-    .map(([name, points], idx) => ({ name, points, rank: idx + 1, tier: _getQuizTier(points, settings) }));
+    .map(([name, points], idx) => ({
+      name,
+      points,
+      totalPoints: points,
+      rank: idx + 1,
+      tier: _getQuizTier(points, settings),
+      verified: false,
+    }));
 }
 
 function _isSignalSprintAttempt(attempt = {}) {
@@ -2104,6 +2148,9 @@ function renderPlayerLeaderboardPage() {
   const viewGiftPoints = isSeason ? summary.seasonGiftPoints : summary.weeklyGiftPoints;
   const viewPoints = isSeason ? summary.seasonPoints : summary.weeklyPoints;
   const viewRows = isSeason ? summary.seasonLeaderboardRows : summary.weeklyLeaderboardRows;
+  const verifiedBoard = isSeason
+    ? summary.seasonLeaderboardVerified === true
+    : summary.weeklyLeaderboardVerified === true;
   const signalConfig = _getSignalLeaderboardConfig();
   const signalRows = _getSignalLeaderboardRowsForMode(summary, isSeason, signalConfig.mode);
   const viewTier = _getQuizTier(viewPoints, settings);
@@ -2113,12 +2160,9 @@ function renderPlayerLeaderboardPage() {
   const goalPct = Math.min(100, Math.round((summary.weeklyPoints / settings.weeklyGoal) * 100));
   const remaining = Math.max(0, settings.weeklyGoal - summary.weeklyPoints);
   const badgeFloor = Math.min(settings.honorRollMin, settings.highHonorRollMin, settings.coachesListMin);
-  const syncMeta = typeof window !== "undefined" && typeof window.getRemotePlayerLeaderboardMeta === "function"
-    ? window.getRemotePlayerLeaderboardMeta()
-    : null;
-  const syncLabel = syncMeta?.synced
-    ? "Team synced"
-    : "Local board";
+  const syncLabel = verifiedBoard
+    ? "Server-verified board"
+    : "Practice-only local results";
   const recentHtml = recentAttempts.length
     ? recentAttempts.map((attempt) => `
         <div class="player-leaderboard-attempt${attempt.completed === false ? " is-partial" : ""}">
@@ -2135,9 +2179,9 @@ function renderPlayerLeaderboardPage() {
     <div class="player-leaderboard-shell">
       <section class="player-leaderboard-hero">
         <div>
-          <span class="player-leaderboard-kicker">Quiz progress</span>
-          <h2>${isSeason ? "Season points and weekly pace" : "Quiz points and weekly standard"}</h2>
-          <p>${isSeason ? "Track the whole season while still chasing the weekly standard." : `Get to ${settings.weeklyGoal} points this week. Game Plan quizzes count ${settings.gameplanWeight}x.`}</p>
+          <span class="player-leaderboard-kicker">Practice progress</span>
+          <h2>${isSeason ? "Practice season points and weekly pace" : "Practice points and weekly standard"}</h2>
+          <p>${isSeason ? "Local practice history stays on this device. Server-verified Call Recognition results appear on the team board." : `Practice toward ${settings.weeklyGoal} points this week. Server-verified Call Recognition is the only quiz mode that can change the team board.`}</p>
         </div>
       </section>
       ${draft ? _renderPlayerQuizResumeCard(draft, "page") : ""}
@@ -2147,13 +2191,13 @@ function renderPlayerLeaderboardPage() {
       </div>
       <section class="player-leaderboard-grid" aria-label="Quiz progress">
         <article class="player-leaderboard-card player-leaderboard-card--goal">
-          <span>${isSeason ? "Season Points" : "Weekly Goal"}</span>
+          <span>${isSeason ? "Practice Season Points" : "Practice Weekly Goal"}</span>
           <strong>${isSeason ? Math.round(summary.seasonPoints) : `${Math.round(summary.weeklyPoints)} / ${settings.weeklyGoal}`}</strong>
           <div class="player-leaderboard-meter" aria-hidden="true"><i class="player-leaderboard-meter-fill"></i></div>
           <small>${isSeason ? `${Math.round(summary.weeklyPoints)} / ${settings.weeklyGoal} this week` : (remaining ? `${Math.round(remaining)} points to ${escapeHtml(championName)}` : (achievement.stars ? `${escapeHtml(achievement.shortLabel)} · ${Math.round(achievement.overGoal)} above` : `${escapeHtml(championName)} standard met`))}</small>
         </article>
         <article class="player-leaderboard-card player-leaderboard-card--tier">
-          <span>Current Tier</span>
+          <span>Practice Tier</span>
           <strong>${escapeHtml(viewTier)}</strong>
           <small>${viewAttempts.length} attempt${viewAttempts.length === 1 ? "" : "s"} ${isSeason ? "this season" : "this week"}</small>
         </article>
@@ -2163,7 +2207,7 @@ function renderPlayerLeaderboardPage() {
           <small>${achievement.stars ? `${escapeHtml(achievement.shortLabel)}${achievement.nextRemaining ? ` · ${Math.round(achievement.nextRemaining)} to next` : ""}` : `${Math.round(settings.weeklyGoal + Math.max(100, settings.weeklyGoal * 0.25))} unlocks star 1`}</small>
         </article>
         <article class="player-leaderboard-card player-leaderboard-card--badge">
-          <span>Best Badge</span>
+          <span>Practice Badge</span>
           <strong>${summary.bestPercent ? escapeHtml(summary.bestBadge.label) : "No attempts"}</strong>
           <small>${summary.bestPercent ? `${Math.round(summary.bestPercent)}% best score` : `${badgeFloor}% unlocks bonuses`}</small>
         </article>
@@ -2175,8 +2219,8 @@ function renderPlayerLeaderboardPage() {
       </section>
       <section class="player-leaderboard-board">
         <div class="player-leaderboard-section-head">
-          <h3>Point sources</h3>
-          <span>${escapeHtml(viewLabel)}</span>
+          <h3>Practice-only point sources</h3>
+          <span>${escapeHtml(viewLabel)} · not team standings</span>
         </div>
         <div class="player-leaderboard-breakdown">
           <span><strong>${Math.round(viewQuizPoints)}</strong><small>Quiz</small></span>
@@ -2187,7 +2231,7 @@ function renderPlayerLeaderboardPage() {
       </section>
       <section class="player-leaderboard-board">
         <div class="player-leaderboard-section-head">
-          <h3>${isSeason ? "Season board" : "Weekly board"}</h3>
+          <h3>${verifiedBoard ? (isSeason ? "Verified season board" : "Verified weekly board") : "Practice-only local board"}</h3>
           <span>${escapeHtml(syncLabel)} · tap a name for stickers</span>
         </div>
         <div class="player-quiz-leaderboard-preview">${_renderQuizLeaderRows(viewRows, summary.player)}</div>
@@ -3355,7 +3399,7 @@ function _renderCoachQuizLeaderboardPanel(summary) {
     <section class="coach-quiz-setup-section coach-quiz-leaderboard-panel">
       <div class="coach-quiz-section-head">
         <h3>Leaderboard review</h3>
-        <span>${escapeHtml(summary.label)} · ${summary.totals.players} players · ${summary.totals.attempts} attempts</span>
+        <span>${escapeHtml(summary.label)} · ${summary.verified ? "server-verified standings" : "practice-only local results"} · ${summary.totals.players} players · ${summary.totals.attempts} attempts</span>
       </div>
       <div class="coach-quiz-leaderboard-toolbar">
         <div class="coach-quiz-view-toggle" role="group" aria-label="Coach leaderboard view">
