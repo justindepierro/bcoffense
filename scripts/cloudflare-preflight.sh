@@ -126,5 +126,27 @@ if (( ${#pending_migrations[@]} > 0 )); then
   exit 1
 fi
 
+printf 'Checking remote critical D1 schema for %s…\n' "$DATABASE_NAME"
+
+# Migration names alone cannot prove that a pre-existing/manual table has the
+# required columns and indexes. The probe is deliberately one SELECT-only
+# sqlite_master/PRAGMA metadata query; it neither applies migrations nor
+# changes the database while verifying the deploy boundary.
+if ! critical_schema_probe_sql="$(node scripts/critical-d1-schema.mjs --sql)"; then
+  fail "could not build the local critical D1 schema probe."
+fi
+
+if ! remote_schema_json="$(NO_COLOR=1 "${WRANGLER[@]}" d1 execute "$DATABASE_NAME" --remote --json \
+  --command "$critical_schema_probe_sql")"; then
+  printf '\n' >&2
+  fail "could not read the remote critical D1 schema. No Pages deployment was attempted."
+fi
+
+if ! schema_report="$(printf '%s' "$remote_schema_json" | node scripts/critical-d1-schema.mjs --verify 2>&1)"; then
+  printf '\n%s\n' "$schema_report" >&2
+  fail "remote critical D1 schema does not match this checkout. No Pages deployment was attempted."
+fi
+
+printf '%s\n' "$schema_report"
 printf 'D1 migration preflight passed: %s remote migration(s) match %s local file(s).\n' \
   "${#remote_migration_names[@]}" "${#local_migrations[@]}"

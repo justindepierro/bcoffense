@@ -15,9 +15,11 @@ import {
 } from "../_lib/auth.js";
 import { createVerificationToken, validateEmail } from "../_lib/d1-auth.js";
 import { sendEmail, inviteEmailHtml, inviteEmailText } from "../_lib/email.js";
+import { RequestBodyError, readBoundedJsonOrFormObject } from "../_lib/request-body.js";
 
 const INVITATION_TTL_SECONDS = 172_800; // 48 hours
 const RESEND_COOLDOWN_SECONDS = 10;
+const MAX_ADMIN_BOOTSTRAP_BODY_BYTES = 8 * 1024;
 // Legacy staff activity can create an audit/notification-only D1 row for the
 // shared `admin` login. It is not a named administrator and must never block
 // this transition path.
@@ -70,9 +72,26 @@ function statusPayload(namedAdmins, env, options = {}) {
 }
 
 async function parseBody(request) {
-  const contentType = request.headers.get("Content-Type") || "";
-  if (contentType.includes("application/json")) return request.json();
-  return Object.fromEntries(await request.formData());
+  return readBoundedJsonOrFormObject(request, { maxBytes: MAX_ADMIN_BOOTSTRAP_BODY_BYTES });
+}
+
+function textField(body, fieldNames, label) {
+  for (const fieldName of fieldNames) {
+    const value = body[fieldName];
+    // Preserve the current camelCase-first compatibility behavior: an empty
+    // primary field falls through to its legacy snake_case alias.
+    if (value === undefined || value === null || value === "") continue;
+    if (typeof value !== "string") return { error: `${label} must be text.` };
+    return { value: value.trim() };
+  }
+  return { value: "" };
+}
+
+function bootstrapBodyError(error) {
+  if (error instanceof RequestBodyError && error.status === 413) {
+    return authJson({ ok: false, error: "Administrator setup request is too large." }, { status: 413 });
+  }
+  return authJson({ ok: false, error: "Invalid request body." }, { status: 400 });
 }
 
 function cleanName(value, label, maxLength = 120) {
@@ -265,17 +284,21 @@ export async function onRequest(context) {
   let body;
   try {
     body = await parseBody(request);
-  } catch (_) {
-    return authJson({ ok: false, error: "Invalid request body." }, { status: 400 });
-  }
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return authJson({ ok: false, error: "Invalid request body." }, { status: 400 });
+  } catch (error) {
+    return bootstrapBodyError(error);
   }
 
-  const email = String(body.email || "").trim().toLowerCase();
-  const display = cleanName(body.displayName || body.display_name, "Display name");
-  const first = cleanName(body.firstName || body.first_name, "First name", 80);
-  const last = cleanName(body.lastName || body.last_name, "Last name", 80);
+  const emailField = textField(body, ["email"], "Email");
+  const displayField = textField(body, ["displayName", "display_name"], "Display name");
+  const firstField = textField(body, ["firstName", "first_name"], "First name");
+  const lastField = textField(body, ["lastName", "last_name"], "Last name");
+  const invalidField = [emailField, displayField, firstField, lastField].find((field) => field.error);
+  if (invalidField?.error) return authJson({ ok: false, error: invalidField.error }, { status: 422 });
+
+  const email = emailField.value.toLowerCase();
+  const display = cleanName(displayField.value, "Display name");
+  const first = cleanName(firstField.value, "First name", 80);
+  const last = cleanName(lastField.value, "Last name", 80);
   const emailError = validateEmail(email);
   if (emailError) return authJson({ ok: false, error: emailError }, { status: 422 });
   if (LEGACY_SYNTHETIC_STAFF_EMAILS.includes(email)) {

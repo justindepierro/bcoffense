@@ -520,7 +520,7 @@
         disabled = true;
       } else if (source?.error) {
         message = source.error;
-        disabled = false;
+        disabled = true;
       } else if (_aqzCurrentSourceMatches(source)) {
         message = `${sourceLabel} has a verified quiz in progress. Resume it to keep answering.`;
       } else if (aqzState.session && aqzState.session.status === "active" && !_aqzSessionExpired()) {

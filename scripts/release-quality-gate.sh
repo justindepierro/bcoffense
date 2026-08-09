@@ -7,6 +7,7 @@ cd "$(dirname "$0")/.."
 
 npm run audit:globals
 node tests/fresh-schema-login-rate-limit.test.mjs
+node tests/critical-d1-schema-contract.test.mjs
 node tests/admin-bootstrap-contract.test.mjs
 node tests/admin-bootstrap-runtime.test.mjs
 npm run test:quality

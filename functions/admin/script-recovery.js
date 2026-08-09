@@ -13,9 +13,11 @@ import {
   readWorkspaceRevision,
 } from "../_lib/workspace-revisions.js";
 import { sanitizeTeamWorkspace } from "../workspace/revision.js";
+import { RequestBodyError, readBoundedJsonObject } from "../_lib/request-body.js";
 
 const SEARCH_LIMIT = 100;
 const REVISION_PATTERN = /^[a-f0-9]{64}$/i;
+const MAX_SCRIPT_RECOVERY_BODY_BYTES = 4 * 1024;
 
 function parseStoredJson(value, fallback = []) {
   if (Array.isArray(value)) return value;
@@ -127,10 +129,17 @@ export async function onRequestPost(context) {
   const principal = await requireAdmin(context);
   if (principal.error) return principal.error;
 
-  let input = null;
-  try { input = await context.request.json(); } catch (_err) { /* handled below */ }
-  const sourceRevision = String(input?.sourceRevision || "").trim();
-  const scriptId = String(input?.scriptId || "").trim();
+  let input;
+  try {
+    input = await readBoundedJsonObject(context.request, { maxBytes: MAX_SCRIPT_RECOVERY_BODY_BYTES });
+  } catch (error) {
+    if (error instanceof RequestBodyError && error.status === 413) {
+      return authJson({ ok: false, error: "Recovery request is too large." }, { status: 413 });
+    }
+    return authJson({ ok: false, error: "The selected recovery record is invalid." }, { status: 400 });
+  }
+  const sourceRevision = typeof input.sourceRevision === "string" ? input.sourceRevision.trim() : "";
+  const scriptId = typeof input.scriptId === "string" ? input.scriptId.trim() : "";
   if (!REVISION_PATTERN.test(sourceRevision) || !scriptId || scriptId.length > 160) {
     return authJson({ ok: false, error: "The selected recovery record is invalid." }, { status: 400 });
   }
