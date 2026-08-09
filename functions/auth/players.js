@@ -7,6 +7,26 @@ import { getSessionFromRequest, authJson, withSecurityHeaders } from "../_lib/au
 import { createD1User, findUserByEmail, createVerificationToken, validateEmail } from "../_lib/d1-auth.js";
 import { sendEmail, inviteEmailHtml, inviteEmailText } from "../_lib/email.js";
 import { DEFAULT_MANAGED_COACH_PERMISSIONS, hasCoachPermission, parseCoachPermissions } from "../_lib/staff-access.js";
+import { RequestBodyError, readBoundedJsonOrFormObject } from "../_lib/request-body.js";
+
+const MAX_PLAYER_CREATE_REQUEST_BYTES = 8 * 1024;
+
+function textField(body, fieldNames, label) {
+  for (const fieldName of fieldNames) {
+    const value = body[fieldName];
+    if (value === undefined || value === null || value === "") continue;
+    if (typeof value !== "string") return { error: `${label} must be text.` };
+    return { value: value.trim() };
+  }
+  return { value: "" };
+}
+
+function playerCreateBodyError(error) {
+  if (error instanceof RequestBodyError && error.status === 413) {
+    return authJson({ ok: false, error: "Request body is too large." }, { status: 413 });
+  }
+  return authJson({ ok: false, error: "Invalid request body." }, { status: 400 });
+}
 
 function requireCoach(session) {
   if (!session || (session.role !== "coach" && session.role !== "admin")) return false;
@@ -87,19 +107,26 @@ export async function onRequest(context) {
 
   // ── POST — invite new player ───────────────────────────────────────────────
   if (request.method === "POST") {
-    let body = {};
+    let body;
     try {
-      const ct = request.headers.get("Content-Type") || "";
-      body = ct.includes("application/json") ? await request.json() : Object.fromEntries(await request.formData());
-    } catch (_) {
-      return authJson({ ok: false, error: "Invalid request body." }, { status: 400 });
+      body = await readBoundedJsonOrFormObject(request, { maxBytes: MAX_PLAYER_CREATE_REQUEST_BYTES });
+    } catch (error) {
+      return playerCreateBodyError(error);
     }
 
-    const email = String(body.email || "").trim().toLowerCase();
-    const displayName = String(body.displayName || body.display_name || "").trim();
-    const firstName = String(body.firstName || "").trim();
-    const lastName = String(body.lastName || "").trim();
-    const requestedRole = String(body.role || "player").trim().toLowerCase() === "coach" ? "coach" : "player";
+    const emailField = textField(body, ["email"], "Email");
+    const displayNameField = textField(body, ["displayName", "display_name"], "Display name");
+    const firstNameField = textField(body, ["firstName"], "First name");
+    const lastNameField = textField(body, ["lastName"], "Last name");
+    const roleField = textField(body, ["role"], "Role");
+    const invalidField = [emailField, displayNameField, firstNameField, lastNameField, roleField].find((field) => field.error);
+    if (invalidField?.error) return authJson({ ok: false, error: invalidField.error }, { status: 422 });
+
+    const email = emailField.value.toLowerCase();
+    const displayName = displayNameField.value;
+    const firstName = firstNameField.value;
+    const lastName = lastNameField.value;
+    const requestedRole = roleField.value.toLowerCase() === "coach" ? "coach" : "player";
     if (requestedRole === "coach" && session.role !== "admin") {
       return authJson({ ok: false, error: "Only an administrator can invite coaches." }, { status: 403 });
     }
