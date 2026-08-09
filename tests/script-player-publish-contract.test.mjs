@@ -122,8 +122,8 @@ assert.match(
 );
 assert.match(
   scriptQuiz,
-  /function _getPlayerQuizRecommendation[\s\S]*?const mode = quick;[\s\S]*?function startRecommendedPlayerQuiz\(\)[\s\S]*?_renderPlayerQuizHub\(\);/,
-  "the player Quiz center keeps Quick Hits as the non-launching recommendation so players choose focused modes deliberately",
+  /function _getPlayerQuizRecommendation[\s\S]*?modes\.find\(\(entry\) => entry\.key === "quick" && !entry\.disabled\)[\s\S]*?function startRecommendedPlayerQuiz\(\)[\s\S]*?_renderPlayerQuizHub\(\);/,
+  "the recommended study adapts to weak areas but still falls back to Quick Hits and only pre-selects the hub so players choose focused modes deliberately",
 );
 assert.match(
   cloudSync,
