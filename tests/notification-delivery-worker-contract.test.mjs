@@ -25,7 +25,8 @@ assert.match(workerSource, /CONFIGURATION_RETRY_SECONDS,[\s\S]*?"configuration"/
 assert.match(workerSource, /message\.retry\(\{ delaySeconds \}\)/, "retries are controlled per message rather than by throwing a whole batch");
 assert.match(workerSource, /\{ \.\.\.detail, leaseToken \}/, "retry state changes are fenced by the claim lease token");
 assert.match(workerSource, /leaseToken: delivery\.leaseToken/, "completion is fenced by the claim lease token");
-assert.match(workerSource, /findDueNotificationOutboxIds\(env\.DB, nowSeconds\(\), SWEEP_LIMIT\)/, "the scheduled worker repairs rows still due in D1");
+assert.match(workerSource, /const sweepNow = nowSeconds\(\)/, "the scheduled sweep captures one timestamp so marker reconcile and the due scan agree");
+assert.match(workerSource, /findDueNotificationOutboxIds\(env\.DB, sweepNow, SWEEP_LIMIT\)/, "the scheduled worker repairs rows still due in D1 using the captured sweep timestamp");
 assert.match(workerSource, /import \{ enqueueNotificationOutboxDeliveries \} from "\.\.\/functions\/_lib\/notification-outbox-queue\.js"/, "the repair sweep reuses the bounded opaque Queue producer bridge");
 assert.match(workerSource, /await enqueueNotificationOutboxDeliveries\(null, env, ids\)/, "the repair sweep publishes and marks due rows in bounded Queue/D1 batches rather than serially");
 assert.match(workerSource, /terminal: Number\(outcome\?\.terminal \|\| 0\) \|\| 0/, "terminal push outcomes are passed to the final outbox transition");
