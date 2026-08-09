@@ -5,6 +5,15 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Release-quality executes application tests and browser tooling. Preserve
+# locally configured Wrangler credentials, but do not let Cloudflare CI
+# credentials flow into those child processes. They are restored only after
+# the mandatory quality gate succeeds, immediately before Cloudflare commands
+# need them.
+cloudflare_account_id="${CLOUDFLARE_ACCOUNT_ID:-}"
+cloudflare_api_token="${CLOUDFLARE_API_TOKEN:-}"
+unset CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_TOKEN
+
 # Production is only allowed to receive the exact, clean commit currently at
 # origin/main. This script deliberately never stages, commits, or pushes.
 if [[ "$(git branch --show-current)" != "main" && "${GITHUB_REF:-}" != "refs/heads/main" ]]; then
@@ -25,6 +34,17 @@ fi
 
 # Keep deployment blocked until the same full quality suite used by CI passes.
 ./scripts/release-quality-gate.sh
+
+# Restore explicitly supplied CI credentials only after untrusted quality-test
+# processes have completed. When these were not supplied (for example a local
+# Wrangler login), leave the environment untouched so Wrangler can use its
+# normal authenticated profile.
+if [[ -n "$cloudflare_account_id" ]]; then
+  export CLOUDFLARE_ACCOUNT_ID="$cloudflare_account_id"
+fi
+if [[ -n "$cloudflare_api_token" ]]; then
+  export CLOUDFLARE_API_TOKEN="$cloudflare_api_token"
+fi
 
 # Pages Functions can reference tables introduced by the same release. Confirm
 # the remote schema is current before staging or uploading any Pages assets.

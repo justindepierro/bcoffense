@@ -36,6 +36,7 @@ Set these in the Cloudflare Pages project:
 
 ~~~text
 AUTH_SESSION_SECRET
+AUTH_PRIMARY_TEAM_ID
 AUTH_ADMIN_PASSWORD_SHA256
 AUTH_COACH_PASSWORD_SHA256
 AUTH_PLAYER_PASSWORD_SHA256
@@ -189,6 +190,36 @@ assets.
 ~~~bash
 wrangler pages deploy .
 ~~~
+
+## Manual GitHub Actions production deploy
+
+`.github/workflows/deploy-production.yml` adds a manual **Deploy Production**
+workflow. It checks out the dispatched revision and delegates all release work
+to `./scripts/deploy-cloudflare.sh`; that script refuses any revision that is
+not the current tip of `origin/main`, then runs the canonical quality gate,
+read-only D1 migration preflight, Pages upload, and final source verification.
+The workflow first runs that quality gate in a credential-free verification
+job. The protected deployment job runs the guarded script again; the script
+does not export its Cloudflare credentials to its mandatory quality-test child
+processes, and restores them only for the D1 and Pages commands after the gate
+passes.
+
+Before enabling it, configure this outside the repository in **GitHub →
+Settings → Environments**:
+
+1. Create an environment named `production`.
+2. Restrict deployment branches to `main`, add required reviewers, and prevent
+   self-review if the team's GitHub plan supports those controls.
+3. Add `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` as environment
+   secrets. Scope the token to only this Cloudflare account with **Cloudflare
+   Pages: Edit** and **D1: Read** permissions; the release script deploys
+   Pages and reads only the D1 migration ledger.
+
+Run the workflow from the Actions tab on `main`. The token is passed only to
+the protected deployment job as an environment variable and is never printed
+by the workflow. Keep the Pages runtime secrets listed above in Cloudflare;
+they are not duplicated in GitHub because the guarded deploy script verifies
+their bindings remotely.
 
 ## Daily media workflow after the containment release
 
