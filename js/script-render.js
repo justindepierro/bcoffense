@@ -1283,7 +1283,7 @@ function renderScript() {
   if (typeof script === "undefined" || !Array.isArray(script)) return;
   updateScriptOpponentBadge();
   if (typeof updateScriptReconcileStatus === "function") updateScriptReconcileStatus();
-  if (typeof updateScriptArtifactStatus === "function") updateScriptArtifactStatus();
+  updateScriptArtifactStatus();
   try {
     const renderStartedAt = performance.now();
     const container = document.getElementById("scriptPlays");

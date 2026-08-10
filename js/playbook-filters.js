@@ -528,7 +528,7 @@ function clearTypeFilters() {
     .querySelectorAll("#pbChipsType .pb-chip.active")
     .forEach((chip) => chip.classList.remove("active"));
   if (typeof invalidateStatsBarCache === "function") invalidateStatsBarCache();
-  if (typeof filterPlays === "function") filterPlays();
+  filterPlays();
 }
 
 function clearPbSearch() {

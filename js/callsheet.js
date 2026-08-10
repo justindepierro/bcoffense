@@ -556,9 +556,7 @@ async function autoPopulateCallSheet() {
         seen[catId].add(key);
 
         const hash = (play.preferredHash || "").toLowerCase().trim();
-        const playWithNum = typeof copyPlayForCallSheet === "function"
-          ? copyPlayForCallSheet(play, { wristbandNumber: getWristbandNumberForPlay(play) })
-          : { ...play, wristbandNumber: getWristbandNumberForPlay(play) };
+        const playWithNum = copyPlayForCallSheet(play, { wristbandNumber: getWristbandNumberForPlay(play) });
 
         if (hash === "left" || hash === "l") {
           callSheet[catId].left.push(playWithNum);
@@ -1397,9 +1395,7 @@ function refreshCallSheetFromPlaybook() {
           : String(snap?.playbookId || snap?.sourcePlayId || "").trim();
         const fresh = (sourceId && bySourceId.get(sourceId)) || byKey.get(csPlayKey(snap));
         if (fresh) {
-          arr[i] = typeof copyPlayForCallSheet === "function"
-            ? copyPlayForCallSheet(fresh, getLocalOverrides(snap))
-            : { ...snap, ...fresh };
+          arr[i] = copyPlayForCallSheet(fresh, getLocalOverrides(snap));
           updated += 1;
         }
       });

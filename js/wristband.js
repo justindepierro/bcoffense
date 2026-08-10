@@ -188,12 +188,7 @@ function getWristbandTraceSnapshot(extra = {}) {
   const cardData = Array.isArray(card?.data) ? card.data : [];
   const grid = document.getElementById("wristbandGrid");
   const cardEl = document.getElementById("wristbandCard");
-  const activeCellCount =
-    typeof getActiveWristbandCellCount === "function"
-      ? getActiveWristbandCellCount()
-      : wbPlayerCardMode
-        ? WB_ROWS
-        : CELLS_PER_CARD;
+  const activeCellCount = getActiveWristbandCellCount();
   const gridCells = grid ? [...grid.querySelectorAll(".wristband-cell")] : [];
   return {
     timestamp: new Date().toISOString(),

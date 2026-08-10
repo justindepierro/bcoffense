@@ -1252,7 +1252,6 @@ const storageManager = {
       if (
         removeExpiredDrafts &&
         _isDraftStorageKey(key) &&
-        typeof isDraftExpired === "function" &&
         isDraftExpired(parsed)
       ) {
         localStorage.removeItem(storageKey);

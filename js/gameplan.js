@@ -1077,7 +1077,7 @@ function _gpFindPlayBySig(sig) {
 function _gpBoxLabel(boxId) {
   if (!boxId) return "";
   if (boxId === GP_HOLDING_ID) return "Holding";
-  const board = (typeof _gpEnsureBoard === "function") ? _gpEnsureBoard() : null;
+  const board = _gpEnsureBoard();
   const custom = board && Array.isArray(board.customBoxes)
     ? board.customBoxes.find((b) => b.id === boxId)
     : null;

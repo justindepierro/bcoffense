@@ -196,7 +196,7 @@ function getSavedScripts() {
   // The repaired document should reach players like any other meaningful
   // script update. Delay this until the current stack has finished reading
   // storage so this normalizer never re-enters itself synchronously.
-  if (reconciliation.latestPublished && typeof recordPlayerPublishStatus === "function") {
+  if (reconciliation.latestPublished) {
     const published = reconciliation.latestPublished;
     setTimeout(() => {
       recordPlayerPublishStatus("scripts", {
@@ -397,7 +397,7 @@ async function recordPlayerPublishStatus(kind, details = {}, opts = {}) {
   // The canonical publish loop writes the activity entry only after the
   // server returns its immutable release revision. Do not create a premature
   // local “success” row here: this function may merely have queued the work.
-  if (typeof renderCoachPublishStatus === "function") renderCoachPublishStatus();
+  renderCoachPublishStatus();
   // A player alert must describe a release that already committed. A queued
   // background publish can legitimately take a moment, and announcing it
   // first creates a notification whose Practice link cannot resolve yet.
@@ -584,10 +584,7 @@ function hydratePlayerScriptMediaIds() {
 }
 
 function tracePlayerScriptAction(phase, payload = {}, level = "info") {
-  const publishedScripts =
-    typeof getPlayerPublishedScripts === "function"
-      ? getPlayerPublishedScripts()
-      : [];
+  const publishedScripts = getPlayerPublishedScripts();
   const data = {
     phaseAction: payload.action || "loadPublishedPlayerScript",
     role:
@@ -766,8 +763,8 @@ function showPlayerPracticeLanding() {
   const scriptPanel = document.getElementById("script");
   if (!scriptPanel) return false;
   scriptPanel.classList.add("script-player-practice-landing");
-  if (typeof renderPlayerScriptLauncher === "function") renderPlayerScriptLauncher();
-  if (typeof renderPlayerLoadedScriptBar === "function") renderPlayerLoadedScriptBar();
+  renderPlayerScriptLauncher();
+  renderPlayerLoadedScriptBar();
   if (typeof showTab === "function" && currentActiveTab !== "script") showTab("script");
   return true;
 }
