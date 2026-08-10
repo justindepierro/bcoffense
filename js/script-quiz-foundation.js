@@ -2297,8 +2297,10 @@ function _quizUniquePlaysFromList(list) {
   return (Array.isArray(list) ? list : [])
     .filter((play) => play && !play.isSeparator)
     .filter((play, idx) => {
-      const sig = typeof playSignature === "function"
-        ? playSignature(play)
+      // Dedupe by canonical id (cheap) and fall back to content only when the
+      // play has no stable id; avoids a playSignature build per play.
+      const sig = typeof playRefKey === "function"
+        ? playRefKey(play) || `${_quizPlainCall(play)}::${idx}`
         : `${_quizPlainCall(play)}::${idx}`;
       if (seen.has(sig)) return false;
       seen.add(sig);
@@ -2322,6 +2324,7 @@ function _quizCompletenessStats(playList) {
   const callSet = new Set();
   const formationSet = new Set();
   const typeSet = new Set();
+  const quizPositions = _getQuizPositions();
   playsForSource.forEach((play) => {
     const call = _quizPlainCall(play).toLowerCase();
     if (call) callSet.add(call);
@@ -2342,7 +2345,7 @@ function _quizCompletenessStats(playList) {
     if (hasDiagram) {
       totals.diagrams += 1;
     }
-    if (_getQuizPositions().some((position) => String(play[position.key] || "").trim())) {
+    if (quizPositions.some((position) => String(play[position.key] || "").trim())) {
       totals.rules += 1;
     }
     if (String(play.playerNotes || play.respNotes || play.notes || "").trim()) {
@@ -3126,7 +3129,7 @@ function _renderCoachQuizSourceCard(source, kind, stats) {
         </div>
       </div>`;
   return `
-    <article class="coach-quiz-source-card coach-quiz-source-card--${escapeAttr(readiness.tone)}${expanded ? " is-expanded" : ""}">
+    <article class="coach-quiz-source-card coach-quiz-source-card--${escapeAttr(readiness.tone)}${expanded ? " is-expanded" : ""}" data-source-key="${escapeAttr(key)}">
       <div class="coach-quiz-source-head">
         <div>
           <span class="coach-quiz-source-kind">${kind === "gameplan" ? "Game Plan" : "Practice Script"}</span>
@@ -4186,9 +4189,44 @@ function setCoachQuizTab(tab) {
 // preview, metric bars, readiness split) renders only while expanded.
 let _coachQuizExpandedSource = null;
 
+// Re-render only the affected source card(s) on expand/collapse instead of
+// re-scoring every source through a full page render. Falls back to a full
+// render if the target card cannot be located.
+function _coachQuizSourceCardMarkup(key) {
+  const sep = key.indexOf(":");
+  if (sep < 0) return null;
+  const kind = key.slice(0, sep);
+  const id = key.slice(sep + 1);
+  const sources = kind === "gameplan"
+    ? _getCoachQuizGamePlanSources()
+    : _getCoachQuizScriptSources();
+  const source = sources.find((s) => String(s.id) === id);
+  if (!source) return null;
+  return _renderCoachQuizSourceCard(source, kind, _quizCompletenessStats(source.plays));
+}
+
 function toggleCoachQuizSourceDetails(key) {
-  _coachQuizExpandedSource = _coachQuizExpandedSource === key ? null : key;
-  renderCoachQuizSetupPage();
+  const page = document.getElementById("coachQuizSetupPage");
+  const previous = _coachQuizExpandedSource;
+  _coachQuizExpandedSource = previous === key ? null : key;
+  if (!page || typeof setInnerHTML !== "function") {
+    renderCoachQuizSetupPage();
+    return;
+  }
+  const keys = previous && previous !== _coachQuizExpandedSource ? [key, previous] : [key];
+  const replaced = keys.every((k) => {
+    const el = page.querySelector(`[data-source-key="${CSS.escape(k)}"]`);
+    const markup = el ? _coachQuizSourceCardMarkup(k) : null;
+    if (!el || !markup) return false;
+    const holder = document.createElement("div");
+    setInnerHTML(holder, markup);
+    const node = holder.firstElementChild;
+    if (!node) return false;
+    el.replaceWith(node);
+    _applyCoachQuizMetricBars(node);
+    return true;
+  });
+  if (!replaced) renderCoachQuizSetupPage();
 }
 
 function _renderCoachQuizSubtabs(active, meta = {}) {
@@ -4352,7 +4390,12 @@ function renderCoachQuizSetupPage() {
       ${settingsMarkup}
     </div>
   `);
-  page.querySelectorAll(".coach-quiz-metric i b").forEach((bar) => {
+  _applyCoachQuizMetricBars(page);
+}
+
+function _applyCoachQuizMetricBars(root) {
+  if (!root) return;
+  root.querySelectorAll(".coach-quiz-metric i b").forEach((bar) => {
     const width = bar.dataset.pct || "0";
     bar.style.width = `${Math.max(0, Math.min(100, Number(width) || 0))}%`;
   });
