@@ -171,6 +171,9 @@ function registerDeferredBundle(name, paths, actions) {
     };
     window[action] = bridge;
   });
+  // Return the loader so a caller can preload the whole bundle (e.g. after
+  // first paint) without waiting for a user action.
+  return loadBundle;
 }
 
 // Coach-only playbook analytics / report tools (no boot side effects, no
@@ -198,3 +201,38 @@ registerDeferredBundle(
     "openPlaybookHealthEdit",
   ],
 );
+
+// Quiz surfaces (Call Recognition, homework assignments, leaderboard, and the
+// server-authoritative session) span nine interdependent files (~346KB). They
+// are excluded from the eager shell and loaded on first use of any entry action
+// below. app-init preloads the whole bundle after first paint so coach quiz
+// tabs open instantly and player homework/hub surfaces hydrate. Only void
+// user-action entries are bridged here — render-path functions that return
+// markup (renderPlayerQuizHomeworkDashboard, _renderPlayerQuizHub) are left
+// unbridged and hydrate on the post-load surface refresh instead.
+const loadQuizSuite = registerDeferredBundle(
+  "quiz-suite",
+  [
+    "js/script-quiz-state.js",
+    "js/script-quiz-foundation.js",
+    "js/script-quiz.js",
+    "js/script-quiz-media.js",
+    "js/script-quiz-progress.js",
+    "js/script-quiz-leaderboard.js",
+    "js/player-quiz-sync.js",
+    "js/player-quiz-authoritative.js",
+    "js/script-quiz-assignments.js",
+  ],
+  [
+    "renderQuizPage",
+    "startScriptQuiz",
+    "openPlayerQuizHub",
+    "openPlayerQuizHubForCurrentScript",
+    "startPlayerQuizAssignment",
+    "startAuthoritativePlayerQuiz",
+    "setPlayerQuizSource",
+    "refreshQuizAssignments",
+  ],
+);
+// Exposed so app-init can preload the bundle after first paint.
+window.loadQuizSuite = loadQuizSuite;

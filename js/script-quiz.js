@@ -2754,7 +2754,7 @@ function initScriptQuizInteractionRouting() {
   }, true);
 }
 
-document.addEventListener("DOMContentLoaded", initScriptQuizInteractionRouting);
+runWhenDomReady(initScriptQuizInteractionRouting);
 
 async function startScriptQuiz(options = {}) {
   const launchStartedAt = _quizPerfNow();

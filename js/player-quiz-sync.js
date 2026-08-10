@@ -229,7 +229,7 @@
   // order; it always routes awards through the server-authorized endpoint.
   window.mutateStaffLeaderboardRecord = mutateStaffLeaderboardRecord;
 
-  document.addEventListener("DOMContentLoaded", () => {
+  runWhenDomReady(() => {
     void (async () => {
       const user = await _getVerifiedLeaderboardUser();
       if (!user) return;

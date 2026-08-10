@@ -77,23 +77,26 @@ for (const deferredScript of deferredScripts) {
 }
 assert.equal(
   shellScripts.indexOf("js/script-quiz-foundation.js"),
-  shellScripts.indexOf("js/script-quiz-state.js") + 1,
-  "quiz foundation loads immediately after quiz state",
+  -1,
+  "the quiz suite is deferred, not eagerly loaded by the startup shell",
 );
-assert.equal(
-  shellScripts.indexOf("js/script-quiz.js"),
-  shellScripts.indexOf("js/script-quiz-foundation.js") + 1,
-  "player quiz runtime loads immediately after its foundation",
-);
-assert.equal(
-  shellScripts.indexOf("js/script-quiz-media.js"),
-  shellScripts.indexOf("js/script-quiz.js") + 1,
-  "quiz media preparation loads immediately after the player quiz runtime",
-);
-assert.equal(
-  shellScripts.indexOf("js/script-quiz-progress.js"),
-  shellScripts.indexOf("js/script-quiz-media.js") + 1,
-  "quiz progress loads after media preparation is ready",
+const quizBundleOrder = [
+  "js/script-quiz-state.js",
+  "js/script-quiz-foundation.js",
+  "js/script-quiz.js",
+  "js/script-quiz-media.js",
+  "js/script-quiz-progress.js",
+  "js/script-quiz-leaderboard.js",
+  "js/player-quiz-sync.js",
+  "js/player-quiz-authoritative.js",
+  "js/script-quiz-assignments.js",
+];
+const quizBundleStart = deferredScripts.indexOf("js/script-quiz-state.js");
+assert.ok(quizBundleStart >= 0, "the quiz suite is registered as a deferred bundle");
+assert.deepEqual(
+  deferredScripts.slice(quizBundleStart, quizBundleStart + quizBundleOrder.length),
+  quizBundleOrder,
+  "the deferred quiz-suite bundle loads its nine files in dependency order",
 );
 assert.equal(new Set(shellStyles).size, shellStyles.length, "index.html loads each stylesheet once");
 assert.equal(new Set(cachedStyles).size, cachedStyles.length, "sw.js pre-caches each stylesheet once");

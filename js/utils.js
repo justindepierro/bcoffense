@@ -10,6 +10,30 @@ const WRISTBAND_OFFSET = 11;
 const PICKER_LIMIT = 150;
 const TOOLTIP_DELAY_MS = 200;
 
+// Runs a callback after DOMContentLoaded whether or not it has already fired.
+// utils.js is the first deferred script (executes before DOMContentLoaded), so
+// this flag stays accurate even for modules injected later (deferred features),
+// whose own DOMContentLoaded handlers would otherwise never fire.
+let _bcDomContentLoaded =
+  typeof document !== "undefined" && document.readyState === "complete";
+if (typeof document !== "undefined" && !_bcDomContentLoaded) {
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+      _bcDomContentLoaded = true;
+    },
+    { once: true },
+  );
+}
+function runWhenDomReady(callback) {
+  if (typeof callback !== "function") return;
+  const ready =
+    _bcDomContentLoaded ||
+    (typeof document !== "undefined" && document.readyState === "complete");
+  if (ready) callback();
+  else document.addEventListener("DOMContentLoaded", callback, { once: true });
+}
+
 
 // ============ Shared Color Tokens ============
 // Mirrors CSS custom properties for use in JS-generated inline styles

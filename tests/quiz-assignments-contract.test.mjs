@@ -12,7 +12,7 @@ async function source(relativePath) {
 }
 
 console.log("\n▸ Private quiz homework contract");
-const [migration, migrationQuestionConfig, migrationLifecycle, migrationOutbox, helper, route, client, quizFoundation, quizRuntime, notifications, playersAdmin, storage, workspaceRoute, index, sw] = await Promise.all([
+const [migration, migrationQuestionConfig, migrationLifecycle, migrationOutbox, helper, route, client, quizFoundation, quizRuntime, notifications, playersAdmin, storage, workspaceRoute, index, sw, featureLoader] = await Promise.all([
   source("../migrations/0020_quiz_assignments.sql"),
   source("../migrations/0021_quiz_assignment_question_config.sql"),
   source("../migrations/0022_quiz_assignment_delivery_lifecycle.sql"),
@@ -28,6 +28,7 @@ const [migration, migrationQuestionConfig, migrationLifecycle, migrationOutbox, 
   source("../functions/workspace/revision.js"),
   source("../index.html"),
   source("../sw.js"),
+  source("../js/feature-loader.js"),
 ]);
 const quiz = `${quizFoundation}\n${quizRuntime}`;
 
@@ -104,8 +105,11 @@ assert(
   "homework notification opens exactly the assigned quiz",
 );
 assert(
-  /script-quiz-assignments\.js\?v=\d+/.test(index) && sw.includes("./js/script-quiz-assignments.js"),
-  "assignment client is loaded and cached with the app shell",
+  !/script-quiz-assignments\.js\?v=\d+/.test(index)
+    && !sw.includes("./js/script-quiz-assignments.js")
+    && featureLoader.includes('"js/script-quiz-assignments.js"')
+    && featureLoader.includes('"quiz-suite"'),
+  "assignment client is deferred in the quiz-suite bundle, not the eager app shell",
 );
 
 if (failed) {

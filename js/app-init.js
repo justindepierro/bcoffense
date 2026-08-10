@@ -111,6 +111,18 @@ async function initApp() {
     } else {
       storageManager.compactLocalStorage({ removeExpiredDrafts: true });
     }
+    // Quiz surfaces (~346KB across nine files) are deferred off the eager
+    // shell. Preload them after first paint so coach quiz tabs open instantly
+    // and player homework/hub surfaces hydrate. Bridges in feature-loader cover
+    // any quiz interaction that happens before this finishes.
+    if (window.appStartup && typeof window.appStartup.queueTask === "function") {
+      window.appStartup.queueTask("preload-quiz-suite", () => _preloadQuizSuite(), {
+        delay: 1200,
+        priority: 30,
+      });
+    } else {
+      void _preloadQuizSuite();
+    }
     if (hasUsableStoredPlaybook(storedPlaybook)) {
       if (typeof setStartupLoadingMessage === "function") {
         setStartupLoadingMessage("Restoring playbook...");
@@ -161,6 +173,35 @@ async function initApp() {
       document.body.classList.remove("app-booting");
       document.body.classList.add("app-ready");
     }
+  }
+}
+
+async function _preloadQuizSuite() {
+  try {
+    if (typeof whenAuthReady === "function") {
+      try {
+        await whenAuthReady();
+      } catch (_) {
+        /* proceed with best-effort role; a failed auth check still lets
+           coaches use the quiz tab once the bundle loads */
+      }
+    }
+    if (typeof window.loadQuizSuite !== "function") return;
+    await window.loadQuizSuite();
+    // Re-render surfaces whose quiz widgets rendered empty before the bundle
+    // finished loading (guards returned "" while the functions were undefined).
+    if (document.body?.dataset?.authRole === "player") {
+      if (typeof _refreshPlayerTeamSurfaces === "function") {
+        _refreshPlayerTeamSurfaces();
+      }
+    } else if (
+      document.getElementById("quiz")?.classList.contains("active") &&
+      typeof renderQuizPage === "function"
+    ) {
+      renderQuizPage();
+    }
+  } catch (err) {
+    console.warn("Quiz suite preload failed:", err);
   }
 }
 

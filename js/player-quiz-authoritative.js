@@ -785,5 +785,5 @@
   window.completeAuthoritativeQuiz = completeAuthoritativeQuiz;
   window.closeAuthoritativeQuiz = closeAuthoritativeQuiz;
 
-  document.addEventListener("DOMContentLoaded", _aqzInit);
+  runWhenDomReady(_aqzInit);
 })();
