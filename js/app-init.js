@@ -100,7 +100,17 @@ async function initApp() {
       }
       storedPlaybook = await storageManager.getPlaybook();
     }
-    storageManager.compactLocalStorage({ removeExpiredDrafts: true });
+    // Storage compaction (LZ recompress + expired-draft cleanup) is opportunistic
+    // maintenance; keep it off the first-paint critical path.
+    if (window.appStartup && typeof window.appStartup.queueTask === "function") {
+      window.appStartup.queueTask(
+        "compact-local-storage",
+        () => storageManager.compactLocalStorage({ removeExpiredDrafts: true }),
+        { delay: 1500, priority: 40 },
+      );
+    } else {
+      storageManager.compactLocalStorage({ removeExpiredDrafts: true });
+    }
     if (hasUsableStoredPlaybook(storedPlaybook)) {
       if (typeof setStartupLoadingMessage === "function") {
         setStartupLoadingMessage("Restoring playbook...");
