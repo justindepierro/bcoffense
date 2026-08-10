@@ -309,6 +309,7 @@ If a new `window.X =` export is intentional, add it here in sorted order and
 explain the purpose in the owning file.
 
 ```window-export-manifest
+window.__bcAuthMePrefetch
 window.__bcErrorHandlerInstalled
 window.__bcErrors
 window.__bcLastActionTrace

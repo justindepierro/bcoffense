@@ -529,11 +529,29 @@
       ? setTimeout(() => controller.abort(), 3500)
       : 0;
     try {
-      const response = await fetch("/auth/me", {
-        credentials: "same-origin",
-        headers: { Accept: "application/json" },
-        signal: controller?.signal,
-      });
+      // Reuse the request warmed in index.html's <head> when available so the
+      // round-trip overlaps script parsing instead of running after it.
+      const warmed = window.__bcAuthMePrefetch;
+      window.__bcAuthMePrefetch = null;
+      let response;
+      if (warmed) {
+        response = controller
+          ? await Promise.race([
+              warmed,
+              new Promise((_, reject) => {
+                controller.signal.addEventListener("abort", () =>
+                  reject(new DOMException("Aborted", "AbortError")),
+                );
+              }),
+            ])
+          : await warmed;
+      } else {
+        response = await fetch("/auth/me", {
+          credentials: "same-origin",
+          headers: { Accept: "application/json" },
+          signal: controller?.signal,
+        });
+      }
       if (!response.ok) {
         return { user: null, denied: true, offline: false };
       }

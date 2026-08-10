@@ -5,3 +5,8 @@ tests/node_modules/
 icons/
 *.min.js
 *.min.css
+
+# Hand-formatted, compact-style files whose exact layout smoke/contract tests
+# depend on. Prettier reflows their single-line rules and breaks those checks.
+index.html
+css/
