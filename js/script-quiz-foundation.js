@@ -3070,9 +3070,11 @@ function _renderCoachQuizSourceControls(source, kind, stats) {
   `;
 }
 
-function _renderCoachQuizSourceCard(source, kind) {
-  const stats = _quizCompletenessStats(source.plays);
+function _renderCoachQuizSourceCard(source, kind, stats) {
+  stats = stats || _quizCompletenessStats(source.plays);
   const readiness = _quizReadinessLabel(stats.score);
+  const key = `${kind}:${source.id}`;
+  const expanded = _coachQuizExpandedSource === key;
   const actions = _quizReadinessActions(stats, {
     needsVisibility: kind === "script" && !source.playerVisible,
     bucketCount: kind === "gameplan" ? source.bucketCount : undefined,
@@ -3086,7 +3088,7 @@ function _renderCoachQuizSourceCard(source, kind) {
         class="coach-quiz-score-ring coach-quiz-score-ring-btn"
         data-tone="${escapeAttr(readiness.tone)}"
         data-action="openCoachQuizSourceRepair"
-        data-arg="${escapeAttr(`${kind}:${source.id}`)}"
+        data-arg="${escapeAttr(key)}"
         aria-label="Open ${escapeAttr(readiness.label)} play repair list for ${escapeAttr(source.title)}">
         <strong>${stats.score}</strong>
         <span>${escapeHtml(readiness.label)}</span>
@@ -3095,8 +3097,30 @@ function _renderCoachQuizSourceCard(source, kind) {
         <strong>${stats.score}</strong>
         <span>${escapeHtml(readiness.label)}</span>
       </div>`;
+  // Heavy detail (mode recommendation, readiness split, metric bars, and the
+  // live question generator preview) renders only for the one expanded card.
+  const detail = !expanded ? "" : `
+      <div class="coach-quiz-source-detail">
+        ${_renderCoachQuizSourceControls(source, kind, stats)}
+        ${_renderCoachQuizModeRecommendation(source, kind)}
+        ${_renderCoachQuizReadinessSplit(stats)}
+        <div class="coach-quiz-metrics">
+          ${_quizMetric("Diagrams", stats.diagrams, stats.playCount)}
+          ${_quizMetric("Rules", stats.rules, stats.playCount)}
+          ${_quizMetric("Notes", stats.notes, stats.playCount)}
+          ${_quizMetric("Situation", stats.situation, stats.playCount)}
+          ${_quizMetric("Defense", stats.defense, stats.playCount)}
+        </div>
+        ${_renderCoachQuizQuestionPreview(source, kind)}
+        <div class="coach-quiz-next-actions">
+          <strong>Make this quiz better</strong>
+          ${actions.length
+      ? `<ul>${actions.map((action) => `<li>${escapeHtml(action)}</li>`).join("")}</ul>`
+      : `<p>This source is ready for player quizzes.</p>`}
+        </div>
+      </div>`;
   return `
-    <article class="coach-quiz-source-card coach-quiz-source-card--${escapeAttr(readiness.tone)}">
+    <article class="coach-quiz-source-card coach-quiz-source-card--${escapeAttr(readiness.tone)}${expanded ? " is-expanded" : ""}">
       <div class="coach-quiz-source-head">
         <div>
           <span class="coach-quiz-source-kind">${kind === "gameplan" ? "Game Plan" : "Practice Script"}</span>
@@ -3106,28 +3130,13 @@ function _renderCoachQuizSourceCard(source, kind) {
         ${scoreRing}
       </div>
       <div class="coach-quiz-source-meta">${escapeHtml(meta)}</div>
-      ${_renderCoachQuizSourceControls(source, kind, stats)}
-      ${_renderCoachQuizModeRecommendation(source, kind)}
-      ${_renderCoachQuizReadinessSplit(stats)}
       ${_renderQuizCompletenessChips(stats, "quiz-completeness-chips coach-quiz-completeness-chips")}
-      <div class="coach-quiz-metrics">
-        ${_quizMetric("Diagrams", stats.diagrams, stats.playCount)}
-        ${_quizMetric("Rules", stats.rules, stats.playCount)}
-        ${_quizMetric("Notes", stats.notes, stats.playCount)}
-        ${_quizMetric("Situation", stats.situation, stats.playCount)}
-        ${_quizMetric("Defense", stats.defense, stats.playCount)}
+      <div class="coach-quiz-source-actions">
+        ${canRepair ? `<button type="button" class="btn btn-sm btn-outline" data-action="openCoachQuizSourceRepair" data-arg="${escapeAttr(key)}">Review plays</button>` : ""}
+        <button type="button" class="btn btn-sm btn-primary" data-action="openQuizAssignmentForSource" data-arg="${escapeAttr(`${kind}|${encodeURIComponent(source.id)}`)}">Assign homework</button>
+        <button type="button" class="coach-quiz-detail-toggle" data-action="toggleCoachQuizSourceDetails" data-arg="${escapeAttr(key)}" aria-expanded="${expanded ? "true" : "false"}">${expanded ? "Hide details ▲" : "Details ▾"}</button>
       </div>
-      ${_renderCoachQuizQuestionPreview(source, kind)}
-      <div class="coach-quiz-next-actions">
-        <strong>Make this quiz better</strong>
-        ${actions.length
-      ? `<ul>${actions.map((action) => `<li>${escapeHtml(action)}</li>`).join("")}</ul>`
-      : `<p>This source is ready for player quizzes.</p>`}
-        <div class="coach-quiz-next-action-buttons">
-          ${canRepair ? `<button type="button" class="btn btn-sm btn-outline" data-action="openCoachQuizSourceRepair" data-arg="${escapeAttr(`${kind}:${source.id}`)}">Review plays</button>` : ""}
-          <button type="button" class="btn btn-sm btn-primary" data-action="openQuizAssignmentForSource" data-arg="${escapeAttr(`${kind}|${encodeURIComponent(source.id)}`)}">Assign homework</button>
-        </div>
-      </div>
+      ${detail}
     </article>
   `;
 }
@@ -4167,6 +4176,15 @@ function setCoachQuizTab(tab) {
   renderCoachQuizSetupPage();
 }
 
+// Only one source card is expanded at a time; its heavy detail (question
+// preview, metric bars, readiness split) renders only while expanded.
+let _coachQuizExpandedSource = null;
+
+function toggleCoachQuizSourceDetails(key) {
+  _coachQuizExpandedSource = _coachQuizExpandedSource === key ? null : key;
+  renderCoachQuizSetupPage();
+}
+
 function _renderCoachQuizSubtabs(active, meta = {}) {
   const buttons = _COACH_QUIZ_TABS.map(([id, label]) => {
     const isActive = id === active;
@@ -4187,13 +4205,37 @@ function renderCoachQuizSetupPage() {
     page.innerHTML = "";
     return;
   }
-  if (window.playImages && typeof window.playImages.loadKeys === "function") {
-    window.playImages.loadKeys().catch(() => { });
-  }
   const tab = _coachQuizActiveTab();
+  const isSources = tab === "sources";
   const scripts = _getCoachQuizScriptSources();
   const gamePlans = _getCoachQuizGamePlanSources();
-  const allStats = [...scripts.map((s) => _quizCompletenessStats(s.plays)), ...gamePlans.map((g) => _quizCompletenessStats(g.plays))];
+  // Completeness stats are only needed on the Sources tab (hero score + cards);
+  // each source is scored once here and reused instead of re-scored per card.
+  const scriptStats = isSources ? scripts.map((s) => _quizCompletenessStats(s.plays)) : [];
+  const gamePlanStats = isSources ? gamePlans.map((g) => _quizCompletenessStats(g.plays)) : [];
+  const allStats = [...scriptStats, ...gamePlanStats];
+  // Diagram counts depend on the image key cache; if it is not warm yet the
+  // first pass reports 0 diagrams, so re-render once the keys finish loading.
+  // Default to "ready" when the readiness probe is missing so an older cached
+  // play-images build can never trigger an endless load/re-render loop.
+  const keyCacheReady =
+    typeof window.playImages?.isKeyCacheReady === "function"
+      ? window.playImages.isKeyCacheReady()
+      : true;
+  if (
+    isSources &&
+    !keyCacheReady &&
+    window.playImages &&
+    typeof window.playImages.loadKeys === "function"
+  ) {
+    window.playImages.loadKeys()
+      .then(() => {
+        if (document.getElementById("coachQuizSetupPage") && _coachQuizActiveTab() === "sources") {
+          renderCoachQuizSetupPage();
+        }
+      })
+      .catch(() => { });
+  }
   const avgScore = allStats.length
     ? Math.round(allStats.reduce((sum, stats) => sum + stats.score, 0) / allStats.length)
     : 0;
@@ -4261,7 +4303,7 @@ function renderCoachQuizSetupPage() {
         </div>
         <div class="coach-quiz-source-grid">
           ${scripts.length
-      ? scripts.map((source) => _renderCoachQuizSourceCard(source, "script")).join("")
+      ? scripts.map((source, i) => _renderCoachQuizSourceCard(source, "script", scriptStats[i])).join("")
       : `<div class="coach-quiz-empty">No saved practice scripts yet.</div>`}
         </div>
       </section>
@@ -4272,7 +4314,7 @@ function renderCoachQuizSetupPage() {
         </div>
         <div class="coach-quiz-source-grid">
           ${gamePlans.length
-      ? gamePlans.map((source) => _renderCoachQuizSourceCard(source, "gameplan")).join("")
+      ? gamePlans.map((source, i) => _renderCoachQuizSourceCard(source, "gameplan", gamePlanStats[i])).join("")
       : `<div class="coach-quiz-empty">No game plans with plays yet.</div>`}
         </div>
       </section>`;
@@ -4292,10 +4334,10 @@ function renderCoachQuizSetupPage() {
           <h2>Make every quiz source player-ready</h2>
           <p>Check whether scripts and game plans have enough diagrams, rules, notes, and metadata for kids to learn from the quiz instead of guessing.</p>
         </div>
-        <div class="coach-quiz-hero-score">
+        ${isSources ? `<div class="coach-quiz-hero-score">
           <strong>${avgScore}</strong>
           <span>${readyCount}/${allStats.length || 0} ready</span>
-        </div>
+        </div>` : ""}
       </section>
       ${_renderCoachQuizSubtabs(tab, { sourceCount: scripts.length + gamePlans.length })}
       ${sourcesMarkup}
