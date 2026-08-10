@@ -1285,10 +1285,13 @@ function findPlayOnWristband(play) {
   const normalizeWristbandLabel = (value) => typeof normalizePlayCompareValue === "function"
     ? normalizePlayCompareValue(value)
     : String(value || "").trim().toLowerCase();
-  // Script rows display the Line Call in brackets. Imports may store that
-  // same short identity in a wristband's play or One Word field instead.
+  // Imports may store a play's short one-word identity in the wristband's play
+  // or One Word field. Do NOT fall back on the Line Call: a line call (e.g.
+  // "Michael") is a shared blocking call used by many plays, so matching on it
+  // assigns every play with that call to whichever single cell happens to carry
+  // it.
   const fallbackLabels = new Set(
-    [play?.lineCall, play?.oneWord]
+    [play?.oneWord]
       .map(normalizeWristbandLabel)
       .filter((label) => label.length >= 3),
   );
@@ -1343,10 +1346,10 @@ function findPlayOnWristband(play) {
         return wristbandNumber;
       }
       // Imported wristbands can use abbreviated calls (for example, “BB”
-      // while the Script says “Bob”). Match only a shared short Line Call or
-      // One Word label, and only if it maps to exactly one wristband cell.
+      // while the Script says “Bob”). Match only a shared play-specific One
+      // Word or play name, and only if it maps to exactly one wristband cell.
+      // Line calls are intentionally excluded: they are shared across plays.
       const wristbandLabels = [
-        wristbandPlay?.lineCall,
         wristbandPlay?.oneWord,
         wristbandPlay?.play,
       ].map(normalizeWristbandLabel);
