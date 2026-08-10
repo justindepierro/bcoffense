@@ -876,6 +876,10 @@ function showPlayContextMenu(event, categoryId, hash, index) {
   menu.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-action]");
     if (!btn) return;
+    // This context menu owns every data-action inside it; don't let clicks
+    // bubble to the global app-events router (which logs a false
+    // "missing action handler" for cellBg/cellTextColor/etc.).
+    e.stopPropagation();
     const action = btn.dataset.action;
     const p = callSheet[categoryId]?.[hash]?.[index];
     if (!p) {
