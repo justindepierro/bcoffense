@@ -78,6 +78,18 @@ body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
   );
 }
 
+/* Tablet landscape uses the desktop-style shell, so the phone action-pill
+   cluster (Library/Actions) is redundant and was stacking on top of the round
+   utility FABs in the corner. Mirror desktop: drop the pill cluster and show
+   the inline header Library/Actions buttons instead. */
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen .page-fab-cluster {
+  display: none !important;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen .page-actions-open-btn,
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen .page-library-btn {
+  display: inline-flex;
+}
+
 @media (max-width: 600px) {
   .td-option-btn {
     padding: 10px 12px;

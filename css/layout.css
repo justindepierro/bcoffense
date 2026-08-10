@@ -776,6 +776,38 @@ body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tab {
   }
 }
 
+/* Tablet-landscape coach shell: adopt the desktop fixed-height flex column so
+   the header + tab bar pin to the top with NO sticky-offset gap and each panel
+   owns its own scroll. A roomy landscape iPad gets the desktop workspace feel
+   instead of the phone body-scroll shell. Scoped to coach (is-staff-mobile-shell)
+   so phones, portrait, and players keep the mobile shell. */
+@media (min-width: 821px) {
+  html.shell-tablet.is-landscape-screen.is-staff-mobile-shell {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  body.app-ready.shell-tablet.is-landscape-screen.is-staff-mobile-shell {
+    display: flex;
+    flex-direction: column;
+    height: calc(var(--app-vh, 1vh) * 100);
+    min-height: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+    padding-bottom: 0;
+  }
+  body.app-ready.shell-tablet.is-landscape-screen.is-staff-mobile-shell #mainApp {
+    overflow: hidden;
+  }
+  body.app-ready.shell-tablet.is-landscape-screen.is-staff-mobile-shell
+    #mainApp
+    .tabs {
+    position: relative;
+    top: 0;
+    flex: 0 0 auto;
+  }
+}
+
 body[data-auth-role="player"] #dashboard.panel,
 body[data-auth-role="player"] #playbook.panel,
 body[data-auth-role="player"] #script.panel,
