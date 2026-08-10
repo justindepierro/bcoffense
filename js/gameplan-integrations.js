@@ -630,7 +630,7 @@ async function pushGamePlanToWristband() {
 
   if (typeof markWristbandDirty === "function") markWristbandDirty();
   if (typeof scheduleWristbandAutosave === "function") scheduleWristbandAutosave();
-  if (typeof renderWristband === "function") renderWristband();
+  renderWristbandGrid();
 
   _gpStorePushReceipt("wristband", added, skippedCount);
 
@@ -639,7 +639,7 @@ async function pushGamePlanToWristband() {
   showUndoToast(msg, () => {
     wristbandCards.splice(0, wristbandCards.length, ...preSnapshot);
     if (typeof markWristbandDirty === "function") markWristbandDirty();
-    if (typeof renderWristband === "function") renderWristband();
+    renderWristbandGrid();
     showToast("Wristband push undone", { type: "info", duration: 2000 });
   }, 8000);
   if (added > 0 && typeof confirmWristbandHandoffPersistence === "function") {
