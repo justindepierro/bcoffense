@@ -170,7 +170,7 @@ function getWristbandPlayUsageMap() {
   wristbandCards.forEach((card) => {
     (card?.data || []).slice(0, cellsPerCard).forEach((play) => {
       if (!play) return;
-      const signature = playSignature(play);
+      const signature = playRefKey(play);
       usage.set(signature, (usage.get(signature) || 0) + 1);
     });
   });
@@ -232,7 +232,7 @@ function renderWristbandPlays() {
       if (wbLibraryQuickFilter === "pinned") return favoriteSet.has(index);
       if (wbLibraryQuickFilter === "recent") return recentSet.has(index);
       if (wbLibraryQuickFilter === "not-on-card") {
-        return !usageMap.has(playSignature(play));
+        return !usageMap.has(playRefKey(play));
       }
       return true;
     });
@@ -257,7 +257,7 @@ function renderWristbandPlays() {
   container.innerHTML = visible
     .map(({ play, index }) => {
       const isFav = favoriteSet.has(index);
-      const onCardCount = usageMap.get(playSignature(play)) || 0;
+      const onCardCount = usageMap.get(playRefKey(play)) || 0;
       const duplicateBlocked = wbPreventDuplicates && onCardCount > 0;
       const emoji =
         displayOptions.showEmoji && play.personnel

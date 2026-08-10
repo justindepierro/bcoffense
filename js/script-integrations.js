@@ -24,11 +24,17 @@ const SCRIPT_WRISTBAND_IDENTITY_FIELDS = [
 function _scriptIntegrationPlaySnapshot(scriptPlay) {
   const playbookPlays = typeof plays !== "undefined" && Array.isArray(plays) ? plays : [];
   const callKey = _scriptIntegrationCallIdentity(scriptPlay);
+  const scriptPlayId =
+    typeof getStablePlaySourceId === "function" ? getStablePlaySourceId(scriptPlay) : "";
   const tagKey =
     typeof getPlayIdentityKey === "function"
       ? getPlayIdentityKey(scriptPlay, "tag", { trim: false })
       : "";
   const playbookPlay =
+    (scriptPlayId &&
+      playbookPlays.find(
+        (candidate) => getStablePlaySourceId(candidate) === scriptPlayId,
+      )) ||
     playbookPlays.find(
       (candidate) =>
         callKey && _scriptIntegrationCallIdentity(candidate) === callKey,

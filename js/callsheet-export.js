@@ -13,7 +13,7 @@
 function isPlayOnCallSheet(play, categoryId) {
   const data = callSheet[categoryId];
   if (!data) return false;
-  const checkArr = (arr) => arr.some((p) => playsMatch(p, play));
+  const checkArr = (arr) => arr.some((p) => samePlayRef(p, play));
   return checkArr(data.left || []) || checkArr(data.right || []);
 }
 
@@ -24,10 +24,10 @@ function getCallSheetPlayLocations(play) {
     const data = callSheet[cat.id];
     if (!data) return;
 
-    if ((data.left || []).some((entry) => playsMatch(entry, play))) {
+    if ((data.left || []).some((entry) => samePlayRef(entry, play))) {
       locations.push(`${getCategoryDisplayName(cat)} - Left`);
     }
-    if ((data.right || []).some((entry) => playsMatch(entry, play))) {
+    if ((data.right || []).some((entry) => samePlayRef(entry, play))) {
       locations.push(`${getCategoryDisplayName(cat)} - Right`);
     }
   });

@@ -914,8 +914,8 @@ function _gpMatchupBadges(play) {
 // #117-119: Scout source badge — shows if GP play is scout-recommended + why
 function _gpScoutBadge(play) {
   if (typeof _tdScoutRecs === "undefined" || !Array.isArray(_tdScoutRecs) || !_tdScoutRecs.length) return "";
-  if (typeof playsMatch !== "function") return "";
-  const rec = _tdScoutRecs.find((r) => playsMatch(r.play, play));
+  if (typeof samePlayRef !== "function") return "";
+  const rec = _tdScoutRecs.find((r) => samePlayRef(r.play, play));
   if (!rec) return "";
   const reasons = Array.isArray(rec.reasons) && rec.reasons.length > 0 ? rec.reasons : [];
   // Confidence: 3 = all 3 factors, 2 = 2 factors, 1 = 1 factor

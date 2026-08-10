@@ -531,7 +531,7 @@ async function autoFillWristband() {
   const filtered = plays.filter(
     (play) =>
       matchesWristbandPlayFilters(play, filterState) &&
-      (!wbPreventDuplicates || !usageMap.has(playSignature(play))),
+      (!wbPreventDuplicates || !usageMap.has(playRefKey(play))),
   );
 
   if (filtered.length === 0) {

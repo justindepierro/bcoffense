@@ -806,7 +806,7 @@ function openPlayEditor(filteredIdx) {
   _editingFilteredIdx = filteredIdx;
   _editingMasterIdx = plays.indexOf(play);
   if (_editingMasterIdx < 0) {
-    _editingMasterIdx = plays.findIndex((candidate) => playsMatch(candidate, play));
+    _editingMasterIdx = plays.findIndex((candidate) => samePlayRef(candidate, play));
   }
   _populateEditorForm(play, false);
 }
@@ -1314,7 +1314,7 @@ function openReadinessFromPlayEditor() {
   const play = _editingMasterIdx >= 0 ? plays[_editingMasterIdx] : null;
   if (!play) return;
   const scriptIdx = Array.isArray(script)
-    ? script.findIndex((sp) => !sp.isSeparator && playsMatch(sp, play))
+    ? script.findIndex((sp) => !sp.isSeparator && samePlayRef(sp, play))
     : -1;
   closePlayEditor();
   if (scriptIdx >= 0 && typeof toggleScriptReadinessPanel === "function") {

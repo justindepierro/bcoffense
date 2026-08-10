@@ -263,7 +263,7 @@ async function pushPeriodToCallSheet(separatorIndex) {
 
       const data = callSheet[catId];
       const alreadyThere = [...(data.left || []), ...(data.right || [])].some(
-        (existing) => playsMatch(existing, play),
+        (existing) => samePlayRef(existing, play),
       );
       if (alreadyThere) {
         skipped++;
@@ -386,7 +386,7 @@ function doImportFromCallSheet(separatorIndex, modal) {
     const allPlays = [...(data.left || []), ...(data.right || [])];
 
     allPlays.forEach((csPlay) => {
-      const isDupe = existingPlays.some((existingPlay) => playsMatch(existingPlay, csPlay));
+      const isDupe = existingPlays.some((existingPlay) => samePlayRef(existingPlay, csPlay));
       if (isDupe) {
         skipped++;
         return;

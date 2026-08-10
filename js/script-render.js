@@ -1259,10 +1259,10 @@ function jumpToPlayInPlaybook(idxOrStr) {
   const idx = parseInt(idxOrStr, 10);
   const scriptPlay = script[idx];
   if (!scriptPlay || scriptPlay.isSeparator) return;
-  let fIdx = filteredPlays.findIndex((p) => playsMatch(p, scriptPlay));
+  let fIdx = filteredPlays.findIndex((p) => samePlayRef(p, scriptPlay));
   if (fIdx < 0 && typeof clearFilters === "function") {
     clearFilters();
-    fIdx = filteredPlays.findIndex((p) => playsMatch(p, scriptPlay));
+    fIdx = filteredPlays.findIndex((p) => samePlayRef(p, scriptPlay));
   }
   if (fIdx < 0) {
     showToast("Play not found in playbook", { type: "warning" });

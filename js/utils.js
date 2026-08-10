@@ -1875,6 +1875,29 @@ function getPlayMediaId(play) {
   return sourceId ? `play:${sourceId}` : "";
 }
 
+// Solid-reference identity match for "is this the SAME play?" decisions
+// (diagram/clip/signal/wristband/readiness/thread lookups, presence checks,
+// dedupe). Matches by canonical stable id first; only falls back to the fuzzy
+// content comparison when either side lacks a stable id (legacy/manual copies).
+// Do NOT use playsMatch() directly for identity — it treats two different plays
+// with the same call/formation as equal and misses renamed copies.
+function samePlayRef(a, b) {
+  if (!a || !b) return false;
+  const idA = getStablePlaySourceId(a);
+  const idB = getStablePlaySourceId(b);
+  if (idA && idB) return idA === idB;
+  return typeof playsMatch === "function" ? playsMatch(a, b) : false;
+}
+
+// Stable dedupe/map key for a play: canonical id when present, else the content
+// signature so legacy copies without an id still collapse by content.
+function playRefKey(play) {
+  return (
+    getStablePlaySourceId(play) ||
+    (typeof playSignature === "function" ? playSignature(play) : "")
+  );
+}
+
 function copyPlayWithSourceIdentity(play, overrides = {}) {
   if (!play || typeof play !== "object") return { ...overrides };
   const sourceId = getStablePlaySourceId(play);
@@ -2124,19 +2147,20 @@ function playsMatch(p1, p2) {
 
 /**
  * Build an O(1) membership matcher equivalent to
- * `arr.some((a) => playsMatch(a, play))`, for use in render hot paths that
+ * `arr.some((a) => samePlayRef(a, play))`, for use in render hot paths that
  * would otherwise be O(rows × arr).
  *
- * playsMatch is an OR of five pure key-equality strategies, so precomputing one
- * Set per strategy from `arr` and testing five memberships is exactly
- * equivalent: `play` matches iff any strategy key is present in its Set (each
- * strategy match is transitive key equality). Empty-key semantics match
- * playsMatch too (empty === empty), so no behavior change.
+ * A play matches if it shares a canonical stable id with any indexed play, OR
+ * (for legacy/manual copies without ids) if it matches under any of the five
+ * pure playsMatch key strategies. Precomputing one Set per strategy plus a
+ * stable-id Set makes each membership test O(1) and equivalent to samePlayRef.
+ * Empty keys/ids are never indexed, so empty never matches empty.
  *
  * @param {Array} arr - Plays to index (falsy entries skipped, like playsMatch).
  * @returns {(play: Object) => boolean}
  */
 function buildPlaysMatchLookup(arr) {
+  const stableIds = new Set();
   const coreId = new Set();
   const nameId = new Set();
   const nameIdCI = new Set();
@@ -2144,6 +2168,8 @@ function buildPlaysMatchLookup(arr) {
   const nameCmp = new Set();
   (Array.isArray(arr) ? arr : []).forEach((p) => {
     if (!p) return;
+    const stableId = getStablePlaySourceId(p);
+    if (stableId) stableIds.add(stableId);
     coreId.add(getPlayIdentityKey(p, "core", { trim: false }));
     nameId.add(getPlayIdentityKey(p, "name", { trim: false }));
     nameIdCI.add(getPlayIdentityKey(p, "name", { normalizeCase: true }));
@@ -2152,6 +2178,8 @@ function buildPlaysMatchLookup(arr) {
   });
   return function playMatchesIndexed(play) {
     if (!play) return false;
+    const stableId = getStablePlaySourceId(play);
+    if (stableId && stableIds.has(stableId)) return true;
     return (
       coreId.has(getPlayIdentityKey(play, "core", { trim: false })) ||
       nameId.has(getPlayIdentityKey(play, "name", { trim: false })) ||

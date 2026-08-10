@@ -381,10 +381,10 @@ function filterPlays() {
     }
     if (scoutOnly) {
       const recs = typeof _tdScoutRecs !== "undefined" && Array.isArray(_tdScoutRecs) ? _tdScoutRecs : [];
-      if (!recs.some((r) => typeof playsMatch === "function" && playsMatch(r.play, play))) return false;
+      if (!recs.some((r) => typeof samePlayRef === "function" && samePlayRef(r.play, play))) return false;
     }
     if (inWeekOnly || unusedOnly) {
-      const inScript = Array.isArray(script) && script.some((s) => !s.isSeparator && typeof playsMatch === "function" && playsMatch(s, play));
+      const inScript = Array.isArray(script) && script.some((s) => !s.isSeparator && typeof samePlayRef === "function" && samePlayRef(s, play));
       const onSheet = typeof getCallSheetPlayLocations === "function" && getCallSheetPlayLocations(play).length > 0;
       const inWeek = inScript || onSheet;
       if (inWeekOnly && !inWeek) return false;

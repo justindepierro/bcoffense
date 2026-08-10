@@ -541,8 +541,8 @@ function _renderWorkflowChips(play, idx, scriptLookup, scoutLookup) {
     if (scriptLookup(play)) {
       chips.push(`<span class="pb-wf-chip pb-wf-script" title="In current practice script">📋 Script</span>`);
     }
-  } else if (Array.isArray(script) && typeof playsMatch === "function") {
-    if (script.some((s) => !s.isSeparator && playsMatch(s, play))) {
+  } else if (Array.isArray(script) && typeof samePlayRef === "function") {
+    if (script.some((s) => !s.isSeparator && samePlayRef(s, play))) {
       chips.push(`<span class="pb-wf-chip pb-wf-script" title="In current practice script">📋 Script</span>`);
     }
   }
@@ -1319,7 +1319,7 @@ function _wfFindOnWristband(play) {
   if (!Array.isArray(wristbandCards) || !wristbandCards.length) return { found: false };
   for (const card of wristbandCards) {
     if (!Array.isArray(card.data)) continue;
-    const cellIdx = card.data.findIndex((cell) => cell !== null && typeof playsMatch === "function" && playsMatch(cell, play));
+    const cellIdx = card.data.findIndex((cell) => cell !== null && typeof samePlayRef === "function" && samePlayRef(cell, play));
     if (cellIdx >= 0) {
       const col = cellIdx < 20 ? "A" : "B";
       const row = (cellIdx % 20) + 1;
