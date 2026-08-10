@@ -2329,11 +2329,17 @@ function _quizCompletenessStats(playList) {
     if (formation) formationSet.add(formation);
     const playType = _quizCleanText(play.type).toLowerCase();
     if (playType) typeSet.add(playType);
-    if (
-      window.playImages &&
-      typeof window.playImages.hasDisplayForPlay === "function" &&
-      window.playImages.hasDisplayForPlay(play)
-    ) {
+    // Fast O(1) diagram check — hasDisplayForPlay scans the playbook per play
+    // and made scoring every source take 15-20s; fall back only if unavailable.
+    const hasDiagram = window.playImages
+      && typeof window.playImages.hasDisplayForPlayFast === "function"
+      ? window.playImages.hasDisplayForPlayFast(play)
+      : Boolean(
+        window.playImages &&
+        typeof window.playImages.hasDisplayForPlay === "function" &&
+        window.playImages.hasDisplayForPlay(play),
+      );
+    if (hasDiagram) {
       totals.diagrams += 1;
     }
     if (_getQuizPositions().some((position) => String(play[position.key] || "").trim())) {

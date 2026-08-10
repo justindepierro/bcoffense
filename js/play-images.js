@@ -1888,6 +1888,29 @@
     return displaySignaturesForPlay(play).some(has);
   }
 
+  // O(1) diagram-presence check for hot loops (e.g. quiz readiness scoring over
+  // every play of every source). Tests only the cheap exact-id keys — media id
+  // and the canonical source ids the play already carries — and skips the
+  // per-candidate playbook uniqueness scan that makes hasDisplayForPlay too slow
+  // in a tight loop. Accurate for canonical-id-keyed diagrams (the modern path);
+  // callers needing legacy content-key coverage should use hasDisplayForPlay.
+  function hasDisplayForPlayFast(play) {
+    if (!play || typeof play !== "object") return false;
+    const mediaId = typeof getPlayMediaId === "function"
+      ? getPlayMediaId(play)
+      : String(play?.mediaId || "").trim();
+    const candidates = [
+      mediaId,
+      play.playbookId,
+      play.sourcePlayId,
+      play.originalPlayId,
+      play.id,
+    ]
+      .map(_normalizeSig)
+      .filter(Boolean);
+    return candidates.some(has);
+  }
+
   function storedSignatureForPlay(play) {
     return signaturesForPlay(play).find(has) || "";
   }
@@ -2725,6 +2748,7 @@
     getCachedRemoteManifestForPlay,
     hasForPlay,
     hasDisplayForPlay,
+    hasDisplayForPlayFast,
     storedSignatureForPlay,
     storedDisplaySignatureForPlay,
     deleteForPlay,
