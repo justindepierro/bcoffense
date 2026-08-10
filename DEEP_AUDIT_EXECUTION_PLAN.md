@@ -52,14 +52,17 @@
 
 ## Phase 1 — Stabilize the Product (current focus)
 
-### 1.1 — Telemetry / Web Vitals ◑ → ⬜ 🔴 (recommended next)
+### 1.1 — Telemetry / Web Vitals ◑ 🔴 (in-app shipped 2026-08-09; server beacon pending)
 
-**Status:** `window.perfMonitor` is a **stub** — call sites in `play-images.js`,
-`play-clips.js`, `script-quiz-foundation.js` already call
-`perfMonitor.record(name, ms, meta)` / `perfMonitor.measure(name, fn, meta)` but
-**no implementation exists**, so they are silent no-ops. No Core Web Vitals
-capture (no `PerformanceObserver`), no server reporting. `appDiagnostics`
-(`js/app-diagnostics.js`) has a startup timeline but console/in-memory only.
+**Status:** ✅ **In-app telemetry shipped** — `js/perf-monitor.js` implements
+`window.perfMonitor` with `.record(name, ms, meta)` / `.measure(name, fn, meta)`
+(now lighting up the previously no-op call sites in `play-images.js`,
+`play-clips.js`, `script-quiz-foundation.js`) and captures **LCP, INP, CLS, FCP,
+TTFB** via native `PerformanceObserver` (no npm deps). `?perf` prints a console
+report of vitals + slowest recorded ops. Contract test:
+`tests/perf-monitor-contract.test.mjs`. **Remaining:** the optional sampled
+server beacon (step 5 below) and wiring `perfMonitor.measure` into more hot paths
+(startup module init, render).
 
 **Steps:**
 1. Implement `window.perfMonitor` (new `js/perf-monitor.js`, load early) exposing
