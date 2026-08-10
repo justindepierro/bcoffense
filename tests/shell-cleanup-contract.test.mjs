@@ -57,6 +57,9 @@ const deferredScripts = [
   ...featureLoaderSource.matchAll(
     /loadDeferredFeature\("[^"]+", (?:"|deferredFeatureSrc\(")(js\/[^"?]+\.js)(?:\?[^\"]*)?"\)?\)/g,
   ),
+  ...featureLoaderSource.matchAll(
+    /registerDeferredActions\(\s*"[^"]+"\s*,\s*"(js\/[^"?]+\.js)"/g,
+  ),
 ].map((match) => match[1]);
 const shellStyles = [...indexHtml.matchAll(/href="(css\/[^"?]+\.css)(?:\?[^\"]*)?"/g)].map((match) => match[1]);
 const cachedStyles = [...serviceWorker.matchAll(/["']\.\/(css\/[^"']+\.css)["']/g)].map((match) => match[1]);

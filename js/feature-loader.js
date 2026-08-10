@@ -84,3 +84,49 @@ async function openDeferredPrintStudio() {
 window.openMediaInventoryReport = openDeferredMediaInventory;
 // Stable delegated-action bridge; the feature script replaces it when loaded.
 window.openPrintStudio = openDeferredPrintStudio;
+
+// ── Deferred print / export tools ──────────────────────────────────────
+// These modules only run on explicit print/export/report actions and have no
+// boot-time side effects, so they are excluded from the eager script tags and
+// loaded on first use. Every externally-reachable action gets a stable bridge
+// that loads the owning module (whose top-level function declarations replace
+// these bridges) and then forwards the original call with its arguments.
+function registerDeferredActions(name, path, actions) {
+  const src = deferredFeatureSrc(path);
+  actions.forEach((action) => {
+    const bridge = function (...args) {
+      return loadDeferredFeature(name, src)
+        .then(() => {
+          const real = window[action];
+          if (typeof real !== "function" || real === bridge) {
+            throw new Error(`${name} did not finish starting (${action}).`);
+          }
+          return real.apply(this, args);
+        })
+        .catch((err) => {
+          if (typeof showToast === "function") {
+            showToast(
+              "That tool is unavailable right now. Check your connection and try again.",
+              { type: "error" },
+            );
+          }
+          console.error("Deferred feature load failed:", name, action, err);
+          return null;
+        });
+    };
+    window[action] = bridge;
+  });
+}
+
+registerDeferredActions("playbook-print", "js/playbook-print.js", [
+  "printFilteredPlays",
+  "togglePrintOptionsPanel",
+  "toggleAllPbPrintOptions",
+  "addPbPrintSortField",
+  "_pbSortRemove",
+  "_pbSortToggleDir",
+  "syncFromWristbandOptions",
+]);
+registerDeferredActions("gameplan-print", "js/gameplan-print.js", [
+  "openGamePlanPrintModal",
+]);
