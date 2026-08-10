@@ -150,6 +150,12 @@ function serveStatic(port) {
     // available as empty, valid fixtures so a UI check catches real browser
     // failures rather than expected 404s from routes the static server cannot
     // otherwise provide.
+    if (parsed.pathname === "/api/telemetry") {
+      // Mirror production: telemetry beacon accepts and returns 204 No Content.
+      res.writeHead(204);
+      res.end();
+      return;
+    }
     if (parsed.pathname === "/player/release") {
       const release = {
         schema: "bcoffense.player-release/v1",

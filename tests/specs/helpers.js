@@ -262,6 +262,20 @@ function isExpectedReloadCancellation(request) {
   );
 }
 
+// The performance telemetry beacon (js/perf-monitor.js) fires on
+// visibilitychange/pagehide via navigator.sendBeacon (or fetch keepalive).
+// When the page is torn down between tests the browsing context is destroyed
+// mid-flight, which Chromium reports as an ERR_ABORTED POST. That is the
+// designed best-effort behavior of a fire-and-forget beacon, not an app
+// failure, so exempt exactly that request.
+function isExpectedTelemetryBeaconAbort(request) {
+  if (
+    request.method() !== "POST" ||
+    request.failure()?.errorText !== "net::ERR_ABORTED"
+  ) return false;
+  return /\/api\/telemetry(?:\?|$)/.test(request.url());
+}
+
 async function installRuntimeErrorGuards(page) {
   page.__bcRuntimeIssues = [];
   page.__bcMainFrameNavigations = 0;
@@ -309,6 +323,7 @@ async function installRuntimeErrorGuards(page) {
     // /auth/me probe and Google font GETs are exempt; any app/API/local asset,
     // other host, method, or error class remains a test failure.
     if (isExpectedReloadCancellation(request)) return;
+    if (isExpectedTelemetryBeaconAbort(request)) return;
     page.__bcRuntimeIssues.push({
       type: "requestfailed",
       message: request.failure()?.errorText || "request failed",

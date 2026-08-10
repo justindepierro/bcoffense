@@ -85,6 +85,12 @@ function handleAuthLogin(req, res) {
 }
 
 function handleApiStub(parsed, res) {
+  if (parsed.pathname === "/api/telemetry") {
+    // Mirror production: telemetry beacon accepts and returns 204 No Content.
+    res.writeHead(204);
+    res.end();
+    return true;
+  }
   if (parsed.pathname === "/auth/me") {
     sendJson(res, { user: null });
     return true;
