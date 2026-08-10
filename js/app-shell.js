@@ -378,9 +378,7 @@ function scrollElementWithinPanel(el, opts = {}) {
   const behavior = opts.behavior || "smooth";
   const block = opts.block || "nearest";
 
-  const isDesktopPanel =
-    typeof isDesktopShellPanelScrollOwner === "function" &&
-    isDesktopShellPanelScrollOwner();
+  const isDesktopPanel = isDesktopShellPanelScrollOwner();
   if (!isDesktopPanel) {
     try {
       el.scrollIntoView({ behavior, block });
@@ -726,7 +724,7 @@ function syncMobileShellState() {
   body.dataset.mobileScriptMode = body.classList.contains("mobile-script-editing")
     ? "edit"
     : "run";
-  if (typeof syncMobileScriptEditMode === "function") syncMobileScriptEditMode();
+  syncMobileScriptEditMode();
   if (
     activeTab === "callsheet" &&
     previousShellSize &&
@@ -744,9 +742,9 @@ function syncMobileShellState() {
     renderWristbandGrid();
   }
   queueMobileOverflowTrace();
-  if (typeof updateMobileCoachDock === "function") updateMobileCoachDock();
-  if (typeof applyMobileCoachLockUi === "function") applyMobileCoachLockUi();
-  if (typeof syncMobilePrimaryNav === "function") syncMobilePrimaryNav();
+  updateMobileCoachDock();
+  applyMobileCoachLockUi();
+  syncMobilePrimaryNav();
 }
 
 function syncMobilePrimaryNav() {
@@ -877,7 +875,6 @@ document.addEventListener("DOMContentLoaded", () => {
       "scroll",
       () => {
         if (
-          typeof isDesktopShellPanelScrollOwner === "function" &&
           isDesktopShellPanelScrollOwner() &&
           (mainApp.scrollTop !== 0 || mainApp.scrollLeft !== 0)
         ) {
@@ -2198,7 +2195,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         queueMobileShellStateSync();
       }
-      if (typeof applyMobileCoachLockUi === "function") applyMobileCoachLockUi();
+      applyMobileCoachLockUi();
     });
   });
   observer.observe(document.body, { childList: true, subtree: true });
@@ -2353,7 +2350,7 @@ function _setPlayerBootstrapProgress(result, key, status, opts = {}) {
   _setPlayerBootstrapStep(result, key, status, opts.detail || "");
   const activeStep = result.steps.find((step) => step.key === key);
   const title = opts.title || (status === "ready" ? "Checking for coach updates" : _playerBootstrapStepLabel(activeStep));
-  if (opts.startup && typeof setStartupLoadingMessage === "function") {
+  if (opts.startup) {
     setStartupLoadingMessage(title);
   }
   _setPlayerTeamRefreshState({
@@ -2695,7 +2692,7 @@ async function waitForPlayerStartupBootstrap(opts = {}) {
   });
   const bootstrap = refreshPlayerTeamApp({ quiet: true, startup: true });
   const result = await Promise.race([bootstrap, timeout]);
-  if (timedOut && typeof setStartupLoadingMessage === "function") {
+  if (timedOut) {
     setStartupLoadingMessage("Opening dashboard...");
   }
   return result;
@@ -2728,11 +2725,7 @@ function schedulePlayerTeamUpdateCheck(opts = {}) {
     _pa = false;
     const dy = e.changedTouches[0].clientY - _py;
     if (dy > 64) {
-      if (typeof refreshPlayerTeamApp === "function") refreshPlayerTeamApp();
-      else if (typeof renderPlayerDashboardHome === "function") {
-        renderPlayerDashboardHome();
-        showToast("Refreshed", { duration: 1500, type: "success" });
-      }
+      refreshPlayerTeamApp();
     }
   }, { passive: true });
 }());
