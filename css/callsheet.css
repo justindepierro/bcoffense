@@ -5530,6 +5530,9 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-bucket .cs-index-list--unsequenced { padding-left: 5px; list-style: none; }
 .cs-index-bucket .cs-index-list--unsequenced .cs-index-play { padding-left: 0; }
 .cs-index-play { position: relative; display: flex; align-items: flex-start; gap: 3px; min-width: 0; padding: 1px 0; user-select: none; -webkit-user-select: none; }
+/* Highlighted plays carry --cs-highlight-bg inline; apply it to any index-card
+   list item (editable builder and print list) so cell highlight is visible. */
+.cs-index-bucket ol li.highlighted { background: var(--cs-highlight-bg, var(--color-accent-light)) !important; }
 .cs-index-play-grip { flex: 0 0 auto; min-width: 15px; cursor: grab; color: #587091; font-size: 12px; line-height: 1.25; touch-action: none; -webkit-user-drag: element; }
 .cs-index-play-grip:active { cursor: grabbing; }
 .cs-index-play--dragging { opacity: .45; }

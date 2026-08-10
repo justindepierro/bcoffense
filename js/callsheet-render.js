@@ -1558,6 +1558,53 @@ function getPlayBorderColor(play, options) {
 }
 
 /**
+ * Shared per-cell formatting for the call sheet grid and the index-card view.
+ * Both render paths must use this so cell colors/formatting cannot diverge
+ * (the index-card view previously dropped every cell color and format).
+ */
+function csBuildPlayCellStyle(play, options = {}) {
+  const highlightConfig = getCallSheetHighlightConfig(play);
+  const isHighlighted = Boolean(highlightConfig);
+  const borderColor = getPlayBorderColor(play, options);
+  const tempo = (play.tempo || "").toLowerCase();
+  let tempoClass = "";
+  if (options.highlightHuddle && tempo === "huddle") tempoClass = "tempo-huddle";
+  else if (options.highlightCandy && tempo === "candy") tempoClass = "tempo-candy";
+  const cellStyles = [];
+  if (highlightConfig) {
+    cellStyles.push(`--cs-highlight-bg: ${highlightConfig.bg}`);
+    cellStyles.push(`--cs-highlight-border: ${highlightConfig.border}`);
+  }
+  if (borderColor) cellStyles.push(`border: 2px solid ${borderColor}`);
+  if (play.cellBg && !isHighlighted) cellStyles.push(`background: ${play.cellBg}`);
+  if (play.cellTextColor) cellStyles.push(`color: ${play.cellTextColor}`);
+  if (play.cellFontSize) cellStyles.push(`font-size: ${play.cellFontSize}`);
+  const textDeco = [];
+  if (play.cellUnderline) textDeco.push("underline");
+  if (play.cellStrikethrough) textDeco.push("line-through");
+  if (textDeco.length) cellStyles.push(`text-decoration: ${textDeco.join(" ")}`);
+  if (play.cellBold) cellStyles.push("font-weight: bold");
+  if (play.cellItalic) cellStyles.push("font-style: italic");
+  const hasFormat = Boolean(
+    highlightConfig ||
+      play.borderColor ||
+      play.cellBg ||
+      play.cellTextColor ||
+      play.cellBold ||
+      play.cellItalic ||
+      play.cellUnderline ||
+      play.cellStrikethrough ||
+      play.cellFontSize,
+  );
+  return {
+    styleStr: cellStyles.length ? cellStyles.join(";") + ";" : "",
+    highlightClass: isHighlighted ? "highlighted" : "",
+    tempoClass,
+    hasFormat,
+  };
+}
+
+/**
  * Render a single play in the call sheet
  */
 function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
@@ -1602,50 +1649,8 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
     textMeta = { displayOptions, displaySummary, visiblePlayText };
     if (textMemo && play && typeof play === "object") textMemo.set(play, textMeta);
   }
-  const highlightConfig = getCallSheetHighlightConfig(play);
-  const isHighlighted = Boolean(highlightConfig);
-  const borderColor = getPlayBorderColor(play, options);
-
-  // Build tempo class
-  const tempo = (play.tempo || "").toLowerCase();
-  let tempoClass = "";
-  if (options.highlightHuddle && tempo === "huddle")
-    tempoClass = "tempo-huddle";
-  else if (options.highlightCandy && tempo === "candy")
-    tempoClass = "tempo-candy";
-
-  const highlightClass = isHighlighted ? "highlighted" : "";
-
-  // Build per-cell inline styles
-  let cellStyles = [];
-  if (highlightConfig) {
-    cellStyles.push(`--cs-highlight-bg: ${highlightConfig.bg}`);
-    cellStyles.push(`--cs-highlight-border: ${highlightConfig.border}`);
-  }
-  if (borderColor) cellStyles.push(`border: 2px solid ${borderColor}`);
-  if (play.cellBg && !isHighlighted) cellStyles.push(`background: ${play.cellBg}`);
-  if (play.cellTextColor) cellStyles.push(`color: ${play.cellTextColor}`);
-  if (play.cellFontSize) cellStyles.push(`font-size: ${play.cellFontSize}`);
-  let textDeco = [];
-  if (play.cellUnderline) textDeco.push("underline");
-  if (play.cellStrikethrough) textDeco.push("line-through");
-  if (textDeco.length)
-    cellStyles.push(`text-decoration: ${textDeco.join(" ")}`);
-  if (play.cellBold) cellStyles.push("font-weight: bold");
-  if (play.cellItalic) cellStyles.push("font-style: italic");
-  const cellStyleStr = cellStyles.length ? cellStyles.join(";") + ";" : "";
-
-  // Check if play has any custom formatting
-  const hasFormat =
-    highlightConfig ||
-    play.borderColor ||
-    play.cellBg ||
-    play.cellTextColor ||
-    play.cellBold ||
-    play.cellItalic ||
-    play.cellUnderline ||
-    play.cellStrikethrough ||
-    play.cellFontSize;
+  const { styleStr: cellStyleStr, highlightClass, tempoClass, hasFormat } =
+    csBuildPlayCellStyle(play, options);
   const formatIndicator = hasFormat
     ? `<span class="cs-cell-format-dot" title="Custom cell formatting applied">✦</span>`
     : "";
