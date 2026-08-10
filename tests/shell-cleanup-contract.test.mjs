@@ -53,13 +53,10 @@ const cachedScripts = [...serviceWorker.matchAll(/["']\.\/(js\/[^"']+\.js)["']/g
 const runtimeFiles = jsEntries.filter((name) => name.endsWith(".js")).map((name) => `js/${name}`);
 const featureLoaderSource = await source("js/feature-loader.js");
 const cleanupAuditSource = await source("scripts/cleanup-audit.mjs");
+// feature-loader.js only references deferred assets, so every "js/x.js" literal
+// (loadDeferredFeature, registerDeferredActions, registerDeferredBundle) counts.
 const deferredScripts = [
-  ...featureLoaderSource.matchAll(
-    /loadDeferredFeature\("[^"]+", (?:"|deferredFeatureSrc\(")(js\/[^"?]+\.js)(?:\?[^\"]*)?"\)?\)/g,
-  ),
-  ...featureLoaderSource.matchAll(
-    /registerDeferredActions\(\s*"[^"]+"\s*,\s*"(js\/[^"?]+\.js)"/g,
-  ),
+  ...featureLoaderSource.matchAll(/["'](js\/[^"'?]+\.js)(?:\?[^"']*)?["']/g),
 ].map((match) => match[1]);
 const shellStyles = [...indexHtml.matchAll(/href="(css\/[^"?]+\.css)(?:\?[^\"]*)?"/g)].map((match) => match[1]);
 const cachedStyles = [...serviceWorker.matchAll(/["']\.\/(css\/[^"']+\.css)["']/g)].map((match) => match[1]);
@@ -69,8 +66,8 @@ assert.equal(new Set(shellScripts).size, shellScripts.length, "index.html loads 
 assert.equal(new Set(cachedScripts).size, cachedScripts.length, "sw.js pre-caches each global runtime script once");
 assert.equal(new Set(deferredScripts).size, deferredScripts.length, "each deferred feature is registered once");
 assert.ok(
-  cleanupAuditSource.includes("deferredFeatureSrc\\("),
-  "the cleanup audit recognizes deferred scripts registered through the cache-busting URL helper",
+  cleanupAuditSource.includes("js\\/[^\"'?]+\\.js"),
+  "the cleanup audit extracts deferred js/* script literals (with optional cache-busting query) from feature-loader.js",
 );
 assert.deepEqual(sort([...shellScripts, ...deferredScripts]), sort(runtimeFiles), "every runtime JS file belongs to either the startup shell or an explicit deferred feature");
 assert.deepEqual(sort(cachedScripts), sort(shellScripts), "the service worker pre-caches the complete startup shell only");

@@ -37,19 +37,12 @@ function getHtmlAssets(html) {
 
 function getDeferredFeatureAssets(featureLoader) {
   // Deferred features are deliberately absent from the startup shell and its
-  // precache. Treat their registered script URLs as runtime references so this
-  // audit does not report supported, lazy-loaded features as dead files.
-  return unique([
-    ...extractAll(
-      featureLoader,
-      /loadDeferredFeature\([^,]+,\s*(?:deferredFeatureSrc\(\s*)?["'](js\/[^"'?]+\.js)(?:\?[^"']*)?["']\s*\)?\s*\)/g,
-    ),
-    // registerDeferredActions("name", "js/x.js", [...]) bridges.
-    ...extractAll(
-      featureLoader,
-      /registerDeferredActions\(\s*["'][^"']+["']\s*,\s*["'](js\/[^"'?]+\.js)["']/g,
-    ),
-  ]);
+  // precache. feature-loader.js only references deferred assets, so every
+  // "js/x.js" literal it contains (loadDeferredFeature, registerDeferredActions,
+  // and registerDeferredBundle arrays) is a supported runtime reference.
+  return unique(
+    extractAll(featureLoader, /["'](js\/[^"'?]+\.js)(?:\?[^"']*)?["']/g),
+  );
 }
 
 function getServiceWorkerAssets(sw) {

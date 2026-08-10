@@ -130,3 +130,71 @@ registerDeferredActions("playbook-print", "js/playbook-print.js", [
 registerDeferredActions("gameplan-print", "js/gameplan-print.js", [
   "openGamePlanPrintModal",
 ]);
+
+// ── Deferred module bundles ────────────────────────────────────────────
+// Some coach-only tools span several interdependent files that must all load
+// before any entry runs. Load the whole set on first use of any entry action.
+function registerDeferredBundle(name, paths, actions) {
+  let bundlePromise = null;
+  const loadBundle = () => {
+    if (!bundlePromise) {
+      bundlePromise = paths.reduce(
+        (chain, path, i) =>
+          chain.then(() =>
+            loadDeferredFeature(`${name}#${i}`, deferredFeatureSrc(path)),
+          ),
+        Promise.resolve(),
+      );
+    }
+    return bundlePromise;
+  };
+  actions.forEach((action) => {
+    const bridge = function (...args) {
+      return loadBundle()
+        .then(() => {
+          const real = window[action];
+          if (typeof real !== "function" || real === bridge) {
+            throw new Error(`${name} did not finish starting (${action}).`);
+          }
+          return real.apply(this, args);
+        })
+        .catch((err) => {
+          if (typeof showToast === "function") {
+            showToast(
+              "That tool is unavailable right now. Check your connection and try again.",
+              { type: "error" },
+            );
+          }
+          console.error("Deferred bundle load failed:", name, action, err);
+          return null;
+        });
+    };
+    window[action] = bridge;
+  });
+}
+
+// Coach-only playbook analytics / report tools (no boot side effects, no
+// render-path callers; every entry is a guarded user action).
+registerDeferredBundle(
+  "playbook-analytics",
+  [
+    "js/playbook-reports.js",
+    "js/playbook-reports-identity.js",
+    "js/playbook-sanitize.js",
+    "js/playbook-analytics.js",
+    "js/playbook-analytics-render.js",
+    "js/playbook-identity.js",
+  ],
+  [
+    "openPlaybookBalanceReport",
+    "openPlaybookSituationCoverage",
+    "openPlaybookTouchReport",
+    "openPlaybookConstraintMap",
+    "openPlaybookIdentityAlignment",
+    "openPlaybookDataHealth",
+    "openPlaybookSanitize",
+    "openPlaybookSanitizeFiltered",
+    "openPlaybookCategoryCleanup",
+    "openPlaybookHealthEdit",
+  ],
+);
