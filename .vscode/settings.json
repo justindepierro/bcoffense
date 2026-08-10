@@ -40,10 +40,14 @@
   "javascript.suggest.autoImports": false,
   "typescript.suggest.autoImports": false,
 
-  // HTML: index.html is large (~3300 lines), increase fold/performance limits
+  // HTML: index.html is large (~3300 lines), increase fold/performance limits.
+  // Never format-on-save HTML/CSS — index.html and css/ are hand-formatted,
+  // compact-style files whose exact layout smoke/contract tests depend on, and
+  // the built-in HTML/CSS formatters ignore .prettierignore.
   "editor.foldingMaximumRegions": 5000,
   "[html]": {
     "editor.defaultFormatter": "vscode.html-language-features",
+    "editor.formatOnSave": false,
     "editor.tabSize": 2
   },
   "[javascript]": {
@@ -51,7 +55,8 @@
     "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "[css]": {
-    "editor.tabSize": 2
+    "editor.tabSize": 2,
+    "editor.formatOnSave": false
   },
 
   // ─── Terminal ─────────────────────────────────────────────────────────────
