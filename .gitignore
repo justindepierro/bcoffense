@@ -13,3 +13,4 @@ tests/playwright-report/
 tests/screenshots/
 tests/node_modules/
 node_modules/
+media-cleanup-backup-20260809/

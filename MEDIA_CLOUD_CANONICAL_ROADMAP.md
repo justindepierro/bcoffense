@@ -43,14 +43,16 @@ deleted; the findings below are recorded for explicit review before any cleanup.
 - **Dead legacy table:** the global `media_manifests` (migration 0010, 122 rows)
   is referenced by **zero** live code and is a strict subset of
   `team_media_manifests` (114 team rows have no global counterpart; 0 the other
-  way). It is superseded evidence only — a drop candidate pending an explicit,
-  separate decision. It was **not** dropped here.
+  way). It is superseded evidence only and was **dropped on 2026-08-09** by
+  migration `0031_drop_legacy_media_manifests.sql` after a row-level export was
+  retained. `team_media_manifests` remains the sole authority.
 - **Orphaned R2 blobs:** the media health monitor has flagged **9**
   `media_cleanup_candidates`, all `status='pending'`, each an old
   replaced-diagram version under `.../plays/<mediaId>/diagram/<version>`. All 9
   are confirmed unreferenced by any current manifest (team or global) and have
-  been stable across 106 scans. They are safe cleanup candidates pending
-  explicit review; **none were deleted**.
+  been stable across 106 scans. All 9 were backed up and **deleted on
+  2026-08-09**, and their ledger rows are marked `deleted` (the health
+  `Cleanup candidates` baseline is now 0).
 - **Clips:** there are no published clips in D1 (0 `kind='clip'` manifests), so
   the earlier "legacy clip inventory" concern has no live objects to reconcile.
 - **Other media tables:** `team_media_upload_receipts` = 0 (no pending uploads);
@@ -58,8 +60,10 @@ deleted; the findings below are recorded for explicit review before any cleanup.
   not media bytes).
 
 Remaining action is a human decision on whether to (a) drop the dead
-`media_manifests` table and (b) delete the 9 confirmed-orphan R2 blobs. Both are
-deferred until explicitly approved.
+`media_manifests` table and (b) delete the 9 confirmed-orphan R2 blobs. Both
+were executed on 2026-08-09 after local backups (row-level table export and the
+9 blob bytes), retained in a gitignored `media-cleanup-backup-20260809/`
+directory for recovery.
 
 Later that day, a checksum-valid pre-data-plane workspace revision was found
 to contain 16 known browser-only backup fields alongside 43 team fields. The
