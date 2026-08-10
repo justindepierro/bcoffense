@@ -2331,8 +2331,8 @@ function _quizCompletenessStats(playList) {
     if (playType) typeSet.add(playType);
     if (
       window.playImages &&
-      typeof window.playImages.hasForPlay === "function" &&
-      window.playImages.hasForPlay(play)
+      typeof window.playImages.hasDisplayForPlay === "function" &&
+      window.playImages.hasDisplayForPlay(play)
     ) {
       totals.diagrams += 1;
     }
@@ -2571,8 +2571,8 @@ function _coachQuizPlayRepairIssues(play) {
   const target = _findCoachQuizPlaybookTarget(play);
   const hasDiagram = Boolean(
     window.playImages &&
-    typeof window.playImages.hasForPlay === "function" &&
-    (window.playImages.hasForPlay(play) || (target.play && window.playImages.hasForPlay(target.play)))
+    typeof window.playImages.hasDisplayForPlay === "function" &&
+    (window.playImages.hasDisplayForPlay(play) || (target.play && window.playImages.hasDisplayForPlay(target.play)))
   );
 
   if (!hasDiagram) issues.push({ label: "Missing diagram", tone: "danger" });
@@ -2784,8 +2784,8 @@ function _coachQuizQuestionPreviewStats(playList) {
     }
     if (
       window.playImages &&
-      typeof window.playImages.hasForPlay === "function" &&
-      window.playImages.hasForPlay(play)
+      typeof window.playImages.hasDisplayForPlay === "function" &&
+      window.playImages.hasDisplayForPlay(play)
     ) {
       playsWithDiagram += 1;
     }

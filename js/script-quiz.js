@@ -255,8 +255,8 @@ function _quizItemHasDiagram(itemOrPlay) {
   return Boolean(
     play &&
     window.playImages &&
-    typeof window.playImages.hasForPlay === "function" &&
-    window.playImages.hasForPlay(play)
+    typeof window.playImages.hasDisplayForPlay === "function" &&
+    window.playImages.hasDisplayForPlay(play)
   );
 }
 

@@ -93,7 +93,7 @@ function _quizAssignmentFocus(draft) {
 }
 
 function _quizAssignmentHasDiagram(play) {
-  return Boolean(window.playImages && typeof window.playImages.hasForPlay === "function" && window.playImages.hasForPlay(play));
+  return Boolean(window.playImages && typeof window.playImages.hasDisplayForPlay === "function" && window.playImages.hasDisplayForPlay(play));
 }
 
 function _quizAssignmentSignalLabels(play) {
