@@ -1911,6 +1911,16 @@
     return candidates.some(has);
   }
 
+  // Remote-aware diagram presence for readiness/reporting: locally cached OR
+  // published to the team cloud manifest (as resolved by the last
+  // checkRemoteForPlays batch). Sync and cheap; a coach whose diagrams live in
+  // the cloud but are not cached on this device still counts as having one.
+  function hasPublishedDiagramForPlay(play) {
+    if (hasDisplayForPlayFast(play)) return true;
+    const remote = getCachedRemoteManifestForPlay(play);
+    return Boolean(remote && remote.published);
+  }
+
   function storedSignatureForPlay(play) {
     return signaturesForPlay(play).find(has) || "";
   }
@@ -2749,6 +2759,7 @@
     hasForPlay,
     hasDisplayForPlay,
     hasDisplayForPlayFast,
+    hasPublishedDiagramForPlay,
     storedSignatureForPlay,
     storedDisplaySignatureForPlay,
     deleteForPlay,

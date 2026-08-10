@@ -2289,7 +2289,19 @@ function renderQuizPage() {
     renderPlayerLeaderboardPage();
     return;
   }
+  _coachQuizRemoteChecked = false;
   renderCoachQuizSetupPage();
+}
+
+// Remote-aware diagram presence used across quiz readiness/repair: counts a
+// diagram that lives only in the cloud team manifest, not just locally cached
+// ones. Falls back to the fast local check when the remote-aware API is absent.
+function _quizPlayHasDiagram(play) {
+  const api = window.playImages;
+  if (!api || !play) return false;
+  if (typeof api.hasPublishedDiagramForPlay === "function") return api.hasPublishedDiagramForPlay(play);
+  if (typeof api.hasDisplayForPlayFast === "function") return api.hasDisplayForPlayFast(play);
+  return typeof api.hasDisplayForPlay === "function" && api.hasDisplayForPlay(play);
 }
 
 function _quizUniquePlaysFromList(list) {
@@ -2332,17 +2344,7 @@ function _quizCompletenessStats(playList) {
     if (formation) formationSet.add(formation);
     const playType = _quizCleanText(play.type).toLowerCase();
     if (playType) typeSet.add(playType);
-    // Fast O(1) diagram check — hasDisplayForPlay scans the playbook per play
-    // and made scoring every source take 15-20s; fall back only if unavailable.
-    const hasDiagram = window.playImages
-      && typeof window.playImages.hasDisplayForPlayFast === "function"
-      ? window.playImages.hasDisplayForPlayFast(play)
-      : Boolean(
-        window.playImages &&
-        typeof window.playImages.hasDisplayForPlay === "function" &&
-        window.playImages.hasDisplayForPlay(play),
-      );
-    if (hasDiagram) {
+    if (_quizPlayHasDiagram(play)) {
       totals.diagrams += 1;
     }
     if (quizPositions.some((position) => String(play[position.key] || "").trim())) {
@@ -2578,11 +2580,7 @@ function _coachQuizPlayRepairIssues(play) {
     ? getPlaySourceStatus(play, plays)
     : { state: "local" };
   const target = _findCoachQuizPlaybookTarget(play);
-  const hasDiagram = Boolean(
-    window.playImages &&
-    typeof window.playImages.hasDisplayForPlay === "function" &&
-    (window.playImages.hasDisplayForPlay(play) || (target.play && window.playImages.hasDisplayForPlay(target.play)))
-  );
+  const hasDiagram = _quizPlayHasDiagram(play) || (target.play && _quizPlayHasDiagram(target.play));
 
   if (!hasDiagram) issues.push({ label: "Missing diagram", tone: "danger" });
   if (!_getQuizPositions().some((position) => String(play?.[position.key] || "").trim())) {
@@ -4188,6 +4186,8 @@ function setCoachQuizTab(tab) {
 // Only one source card is expanded at a time; its heavy detail (question
 // preview, metric bars, readiness split) renders only while expanded.
 let _coachQuizExpandedSource = null;
+// Remote diagram manifests are resolved once per Quiz-tab open.
+let _coachQuizRemoteChecked = false;
 
 // Re-render only the affected source card(s) on expand/collapse instead of
 // re-scoring every source through a full page render. Falls back to a full
@@ -4279,6 +4279,29 @@ function renderCoachQuizSetupPage() {
         }
       })
       .catch(() => { });
+  }
+  // Diagrams may live only in the cloud team manifest (not cached on this
+  // device). Resolve remote presence once per Quiz open, then re-render so the
+  // counts include published diagrams. The flag is set before the async call so
+  // the follow-up render cannot re-enter this batch.
+  if (
+    isSources &&
+    !_coachQuizRemoteChecked &&
+    window.playImages &&
+    typeof window.playImages.checkRemoteForPlays === "function"
+  ) {
+    _coachQuizRemoteChecked = true;
+    const remotePlays = [...scripts, ...gamePlans]
+      .flatMap((source) => (Array.isArray(source.plays) ? source.plays : []));
+    if (remotePlays.length) {
+      window.playImages.checkRemoteForPlays(remotePlays)
+        .then(() => {
+          if (document.getElementById("coachQuizSetupPage") && _coachQuizActiveTab() === "sources") {
+            renderCoachQuizSetupPage();
+          }
+        })
+        .catch(() => { });
+    }
   }
   const avgScore = allStats.length
     ? Math.round(allStats.reduce((sum, stats) => sum + stats.score, 0) / allStats.length)
