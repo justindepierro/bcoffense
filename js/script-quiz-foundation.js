@@ -4146,6 +4146,39 @@ async function coachRevokeHelmetStickerAward(stickerId = "") {
   showToast(`${sticker.label || "Sticker"} removed for ${player}.`, { type: "success" });
 }
 
+const _COACH_QUIZ_TABS = [
+  ["sources", "Sources"],
+  ["homework", "Homework"],
+  ["rewards", "Rewards"],
+  ["settings", "Settings"],
+];
+let _coachQuizActiveTabName = "sources";
+
+function _coachQuizActiveTab() {
+  return _COACH_QUIZ_TABS.some(([id]) => id === _coachQuizActiveTabName)
+    ? _coachQuizActiveTabName
+    : "sources";
+}
+
+function setCoachQuizTab(tab) {
+  _coachQuizActiveTabName = _COACH_QUIZ_TABS.some(([id]) => id === tab)
+    ? tab
+    : "sources";
+  renderCoachQuizSetupPage();
+}
+
+function _renderCoachQuizSubtabs(active, meta = {}) {
+  const buttons = _COACH_QUIZ_TABS.map(([id, label]) => {
+    const isActive = id === active;
+    const count =
+      id === "sources" && meta.sourceCount
+        ? ` <span class="coach-quiz-subtab-count">${meta.sourceCount}</span>`
+        : "";
+    return `<button type="button" role="tab" class="coach-quiz-subtab${isActive ? " active" : ""}" aria-selected="${isActive ? "true" : "false"}" data-action="setCoachQuizTab" data-arg="${id}">${escapeHtml(label)}${count}</button>`;
+  }).join("");
+  return `<div class="coach-quiz-subtabs" role="tablist">${buttons}</div>`;
+}
+
 function renderCoachQuizSetupPage() {
   const page = document.getElementById("coachQuizSetupPage");
   if (!page) return;
@@ -4157,6 +4190,7 @@ function renderCoachQuizSetupPage() {
   if (window.playImages && typeof window.playImages.loadKeys === "function") {
     window.playImages.loadKeys().catch(() => { });
   }
+  const tab = _coachQuizActiveTab();
   const scripts = _getCoachQuizScriptSources();
   const gamePlans = _getCoachQuizGamePlanSources();
   const allStats = [...scripts.map((s) => _quizCompletenessStats(s.plays)), ...gamePlans.map((g) => _quizCompletenessStats(g.plays))];
@@ -4164,34 +4198,20 @@ function renderCoachQuizSetupPage() {
     ? Math.round(allStats.reduce((sum, stats) => sum + stats.score, 0) / allStats.length)
     : 0;
   const readyCount = allStats.filter((stats) => stats.score >= 88).length;
-  const rewardEvents = _getPlayerRewardEvents();
-  const stickers = _getPlayerHelmetStickers();
+  // Only the active tab's heavier summaries are computed, keeping the page light.
+  const rewardEvents = tab === "rewards" ? _getPlayerRewardEvents() : [];
+  const stickers = tab === "rewards" ? _getPlayerHelmetStickers() : [];
   const weekKey = _quizWeekKey(new Date());
   const weeklyRewardEvents = rewardEvents.filter((event) => event.weekKey === weekKey);
   const weeklyStickerEvents = stickers.filter((event) => event.weekKey === weekKey);
-  const leaderboardSummary = _buildCoachQuizLeaderboardSummary();
-  const quizSettings = _getPlayerQuizSettings();
-  const rosterHealthSummary = _buildCoachQuizRosterHealthSummary();
-  if (!_leaderboardSelectedPlayer && leaderboardSummary.rows[0]?.name) {
+  const leaderboardSummary = tab === "rewards" ? _buildCoachQuizLeaderboardSummary() : { rows: [] };
+  const quizSettings = tab === "settings" ? _getPlayerQuizSettings() : null;
+  const rosterHealthSummary = tab === "homework" ? _buildCoachQuizRosterHealthSummary() : null;
+  if (tab === "rewards" && !_leaderboardSelectedPlayer && leaderboardSummary.rows[0]?.name) {
     _leaderboardSelectedPlayer = leaderboardSummary.rows[0].name;
   }
 
-  setInnerHTML(page, `
-    <div class="coach-quiz-setup-shell">
-      <section class="coach-quiz-setup-hero">
-        <div>
-          <span class="coach-quiz-kicker">Set Up Quizzes</span>
-          <h2>Make every quiz source player-ready</h2>
-          <p>Check whether scripts and game plans have enough diagrams, rules, notes, and metadata for kids to learn from the quiz instead of guessing.</p>
-        </div>
-        <div class="coach-quiz-hero-score">
-          <strong>${avgScore}</strong>
-          <span>${readyCount}/${allStats.length || 0} ready</span>
-        </div>
-      </section>
-      ${_renderCoachQuizSettingsPanel(quizSettings)}
-      ${typeof renderCoachQuizAssignmentsPanel === "function" ? renderCoachQuizAssignmentsPanel() : ""}
-      ${_renderCoachQuizRosterHealthPanel(rosterHealthSummary)}
+  const rewardsMarkup = tab !== "rewards" ? "" : `
       <section class="coach-quiz-reward-panel">
         <article>
           <span>Question points</span>
@@ -4230,7 +4250,9 @@ function renderCoachQuizSetupPage() {
         </div>
       </section>
       ${_renderCoachQuizAwardHistoryPanel(weeklyRewardEvents, weeklyStickerEvents)}
-      ${_renderCoachQuizLeaderboardPanel(leaderboardSummary)}
+      ${_renderCoachQuizLeaderboardPanel(leaderboardSummary)}`;
+
+  const sourcesMarkup = tab !== "sources" ? "" : `
       ${_renderCoachQuizPositionPicker()}
       <section class="coach-quiz-setup-section">
         <div class="coach-quiz-section-head">
@@ -4253,7 +4275,33 @@ function renderCoachQuizSetupPage() {
       ? gamePlans.map((source) => _renderCoachQuizSourceCard(source, "gameplan")).join("")
       : `<div class="coach-quiz-empty">No game plans with plays yet.</div>`}
         </div>
+      </section>`;
+
+  const homeworkMarkup = tab !== "homework" ? "" : `
+      ${typeof renderCoachQuizAssignmentsPanel === "function" ? renderCoachQuizAssignmentsPanel() : ""}
+      ${_renderCoachQuizRosterHealthPanel(rosterHealthSummary)}`;
+
+  const settingsMarkup = tab !== "settings" ? "" : `
+      ${_renderCoachQuizSettingsPanel(quizSettings)}`;
+
+  setInnerHTML(page, `
+    <div class="coach-quiz-setup-shell">
+      <section class="coach-quiz-setup-hero">
+        <div>
+          <span class="coach-quiz-kicker">Set Up Quizzes</span>
+          <h2>Make every quiz source player-ready</h2>
+          <p>Check whether scripts and game plans have enough diagrams, rules, notes, and metadata for kids to learn from the quiz instead of guessing.</p>
+        </div>
+        <div class="coach-quiz-hero-score">
+          <strong>${avgScore}</strong>
+          <span>${readyCount}/${allStats.length || 0} ready</span>
+        </div>
       </section>
+      ${_renderCoachQuizSubtabs(tab, { sourceCount: scripts.length + gamePlans.length })}
+      ${sourcesMarkup}
+      ${homeworkMarkup}
+      ${rewardsMarkup}
+      ${settingsMarkup}
     </div>
   `);
   page.querySelectorAll(".coach-quiz-metric i b").forEach((bar) => {

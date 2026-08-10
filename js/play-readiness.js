@@ -120,8 +120,30 @@ function getPlayReadinessFamily(play) {
 
 function getPlayReadinessKey(play) {
   if (!play) return "";
+  // Canonical stable id first so a play's rep history follows it through
+  // renames; fall back to the legacy content signature for id-less copies.
+  const stableId =
+    typeof getStablePlaySourceId === "function" ? getStablePlaySourceId(play) : "";
+  if (stableId) return stableId;
   if (typeof playSignature === "function") return playSignature(play);
   return getPlayIdentityKey(play, "tag", { trim: false });
+}
+
+// Records were historically keyed by playSignature. Resolve a play to the key
+// its record currently lives under and migrate a legacy signature-keyed record
+// onto the canonical id key on first access — non-destructive, so existing
+// readiness history keeps resolving and re-keys itself as plays are touched.
+function _resolvePlayReadinessKey(store, play) {
+  const key = getPlayReadinessKey(play);
+  if (!key || !store || !store.records) return key || "";
+  if (store.records[key]) return key;
+  const legacyKey = typeof playSignature === "function" ? playSignature(play) : "";
+  if (legacyKey && legacyKey !== key && store.records[legacyKey]) {
+    store.records[key] = store.records[legacyKey];
+    delete store.records[legacyKey];
+    savePlayReadinessStore(store);
+  }
+  return key;
 }
 
 function getPlayReadinessSnapshot(play) {
@@ -156,9 +178,9 @@ function createPlayReadinessRecord(play) {
 }
 
 function getPlayReadinessRecord(play, opts = {}) {
-  const key = getPlayReadinessKey(play);
-  if (!key) return null;
   const store = getPlayReadinessStore();
+  const key = _resolvePlayReadinessKey(store, play);
+  if (!key) return null;
   let record = store.records[key];
   if (!record && opts.create) {
     record = createPlayReadinessRecord(play);
@@ -169,9 +191,9 @@ function getPlayReadinessRecord(play, opts = {}) {
 }
 
 function upsertPlayReadinessRecord(play, updater) {
-  const key = getPlayReadinessKey(play);
-  if (!key) return null;
   const store = getPlayReadinessStore();
+  const key = _resolvePlayReadinessKey(store, play);
+  if (!key) return null;
   let record = store.records[key] || createPlayReadinessRecord(play);
   // Inline migration: convert legacy reps[]+actionReports[] → logs[]
   if (!Array.isArray(record.logs)) {
