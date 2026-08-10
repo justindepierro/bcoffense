@@ -184,6 +184,7 @@
   var SAMPLE_RATE = 1; // 100% while the roster is small; lower as traffic grows.
   var MAX_BEACONS = 3; // cap sends per page session
   var beaconsSent = 0;
+  var lastBeaconSig = null; // dedupe identical payloads (visibilitychange + pagehide)
   var sampledIn = Math.random() < SAMPLE_RATE;
 
   function deviceKind() {
@@ -218,7 +219,11 @@
 
   function currentTab() {
     try {
-      return typeof window.currentActiveTab === "string" ? window.currentActiveTab : null;
+      if (typeof window.currentActiveTab === "string") return window.currentActiveTab;
+      // help.js declares currentActiveTab as a top-level `let` (lexical global,
+      // not a window property), so read it by name once it has initialized.
+      if (typeof currentActiveTab === "string") return currentActiveTab;
+      return null;
     } catch (e) {
       return null;
     }
@@ -254,11 +259,15 @@
     } catch (e) {
       return false;
     }
+    // Skip an identical payload: finalize() fires on both visibilitychange and
+    // pagehide, which would otherwise write the same vitals row twice.
+    if (payload === lastBeaconSig) return false;
     try {
       if (typeof navigator !== "undefined" && navigator.sendBeacon) {
         var blob = new Blob([payload], { type: "application/json" });
         if (navigator.sendBeacon(BEACON_URL, blob)) {
           beaconsSent += 1;
+          lastBeaconSig = payload;
           return true;
         }
       }
@@ -274,6 +283,7 @@
         credentials: "same-origin",
       });
       beaconsSent += 1;
+      lastBeaconSig = payload;
       return true;
     } catch (e) {
       return false;
