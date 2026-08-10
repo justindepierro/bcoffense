@@ -1195,9 +1195,7 @@ function clearPlayPresentationTele() {
 
 function getPlayPresentationTeleExportFilename() {
   const play = playPresentationState.items[playPresentationState.index]?.play;
-  const label = typeof getPlayPresentationPlayLabel === "function"
-    ? getPlayPresentationPlayLabel(play || {})
-    : "play";
+  const label = getPlayPresentationPlayLabel(play || {});
   const safeLabel = String(label || "play")
     .replace(/[^a-z0-9]+/gi, "-")
     .replace(/^-+|-+$/g, "")
@@ -3377,10 +3375,7 @@ function closePlayPresentationSetupOverlay() {
 
 function getPlayPresentationItemLabel(item, index) {
   const number = item?.number ? `${item.number}. ` : `${index + 1}. `;
-  const label =
-    typeof getPlayPresentationPlayLabel === "function"
-      ? getPlayPresentationPlayLabel(item?.play)
-      : item?.play?.play || "Play";
+  const label = getPlayPresentationPlayLabel(item?.play);
   return `${number}${label}`;
 }
 

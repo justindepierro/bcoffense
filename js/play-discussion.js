@@ -2445,9 +2445,7 @@ async function openScriptDiscussion(idxStr) {
   // Brief wait for the presentation overlay to render
   await new Promise((r) => setTimeout(r, 250));
 
-  if (typeof openPresentationDiscussion === "function") {
-    openPresentationDiscussion();
-  }
+  openPresentationDiscussion();
 }
 
 /**
@@ -2880,7 +2878,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     clearInterval(interval);
     const idx = plays.findIndex(
-      (p) => typeof getPlayThreadId === "function" && getPlayThreadId(p) === _discDeepLinkPlayId
+      (p) => getPlayThreadId(p) === _discDeepLinkPlayId
     );
     if (idx === -1) return; // play not found — deep link post highlight will still work if panel opens
     if (typeof openPlayWorkflowPanel === "function") {

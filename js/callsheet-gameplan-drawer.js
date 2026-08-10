@@ -449,7 +449,7 @@ function _gpDrawerOnDragStart(event) {
 function _gpDrawerOnDragEnd(event) {
   event.currentTarget.classList.remove("gp-drawer-row-dragging");
   _gpDrawerClearDragState();
-  if (typeof _gpClearHighlights === "function") _gpClearHighlights();
+  _gpClearHighlights();
 }
 
 /* ---------- Public API ----------------------------------------------------- */

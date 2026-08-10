@@ -525,7 +525,7 @@ function _pbIdentityAnalyze(source) {
       unclassified += 1;
     }
 
-    const terms = typeof _pbConstraintTerms === "function" ? _pbConstraintTerms(play) : [];
+    const terms = _pbConstraintTerms(play);
     if (terms.length) taggedConstraints += 1;
     terms.forEach((term) => complements.add(term));
 

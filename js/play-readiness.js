@@ -518,7 +518,7 @@ function refreshPlayReadinessSurfaces(source = "") {
   if (typeof requestRenderScript === "function") requestRenderScript();
   if (typeof requestRenderPlaybook === "function") {
     requestRenderPlaybook();
-  } else if (typeof renderSelectedPlaybookReadinessPanel === "function") {
+  } else {
     renderSelectedPlaybookReadinessPanel(selectedRowIndex);
   }
   if (typeof requestRenderGamePlan === "function") {
@@ -531,7 +531,7 @@ function refreshPlayReadinessSurfaces(source = "") {
   ) {
     renderPlayPresentation();
   }
-  if (source === "playbook" && typeof renderSelectedPlaybookReadinessPanel === "function") {
+  if (source === "playbook") {
     renderSelectedPlaybookReadinessPanel(selectedRowIndex);
   }
 }

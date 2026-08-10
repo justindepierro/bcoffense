@@ -620,7 +620,7 @@ async function openNotifDeepLink(arg) {
 
   const discussionTarget = _parseNotificationDiscussionTarget(deepLink);
   const playId = discussionTarget.playId;
-  if (playId && typeof openDiscussionForPlayId === "function") {
+  if (playId) {
     openDiscussionForPlayId(playId, { postId: discussionTarget.postId });
   }
 }

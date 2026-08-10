@@ -1552,7 +1552,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "mouseenter",
     (e) => {
       const row = e.target.closest("tr[data-orig]");
-      if (row && typeof showPlayTooltip === "function") {
+      if (row) {
         showPlayTooltip(e, parseInt(row.dataset.orig, 10));
       }
     },
@@ -1562,7 +1562,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "mouseleave",
     (e) => {
       const row = e.target.closest("tr[data-orig]");
-      if (row && typeof hidePlayTooltip === "function") {
+      if (row) {
         hidePlayTooltip();
       }
     },

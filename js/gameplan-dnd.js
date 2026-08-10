@@ -26,7 +26,7 @@ function _gpClearDragState() {
   document.querySelectorAll(".gp-box.is-drop-target").forEach((b) => b.classList.remove("is-drop-target"));
   document.querySelectorAll(".gp-box-play.is-drag-source").forEach((row) => row.classList.remove("is-drag-source"));
   document.querySelectorAll(".gp-box-body").forEach((dz) => {
-    if (typeof _gpClearDropIndicators === "function") _gpClearDropIndicators(dz);
+    _gpClearDropIndicators(dz);
   });
   const trash = document.getElementById("gpTrashZone");
   if (trash) trash.classList.remove("is-active");

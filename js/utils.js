@@ -440,7 +440,7 @@ function showToast(message, durationOrOpts = 2000) {
     toast.dataset.persistent = "true";
   }
   if (type) toast.classList.add("toast-" + type);
-  if (type === "error" && typeof vibrateHaptic === "function") vibrateHaptic([8, 40, 8]);
+  if (type === "error") vibrateHaptic([8, 40, 8]);
 
   toast.textContent = String(message || "");
   if (actionLabel && action) {
@@ -1886,31 +1886,22 @@ function samePlayRef(a, b) {
   const idA = getStablePlaySourceId(a);
   const idB = getStablePlaySourceId(b);
   if (idA && idB) return idA === idB;
-  return typeof playsMatch === "function" ? playsMatch(a, b) : false;
+  return playsMatch(a, b);
 }
 
 // Stable dedupe/map key for a play: canonical id when present, else the content
 // signature so legacy copies without an id still collapse by content.
 function playRefKey(play) {
-  return (
-    getStablePlaySourceId(play) ||
-    (typeof playSignature === "function" ? playSignature(play) : "")
-  );
+  return getStablePlaySourceId(play) || playSignature(play);
 }
 
 function copyPlayWithSourceIdentity(play, overrides = {}) {
   if (!play || typeof play !== "object") return { ...overrides };
   const sourceId = getStablePlaySourceId(play);
   const sourceIdentityKey =
-    play.sourceIdentityKey ||
-    (typeof getPlayIdentityKey === "function"
-      ? getPlayIdentityKey(play, "tag", { trim: false })
-      : "");
+    play.sourceIdentityKey || getPlayIdentityKey(play, "tag", { trim: false });
   const sourceGamePlanKey =
-    play.sourceGamePlanKey ||
-    (typeof getPlayIdentityKey === "function"
-      ? getPlayIdentityKey(play, "gameplan", { trim: false })
-      : "");
+    play.sourceGamePlanKey || getPlayIdentityKey(play, "gameplan", { trim: false });
   const copy = { ...play, ...overrides };
   const mediaId = getPlayMediaId(play);
   if (sourceId) {
@@ -2580,7 +2571,7 @@ function setGameWeek(opponentIndex, weekLabel) {
   // Invalidate script's scouting cache so next render fetches fresh data
   if (typeof invalidateScoutCache === "function") invalidateScoutCache();
   // Sync the persistent game-week bar across all pages
-  if (typeof updateGameWeekBar === "function") updateGameWeekBar();
+  updateGameWeekBar();
 }
 
 /**
@@ -2951,7 +2942,7 @@ function _printCleanFilenameToken(value) {
 }
 
 function getPrintArtifactContext() {
-  const gameWeek = typeof getGameWeek === "function" ? getGameWeek() : {};
+  const gameWeek = getGameWeek();
   return {
     team: typeof getTeamName === "function" ? getTeamName() : "BCOffense",
     opponent: gameWeek?.opponentName || "",

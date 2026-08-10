@@ -69,7 +69,7 @@ function ensurePlaybookImageBadgesReady() {
     .loadKeys()
     .then(() => {
       _playbookImageKeyRefreshPending = false;
-      if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+      requestRenderPlaybook();
     })
     .catch(() => {
       _playbookImageKeyRefreshPending = false;
@@ -104,7 +104,7 @@ function ensurePlaybookRemoteImageBadgesReady(playList = []) {
         if (manifest?.published) _playbookKnownCloudDiagramMediaIds.add(mediaId);
         if (manifest?.status === "unpublished") _playbookKnownCloudDiagramMediaIds.delete(mediaId);
       });
-      if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+      requestRenderPlaybook();
     })
     .finally(() => { _playbookRemoteImageBadgeRefreshPending = false; });
 }
@@ -998,10 +998,10 @@ function requestRenderPlaybook() {
 
 if (typeof window !== "undefined") {
   window.addEventListener("play-images-ready", () => {
-    if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+    requestRenderPlaybook();
   });
   window.addEventListener("play-images-changed", () => {
-    if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+    requestRenderPlaybook();
   });
 }
 
