@@ -28,6 +28,39 @@ flow and one was a normal admin upload. This is strong recovery progress, not
 permission to mark every mapping complete: the remaining archived candidates
 still need their permanent-media-ID and visual/player-session verification.
 
+## Legacy media reconciliation closeout (2026-08-09)
+
+A read-only production D1 + media-health-monitor reconciliation on
+August 9, 2026 resolves the previously "pending" legacy-media items. No data was
+deleted; the findings below are recorded for explicit review before any cleanup.
+
+- **Authoritative table:** `team_media_manifests` (migration 0012) is the sole
+  live diagram authority. Every production read/write path
+  (`functions/_lib/image-media.js`, `functions/media/inventory.js`,
+  `functions/images/*`, `workers/media-health-monitor.js`) queries only it. It
+  holds **236 diagram pointers for the one team**; the `kind='clip'` count is
+  **0**.
+- **Dead legacy table:** the global `media_manifests` (migration 0010, 122 rows)
+  is referenced by **zero** live code and is a strict subset of
+  `team_media_manifests` (114 team rows have no global counterpart; 0 the other
+  way). It is superseded evidence only — a drop candidate pending an explicit,
+  separate decision. It was **not** dropped here.
+- **Orphaned R2 blobs:** the media health monitor has flagged **9**
+  `media_cleanup_candidates`, all `status='pending'`, each an old
+  replaced-diagram version under `.../plays/<mediaId>/diagram/<version>`. All 9
+  are confirmed unreferenced by any current manifest (team or global) and have
+  been stable across 106 scans. They are safe cleanup candidates pending
+  explicit review; **none were deleted**.
+- **Clips:** there are no published clips in D1 (0 `kind='clip'` manifests), so
+  the earlier "legacy clip inventory" concern has no live objects to reconcile.
+- **Other media tables:** `team_media_upload_receipts` = 0 (no pending uploads);
+  `media_health_runs` = 504 accumulated scan rows (a log-retention candidate,
+  not media bytes).
+
+Remaining action is a human decision on whether to (a) drop the dead
+`media_manifests` table and (b) delete the 9 confirmed-orphan R2 blobs. Both are
+deferred until explicitly approved.
+
 Later that day, a checksum-valid pre-data-plane workspace revision was found
 to contain 16 known browser-only backup fields alongside 43 team fields. The
 new strict route correctly rejected that mixed snapshot with a 502, but routine
@@ -123,7 +156,7 @@ They describe the remote account, not the un-deployed code below.
 | Teams and accounts | D1 has one team and 17 user rows. Migration 0011 assigned all 17 users to the verified primary team. | Team-scoped routes now have an explicit membership basis. |
 | D1 migrations | The remote ledger records 24 applied migrations and the release preflight passes. | The schema gate is satisfied for the deployed canonical release. |
 | Legacy diagram metadata | The old media_manifests table has 122 rows and now records checksums, but it remains a legacy evidence table. | It is not proof of a correct canonical mapping or player authority. |
-| New diagram table | team_media_manifests is present after migration 0012. | New team-scoped diagram routes have their required schema; legacy rows still need reconciliation. |
+| New diagram table | team_media_manifests is present after migration 0012. | New team-scoped diagram routes have their required schema; legacy rows reconciled on 2026-08-09 (see the closeout section above). |
 | Referential integrity | PRAGMA foreign_key_check was clean. | Preserve the database; this is not a corruption-rebuild exercise. |
 | Session state | A live users.sessions_invalid_before column was observed outside the tracked migrations. | Migration 0013 uses a separate state table rather than an unsafe ALTER TABLE. |
 | KV inventory | A remote Wrangler listing verified 47 current team-scoped clip manifests plus 3 historic display-derived play manifests. | Current manifests are authoritative; the three historic play tags are retained only until the verified permanent-ID migration finishes. |

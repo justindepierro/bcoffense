@@ -33,7 +33,7 @@ account at audit time, not the code currently in the working tree.
 | D1 team data | One team and 17 users were present; migration 0011 assigned all 17 users to the verified primary-team ID. | Scoped data now has explicit membership. |
 | D1 migration ledger | Migrations 0011–0017 are applied and deployment preflight passes. | The deployed Pages release is schema-compatible. |
 | Legacy diagram metadata | The legacy media_manifests table contains 122 rows with blank checksums and legacy media/plays/... object paths. | They are migration/recovery evidence, not verified current canonical diagram pointers. |
-| New manifest table | team_media_manifests exists after migration 0012. | New diagram routes have their production schema; legacy pointers remain quarantined until verified. |
+| New manifest table | team_media_manifests exists after migration 0012. | Authoritative as of 2026-08-09: 236 team diagram pointers, sole live source; global media_manifests confirmed unreferenced by live code. See MEDIA_CLOUD_CANONICAL_ROADMAP.md closeout. |
 | Referential integrity | PRAGMA foreign_key_check returned clean. | Preserve and migrate the data; do not rebuild or mass-delete it. |
 | Session invalidation | A sessions_invalid_before users column existed outside the tracked migration history. | Local migration 0013 creates separate state so it works on both known schema shapes. |
 | KV inventory | Direct Wrangler listing returned no keys, while an earlier in-app report showed clip/media records. | The namespace/binding/environment needs explicit reconciliation; neither count should drive cleanup. |
