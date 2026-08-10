@@ -606,7 +606,6 @@ async function reconcileScriptWithGamePlan() {
 
   markScriptDirty();
   if (typeof renderScript === "function") renderScript();
-  if (typeof updateScriptCount === "function") updateScriptCount();
   updateScriptReconcileStatus();
 
   const summary = [
@@ -621,7 +620,6 @@ async function reconcileScriptWithGamePlan() {
         script.splice(0, script.length, ...prev.script);
         markScriptDirty();
         if (typeof renderScript === "function") renderScript();
-        if (typeof updateScriptCount === "function") updateScriptCount();
         updateScriptReconcileStatus();
         showToast("Reconcile undone", { type: "info" });
       }
