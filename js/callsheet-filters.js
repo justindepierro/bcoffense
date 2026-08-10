@@ -53,7 +53,7 @@ function getWristbandNumberForPlay(play) {
 
   const wristbandPlays = callSheetSettings.loadedWristbandPlays;
   const persistentIds = new Set(
-    [play?.playbookId, play?.sourcePlayId, play?.originalPlayId, play?.wristbandLinkId]
+    [play?.playbookId, play?.sourcePlayId, play?.originalPlayId, play?.wristbandLinkId, play?.id]
       .map((value) => String(value || "").trim())
       .filter(Boolean),
   );
@@ -64,6 +64,7 @@ function getWristbandNumberForPlay(play) {
         wristbandPlay?.sourcePlayId,
         wristbandPlay?.originalPlayId,
         wristbandPlay?.wristbandLinkId,
+        wristbandPlay?.id,
       ]
         .map((value) => String(value || "").trim())
         .filter(Boolean);

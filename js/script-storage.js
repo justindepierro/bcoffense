@@ -1273,11 +1273,13 @@ function findPlayOnWristband(play) {
   if (!scriptWristband || !scriptWristband.cards) return null;
 
   const cellsPerCard = getWristbandRecordCellCount(scriptWristband);
-  // A Script row has its own mutable row id. These are the durable Playbook
-  // identities copied between Script, Wristband, Game Plan, and Call Sheet.
-  // Always use them before looking at display text.
+  // Durable Playbook identities are copied between Script, Wristband, Game Plan,
+  // and Call Sheet. Wristband cells keep that durable id in `id`, while script
+  // rows keep it in playbookId/sourcePlayId (their `id` is a mutable numeric row
+  // id). Include all of them so a cell's `id` still matches a script play's
+  // playbookId; a numeric row id never collides with a "play_"-style id.
   const getPersistentPlayIds = (candidate) => new Set(
-    [candidate?.playbookId, candidate?.sourcePlayId, candidate?.originalPlayId, candidate?.wristbandLinkId]
+    [candidate?.playbookId, candidate?.sourcePlayId, candidate?.originalPlayId, candidate?.wristbandLinkId, candidate?.id]
       .map((value) => String(value || "").trim())
       .filter(Boolean),
   );
