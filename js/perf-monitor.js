@@ -179,6 +179,107 @@
     );
   }
 
+  // ── Sampled field-data beacon (POST /api/telemetry) ───────────────────
+  var BEACON_URL = "/api/telemetry";
+  var SAMPLE_RATE = 1; // 100% while the roster is small; lower as traffic grows.
+  var MAX_BEACONS = 3; // cap sends per page session
+  var beaconsSent = 0;
+  var sampledIn = Math.random() < SAMPLE_RATE;
+
+  function deviceKind() {
+    try {
+      var w = (typeof window !== "undefined" && window.innerWidth) || 0;
+      if (w && w < 600) return "phone";
+      if (w && w < 1024) return "tablet";
+      return "desktop";
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function connectionKind() {
+    try {
+      var c = navigator.connection || navigator.webkitConnection;
+      return c && c.effectiveType ? String(c.effectiveType) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function navigationType() {
+    try {
+      var nav =
+        performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
+      return nav && nav.type ? String(nav.type) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function currentTab() {
+    try {
+      return typeof window.currentActiveTab === "string" ? window.currentActiveTab : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function hasAnyVital() {
+    return !!(vitals.LCP || vitals.INP || vitals.CLS || vitals.FCP || vitals.TTFB);
+  }
+
+  function buildBeaconPayload() {
+    var out = {
+      tab: currentTab(),
+      device: deviceKind(),
+      connection: connectionKind(),
+      navType: navigationType(),
+    };
+    ["LCP", "INP", "CLS", "FCP", "TTFB"].forEach(function (k) {
+      if (vitals[k]) out[k.toLowerCase()] = vitals[k].value;
+    });
+    if (vitals.LCP) out.lcpRating = vitals.LCP.rating;
+    if (vitals.INP) out.inpRating = vitals.INP.rating;
+    if (vitals.CLS) out.clsRating = vitals.CLS.rating;
+    return out;
+  }
+
+  // Uses sendBeacon (survives page unload); falls back to fetch keepalive.
+  function sendVitalsBeacon(force) {
+    if (!force && (!sampledIn || beaconsSent >= MAX_BEACONS)) return false;
+    if (!hasAnyVital()) return false;
+    var payload;
+    try {
+      payload = JSON.stringify(buildBeaconPayload());
+    } catch (e) {
+      return false;
+    }
+    try {
+      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+        var blob = new Blob([payload], { type: "application/json" });
+        if (navigator.sendBeacon(BEACON_URL, blob)) {
+          beaconsSent += 1;
+          return true;
+        }
+      }
+    } catch (e) {
+      /* fall through to fetch */
+    }
+    try {
+      fetch(BEACON_URL, {
+        method: "POST",
+        body: payload,
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        credentials: "same-origin",
+      });
+      beaconsSent += 1;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function summary() {
     return { vitals: vitals, targets: VITAL_TARGETS, recordCount: records.length };
   }
@@ -227,6 +328,9 @@
     records: function () {
       return records.slice();
     },
+    flush: function () {
+      return sendVitalsBeacon(true);
+    },
     summary: summary,
     report: report,
   };
@@ -237,6 +341,7 @@
     var finalize = function () {
       try {
         record("vitals:final", 0, summary().vitals);
+        sendVitalsBeacon(false);
       } catch (e) {
         /* nothing to finalize */
       }

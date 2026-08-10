@@ -16,6 +16,9 @@ function canManagedCoachUseWriteRoute(session, pathname) {
   // editing. Keep them usable for every managed coach.
   if (pathname === "/auth/logout" || pathname.startsWith("/api/account/") || pathname.startsWith("/api/push/")) return true;
 
+  // Anonymous performance telemetry is a benign, non-workspace diagnostic write.
+  if (pathname === "/api/telemetry") return true;
+
   // Collaboration is deliberately available in the default coach profile.
   if (pathname.startsWith("/api/questions")) return hasCoachPermission(session, "feature:questions");
   if (pathname.startsWith("/api/quiz-assignments")) return hasCoachPermission(session, "feature:quiz_assignments");
