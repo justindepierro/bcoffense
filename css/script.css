@@ -8870,6 +8870,102 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   background: transparent;
 }
 
+/* ============================================================
+   FIELD VIEW — read-optimized, big-touch card list for thumbing the script
+   on the field / in the weight room. Reuses the VIEW selector
+   (data-controls-mode="field"): editor chrome is hidden and the call goes
+   big. No render-path change — this is a presentation transform of the rows.
+   ============================================================ */
+#script[data-controls-mode="field"] .script-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+#script[data-controls-mode="field"] .script-item:not(.period-header) {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  grid-template-columns: none !important;
+  padding: 14px 16px;
+  margin-bottom: 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Hide the editor machinery — Field View is for reading, not building. */
+#script[data-controls-mode="field"] .script-item .script-select-tools,
+#script[data-controls-mode="field"] .script-item .hash-input,
+#script[data-controls-mode="field"] .script-item .defense-inputs,
+#script[data-controls-mode="field"] .script-item .play-controls,
+#script[data-controls-mode="field"] .script-item .play-readiness-widget,
+#script[data-controls-mode="field"] .script-item .script-player-grid,
+#script[data-controls-mode="field"] .script-item .script-call-edits,
+#script[data-controls-mode="field"] .script-item .play-readiness-badge,
+#script[data-controls-mode="field"] .script-item .source-status-badge {
+  display: none !important;
+}
+
+/* Small number chip above the call. */
+#script[data-controls-mode="field"] .script-item .play-num {
+  display: inline-flex !important;
+  align-self: flex-start;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Big, legible play call + a tidy chip row. */
+#script[data-controls-mode="field"] .script-item .play-call {
+  min-width: 0;
+}
+#script[data-controls-mode="field"] .script-item .play-call .full-call {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  line-height: 1.18;
+}
+#script[data-controls-mode="field"] .script-item .play-call .call-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+/* Period headers: bold, colored, sticky — name + meta only (hide editor bits). */
+#script[data-controls-mode="field"] .period-header-wrapper {
+  margin-top: 6px;
+}
+#script[data-controls-mode="field"] .script-item.period-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 8px 14px;
+}
+#script[data-controls-mode="field"] .script-item.period-header .ph-top,
+#script[data-controls-mode="field"] .script-item.period-header .ph-right,
+#script[data-controls-mode="field"] .script-item.period-header .ph-drag-handle,
+#script[data-controls-mode="field"] .script-item.period-header .ph-minutes-input {
+  display: none !important;
+}
+#script[data-controls-mode="field"] .script-item.period-header .ph-label-input {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  pointer-events: none;
+  min-width: 0;
+}
+#script[data-controls-mode="field"] .script-item.period-header .ph-meta-span {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  opacity: 0.92;
+}
+
 @media (max-width: 1180px) {
   #script .script-workbench-controls {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

@@ -26,7 +26,7 @@ function getScriptControlsMode() {
 }
 
 function normalizeScriptControlsMode(mode) {
-  return ["basic", "run", "advanced"].includes(mode) ? mode : "basic";
+  return ["basic", "run", "advanced", "field"].includes(mode) ? mode : "basic";
 }
 
 function setScriptControlsMode(mode) {
