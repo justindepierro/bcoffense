@@ -8923,12 +8923,25 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   align-items: stretch;
   gap: 6px;
   grid-template-columns: none !important;
+  position: relative;
   padding: 14px 16px;
   margin-bottom: 0;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: var(--shadow-xs);
+  cursor: pointer;
+}
+
+/* A quiet 'tap to present' cue on each card. */
+#script[data-controls-mode="field"] .script-item:not(.period-header)::after {
+  content: "\25B6";
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  pointer-events: none;
 }
 
 /* Hide the editor machinery — Field View is for reading, not building. */
@@ -8998,6 +9011,35 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   font-size: var(--font-size-sm);
   font-weight: 700;
   opacity: 0.92;
+}
+
+/* Full-bleed Field View: strip the builder chrome down to just the plays. */
+#script[data-controls-mode="field"] .script-header-panel,
+#script[data-controls-mode="field"] .script-play-rail,
+#script[data-controls-mode="field"] .script-section-head .script-stats-bar,
+#script[data-controls-mode="field"] .script-section-head .period-buttons,
+#script[data-controls-mode="field"] .script-section-head .script-toolbar,
+#script[data-controls-mode="field"] .script-library-toggle-btn,
+#script[data-controls-mode="field"] .script-timeline,
+#script[data-controls-mode="field"] .script-column-headers,
+#script[data-controls-mode="field"] .period-actions-toolbar {
+  display: none !important;
+}
+
+/* One column — no library rail. */
+#script[data-controls-mode="field"] .script-builder {
+  display: block !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+#script[data-controls-mode="field"] .script-list {
+  width: 100%;
+}
+
+/* Slim section head: just the title + the Build/Field toggle. */
+#script[data-controls-mode="field"] .script-section-head {
+  gap: 10px;
+  padding-bottom: 6px;
+  border-bottom: 0;
 }
 
 @media (max-width: 1180px) {

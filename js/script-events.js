@@ -183,6 +183,19 @@ function initScriptEvents() {
       e.stopPropagation();
     });
 
+    // Field View: tapping a play card (not a button/input) opens the play
+    // presentation so a coach can pull it up when a player has a question.
+    scriptEl.addEventListener("click", (e) => {
+      const scriptPanel = document.getElementById("script");
+      if (!scriptPanel || scriptPanel.dataset.controlsMode !== "field") return;
+      if (e.target.closest("button, a, input, select, textarea, [data-action]")) return;
+      const card = e.target.closest(".script-item:not(.period-header)");
+      if (!card) return;
+      const idx = parseInt(card.dataset.idx, 10);
+      if (Number.isNaN(idx)) return;
+      if (typeof openScriptPresentation === "function") openScriptPresentation(idx);
+    });
+
     scriptEl.addEventListener("change", (e) => {
       const el = e.target;
       const field = el.dataset.field;
