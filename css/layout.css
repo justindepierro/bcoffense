@@ -105,6 +105,17 @@ h1 {
   box-shadow: 0 2px 12px rgba(10, 18, 42, 0.2);
   border-bottom: 3px solid var(--color-accent);
 }
+
+/* Installed (standalone) app: keep the header + app rail clear of the iOS
+   status bar (clock/battery). iPad reports no safe-area inset, so fall back to
+   a sensible minimum. */
+body.display-mode-installed .app-header {
+  padding-top: max(env(safe-area-inset-top, 0px), 22px);
+}
+body.display-mode-installed.shell-tablet.is-landscape-screen.is-staff-mobile-shell
+  .ipad-rail {
+  padding-top: calc(max(env(safe-area-inset-top, 0px), 22px) + 8px);
+}
 .app-header-brand {
   display: flex;
   align-items: center;

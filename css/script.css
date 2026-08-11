@@ -8910,6 +8910,15 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   box-shadow: var(--shadow-xs);
 }
 
+/* Load-a-saved-script button lives in the slim Field View head only (Build mode
+   already has the full workbench + Actions menu). */
+.script-field-load-btn {
+  display: none;
+}
+#script[data-controls-mode="field"] .script-field-load-btn {
+  display: inline-flex;
+}
+
 #script[data-controls-mode="field"] .script-container {
   display: flex;
   flex-direction: column;
