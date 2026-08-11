@@ -7446,6 +7446,9 @@ body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
 body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
   #script
   .script-workbench-control-block {
+  flex: 0 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
   padding: 0;
   border: 0;
   background: transparent;
@@ -7462,11 +7465,15 @@ body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
   width: auto;
   gap: 5px;
 }
+/* Buttons keep their intrinsic width and wrap as whole units — never shrink
+   below their label (which would let text overflow onto the next button, the
+   overlap seen with iOS larger-text / zoom). */
 body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
   #script
   .script-workbench-primary-actions .btn {
+  flex: 0 0 auto;
   width: auto;
-  min-width: 0;
+  min-width: max-content;
   min-height: 34px;
   white-space: nowrap;
 }
