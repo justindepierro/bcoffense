@@ -8930,10 +8930,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   display: flex !important;
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
+  gap: 3px;
   grid-template-columns: none !important;
   position: relative;
-  padding: 14px 16px;
+  padding: 10px 44px 10px 16px;
   margin-bottom: 0;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
@@ -8957,13 +8957,46 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 #script[data-controls-mode="field"] .script-item .script-select-tools,
 #script[data-controls-mode="field"] .script-item .hash-input,
 #script[data-controls-mode="field"] .script-item .defense-inputs,
-#script[data-controls-mode="field"] .script-item .play-controls,
+#script[data-controls-mode="field"] .script-item .play-control-actions,
 #script[data-controls-mode="field"] .script-item .play-readiness-widget,
 #script[data-controls-mode="field"] .script-item .script-player-grid,
 #script[data-controls-mode="field"] .script-item .script-call-edits,
 #script[data-controls-mode="field"] .script-item .play-readiness-badge,
 #script[data-controls-mode="field"] .script-item .source-status-badge {
   display: none !important;
+}
+
+/* Keep just the reps as a compact chip (info without the editor clutter). */
+#script[data-controls-mode="field"] .script-item .play-controls {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#script[data-controls-mode="field"] .script-item .play-control-fields {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+#script[data-controls-mode="field"] .script-item .play-reps-input {
+  width: 44px;
+  min-height: 28px;
+  padding: 2px 6px;
+  text-align: center;
+  font-weight: 800;
+  border-radius: var(--radius-pill);
+}
+#script[data-controls-mode="field"] .script-item .play-control-fields::after {
+  content: "reps";
+  font-size: var(--font-size-2xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 /* Small number chip above the call. */
