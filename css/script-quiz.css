@@ -7478,11 +7478,23 @@ body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
   white-space: nowrap;
 }
 
-/* Keep the sort/search toolbar on ONE row so it can't overlap the period
-   list below it. */
+/* Keep the sort/search toolbar contained in the section head so it can't
+   overflow onto the period list below it. */
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-section-head {
+  flex: 0 0 auto;
+  height: auto;
+  min-height: 0;
+  align-content: flex-start;
+  row-gap: 6px;
+}
 body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
   #script
   .script-toolbar {
+  flex: 0 0 100%;
+  order: 20;
+  margin-top: 2px;
   grid-template-columns: max-content minmax(160px, 1fr) minmax(170px, 0.9fr);
   gap: 6px;
   padding: 0 0 4px;
