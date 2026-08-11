@@ -883,6 +883,17 @@ function ipadRailGo(tab) {
   closeIpadRailMore();
 }
 
+// The installed app has no address bar, so this is the one-tap "restart":
+// startup re-pulls the latest team workspace (playbook, scripts, media).
+function refreshAppData() {
+  try {
+    if (typeof showToast === "function") {
+      showToast("Refreshing latest data…", { duration: 1400 });
+    }
+  } catch (_) {}
+  setTimeout(() => location.reload(), 150);
+}
+
 queueMobileShellStateSync();
 document.addEventListener("DOMContentLoaded", () => {
   observeMobileShellChrome();
