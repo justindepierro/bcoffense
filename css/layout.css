@@ -795,6 +795,10 @@ body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tab {
     overflow: hidden;
     overscroll-behavior: none;
     padding-bottom: 0;
+    /* Reserve the left gutter for the fixed app rail so no panel (some break out
+       of #mainApp's padding) can render underneath it. */
+    padding-left: 78px;
+    box-sizing: border-box;
   }
   body.app-ready.shell-tablet.is-landscape-screen.is-staff-mobile-shell #mainApp {
     overflow: hidden;
@@ -825,7 +829,7 @@ body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tab {
     gap: 4px;
     position: fixed;
     left: 0;
-    top: var(--app-header-height, 56px);
+    top: 0;
     bottom: 0;
     width: 78px;
     padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
@@ -903,12 +907,9 @@ body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tab {
     color: var(--color-primary);
   }
 
-  /* Hide the website top tab bar and make room for the rail. */
+  /* Hide the website top tab bar (the rail replaces it). */
   body.shell-tablet.is-landscape-screen.is-staff-mobile-shell #mainApp .tabs {
     display: none;
-  }
-  body.shell-tablet.is-landscape-screen.is-staff-mobile-shell #mainApp {
-    padding-left: 78px;
   }
 
   /* "More" popover next to the rail. */
