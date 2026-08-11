@@ -2110,7 +2110,11 @@ body.play-presentation-mobile .pp-disc-drawer .disc-composer-actions .btn {
   gap: 2px;
   padding: 3px;
   border-radius: var(--radius-pill);
-  background: var(--color-white-alpha-15);
+  /* Solid dark pill so the zoom control is always legible over any diagram
+     (light or dark) instead of a near-invisible translucent ghost. */
+  background: color-mix(in srgb, var(--color-primary-dark) 88%, transparent);
+  border: 1px solid var(--color-white-alpha-25);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 38%);
   backdrop-filter: blur(6px);
   transition: opacity var(--transition-normal) ease;
 }
@@ -2122,10 +2126,10 @@ body.play-presentation-mobile .pp-disc-drawer .disc-composer-actions .btn {
   min-width: 42px;
   min-height: 42px;
   padding: 0 10px;
-  border: 1px solid var(--color-white-alpha-20);
+  border: 1px solid var(--color-white-alpha-25);
   border-radius: var(--radius-pill);
   color: var(--color-text-inverse);
-  background: transparent;
+  background: var(--color-white-alpha-15);
   font: inherit;
   font-size: var(--font-size-sm);
   font-weight: 900;
