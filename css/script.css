@@ -8876,6 +8876,40 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
    (data-controls-mode="field"): editor chrome is hidden and the call goes
    big. No render-path change — this is a presentation transform of the rows.
    ============================================================ */
+
+/* Prominent Build / Field switch (the discoverable way in, above the plays). */
+.script-surface-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-light);
+}
+.script-surface-toggle .script-surface-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 34px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+#script:not([data-controls-mode="field"]) .script-surface-toggle [data-surface="build"],
+#script[data-controls-mode="field"] .script-surface-toggle [data-surface="field"] {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-xs);
+}
+
 #script[data-controls-mode="field"] .script-container {
   display: flex;
   flex-direction: column;
