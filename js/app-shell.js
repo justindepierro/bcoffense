@@ -860,6 +860,29 @@ function observeMobileShellChrome() {
 // Run synchronously at parse time so is-mobile-screen is set before first paint.
 // The rAF version below handles subsequent resize/orientation changes.
 syncMobileShellState();
+
+// ── iPad app rail (left icon sidebar) runtime ──────────────────────────────
+// The rail buttons route through the standard showTab() nav; these helpers only
+// drive the "More" popover and let a selection close it.
+function toggleIpadRailMore() {
+  const el = document.getElementById("ipadRailMore");
+  if (!el) return;
+  const open = el.classList.toggle("visible");
+  document
+    .querySelector(".ipad-rail-more-btn")
+    ?.setAttribute("aria-expanded", open ? "true" : "false");
+}
+function closeIpadRailMore() {
+  document.getElementById("ipadRailMore")?.classList.remove("visible");
+  document
+    .querySelector(".ipad-rail-more-btn")
+    ?.setAttribute("aria-expanded", "false");
+}
+function ipadRailGo(tab) {
+  if (typeof showTab === "function") showTab(tab);
+  closeIpadRailMore();
+}
+
 queueMobileShellStateSync();
 document.addEventListener("DOMContentLoaded", () => {
   observeMobileShellChrome();

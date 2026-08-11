@@ -808,6 +808,163 @@ body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tab {
   }
 }
 
+/* ============================================================
+   iPad app rail (coach, landscape) — left icon sidebar navigation.
+   Replaces the website top tab bar with an app-style vertical rail.
+   ============================================================ */
+.ipad-rail,
+.ipad-rail-more-overlay {
+  display: none;
+}
+
+@media (min-width: 821px) {
+  body.shell-tablet.is-landscape-screen.is-staff-mobile-shell .ipad-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    position: fixed;
+    left: 0;
+    top: var(--app-header-height, 56px);
+    bottom: 0;
+    width: 78px;
+    padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    box-shadow: 2px 0 10px rgb(10 18 42 / 6%);
+    z-index: calc(var(--z-header) - 1);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  [data-theme="dark"]
+    body.shell-tablet.is-landscape-screen.is-staff-mobile-shell
+    .ipad-rail {
+    background: var(--color-surface-muted);
+  }
+
+  .ipad-rail .ipad-rail-spacer {
+    flex: 1 1 auto;
+  }
+
+  .ipad-rail .ipad-rail-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    width: 100%;
+    min-height: 60px;
+    padding: 8px 2px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition:
+      background var(--transition-fast),
+      color var(--transition-fast);
+  }
+
+  .ipad-rail .ipad-rail-icon {
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .ipad-rail .ipad-rail-label {
+    font-size: 10px;
+    line-height: 1.1;
+    text-align: center;
+    letter-spacing: 0.01em;
+  }
+
+  @media (hover: hover) {
+    .ipad-rail .ipad-rail-btn:hover {
+      background: var(--color-bg-hover-row);
+      color: var(--color-text);
+    }
+  }
+
+  .ipad-rail .ipad-rail-btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+  }
+
+  /* Active destination (driven by body[data-active-tab]). */
+  body[data-active-tab="script"] .ipad-rail [data-rail-tab="script"],
+  body[data-active-tab="gameplan"] .ipad-rail [data-rail-tab="gameplan"],
+  body[data-active-tab="callsheet"] .ipad-rail [data-rail-tab="callsheet"],
+  body[data-active-tab="playbook"] .ipad-rail [data-rail-tab="playbook"],
+  body[data-active-tab="wristband"] .ipad-rail [data-rail-tab="wristband"] {
+    background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+    color: var(--color-primary);
+  }
+
+  /* Hide the website top tab bar and make room for the rail. */
+  body.shell-tablet.is-landscape-screen.is-staff-mobile-shell #mainApp .tabs {
+    display: none;
+  }
+  body.shell-tablet.is-landscape-screen.is-staff-mobile-shell #mainApp {
+    padding-left: 78px;
+  }
+
+  /* "More" popover next to the rail. */
+  body.shell-tablet.is-landscape-screen.is-staff-mobile-shell
+    .ipad-rail-more-overlay.visible {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    background: rgb(10 18 42 / 18%);
+  }
+
+  .ipad-rail-more-overlay .ipad-rail-more-sheet {
+    position: fixed;
+    left: 84px;
+    bottom: 12px;
+    width: min(260px, 60vw);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .ipad-rail-more-overlay .ipad-rail-more-sheet button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 46px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text);
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  @media (hover: hover) {
+    .ipad-rail-more-overlay .ipad-rail-more-sheet button:hover {
+      background: var(--color-bg-hover-row);
+    }
+  }
+
+  .ipad-rail-more-overlay .ipad-rail-more-divider {
+    height: 1px;
+    margin: 4px 6px;
+    background: var(--color-border-light);
+  }
+}
+
 body[data-auth-role="player"] #dashboard.panel,
 body[data-auth-role="player"] #playbook.panel,
 body[data-auth-role="player"] #script.panel,
