@@ -79,6 +79,12 @@ body.play-presentation-open .quick-tools {
   box-shadow: var(--shadow-md);
 }
 
+/* Installed app: iPad reports no safe-area inset, so force the presentation
+   header below the iOS status bar (clock/battery) with a minimum. */
+body.display-mode-installed .pp-header {
+  padding-top: max(env(safe-area-inset-top, 0px), 22px);
+}
+
 .pp-header-context,
 .pp-header-actions,
 .pp-mode-switcher,
@@ -2103,7 +2109,10 @@ body.play-presentation-mobile .pp-disc-drawer .disc-composer-actions .btn {
 /* ---- M-042 Diagram zoom / pan --------------------------------------------- */
 .pp-zoom-controls {
   position: absolute;
-  right: max(var(--space-md), env(safe-area-inset-right, 0px));
+  /* Bottom-LEFT so the zoom pill never overlaps the bottom-right score rep
+     rail. */
+  left: max(var(--space-md), env(safe-area-inset-left, 0px));
+  right: auto;
   bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px));
   z-index: var(--z-dropdown);
   display: inline-flex;
