@@ -90,6 +90,23 @@ body.shell-tablet.is-staff-mobile-shell.is-landscape-screen .page-library-btn {
   display: inline-flex;
 }
 
+/* Playbook toolbar: the 6-track grid wraps into two rows on tablet, leaving a
+   big empty gap. Flow it as a single flex row (search absorbs the slack, the
+   utility + action buttons sit right) so it reads as one clean toolbar. */
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen #playbook .pb-top-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen #playbook .pb-search-wrap {
+  flex: 1 1 240px;
+  max-width: 520px;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen #playbook .pb-utility-group {
+  margin-left: auto;
+}
+
 @media (max-width: 600px) {
   .td-option-btn {
     padding: 10px 12px;

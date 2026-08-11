@@ -7359,6 +7359,175 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
   display: none !important;
 }
 
+/* ============================================================
+   Tablet LANDSCAPE Script workspace
+   Mirror the desktop workspace shell so the builder fills the panel, each
+   pane owns its own scroll, and the header collapses to a slim single bar
+   instead of a ~200px stack. Portrait keeps the base tablet block above.
+   ============================================================ */
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script.panel.active {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+/* Slim single-row header: title + date + workbench actions on one line. */
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-header-panel {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 5px 10px;
+  margin-bottom: 6px;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-header-top {
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen #script .script-label,
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-workbench-group-label {
+  display: none;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-title-group {
+  flex: 1 1 200px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-name-input {
+  flex: 0 1 220px;
+  width: auto;
+  min-width: 120px;
+  padding: 4px 8px;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-date-group {
+  flex: 0 0 auto;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-workbench-controls {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  grid-template-columns: none;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-workbench-control-block {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  gap: 6px;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-workbench-primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  grid-template-columns: none;
+  width: auto;
+  gap: 5px;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-workbench-primary-actions .btn {
+  width: auto;
+  min-width: 0;
+  min-height: 34px;
+  white-space: nowrap;
+}
+
+/* Keep the sort/search toolbar on ONE row so it can't overlap the period
+   list below it. */
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-toolbar {
+  grid-template-columns: max-content minmax(160px, 1fr) minmax(170px, 0.9fr);
+  gap: 6px;
+  padding: 0 0 4px;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-toolbar-left,
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-toolbar-center,
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-toolbar-right {
+  flex-wrap: nowrap;
+  gap: 5px;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-toolbar .toolbar-sort-select {
+  flex: 1 1 140px;
+  min-width: 100px;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-toolbar .script-search-input {
+  min-width: 120px;
+}
+
+/* Builder fills the remaining height; each pane scrolls internally. */
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-builder {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  align-items: stretch;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-play-rail.play-list {
+  height: 100%;
+  max-height: none;
+  overflow: auto;
+}
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
+  #script
+  .script-list {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 /* Script-owned responsive layout: shared responsive.css must not decide
    this workspace's rail, action, or packet geometry. */
 @media (max-width: 1024px) {
