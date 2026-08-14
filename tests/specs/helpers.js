@@ -12,6 +12,13 @@ const TEST_ROLE = process.env.BCOFFENSE_ROLE || "";
 const COACH_USER = process.env.BCOFFENSE_USER || TEST_ROLE || "coach";
 const COACH_PASS = process.env.BCOFFENSE_PASS || "password";
 const E2E_LOCAL = process.env.BCOFFENSE_E2E_LOCAL === "1";
+const E2E_LOCAL_DIRECT_LOGIN = E2E_LOCAL && process.env.BCOFFENSE_E2E_LOCAL_DIRECT_LOGIN === "1";
+const LOCAL_E2E_BASE_URL = process.env.BASE_URL || `http://127.0.0.1:${process.env.BCOFFENSE_E2E_PORT || "4177"}`;
+// `completeAuthenticatedLogin` can wait up to 14 seconds for the authorized
+// workspace bootstrap. Leave a bounded allowance for the exit animation and
+// a loaded local browser, while keeping this narrower than the 45 second
+// per-test budget.
+const AUTH_LOGIN_COMPLETE_TIMEOUT = 20_000;
 
 const RUNTIME_IGNORE_PATTERNS = [
   /ResizeObserver loop/i,
@@ -107,16 +114,50 @@ async function ensureLocalWorkspaceReady(page) {
  * @param {import('@playwright/test').Page} page
  */
 async function login(page, opts = {}) {
+  const role = opts.role || TEST_ROLE || COACH_USER || "coach";
+  const username = opts.username || (["admin", "coach", "player"].includes(role) ? role : COACH_USER);
+  const password = opts.password || COACH_PASS;
+
+  // The iPad release smoke exercises app surfaces, not the visual login form.
+  // Its loopback server exposes the same auth endpoint and a browser-context
+  // request shares that real session cookie with the next navigation. This
+  // removes WebKit visual-viewport/focus animation from unrelated test setup
+  // while preserving authenticated app startup, role gating, and all product
+  // assertions. Other local and production test runs retain UI login.
+  if (E2E_LOCAL_DIRECT_LOGIN) {
+    const response = await page.context().request.post(
+      new URL("/auth/login", LOCAL_E2E_BASE_URL).toString(),
+      { data: { username, password } },
+    );
+    if (!response.ok()) {
+      throw new Error(`Local test login failed with HTTP ${response.status()}.`);
+    }
+    await page.goto("/");
+    const authenticated = await page.waitForFunction(
+      (expectedUser) => {
+        const user = window.getCurrentAuthUser?.();
+        return user?.username === expectedUser &&
+          !document.body.classList.contains("auth-locked") &&
+          !document.getElementById("authLoginOverlay");
+      },
+      username,
+      { timeout: AUTH_LOGIN_COMPLETE_TIMEOUT },
+    )
+      .then(() => true)
+      .catch(() => false);
+    if (!authenticated) {
+      throw new Error("Local test session did not initialize in the app shell.");
+    }
+    await ensureLocalWorkspaceReady(page);
+    return;
+  }
+
   await page.goto("/");
   await page
     .waitForSelector('#authLoginOverlay, #mainApp:not(.hidden), form#loginForm, input[name="username"]', {
       timeout: 10_000,
     })
     .catch(() => {});
-
-  const role = opts.role || TEST_ROLE || COACH_USER || "coach";
-  const username = opts.username || (["admin", "coach", "player"].includes(role) ? role : COACH_USER);
-  const password = opts.password || COACH_PASS;
 
   if (await page.locator("#mainApp:not(.hidden)").count() > 0) {
     const locked = await page.evaluate(() => document.body?.classList.contains("auth-locked")).catch(() => false);
@@ -132,16 +173,29 @@ async function login(page, opts = {}) {
     const roleButton = appLogin.locator(`[data-login-role="${role}"]`);
     if (await roleButton.count() > 0) await roleButton.click();
     await appLogin.locator("#authUsername").fill(username);
-    await appLogin.locator("#authPassword").fill(password);
-    await appLogin.locator("#authLoginSubmit").click();
-    const hidden = await appLogin.waitFor({ state: "hidden", timeout: 10_000 })
+    const passwordInput = appLogin.locator("#authPassword");
+    await passwordInput.fill(password);
+    const submitButton = appLogin.locator("#authLoginSubmit");
+    await expect(submitButton).toBeEnabled();
+    // iPad WebKit can still be settling its visual-viewport scroll after an
+    // input receives focus. A pointer click waits for the submit button's
+    // geometry to stop moving, while a keyboard event can race the mobile
+    // browser's focus transition. `requestSubmit()` dispatches the same native
+    // form submit event without coupling local setup to either transient UI.
+    await appLogin.locator("#authLoginForm").evaluate((form) => form.requestSubmit());
+    // Wait on the app's actual completed-auth state rather than WebKit's
+    // locator visibility bookkeeping while the overlay is being removed.
+    const hidden = await page.waitForFunction(
+      () => !document.body.classList.contains("auth-locked") && !document.getElementById("authLoginOverlay"),
+      undefined,
+      { timeout: AUTH_LOGIN_COMPLETE_TIMEOUT },
+    )
       .then(() => true)
       .catch(() => false);
     if (!hidden) {
-      const message = await appLogin
-        .locator(".auth-login-error, [aria-live='assertive'], [role='alert']")
-        .first()
-        .textContent()
+      const message = await page.evaluate(() => (
+        document.querySelector("#authLoginOverlay .auth-login-error, #authLoginOverlay [aria-live='assertive'], #authLoginOverlay [role='alert']")?.textContent || ""
+      ))
         .catch(() => "");
       throw new Error(
         `Login did not complete${message ? `: ${message.trim()}` : ""}. ` +

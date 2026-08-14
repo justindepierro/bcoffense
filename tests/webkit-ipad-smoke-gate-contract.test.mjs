@@ -4,10 +4,12 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
-const [packageJson, testsPackageJson, playwrightConfig, qualityWorkflow, productionWorkflow, notificationWorkflow, releaseGate, pagesDeploy, workerDeploy] = await Promise.all([
+const [packageJson, testsPackageJson, playwrightConfig, smokeLauncher, helpers, qualityWorkflow, productionWorkflow, notificationWorkflow, releaseGate, pagesDeploy, workerDeploy] = await Promise.all([
   source("package.json"),
   source("tests/package.json"),
   source("tests/playwright.config.js"),
+  source("tests/run-local-webkit-ipad-smoke.mjs"),
+  source("tests/specs/helpers.js"),
   source(".github/workflows/quality.yml"),
   source(".github/workflows/deploy-production.yml"),
   source(".github/workflows/deploy-notification-worker.yml"),
@@ -50,15 +52,44 @@ assert(
   qualityCommand.indexOf("npm run test:tablet") < qualityCommand.indexOf("npm run test:webkit:ipad"),
   "the WebKit smoke supplements the existing Chromium tablet matrix instead of replacing it",
 );
-assert.match(smokeCommand, /^BCOFFENSE_E2E_LOCAL=1 playwright test\b/, "the WebKit smoke uses the local authenticated app harness");
-assert.match(smokeCommand, /--project=ipad-portrait/, "the WebKit smoke covers iPad portrait");
-assert.match(smokeCommand, /--project=ipad-landscape/, "the WebKit smoke covers iPad landscape");
-assert.match(smokeCommand, /--workers=1/, "the WebKit smoke serializes shared local browser startup for stable release evidence");
-assert.match(smokeCommand, /--retries=0/, "a WebKit regression fails the first required smoke attempt");
-assert.doesNotMatch(smokeCommand, /--(?:pass-with-no-tests|grep|headed|ui)\b/, "the WebKit smoke has no advisory or interactive bypass");
+assert.equal(smokeCommand, "node run-local-webkit-ipad-smoke.mjs", "the WebKit smoke uses its isolated local launcher");
+assert.match(smokeLauncher, /BCOFFENSE_E2E_LOCAL:\s*"1"/, "the WebKit smoke uses the local authenticated app harness");
+assert.match(smokeLauncher, /BCOFFENSE_E2E_LOCAL_DIRECT_LOGIN:\s*"1"/, "the WebKit smoke avoids visual-login setup races through the local authenticated harness");
+assert.match(smokeLauncher, /BASE_URL:\s*baseUrl/, "the WebKit smoke pins Playwright to its owned loopback server");
+assert.match(smokeLauncher, /findFreeLoopbackPort/, "the WebKit smoke avoids fixed-port stale-server reuse");
+assert.match(smokeLauncher, /SMOKE_BATCHES/, "the WebKit smoke bounds the known late-run WebKit check to a fresh strict batch");
+assert.match(
+  smokeLauncher,
+  /const SMOKE_BATCHES = \[\s*\["specs\/19-player-presentation-diagram-cache\.spec\.js"\]/,
+  "the presentation-cache regression runs first in its own fresh WebKit process",
+);
+assert.match(smokeLauncher, /child\.once\("close"/, "the next WebKit batch waits for Playwright's process streams to close");
+assert.match(smokeLauncher, /waitForWebKitProcessSettlement/, "the launcher gives native WebKit a bounded cleanup turn between strict batches");
+assert.match(smokeLauncher, /if \(exitCode !== 0\) break/, "a failed strict WebKit batch stops the gate instead of retrying or continuing");
+assert.match(smokeLauncher, /"--project=ipad-portrait"/, "the WebKit smoke covers iPad portrait");
+assert.match(smokeLauncher, /"--project=ipad-landscape"/, "the WebKit smoke covers iPad landscape");
+assert.match(smokeLauncher, /"--workers=1"/, "the WebKit smoke serializes shared local browser startup for stable release evidence");
+assert.match(smokeLauncher, /"--retries=0"/, "a WebKit regression fails the first required smoke attempt");
+assert.doesNotMatch(smokeLauncher, /--(?:pass-with-no-tests|grep|headed|ui)\b/, "the WebKit smoke has no advisory or interactive bypass");
 for (const spec of requiredSpecs) {
-  assert.match(smokeCommand, new RegExp(`specs/${spec.replace(".", "\\.")}`), `the WebKit smoke includes ${spec}`);
+  assert.match(smokeLauncher, new RegExp(`specs/${spec.replace(".", "\\.")}`), `the WebKit smoke includes ${spec}`);
 }
+
+assert.match(
+  helpers,
+  /form\.requestSubmit\(\)/,
+  "local iPad test setup submits the native auth form without waiting on transient visual-viewport button movement",
+);
+assert.match(
+  helpers,
+  /AUTH_LOGIN_COMPLETE_TIMEOUT = 20_000/,
+  "the local login wait covers the app's bounded authorized-workspace bootstrap",
+);
+assert.match(
+  helpers,
+  /E2E_LOCAL_DIRECT_LOGIN[\s\S]*?page\.context\(\)\.request\.post/,
+  "the WebKit local harness creates a real loopback session without visual form actionability",
+);
 
 assert.match(
   playwrightConfig,

@@ -8,7 +8,7 @@
     "test:local":  "BCOFFENSE_E2E_LOCAL=1 playwright test --project=chromium-desktop",
     "test:local:phone": "BCOFFENSE_E2E_LOCAL=1 playwright test --project=iphone --project=phone-narrow",
     "test:local:ipad":  "BCOFFENSE_E2E_LOCAL=1 playwright test --project=ipad-portrait --project=ipad-landscape",
-    "test:local:webkit-ipad-smoke": "BCOFFENSE_E2E_LOCAL=1 playwright test --project=ipad-portrait --project=ipad-landscape --workers=1 --retries=0 specs/04-responsive.spec.js specs/11-playbook-tablet-drawers.spec.js specs/12-tablet-blocking-layers.spec.js specs/13-wristband-tablet-rail.spec.js specs/15-gameplan-tablet-rail.spec.js specs/16-tablet-usable-height-layers.spec.js specs/19-player-presentation-diagram-cache.spec.js specs/23-reorder-modal-layers.spec.js specs/24-playbook-deferred-layers.spec.js specs/25-player-playbook-tablet-touch.spec.js specs/26-playbook-print-layer.spec.js specs/28-callsheet-ipad-portrait-controls.spec.js specs/29-compact-tablet-quick-tools.spec.js specs/30-player-ipad-header.spec.js specs/31-player-ipad-study-surface.spec.js",
+    "test:local:webkit-ipad-smoke": "node run-local-webkit-ipad-smoke.mjs",
     "test:local:all":   "BCOFFENSE_E2E_LOCAL=1 playwright test --project=chromium-desktop --project=ipad-portrait --project=ipad-landscape --project=iphone --project=phone-narrow",
     "test:local:hydration": "node run-local-hydration.mjs",
     "test:all":    "playwright test",
