@@ -4,6 +4,44 @@ const PB_BALANCE_DIMENSIONS = [
   { key: "basePlay", label: "Concept", empty: "No Base Play" },
 ];
 
+// The report family is deferred, but these are still real blocking dialogs.
+// Keep their layer lifecycle local to the family so report content can remain
+// independent of the app-wide modal helpers and every report has one named
+// scroll owner on tablet touch shells.
+function _pbDiscardReportOverlay(overlayId, layerId) {
+  const existing = document.getElementById(overlayId);
+  if (!existing) return;
+  if (typeof closeLayer === "function") {
+    closeLayer(layerId, { returnFocus: false });
+  }
+  existing.remove();
+}
+
+function _pbOpenReportLayer(overlay, options) {
+  const { layerId, scrollElement, initialFocus, onEscape } = options;
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: layerId,
+      scrollElement,
+      blocking: true,
+      safeArea: true,
+      initialFocus,
+      onEscape,
+    });
+    return;
+  }
+  if (typeof trapFocus === "function") trapFocus(overlay);
+  initialFocus?.focus?.({ preventScroll: true });
+}
+
+function _pbCloseReportLayer(overlay, layerId, options = {}) {
+  if (typeof closeLayer === "function") {
+    closeLayer(layerId, { returnFocus: options.returnFocus !== false });
+  }
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.remove(), 180);
+}
+
 function _pbBalanceHasActiveFilters() {
   const checkedIds = ["pbGamePlanFilter", "pbJvFilter"];
   const selectIds = [
@@ -190,7 +228,7 @@ function openPlaybookBalanceReport() {
   const [personnel, formation, concept] = analysis.dimensions;
   const signals = _pbBalanceSignals(analysis);
 
-  document.getElementById("playbookBalanceOverlay")?.remove();
+  _pbDiscardReportOverlay("playbookBalanceOverlay", "playbook-balance-report");
   const overlay = document.createElement("div");
   overlay.className = "custom-modal-overlay visible";
   overlay.id = "playbookBalanceOverlay";
@@ -239,21 +277,26 @@ function openPlaybookBalanceReport() {
         ${scope.hasFilters ? '<button type="button" class="btn btn-sm" data-action="clearPlaybookBalanceFilters">Clear Playbook Filters</button>' : ""}
         <button type="button" class="btn btn-sm" data-action="closePlaybookBalanceReport">Done</button>
       </div>
-    </div>`;
+  </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  const closeButton = overlay.querySelector(".modal-close");
+  _pbOpenReportLayer(overlay, {
+    layerId: "playbook-balance-report",
+    scrollElement: overlay.querySelector(".pb-balance-body") || overlay,
+    initialFocus: closeButton || overlay,
+    onEscape: () => closePlaybookBalanceReport(),
+  });
 }
 
-function closePlaybookBalanceReport() {
+function closePlaybookBalanceReport(options = {}) {
   const overlay = document.getElementById("playbookBalanceOverlay");
   if (!overlay) return;
-  overlay.classList.remove("visible");
-  setTimeout(() => overlay.remove(), 180);
+  _pbCloseReportLayer(overlay, "playbook-balance-report", options);
 }
 
 function clearPlaybookBalanceFilters() {
   if (typeof clearFilters === "function") clearFilters();
-  closePlaybookBalanceReport();
+  closePlaybookBalanceReport({ returnFocus: false });
   requestAnimationFrame(() => openPlaybookBalanceReport());
 }
 
@@ -546,7 +589,7 @@ function openPlaybookSituationCoverage() {
   const analysis = _pbSituationAnalyze(scope.plays);
   const signals = _pbSituationSignals(analysis);
 
-  document.getElementById("playbookSituationOverlay")?.remove();
+  _pbDiscardReportOverlay("playbookSituationOverlay", "playbook-situation-report");
   const overlay = document.createElement("div");
   overlay.className = "custom-modal-overlay visible";
   overlay.id = "playbookSituationOverlay";
@@ -594,21 +637,26 @@ function openPlaybookSituationCoverage() {
         ${scope.hasFilters ? '<button type="button" class="btn btn-sm" data-action="clearPlaybookSituationFilters">Clear Playbook Filters</button>' : ""}
         <button type="button" class="btn btn-sm" data-action="closePlaybookSituationCoverage">Done</button>
       </div>
-    </div>`;
+  </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  const closeButton = overlay.querySelector(".modal-close");
+  _pbOpenReportLayer(overlay, {
+    layerId: "playbook-situation-report",
+    scrollElement: overlay.querySelector(".pb-balance-body") || overlay,
+    initialFocus: closeButton || overlay,
+    onEscape: () => closePlaybookSituationCoverage(),
+  });
 }
 
-function closePlaybookSituationCoverage() {
+function closePlaybookSituationCoverage(options = {}) {
   const overlay = document.getElementById("playbookSituationOverlay");
   if (!overlay) return;
-  overlay.classList.remove("visible");
-  setTimeout(() => overlay.remove(), 180);
+  _pbCloseReportLayer(overlay, "playbook-situation-report", options);
 }
 
 function clearPlaybookSituationFilters() {
   if (typeof clearFilters === "function") clearFilters();
-  closePlaybookSituationCoverage();
+  closePlaybookSituationCoverage({ returnFocus: false });
   requestAnimationFrame(() => openPlaybookSituationCoverage());
 }
 
@@ -755,7 +803,7 @@ function openPlaybookTouchReport() {
   const topName = report.topPlayer?.name || "None";
   const topPct = report.topPlayer ? `${report.topPlayer.pct.toFixed(0)}%` : "0%";
 
-  document.getElementById("playbookTouchOverlay")?.remove();
+  _pbDiscardReportOverlay("playbookTouchOverlay", "playbook-touch-report");
   const overlay = document.createElement("div");
   overlay.className = "custom-modal-overlay visible";
   overlay.id = "playbookTouchOverlay";
@@ -812,21 +860,26 @@ function openPlaybookTouchReport() {
         ${scope.hasFilters ? '<button type="button" class="btn btn-sm" data-action="clearPlaybookTouchFilters">Clear Playbook Filters</button>' : ""}
         <button type="button" class="btn btn-sm" data-action="closePlaybookTouchReport">Done</button>
       </div>
-    </div>`;
+  </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  const closeButton = overlay.querySelector(".modal-close");
+  _pbOpenReportLayer(overlay, {
+    layerId: "playbook-touch-report",
+    scrollElement: overlay.querySelector(".pb-balance-body") || overlay,
+    initialFocus: closeButton || overlay,
+    onEscape: () => closePlaybookTouchReport(),
+  });
 }
 
-function closePlaybookTouchReport() {
+function closePlaybookTouchReport(options = {}) {
   const overlay = document.getElementById("playbookTouchOverlay");
   if (!overlay) return;
-  overlay.classList.remove("visible");
-  setTimeout(() => overlay.remove(), 180);
+  _pbCloseReportLayer(overlay, "playbook-touch-report", options);
 }
 
 function clearPlaybookTouchFilters() {
   if (typeof clearFilters === "function") clearFilters();
-  closePlaybookTouchReport();
+  closePlaybookTouchReport({ returnFocus: false });
   requestAnimationFrame(() => openPlaybookTouchReport());
 }
 

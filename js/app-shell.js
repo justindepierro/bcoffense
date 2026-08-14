@@ -244,12 +244,14 @@ function removeMobileShellCssVar(root, name) {
   root.style.removeProperty(name);
 }
 
-function isDesktopShellPanelScrollOwner() {
+// A panel shell can be desktop or the roomy staff-tablet landscape workspace.
+// Both must keep document/#mainApp scrolling at zero while their active panel
+// owns vertical scroll.
+function isPanelShellScrollOwner() {
   const body = document.body;
   if (!body) return false;
   return (
     body.classList.contains("app-ready") &&
-    !body.classList.contains("is-mobile-screen") &&
     !body.classList.contains("app-layer-locked") &&
     body.dataset.scrollOwner === "panel"
   );
@@ -329,7 +331,7 @@ function traceDesktopShellScrollRepair(reason, snapshot) {
 }
 
 function repairDesktopDocumentScroll(reason = "scroll") {
-  if (!isDesktopShellPanelScrollOwner()) return false;
+  if (!isPanelShellScrollOwner()) return false;
   const before = getDocumentScrollPosition();
   // Also check #mainApp — scrollIntoView on elements inside overflow:hidden
   // containers can set mainApp.scrollTop which hides the tab bar.
@@ -369,17 +371,17 @@ function queueDesktopDocumentScrollRepair(reason = "scroll") {
 // scrollIntoView walks EVERY scrollable ancestor including #mainApp (overflow:
 // hidden but scriptable), which pushes the desktop tab bar off-screen. This
 // helper scrolls the nearest genuine inner scroll container instead, and never
-// touches the shell. On mobile (document is the scroll owner) it falls back to
-// native scrollIntoView, which is safe there. If no inner container is found on
-// desktop it no-ops — a row that fails to auto-scroll is a far better failure
-// than a vanished tab bar.
+// touches the shell. When the document is the owner it falls back to native
+// scrollIntoView, which is safe there. If no inner container is found in a
+// panel shell it no-ops — a row that fails to auto-scroll is a far better
+// failure than a vanished tab bar.
 function scrollElementWithinPanel(el, opts = {}) {
   if (!el || typeof el.getBoundingClientRect !== "function") return;
   const behavior = opts.behavior || "smooth";
   const block = opts.block || "nearest";
 
-  const isDesktopPanel = isDesktopShellPanelScrollOwner();
-  if (!isDesktopPanel) {
+  const isPanelShell = isPanelShellScrollOwner();
+  if (!isPanelShell) {
     try {
       el.scrollIntoView({ behavior, block });
     } catch (_e) {
@@ -421,7 +423,7 @@ function scrollElementWithinPanel(el, opts = {}) {
     }
     container = container.parentElement;
   }
-  // No inner scroll container found on desktop — intentionally do nothing.
+  // No inner scroll container found in a panel shell — intentionally do nothing.
 }
 
 if (typeof window !== "undefined") {
@@ -548,15 +550,84 @@ function isLikelyIPadOSDevice() {
   );
 }
 
+// The visual viewport is deliberately *not* the source of truth for device
+// class or physical orientation. On iPadOS it shrinks for the software
+// keyboard, which previously let an editing iPad turn into a phone (or a
+// portrait iPad turn into landscape) mid-session. Keep the layout viewport for
+// shell sizing and the visual viewport for usable-height/keyboard treatment.
+function getMobileShellLayoutViewport() {
+  const root = document.documentElement;
+  return {
+    width: Math.round(window.innerWidth || root?.clientWidth || 0),
+    height: Math.round(window.innerHeight || root?.clientHeight || 0),
+  };
+}
+
+function getMobileShellVisualViewport(layoutViewport) {
+  const viewport = window.visualViewport;
+  return {
+    width: Math.round(viewport?.width || layoutViewport.width || 0),
+    height: Math.round(viewport?.height || layoutViewport.height || 0),
+    offsetTop: Math.round(viewport?.offsetTop || 0),
+  };
+}
+
+function getMobileShellDeviceViewport(layoutViewport) {
+  const width = Math.round(Number(window.screen?.width) || 0);
+  const height = Math.round(Number(window.screen?.height) || 0);
+  if (width > 0 && height > 0) return { width, height };
+  return layoutViewport;
+}
+
+function getStableShellOrientation(layoutViewport, deviceViewport, useDeviceOrientation) {
+  if (useDeviceOrientation) {
+    const type = String(window.screen?.orientation?.type || "");
+    if (type.includes("landscape")) return "landscape";
+    if (type.includes("portrait")) return "portrait";
+
+    const legacyOrientation = Number(window.orientation);
+    if (Number.isFinite(legacyOrientation)) {
+      return Math.abs(legacyOrientation) === 90 ? "landscape" : "portrait";
+    }
+
+    if (deviceViewport.width && deviceViewport.height) {
+      return deviceViewport.width > deviceViewport.height ? "landscape" : "portrait";
+    }
+  }
+  return layoutViewport.width > layoutViewport.height ? "landscape" : "portrait";
+}
+
+function getMobileShellKeyboardInset(layoutViewport, visualViewport) {
+  return Math.max(
+    0,
+    layoutViewport.height - visualViewport.height - Math.max(0, visualViewport.offsetTop || 0),
+  );
+}
+
+// This is the responsive.css range where study navigation is bottom-anchored:
+// the phone primary nav owns the narrowest view and the main tab strip owns
+// the remaining narrow/coarse and short views. Wider tablet portals retain the
+// normal sticky top tabs, so their tab height must continue to participate in
+// content and sticky-offset calculations.
+const STUDY_BOTTOM_NAV_MEDIA_QUERY =
+  "(max-width: 640px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px)";
+
+function usesStudyBottomNavigation(isStudyPortal, isMobile) {
+  if (!isStudyPortal || !isMobile) return false;
+  return Boolean(window.matchMedia?.(STUDY_BOTTOM_NAV_MEDIA_QUERY)?.matches);
+}
+
 function syncMobileShellState() {
   _mobileShellFrame = 0;
-  const viewport = window.visualViewport;
-  const width =
-    Math.round(viewport?.width || window.innerWidth || document.documentElement.clientWidth || 0);
-  const height =
-    Math.round(viewport?.height || window.innerHeight || document.documentElement.clientHeight || 0);
-  const shortSide = Math.min(width, height);
-  const longSide = Math.max(width, height);
+  const layoutViewport = getMobileShellLayoutViewport();
+  const visualViewport = getMobileShellVisualViewport(layoutViewport);
+  const deviceViewport = getMobileShellDeviceViewport(layoutViewport);
+  const width = layoutViewport.width;
+  const height = layoutViewport.height;
+  const visualWidth = visualViewport.width;
+  const visualHeight = visualViewport.height;
+  const shortSide = Math.min(deviceViewport.width, deviceViewport.height);
+  const longSide = Math.max(deviceViewport.width, deviceViewport.height);
   const root = document.documentElement;
   const body = document.body;
   if (!body) return;
@@ -564,15 +635,36 @@ function syncMobileShellState() {
   const isTouch =
     window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
   const isIPadOS = isLikelyIPadOSDevice();
+  const isTouchPhone =
+    (isTouch || isIPadOS) && shortSide <= 560;
   const isTouchTablet =
-    (isTouch || isIPadOS) && shortSide <= 1024 && longSide <= 1366;
+    (isTouch || isIPadOS) && shortSide > 560 && shortSide <= 1024 && longSide <= 1366;
   const isMobile =
     width <= 768 ||
-    isTouchTablet;
-  const isPhone = shortSide <= 560;
-  const isCompact = shortSide <= 420;
-  const isShort = height <= 620;
-  const isLandscape = width > height;
+    isTouchTablet ||
+    isTouchPhone;
+  const phoneShortSide = isTouch || isIPadOS
+    ? shortSide
+    : Math.min(width, height);
+  const isPhone = phoneShortSide <= 560;
+  const isCompact = phoneShortSide <= 420;
+  const keyboardInset = getMobileShellKeyboardInset(layoutViewport, visualViewport);
+  const isKeyboardOpen = keyboardInset > 80;
+  const isShort = visualHeight <= 620;
+  const hardwareOrientation = getStableShellOrientation(
+    layoutViewport,
+    deviceViewport,
+    Boolean(isTouch || isIPadOS),
+  );
+  // Screen Orientation identifies the physical iPad rotation, but Stage
+  // Manager/Split View can leave a landscape device with a portrait-width app
+  // window. That window must use the compact/document profile instead of
+  // activating the 78px coach rail. Width is stable through keyboard changes;
+  // deliberately do not use visual height here.
+  const isTabletCompactLayout =
+    isTouchTablet && hardwareOrientation === "landscape" && width < 821;
+  const orientation = isTabletCompactLayout ? "portrait" : hardwareOrientation;
+  const isLandscape = orientation === "landscape";
   const shellPhone = isPhone;
   const shellCompact = isMobile && (shellPhone || (!isTouchTablet && width <= 768));
   const shellTablet = isMobile && !shellPhone && (width <= 1024 || isTouchTablet);
@@ -586,6 +678,7 @@ function syncMobileShellState() {
   const authRole = body.dataset.authRole || "";
   const isStudyPortal =
     authRole === "player" || body.dataset.authStudyPortal === "true";
+  const playerBottomNavActive = usesStudyBottomNavigation(isStudyPortal, isMobile);
   const displayMode = getAppDisplayMode();
   const fullscreenApiActive = Boolean(document.fullscreenElement);
   const isStandaloneDisplay =
@@ -598,6 +691,16 @@ function syncMobileShellState() {
     body.dataset.activeTab ||
     (typeof currentActiveTab !== "undefined" ? currentActiveTab : "");
   const previousShellSize = body.dataset.shellSize || "";
+  const previousShellOrientation = body.dataset.shellOrientation || "";
+  const layoutProfile = shellTablet
+    ? isTabletCompactLayout
+      ? "tablet-compact"
+      : `tablet-${orientation}`
+    : shellPhone
+      ? "phone"
+      : shellCompact
+        ? "compact"
+        : "desktop";
   const header = document.querySelector(".app-header");
   const tabs = document.querySelector(".tabs");
   const coachDock = document.getElementById("mobileCoachDock");
@@ -613,17 +716,27 @@ function syncMobileShellState() {
   const stateKey = [
     width,
     height,
+    visualWidth,
+    visualHeight,
+    keyboardInset,
+    deviceViewport.width,
+    deviceViewport.height,
     headerHeight,
     tabsHeight,
     coachDockHeight,
     isTouch ? "touch" : "pointer",
     authRole,
     isStudyPortal ? "study" : "workspace",
+    playerBottomNavActive ? "study-bottom-nav" : "study-top-nav",
     activeTab,
     isMobile ? "mobile" : "desktop",
     shellSize,
     appDevice,
+    layoutProfile,
+    hardwareOrientation,
+    isTabletCompactLayout ? "tablet-compact" : "tablet-roomy",
     isShort ? "short" : "tall",
+    isKeyboardOpen ? "keyboard" : "no-keyboard",
     isLandscape ? "landscape" : "portrait",
     displayMode,
     fullscreenApiActive ? "fullscreen-api" : "windowed",
@@ -634,10 +747,12 @@ function syncMobileShellState() {
   if (stateKey === _mobileShellLastStateKey) return;
   _mobileShellLastStateKey = stateKey;
 
-  setMobileShellCssVar(root, "--app-vh", `${Math.max(height * 0.01, 1)}px`);
-  setMobileShellCssVar(root, "--app-vw", `${Math.max(width * 0.01, 1)}px`);
+  setMobileShellCssVar(root, "--app-vh", `${Math.max(visualHeight * 0.01, 1)}px`);
+  setMobileShellCssVar(root, "--app-vw", `${Math.max(visualWidth * 0.01, 1)}px`);
+  setMobileShellCssVar(root, "--app-layout-vh", `${Math.max(height * 0.01, 1)}px`);
+  setMobileShellCssVar(root, "--app-layout-vw", `${Math.max(width * 0.01, 1)}px`);
+  setMobileShellCssVar(root, "--app-keyboard-inset", `${keyboardInset}px`);
 
-  const playerBottomNavActive = isStudyPortal && isMobile;
   if (header) setMobileShellCssVar(root, "--app-header-height", `${headerHeight}px`);
   if (tabs) {
     setMobileShellCssVar(root, "--app-tabs-height", `${playerBottomNavActive ? 0 : tabsHeight}px`);
@@ -653,6 +768,8 @@ function syncMobileShellState() {
     el.classList.toggle("is-phone-screen", isPhone);
     el.classList.toggle("is-compact-screen", isCompact);
     el.classList.toggle("is-short-screen", isShort);
+    el.classList.toggle("is-keyboard-open", isKeyboardOpen);
+    el.classList.toggle("is-tablet-compact-layout", isTabletCompactLayout);
     el.classList.toggle("is-landscape-screen", isLandscape);
     el.classList.toggle("is-portrait-screen", !isLandscape);
     el.classList.toggle("is-touch-screen", Boolean(isTouch));
@@ -696,6 +813,8 @@ function syncMobileShellState() {
     el.dataset.fullscreenApi = fullscreenApiActive ? "true" : "false";
     el.dataset.ipados = isIPadOS ? "true" : "false";
     el.dataset.presentation = presentationActive ? "true" : "false";
+    el.dataset.layoutProfile = layoutProfile;
+    el.dataset.hardwareOrientation = hardwareOrientation;
   });
   body.dataset.shellSize = shellSize;
   body.dataset.shellWidth = String(width);
@@ -703,8 +822,22 @@ function syncMobileShellState() {
   body.dataset.shellShort = isShort ? "true" : "false";
   body.dataset.shellOrientation = isLandscape ? "landscape" : "portrait";
   body.dataset.shellPointer = isTouch ? "coarse" : "fine";
+  body.dataset.hardwareOrientation = hardwareOrientation;
+  body.dataset.keyboardOpen = isKeyboardOpen ? "true" : "false";
+  body.dataset.keyboardInset = String(keyboardInset);
+  body.dataset.visualViewportWidth = String(visualWidth);
+  body.dataset.visualViewportHeight = String(visualHeight);
+  const staffTabletPanelShell =
+    shellTablet &&
+    layoutProfile === "tablet-landscape" &&
+    width >= 821 &&
+    Boolean(authRole) &&
+    !isStudyPortal &&
+    authRole !== "locked";
   body.dataset.scrollOwner = body.classList.contains("app-layer-locked")
     ? "layer"
+    : staffTabletPanelShell
+      ? "panel"
     : isMobile
       ? "document"
       : "panel";
@@ -725,22 +858,36 @@ function syncMobileShellState() {
     ? "edit"
     : "run";
   syncMobileScriptEditMode();
+  const shellGeometryChanged =
+    Boolean(previousShellSize) &&
+    (previousShellSize !== shellSize || previousShellOrientation !== orientation);
   if (
     activeTab === "callsheet" &&
-    previousShellSize &&
-    previousShellSize !== shellSize &&
+    shellGeometryChanged &&
     typeof scheduleRenderCallSheet === "function"
   ) {
     scheduleRenderCallSheet();
   }
   if (
     activeTab === "wristband" &&
-    previousShellSize &&
-    previousShellSize !== shellSize &&
+    shellGeometryChanged &&
     typeof renderWristbandGrid === "function"
   ) {
     renderWristbandGrid();
   }
+  window.dispatchEvent(new CustomEvent("bc:layoutchange", {
+    detail: {
+      device: appDevice,
+      orientation,
+      hardwareOrientation,
+      profile: layoutProfile,
+      shellSize,
+      keyboardOpen: isKeyboardOpen,
+      keyboardInset,
+      layoutViewport: { width, height },
+      visualViewport: { width: visualWidth, height: visualHeight },
+    },
+  }));
   queueMobileOverflowTrace();
   updateMobileCoachDock();
   applyMobileCoachLockUi();
@@ -909,7 +1056,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "scroll",
       () => {
         if (
-          isDesktopShellPanelScrollOwner() &&
+          isPanelShellScrollOwner() &&
           (mainApp.scrollTop !== 0 || mainApp.scrollLeft !== 0)
         ) {
           mainApp.scrollTop = 0;
@@ -1067,7 +1214,9 @@ document.addEventListener("keydown", (e) => {
       obActivePlayName = names[nextIndex];
       obRenderPlayList();
       obRenderSidebar();
-      const activeCard = document.querySelector("#obPlayList .ob-card.active");
+      const activeCard = document.querySelector(
+        "#obPlayList .ob-card.ob-card-active",
+      );
       if (activeCard) scrollElementWithinPanel(activeCard, { block: "nearest" });
       return;
     }

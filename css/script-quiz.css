@@ -20,6 +20,17 @@
   display: none;
 }
 
+/* These dialogs are all registered blocking layers. Keep their fixed canvas
+   tied to the shell's visual viewport instead of the larger layout viewport;
+   a soft keyboard must not hide a Close action or quiz navigation. */
+.script-quiz-overlay.app-layer-active,
+.aqz-overlay.app-layer-active,
+.player-leaderboard-profile-overlay.app-layer-active {
+  bottom: auto;
+  height: var(--app-visual-viewport-height);
+  box-sizing: border-box;
+}
+
 .script-quiz-panel {
   background: var(--color-bg-body);
   border-radius: var(--radius-lg);
@@ -27,7 +38,10 @@
     color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
   box-shadow: var(--shadow-lg);
   width: min(680px, 100%);
-  max-height: calc(var(--app-vh, 1vh) * 90);
+  max-height: min(
+    calc(var(--app-vh, 1vh) * 90),
+    var(--app-layer-usable-height)
+  );
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1425,7 +1439,10 @@
 
 .aqz-panel {
   width: min(680px, 100%);
-  max-height: calc(var(--app-vh, 1vh) * 92);
+  max-height: min(
+    calc(var(--app-vh, 1vh) * 92),
+    var(--app-layer-usable-height)
+  );
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1667,7 +1684,7 @@
 .aqz-media img {
   display: block;
   width: 100%;
-  max-height: min(42vh, 360px);
+  max-height: min(calc(var(--app-vh, 1vh) * 42), 360px);
   object-fit: contain;
 }
 
@@ -1901,7 +1918,10 @@
 
 .player-quiz-hub-panel {
   width: min(920px, 100%);
-  max-height: calc(var(--app-vh, 1vh) * 92);
+  max-height: min(
+    calc(var(--app-vh, 1vh) * 92),
+    var(--app-layer-usable-height)
+  );
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -3614,7 +3634,7 @@
 
 .player-leaderboard-profile-panel {
   width: min(920px, 100%);
-  max-height: min(860px, calc((var(--app-vh, 1vh) * 100) - 36px));
+  max-height: min(860px, var(--app-layer-usable-height));
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
@@ -3655,6 +3675,8 @@
 
 .player-profile-header .modal-close {
   flex: 0 0 auto;
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
   background: color-mix(in srgb, var(--color-surface) 14%, transparent);
   color: var(--color-text-inverse);
 }
@@ -5787,7 +5809,7 @@
 
   .aqz-panel {
     max-height: none;
-    min-height: min(100%, calc((var(--app-vh, 1vh) * 100) - 20px));
+    min-height: min(100%, var(--app-layer-usable-height));
   }
 
   .aqz-header,
@@ -5843,7 +5865,7 @@
   .script-quiz-panel {
     width: 100%;
     max-height: none;
-    min-height: min(100%, calc((var(--app-vh, 1vh) * 100) - 20px));
+    min-height: min(100%, var(--app-layer-usable-height));
     border-radius: var(--radius-lg);
   }
 
@@ -5977,7 +5999,7 @@
 
   .script-quiz-scenario--signal-video .sq-signal-prompt video {
     aspect-ratio: 9 / 12;
-    max-height: min(38vh, 280px);
+    max-height: min(calc(var(--app-vh, 1vh) * 38), 280px);
   }
 
   .script-quiz-scenario--signal-video .sq-scenario-block--situation,
@@ -6006,7 +6028,7 @@
   }
 
   .script-quiz-scenario--signal-sequence .sq-signal-sequence-item video {
-    max-height: 18vh;
+    max-height: calc(var(--app-vh, 1vh) * 18);
   }
 
   .sq-scenario-block--quiz-detail {
@@ -6139,7 +6161,7 @@
   .player-quiz-hub-panel {
     width: 100%;
     max-height: none;
-    min-height: min(100%, calc((var(--app-vh, 1vh) * 100) - 20px));
+    min-height: min(100%, var(--app-layer-usable-height));
   }
 
   .player-quiz-hub-header {
@@ -6384,7 +6406,7 @@
   .player-leaderboard-profile-panel {
     width: 100%;
     max-height: none;
-    min-height: min(100%, calc((var(--app-vh, 1vh) * 100) - 20px));
+    min-height: min(100%, var(--app-layer-usable-height));
     border-radius: var(--radius-lg);
   }
 

@@ -9,6 +9,8 @@ const componentStyles = await readFile(new URL("css/components.css", `file://${r
 const utilsSource = await readFile(new URL("js/utils.js", `file://${root}/`), "utf8");
 const serverAuthSource = await readFile(new URL("functions/_lib/auth.js", `file://${root}/`), "utf8");
 const loginRouteSource = await readFile(new URL("functions/auth/login.js", `file://${root}/`), "utf8");
+const localE2eServerSource = await readFile(new URL("scripts/e2e-local-server.mjs", `file://${root}/`), "utf8");
+const appBootstrapSource = await readFile(new URL("js/app-bootstrap.js", `file://${root}/`), "utf8");
 
 assert.match(
   cloudSource,
@@ -74,6 +76,41 @@ assert.match(
   authSource,
   /async function logoutAuth\(\) \{[\s\S]*?fetch\("\/auth\/logout"[\s\S]*?cache: "no-store"[\s\S]*?fetch\("\/auth\/me"[\s\S]*?verification\.status !== 401[\s\S]*?Could not confirm secure sign-out[\s\S]*?return false;[\s\S]*?currentAuthUser = null/,
   "logout only clears the local identity after the server confirms the session cookie is gone",
+);
+assert.match(
+  localE2eServerSource,
+  /const LOCAL_SESSION_COOKIE_NAME = "bc_local_e2e_session";[\s\S]*?const localSessions = new Map\(\);[\s\S]*?function localSessionCookie\(token\)[\s\S]*?"Path=\/"[\s\S]*?"HttpOnly"[\s\S]*?"SameSite=Lax"/,
+  "the local E2E server uses a host-only, HttpOnly loopback session cookie",
+);
+assert.match(
+  localE2eServerSource,
+  /function handleAuthLogin\(req, res\)[\s\S]*?const token = createLocalSession\(role\);[\s\S]*?"Set-Cookie": localSessionCookie\(token\)/,
+  "a successful local sign-in creates a server-side session and returns its cookie",
+);
+assert.match(
+  localE2eServerSource,
+  /if \(parsed\.pathname === "\/auth\/me"\) \{[\s\S]*?const session = getLocalSession\(req\);[\s\S]*?if \(!session\)[\s\S]*?authenticated: false[\s\S]*?401[\s\S]*?authenticated: true, user: session\.user/,
+  "the local auth probe restores a valid signed-in role and returns 401 only when the cookie is absent or expired",
+);
+assert.match(
+  localE2eServerSource,
+  /if \(parsed\.pathname === "\/auth\/logout"\) \{[\s\S]*?localSessions\.delete\(session\.token\);[\s\S]*?"Set-Cookie": clearLocalSessionCookie\(\)/,
+  "local sign-out revokes the server-side session and clears its loopback cookie for safe role switching",
+);
+assert.match(
+  appBootstrapSource,
+  /function isLocalWorkspacePreviewHost\(\)[\s\S]*?host === "localhost"[\s\S]*?host === "127\.0\.0\.1"/,
+  "the empty-workspace preview exception is explicitly limited to loopback hosts",
+);
+assert.match(
+  appBootstrapSource,
+  /const isLocalStaffPreview = Boolean\([\s\S]*?currentUser && !isPlayer && isLocalWorkspacePreviewHost\(\)[\s\S]*?const shouldShowEmptyApp = isPlayer \|\| isMobileStartupShell\(\) \|\| isLocalStaffPreview[\s\S]*?const localPreviewTab = isLocalStaffPreview[\s\S]*?getRestorableStoredTab\(\) \|\| "dashboard"/,
+  "an authenticated localhost staff preview opens an empty workspace on Dashboard while preserving a saved tab during local reload hydration",
+);
+assert.match(
+  appBootstrapSource,
+  /if \(isMobileStartupShell\(\) \|\| isLocalWorkspacePreviewHost\(\)\) return;/,
+  "the localhost preview cannot be sent back to import by the delayed first-use walkthrough",
 );
 assert.match(
   serverAuthSource,

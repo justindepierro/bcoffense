@@ -963,26 +963,80 @@
     return { pushed, pending: Math.max(_readDiagramUploadQueue().length, durablePending) };
   }
 
-  async function _fetchRemoteForPlay(play) {
-    if (!_remoteAvailable()) return null;
+  async function _fetchRemoteForPlayResult(play) {
+    if (!_remoteAvailable()) {
+      return { url: null, status: "offline", reason: "offline" };
+    }
     const identityKeys = _remoteIdentityKeysForPlay(play);
+    let lastFailure = {
+      url: null,
+      status: "load-error",
+      reason: "no-stable-key",
+    };
     for (const identityKey of identityKeys) {
       try {
         const res = await _remoteFetch(
           `/images/file?sig=${encodeURIComponent(identityKey)}`,
         );
-        if (!res.ok) continue;
+        if (!res.ok) {
+          // A successful manifest does not make a later denied file request
+          // safe to bypass from cache. The release/session remains
+          // authoritative in that case.
+          if (res.status === 401 || res.status === 403) {
+            return {
+              url: null,
+              status: "auth-required",
+              reason: `http-${res.status}`,
+            };
+          }
+          lastFailure = {
+            url: null,
+            status: _isTransientOverloadStatus(res.status) ? "transient-error" : "load-error",
+            reason: `http-${res.status}`,
+          };
+          continue;
+        }
         const blob = await res.blob();
-        if (!blob || blob.size === 0) continue;
+        if (!blob || blob.size === 0) {
+          // A zero-byte or otherwise unreadable response is not a signal
+          // that the published release was withdrawn. Keep any current
+          // canonical cache usable while the file service recovers.
+          lastFailure = {
+            url: null,
+            status: "transient-error",
+            reason: "empty-file",
+          };
+          continue;
+        }
         // Cache in IndexedDB under the identity key for future local lookups
         await set(identityKey, blob, { emit: false });
-        return _urlCache.get(_normalizeSig(identityKey)) || null;
-      } catch (_e) {
-        if (_e?.code === "BC_MEDIA_AUTH_REQUIRED") break;
-        // Try the next compatible remote key.
+        const url = _urlCache.get(_normalizeSig(identityKey)) || null;
+        if (url) return { url, status: "ready", reason: "remote" };
+        lastFailure = {
+          url: null,
+          status: "transient-error",
+          reason: "cache-unavailable",
+        };
+      } catch (error) {
+        if (error?.code === "BC_MEDIA_AUTH_REQUIRED") {
+          return { url: null, status: "auth-required", reason: "auth-required" };
+        }
+        // A network/timeout/decode failure after an authoritative published
+        // manifest is transient. Presentation may use only the exact
+        // canonical media ID already stored on this device as a fallback.
+        lastFailure = {
+          url: null,
+          status: "transient-error",
+          reason: error?.name === "AbortError" ? "timeout" : "network",
+        };
       }
     }
-    return null;
+    return lastFailure;
+  }
+
+  async function _fetchRemoteForPlay(play) {
+    const result = await _fetchRemoteForPlayResult(play);
+    return result.url || null;
   }
 
   async function checkRemoteForPlay(play, options = {}) {
@@ -1014,6 +1068,11 @@
           headers: { Accept: "application/json" },
         });
         if (!response.ok) {
+          // A forbidden manifest is an authorization decision, not a
+          // temporary cloud fault. Never let a cached diagram bypass it.
+          if (response.status === 403) {
+            return _remoteUnauthorizedResult(identityKey);
+          }
           const status = response.status === 404 ? "unpublished" : "error";
           const result = {
             ok: false,
@@ -1200,10 +1259,14 @@
           } else {
             _cacheRemoteManifest(identityKey, {
               ok: false,
-              status: response.status === 404 ? "unpublished" : "error",
+              status: response.status === 403
+                ? "unauthorized"
+                : response.status === 404
+                  ? "unpublished"
+                  : "error",
               published: false,
               sig: identityKey,
-              reason: `http-${response.status}`,
+              reason: response.status === 403 ? "auth-required" : `http-${response.status}`,
             });
           }
         } catch (err) {
@@ -1824,12 +1887,16 @@
     }
 
     let remote = null;
+    let remoteFile = null;
     if (_remoteAvailable()) {
       remote = await checkRemoteForPlay(play);
       if (remote.published) {
-        const remoteUrl = await _fetchRemoteForPlay(play);
-        if (remoteUrl) {
-          return { status: "ready", source: "remote", url: remoteUrl, message: "Diagram ready" };
+        remoteFile = await _fetchRemoteForPlayResult(play);
+        if (remoteFile.url) {
+          return { status: "ready", source: "remote", url: remoteFile.url, message: "Diagram ready" };
+        }
+        if (remoteFile.status === "auth-required") {
+          remote = _remoteUnauthorizedResult(mediaId);
         }
       }
     }
@@ -1838,7 +1905,12 @@
     // used as an offline/temporary fallback. Content and historic signature
     // keys are intentionally excluded from player display resolution.
     const cachedUrl = await ensureUrl(mediaId);
-    if (cachedUrl && (!remote || remote.status === "offline" || remote.status === "error")) {
+    if (cachedUrl && (
+      !remote ||
+      remote.status === "offline" ||
+      remote.status === "error" ||
+      remoteFile?.status === "transient-error"
+    )) {
       return {
         status: "ready",
         source: "local",

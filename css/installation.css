@@ -56,6 +56,12 @@
   overflow-wrap: anywhere;
 }
 
+/* The tablet landscape command alternatives are rendered with the desktop
+   actions so the normal desktop and portrait paths remain independent. */
+.install-tablet-landscape-only {
+  display: none;
+}
+
 /* Overall Progress Ring */
 .install-overall-progress {
   text-align: center;
@@ -1572,5 +1578,215 @@
     border-color: var(--coach-grid-divider);
     border-radius: var(--coach-grid-radius);
     background: var(--coach-grid-surface);
+  }
+}
+
+/* Staff tablet landscape is a constrained coaching workspace, not the
+   desktop Coach Grid and not the portrait document view. Keep the panel as
+   the page scroll owner while moving infrequent template/checklist commands
+   into reachable anchored menus. */
+@media screen and (min-width: 821px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation.panel.active {
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-container {
+    max-width: none;
+    padding: 8px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-header {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-title {
+    font-size: var(--font-size-lg);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-header-right {
+    grid-template-columns: max-content max-content;
+    gap: 8px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-header-actions--desktop,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-detail-actions--desktop {
+    display: none;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-tablet-landscape-only {
+    display: inline-flex;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-tablet-header-actions,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-tablet-detail-actions {
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-tablet-header-actions {
+    justify-content: end;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-tablet-detail-actions {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) max-content;
+    justify-content: end;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-tablet-header-actions .btn,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-tablet-detail-actions .btn,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-search,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-smart-toggle {
+    min-height: 44px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-tablet-header-actions .btn,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-tablet-detail-actions .btn {
+    min-width: 44px;
+    padding-inline: 10px;
+    white-space: nowrap;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-search {
+    width: 100%;
+    padding-inline: 10px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-smart-toggle {
+    grid-column: 1 / -1;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px 0 42px;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+  }
+
+  /* The native checkbox fills its visible label so the full 44px row is the
+     touch target. The compact check indicator remains a pseudo-element. */
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-smart-toggle input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-smart-toggle span::before {
+    content: "";
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--color-border-input);
+    border-radius: 4px;
+    background: var(--color-surface);
+    transform: translateY(-50%);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-smart-toggle input:checked + span::before {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    box-shadow: inset 0 0 0 3px var(--color-surface);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-smart-toggle input:focus-visible + span::before {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-readiness {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-readiness-item {
+    min-height: 58px;
+    padding: 6px 8px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-readiness-val {
+    font-size: var(--font-size-xl);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-category-grid {
+    grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-cat-card {
+    min-height: 48px;
+    padding: 7px 9px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-cat-icon {
+    font-size: var(--font-size-xl);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-detail-header {
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 42%);
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #installation .install-item {
+    min-height: 44px;
+    padding-block: 7px;
+  }
+
+  /* Anchored menus are portaled to body while open, so this intentionally
+     remains outside the #installation descendant selector. */
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    .tool-menu.install-tablet-landscape-menu {
+    min-width: min(244px, calc(100vw - 24px));
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    .tool-menu.install-tablet-landscape-menu button {
+    min-height: 44px;
   }
 }

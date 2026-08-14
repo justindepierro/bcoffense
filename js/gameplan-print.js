@@ -216,15 +216,20 @@ async function openGamePlanPrintModal() {
     );
   }
   return new Promise((resolve) => {
+    const returnFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
     const overlay = document.createElement("div");
-    overlay.className = "custom-modal-overlay";
+    overlay.id = "gpPrintModalOverlay";
+    overlay.className = "custom-modal-overlay gp-print-modal-overlay";
     overlay.innerHTML = `
-      <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="gpPrintTitle">
-        <div class="custom-modal-header">
+      <div class="custom-modal gp-print-modal" role="dialog" aria-modal="true" aria-labelledby="gpPrintTitle">
+        <div class="custom-modal-header gp-print-modal-header">
           <span class="custom-modal-icon">🖨️</span>
           <h3 class="custom-modal-title" id="gpPrintTitle">Print Game Plan Board</h3>
+          <button type="button" class="btn btn-ghost gp-print-close" id="gpPrintClose" aria-label="Close Game Plan print options" title="Close">×</button>
         </div>
-        <div class="custom-modal-body">
+        <div class="custom-modal-body gp-print-modal-body">
           <div class="gp-print-form">
             <div class="gp-print-row">
               <label for="gpPrintPaper">Paper</label>
@@ -333,21 +338,43 @@ async function openGamePlanPrintModal() {
         </div>
       </div>`;
     document.body.appendChild(overlay);
-    if (typeof trapFocus === "function") trapFocus(overlay);
-    if (typeof openLayer === "function")
-      openLayer(overlay, {
-        id: "gp-print-modal",
-        exclusive: false,
-        trapFocus: false,
-      });
-    requestAnimationFrame(() => overlay.classList.add("visible"));
-
+    // LayerManager places initial focus synchronously. The custom modal
+    // animation uses visibility:hidden until `.visible` is present, so reveal
+    // it before the manager resolves the explicit Close target.
+    overlay.classList.add("visible");
+    let closed = false;
     const close = (ok) => {
+      if (closed) return;
+      closed = true;
       if (typeof closeLayer === "function") closeLayer("gp-print-modal");
+      else if (returnFocus?.isConnected) {
+        try { returnFocus.focus({ preventScroll: true }); } catch (_error) { returnFocus.focus(); }
+      }
       overlay.classList.remove("visible");
       setTimeout(() => overlay.remove(), 200);
       resolve(ok);
     };
+    if (typeof openLayer === "function") {
+      openLayer(overlay, {
+        id: "gp-print-modal",
+        exclusive: false,
+        blocking: true,
+        safeArea: true,
+        scrollElement: overlay.querySelector(".gp-print-modal-body") || overlay.querySelector(".gp-print-modal") || overlay,
+        initialFocus: overlay.querySelector("#gpPrintClose") || overlay.querySelector("#gpPrintCancel") || overlay.querySelector(".gp-print-modal") || overlay,
+        onEscape: () => close(false),
+        returnFocus,
+      });
+    } else if (typeof trapFocus === "function") {
+      trapFocus(overlay);
+      overlay.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          close(false);
+        }
+      });
+    }
+    overlay.querySelector("#gpPrintClose").addEventListener("click", () => close(false));
     overlay.querySelector("#gpPrintCancel").addEventListener("click", () => close(false));
     overlay.querySelector("#gpPrintSmart").addEventListener("click", () => {
       _gpApplySmartPrintDefaults();
@@ -405,9 +432,6 @@ async function openGamePlanPrintModal() {
     });
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) close(false);
-    });
-    overlay.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") { e.preventDefault(); close(false); }
     });
   });
 }

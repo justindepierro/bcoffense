@@ -24,6 +24,11 @@ const MIME_TYPES = new Map([
 ]);
 
 const ROLES = new Set(["admin", "coach", "player"]);
+// This server only listens on 127.0.0.1. Keep its mock session host-only as
+// well (no Domain attribute) so it can never represent a deployable session.
+const LOCAL_SESSION_COOKIE_NAME = "bc_local_e2e_session";
+const LOCAL_SESSION_MAX_AGE_SECONDS = 8 * 60 * 60;
+const localSessions = new Map();
 
 function parsePort(argv) {
   const raw = argv.find((arg) => arg.startsWith("--port="));
@@ -47,16 +52,76 @@ function authUser(role) {
   };
 }
 
-function sendJson(res, body, status = 200) {
+function sendJson(res, body, status = 200, headers = {}) {
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
+    ...headers,
   });
   res.end(JSON.stringify(body));
 }
 
 function sendEmptyOk(res) {
   sendJson(res, { ok: true });
+}
+
+function getCookieValue(req, name) {
+  const cookies = String(req.headers.cookie || "").split(";");
+  for (const entry of cookies) {
+    const separator = entry.indexOf("=");
+    if (separator < 0) continue;
+    const key = entry.slice(0, separator).trim();
+    if (key !== name) continue;
+    try {
+      return decodeURIComponent(entry.slice(separator + 1).trim());
+    } catch (_err) {
+      return "";
+    }
+  }
+  return "";
+}
+
+function createLocalSession(role) {
+  let token = "";
+  do {
+    token = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  } while (localSessions.has(token));
+  localSessions.set(token, {
+    user: authUser(role),
+    expiresAt: Date.now() + LOCAL_SESSION_MAX_AGE_SECONDS * 1000,
+  });
+  return token;
+}
+
+function getLocalSession(req) {
+  const token = getCookieValue(req, LOCAL_SESSION_COOKIE_NAME);
+  if (!token) return null;
+  const session = localSessions.get(token);
+  if (!session || session.expiresAt <= Date.now()) {
+    localSessions.delete(token);
+    return null;
+  }
+  return { token, user: session.user };
+}
+
+function localSessionCookie(token) {
+  return [
+    `${LOCAL_SESSION_COOKIE_NAME}=${encodeURIComponent(token)}`,
+    "Path=/",
+    `Max-Age=${LOCAL_SESSION_MAX_AGE_SECONDS}`,
+    "HttpOnly",
+    "SameSite=Lax",
+  ].join("; ");
+}
+
+function clearLocalSessionCookie() {
+  return [
+    `${LOCAL_SESSION_COOKIE_NAME}=`,
+    "Path=/",
+    "Max-Age=0",
+    "HttpOnly",
+    "SameSite=Lax",
+  ].join("; ");
 }
 
 function safePathFromUrl(requestUrl) {
@@ -80,11 +145,17 @@ function handleAuthLogin(req, res) {
       sendJson(res, { ok: false, error: "Invalid username or password." }, 401);
       return;
     }
-    sendJson(res, { ok: true, user: authUser(role) });
+    const token = createLocalSession(role);
+    sendJson(
+      res,
+      { ok: true, user: authUser(role) },
+      200,
+      { "Set-Cookie": localSessionCookie(token) },
+    );
   });
 }
 
-function handleApiStub(parsed, res) {
+function handleApiStub(req, parsed, res) {
   if (parsed.pathname === "/api/telemetry") {
     // Mirror production: telemetry beacon accepts and returns 204 No Content.
     res.writeHead(204);
@@ -92,11 +163,21 @@ function handleApiStub(parsed, res) {
     return true;
   }
   if (parsed.pathname === "/auth/me") {
-    sendJson(res, { user: null });
+    const session = getLocalSession(req);
+    if (!session) {
+      // Mirror a real signed-out Pages session. The app deliberately clears a
+      // local identity only after logout is confirmed by a 401; returning 200
+      // here made the local preview impossible to sign out of or role-switch.
+      sendJson(res, { authenticated: false }, 401, { "Set-Cookie": clearLocalSessionCookie() });
+      return true;
+    }
+    sendJson(res, { authenticated: true, user: session.user });
     return true;
   }
   if (parsed.pathname === "/auth/logout") {
-    sendEmptyOk(res);
+    const session = getLocalSession(req);
+    if (session) localSessions.delete(session.token);
+    sendJson(res, { ok: true }, 200, { "Set-Cookie": clearLocalSessionCookie() });
     return true;
   }
   if (parsed.pathname === "/auth/players") {
@@ -179,7 +260,7 @@ const server = createServer((req, res) => {
     handleAuthLogin(req, res);
     return;
   }
-  if (handleApiStub(parsed, res)) return;
+  if (handleApiStub(req, parsed, res)) return;
   if (parsed.pathname === "/favicon.ico") {
     res.writeHead(204);
     res.end();

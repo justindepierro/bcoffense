@@ -63,5 +63,13 @@ assert.match(print, /if \(play\?\._blank\)/, "print output preserves intentional
 assert.match(print, /print-category--single/, "Call Sheet printing carries the category's sequence layout into the print job");
 assert.match(printCss, /\.print-category--single .print-plays-grid/, "single-column print categories use one full-width play column");
 assert.match(metadata, /function removeCallSheetBlankRows\(categoryId\)/, "category tools can remove accumulated blank spacers in one action");
+assert.match(render, /cs-play-touch-actions[\s\S]*?cs-mobile-reorder-controls[\s\S]*?moveCallSheetPlay[\s\S]*?cs-blank-remove/, "blank rows group deterministic tablet move and remove controls");
+assert.match(render, /const swapBtn =[\s\S]*?cs-play-touch-actions[\s\S]*?cs-mobile-reorder-controls[\s\S]*?\$\{swapBtn\}[\s\S]*?removeCallSheetPlay/, "normal Call Sheet rows group move, hash-swap, and remove controls");
+assert.match(css, /body\.shell-tablet\.is-mobile-screen\.is-staff-mobile-shell:not\(\[data-auth-role="player"\]\)[\s\S]*?\.callsheet-play,[\s\S]*?\.cs-blank-row \{[\s\S]*?flex-wrap: wrap;/, "tablet Call Sheet rows wrap before their full-width action group so controls cannot overflow horizontally");
+assert.match(css, /body\.shell-tablet\.is-mobile-screen\.is-staff-mobile-shell:not\(\[data-auth-role="player"\]\)[\s\S]*?\.cs-play-touch-actions \{[\s\S]*?display: flex;[\s\S]*?flex: 0 0 100%/, "staff tablets expose an explicit full-width action row instead of relying on touch drag-and-drop");
+assert.match(css, /\.cs-mobile-reorder-controls button,[\s\S]*?\.cs-hash-swap,[\s\S]*?\.callsheet-play \.remove-play,[\s\S]*?min-height: var\(--coach-workbench-control-height\);[\s\S]*?opacity: 1;/, "tablet move, swap, and remove controls use the shared tablet target size and stay visible");
+assert.match(css, /body\.shell-tablet\.is-mobile-screen\.is-portrait-screen\.is-staff-mobile-shell[\s\S]*?#callsheet[\s\S]*?\.cs-cat-header \{[\s\S]*?top: calc\(var\(--app-header-height\) \+ var\(--app-tabs-height\)\);/, "portrait tablet sticky category headers clear the measured document chrome");
+assert.ok(css.indexOf("@media print {\n  .cs-play-touch-actions { display: none; }\n}") > css.indexOf(".cs-play-touch-actions { display: contents; }"), "tablet action rows are hidden after their default display rule, so they cannot enter Call Sheet print output");
+assert.doesNotMatch(print, /cs-play-touch-actions|cs-mobile-reorder-controls/, "the independent print renderer does not consume interactive tablet controls");
 
 console.log("call sheet current-save contract: layout, live wristband, and save identity contracts passed");

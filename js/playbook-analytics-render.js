@@ -492,7 +492,7 @@ function openPlaybookDataHealth() {
     showToast("Import a playbook CSV first", { duration: 2500, type: "error" });
     return;
   }
-  document.getElementById("playbookDataHealthOverlay")?.remove();
+  _pbDiscardReportOverlay("playbookDataHealthOverlay", "playbook-data-health-report");
   const overlay = document.createElement("div");
   overlay.className = "custom-modal-overlay visible";
   overlay.id = "playbookDataHealthOverlay";
@@ -509,23 +509,28 @@ function openPlaybookDataHealth() {
         <button type="button" class="btn btn-sm" data-action="openPlaybookHealthCleanup">Open Cleanup Data</button>
         <button type="button" class="btn btn-sm" data-action="closePlaybookDataHealth">Done</button>
       </div>
-    </div>`;
+  </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  const closeButton = overlay.querySelector(".modal-close");
+  _pbOpenReportLayer(overlay, {
+    layerId: "playbook-data-health-report",
+    scrollElement: overlay.querySelector("#playbookDataHealthBody") || overlay,
+    initialFocus: closeButton || overlay,
+    onEscape: () => closePlaybookDataHealth(),
+  });
   renderPlaybookDataHealth();
 }
 
-function closePlaybookDataHealth() {
+function closePlaybookDataHealth(options = {}) {
   const overlay = document.getElementById("playbookDataHealthOverlay");
   if (!overlay) return;
-  overlay.classList.remove("visible");
-  setTimeout(() => overlay.remove(), 180);
+  _pbCloseReportLayer(overlay, "playbook-data-health-report", options);
 }
 
 function openPlaybookHealthEdit(masterIdx) {
   masterIdx = parseInt(masterIdx, 10);
   if (!Array.isArray(plays) || !plays[masterIdx]) return;
-  closePlaybookDataHealth();
+  closePlaybookDataHealth({ returnFocus: false });
   if (typeof showTab === "function") showTab("playbook");
 
   const play = plays[masterIdx];
@@ -546,7 +551,7 @@ function openPlaybookHealthEdit(masterIdx) {
 
 function openPlaybookSanitizeField(fieldKey) {
   if (!_sanitizeFieldDef(fieldKey)) return;
-  closePlaybookDataHealth();
+  closePlaybookDataHealth({ returnFocus: false });
   _sanitizeFieldKey = fieldKey;
   openPlaybookSanitize();
 }
@@ -561,7 +566,7 @@ function openPlaybookSanitizeIssue(encodedPayload) {
   const fieldKey = payload?.fieldKey;
   const values = Array.isArray(payload?.values) ? payload.values : [];
   if (!_sanitizeFieldDef(fieldKey) || !values.length) return;
-  closePlaybookDataHealth();
+  closePlaybookDataHealth({ returnFocus: false });
   if (typeof openPlaybookSanitizeFocused === "function") {
     openPlaybookSanitizeFocused(fieldKey, values);
   } else {
@@ -571,6 +576,6 @@ function openPlaybookSanitizeIssue(encodedPayload) {
 }
 
 function openPlaybookHealthCleanup() {
-  closePlaybookDataHealth();
+  closePlaybookDataHealth({ returnFocus: false });
   openPlaybookSanitize();
 }

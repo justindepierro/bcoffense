@@ -1017,6 +1017,9 @@ body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar-spacer {
   gap: 0;
   flex-shrink: 0;
 }
+.gp-box-play-tablet-menu {
+  display: none;
+}
 .gp-box-play-btn {
   background: transparent;
   border: 0;
@@ -1242,14 +1245,12 @@ body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar-spacer {
   min-height: 44px;
   font-size: var(--font-size-xs);
 }
-/* Bulk action sheet affordances — phone only (hidden on larger screens) */
+/* Bulk action sheet affordances — the phone dialog is portaled to <body>,
+   while the normal bulk row stays inline for tablet and desktop. */
 .gp-bulk-trigger {
   display: none;
 }
-.gp-bulk-sheet-header {
-  display: none;
-}
-.gp-bulk-backdrop {
+.gp-bulk-sheet-overlay {
   display: none;
 }
 
@@ -2257,6 +2258,22 @@ body.gp-dragging-from-box .gp-trash-zone {
   color: var(--color-text-muted);
   margin-left: var(--space-sm);
 }
+
+/* T-009 P1: Coverage and Touch Tracker remain native disclosures. On the
+   touch Game Plan surface, give each real <summary> a full 44px hit area
+   without changing desktop's compact always-open treatment or print. */
+@media screen and (pointer: coarse) {
+  body.is-mobile-screen #gameplan .gp-scoreboard:not(.gp-media-scoreboard) > summary,
+  body.is-mobile-screen #gameplan .gp-touch-tracker > summary {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-height: var(--tap-min);
+    padding-block: 6px;
+    touch-action: manipulation;
+  }
+}
+
 .gp-touch-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -2896,9 +2913,10 @@ body.gp-dragging-from-box .gp-trash-zone {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: calc(var(--app-vh, 1vh) * 50);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  /* The named modal body owns scrolling; a capped nested list trapped focus
+     and touch scrolling above the Save/Cancel footer on a short iPad view. */
+  max-height: none;
+  overflow: visible;
 }
 .gp-mgb-row {
   display: grid;
@@ -3229,7 +3247,7 @@ body.gp-dragging-from-box .gp-trash-zone {
    ========================================================================= */
 .gp-info-modal {
   max-width: 720px;
-  width: min(720px, 92vw);
+  width: min(720px, 100%);
   border-top: 4px solid var(--gp-info-accent, var(--color-primary));
 }
 .gp-info-count {
@@ -3428,56 +3446,97 @@ body.gp-dragging-from-box .gp-trash-zone {
     display: inline-flex;
     align-items: center;
     flex: 0 0 auto;
-    min-height: 32px;
+    min-width: 44px;
+    min-height: 44px;
   }
   .gp-library-bulk {
     display: none;
   }
-  .gp-library-bulk.gp-bulk-open {
+
+  /* The phone-only sheet is deliberately outside #gameplan. Game Plan's
+     board render replaces that root, while this blocking layer remains stable
+     for focus, Escape, and nested list-picker flows. */
+  .gp-bulk-sheet-overlay.visible {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    align-items: flex-end;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    background: var(--color-overlay-md);
+    z-index: var(--z-modal-top);
+  }
+
+  .gp-bulk-sheet-overlay.app-layer-active {
+    bottom: auto;
+    height: var(--app-visual-viewport-height);
+    max-height: var(--app-visual-viewport-height);
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .gp-bulk-sheet-overlay.app-layer-safe-area {
+    padding: var(--app-layer-safe-top) var(--app-layer-safe-right) 0 var(--app-layer-safe-left);
+  }
+
+  .gp-bulk-sheet {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    margin: 0;
-    padding: var(--space-md);
-    padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
-    gap: var(--space-xs);
-    max-height: calc(var(--app-vh, 1vh) * 70);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    border-top: 1px solid var(--color-border-med);
-    border-bottom: none;
+    align-items: center;
+    width: min(560px, 100%);
+    max-height: calc(var(--app-visual-viewport-height) - var(--app-layer-safe-top));
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-border-med);
+    border-bottom: 0;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     background: var(--color-surface);
     box-shadow: var(--shadow-lg);
-    z-index: var(--z-modal);
     animation: gp-bulk-up 0.2s ease-out;
   }
+
   .gp-bulk-sheet-header {
     display: flex;
     align-items: center;
+    align-self: stretch;
     justify-content: space-between;
-    font-weight: 600;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  .gp-bulk-sheet-header h2 {
+    margin: 0;
     font-size: var(--font-size-md);
+    font-weight: 700;
   }
-  .gp-library-bulk.gp-bulk-open .btn-sm:not(.gp-bulk-close) {
-    flex: 1 1 auto;
-    min-height: 44px;
-  }
-  .gp-library-bulk.gp-bulk-open .gp-bulk-close {
+
+  .gp-bulk-close {
     flex: 0 0 auto;
-    min-width: 32px;
-    min-height: 32px;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    font-size: 22px;
+    line-height: 1;
   }
-  .gp-bulk-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: var(--color-overlay-md);
-    z-index: calc(var(--z-modal) - 1);
+
+  .gp-bulk-sheet-body {
+    display: grid;
+    flex: 1 1 auto;
+    align-self: stretch;
+    min-height: 0;
+    gap: var(--space-xs);
+    padding: var(--space-md);
+    padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .gp-bulk-sheet-body .btn {
+    min-height: 44px;
   }
   @keyframes gp-bulk-up {
     from {
@@ -4011,7 +4070,7 @@ body.gp-printing .gp-print-detail-val {
 }
 
 /* ── 4×6 Game Day Index Cards ───────────────────────────────────────── */
-.gp-index-modal { width: min(760px, 96vw); max-height: min(92vh, 900px); display: flex; flex-direction: column; }
+.gp-index-modal { width: min(760px, 100%); max-height: min(900px, var(--app-layer-usable-height)); display: flex; flex-direction: column; }
 .gp-index-intro { padding-bottom: 0; color: var(--color-text-muted); }
 .gp-index-toolbar, .gp-index-card-tabs, .gp-index-side-tabs { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
 .gp-index-toolbar { padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--color-border); }
@@ -4030,6 +4089,175 @@ body.gp-printing .gp-print-detail-val {
 .gp-index-empty-card { grid-column: 1 / -1; min-height: 180px; display: grid; place-items: center; text-align: center; border: 1px dashed #8795ae; padding: 12px; }
 .gp-index-add { display: block; width: min(100%, 480px); margin: var(--space-sm) auto; border-style: dashed; }
 
+/* Game Plan blocking dialogs use one measured visual viewport and one
+   intentional interior scroller. This keeps their Close/action controls above
+   iPad browser chrome and a software keyboard without changing print output. */
+@media screen {
+  :is(.gp-index-overlay, .gp-print-modal-overlay).app-layer-active {
+    height: var(--app-visual-viewport-height);
+    max-height: var(--app-visual-viewport-height);
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+
+  :is(.gp-index-modal, .gp-print-modal) {
+    display: flex;
+    max-height: min(900px, var(--app-layer-usable-height));
+    overflow: hidden;
+  }
+
+  .gp-print-modal { width: min(680px, 100%); }
+
+  .gp-index-modal-header,
+  .gp-print-modal-header { min-width: 0; }
+
+  :is(.gp-index-close, .gp-print-close) {
+    flex: 0 0 40px;
+    width: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    margin-left: auto;
+    padding: 0;
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .gp-index-scroll,
+  .gp-print-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* The parent scroll region is the one owner. The intro is ordinary content,
+     not a second nested custom-modal-body scroll container. */
+  .gp-index-scroll .gp-index-intro {
+    flex: 0 0 auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .gp-index-empty-state { margin: var(--space-md); color: var(--color-text-muted); }
+
+}
+
+@media screen and (pointer: coarse),
+  screen and (max-width: 820px) {
+  .gp-index-modal :is(.btn, .gp-index-bucket-actions button),
+  .gp-print-modal :is(.btn, select, .gp-print-toggles label),
+  :is(.gp-index-close, .gp-print-close) {
+    min-height: 44px;
+  }
+
+  :is(.gp-index-close, .gp-print-close) {
+    flex-basis: 44px;
+    width: 44px;
+    min-width: 44px;
+  }
+
+  .gp-index-bucket-actions button {
+    min-width: 44px;
+    padding: 0;
+  }
+
+  .gp-print-toggles label { padding: 4px 0; }
+}
+
+/* Legacy Game Plan dialogs are generated by separate action/render modules,
+   but they share one deliberate layer contract: the overlay tracks the
+   measured visual viewport, chrome stays fixed, and exactly one named body
+   scrolls. Keep this screen-only so physical Game Plan print output is not
+   affected. */
+@media screen {
+  .gp-modal-layer.app-layer-active {
+    bottom: auto;
+    height: var(--app-visual-viewport-height);
+    max-height: var(--app-visual-viewport-height);
+    box-sizing: border-box;
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+
+  .gp-legacy-modal {
+    display: flex;
+    flex-direction: column;
+    max-height: min(900px, var(--app-layer-usable-height));
+    overflow: hidden;
+  }
+
+  .gp-sort-all-modal { width: min(520px, 100%); max-width: 520px; }
+  .gp-personnel-variants-picker { width: min(460px, 100%); max-width: 460px; }
+  .gp-manage-boxes-modal { width: min(560px, 100%); max-width: 560px; }
+  .gp-box-matching-modal { width: min(680px, 100%); max-width: 680px; }
+  .gp-smart-builder-modal { width: min(980px, 100%); max-width: 980px; }
+  .gp-info-modal { width: min(720px, 100%); max-width: 720px; }
+
+  .gp-legacy-modal-close {
+    flex: 0 0 40px;
+    width: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    margin-left: auto;
+    padding: 0;
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .gp-modal-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .gp-box-matching-modal .gp-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+  }
+
+  .gp-box-matching-modal .gp-meta-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    background: var(--color-bg-light);
+  }
+
+  .gp-box-matching-modal .gp-meta-check input { margin: 0; }
+  .gp-box-matching-modal .gp-meta-check:has(input:checked) {
+    background: var(--color-primary);
+    color: var(--color-white);
+    border-color: var(--color-primary);
+  }
+}
+
+@media screen and (pointer: coarse),
+  screen and (max-width: 820px) {
+  .gp-legacy-modal :is(.btn, select, input:not([type="checkbox"]), .gp-meta-check),
+  .gp-mgb-row,
+  .gp-personnel-variants-picker-choice {
+    min-height: 44px;
+  }
+
+  .gp-legacy-modal-close {
+    flex-basis: 44px;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .gp-box-matching-modal .gp-meta-check { padding: 4px 10px; }
+}
+
 @media print {
   body.gp-index-printing > * { display: none !important; }
   body.gp-index-printing #gpIndexCardPrintRoot { display: block !important; }
@@ -4041,4 +4269,319 @@ body.gp-printing .gp-print-detail-val {
   body.gp-index-printing .gp-index-bucket header { padding: .025in .04in; font-size: 6.4pt; }
   body.gp-index-printing .gp-index-bucket ol { padding: .035in .035in .035in .14in; font-size: 6.3pt; line-height: 1.14; }
   body.gp-index-printing .gp-index-bucket li { margin-bottom: .025in; }
+}
+
+/* Tablet-only controls are rendered with the board so their disclosure state
+   can stay local to Game Plan. They are intentionally absent from desktop,
+   portrait, player, and print presentations. */
+.gp-library-rail-toggle,
+.gp-library-rail-close,
+.gp-box-tablet-actions {
+  display: none;
+}
+
+/* ============ Staff tablet landscape: Game Plan ============
+ *
+ * The 78px app rail makes the ordinary desktop board too dense and the phone
+ * stack too wasteful. Treat this as a compact workbench: a real source rail
+ * beside a two-column board, with exactly two deliberate scroll owners. The
+ * predicate is deliberately narrow so desktop, portrait, player, and print
+ * retain their established layouts.
+ */
+@media screen and (min-width: 821px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan.panel.active {
+    gap: 0;
+    margin: 0;
+    padding: 8px;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-command-zone {
+    flex: 0 0 auto;
+  }
+
+  /* Keep the command strip visible. The library result list and board grid,
+   * not this outer wrapper, own vertical scrolling below it. */
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-board-scroll {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-library-rail-toggle {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 7px 12px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-layout {
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 8px;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan.gp-library-collapsed
+    .gp-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan.gp-library-collapsed
+    .gp-library {
+    display: none;
+  }
+
+  /* A compact source rail keeps its controls fixed while its result list is
+   * independently scrollable. It never turns into a full-width phone stack. */
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-library {
+    position: static;
+    min-height: 0;
+    max-height: none;
+    padding: 6px;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-library-header {
+    gap: 4px;
+    min-height: 44px;
+    padding-bottom: 4px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-library-rail-close {
+    display: inline-flex;
+    flex: 0 0 44px;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-library-refine {
+    gap: 4px;
+    padding: 4px 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-library :is(.btn, .gp-library-search, select) {
+    min-height: 44px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-library
+    .gp-filters-drawer {
+    max-height: min(38vh, 280px);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-library-list {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Start safely at one board column. The container guard restores two useful
+   * >=300px cards only after the real post-rail workspace can support them. */
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-boxes {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    align-content: start;
+    gap: 8px;
+    padding-right: 2px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box {
+    min-height: 124px;
+  }
+
+  /* On a 1024px/1366px staff tablet the grid container is wide enough after
+   * subtracting the 240–280px rail, so cap it at two usable board columns. */
+  @container (min-width: 880px) {
+    body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+      #gameplan
+      .gp-boxes {
+      grid-template-columns: repeat(2, minmax(300px, 1fr));
+    }
+  }
+
+  /* Header actions used to wrap into an unreadable strip. Keep Add visible,
+   * put the rest behind a nearby disclosure, and retain a 44px floor for every
+   * action that becomes available in that disclosure. */
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-header
+    > .gp-box-actions:not(.gp-box-tablet-actions) {
+    display: none;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-header {
+    flex-wrap: wrap;
+    min-height: 52px;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-title {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-tablet-actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-tablet-actions.is-open {
+    flex-basis: 100%;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-tablet-action-row {
+    display: flex;
+    gap: 4px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-tablet-action-row
+    .btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-tablet-action-row
+    > :first-child {
+    flex: 1 1 auto;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-more-toggle {
+    flex: 0 0 auto;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-more-menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+    padding-top: 6px;
+    border-top: 1px solid var(--color-border-light);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-more-menu
+    :is(.btn, .gp-box-sort) {
+    width: 100%;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-more-menu
+    .gp-box-sort {
+    grid-column: 1 / -1;
+    height: 44px;
+    max-width: none;
+  }
+
+  /* Assigned-play controls used to be tiny, hover-dimmed mouse affordances.
+   * In the tablet workbench one persistent 44px disclosure replaces that
+   * strip; it exposes flags, deterministic move actions, and removal through
+   * the same menu used by a long press. */
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-play-actions {
+    gap: 4px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-play-actions
+    > :not(.gp-box-play-tablet-menu) {
+    display: none;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #gameplan
+    .gp-box-play-tablet-menu {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 var(--tap-min);
+    width: var(--tap-min);
+    min-width: var(--tap-min);
+    height: var(--tap-min);
+    min-height: var(--tap-min);
+    padding: 0;
+    border-radius: var(--radius-sm);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    .cs-context-menu.gp-play-context-menu
+    .cs-ctx-item {
+    min-height: var(--tap-min);
+    padding-block: 8px;
+  }
 }

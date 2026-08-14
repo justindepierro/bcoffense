@@ -39,6 +39,16 @@ body.play-presentation-open .quick-tools {
   height: 100%;
 }
 
+/* In browser/PWA mode the layout viewport can remain taller than the usable
+   iPad viewport while browser chrome or a keyboard is present. The active
+   presentation layer owns the visual viewport instead; fullscreen retains
+   the browser-controlled 100% rule above. */
+.play-presentation-overlay.app-layer-active:not(:fullscreen) {
+  bottom: auto;
+  height: var(--app-visual-viewport-height);
+  box-sizing: border-box;
+}
+
 /* Portrait-only controls are reserved for non-rotating portrait helpers. */
 .pp-portrait-only {
   display: none !important;
@@ -1512,13 +1522,14 @@ body.display-mode-installed .pp-header {
   background: var(--color-overlay-md);
 }
 
-/* M-042 — In-landscape projector install prompt (top-center, clear of the
-   bottom zoom/telestrator controls). Stays visible until dismissed so the
-   chrome-free install path is discoverable. */
+/* M-042 — In-landscape projector install prompt. It begins below the measured
+   header so a first-open nudge never blocks presentation navigation or Close.
+   It stays visible until dismissed so the chrome-free install path remains
+   discoverable. */
 .pp-projector-prompt {
   position: absolute;
   left: 50%;
-  top: calc(var(--space-md) + env(safe-area-inset-top, 0px));
+  top: calc(var(--pp-header-offset, 62px) + var(--space-sm));
   transform: translateX(-50%);
   z-index: var(--z-toast);
   display: flex;
@@ -1976,7 +1987,6 @@ body.play-presentation-mobile .pp-disc-drawer .disc-composer-actions .btn {
   .pp-disc-drawer {
     /* Keep study context visible above a phone discussion sheet. */
     max-height: calc(var(--app-vh, 1vh) * 76);
-    max-height: 76dvh;
     border-radius: 18px 18px 0 0;
   }
   .pp-disc-drawer-head {
@@ -2399,8 +2409,8 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: var(--tap-min);
+  height: var(--tap-min);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   color: var(--color-text);
@@ -2827,7 +2837,7 @@ body.play-presentation-mobile.is-portrait-screen .pp-layout-player {
 
 body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   .pp-layout-player {
-  grid-template-rows: minmax(230px, 34vh) auto;
+  grid-template-rows: minmax(230px, calc(var(--app-vh, 1vh) * 34)) auto;
 }
 
 body.play-presentation-mobile.is-portrait-screen.is-phone-screen
@@ -2894,10 +2904,15 @@ body.play-presentation-mobile.is-landscape-screen .pp-mode-btn {
   font-size: var(--font-size-xs);
 }
 
-body.play-presentation-mobile.is-landscape-screen .pp-nav-btn,
-body.play-presentation-mobile.is-landscape-screen .pp-close-btn {
-  min-width: 38px;
-  min-height: 36px;
+/* The presenter keeps a compact header in tablet layouts, but next/previous
+   and Close are primary controls and retain the standard target. Phone
+   landscape has its own narrower rule below. */
+body.play-presentation-mobile.shell-tablet.is-mobile-screen:not(.is-phone-screen)
+  .pp-nav-btn,
+body.play-presentation-mobile.shell-tablet.is-mobile-screen:not(.is-phone-screen)
+  .pp-close-btn {
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
 }
 
 body.play-presentation-mobile.is-landscape-screen .pp-layout {

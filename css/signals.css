@@ -1003,18 +1003,35 @@
 }
 
 .signals-play-overlay {
+  --signals-play-edge-top: max(var(--space-lg), env(safe-area-inset-top));
+  --signals-play-edge-right: max(var(--space-lg), env(safe-area-inset-right));
+  --signals-play-edge-bottom: max(var(--space-lg), env(safe-area-inset-bottom));
+  --signals-play-edge-left: max(var(--space-lg), env(safe-area-inset-left));
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(var(--app-vh, 1vh) * 100);
   z-index: calc(var(--z-skip-link) + 2);
   display: grid;
   place-items: center;
-  padding: var(--space-lg);
+  box-sizing: border-box;
+  padding: var(--signals-play-edge-top) var(--signals-play-edge-right)
+    var(--signals-play-edge-bottom) var(--signals-play-edge-left);
   background: rgba(10, 16, 28, 0.66);
+  overflow: hidden;
+  overscroll-behavior: contain;
 }
 
 .signals-play-dialog {
   width: min(1040px, 100%);
-  max-height: min(820px, 94vh);
+  max-height: min(
+    820px,
+    calc(
+      (var(--app-vh, 1vh) * 100) - var(--signals-play-edge-top) -
+        var(--signals-play-edge-bottom)
+    )
+  );
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
@@ -1051,8 +1068,9 @@
 }
 
 .signals-play-close {
-  width: 42px;
-  height: 42px;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-bg-lighter);
@@ -1161,7 +1179,7 @@
 
 .signals-play-video {
   width: 100%;
-  max-height: 62vh;
+  max-height: calc(var(--app-vh, 1vh) * 62);
   border-radius: var(--radius-sm);
   background: var(--color-dark);
 }
@@ -1290,12 +1308,18 @@
   }
 
   body.shell-phone:not(.shell-ipados) .signals-play-overlay {
+    --signals-play-edge-top: max(var(--space-sm), env(safe-area-inset-top));
+    --signals-play-edge-right: max(var(--space-sm), env(safe-area-inset-right));
+    --signals-play-edge-bottom: max(var(--space-sm), env(safe-area-inset-bottom));
+    --signals-play-edge-left: max(var(--space-sm), env(safe-area-inset-left));
     align-items: stretch;
-    padding: var(--space-sm);
   }
 
   body.shell-phone:not(.shell-ipados) .signals-play-dialog {
-    max-height: calc(100vh - (2 * var(--space-sm)));
+    max-height: calc(
+      (var(--app-vh, 1vh) * 100) - var(--signals-play-edge-top) -
+        var(--signals-play-edge-bottom)
+    );
   }
 
   body.shell-phone:not(.shell-ipados) .signals-play-header {
@@ -1318,7 +1342,7 @@
   }
 
   body.shell-phone:not(.shell-ipados) .signals-play-video {
-    max-height: 44vh;
+    max-height: calc(var(--app-vh, 1vh) * 44);
   }
 }
 
@@ -1498,5 +1522,78 @@
   body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-signals-workspace .signals-clip video,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-signals-workspace .signals-clip-open {
     border-radius: var(--coach-grid-radius);
+  }
+}
+
+/* ============ Staff tablet landscape: Signals ============ */
+/*
+ * The landscape staff shell loses a 78px app rail, so it should not inherit
+ * the phone breakpoint's one-column command strip and category stack. Keep
+ * the detail pane below the categories at the constrained 1024px tier (the
+ * max-width:1180px rule above still owns that), while the category grid uses
+ * the rendered lane width to reclaim a second usable track whenever it fits.
+ * This deliberately excludes desktop, portrait, and player shells.
+ */
+@media (min-width: 821px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #signals
+    .coach-grid-signals-workspace {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #signals
+    .signals-header {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #signals
+    .signals-header-command {
+    gap: 6px;
+  }
+
+  /* Explicit tracks prevent intrinsic auto-fit sizing from turning the four
+   * summary cards into a tall single column in an iPad command strip. */
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #signals
+    .signals-stats {
+    grid-template-columns: repeat(4, minmax(64px, max-content));
+    gap: 6px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #signals
+    .signals-stat {
+    min-height: 44px;
+    padding: 4px 6px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #signals
+    .signals-header-command
+    > .btn {
+    min-height: 44px;
+  }
+
+  /* auto-fit follows the real category lane: two cards at 1024/1366, one
+   * only when the available lane genuinely drops below a usable card width. */
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #signals
+    .signals-category-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 8px;
+  }
+
+  /* Remote clip actions are used directly in the detail pane. Keep Watch at
+   * the tablet touch-target floor without altering desktop or portrait UI. */
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #signals
+    .signals-clip-open {
+    min-width: 44px;
+    min-height: 44px;
   }
 }

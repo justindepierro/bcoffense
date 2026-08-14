@@ -214,6 +214,11 @@ async function openScriptReorderModal() {
   );
 
   if (selectedPeriod === null) return;
+  // showListPicker completes its visual close and restores its trigger focus
+  // after a short transition. Let that teardown finish before the managed
+  // reorder layer captures focus, otherwise the picker can steal focus back
+  // from the new dialog in a multi-period Script flow.
+  await new Promise((resolve) => setTimeout(resolve, 210));
   openPeriodReorderModal(selectedPeriod);
 }
 

@@ -2854,7 +2854,7 @@ function checkCallSheetMobileContracts() {
   }
 
   if (
-    !/activeTab === "callsheet"[\s\S]*previousShellSize !== shellSize[\s\S]*scheduleRenderCallSheet\(\)/.test(
+    !/const shellGeometryChanged =[\s\S]*previousShellSize !== shellSize[\s\S]*activeTab === "callsheet"[\s\S]*shellGeometryChanged[\s\S]*scheduleRenderCallSheet\(\)/.test(
       appShell,
     )
   ) {
@@ -3847,6 +3847,12 @@ function checkE2eLocalHarness() {
     !/assertRuntimeClean/.test(helpers) ||
     !/requestfailed/.test(helpers) ||
     !/function isExpectedReloadCancellation\(request\)/.test(helpers) ||
+    !/function isExplicitExpectedReloadCancellation\(page, request\)/.test(helpers) ||
+    !/async function reloadWithExpectedAbort\(page, expectedUrls = \[\], options = \{\}\)/.test(helpers) ||
+    !/__bcExpectedReloadAbortUrls/.test(helpers) ||
+    !/new URL\(request\.url\(\)\)/.test(helpers) ||
+    !/async function installLocalFontStubs\(page\)/.test(helpers) ||
+    !/fonts\\\.googleapis\\\.com/.test(helpers) ||
     !/request\.method\(\) !== "GET"/.test(helpers) ||
     !/request\.failure\(\)\?\.errorText !== "net::ERR_ABORTED"/.test(helpers) ||
     !/\^https:\\\/\\\/fonts\\\.\(\?:gstatic\|googleapis\)\\\.com\\\//.test(helpers) ||
@@ -3868,6 +3874,7 @@ function checkE2eLocalHarness() {
     !/Local first-load hydration/.test(hydrationSpec) ||
     !/installRuntimeErrorGuards/.test(hydrationSpec) ||
     !/assertRuntimeClean/.test(hydrationSpec) ||
+    !/reloadWithExpectedAbort\(page, \["\/api\/questions\?summary=1"\]/.test(hydrationSpec) ||
     !/LAST_ACTIVE_TAB/.test(hydrationSpec) ||
     !/dashboard/.test(hydrationSpec) ||
     !/gameplan/.test(hydrationSpec) ||

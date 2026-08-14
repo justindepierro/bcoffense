@@ -124,7 +124,13 @@ function _gpRenderMultiFilterDropdown(field, label, values) {
 function renderGamePlan() {
   const root = document.getElementById("gameplan");
   if (!root) return;
+  const libraryCollapsed = root.classList.contains("gp-library-collapsed");
   if (typeof plays === "undefined" || !Array.isArray(plays) || plays.length === 0) {
+    // The phone Bulk sheet is portaled to <body>, so a playbook reset cannot
+    // leave a stale blocking layer above this empty-state render.
+    if (typeof closeGamePlanBulkSheet === "function") {
+      closeGamePlanBulkSheet({ returnFocus: false, immediate: true });
+    }
     root.innerHTML = `
       <div class="gp-header">
         <div class="gp-header-meta">
@@ -289,11 +295,17 @@ function renderGamePlan() {
 
   const filtered = _gpFilteredLibrary(board);
   const libraryHtml = `
-    <div class="gp-library app-library-pane">
+    <aside class="gp-library app-library-pane" id="gpLibraryPane" role="region"
+      aria-label="Game Plan play library" aria-hidden="${libraryCollapsed ? "true" : "false"}">
       <div class="gp-library-header">
         <span>Library</span>
         <span class="gp-library-count">${filtered.length} of ${plays.length}${_gpSelected.size > 0 ? ` • ${_gpSelected.size} selected` : ""}</span>
-        <button class="btn btn-sm btn-secondary gp-bulk-trigger" data-action="toggleGamePlanBulkSheet" title="Bulk selection actions" aria-haspopup="true">⋯ Bulk</button>
+        <button type="button" class="btn btn-sm btn-secondary gp-bulk-trigger" id="gpBulkSheetTrigger"
+          data-action="openGamePlanBulkSheet" title="Bulk selection actions" aria-haspopup="dialog"
+          aria-controls="gpBulkSheetOverlay" aria-expanded="${_gpShowBulkSheet ? "true" : "false"}">⋯ Bulk</button>
+        <button type="button" class="btn btn-sm gp-library-rail-close" id="gpLibraryRailClose"
+          data-action="toggleGamePlanLibraryRail" data-arg="close" title="Hide play library"
+          aria-label="Hide play library">✕</button>
       </div>
       <div class="gp-library-refine">
         <label class="sr-only" for="gpLibrarySearch">Search Game Plan library</label>
@@ -303,26 +315,23 @@ function renderGamePlan() {
           title="Filter this library by type, formation, personnel, and more" aria-controls="gpLibraryFilters" aria-expanded="${_gpFilters.showFilters ? "true" : "false"}">⚙ Filter${_gpActiveFilterCount() > 0 ? ` (${_gpActiveFilterCount()})` : ""}</button>
       </div>
       ${toolbarHtml}
-      ${_gpShowBulkSheet ? `<div class="gp-bulk-backdrop" data-action="toggleGamePlanBulkSheet" aria-hidden="true"></div>` : ""}
-      <div class="gp-library-bulk${_gpShowBulkSheet ? " gp-bulk-open" : ""}">
-        <div class="gp-bulk-sheet-header">
-          <span>Bulk Actions</span>
-          <button class="btn btn-sm gp-bulk-close" data-action="toggleGamePlanBulkSheet" aria-label="Close bulk actions" title="Close">✕</button>
-        </div>
+      <div class="gp-library-bulk">
         <button class="btn btn-sm btn-secondary" data-action="gpSelectAllVisible" title="Check every play matching current filters">☑ All visible</button>
         <button class="btn btn-sm btn-secondary" data-action="gpClearLibrarySelection" title="Uncheck all">▢ None</button>
         <button class="btn btn-sm btn-secondary" data-action="gpInvertVisibleSelection" title="Invert selection within visible">⇄ Invert</button>
         <button class="btn btn-sm" data-action="gpAddAllVisibleToBox" title="Add every visible play to a box you pick">➕ Add all visible to…</button>
       </div>
-      <div class="gp-library-list app-library-list" id="gpLibraryList">
+      <div class="gp-library-list app-library-list" id="gpLibraryList"
+        data-approved-scroller="gameplan-library-results">
         ${filtered.length === 0
       ? `<div class="gp-box-empty">No plays match the current filters.</div>`
       : filtered.map((p) => _gpRenderLibraryRow(p, assignedSigs, renderCtx)).join("")}
       </div>
-    </div>`;
+    </aside>`;
 
   const boxesHtml = `
-    <div class="gp-boxes gp-density-${escapeHtml(_gpFilters.density)}" id="gpBoxes">
+    <div class="gp-boxes gp-density-${escapeHtml(_gpFilters.density)}" id="gpBoxes"
+      data-approved-scroller="gameplan-board-boxes">
       ${allBoxes.map((b) => _gpRenderBox(b, board, renderCtx)).join("")}
     </div>`;
 
@@ -338,6 +347,13 @@ function renderGamePlan() {
   const touchHtml = _gpRenderTouchTracker(board, draftedPlays);
   const chipsHtml = _gpRenderFilterChips();
   const jumpBarHtml = _gpRenderJumpPills(allBoxes, board);
+  const libraryRailToggleHtml = `
+    <button type="button" class="btn gp-library-rail-toggle" id="gpLibraryRailToggle"
+      data-action="toggleGamePlanLibraryRail" aria-controls="gpLibraryPane"
+      aria-expanded="${libraryCollapsed ? "false" : "true"}" title="${libraryCollapsed ? "Show" : "Hide"} play library">
+      <span aria-hidden="true">📚</span>
+      <span class="gp-library-rail-toggle-label">${libraryCollapsed ? "Show Library" : "Hide Library"}</span>
+    </button>`;
   const trashZoneHtml = `<div class="gp-trash-zone" id="gpTrashZone" data-trash="1">📥 Drag here to send to Holding · 🗑️ Drag to remove</div>`;
   // Sticky spotlight banner — appears when a coverage tile or touch tile is active.
   let spotlightBannerHtml = "";
@@ -363,13 +379,16 @@ function renderGamePlan() {
     : "";
   wrapper.innerHTML =
     `<div class="gp-command-zone">${headerHtml}</div>` +
-    `<div class="gp-board-scroll">${statsBarHtml}${chipsHtml}${jumpBarHtml}${spotlightBannerHtml}${trashZoneHtml}<div class="gp-layout">${libraryHtml}${boxesHtml}</div></div>`;
+    `<div class="gp-board-scroll">${statsBarHtml}${chipsHtml}${jumpBarHtml}${spotlightBannerHtml}${trashZoneHtml}${libraryRailToggleHtml}<div class="gp-layout">${libraryHtml}${boxesHtml}</div></div>`;
   while (wrapper.firstChild) root.appendChild(wrapper.firstChild);
   _gpAttachLibraryHandlers();
   _gpAttachBoxHandlers();
   _gpAttachTrashZoneHandlers();
   if (typeof restoreGamePlanLibrarySearchFocus === "function") {
     restoreGamePlanLibrarySearchFocus();
+  }
+  if (typeof syncGamePlanBulkSheetForViewport === "function") {
+    syncGamePlanBulkSheetForViewport();
   }
   _gpWarmMediaCompletionRemote(draftedPlays);
   if (typeof loadGamePlanDiscussionCounts === "function") {
@@ -537,8 +556,21 @@ function _gpStatRowHtml(label, entries, opts) {
     </div>`;
 }
 
+function _gpCloseGamePlanBoxInfo(options = {}) {
+  const overlay = document.getElementById("gpBoxInfoOverlay");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer("gpBoxInfoOverlay", options);
+  overlay.classList.remove("visible");
+  if (options.immediate) overlay.remove();
+  else setTimeout(() => overlay.remove(), 180);
+}
+
 function showGamePlanBoxInfo(boxId) {
   if (!boxId) return;
+  const returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  // Box Info is a single transient dialog. Replace an old box's view without
+  // returning focus to its soon-to-be-removed Close button.
+  _gpCloseGamePlanBoxInfo({ returnFocus: false, immediate: true });
   const board = _gpEnsureBoard();
   const allBoxes = [GP_HOLDING_BOX, ...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
   const box = allBoxes.find((b) => b.id === boxId);
@@ -592,14 +624,16 @@ function showGamePlanBoxInfo(boxId) {
     ].filter(Boolean).join("");
 
   const overlay = document.createElement("div");
-  overlay.className = "custom-modal-overlay gp-info-modal-overlay";
+  overlay.id = "gpBoxInfoOverlay";
+  overlay.className = "custom-modal-overlay gp-modal-layer gp-info-modal-overlay";
   overlay.innerHTML = `
-    <div class="custom-modal gp-info-modal" role="dialog" aria-modal="true" aria-labelledby="gpBoxInfoTitle" style="--gp-info-accent:${accent}">
+    <div class="custom-modal gp-legacy-modal gp-info-modal" role="dialog" aria-modal="true" aria-labelledby="gpBoxInfoTitle" style="--gp-info-accent:${accent}">
       <div class="custom-modal-header">
         <span class="custom-modal-icon">ℹ️</span>
         <h3 class="custom-modal-title" id="gpBoxInfoTitle">${escapeHtml(box.label)}</h3>
+        <button type="button" class="btn gp-legacy-modal-close" data-gp-info-close aria-label="Close box info">×</button>
       </div>
-      <div class="custom-modal-body">
+      <div class="custom-modal-body gp-modal-scroll gp-info-modal-body">
         ${countHtml}
         ${descHtml}
         ${noteHtml}
@@ -610,18 +644,33 @@ function showGamePlanBoxInfo(boxId) {
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
-  requestAnimationFrame(() => overlay.classList.add("visible"));
+  overlay.classList.add("visible");
 
-  const close = () => {
-    overlay.classList.remove("visible");
-    setTimeout(() => overlay.remove(), 200);
-  };
-  overlay.querySelector("[data-gp-info-close]").addEventListener("click", close);
-  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
-  overlay.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") { e.preventDefault(); close(); }
+  const close = () => _gpCloseGamePlanBoxInfo();
+  const closeButton = overlay.querySelector("[data-gp-info-close]");
+  overlay.querySelectorAll("[data-gp-info-close]").forEach((button) => {
+    button.addEventListener("click", close);
   });
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  const managed = typeof openLayer === "function" && openLayer(overlay, {
+    id: "gpBoxInfoOverlay",
+    scrollElement: overlay.querySelector(".gp-info-modal-body") || overlay,
+    blocking: true,
+    safeArea: true,
+    initialFocus: closeButton || overlay.querySelector(".gp-info-modal") || overlay,
+    onEscape: close,
+    returnFocus,
+  });
+  if (!managed) {
+    if (typeof trapFocus === "function") trapFocus(overlay);
+    closeButton?.focus();
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close();
+      }
+    });
+  }
 }
 
 function _gpRenderBox(box, board, renderCtx) {
@@ -721,6 +770,75 @@ function _gpRenderBox(box, board, renderCtx) {
       <option value="field" ${sortMode === "field" ? "selected" : ""}>Field Position</option>
       <option value="play" ${sortMode === "play" ? "selected" : ""}>Play Name</option>
     </select>`;
+  const addPlayAction = `<button class="btn btn-sm" title="Add a play from the playbook to this box"
+          data-action="addPlayToGamePlanBox" data-arg="${escapeHtml(box.id)}">➕ Add Play</button>`;
+  const suggestAction = `<button class="btn btn-sm" title="Smart fill — pick from plays that match this box's intent"
+          data-action="gpSuggestFillBox" data-arg="${escapeHtml(box.id)}">💡 Suggest</button>`;
+  const callSheetAction = !isHolding && list.length > 0
+    ? `<button class="btn btn-sm btn-secondary" title="Push only this box's plays — fans out to all matching call sheet categories"
+          data-action="pushGamePlanBoxToCallSheet" data-arg="${escapeHtml(box.id)}">➡️ To Call Sheet</button>`
+    : "";
+  const periodAction = !isHolding && list.length > 0
+    ? `<button class="btn btn-sm btn-secondary" title="Add only this box's plays to a script period"
+          data-action="loadGamePlanBoxIntoScript" data-arg="${escapeHtml(box.id)}">📋 To Period</button>`
+    : "";
+  const matchingAction = !isHolding ? (() => {
+    const meta = _gpGetBoxMeta(board, box.id);
+    const hasRules = _gpHasCriteria(meta.criteria) || !!meta.callSheetCategoryId;
+    const summary = _gpFormatBoxMetaSummary(meta);
+    return `<button class="btn btn-sm btn-secondary${hasRules ? " gp-btn-active" : ""}" title="${hasRules ? `Matching rules: ${escapeHtml(summary)}` : "Set matching rules — auto-route plays into this box and Push to Call Sheet"}"
+          data-action="editGamePlanBoxMatching" data-arg="${escapeHtml(box.id)}">🧩</button>`;
+  })() : "";
+  const targetAction = `<button class="btn btn-sm btn-secondary" title="${target > 0 ? `Edit target (currently ${target})` : "Set target count"}"
+          data-action="setGamePlanBoxTarget" data-arg="${escapeHtml(box.id)}">🎯</button>`;
+  const noteAction = `<button class="btn btn-sm btn-secondary" title="${note ? "Edit note" : "Add a note for this box"}"
+          data-action="editGamePlanBoxNote" data-arg="${escapeHtml(box.id)}">${note ? "📝" : "📄"}</button>`;
+  const infoAction = `<button class="btn btn-sm btn-secondary" title="What goes in this box? View stats and breakdown"
+          data-action="showGamePlanBoxInfo" data-arg="${escapeHtml(box.id)}">ℹ️</button>`;
+  const reorderActions = !isHolding ? `
+          <button class="btn btn-sm btn-secondary" title="Move up"
+            data-action="moveGamePlanBoxUp" data-arg="${escapeHtml(box.id)}">↑</button>
+          <button class="btn btn-sm btn-secondary" title="Move down"
+            data-action="moveGamePlanBoxDown" data-arg="${escapeHtml(box.id)}">↓</button>
+          <button class="btn btn-sm btn-secondary" title="Rename this box"
+            data-action="renameAnyGamePlanBox" data-arg="${escapeHtml(box.id)}">✏️</button>
+          <button class="btn btn-sm btn-secondary" title="Hide this box (Manage Boxes to restore)"
+            data-action="hideGamePlanBox" data-arg="${escapeHtml(box.id)}">👁️‍🗨️</button>
+        ` : "";
+  const deleteAction = isCustom
+    ? `<button class="btn btn-sm btn-danger" title="Delete box"
+              data-action="deleteGamePlanBox" data-arg="${escapeHtml(box.id)}">🗑️</button>`
+    : "";
+  const clearAction = `<button class="btn btn-sm" title="Clear plays in this box"
+          data-action="clearGamePlanBox" data-arg="${escapeHtml(box.id)}">⨯</button>`;
+  const boxMoreOpen = _gpOpenBoxMoreId === box.id;
+  const boxMoreMenuId = _gpBoxMoreMenuId(box.id);
+  const tabletHeaderActions = `
+      <div class="gp-box-actions gp-box-tablet-actions${boxMoreOpen ? " is-open" : ""}" data-stop-toggle="1">
+        <div class="gp-box-tablet-action-row">
+          ${addPlayAction}
+          <button class="btn btn-sm btn-secondary gp-box-more-toggle" id="${escapeHtml(_gpBoxMoreToggleId(box.id))}"
+            type="button" title="More actions for ${escapeHtml(box.label)}" data-action="toggleGamePlanBoxMore"
+            data-arg="${escapeHtml(box.id)}" aria-controls="${escapeHtml(boxMoreMenuId)}"
+            aria-expanded="${boxMoreOpen ? "true" : "false"}">⋯ More</button>
+        </div>
+        ${boxMoreOpen ? `
+          <div class="gp-box-more-menu" id="${escapeHtml(boxMoreMenuId)}" role="group"
+            aria-label="More actions for ${escapeHtml(box.label)}">
+            ${suggestAction}
+            ${sortDropdown}
+            ${holdingAutoBtn}
+            ${callSheetAction}
+            ${periodAction}
+            ${matchingAction}
+            ${targetAction}
+            ${noteAction}
+            ${infoAction}
+            ${reorderActions}
+            ${deleteAction}
+            ${clearAction}
+          </div>` : ""}
+      </div>`;
   const countTitle = boxFilterActive
     ? `${visibleList.length} visible of ${list.length} total plays`
     : `${list.length} play${list.length === 1 ? "" : "s"}`;
@@ -740,50 +858,21 @@ function _gpRenderBox(box, board, renderCtx) {
         ${varietyHtml}
       </div>
       <div class="gp-box-actions" data-stop-toggle="1">
-        <button class="btn btn-sm" title="Add a play from the playbook to this box"
-          data-action="addPlayToGamePlanBox" data-arg="${escapeHtml(box.id)}">➕ Add Play</button>
-        <button class="btn btn-sm" title="Smart fill — pick from plays that match this box's intent"
-          data-action="gpSuggestFillBox" data-arg="${escapeHtml(box.id)}">💡 Suggest</button>
+        ${addPlayAction}
+        ${suggestAction}
         ${sortDropdown}
         ${holdingAutoBtn}
-        ${!isHolding && list.length > 0
-      ? `<button class="btn btn-sm btn-secondary" title="Push only this box's plays — fans out to all matching call sheet categories"
-          data-action="pushGamePlanBoxToCallSheet" data-arg="${escapeHtml(box.id)}">➡️ To Call Sheet</button>`
-      : ""}
-        ${!isHolding && list.length > 0
-      ? `<button class="btn btn-sm btn-secondary" title="Add only this box's plays to a script period"
-          data-action="loadGamePlanBoxIntoScript" data-arg="${escapeHtml(box.id)}">📋 To Period</button>`
-      : ""}
-        ${!isHolding ? (() => {
-      const meta = _gpGetBoxMeta(board, box.id);
-      const hasRules = _gpHasCriteria(meta.criteria) || !!meta.callSheetCategoryId;
-      const summary = _gpFormatBoxMetaSummary(meta);
-      return `<button class="btn btn-sm btn-secondary${hasRules ? " gp-btn-active" : ""}" title="${hasRules ? `Matching rules: ${escapeHtml(summary)}` : "Set matching rules — auto-route plays into this box and Push to Call Sheet"}"
-          data-action="editGamePlanBoxMatching" data-arg="${escapeHtml(box.id)}">🧩</button>`;
-    })() : ""}
-        <button class="btn btn-sm btn-secondary" title="${target > 0 ? `Edit target (currently ${target})` : "Set target count"}"
-          data-action="setGamePlanBoxTarget" data-arg="${escapeHtml(box.id)}">🎯</button>
-        <button class="btn btn-sm btn-secondary" title="${note ? "Edit note" : "Add a note for this box"}"
-          data-action="editGamePlanBoxNote" data-arg="${escapeHtml(box.id)}">${note ? "📝" : "📄"}</button>
-        <button class="btn btn-sm btn-secondary" title="What goes in this box? View stats and breakdown"
-          data-action="showGamePlanBoxInfo" data-arg="${escapeHtml(box.id)}">ℹ️</button>
-        ${!isHolding ? `
-          <button class="btn btn-sm btn-secondary" title="Move up"
-            data-action="moveGamePlanBoxUp" data-arg="${escapeHtml(box.id)}">↑</button>
-          <button class="btn btn-sm btn-secondary" title="Move down"
-            data-action="moveGamePlanBoxDown" data-arg="${escapeHtml(box.id)}">↓</button>
-          <button class="btn btn-sm btn-secondary" title="Rename this box"
-            data-action="renameAnyGamePlanBox" data-arg="${escapeHtml(box.id)}">✏️</button>
-          <button class="btn btn-sm btn-secondary" title="Hide this box (Manage Boxes to restore)"
-            data-action="hideGamePlanBox" data-arg="${escapeHtml(box.id)}">👁️‍🗨️</button>
-        ` : ""}
-        ${isCustom
-      ? `<button class="btn btn-sm btn-danger" title="Delete box"
-              data-action="deleteGamePlanBox" data-arg="${escapeHtml(box.id)}">🗑️</button>`
-      : ""}
-        <button class="btn btn-sm" title="Clear plays in this box"
-          data-action="clearGamePlanBox" data-arg="${escapeHtml(box.id)}">⨯</button>
+        ${callSheetAction}
+        ${periodAction}
+        ${matchingAction}
+        ${targetAction}
+        ${noteAction}
+        ${infoAction}
+        ${reorderActions}
+        ${deleteAction}
+        ${clearAction}
       </div>
+      ${tabletHeaderActions}
     </div>
     ${progressHtml}
     ${hashHtml}
@@ -890,6 +979,8 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx, renderCtx) {
         ${meta || scoutBadge || variantControl ? `<div class="gp-box-play-meta">${variantControl || (meta ? escapeHtml(meta) : "")}${addVariantsControl}${scoutBadge}</div>` : ""}
       </div>
       <div class="gp-box-play-actions">
+        <button type="button" class="gp-box-play-tablet-menu" aria-label="Actions for this play"
+          data-action="openGamePlanPlayActionMenu" data-arg="${escapeHtml(actionArg)}" title="Actions for this play">⋯</button>
         ${discBtn}
         ${flagBtns}
         ${reorderBtns}
@@ -1011,11 +1102,154 @@ function _gpActiveFilterCount() {
   return n;
 }
 
-// Phone-only: toggle the bulk-operations action sheet. On larger screens the
-// bulk bar is always shown inline, so this only matters under shell-phone.
+// Phone-only Bulk Actions are a true blocking layer rather than a piece of
+// Game Plan's frequently replaced board DOM.  The inline bulk bar remains the
+// desktop/tablet control; this portal only exists at the phone breakpoint.
+let _gpBulkSheetCloseTimer = null;
+
+function _gpIsPhoneBulkSheetViewport() {
+  if (typeof window === "undefined") return false;
+  if (typeof window.matchMedia === "function") {
+    return window.matchMedia("(max-width: 640px)").matches;
+  }
+  return Number(window.innerWidth) <= 640;
+}
+
+function _gpBulkSheetMarkup() {
+  return `
+    <section class="gp-bulk-sheet" role="dialog" aria-modal="true" aria-labelledby="gpBulkSheetTitle">
+      <div class="gp-bulk-sheet-header">
+        <h2 id="gpBulkSheetTitle">Bulk Actions</h2>
+        <button type="button" class="btn btn-ghost gp-bulk-close" data-action="closeGamePlanBulkSheet"
+          data-layer-close aria-label="Close bulk actions" title="Close bulk actions">✕</button>
+      </div>
+      <div class="gp-bulk-sheet-body">
+        <button class="btn btn-secondary" data-action="gpSelectAllVisible" title="Check every play matching current filters">☑ All visible</button>
+        <button class="btn btn-secondary" data-action="gpClearLibrarySelection" title="Uncheck all">▢ None</button>
+        <button class="btn btn-secondary" data-action="gpInvertVisibleSelection" title="Invert selection within visible">⇄ Invert</button>
+        <button class="btn" data-action="gpAddAllVisibleToBox" title="Add every visible play to a box you pick">➕ Add all visible to…</button>
+      </div>
+    </section>`;
+}
+
+function _gpSetBulkSheetTriggerExpanded(isOpen) {
+  document.querySelectorAll(".gp-bulk-trigger").forEach((trigger) => {
+    trigger.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  });
+}
+
+function _gpGetBulkSheetReturnTarget(overlay) {
+  const original = overlay?._gpBulkSheetReturnFocus;
+  if (original?.isConnected) return original;
+  return document.getElementById("gpBulkSheetTrigger");
+}
+
+function openGamePlanBulkSheet() {
+  if (!_gpIsPhoneBulkSheetViewport()) {
+    closeGamePlanBulkSheet({ returnFocus: false, immediate: true });
+    return false;
+  }
+
+  const existing = document.getElementById("gpBulkSheetOverlay");
+  if (_gpShowBulkSheet && existing?.dataset.layerOpen === "true") return true;
+
+  const active = document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : null;
+  const trigger = active?.matches(".gp-bulk-trigger")
+    ? active
+    : document.getElementById("gpBulkSheetTrigger") || active;
+  const overlay = existing || document.createElement("div");
+  overlay.id = "gpBulkSheetOverlay";
+  overlay.className = "gp-bulk-sheet-overlay";
+  overlay.setAttribute("aria-hidden", "false");
+  overlay.innerHTML = _gpBulkSheetMarkup();
+  overlay._gpBulkSheetReturnFocus = trigger || null;
+  if (!overlay.parentElement) document.body.appendChild(overlay);
+
+  if (overlay.dataset.gpBulkSheetBackdropBound !== "true") {
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) closeGamePlanBulkSheet();
+    });
+    overlay.dataset.gpBulkSheetBackdropBound = "true";
+  }
+
+  window.clearTimeout(_gpBulkSheetCloseTimer);
+  _gpShowBulkSheet = true;
+  overlay.classList.add("visible");
+  _gpSetBulkSheetTriggerExpanded(true);
+
+  const closeButton = overlay.querySelector(".gp-bulk-close");
+  const scrollBody = overlay.querySelector(".gp-bulk-sheet-body");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "gp-bulk-sheet",
+      // The Add-all flow opens the existing shared list picker above this
+      // sheet. Keeping both layers nonexclusive preserves that nested path.
+      exclusive: false,
+      blocking: true,
+      safeArea: true,
+      scrollElement: scrollBody || overlay,
+      initialFocus: closeButton || overlay,
+      onEscape: () => closeGamePlanBulkSheet(),
+      returnFocus: trigger || true,
+    });
+  } else {
+    overlay.classList.add("app-layer-active", "app-layer-safe-area");
+    if (typeof trapFocus === "function") trapFocus(overlay);
+    closeButton?.focus({ preventScroll: true });
+  }
+  return true;
+}
+
+function closeGamePlanBulkSheet(options = {}) {
+  const overlay = document.getElementById("gpBulkSheetOverlay");
+  _gpShowBulkSheet = false;
+  _gpSetBulkSheetTriggerExpanded(false);
+  if (!overlay) return false;
+
+  const returnTarget = options.returnFocus === false
+    ? null
+    : _gpGetBulkSheetReturnTarget(overlay);
+  if (typeof closeLayer === "function") {
+    closeLayer("gp-bulk-sheet", { returnFocus: options.returnFocus !== false });
+  }
+  overlay.classList.remove("visible", "app-layer-active", "app-layer-safe-area");
+  overlay.setAttribute("aria-hidden", "true");
+
+  // A bulk action can re-render the Game Plan root while the sheet stays
+  // open. LayerManager keeps the original trigger, so provide the current
+  // stable trigger as a fallback when that old node has been replaced.
+  if (returnTarget?.isConnected && document.activeElement !== returnTarget) {
+    try { returnTarget.focus({ preventScroll: true }); } catch (_error) { returnTarget.focus(); }
+  }
+
+  window.clearTimeout(_gpBulkSheetCloseTimer);
+  if (options.immediate) {
+    overlay.remove();
+  } else {
+    _gpBulkSheetCloseTimer = window.setTimeout(() => {
+      if (!overlay.classList.contains("visible")) overlay.remove();
+    }, 180);
+  }
+  return true;
+}
+
+// Kept as a compatibility surface for old local sessions or bookmarks. New
+// controls intentionally use explicit open/close actions so their lifecycle
+// cannot desynchronize after a board render.
 function toggleGamePlanBulkSheet() {
-  _gpShowBulkSheet = !_gpShowBulkSheet;
-  requestRenderGamePlan();
+  return _gpShowBulkSheet ? closeGamePlanBulkSheet() : openGamePlanBulkSheet();
+}
+
+function syncGamePlanBulkSheetForViewport() {
+  if (_gpShowBulkSheet && !_gpIsPhoneBulkSheetViewport()) {
+    closeGamePlanBulkSheet({ returnFocus: false, immediate: true });
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("resize", syncGamePlanBulkSheetForViewport, { passive: true });
 }
 
 /* -------------------------------------------------------------------------

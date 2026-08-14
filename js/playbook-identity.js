@@ -192,12 +192,12 @@ function openPlaybookCategoryCleanup() {
   }
   if (_catCleanupScope === "filtered") _captureCatCleanupFilteredSnapshot();
   _catCleanupHasPendingPlaybookRender = false;
-  document.getElementById("playbookCatCleanupOverlay")?.remove();
+  _pbDiscardReportOverlay("playbookCatCleanupOverlay", "playbook-category-cleanup");
   const overlay = document.createElement("div");
   overlay.className = "custom-modal-overlay visible";
   overlay.id = "playbookCatCleanupOverlay";
   overlay.innerHTML = `
-    <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="catCleanupTitle" style="max-width:960px;width:96vw;">
+    <div class="custom-modal pb-category-cleanup-modal" role="dialog" aria-modal="true" aria-labelledby="catCleanupTitle" style="max-width:960px;width:96vw;">
       <div class="custom-modal-header">
         <span class="custom-modal-icon">🧹</span>
         <h3 class="custom-modal-title" id="catCleanupTitle">Cleanup by Call Sheet Category</h3>
@@ -251,7 +251,25 @@ function openPlaybookCategoryCleanup() {
     </div>
   `;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  const closeButton = overlay.querySelector(".modal-close");
+  _pbOpenReportLayer(overlay, {
+    layerId: "playbook-category-cleanup",
+    scrollElement: overlay.querySelector(".cat-cleanup-body") || overlay,
+    initialFocus: closeButton || overlay,
+    onEscape: (event) => {
+      // Category Cleanup has a deliberate two-step Escape behavior: when the
+      // search field owns focus, Escape clears its query before the next
+      // Escape dismisses the dialog. LayerManager owns capture-phase Escape,
+      // so preserve that legacy interaction here rather than letting the
+      // dialog close before the search input receives its old handler.
+      const search = event?.target;
+      if (search?.id === "catCleanupSearch" && search.value) {
+        clearPlaybookCategoryCleanupSearch();
+        return;
+      }
+      closePlaybookCategoryCleanup();
+    },
+  });
 
   // -------- Direct, scoped listeners (do not rely on document delegation
   // for inside-modal controls — this guarantees they fire). --------
@@ -350,15 +368,12 @@ function openPlaybookCategoryCleanup() {
   _renderCatCleanupShowMode();
   _renderCatCleanupSelect();
   _renderCatCleanupList();
-  // Auto-focus search for instant typing
-  setTimeout(() => searchInput?.focus(), 50);
 }
 
-function closePlaybookCategoryCleanup() {
+function closePlaybookCategoryCleanup(options = {}) {
   const overlay = document.getElementById("playbookCatCleanupOverlay");
   if (!overlay) return;
-  overlay.classList.remove("visible");
-  setTimeout(() => overlay.remove(), 180);
+  _pbCloseReportLayer(overlay, "playbook-category-cleanup", options);
   if (_catCleanupHasPendingPlaybookRender) {
     _catCleanupHasPendingPlaybookRender = false;
     // One refresh on exit reflects all completed cleanup edits without

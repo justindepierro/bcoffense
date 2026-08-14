@@ -2756,6 +2756,23 @@ function initScriptQuizInteractionRouting() {
 
 runWhenDomReady(initScriptQuizInteractionRouting);
 
+function _openScriptQuizLayer(overlay) {
+  if (!overlay) return;
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "scriptQuizOverlay",
+      scrollElement: "scriptQuizCard",
+      blocking: true,
+      initialFocus: overlay.querySelector("[data-action='closeScriptQuiz']") || overlay,
+      // A live quiz retains its existing pause/exit confirmation. Register it
+      // with LayerManager so Escape cannot reach an underlying page shortcut.
+      onEscape: () => closeScriptQuiz(),
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+  }
+}
+
 async function startScriptQuiz(options = {}) {
   const launchStartedAt = _quizPerfNow();
   const opts = options && typeof options === "object" ? options : {};
@@ -2839,15 +2856,7 @@ async function startScriptQuiz(options = {}) {
         <div class="sq-scenario-value">Loading first rep...</div>
       </div>`);
   }
-  if (typeof openLayer === "function") {
-    openLayer(overlay, {
-      id: "scriptQuizOverlay",
-      scrollElement: "scriptQuizCard",
-      blocking: true,
-    });
-  } else if (typeof trapFocus === "function") {
-    trapFocus(overlay);
-  }
+  _openScriptQuizLayer(overlay);
   await _prepareQuizMedia(_quizPlays, { signalWindow: SIGNAL_QUIZ_PRELOAD_WINDOW });
   if (mediaPrepToken !== _quizMediaPrepToken) return;
   _quizPerfRecord("launch-to-ready", launchStartedAt);
@@ -3445,15 +3454,7 @@ function _setScriptQuizOverlayOpen(open) {
   if (!overlay) return;
   overlay.classList.toggle("hidden", !open);
   if (open) {
-    if (typeof openLayer === "function") {
-      openLayer(overlay, {
-        id: "scriptQuizOverlay",
-        scrollElement: "scriptQuizCard",
-        blocking: true,
-      });
-    } else if (typeof trapFocus === "function") {
-      trapFocus(overlay);
-    }
+    _openScriptQuizLayer(overlay);
   } else if (typeof closeLayer === "function") {
     closeLayer(overlay);
   }

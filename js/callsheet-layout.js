@@ -269,8 +269,21 @@ function openCallSheetLayoutModal() {
     setCallSheetLayoutDraftColor(select.dataset.category, select.value);
   });
 
-  if (typeof openLayer === "function")
-    openLayer(overlay, { id: "cs-layout-modal", exclusive: false });
+  const modal = overlay.querySelector(".cs-layout-modal");
+  const closeButton = overlay.querySelector(".cs-sort-close");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "cs-layout-modal",
+      scrollElement: overlay.querySelector(".cs-layout-modal-body") || modal || overlay,
+      blocking: true,
+      exclusive: false,
+      initialFocus: closeButton || modal || overlay,
+      onEscape: () => closeCallSheetLayoutModal(),
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+    closeButton?.focus();
+  }
   renderCallSheetLayoutModal();
 }
 

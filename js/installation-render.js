@@ -305,10 +305,21 @@ function renderInstallation() {
           <p class="install-subtitle">Track what you've taught — see what's game-ready</p>
         </div>
         <div class="install-header-right">
-          <div class="install-header-actions">
+          <div class="install-header-actions install-header-actions--desktop">
             <button class="btn btn-sm" data-action="saveInstallationTemplate" title="Save current installation progress as a reusable template">💾 Template</button>
             <button class="btn btn-sm" data-action="openInstallationTemplatesMenu" title="Load or delete saved installation templates">📁 Templates</button>
             <button class="btn btn-primary sir-btn" data-action="showSmartInstallReport" title="Smart Installation Report">🧠 Smart Report</button>
+          </div>
+          <div class="install-tablet-landscape-only install-tablet-header-actions" aria-label="Installation tools">
+            <div class="tool-menu-wrap install-tablet-more-wrap" data-anchored>
+              <button type="button" class="btn btn-secondary install-tablet-more-trigger" data-action="toggleParentOpen"
+                aria-haspopup="true" aria-expanded="false" aria-label="More installation tools">⋯ More</button>
+              <div class="tool-menu install-tablet-landscape-menu" data-action="removeParentOpen" aria-label="More installation tools">
+                <button type="button" data-action="showSmartInstallReport">🧠 Smart report</button>
+                <button type="button" data-action="saveInstallationTemplate">💾 Save template</button>
+                <button type="button" data-action="openInstallationTemplatesMenu">📁 Manage templates</button>
+              </div>
+            </div>
           </div>
           <div class="install-overall-progress">
             <div class="install-overall-ring" style="--pct:${overallPct}">
@@ -479,7 +490,7 @@ function renderInstallCategoryDetail(components, data) {
     <div class="install-detail">
       <div class="install-detail-header">
         <h3>${cat.icon} ${cat.label} <span class="install-detail-count">${installedCount}/${allItems.length}</span></h3>
-        <div class="install-detail-actions">
+        <div class="install-detail-actions install-detail-actions--desktop">
           <input type="text" class="install-search" placeholder="Search ${cat.label.toLowerCase()}..."
                  value="${installSearchTerm}" data-oninput="installSearch" data-pass="value">
           ${cat.id === "play"
@@ -492,6 +503,26 @@ function renderInstallCategoryDetail(components, data) {
     }
           <button class="btn btn-sm btn-success" data-action="installAll" data-arg="${cat.id}" title="Mark all as installed">✅ All</button>
           <button class="btn btn-sm btn-danger" data-action="uninstallAll" data-arg="${cat.id}" title="Clear all">✕ Clear</button>
+        </div>
+        <div class="install-tablet-landscape-only install-tablet-detail-actions" aria-label="${cat.label} checklist tools">
+          <input type="text" class="install-search" placeholder="Search ${cat.label.toLowerCase()}..."
+                 value="${installSearchTerm}" data-oninput="installSearch" data-pass="value">
+          ${cat.id === "play"
+      ? `<label class="install-smart-toggle" title="Group play variations by base concept">
+                  <input type="checkbox" ${installSmartBasePlays ? "checked" : ""}
+                         data-onchange="toggleSmartBasePlays">
+                  <span>Smart base plays</span>
+                 </label>`
+      : ""
+    }
+          <div class="tool-menu-wrap install-tablet-more-wrap" data-anchored>
+            <button type="button" class="btn btn-secondary install-tablet-more-trigger" data-action="toggleParentOpen"
+              aria-haspopup="true" aria-expanded="false" aria-label="More ${cat.label} checklist actions">⋯ More</button>
+            <div class="tool-menu install-tablet-landscape-menu" data-action="removeParentOpen" aria-label="More ${cat.label} checklist actions">
+              <button type="button" data-action="installAll" data-arg="${cat.id}">✅ Mark all installed</button>
+              <button type="button" data-action="uninstallAll" data-arg="${cat.id}">✕ Clear installed</button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="install-checklist">

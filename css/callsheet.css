@@ -9,7 +9,7 @@
 
 /* 4×6 Call Sheet index-card builder */
 #csIndexCardPrintRoot { display: none; }
-.cs-index-modal { width: min(760px, 96vw); max-height: 92vh; display: flex; flex-direction: column; }
+.cs-index-modal { width: min(760px, 96vw); max-height: calc(var(--app-vh, 1vh) * 92); display: flex; flex-direction: column; }
 .cs-index-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--color-border); color: var(--color-text-muted); font-size: var(--font-size-sm); }
 .cs-index-card { box-sizing: border-box; display: flex; flex-direction: column; width: min(100%, 480px); height: min(720px, calc((100vw - 32px) * 1.5)); margin: var(--space-sm) auto; padding: 11px; border: 2px solid #142a57; border-radius: 7px; background: #fff; color: #101b34; box-shadow: 0 6px 18px rgba(14, 32, 73, .16); overflow: hidden; }
 .cs-index-card-head { flex: 0 0 auto; display: flex; justify-content: space-between; gap: 8px; padding: 5px 7px; border-bottom: 2px solid #142a57; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
@@ -24,7 +24,7 @@
 .cs-index-empty { grid-column: 1 / -1; display: grid; min-height: 180px; place-items: center; border: 1px dashed #8795ae; color: #5f6c80; font-style: italic; text-align: center; }
 .cs-index-add { display: block; width: min(100%, 480px); margin: var(--space-sm) auto; border-style: dashed; }
 .cs-index-print-preview-modal { width: min(980px, calc(100vw - 28px)); max-width: none; }
-.cs-index-print-preview-pages { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; max-height: min(68vh, 700px); overflow: auto; padding: 18px; background: var(--color-bg-dark, #334155); }
+.cs-index-print-preview-pages { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; max-height: min(calc(var(--app-vh, 1vh) * 68), 700px); overflow: auto; padding: 18px; background: var(--color-bg-dark, #334155); }
 .cs-index-print-preview-pages .cs-index-print-page { min-width: 0; }
 /* The editor has an explicit pixel height so it can report capacity. The
    preview must instead use the physical 4×6 ratio at its scaled width. */
@@ -124,7 +124,7 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
 .cs-print-preview-modal {
   width: min(1180px, calc(100vw - 32px));
   max-width: none;
-  max-height: min(92vh, 980px);
+  max-height: min(calc(var(--app-vh, 1vh) * 92), 980px);
 }
 
 .cs-print-preview-meta {
@@ -141,7 +141,7 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
 .cs-print-preview-pages {
   display: grid;
   gap: 18px;
-  max-height: min(68vh, 710px);
+  max-height: min(calc(var(--app-vh, 1vh) * 68), 710px);
   padding: 18px;
   overflow: auto;
   overscroll-behavior: contain;
@@ -247,7 +247,7 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
 
 @media (max-width: 700px) {
   .cs-print-preview-modal { width: calc(100vw - 16px); }
-  .cs-print-preview-pages { max-height: 64vh; padding: 10px; }
+  .cs-print-preview-pages { max-height: calc(var(--app-vh, 1vh) * 64); padding: 10px; }
   .cs-print-preview-pages .cs-print-page { min-width: 620px; }
 }
 
@@ -855,6 +855,17 @@ body.shell-phone #callSheetGrid.callsheet-phone-cards {
 
 .cs-mobile-reorder-controls { display: none; }
 
+/* Keep the editor controls structurally grouped so touch shells can place
+   them on their own action row. display: contents preserves the desktop/print-like
+   grid's existing child layout until a tablet shell explicitly opts in. */
+.cs-play-touch-actions { display: contents; }
+
+/* This follows the default display declaration above so editor controls cannot
+   enter the screen-independent Call Sheet print layout. */
+@media print {
+  .cs-play-touch-actions { display: none; }
+}
+
 body.shell-phone #callsheet .cs-mobile-hash-actions .callsheet-dropzone,
 body.shell-phone #callsheet .cs-mobile-hash-actions .cs-add-blank-btn {
   display: inline-flex;
@@ -911,6 +922,68 @@ body.shell-phone #callsheet .cs-mobile-reorder-controls button {
 }
 body.shell-phone #callsheet .cs-blank-row { min-height: 44px; padding: 4px 8px; }
 body.shell-phone #callsheet .cs-blank-row .cs-blank-remove { display: inline-flex; width: 44px; height: 44px; opacity: 1; }
+
+/* Tablet Call Sheet editing: HTML drag-and-drop is not a dependable touch
+   interaction, so retain the dense board but give every call an explicit,
+   persistent move/swap/remove row. This stays out of phone cards, desktop,
+   player views, and the independent print renderer. */
+@media screen {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .callsheet-play,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-blank-row {
+    flex-wrap: wrap;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-play-touch-actions {
+    display: flex;
+    flex: 0 0 100%;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--coach-grid-gap);
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--color-border-light);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-mobile-reorder-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: auto;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-mobile-reorder-controls button,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-hash-swap,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .callsheet-play .remove-play,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-blank-row .cs-blank-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--coach-workbench-control-height);
+    min-width: var(--coach-workbench-control-height);
+    height: var(--coach-workbench-control-height);
+    min-height: var(--coach-workbench-control-height);
+    margin: 0;
+    padding: 0;
+    opacity: 1;
+    touch-action: manipulation;
+  }
+}
 
 body.shell-phone #callsheet .cs-empty-cat {
   padding: 10px;
@@ -2543,6 +2616,17 @@ body.shell-phone #callsheet .cs-empty-cat {
     top: calc(var(--app-header-height) + var(--app-tabs-height));
   }
 }
+
+/* Staff tablet portrait uses document scrolling, unlike the landscape
+   workbench panel. Its sticky category headers must clear the measured app
+   header and tabs even on 834px+ iPads outside the old <=820px media query. */
+@media screen {
+  body.shell-tablet.is-mobile-screen.is-portrait-screen.is-staff-mobile-shell
+    #callsheet
+    .cs-cat-header {
+    top: calc(var(--app-header-height) + var(--app-tabs-height));
+  }
+}
 .cs-cat-header .header-text {
   flex: 1;
   overflow: hidden;
@@ -3535,11 +3619,14 @@ body.shell-phone #callsheet .cs-empty-cat {
 .constraint-panel-overlay {
   position: fixed;
   inset: 0;
+  height: calc(var(--app-vh, 1vh) * 100);
   z-index: var(--z-overlay);
   display: flex;
   justify-content: flex-end;
   pointer-events: none;
   opacity: 0;
+  overflow: hidden;
+  overscroll-behavior: contain;
   transition: opacity 0.2s;
 }
 .constraint-panel-overlay.visible {
@@ -3548,8 +3635,10 @@ body.shell-phone #callsheet .cs-empty-cat {
   background: rgba(0, 0, 0, 0.38);
 }
 .constraint-panel {
-  width: min(520px, 96vw);
+  width: min(520px, 100%);
   height: 100%;
+  min-height: 0;
+  max-height: 100%;
   background: var(--color-bg-lighter, #fff);
   border-left: 3px solid var(--color-primary, #667eea);
   display: flex;
@@ -3585,7 +3674,12 @@ body.shell-phone #callsheet .cs-empty-cat {
   font-size: 1.5rem;
   cursor: pointer;
   line-height: 1;
-  padding: 0 4px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: var(--radius-sm);
   opacity: 0.85;
 }
 .cr-close-btn:hover {
@@ -3595,7 +3689,10 @@ body.shell-phone #callsheet .cs-empty-cat {
 /* Scrollable body */
 .constraint-panel-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 16px;
 }
 
@@ -5493,7 +5590,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-main-more-trigger[aria-expanded="true"] { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary-dark); }
 .cs-index-main-more-menu { z-index: 100; min-width: 190px; }
 .tool-menu-wrap.open .cs-index-main-more-menu { display: grid; }
-.cs-index-library-modal { width: min(720px, calc(100vw - 28px)); max-height: min(84vh, 760px); }
+.cs-index-library-modal { width: min(720px, calc(100vw - 28px)); max-height: min(calc(var(--app-vh, 1vh) * 84), 760px); }
 .cs-index-library-save { padding: var(--space-md); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); background: var(--color-bg-light); }
 .cs-index-library-save h4, .cs-index-library-list h4 { margin: 0; }
 .cs-index-library-save p, .cs-index-library-list p { margin: 4px 0 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
@@ -5541,6 +5638,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-bucket--play-drop-end ol { box-shadow: inset 0 -3px 0 var(--color-primary); background: color-mix(in srgb, var(--color-primary) 6%, white); }
 .cs-index-bucket--play-drop-end ol::after { content: "Drop at end"; display: block; margin-top: 3px; color: var(--color-primary); font-size: 9px; font-weight: 800; text-align: center; }
 .cs-index-play-text { min-width: 0; flex: 1; }
+.cs-index-play-touch-action { display: none; }
 .cs-index-wristband-number { display: inline-block; min-width: 2.1em; margin-right: 3px; padding: 0 3px; border: 1px solid #13264d; border-radius: 3px; color: #13264d; font-weight: 900; line-height: 1.25; text-align: center; }
 .cs-index-play-actions { display: inline-flex; position: absolute; z-index: 1; top: 0; right: 0; gap: 2px; padding-left: 3px; background: color-mix(in srgb, white 92%, transparent); opacity: 0; pointer-events: none; }
 .cs-index-play:hover .cs-index-play-actions, .cs-index-play:focus-within .cs-index-play-actions { opacity: 1; pointer-events: auto; }
@@ -5558,8 +5656,328 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-index-bucket--dragging { opacity: .45; }
 .cs-index-bucket--drop-before { box-shadow: 0 -4px 0 var(--color-primary); background: color-mix(in srgb, var(--color-primary) 7%, white); }
 .cs-index-bucket--drop-after { box-shadow: 0 4px 0 var(--color-primary); background: color-mix(in srgb, var(--color-primary) 7%, white); }
+.cs-index-bucket-manage-label { display: none; }
+
+/* Tablet layer geometry: Call Sheet dialogs use the visual viewport token,
+   one named scroll owner, and safe-area padding.  This deliberately applies
+   only to staff-tablet Call Sheet surfaces; desktop keeps its existing modal
+   sizing and phone keeps the shared full-width modal treatment. */
+@media screen {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #csAddCategoryOverlay,
+      #csIndexCardLibraryOverlay,
+      #csLayoutOverlay,
+      #csManagePresetsOverlay,
+      #csSortOverlay,
+      #csSuggestOverlay,
+      #csTemplateOverlay,
+      .cs-index-manual-duplex-overlay,
+      .cs-index-print-modal-overlay,
+      .cs-index-print-preview-overlay,
+      .cs-print-modal-overlay,
+      .cs-print-preview-overlay
+    ).app-layer-active {
+    box-sizing: border-box;
+    height: calc(var(--app-vh, 1vh) * 100);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #csAddCategoryOverlay,
+      #csIndexCardLibraryOverlay,
+      #csLayoutOverlay,
+      #csManagePresetsOverlay,
+      #csSortOverlay,
+      #csSuggestOverlay,
+      #csTemplateOverlay,
+      .cs-index-manual-duplex-overlay,
+      .cs-index-print-modal-overlay,
+      .cs-index-print-preview-overlay,
+      .cs-print-modal-overlay,
+      .cs-print-preview-overlay
+    ).app-layer-safe-area {
+    padding-top: max(var(--space-md), env(safe-area-inset-top));
+    padding-right: max(var(--space-md), env(safe-area-inset-right));
+    padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+    padding-left: max(var(--space-md), env(safe-area-inset-left));
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #csLayoutOverlay
+    .cs-layout-modal {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #csLayoutOverlay
+    .cs-layout-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #csSuggestOverlay
+    .cs-suggest-modal,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(.cs-index-print-preview-modal, .cs-print-preview-modal) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(.cs-index-manual-duplex-overlay, .cs-index-print-modal-overlay, .cs-print-modal-overlay)
+    .custom-modal {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(.cs-index-print-preview-pages, .cs-print-preview-pages) {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #csAddCategoryOverlay,
+      #csIndexCardLibraryOverlay,
+      #csLayoutOverlay,
+      #csManagePresetsOverlay,
+      #csSortOverlay,
+      #csSuggestOverlay,
+      #csTemplateOverlay
+    )
+    :is(.cs-sort-close, .modal-close-btn) {
+    display: inline-grid;
+    width: var(--coach-workbench-control-height);
+    min-width: var(--coach-workbench-control-height);
+    height: var(--coach-workbench-control-height);
+    min-height: var(--coach-workbench-control-height);
+    place-items: center;
+    padding: 0;
+  }
+}
 
 @media (max-width: 640px) {
   .cs-index-main { padding: var(--space-sm); }
   .cs-index-editor-stage { padding: 5px; }
+}
+
+/* Index Card prints retain their compact physical markup. On staff tablets,
+   however, the editable card must not depend on hover or HTML drag-and-drop:
+   expose one persistent call action and use the existing bucket menu as a
+   deliberate situation action sheet. */
+@media screen {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet.callsheet-index-mode
+    .cs-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet.callsheet-index-mode
+    .cs-toolbar-left,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet.callsheet-index-mode
+    .cs-toolbar-right {
+    flex: 1 1 100%;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet.callsheet-index-mode
+    .cs-toolbar-right {
+    margin-left: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet.callsheet-index-mode
+    .cs-index-toolbar-context {
+    flex: 1 1 100%;
+    justify-content: space-between;
+    padding-top: 2px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet.callsheet-index-mode
+    .cs-index-toolbar-context
+    .cs-index-main-tabs {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet.callsheet-index-mode
+    .cs-index-toolbar-context
+    .cs-index-main-tabs
+    .btn {
+    flex: 0 0 auto;
+    max-width: 200px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet.callsheet-index-mode
+    :is(.cs-toolbar .btn, .cs-toggle, .cs-index-main-more-trigger) {
+    min-height: var(--coach-workbench-control-height);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-index-card--editor
+    .cs-index-card-head {
+    align-items: center;
+    min-height: var(--coach-workbench-control-height);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-index-card--editor
+    .cs-index-card-title-input {
+    min-height: var(--coach-workbench-control-height);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-index-card--editor
+    .cs-index-play {
+    align-items: center;
+    gap: 6px;
+    min-height: var(--coach-workbench-control-height);
+    padding: 4px 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-index-card--editor
+    .cs-index-play-grip,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-index-card--editor
+    .cs-index-play-actions {
+    display: none;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-index-card--editor
+    .cs-index-play-touch-action {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--coach-workbench-control-height);
+    min-height: var(--coach-workbench-control-height);
+    padding: 0 8px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-muted);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+    touch-action: manipulation;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-index-card--editor
+    .cs-index-bucket
+    > header {
+    min-height: calc(var(--coach-workbench-control-height) + 8px);
+    padding: 4px 6px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-index-card--editor
+    .cs-index-bucket-grip {
+    display: none;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-index-card--editor
+    .cs-index-bucket-actions {
+    gap: 4px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-index-card--editor
+    .cs-index-bucket-actions
+    > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: var(--coach-workbench-control-height);
+    height: var(--coach-workbench-control-height);
+    min-height: var(--coach-workbench-control-height);
+    padding: 0 8px;
+    font-size: var(--font-size-xs);
+    touch-action: manipulation;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-index-card--editor
+    .cs-index-bucket-manage-label {
+    display: inline;
+    margin-left: 3px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-index-card--editor
+    .cs-index-empty-add,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-index-editor-stage
+    .cs-index-add {
+    min-height: var(--coach-workbench-control-height);
+    touch-action: manipulation;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #csIndexCardLibraryOverlay
+    .cs-sort-close {
+    display: inline-grid;
+    flex: 0 0 var(--coach-workbench-control-height);
+    width: var(--coach-workbench-control-height);
+    min-width: var(--coach-workbench-control-height);
+    height: var(--coach-workbench-control-height);
+    min-height: var(--coach-workbench-control-height);
+    place-items: center;
+    padding: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #csIndexCardLibraryOverlay
+    .cs-sort-actions
+    .btn {
+    min-height: var(--coach-workbench-control-height);
+  }
 }

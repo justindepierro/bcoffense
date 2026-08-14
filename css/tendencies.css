@@ -524,6 +524,18 @@
   overflow-wrap: anywhere;
 }
 
+/* The compact header action group is intentionally dormant outside the
+   staff-tablet landscape shell. Those modes retain the established direct
+   action grid below; the targeted override at the end of this file turns it
+   into the touch-first primary + More path. */
+.td-detail-nav,
+.td-toolbar-desktop-utilities {
+  display: contents;
+}
+.td-tablet-landscape-only {
+  display: none;
+}
+
 .td-column-panel {
   display: none;
 }
@@ -1006,6 +1018,12 @@
   color: var(--color-text-light);
   font-size: var(--font-size-sm);
   white-space: nowrap;
+}
+
+.tool-menu button.td-menu-active {
+  background: color-mix(in srgb, var(--color-primary-light) 62%, var(--color-surface));
+  color: var(--color-primary-dark);
+  font-weight: 700;
 }
 
 /* ============ Filter Panel ============ */
@@ -1968,5 +1986,171 @@
     min-height: var(--coach-grid-mini-control-height);
     padding: 2px 5px;
     border-radius: var(--coach-grid-radius);
+  }
+}
+
+/* ============ Staff tablet landscape: Tendencies command density ============ */
+/*
+   This is deliberately shell-scoped instead of width-scoped. A desktop, a
+   portrait iPad, and the player portal continue to use the original direct
+   action grid; a staff landscape iPad gets the persistent core path plus
+   anchored overflow menus that cannot be clipped by the panel scroller.
+*/
+@media (min-width: 821px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-detail-header {
+    display: grid;
+    grid-template-columns: max-content minmax(140px, 1fr) max-content;
+    align-items: center;
+    gap: var(--coach-grid-gap);
+    flex-wrap: nowrap;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-detail-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--coach-grid-gap);
+    min-width: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-detail-nav .btn,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-tablet-header-actions > .btn,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-tablet-more-trigger {
+    min-height: 44px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-detail-header h2 {
+    flex: initial;
+    min-width: 0;
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-detail-actions--desktop,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-toolbar-desktop-utilities {
+    display: none;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-tablet-landscape-only {
+    display: inline-flex;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-tablet-header-actions {
+    align-items: center;
+    justify-content: end;
+    gap: var(--coach-grid-gap);
+    min-width: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-tablet-more-wrap {
+    flex: 0 0 auto;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-tablet-more-trigger {
+    min-width: 76px;
+    white-space: nowrap;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-toolbar {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    align-items: center;
+    gap: var(--coach-grid-gap);
+    overflow: visible;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-toolbar-left {
+    grid-template-columns: minmax(150px, 1fr) max-content max-content;
+    align-items: center;
+    gap: var(--coach-grid-gap);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-toolbar-right {
+    display: flex;
+    align-items: center;
+    justify-content: end;
+    min-width: max-content;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-search-box {
+    min-width: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-search-input,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-toolbar .btn {
+    min-height: 44px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-search-input,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-search-input:focus {
+    width: 100%;
+  }
+
+  /* Keep the film log's only nested scroller horizontal. The active panel
+     remains the vertical owner selected by the tablet-landscape shell. */
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-play-log {
+    min-width: 0;
+    overflow: visible;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #tendencies
+    .td-table-container {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    .tool-menu.td-tablet-landscape-menu {
+    min-width: min(250px, calc(100vw - 24px));
+    max-width: min(320px, calc(100vw - 24px));
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    .tool-menu.td-tablet-landscape-menu button {
+    min-height: 44px;
   }
 }

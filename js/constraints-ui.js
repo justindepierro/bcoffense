@@ -283,18 +283,37 @@ function toggleTaDetail(id) {
   }
 }
 
-function runConstraintCheck() {
+function runConstraintCheck(options = {}) {
   if (!CONSTRAINTS_ENABLED) {
     showToast("Constraints module is disabled (CONSTRAINTS_ENABLED = false)");
     return;
   }
 
-  // Show the panel
+  // The report is a true modal review surface: it has enough interactive
+  // content that letting the Call Sheet remain touch-scrollable behind it is
+  // both confusing and unsafe on a tablet. The shared layer owns that
+  // lifecycle (background lock, focus loop, safe area, Escape, and return
+  // focus) while the report body remains this dialog's only scroll region.
   const panel = document.getElementById("constraintPanel");
   if (!panel) return;
   panel.removeAttribute("inert");
   panel.setAttribute("aria-hidden", "false");
   panel.classList.add("visible");
+  const body = document.getElementById("constraintPanelBody");
+  const closeButton = panel.querySelector(".cr-close-btn");
+  const returnFocus = options?.returnFocus instanceof HTMLElement
+    ? options.returnFocus
+    : null;
+  if (panel.dataset.layerOpen !== "true") {
+    openLayer(panel, {
+      id: "constraintPanel",
+      scrollElement: body || panel,
+      blocking: true,
+      initialFocus: closeButton || panel,
+      returnFocus,
+      onEscape: () => closeConstraintPanel(),
+    });
+  }
 
   try {
     const report = evaluateCallSheet(callSheet);
@@ -307,9 +326,10 @@ function runConstraintCheck() {
   }
 }
 
-function closeConstraintPanel() {
+function closeConstraintPanel(options = {}) {
   const panel = document.getElementById("constraintPanel");
   if (!panel) return;
+  closeLayer("constraintPanel", options);
   panel.classList.remove("visible");
   panel.setAttribute("aria-hidden", "true");
   panel.setAttribute("inert", "");

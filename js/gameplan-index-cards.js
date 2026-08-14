@@ -1,6 +1,7 @@
 /* Game Plan 4×6 Index Cards — quick-call cards linked to Game Plan buckets. */
 let _gpIndexCardSelectedId = "";
 let _gpIndexCardSelectedSide = "front";
+let _gpIndexCardCloseTimer = 0;
 
 function _gpIndexCards(board = _gpEnsureBoard()) { return Array.isArray(board.indexCards) ? board.indexCards : []; }
 function _gpIndexCardId() { return `index-card-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`; }
@@ -31,15 +32,40 @@ function _gpIndexCardCardMarkup(card, side, board, options = {}) {
 }
 
 function _gpRenderIndexCardBuilder() {
-  const overlay = document.getElementById("gpIndexCardBuilder"); if (!overlay) return;
-  const board = _gpEnsureBoard(); const cards = _gpIndexCards(board); const card = _gpCurrentIndexCard(board);
-  const tabs = cards.map((item, index) => `<button type="button" class="btn btn-sm ${item.id === card?.id ? "btn-primary" : "btn-outline"}" data-gp-index-action="card" data-id="${escapeAttr(item.id)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`).join("");
-  overlay.innerHTML = `<div class="custom-modal gp-index-modal" role="dialog" aria-modal="true" aria-labelledby="gpIndexCardTitle"><div class="custom-modal-header"><span class="custom-modal-icon">🗂️</span><h3 class="custom-modal-title" id="gpIndexCardTitle">4×6 Game Day Index Cards</h3></div><div class="custom-modal-body gp-index-intro">Build a short, signal-ready menu from the active Game Plan. Buckets stay linked to their source plays.</div><div class="gp-index-toolbar"><div class="gp-index-card-tabs">${tabs}</div><button type="button" class="btn btn-sm btn-outline" data-gp-index-action="new">＋ Card</button>${card ? `<button type="button" class="btn btn-sm btn-outline" data-gp-index-action="rename">Rename</button><button type="button" class="btn btn-sm btn-danger" data-gp-index-action="delete-card">Delete</button>` : ""}</div>${card ? `<div class="gp-index-side-tabs"><button type="button" class="btn ${_gpIndexCardSelectedSide === "front" ? "btn-primary" : "btn-outline"}" data-gp-index-action="side" data-side="front">Front</button><button type="button" class="btn ${_gpIndexCardSelectedSide === "back" ? "btn-primary" : "btn-outline"}" data-gp-index-action="side" data-side="back">Back</button><span>4 × 6 in · two columns</span></div>${_gpIndexCardCardMarkup(card, _gpIndexCardSelectedSide, board, { controls: true })}<button type="button" class="btn btn-outline gp-index-add" data-gp-index-action="add">＋ Add bucket</button>` : "<p>No card yet.</p>"}<div class="custom-modal-actions"><button type="button" class="btn btn-secondary" data-gp-index-action="close">Close</button>${cards.length ? `<button type="button" class="btn btn-primary" data-gp-index-action="print">🖨️ Print front & back</button>` : ""}</div></div>`;
+  const overlay = document.getElementById("gpIndexCardBuilder");
+  if (!overlay) return;
+  const board = _gpEnsureBoard();
+  const cards = _gpIndexCards(board);
+  const card = _gpCurrentIndexCard(board);
+  const tabs = cards
+    .map((item, index) => `<button type="button" class="btn btn-sm ${item.id === card?.id ? "btn-primary" : "btn-outline"}" data-gp-index-action="card" data-id="${escapeAttr(item.id)}">${escapeHtml(item.name || `Card ${index + 1}`)}</button>`)
+    .join("");
+  const editorMarkup = card
+    ? `<div class="gp-index-side-tabs"><button type="button" class="btn ${_gpIndexCardSelectedSide === "front" ? "btn-primary" : "btn-outline"}" data-gp-index-action="side" data-side="front">Front</button><button type="button" class="btn ${_gpIndexCardSelectedSide === "back" ? "btn-primary" : "btn-outline"}" data-gp-index-action="side" data-side="back">Back</button><span>4 × 6 in · two columns</span></div>${_gpIndexCardCardMarkup(card, _gpIndexCardSelectedSide, board, { controls: true })}<button type="button" class="btn btn-outline gp-index-add" data-gp-index-action="add">＋ Add bucket</button>`
+    : "<p class=\"gp-index-empty-state\">No card yet.</p>";
+
+  overlay.innerHTML = `<div class="custom-modal gp-index-modal" role="dialog" aria-modal="true" aria-labelledby="gpIndexCardTitle"><div class="custom-modal-header gp-index-modal-header"><span class="custom-modal-icon">🗂️</span><h3 class="custom-modal-title" id="gpIndexCardTitle">4×6 Game Day Index Cards</h3><button type="button" class="btn btn-ghost gp-index-close" data-gp-index-action="close" aria-label="Close Game Day Index Cards" title="Close">×</button></div><div class="gp-index-scroll"><div class="custom-modal-body gp-index-intro">Build a short, signal-ready menu from the active Game Plan. Buckets stay linked to their source plays.</div><div class="gp-index-toolbar"><div class="gp-index-card-tabs">${tabs}</div><button type="button" class="btn btn-sm btn-outline" data-gp-index-action="new">＋ Card</button>${card ? `<button type="button" class="btn btn-sm btn-outline" data-gp-index-action="rename">Rename</button><button type="button" class="btn btn-sm btn-danger" data-gp-index-action="delete-card">Delete</button>` : ""}</div>${editorMarkup}</div><div class="custom-modal-actions"><button type="button" class="btn btn-secondary" data-gp-index-action="close">Close</button>${cards.length ? `<button type="button" class="btn btn-primary" data-gp-index-action="print">🖨️ Print front & back</button>` : ""}</div></div>`;
   overlay.querySelectorAll("[data-gp-index-action]").forEach((button) => button.addEventListener("click", _gpHandleIndexCardAction));
+
+  // Re-rendering replaces the scroll body. Refresh the existing layer state
+  // without moving focus so touch scroll containment keeps pointing at the
+  // current editor instead of a detached node.
+  if (overlay.dataset.layerOpen === "true" && typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "gp-index-cards",
+      blocking: true,
+      safeArea: true,
+      scrollElement: overlay.querySelector(".gp-index-scroll") || overlay.querySelector(".gp-index-modal") || overlay,
+      onEscape: () => closeGamePlanIndexCards(),
+    });
+  }
 }
 
 function openGamePlanIndexCards() {
   let overlay = document.getElementById("gpIndexCardBuilder");
+  const returnFocus = document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : null;
   if (!overlay) {
     overlay = document.createElement("div");
     overlay.id = "gpIndexCardBuilder";
@@ -51,11 +77,37 @@ function openGamePlanIndexCards() {
   }
   const board = _gpEnsureBoard();
   if (!_gpIndexCards(board).length) { const card = _gpNewIndexCard(); _gpUpdateBoard((next) => { next.indexCards = [card]; }); _gpIndexCardSelectedId = card.id; }
+  window.clearTimeout(_gpIndexCardCloseTimer);
   _gpRenderIndexCardBuilder();
-  if (typeof openLayer === "function") openLayer(overlay, { id: "gp-index-cards", blocking: true, onEscape: closeGamePlanIndexCards });
-  requestAnimationFrame(() => overlay.classList.add("visible"));
+  // `openLayer()` owns initial focus. Make the animated overlay focusable
+  // before registering it so the managed close target can actually receive
+  // that focus (a visibility:hidden overlay rejects programmatic focus).
+  overlay.classList.add("visible");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "gp-index-cards",
+      blocking: true,
+      safeArea: true,
+      scrollElement: overlay.querySelector(".gp-index-scroll") || overlay.querySelector(".gp-index-modal") || overlay,
+      initialFocus: overlay.querySelector(".gp-index-close") || overlay.querySelector(".gp-index-modal") || overlay,
+      onEscape: () => closeGamePlanIndexCards(),
+      returnFocus,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+    overlay.querySelector(".gp-index-close")?.focus({ preventScroll: true });
+  }
 }
-function closeGamePlanIndexCards() { const overlay = document.getElementById("gpIndexCardBuilder"); if (!overlay) return; if (typeof closeLayer === "function") closeLayer(overlay); overlay.classList.remove("visible"); window.setTimeout(() => overlay.remove(), 180); }
+function closeGamePlanIndexCards() {
+  const overlay = document.getElementById("gpIndexCardBuilder");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer("gp-index-cards");
+  overlay.classList.remove("visible");
+  window.clearTimeout(_gpIndexCardCloseTimer);
+  _gpIndexCardCloseTimer = window.setTimeout(() => {
+    if (!overlay.classList.contains("visible")) overlay.remove();
+  }, 180);
+}
 
 async function _gpIndexCardAddBucket() {
   const template = await showListPicker("Choose a common situation, then connect it to an active Game Plan bucket.", GP_BUCKET_TEMPLATES.map((item) => ({ value: item.id, label: `${item.icon} ${item.label}`, sublabel: item.description })), { title: "Add index-card bucket", icon: "＋" });

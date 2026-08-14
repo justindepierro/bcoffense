@@ -1759,10 +1759,12 @@ function openPlayPresentation(items, startIndex, source, options = {}) {
   if (typeof openLayer === "function") {
     openLayer(overlay, {
       id: "play-presentation",
+      blocking: true,
       safeArea: false,
       trapFocus: false,
       returnFocus: false,
       scrollElement: "playPresentationBody",
+      onEscape: () => closePlayPresentation(),
     });
   }
   if (typeof queueMobileShellMeasuredSync === "function") {
@@ -3296,7 +3298,9 @@ function openPlayPresentationIpadHelp() {
       trapFocus: true,
       returnFocus: true,
       blocking: true,
-      safeArea: false,
+      safeArea: true,
+      initialFocus: panel.querySelector(".pp-sheet-close") || panel,
+      onEscape: () => closePlayPresentationIpadHelp(),
     });
   }
   panel.querySelector(".pp-sheet-close")?.focus();
@@ -3352,8 +3356,10 @@ function openPlayPresentationSetup() {
       trapFocus: true,
       returnFocus: true,
       blocking: true,
-      safeArea: false,
+      safeArea: true,
       scrollElement: "playPresentationSetupBody",
+      initialFocus: panel.querySelector(".pp-sheet-close") || panel,
+      onEscape: () => closePlayPresentationSetup(),
     });
   }
   panel.querySelector(".pp-sheet-close")?.focus();

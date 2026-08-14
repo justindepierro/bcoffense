@@ -268,7 +268,30 @@ function _renderQuizAssignmentModal() {
   _restoreQuizAssignmentModalScrollTop(previousScrollTop);
 }
 
-async function openQuizAssignmentManager(seed = null) { if (!_isQuizAssignmentStaffClient()) return; const refreshed = await refreshQuizAssignments({ quiet: false }); if (!refreshed && !_quizAssignmentState.loaded) return; _quizAssignmentState.draft = seed || _newQuizAssignmentDraft(); let overlay = document.getElementById("quizAssignmentOverlay"); if (!overlay) { overlay = document.createElement("div"); overlay.id = "quizAssignmentOverlay"; overlay.className = "overlay quiz-assignment-overlay hidden"; document.body.appendChild(overlay); } overlay.classList.remove("hidden"); _renderQuizAssignmentModal(); if (typeof openLayer === "function") openLayer(overlay, { id: "quizAssignmentOverlay", scrollElement: "quizAssignmentOverlay", blocking: true }); }
+async function openQuizAssignmentManager(seed = null) {
+  if (!_isQuizAssignmentStaffClient()) return;
+  const refreshed = await refreshQuizAssignments({ quiet: false });
+  if (!refreshed && !_quizAssignmentState.loaded) return;
+  _quizAssignmentState.draft = seed || _newQuizAssignmentDraft();
+  let overlay = document.getElementById("quizAssignmentOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "quizAssignmentOverlay";
+    overlay.className = "overlay quiz-assignment-overlay hidden";
+    document.body.appendChild(overlay);
+  }
+  overlay.classList.remove("hidden");
+  _renderQuizAssignmentModal();
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "quizAssignmentOverlay",
+      scrollElement: overlay.querySelector(".quiz-assignment-modal"),
+      blocking: true,
+      initialFocus: overlay.querySelector("[data-action='closeQuizAssignmentManager']") || overlay,
+      onEscape: () => closeQuizAssignmentManager(),
+    });
+  }
+}
 function openQuizAssignmentForSource(arg) { const [kind, rawId] = String(arg || "").split("|"); const sourceKind = ["script", "gameplan"].includes(kind) ? kind : "playbook"; const sourceId = rawId ? decodeURIComponent(rawId) : ""; const source = _quizAssignmentSources(sourceKind).find((entry) => String(entry.id) === sourceId); const draft = _newQuizAssignmentDraft(); draft.sourceKind = sourceKind; draft.sourceId = sourceId; draft.title = source?.title ? `${source.title} homework` : ""; openQuizAssignmentManager(draft); }
 function closeQuizAssignmentManager() { const draft = _quizAssignmentState.draft; clearTimeout(_quizAssignmentState.autosaveTimer); if (_quizAssignmentHasDraftContent(draft)) saveQuizAssignmentDraft({ quiet: true }); const overlay = document.getElementById("quizAssignmentOverlay"); if (overlay) { if (typeof closeLayer === "function") closeLayer(overlay); overlay.classList.add("hidden"); } _quizAssignmentState.draft = null; }
 function setQuizAssignmentField(field, value) { const draft = _quizAssignmentState.draft; if (!draft) return; draft[field] = value; _scheduleQuizAssignmentDraftSave(); if (field === "positionKey") _renderQuizAssignmentModal(); else refreshQuizAssignmentSourceHealth(); }
@@ -320,8 +343,35 @@ function _renderQuizAssignmentDetails(assignment) {
     : `<footer><div><button type="button" class="btn btn-outline" data-action="duplicateQuizAssignment" data-arg="${escapeAttr(assignment.id)}">Duplicate</button><button type="button" class="btn btn-outline" data-action="followUpQuizAssignment" data-arg="${escapeAttr(assignment.id)}" ${unfinished ? "" : "disabled"}>Follow up</button></div><div><button type="button" class="btn btn-outline" data-action="resendQuizAssignment" data-arg="${escapeAttr(assignment.id)}" ${unfinished ? "" : "disabled"}>Resend unfinished</button><button type="button" class="btn btn-danger" data-action="archiveQuizAssignment" data-arg="${escapeAttr(assignment.id)}">Archive</button></div></footer>`;
   return `<div class="quiz-assignment-detail-modal" role="dialog" aria-modal="true" aria-label="Homework assignment details"><header><div><span>${isDraft ? "Saved homework draft" : "Homework assignment"}</span><h2>${escapeHtml(assignment.title)}</h2><p>${escapeHtml(assignment.instructions || "No coach instructions added.")}</p></div><button class="modal-close" type="button" data-action="closeQuizAssignmentDetails" aria-label="Close">×</button></header><div class="quiz-assignment-detail-body"><div class="quiz-assignment-detail-stats"><span><b>${questions}</b><small>questions</small></span><span><b>${isDraft ? "Not sent" : `${complete}/${recipients.length}`}</b><small>${isDraft ? "draft status" : "complete"}</small></span><span><b>${started}</b><small>in progress</small></span><span><b>${unfinished - started}</b><small>not started</small></span></div><section><div class="quiz-assignment-section-head"><div><span>Assignment preview</span><h3>${isDraft ? "Ready when you are" : "What players see"}</h3></div><span>${escapeHtml(_quizAssignmentDueLabel(assignment.dueAt))}</span></div><div class="quiz-assignment-detail-preview"><strong>${escapeHtml(`${assignment.items?.length || 0} play questions`)}</strong>${typeLabels.length ? `<span>${escapeHtml(typeLabels.join(" · "))}</span>` : ""}${assignment.customQuestions?.length ? `<span>${assignment.customQuestions.length} coach-written multiple choice</span>` : ""}</div></section><section><div class="quiz-assignment-section-head"><div><span>Recipients</span><h3>Completion and follow-up</h3></div><span>${assignment.requiredScore ? `${assignment.requiredScore}% required` : "Completion required"}</span></div><div class="quiz-assignment-recipient-list">${recipients.map((recipient) => `<article class="quiz-assignment-recipient${recipient.completedAt ? " is-complete" : recipient.startedAt ? " is-started" : ""}"><div><strong>${escapeHtml(recipient.name)}</strong><small>${escapeHtml(_quizAssignmentRecipientLabel(recipient))}${recipient.notificationCount ? ` · ${recipient.notificationCount} sent` : ""}</small></div><b>${recipient.completedAt ? "✓" : recipient.startedAt ? "…" : "—"}</b></article>`).join("") || "<span class=\"coach-quiz-empty\">No recipients selected yet.</span>"}</div></section></div>${footer}</div>`;
 }
-function openQuizAssignmentDetails(id) { const assignment = _quizAssignmentById(id); if (!assignment) return; let overlay = document.getElementById("quizAssignmentDetailsOverlay"); if (!overlay) { overlay = document.createElement("div"); overlay.id = "quizAssignmentDetailsOverlay"; overlay.className = "overlay quiz-assignment-overlay hidden"; document.body.appendChild(overlay); } overlay.dataset.action = "closeQuizAssignmentDetailsOverlay"; overlay.innerHTML = _renderQuizAssignmentDetails(assignment); overlay.classList.remove("hidden"); if (typeof openLayer === "function") openLayer(overlay, { id: "quizAssignmentDetailsOverlay", scrollElement: "quizAssignmentDetailsOverlay", blocking: true }); }
-function closeQuizAssignmentDetails() { const overlay = document.getElementById("quizAssignmentDetailsOverlay"); if (overlay) { if (typeof closeLayer === "function") closeLayer(overlay); overlay.classList.add("hidden"); } }
+function openQuizAssignmentDetails(id) {
+  const assignment = _quizAssignmentById(id);
+  if (!assignment) return;
+  let overlay = document.getElementById("quizAssignmentDetailsOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "quizAssignmentDetailsOverlay";
+    overlay.className = "overlay quiz-assignment-overlay hidden";
+    document.body.appendChild(overlay);
+  }
+  overlay.dataset.action = "closeQuizAssignmentDetailsOverlay";
+  overlay.innerHTML = _renderQuizAssignmentDetails(assignment);
+  overlay.classList.remove("hidden");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "quizAssignmentDetailsOverlay",
+      scrollElement: overlay.querySelector(".quiz-assignment-detail-modal"),
+      blocking: true,
+      initialFocus: overlay.querySelector("[data-action='closeQuizAssignmentDetails']") || overlay,
+      onEscape: () => closeQuizAssignmentDetails(),
+    });
+  }
+}
+function closeQuizAssignmentDetails() {
+  const overlay = document.getElementById("quizAssignmentDetailsOverlay");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer(overlay);
+  overlay.classList.add("hidden");
+}
 function duplicateQuizAssignment(id) { const assignment = _quizAssignmentById(id); if (!assignment) return; closeQuizAssignmentDetails(); openQuizAssignmentManager(_quizAssignmentSeed(assignment)); }
 function editQuizAssignmentDraft(id) { const assignment = _quizAssignmentById(id); if (!assignment || assignment.status !== "draft") return; closeQuizAssignmentDetails(); openQuizAssignmentManager(_quizAssignmentSeed(assignment, "edit")); }
 function followUpQuizAssignment(id) { const assignment = _quizAssignmentById(id); if (!assignment) return; closeQuizAssignmentDetails(); openQuizAssignmentManager(_quizAssignmentSeed(assignment, "followup")); }

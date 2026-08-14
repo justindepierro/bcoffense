@@ -1147,6 +1147,14 @@ function openPlayWorkflowPanel(idx) {
   const body = document.getElementById("pbWfPanelBody");
   if (!panel || !body) return;
 
+  // A workflow change can be initiated from a second play while this panel is
+  // already open. Close the prior layer without returning focus into a surface
+  // that is immediately being replaced, then register the refreshed panel as
+  // one blocking layer below.
+  if (panel.classList.contains("visible")) {
+    closePlayWorkflowPanel({ returnFocus: false });
+  }
+
   const playLabel = [play.formation, play.motion ? `(${play.motion})` : "", play.play]
     .filter(Boolean).join(" ");
   if (titleEl) titleEl.textContent = playLabel || "Play Workflow";
@@ -1208,10 +1216,24 @@ function openPlayWorkflowPanel(idx) {
   ));
 
   setInnerHTML(body, sections.join(""));
+  panel.removeAttribute("inert");
+  panel.setAttribute("aria-hidden", "false");
   panel.classList.add("visible");
-  if (typeof trapFocus === "function") {
-    const inner = panel.querySelector(".pb-wf-panel");
-    if (inner) trapFocus(inner);
+  const drawer = panel.querySelector(".pb-wf-panel");
+  const closeButton = panel.querySelector("#pbWfPanelClose");
+  if (typeof openLayer === "function") {
+    openLayer(panel, {
+      id: "pbWorkflowPanel",
+      blocking: true,
+      scrollElement: drawer,
+      initialFocus: closeButton,
+      onEscape: () => closePlayWorkflowPanel(),
+    });
+  } else if (typeof trapFocus === "function") {
+    // Keep the existing fallback usable if a partial legacy embed omits the
+    // shared LayerManager. The normal app always takes the branch above.
+    trapFocus(drawer || panel);
+    closeButton?.focus?.({ preventScroll: true });
   }
 
   // Async Discussion section — appended after static sections
@@ -1293,8 +1315,15 @@ async function togglePlayLike() {
   btn.disabled = false;
 }
 
-function closePlayWorkflowPanel() {
-  document.getElementById("pbWorkflowPanel")?.classList.remove("visible");
+function closePlayWorkflowPanel(options = {}) {
+  const panel = document.getElementById("pbWorkflowPanel");
+  if (!panel) return;
+  if (typeof closeLayer === "function") {
+    closeLayer(panel, options.returnFocus === false ? { returnFocus: false } : {});
+  }
+  panel.classList.remove("visible");
+  panel.setAttribute("aria-hidden", "true");
+  panel.setAttribute("inert", "");
 }
 
 function _wfSection(title, active, content) {

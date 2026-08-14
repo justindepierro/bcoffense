@@ -7,6 +7,20 @@ function isMobileStartupShell() {
   return width > 0 && width <= 768;
 }
 
+// A blank production staff workspace must stop at import so it cannot look
+// like a ready-to-use team. Loopback preview is different: it is explicitly a
+// disposable local test surface, where opening the Dashboard is more useful
+// than trapping a tester in the import screen. Keep this host check here (and
+// not in the shared production auth policy) so deployed behavior is unchanged.
+function isLocalWorkspacePreviewHost() {
+  const host = String(window.location?.hostname || "").toLowerCase();
+  return host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0" || host === "::1";
+}
+
+function canReturnToEmptyWorkspaceShell() {
+  return isMobileStartupShell() || isLocalWorkspacePreviewHost();
+}
+
 function setWorkspaceSurface(surface, opts = {}) {
   const uploadSection = document.getElementById("uploadSection");
   const mainApp = document.getElementById("mainApp");
@@ -19,8 +33,8 @@ function setWorkspaceSurface(surface, opts = {}) {
 
   const backBtn = document.getElementById("backToAppBtn");
   if (backBtn) {
-    const canBackToMobileShell = isMobileStartupShell() && showApp === false;
-    backBtn.classList.toggle("hidden", !(plays.length > 0 || canBackToMobileShell));
+    const canBackToEmptyShell = canReturnToEmptyWorkspaceShell() && showApp === false;
+    backBtn.classList.toggle("hidden", !(plays.length > 0 || canBackToEmptyShell));
   }
 
   if (showApp && opts.initModules) {
@@ -41,7 +55,10 @@ function ensureMobileStartupSurface() {
   const currentUser =
     typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
   const isPlayer = currentUser?.role === "player";
-  const shouldShowEmptyApp = isPlayer || isMobileStartupShell();
+  const isLocalStaffPreview = Boolean(
+    currentUser && !isPlayer && isLocalWorkspacePreviewHost(),
+  );
+  const shouldShowEmptyApp = isPlayer || isMobileStartupShell() || isLocalStaffPreview;
   if (!shouldShowEmptyApp || (!isPlayer && plays.length > 0)) return;
 
   const mainApp = document.getElementById("mainApp");
@@ -52,7 +69,16 @@ function ensureMobileStartupSurface() {
 
   const defaultTab =
     typeof getDefaultAuthTab === "function" ? getDefaultAuthTab() : "playbook";
-  const targetTab = currentUser.role === "player" ? defaultTab : "playbook";
+  // A freshly blank loopback preview starts on Dashboard, but a reload may
+  // already have a valid saved tab waiting for IndexedDB hydration. Respect
+  // that tab now so the preview shell cannot overwrite it with Dashboard
+  // before restoreStoredPlaybookSession gets a chance to apply it.
+  const localPreviewTab = isLocalStaffPreview
+    ? getRestorableStoredTab() || "dashboard"
+    : "";
+  const targetTab = currentUser.role === "player"
+    ? defaultTab
+    : localPreviewTab || "playbook";
   const canUseTarget =
     typeof canAccessTab !== "function" || canAccessTab(targetTab);
   if (!canUseTarget) return;
@@ -244,7 +270,10 @@ function initTeamIdentityUi(runOptionalInit) {
 async function maybeShowFirstUseWalkthrough() {
   if (storageManager.get(STORAGE_KEYS.FIRST_USE_DISMISSED, false)) return;
   if (Array.isArray(plays) && plays.length > 0) return;
-  if (isMobileStartupShell()) return;
+  // The local preview deliberately opens the blank Dashboard. Do not let the
+  // production first-use import walkthrough move a localhost tester back to
+  // the upload surface a moment later.
+  if (isMobileStartupShell() || isLocalWorkspacePreviewHost()) return;
   const currentUser =
     typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
   if (!currentUser || currentUser.role === "player") return;

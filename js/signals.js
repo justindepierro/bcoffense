@@ -1850,7 +1850,9 @@ function openSignalSelectorForPlay(play, options = {}) {
     });
     return;
   }
-  closeSignalSelector();
+  // Opening a new selector must not briefly return focus to the source
+  // control before the replacement dialog takes ownership.
+  _closeSignalSelector({ returnFocus: false });
   _sigSelectorState = {
     play,
     groups,
@@ -1862,17 +1864,43 @@ function openSignalSelectorForPlay(play, options = {}) {
   wrapper.innerHTML = sanitizeHTML(
     _sigRenderSelectorShell(play, groups, records, options.sourceLabel),
   );
-  document.body.appendChild(wrapper.firstElementChild);
-  if (typeof trapFocus === "function") {
-    trapFocus(document.getElementById("signalSelectorOverlay"));
+  const overlay = wrapper.firstElementChild;
+  document.body.appendChild(overlay);
+  const closeButton = overlay.querySelector(".signals-play-close");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "signalSelectorOverlay",
+      // The selector has two independently scrolling panes. Registering the
+      // dialog keeps both panes touch-scrollable while the background stays
+      // locked through the shared app-layer lifecycle.
+      scrollElement: overlay.querySelector(".signals-play-dialog") || overlay,
+      blocking: true,
+      // Swipe View remains open underneath this selector and must regain
+      // ownership when the selector closes.
+      exclusive: false,
+      initialFocus: closeButton,
+      onEscape: () => closeSignalSelector(),
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+    closeButton?.focus({ preventScroll: true });
   }
   openSignalClip(records[0].id);
 }
 
-function closeSignalSelector() {
+function _closeSignalSelector(options = {}) {
   const overlay = document.getElementById("signalSelectorOverlay");
-  if (overlay) overlay.remove();
+  if (overlay) {
+    if (typeof closeLayer === "function") {
+      closeLayer(overlay, { returnFocus: options.returnFocus !== false });
+    }
+    overlay.remove();
+  }
   _sigSelectorState = null;
+}
+
+function closeSignalSelector() {
+  _closeSignalSelector();
 }
 
 async function openSignalClip(recordId) {

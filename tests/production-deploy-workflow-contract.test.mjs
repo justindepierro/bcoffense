@@ -4,13 +4,16 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (path) => readFile(new URL(path, `file://${root}/`), "utf8");
-const [workflow, deployScript, qualityGate, preflight, authRunbook] = await Promise.all([
+const [workflow, deployScript, qualityGate, preflight, authRunbook, packageJson, qualityWorkflow] = await Promise.all([
   source(".github/workflows/deploy-production.yml"),
   source("scripts/deploy-cloudflare.sh"),
   source("scripts/release-quality-gate.sh"),
   source("scripts/cloudflare-preflight.sh"),
   source("CLOUDFLARE_AUTH.md"),
+  source("package.json"),
+  source(".github/workflows/quality.yml"),
 ]);
+const packageScripts = JSON.parse(packageJson).scripts || {};
 
 const verifyStart = workflow.indexOf("  verify:");
 const deployStart = workflow.indexOf("  deploy:");
@@ -52,7 +55,21 @@ assert(credentialRestoreIndex > qualityGateIndex && credentialRestoreIndex < pre
 assert.match(deployScript, /\.\/scripts\/cloudflare-preflight\.sh/, "the guarded deployment script executes the read-only D1 migration preflight");
 assert.match(deployScript, /Verified Cloudflare production source:/, "the guarded deployment script verifies the Pages source after upload");
 assert.match(qualityGate, /npm run test:quality/, "the shared release-quality gate retains its full quality command");
+
+// Tablet geometry is a release requirement, not an advisory local command.
+// Keep the command shape explicit so CI, the guarded Pages deploy, and the
+// independent notification Worker deploy all retain the same tablet gate via
+// release-quality-gate.sh -> test:quality -> test:tablet.
+const tabletCommand = packageScripts["test:tablet"] || "";
+const qualityCommand = packageScripts["test:quality"] || "";
+assert.match(tabletCommand, /scripts\/mobile-viewport-check\.mjs/, "the tablet command runs the maintained viewport harness");
+assert.match(tabletCommand, /--roles=admin,coach,player/, "the required tablet matrix includes every supported role");
+assert.match(tabletCommand, /--ipad-viewports/, "the required tablet matrix uses the named iPad viewport set");
+assert.doesNotMatch(tabletCommand, /--warn-only/, "tablet failures remain release-blocking instead of advisory");
+assert.match(qualityCommand, /npm run test:tablet/, "the full quality command includes the required tablet matrix");
+assert.match(qualityWorkflow, /npm --prefix tests exec -- playwright install --with-deps chromium/, "the PR/main quality workflow installs Chromium for the required tablet matrix");
+assert.match(qualityWorkflow, /run:\s+npm run release:quality/, "the PR/main quality workflow reaches the canonical tablet release gate");
 assert.match(preflight, /--command "SELECT name FROM \$\{MIGRATIONS_TABLE\} ORDER BY id;"/, "the D1 preflight reads the migration ledger without applying migrations");
 assert.match(authRunbook, /AUTH_SESSION_SECRET\nAUTH_PRIMARY_TEAM_ID/, "the runbook lists every Pages secret the guarded deploy script requires");
 
-console.log("production deployment workflow contract: 32 assertions passed");
+console.log("production deployment workflow contract: 39 assertions passed");

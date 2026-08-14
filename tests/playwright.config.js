@@ -10,6 +10,9 @@ const { defineConfig, devices } = require("@playwright/test");
  * Specific browser:
  *   npx playwright test --project=iphone
  *
+ * WebKit iPad smoke:
+ *   BCOFFENSE_E2E_LOCAL=1 npx playwright test --project=ipad-portrait --project=ipad-landscape <curated specs>
+ *
  * All browsers:
  *   npx playwright test --project=chromium-desktop --project=ipad-portrait --project=ipad-landscape --project=iphone --project=phone-narrow
  *
@@ -62,11 +65,14 @@ module.exports = defineConfig({
     },
     {
       name: "ipad-portrait",
-      use: { ...devices["iPad (gen 7)"], viewport: { width: 810, height: 1080 } },
+      // Keep this explicit. The iPad descriptor currently defaults to WebKit,
+      // but the release smoke must not silently become a Chromium-only check
+      // if Playwright changes that descriptor in a future update.
+      use: { ...devices["iPad (gen 7)"], browserName: "webkit", viewport: { width: 810, height: 1080 } },
     },
     {
       name: "ipad-landscape",
-      use: { ...devices["iPad (gen 7) landscape"], viewport: { width: 1080, height: 810 } },
+      use: { ...devices["iPad (gen 7) landscape"], browserName: "webkit", viewport: { width: 1080, height: 810 } },
     },
     {
       name: "iphone",

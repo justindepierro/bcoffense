@@ -15,13 +15,19 @@ function showUpload() {
   }
 
   const backBtn = document.getElementById("backToAppBtn");
-  if (backBtn && (plays.length > 0 || typeof isMobileStartupShell === "function" && isMobileStartupShell())) {
+  const canReturnToEmptyShell =
+    typeof canReturnToEmptyWorkspaceShell === "function" &&
+    canReturnToEmptyWorkspaceShell();
+  if (backBtn && (plays.length > 0 || canReturnToEmptyShell)) {
     backBtn.classList.remove("hidden");
   }
 }
 
 function backToApp() {
-  if (plays.length > 0 || typeof isMobileStartupShell === "function" && isMobileStartupShell()) {
+  const canReturnToEmptyShell =
+    typeof canReturnToEmptyWorkspaceShell === "function" &&
+    canReturnToEmptyWorkspaceShell();
+  if (plays.length > 0 || canReturnToEmptyShell) {
     if (typeof setWorkspaceSurface === "function") {
       setWorkspaceSurface("app", { initModules: plays.length === 0 });
       if (plays.length === 0 && typeof ensureMobileStartupSurface === "function") {

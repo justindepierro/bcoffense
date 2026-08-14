@@ -293,6 +293,7 @@ function renderPlayerCardGrid() {
   // 3 columns: [num (32px) | play name (1fr) | responsibility (1fr)] × 20 rows
   // Same on-screen dimensions as classic, with one play and assignment per row.
   let html = "";
+  let hasPlayerAssignmentReset = false;
   for (let i = 0; i < WB_ROWS; i++) {
     const play = card.data[i];
     const playNum = i + WRISTBAND_OFFSET + cardOffset;
@@ -343,7 +344,8 @@ function renderPlayerCardGrid() {
       custom,
       wbPlayerCardPos,
     );
-    html += `<div class="wristband-cell pc-assignment-cell">
+    if (hasOverride) hasPlayerAssignmentReset = true;
+    html += `<div class="wristband-cell pc-assignment-cell${hasOverride ? " pc-assignment-cell--has-reset" : ""}">
       <select class="pc-rule-select${ruleSource !== wbPlayerCardPos ? " is-overridden" : ""}"
         data-base-position="${escapeHtml(wbPlayerCardPos)}"
         data-card="${currentCardIndex}" data-cell="${i}"
@@ -354,11 +356,12 @@ function renderPlayerCardGrid() {
         data-card="${currentCardIndex}" data-cell="${i}"
         aria-label="Assignment for wristband number ${playNum}"
         placeholder="—" ${play ? "" : "disabled"}>${escapeHtml(respText)}</textarea>
-      ${hasOverride ? `<button class="pc-resp-reset" data-base-position="${escapeHtml(wbPlayerCardPos)}" data-card="${currentCardIndex}" data-cell="${i}" title="Reset to ${escapeHtml(_playerPositionLabel(wbPlayerCardPos))} rule" aria-label="Reset wristband number ${playNum} to ${escapeHtml(_playerPositionLabel(wbPlayerCardPos))} rule">↺</button>` : ""}
+      ${hasOverride ? `<button type="button" class="pc-resp-reset" data-base-position="${escapeHtml(wbPlayerCardPos)}" data-card="${currentCardIndex}" data-cell="${i}" title="Reset to ${escapeHtml(_playerPositionLabel(wbPlayerCardPos))} rule" aria-label="Reset wristband number ${playNum} to ${escapeHtml(_playerPositionLabel(wbPlayerCardPos))} rule">↺</button>` : ""}
     </div>`;
   }
 
   grid.classList.add("pc-grid-active");
+  grid.classList.toggle("pc-grid-has-reset", hasPlayerAssignmentReset);
   document.getElementById("wristbandCard")?.classList.add("pc-card-active");
   grid.style.gridTemplateRows = `repeat(${WB_ROWS}, 1fr)`;
   grid.innerHTML = html;

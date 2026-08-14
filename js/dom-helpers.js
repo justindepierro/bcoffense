@@ -194,25 +194,160 @@ function setInnerHTML(el, html) {
   el.innerHTML = sanitizeHTML(html);
 }
 
+const LAYER_FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "area[href]",
+  "button",
+  "input",
+  "select",
+  "textarea",
+  "iframe",
+  "object",
+  "embed",
+  '[contenteditable]:not([contenteditable="false"])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(", ");
+
+function isLayerFocusCandidate(candidate, layer, options = {}) {
+  if (!(candidate instanceof HTMLElement)) return false;
+  if (layer && candidate !== layer && !layer.contains(candidate)) return false;
+  if (candidate.hidden || candidate.matches("input[type='hidden']")) return false;
+  if (candidate.matches("[disabled], [aria-disabled='true']")) return false;
+  if (candidate.closest("[hidden], [inert], [aria-hidden='true']")) return false;
+  if (!options.allowProgrammatic && candidate.tabIndex < 0) return false;
+  return typeof candidate.focus === "function";
+}
+
+function getLayerFocusableElements(layer) {
+  if (!(layer instanceof HTMLElement)) return [];
+  return Array.from(layer.querySelectorAll(LAYER_FOCUSABLE_SELECTOR)).filter((candidate) =>
+    isLayerFocusCandidate(candidate, layer),
+  );
+}
+
+function focusLayerElement(target) {
+  if (!(target instanceof HTMLElement) || typeof target.focus !== "function") {
+    return false;
+  }
+  try {
+    target.focus({ preventScroll: true });
+  } catch (_error) {
+    // Older browsers can reject focus options. Keep the focus behavior rather
+    // than abandoning a blocking dialog's only reachable control.
+    try {
+      target.focus();
+    } catch (_fallbackError) {
+      return false;
+    }
+  }
+  return document.activeElement === target;
+}
+
+function resolveLayerInitialFocus(layer, initialFocus) {
+  let target = initialFocus;
+  if (typeof target === "function") {
+    try {
+      target = target(layer);
+    } catch (_error) {
+      target = null;
+    }
+  }
+  if (typeof target === "string") {
+    try {
+      target =
+        (layer.matches?.(target) ? layer : null) ||
+        layer.querySelector(target) ||
+        document.getElementById(target);
+    } catch (_error) {
+      // An invalid selector is not a reason to leave a dialog unfocused. The
+      // documented fallback sequence below will choose a safe target instead.
+      target = document.getElementById(target) || null;
+    }
+  }
+  return isLayerFocusCandidate(target, layer, { allowProgrammatic: true })
+    ? target
+    : null;
+}
+
+function getLayerAutofocusTarget(layer) {
+  const candidates = [];
+  if (layer.matches?.("[autofocus]")) candidates.push(layer);
+  candidates.push(...layer.querySelectorAll("[autofocus]"));
+  return candidates.find((candidate) =>
+    isLayerFocusCandidate(candidate, layer, { allowProgrammatic: true }),
+  ) || null;
+}
+
+function getLayerCloseTarget(layer) {
+  return getLayerFocusableElements(layer).find((candidate) => {
+    const action = String(candidate.dataset?.action || "").toLowerCase();
+    const label = String(candidate.getAttribute("aria-label") || "").toLowerCase();
+    const title = String(candidate.getAttribute("title") || "").toLowerCase();
+    const className = String(candidate.className || "").toLowerCase();
+    const text = String(candidate.textContent || "").trim().toLowerCase();
+    return (
+      candidate.hasAttribute("data-layer-close") ||
+      action.startsWith("close") ||
+      label.startsWith("close") ||
+      title.startsWith("close") ||
+      text === "close" ||
+      text.startsWith("close ") ||
+      /(^|[-_ ])close([-_ ]|$)/.test(className)
+    );
+  }) || null;
+}
+
+function focusInitialLayerTarget(layer, initialFocus) {
+  const explicitTarget = resolveLayerInitialFocus(layer, initialFocus);
+  const target =
+    explicitTarget ||
+    getLayerAutofocusTarget(layer) ||
+    getLayerCloseTarget(layer) ||
+    getLayerFocusableElements(layer)[0] ||
+    layer;
+
+  if (target === layer && !layer.hasAttribute("tabindex")) layer.tabIndex = -1;
+  if (focusLayerElement(target)) return true;
+  if (target === layer) return false;
+
+  // A target can become disabled or hidden between render and focus (for
+  // example, while an async dialog section resolves). The layer itself is the
+  // final programmatic fallback so Tab still starts inside the dialog.
+  if (!layer.hasAttribute("tabindex")) layer.tabIndex = -1;
+  return focusLayerElement(layer);
+}
+
 function trapFocus(overlay) {
+  if (!(overlay instanceof HTMLElement) || overlay.dataset.focusTrapReady === "true") {
+    return;
+  }
   overlay.addEventListener("keydown", (e) => {
     if (e.key !== "Tab") return;
-    const focusable = overlay.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    if (focusable.length === 0) return;
+    const focusable = getLayerFocusableElements(overlay);
+    if (focusable.length === 0) {
+      e.preventDefault();
+      if (!overlay.hasAttribute("tabindex")) overlay.tabIndex = -1;
+      focusLayerElement(overlay);
+      return;
+    }
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
+    if (document.activeElement === overlay || !overlay.contains(document.activeElement)) {
+      e.preventDefault();
+      focusLayerElement(e.shiftKey ? last : first);
+      return;
+    }
     if (e.shiftKey) {
       if (document.activeElement === first) {
         e.preventDefault();
-        last.focus();
+        focusLayerElement(last);
       }
     } else if (document.activeElement === last) {
       e.preventDefault();
-      first.focus();
+      focusLayerElement(first);
     }
   });
+  overlay.dataset.focusTrapReady = "true";
 }
 
 const activeAppLayers = new Map();
@@ -295,31 +430,150 @@ function unlockBodyForLayer() {
   window.scrollTo(scrollX, scrollY);
 }
 
+function hasLayerOption(options, name) {
+  return Object.prototype.hasOwnProperty.call(options, name);
+}
+
+function getLayerReturnFocus(element, options) {
+  if (options.returnFocus === false) return null;
+  const requested = options.returnFocus;
+  if (requested instanceof HTMLElement) {
+    return requested.isConnected && requested !== element && !element.contains(requested)
+      ? requested
+      : null;
+  }
+  const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  // A newly registered layer must return to the trigger or an underlying
+  // layer—not a control already inside itself. This also makes a same-id
+  // reopen safe: it can never replace the original trigger with its close
+  // button or another internal field.
+  return active && active !== element && !element.contains(active) ? active : null;
+}
+
+function getLayerScrollElement(options, fallback = null) {
+  if (!hasLayerOption(options, "scrollElement")) return fallback;
+  return getLayerElement(options.scrollElement) || null;
+}
+
+function updateLayerEscapeHandler(state, onEscape, options = {}) {
+  const hasEscapeOption = hasLayerOption(options, "onEscape");
+  if (!hasEscapeOption && state.escapeHandler) return;
+  if (state.escapeHandler) {
+    document.removeEventListener("keydown", state.escapeHandler, true);
+    state.escapeHandler = null;
+  }
+  state.onEscape = typeof onEscape === "function" ? onEscape : null;
+  if (state.onEscape) {
+    state.escapeHandler = (event) => {
+      if (event.key !== "Escape" || getActiveLayerState() !== state) return;
+      event.preventDefault();
+      // A topmost blocking dialog owns Escape completely. Letting this event
+      // continue to page-level shortcuts after return focus runs can close an
+      // unrelated drawer or move focus away from the dialog's trigger.
+      event.stopImmediatePropagation();
+      state.onEscape(event);
+    };
+    document.addEventListener("keydown", state.escapeHandler, true);
+  }
+  // Legacy surfaces can remain open while they are migrated, but the state is
+  // explicit so blocking dialogs are auditable: new dialogs should always
+  // provide onEscape rather than relying on an unrelated global listener.
+  state.element.dataset.layerEscape = state.onEscape
+    ? "managed"
+    : state.blocking
+    ? "required"
+    : "optional";
+}
+
+function syncLayerBlockingState(state, blocking) {
+  if (state.blocking === blocking) return;
+  state.blocking = blocking;
+  if (blocking) lockBodyForLayer();
+  else unlockBodyForLayer();
+}
+
+function syncLayerPresentation(state, options, isNew = false) {
+  const { element } = state;
+  const safeArea = hasLayerOption(options, "safeArea")
+    ? options.safeArea !== false
+    : isNew
+    ? true
+    : element.classList.contains("app-layer-safe-area");
+  element.dataset.layerId = state.id;
+  element.dataset.layerOpen = "true";
+  element.classList.add("app-layer-active");
+  element.classList.toggle("app-layer-safe-area", safeArea);
+
+  const shouldTrapFocus = hasLayerOption(options, "trapFocus")
+    ? options.trapFocus !== false
+    : isNew
+    ? true
+    : state.trapFocus !== false;
+  state.trapFocus = shouldTrapFocus;
+  if (shouldTrapFocus) trapFocus(element);
+}
+
+function reopenLayer(state, options) {
+  if (options.exclusive !== false) {
+    Array.from(activeAppLayers.keys()).forEach((activeId) => {
+      if (activeId !== state.id) closeLayer(activeId, { returnFocus: false });
+    });
+  }
+
+  const nextBlocking = hasLayerOption(options, "blocking")
+    ? options.blocking !== false
+    : state.blocking;
+  if (hasLayerOption(options, "returnFocus")) {
+    // Preserve the original trigger by default, while honoring the one
+    // explicit lifecycle override callers have always been able to make.
+    state.returnFocus = options.returnFocus === false
+      ? null
+      : getLayerReturnFocus(state.element, options) || state.returnFocus;
+  }
+  state.scrollElement = getLayerScrollElement(options, state.scrollElement);
+  syncLayerBlockingState(state, nextBlocking);
+  syncLayerPresentation(state, options);
+  updateLayerEscapeHandler(state, options.onEscape, options);
+
+  // Map insertion order defines the active top layer. Promote an already-open
+  // layer without replacing state.returnFocus or registering another listener.
+  activeAppLayers.delete(state.id);
+  activeAppLayers.set(state.id, state);
+
+  // Re-rendering an already-open dialog can request a deliberate new target;
+  // otherwise preserve the user's current field instead of stealing focus.
+  if (hasLayerOption(options, "initialFocus") || options.focusInitial === true) {
+    focusInitialLayerTarget(state.element, options.initialFocus);
+  }
+  return true;
+}
+
 function openLayer(layer, options = {}) {
   const element = getLayerElement(layer);
   if (!element) return false;
   const id = getLayerId(element, options);
+  const existingState = activeAppLayers.get(id);
+  if (existingState && existingState.element === element) {
+    return reopenLayer(existingState, options);
+  }
+  if (existingState) {
+    // A dynamic overlay can be removed and rebuilt with the same public id.
+    // Tear down the old registration without sending focus to an element that
+    // is being immediately replaced.
+    closeLayer(id, { returnFocus: false });
+  }
+
   const blocking = options.blocking !== false;
   const state = {
     id,
     element,
     blocking,
-    scrollElement: getLayerElement(options.scrollElement) || null,
-    returnFocus:
-      options.returnFocus === false
-        ? null
-        : document.activeElement instanceof HTMLElement
-        ? document.activeElement
-          : null,
+    scrollElement: getLayerScrollElement(options),
+    returnFocus: getLayerReturnFocus(element, options),
+    trapFocus: options.trapFocus !== false,
+    onEscape: null,
+    escapeHandler: null,
   };
-
-  if (typeof options.onEscape === "function") {
-    state.escapeHandler = (event) => {
-      if (event.key !== "Escape" || getActiveLayerState()?.id !== id) return;
-      event.preventDefault();
-      options.onEscape(event);
-    };
-  }
 
   if (options.exclusive !== false) {
     Array.from(activeAppLayers.keys()).forEach((activeId) => {
@@ -328,17 +582,14 @@ function openLayer(layer, options = {}) {
   }
 
   activeAppLayers.set(id, state);
-  element.dataset.layerId = id;
-  element.dataset.layerOpen = "true";
-  element.classList.add("app-layer-active");
-  if (options.safeArea !== false) element.classList.add("app-layer-safe-area");
   if (blocking) lockBodyForLayer();
-  if (options.trapFocus !== false && !element.dataset.focusTrapReady) {
-    trapFocus(element);
-    element.dataset.focusTrapReady = "true";
-  }
-  if (state.escapeHandler) {
-    document.addEventListener("keydown", state.escapeHandler, true);
+  syncLayerPresentation(state, options, true);
+  updateLayerEscapeHandler(state, options.onEscape, options);
+  // A blocking dialog must never leave keyboard focus in the locked document.
+  // Nonblocking drawers remain opt-in so established contextual workbenches do
+  // not unexpectedly steal focus while they are refreshed.
+  if (blocking || hasLayerOption(options, "initialFocus") || options.focusInitial === true) {
+    focusInitialLayerTarget(element, options.initialFocus);
   }
   return true;
 }
@@ -359,7 +610,7 @@ function closeLayer(layer, options = {}) {
   state.element.dataset.layerOpen = "false";
   state.element.classList.remove("app-layer-active", "app-layer-safe-area");
   if (options.returnFocus !== false && state.returnFocus?.isConnected) {
-    state.returnFocus.focus();
+    focusLayerElement(state.returnFocus);
   }
   unlockBodyForLayer();
   return true;
@@ -442,27 +693,57 @@ function showContextMenu(event, menu, selector = ".cs-context-menu") {
 let _reorderDraggedIdx = null;
 let _reorderTempOrder = null;
 
-function showReorderModal(values, opts) {
+function showReorderModal(values, opts = {}) {
   const modalId = "_reorderModal";
   const listId = "_reorderList";
-  _reorderTempOrder = [...values];
+  const layerId = "reorder-modal";
+  const sourceValues = Array.isArray(values) ? values : [];
+
+  // The helper is intentionally a singleton because every caller supplies an
+  // ordered list of labels. Clean up a prior dynamic instance before the new
+  // registration so LayerManager never retains a detached dialog of the same
+  // public layer id.
+  const previous = document.getElementById(modalId);
+  if (previous) {
+    if (typeof closeLayer === "function") {
+      closeLayer(layerId, { returnFocus: false });
+    }
+    previous.remove();
+  }
+
+  _reorderTempOrder = [...sourceValues];
+  let closed = false;
 
   function renderList() {
     return _reorderTempOrder
       .map(
         (val, idx) => `
-      <div class="custom-order-item" draggable="true" data-idx="${idx}"
-           data-drag="reorder">
-        <span class="drag-handle">☰</span>
-        <span class="order-number">${idx + 1}.</span>
+      <div class="custom-order-item reorder-modal-item" draggable="true" data-idx="${idx}"
+           data-drag="reorder" role="listitem">
+        <span class="drag-handle" aria-hidden="true">☰</span>
+        <span class="order-number" aria-hidden="true">${idx + 1}.</span>
         <span class="order-value">${escapeHtml(val)}</span>
+        <span class="reorder-modal-item-actions" aria-label="Move ${escapeAttr(String(val))}">
+          <button type="button" class="reorder-modal-move" data-reorder-move="up" data-idx="${idx}"
+            aria-label="Move ${escapeAttr(String(val))} up" title="Move up"${idx === 0 ? " disabled" : ""}>▲</button>
+          <button type="button" class="reorder-modal-move" data-reorder-move="down" data-idx="${idx}"
+            aria-label="Move ${escapeAttr(String(val))} down" title="Move down"${idx === _reorderTempOrder.length - 1 ? " disabled" : ""}>▼</button>
+        </span>
       </div>`,
       )
       .join("");
   }
 
-  function close() {
+  function close(options = {}) {
+    if (closed) return;
+    closed = true;
     const el = document.getElementById(modalId);
+    // Release the managed layer before removing its dynamic DOM. In a nested
+    // Call Sheet/Wristband flow this keeps the parent blocking layer active
+    // and restores focus to the opener inside that parent.
+    if (typeof closeLayer === "function") {
+      closeLayer(layerId, { returnFocus: options.returnFocus !== false });
+    }
     if (el) el.remove();
     _reorderTempOrder = null;
     _reorderDraggedIdx = null;
@@ -485,33 +766,35 @@ function showReorderModal(values, opts) {
   };
 
   const modalHtml = `
-    <div id="${modalId}" class="modal-overlay show" data-action="_reorderCloseOverlay">
-      <div class="modal-content modal-content-xs">
-        <div class="modal-header-row">
-          <h3 class="modal-title">${opts.title || "Custom Order"}</h3>
-          <button data-action="_reorderClose" class="modal-close-btn" aria-label="Close reorder modal">✕</button>
+    <div id="${modalId}" class="modal-overlay show reorder-modal-overlay" data-action="_reorderCloseOverlay">
+      <div class="modal-content modal-content-xs reorder-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reorderModalTitle">
+        <div class="reorder-modal-header">
+          <h3 id="reorderModalTitle" class="modal-title">${escapeHtml(opts.title || "Custom Order")}</h3>
+          <button type="button" data-action="_reorderClose" data-layer-close class="reorder-modal-close" aria-label="Close reorder modal">✕</button>
         </div>
-        <div class="modal-body">
+        <div class="reorder-modal-body">
           <p class="modal-copy-note">
             ${escapeHtml(opts.note || "Drag values to set your preferred sort order. Top = first.")}
           </p>
-          <div id="${listId}" class="custom-order-list">
+          <p class="reorder-modal-move-hint">Drag on desktop or use the arrow buttons to move a row.</p>
+          <div id="${listId}" class="custom-order-list" role="list" aria-label="Custom order values">
             ${renderList()}
           </div>
-          <div class="modal-action-row-wrap">
-            <button data-action="_reorderSave" class="btn btn-primary modal-btn-padded">
-              ${escapeHtml(opts.saveLabel || "💾 Save Order")}
-            </button>
-            ${opts.onClear
+          <p class="sr-only" id="reorderModalAnnouncement" aria-live="polite"></p>
+        </div>
+        <div class="reorder-modal-actions">
+          <button data-action="_reorderSave" class="btn btn-primary modal-btn-padded">
+            ${escapeHtml(opts.saveLabel || "💾 Save Order")}
+          </button>
+          ${opts.onClear
       ? `<button data-action="_reorderClear" class="btn btn-secondary modal-btn-padded">
               🗑️ Clear Custom Order
             </button>`
       : ""
     }
-            <button data-action="_reorderClose" class="btn modal-btn-padded">
-              Cancel
-            </button>
-          </div>
+          <button data-action="_reorderClose" class="btn modal-btn-padded">
+            Cancel
+          </button>
         </div>
       </div>
     </div>`;
@@ -522,16 +805,62 @@ function showReorderModal(values, opts) {
 
   const overlay = document.getElementById(modalId);
   const list = document.getElementById(listId);
-  if (!overlay || !list) return;
+  const body = overlay?.querySelector(".reorder-modal-body");
+  const closeButton = overlay?.querySelector(".reorder-modal-close");
+  const announcer = overlay?.querySelector("#reorderModalAnnouncement");
+  if (!overlay || !list || !body) return;
 
   const renderIntoList = () => {
     list.innerHTML = renderList();
     bindDragHandlers();
   };
 
+  const moveItem = (sourceIdx, delta) => {
+    const targetIdx = sourceIdx + delta;
+    if (
+      !Number.isInteger(sourceIdx) ||
+      !Number.isInteger(targetIdx) ||
+      targetIdx < 0 ||
+      targetIdx >= _reorderTempOrder.length
+    ) {
+      return;
+    }
+    const [moved] = _reorderTempOrder.splice(sourceIdx, 1);
+    _reorderTempOrder.splice(targetIdx, 0, moved);
+    _reorderDraggedIdx = targetIdx;
+    renderIntoList();
+    if (announcer) announcer.textContent = `${moved} moved to position ${targetIdx + 1}.`;
+
+    // Keep the deterministic control focused after the list re-renders so
+    // keyboard and switch users can make repeated moves without starting over.
+    const movedRow = list.querySelector(`[data-idx="${targetIdx}"]`);
+    const continuedMove = movedRow?.querySelector(
+      `[data-reorder-move="${delta < 0 ? "up" : "down"}"]:not(:disabled)`,
+    );
+    const fallbackMove = movedRow?.querySelector(".reorder-modal-move:not(:disabled)");
+    if (typeof focusLayerElement === "function") {
+      focusLayerElement(continuedMove || fallbackMove);
+    } else {
+      (continuedMove || fallbackMove)?.focus?.();
+    }
+  };
+
+  list.addEventListener("click", (event) => {
+    const target = event.target instanceof Element
+      ? event.target.closest("[data-reorder-move]")
+      : null;
+    if (!(target instanceof HTMLButtonElement) || target.disabled) return;
+    const sourceIdx = parseInt(target.dataset.idx, 10);
+    moveItem(sourceIdx, target.dataset.reorderMove === "up" ? -1 : 1);
+  });
+
   const bindDragHandlers = () => {
     list.querySelectorAll("[data-drag='reorder']").forEach((item) => {
-      item.addEventListener("dragstart", () => {
+      item.addEventListener("dragstart", (event) => {
+        if (event.target instanceof Element && event.target.closest("button")) {
+          event.preventDefault();
+          return;
+        }
         _reorderDraggedIdx = parseInt(item.dataset.idx, 10);
         item.classList.add("dragging");
       });
@@ -556,15 +885,35 @@ function showReorderModal(values, opts) {
         ) {
           return;
         }
-        const [moved] = _reorderTempOrder.splice(_reorderDraggedIdx, 1);
-        _reorderTempOrder.splice(targetIdx, 0, moved);
-        _reorderDraggedIdx = targetIdx;
-        renderIntoList();
+        moveItem(_reorderDraggedIdx, targetIdx - _reorderDraggedIdx);
       });
     });
   };
 
   bindDragHandlers();
+
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: layerId,
+      // Reorder is often launched from an already-open sort editor or cell
+      // popup. It must sit above, not replace, that parent layer.
+      exclusive: false,
+      blocking: true,
+      safeArea: true,
+      scrollElement: body,
+      initialFocus: closeButton || overlay,
+      onEscape: () => close(),
+      returnFocus: true,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+    closeButton?.focus?.();
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      close();
+    });
+  }
 }
 
 // ============================================================

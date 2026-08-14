@@ -557,12 +557,12 @@ function openScriptPeriodManager() {
             <h3 class="modal-title" id="scriptPeriodManagerTitle">🗂️ Organize Practice Periods</h3>
             <p class="modal-helper-text">Move whole periods, change a period’s play order, duplicate it, or remove it with its plays.</p>
           </div>
-          <button class="modal-close-btn" data-action="closeScriptPeriodManager" aria-label="Close period organizer">✕</button>
+          <button type="button" class="modal-close-btn script-period-manager-close" data-action="closeScriptPeriodManager" aria-label="Close period organizer">✕</button>
         </div>
         <div id="scriptPeriodManagerList" class="script-period-manager-list"></div>
         <div class="modal-action-row mt-md">
-          <button class="btn btn-primary" data-action="openScriptPeriodCreatorFromManager">＋ Add Period</button>
-          <button class="btn" data-action="closeScriptPeriodManager">Done</button>
+          <button class="btn btn-primary script-period-manager-footer-action" data-action="openScriptPeriodCreatorFromManager">＋ Add Period</button>
+          <button class="btn script-period-manager-footer-action script-period-manager-done" data-action="closeScriptPeriodManager">Done</button>
         </div>
       </div>
     </div>
@@ -570,10 +570,13 @@ function openScriptPeriodManager() {
   renderScriptPeriodManager();
   const overlay = document.getElementById("scriptPeriodManagerModal");
   if (typeof openLayer === "function" && overlay) {
+    const closeButton = overlay.querySelector(".script-period-manager-close");
     openLayer(overlay, {
       id: "scriptPeriodManagerModal",
       scrollElement: overlay.querySelector(".script-period-manager-list") || overlay,
       blocking: true,
+      initialFocus: closeButton || overlay,
+      onEscape: () => closeScriptPeriodManager(),
     });
   }
 }
@@ -610,11 +613,11 @@ function renderScriptPeriodManager() {
         <span>${period.playCount} play${period.playCount === 1 ? "" : "s"} · ${period.minutes} min</span>
       </div>
       <div class="script-period-manager-actions" aria-label="Actions for ${escapeHtml(period.label)}">
-        <button class="btn btn-sm" data-action="moveScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}:up" ${index === 0 ? "disabled" : ""} title="Move ${escapeHtml(period.label)} up" aria-label="Move ${escapeHtml(period.label)} up">↑</button>
-        <button class="btn btn-sm" data-action="moveScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}:down" ${index === periods.length - 1 ? "disabled" : ""} title="Move ${escapeHtml(period.label)} down" aria-label="Move ${escapeHtml(period.label)} down">↓</button>
-        <button class="btn btn-sm" data-action="reorderScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}" title="Arrange plays in ${escapeHtml(period.label)}">↕ Plays</button>
-        <button class="btn btn-sm" data-action="duplicateScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}" title="Duplicate ${escapeHtml(period.label)}" aria-label="Duplicate ${escapeHtml(period.label)}">⧉</button>
-        <button class="btn btn-sm btn-danger" data-action="deleteScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}" title="Delete ${escapeHtml(period.label)} and its plays" aria-label="Delete ${escapeHtml(period.label)} and its plays">✕</button>
+        <button class="btn btn-sm script-period-manager-action" data-action="moveScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}:up" ${index === 0 ? "disabled" : ""} title="Move ${escapeHtml(period.label)} up" aria-label="Move ${escapeHtml(period.label)} up">↑</button>
+        <button class="btn btn-sm script-period-manager-action" data-action="moveScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}:down" ${index === periods.length - 1 ? "disabled" : ""} title="Move ${escapeHtml(period.label)} down" aria-label="Move ${escapeHtml(period.label)} down">↓</button>
+        <button class="btn btn-sm script-period-manager-action" data-action="reorderScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}" title="Arrange plays in ${escapeHtml(period.label)}">↕ Plays</button>
+        <button class="btn btn-sm script-period-manager-action" data-action="duplicateScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}" title="Duplicate ${escapeHtml(period.label)}" aria-label="Duplicate ${escapeHtml(period.label)}">⧉</button>
+        <button class="btn btn-sm btn-danger script-period-manager-action script-period-manager-delete" data-action="deleteScriptPeriodFromManager" data-arg="${escapeHtml(period.id)}" title="Delete ${escapeHtml(period.label)} and its plays" aria-label="Delete ${escapeHtml(period.label)} and its plays">✕</button>
       </div>
     </article>
   `).join("");

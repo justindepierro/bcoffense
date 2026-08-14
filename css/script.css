@@ -30,14 +30,44 @@
 .coach-quiz-homework-report .is-attention b { color:var(--color-danger); }
 .coach-quiz-homework-card__player { display:inline-block; margin:0 4px 4px 0; padding:3px 6px; border-radius:999px; background:var(--color-bg-light); font-size:var(--font-size-xs); }
 .coach-quiz-homework-card__player.is-done { color:#176b31; background:#dff6e4; }
-.quiz-assignment-overlay { position:fixed; inset:0; z-index:10050; display:grid; place-items:center; overflow:auto; padding:24px; background:rgb(6 17 40 / .58); }
-.quiz-assignment-modal { width:min(980px,100%); max-height:calc(100dvh - 48px); overflow:auto; margin:auto; border:1px solid var(--color-border); border-radius:var(--radius-xl); background:var(--color-surface); box-shadow:var(--shadow-xl); }
-.quiz-assignment-detail-modal { width:min(720px,100%); max-height:calc(100dvh - 48px); overflow:auto; margin:auto; border:1px solid var(--color-border); border-radius:var(--radius-xl); background:var(--color-surface); box-shadow:var(--shadow-xl); }
+.quiz-assignment-overlay {
+  --quiz-assignment-safe-top: max(var(--space-lg), var(--safe-area-top));
+  --quiz-assignment-safe-right: max(var(--space-lg), var(--safe-area-right));
+  --quiz-assignment-safe-bottom: max(var(--space-lg), var(--safe-area-bottom));
+  --quiz-assignment-safe-left: max(var(--space-lg), var(--safe-area-left));
+  position:fixed;
+  inset:0;
+  z-index:10050;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  padding:var(--quiz-assignment-safe-top) var(--quiz-assignment-safe-right) var(--quiz-assignment-safe-bottom) var(--quiz-assignment-safe-left);
+  background:rgb(6 17 40 / .58);
+}
+.quiz-assignment-overlay.app-layer-active {
+  bottom:auto;
+  height:var(--app-visual-viewport-height);
+  box-sizing:border-box;
+}
+.quiz-assignment-modal,
+.quiz-assignment-detail-modal {
+  width:min(980px,100%);
+  max-height:calc(var(--app-visual-viewport-height) - var(--quiz-assignment-safe-top) - var(--quiz-assignment-safe-bottom));
+  overflow:auto;
+  margin:auto;
+  border:1px solid var(--color-border);
+  border-radius:var(--radius-xl);
+  background:var(--color-surface);
+  box-shadow:var(--shadow-xl);
+  overscroll-behavior:contain;
+}
+.quiz-assignment-detail-modal { width:min(720px,100%); }
 .quiz-assignment-modal header, .quiz-assignment-modal footer { padding:20px 22px; border-bottom:1px solid var(--color-border-light); }
 .quiz-assignment-detail-modal header, .quiz-assignment-detail-modal footer { padding:20px 22px; border-bottom:1px solid var(--color-border-light); }
 .quiz-assignment-modal header p { max-width:620px; color:var(--color-text-muted); margin:8px 0 0; }
 .quiz-assignment-detail-modal header p { max-width:560px; color:var(--color-text-muted); margin:8px 0 0; }
 .quiz-assignment-modal footer, .quiz-assignment-detail-modal footer { border-top:1px solid var(--color-border-light); border-bottom:0; position:sticky; bottom:0; background:var(--color-surface); }
+.quiz-assignment-modal .modal-close, .quiz-assignment-detail-modal .modal-close { min-width:var(--tap-min); min-height:var(--tap-min); }
 .quiz-assignment-detail-body { display:grid; gap:16px; padding:20px 22px; }
 .quiz-assignment-detail-body section { display:grid; gap:9px; }
 .quiz-assignment-detail-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); overflow:hidden; border:1px solid var(--color-border); border-radius:var(--radius-md); }
@@ -53,7 +83,7 @@
 .quiz-assignment-recipient.is-complete { background:color-mix(in srgb, var(--color-success) 10%, var(--color-surface)); }
 .quiz-assignment-recipient.is-complete b { color:var(--color-success); }
 .quiz-assignment-recipient.is-started { background:color-mix(in srgb, var(--color-accent) 9%, var(--color-surface)); }
-@media (max-width: 680px) { .quiz-assignment-detail-modal { max-height:calc(100dvh - 20px); } .quiz-assignment-detail-modal header, .quiz-assignment-detail-modal footer, .quiz-assignment-detail-body { padding:14px; } .quiz-assignment-detail-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } .quiz-assignment-detail-stats span:nth-child(2) { border-right:0; } .quiz-assignment-detail-stats span:nth-child(-n+2) { border-bottom:1px solid var(--color-border-light); } .quiz-assignment-detail-modal footer { align-items:stretch; flex-direction:column; } .quiz-assignment-detail-modal footer > div { display:flex; gap:8px; } .quiz-assignment-detail-modal footer .btn { flex:1; } }
+@media (max-width: 680px) { .quiz-assignment-overlay { --quiz-assignment-safe-top:max(10px, var(--safe-area-top)); --quiz-assignment-safe-right:max(10px, var(--safe-area-right)); --quiz-assignment-safe-bottom:max(10px, var(--safe-area-bottom)); --quiz-assignment-safe-left:max(10px, var(--safe-area-left)); } .quiz-assignment-detail-modal { max-height:calc(var(--app-visual-viewport-height) - var(--quiz-assignment-safe-top) - var(--quiz-assignment-safe-bottom)); } .quiz-assignment-detail-modal header, .quiz-assignment-detail-modal footer, .quiz-assignment-detail-body { padding:14px; } .quiz-assignment-detail-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } .quiz-assignment-detail-stats span:nth-child(2) { border-right:0; } .quiz-assignment-detail-stats span:nth-child(-n+2) { border-bottom:1px solid var(--color-border-light); } .quiz-assignment-detail-modal footer { align-items:stretch; flex-direction:column; } .quiz-assignment-detail-modal footer > div { display:flex; gap:8px; } .quiz-assignment-detail-modal footer .btn { flex:1; } }
 .quiz-assignment-form { padding:18px 22px; display:grid; gap:16px; }
 .quiz-assignment-step { display:grid; gap:10px; padding:14px; border:1px solid var(--color-border-light); border-radius:var(--radius-md); background:var(--color-surface-raised, var(--color-surface)); }
 .quiz-assignment-step > label { display:grid; gap:6px; font-weight:700; }
@@ -110,7 +140,7 @@
 .quiz-assignment-play-list { max-height:320px; overflow:auto; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
 .quiz-assignment-play { display:grid; grid-template-columns:22px minmax(0,1fr); column-gap:7px; }
 .quiz-assignment-play span { grid-row:span 2; color:var(--color-primary); font-weight:900; }
-@media (max-width: 680px) { .quiz-assignment-overlay { padding:10px; place-items:start center; } .quiz-assignment-form__row, .quiz-assignment-play-list { grid-template-columns:1fr; } .quiz-assignment-modal { max-height:calc(100dvh - 20px); } .quiz-assignment-modal header, .quiz-assignment-modal footer { padding:14px; } .quiz-assignment-form { padding:14px; } .coach-quiz-homework-report { grid-template-columns:repeat(2,minmax(0,1fr)); } .coach-quiz-homework-report span:nth-child(2n) { border-right:0; } .coach-quiz-homework-report span { border-bottom:1px solid var(--color-border-light); } .coach-quiz-homework-report span:last-child { border-bottom:0; } }
+@media (max-width: 680px) { .quiz-assignment-overlay { place-items:start center; } .quiz-assignment-form__row, .quiz-assignment-play-list { grid-template-columns:1fr; } .quiz-assignment-modal { max-height:calc(var(--app-visual-viewport-height) - var(--quiz-assignment-safe-top) - var(--quiz-assignment-safe-bottom)); } .quiz-assignment-modal header, .quiz-assignment-modal footer { padding:14px; } .quiz-assignment-form { padding:14px; } .coach-quiz-homework-report { grid-template-columns:repeat(2,minmax(0,1fr)); } .coach-quiz-homework-report span:nth-child(2n) { border-right:0; } .coach-quiz-homework-report span { border-bottom:1px solid var(--color-border-light); } .coach-quiz-homework-report span:last-child { border-bottom:0; } }
 
 .coach-quiz-next-action-buttons { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
 
@@ -2945,6 +2975,40 @@ body[data-auth-role="player"]
   .script-period-manager-actions {
     grid-column: 1 / -1;
     justify-content: flex-start;
+  }
+}
+
+/* Period Manager is a coach touch surface. Keep compact desktop controls
+   unchanged, but give each row command and both dismissal paths a real 44px
+   target when a coarse pointer is in use. The actions intentionally wrap
+   below the period summary rather than compressing into its text column. */
+@media screen and (pointer: coarse) {
+  #scriptPeriodManagerModal .script-period-manager-item {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  #scriptPeriodManagerModal .script-period-manager-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  #scriptPeriodManagerModal .script-period-manager-action,
+  #scriptPeriodManagerModal .script-period-manager-footer-action {
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+  }
+
+  #scriptPeriodManagerModal .script-period-manager-close {
+    display: inline-grid;
+    flex: 0 0 var(--tap-min);
+    width: var(--tap-min);
+    min-width: var(--tap-min);
+    height: var(--tap-min);
+    min-height: var(--tap-min);
+    place-items: center;
+    padding: 0;
   }
 }
 
@@ -9374,5 +9438,79 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 @media print {
   .script-save-status {
     display: none !important;
+  }
+}
+
+/* T-009 P1 — Script secondary editor touch targets.
+   The coach tablet keeps the worksheet dense, but these controls open a
+   separate decision or mutate the active period. Give them independent 44px
+   hit areas without changing the desktop worksheet, phone run view, or print
+   packet. The selector intentionally names the coach tablet shell instead of
+   broadening every compact Script control. */
+@media screen and (pointer: coarse) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell
+    #script
+    .play-control-actions
+    .script-personnel-override-btn--quick {
+    width: var(--tap-min);
+    min-width: var(--tap-min);
+    height: var(--tap-min);
+    min-height: var(--tap-min);
+    padding: 0;
+    touch-action: manipulation;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell
+    #scriptPersonnelOverrideModalOverlay
+    :is(.modal-close-btn, .script-personnel-override-choice, .script-personnel-legacy-options > summary),
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell
+    #scriptPeriodColorModalOverlay
+    .modal-close-btn {
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+    touch-action: manipulation;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell
+    #scriptPersonnelOverrideModalOverlay
+    .modal-close-btn,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell
+    #scriptPeriodColorModalOverlay
+    .modal-close-btn {
+    display: inline-grid;
+    width: var(--tap-min);
+    min-width: var(--tap-min);
+    height: var(--tap-min);
+    place-items: center;
+    padding: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell
+    #script
+    .ph-color-palette-btn,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell
+    :is(.period-create-overlay:not(.template-picker-overlay), #scriptPeriodColorModalOverlay)
+    .script-period-color-swatch,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell
+    .period-create-overlay:not(.template-picker-overlay)
+    .pcf-preset {
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+    touch-action: manipulation;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell
+    #script
+    .ph-color-palette-btn,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell
+    .period-create-overlay:not(.template-picker-overlay)
+    .script-period-custom-color
+    input,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell
+    #scriptPeriodColorModalOverlay
+    .script-period-custom-color
+    input {
+    width: var(--tap-min);
+    height: var(--tap-min);
   }
 }

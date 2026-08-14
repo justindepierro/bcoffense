@@ -225,7 +225,7 @@ function openPlaybookConstraintMap() {
     analysis.conceptRows.length,
   );
 
-  document.getElementById("playbookConstraintOverlay")?.remove();
+  _pbDiscardReportOverlay("playbookConstraintOverlay", "playbook-constraint-report");
   const overlay = document.createElement("div");
   overlay.className = "custom-modal-overlay visible";
   overlay.id = "playbookConstraintOverlay";
@@ -291,21 +291,26 @@ function openPlaybookConstraintMap() {
         ${scope.hasFilters ? '<button type="button" class="btn btn-sm" data-action="clearPlaybookConstraintFilters">Clear Playbook Filters</button>' : ""}
         <button type="button" class="btn btn-sm" data-action="closePlaybookConstraintMap">Done</button>
       </div>
-    </div>`;
+  </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  const closeButton = overlay.querySelector(".modal-close");
+  _pbOpenReportLayer(overlay, {
+    layerId: "playbook-constraint-report",
+    scrollElement: overlay.querySelector(".pb-balance-body") || overlay,
+    initialFocus: closeButton || overlay,
+    onEscape: () => closePlaybookConstraintMap(),
+  });
 }
 
-function closePlaybookConstraintMap() {
+function closePlaybookConstraintMap(options = {}) {
   const overlay = document.getElementById("playbookConstraintOverlay");
   if (!overlay) return;
-  overlay.classList.remove("visible");
-  setTimeout(() => overlay.remove(), 180);
+  _pbCloseReportLayer(overlay, "playbook-constraint-report", options);
 }
 
 function clearPlaybookConstraintFilters() {
   if (typeof clearFilters === "function") clearFilters();
-  closePlaybookConstraintMap();
+  closePlaybookConstraintMap({ returnFocus: false });
   requestAnimationFrame(() => openPlaybookConstraintMap());
 }
 
@@ -690,7 +695,7 @@ function openPlaybookIdentityAlignment() {
   const constraintPct = _pbBalancePct(analysis.taggedConstraints, analysis.total);
   const installLabel = analysis.install.score === null ? "N/A" : `${analysis.install.score}%`;
 
-  document.getElementById("playbookIdentityOverlay")?.remove();
+  _pbDiscardReportOverlay("playbookIdentityOverlay", "playbook-identity-report");
   const overlay = document.createElement("div");
   overlay.className = "custom-modal-overlay visible";
   overlay.id = "playbookIdentityOverlay";
@@ -765,20 +770,25 @@ function openPlaybookIdentityAlignment() {
         ${scope.hasFilters ? '<button type="button" class="btn btn-sm" data-action="clearPlaybookIdentityFilters">Clear Playbook Filters</button>' : ""}
         <button type="button" class="btn btn-sm" data-action="closePlaybookIdentityAlignment">Done</button>
       </div>
-    </div>`;
+  </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  const closeButton = overlay.querySelector(".modal-close");
+  _pbOpenReportLayer(overlay, {
+    layerId: "playbook-identity-report",
+    scrollElement: overlay.querySelector(".pb-balance-body") || overlay,
+    initialFocus: closeButton || overlay,
+    onEscape: () => closePlaybookIdentityAlignment(),
+  });
 }
 
-function closePlaybookIdentityAlignment() {
+function closePlaybookIdentityAlignment(options = {}) {
   const overlay = document.getElementById("playbookIdentityOverlay");
   if (!overlay) return;
-  overlay.classList.remove("visible");
-  setTimeout(() => overlay.remove(), 180);
+  _pbCloseReportLayer(overlay, "playbook-identity-report", options);
 }
 
 function clearPlaybookIdentityFilters() {
   if (typeof clearFilters === "function") clearFilters();
-  closePlaybookIdentityAlignment();
+  closePlaybookIdentityAlignment({ returnFocus: false });
   requestAnimationFrame(() => openPlaybookIdentityAlignment());
 }

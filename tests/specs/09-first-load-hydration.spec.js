@@ -11,6 +11,7 @@ const {
   dismissFirstUse,
   installRuntimeErrorGuards,
   resetRuntimeErrorGuards,
+  reloadWithExpectedAbort,
   assertRuntimeClean,
 } = require("./helpers");
 
@@ -69,7 +70,13 @@ test.describe("Local first-load hydration", () => {
     test(`${target.tab} renders seeded data on first load`, async ({ page }) => {
       await seedHydrationFixture(page, target.tab);
       await resetRuntimeErrorGuards(page);
-      await page.reload({ waitUntil: "domcontentloaded" });
+      // The previous Dashboard render schedules a non-critical summary fetch.
+      // If it starts in the same turn as this intentional reload, Chromium
+      // correctly cancels it before the local server receives it. Scope that
+      // one known prior-document cancellation to this reload only.
+      await reloadWithExpectedAbort(page, ["/api/questions?summary=1"], {
+        waitUntil: "domcontentloaded",
+      });
       await waitForHydratedTab(page, target.tab);
       await target.assert(page);
       await assertRuntimeClean(page, { maxMainFrameNavigations: 1 });

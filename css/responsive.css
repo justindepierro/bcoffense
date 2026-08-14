@@ -40,9 +40,7 @@ body.is-mobile-screen .pb-wf-panel-overlay.visible {
    header + tabs stay usable and the workspace shows through the rail. */
 body.shell-tablet.is-staff-mobile-shell.is-landscape-screen
   :is(
-    .constraint-panel-overlay,
-    .cs-display-panel-overlay,
-    .pb-wf-panel-overlay
+    .cs-display-panel-overlay
   ).visible {
   top: calc(var(--app-header-height, 50px) + var(--app-tabs-height, 44px));
   background: rgba(0, 0, 0, 0.14);
@@ -883,6 +881,72 @@ body[data-auth-role="player"] .player-study-state strong {
     min-height: calc(var(--app-vh, 1vh) * 100);
     padding: 12px;
   }
+}
+
+/* Tablet portrait document shell ------------------------------------------------
+   The shared document-scroll foundation above is intentionally broad for
+   phones, but its media query stops at a coarse 820px viewport. The runtime
+   still classifies larger touch/iPadOS portrait screens (for example 834x1112
+   and 1024x1366) as mobile tablet shells. Without this bridge, the base
+   #mainApp/panel overflow rules retain a desktop-style clipping boundary even
+   though the shell's vertical owner is the document.
+
+   Keep this limited to staff tablet portrait. Staff tablet landscape has its
+   own fixed rail/panel shell in layout.css, and player/study navigation has a
+   separate product contract that must not be changed by this coach-workspace
+   bridge. `shell-compact` may coexist with `shell-tablet` in a desktop-UA
+   tablet test, so `shell-tablet` remains the authoritative tablet selector. */
+body.shell-tablet.is-mobile-screen.is-portrait-screen.is-staff-mobile-shell {
+  --tablet-scroll-owner: document;
+  background: var(--color-surface);
+  min-width: 0;
+  min-height: calc(var(--app-vh, 1vh) * 100);
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+  touch-action: pan-y;
+  -webkit-text-size-adjust: 100%;
+}
+
+body.shell-tablet.is-mobile-screen.is-portrait-screen.is-staff-mobile-shell
+  :is(#mainApp, .app-header, .tabs, .panel) {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+}
+
+body.shell-tablet.is-mobile-screen.is-portrait-screen.is-staff-mobile-shell
+  #mainApp {
+  min-width: 0;
+  overflow: visible;
+  overflow-x: clip;
+}
+
+body.shell-tablet.is-mobile-screen.is-portrait-screen.is-staff-mobile-shell
+  .panel {
+  min-height: calc(
+    (var(--app-vh, 1vh) * 100) - var(--app-header-height, 50px) -
+      var(--app-tabs-height, 44px)
+  );
+  overflow: visible;
+  overflow-x: clip;
+  margin: 0;
+  padding: 12px 12px calc(12px + var(--coach-dock-height, 76px));
+  border-right: 0;
+  border-left: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.shell-tablet.is-mobile-screen.is-portrait-screen.is-staff-mobile-shell
+  .panel > * {
+  max-width: 100%;
+}
+
+body.shell-tablet.is-mobile-screen.is-portrait-screen.is-staff-mobile-shell
+  .upload-section {
+  min-height: calc(var(--app-vh, 1vh) * 100);
+  padding: 12px;
 }
 
 body.shell-tablet.is-mobile-screen .app-header-actions {

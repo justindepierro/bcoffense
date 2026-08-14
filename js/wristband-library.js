@@ -15,6 +15,7 @@ function initWristband() {
     loadSavedWristbandsList();
     initSortCriteria();
     setWristbandMobileView(wbMobileView);
+    initWristbandLibraryRailViewportSync();
     updateWristbandSaveChrome();
     if (typeof traceWristbandAction === "function") {
       traceWristbandAction("init complete", { action: "initWristband" });
@@ -200,6 +201,90 @@ function handleWbPreventDuplicatesChange() {
   renderWristbandPlays();
 }
 
+let wristbandLibraryRailViewportBound = false;
+
+function isWristbandLandscapeLibraryRail() {
+  const body = document.body;
+  return Boolean(
+    body &&
+      body.classList.contains("shell-tablet") &&
+      body.classList.contains("is-mobile-screen") &&
+      body.classList.contains("is-staff-mobile-shell") &&
+      body.classList.contains("is-landscape-screen") &&
+      body.dataset.authRole !== "player",
+  );
+}
+
+function syncWristbandLibraryRailChrome() {
+  const panel = document.getElementById("wristband");
+  const pane = document.getElementById("wbLibraryPane");
+  const toggle = document.getElementById("wbLibraryRailToggle");
+  if (!panel || !pane) return;
+
+  const isTabletRail = isWristbandLandscapeLibraryRail();
+  // A desktop collapse should not carry into the tablet rail: the landscape
+  // workspace deliberately starts with source context beside the builder.
+  if (isTabletRail) panel.classList.remove("wb-library-collapsed");
+
+  const collapsedClass = isTabletRail
+    ? "wb-tablet-library-collapsed"
+    : "wb-library-collapsed";
+  const isOpen = !panel.classList.contains(collapsedClass);
+
+  pane.setAttribute("aria-hidden", isOpen ? "false" : "true");
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    toggle.setAttribute(
+      "aria-label",
+      isOpen ? "Collapse play library" : "Open play library",
+    );
+    toggle.title = isOpen ? "Collapse play library" : "Open play library";
+  }
+}
+
+function initWristbandLibraryRailViewportSync() {
+  if (!wristbandLibraryRailViewportBound && typeof window !== "undefined") {
+    wristbandLibraryRailViewportBound = true;
+    window.addEventListener("resize", syncWristbandLibraryRailChrome, { passive: true });
+    window.addEventListener("orientationchange", syncWristbandLibraryRailChrome, { passive: true });
+  }
+  syncWristbandLibraryRailChrome();
+}
+
+function toggleWristbandLibraryRail(requestedState) {
+  const panel = document.getElementById("wristband");
+  if (!panel) return;
+
+  const isTabletRail = isWristbandLandscapeLibraryRail();
+  const collapsedClass = isTabletRail
+    ? "wb-tablet-library-collapsed"
+    : "wb-library-collapsed";
+  const request = String(requestedState || "").toLowerCase();
+  const isCurrentlyOpen = !panel.classList.contains(collapsedClass);
+  const shouldOpen = request === "open" || request === "true"
+    ? true
+    : request === "closed" || request === "false"
+      ? false
+      : !isCurrentlyOpen;
+
+  panel.classList.toggle(collapsedClass, !shouldOpen);
+  if (isTabletRail) panel.classList.remove("wb-library-collapsed");
+  syncWristbandLibraryRailChrome();
+
+  // Closing the rail removes the focused close control from the layout. Move
+  // focus to the persistent builder toggle instead of leaving it on hidden UI.
+  if (!shouldOpen) {
+    const toggle = document.getElementById("wbLibraryRailToggle");
+    if (toggle) {
+      try {
+        toggle.focus({ preventScroll: true });
+      } catch (_err) {
+        toggle.focus();
+      }
+    }
+  }
+}
+
 function setWristbandMobileView(viewName) {
   wbMobileView = viewName === "library" ? "library" : "builder";
   const panel = document.getElementById("wristband");
@@ -212,6 +297,7 @@ function setWristbandMobileView(viewName) {
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
+  syncWristbandLibraryRailChrome();
 }
 
 function renderWristbandPlays() {

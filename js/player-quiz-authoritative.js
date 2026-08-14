@@ -319,6 +319,8 @@
       id: "authoritativeQuizOverlay",
       scrollElement: "authoritativeQuizCard",
       blocking: true,
+      initialFocus: overlay.querySelector("[data-action='closeAuthoritativeQuiz']") || overlay,
+      onEscape: () => closeAuthoritativeQuiz(),
     });
   }
 

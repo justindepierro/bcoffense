@@ -121,13 +121,15 @@ function _csIndexBucketMarkup(bucket, editable) {
     const hlClass = cellStyle.highlightClass ? ` ${cellStyle.highlightClass}` : "";
     if (!editable) return `<li class="${family ? "cs-index-play--family" : ""}${hlClass}"${styleAttr}>${text}</li>`;
     const label = escapeHtml([row.play?.formation, row.play?.play].filter(Boolean).join(" ") || "Call Sheet play");
-    return `<li class="cs-index-play callsheet-play${family ? " cs-index-play--family" : ""}${hlClass}"${styleAttr} data-category="${escapeAttr(bucket.categoryId || "")}" data-hash="${row.hash}" data-index="${row.index}" data-cs-card-bucket="${escapeAttr(bucket.id)}" data-cs-index-play-key="${escapeAttr(_csIndexIdentity(row.play))}" aria-label="${label}"><span class="cs-index-play-grip" draggable="true" title="Drag to reorder this play" aria-label="Drag ${label} to reorder">⠿</span><span class="cs-index-play-text">${text}</span><span class="cs-index-play-actions"><button data-action="moveCallSheetIndexCardPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(_csIndexIdentity(row.play))}|up" title="Move play up" aria-label="Move ${label} up">↑</button><button data-action="moveCallSheetIndexCardPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(_csIndexIdentity(row.play))}|down" title="Move play down" aria-label="Move ${label} down">↓</button><button data-action="toggleCallSheetIndexFamily" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="${family ? "Make this a normal row" : "Indent beneath the call above"}" aria-label="${family ? "Remove family indent" : "Indent as a related family call"}">↳</button><button data-action="toggleCallSheetIndexCompact" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" ${family ? "" : "disabled"} title="${compact ? "Show repeated components" : "Hide components shared with the call above"}" aria-label="${compact ? "Show repeated components" : "Hide repeated components"}">≈</button><button data-action="removeCallSheetIndexPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="Remove from this Index Card bucket only" aria-label="Remove ${label} from this Index Card bucket">×</button><button data-action="openCallSheetIndexPlayMenu" title="Edit this Call Sheet play" aria-label="Edit ${label}">⋯</button></span></li>`;
+    const rowActionArg = `${bucket.id}|${row.key}`;
+    return `<li class="cs-index-play callsheet-play${family ? " cs-index-play--family" : ""}${hlClass}"${styleAttr} data-category="${escapeAttr(bucket.categoryId || "")}" data-hash="${row.hash}" data-index="${row.index}" data-cs-card-bucket="${escapeAttr(bucket.id)}" data-cs-index-play-key="${escapeAttr(_csIndexIdentity(row.play))}" aria-label="${label}"><span class="cs-index-play-grip" draggable="true" title="Drag to reorder this play" aria-label="Drag ${label} to reorder">⠿</span><span class="cs-index-play-text">${text}</span><button type="button" class="cs-index-play-touch-action" data-action="openCallSheetIndexCardPlayActions" data-arg="${escapeAttr(rowActionArg)}" aria-label="Actions for ${label}">Actions</button><span class="cs-index-play-actions"><button data-action="moveCallSheetIndexCardPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(_csIndexIdentity(row.play))}|up" title="Move play up" aria-label="Move ${label} up">↑</button><button data-action="moveCallSheetIndexCardPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(_csIndexIdentity(row.play))}|down" title="Move play down" aria-label="Move ${label} down">↓</button><button data-action="toggleCallSheetIndexFamily" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="${family ? "Make this a normal row" : "Indent beneath the call above"}" aria-label="${family ? "Remove family indent" : "Indent as a related family call"}">↳</button><button data-action="toggleCallSheetIndexCompact" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" ${family ? "" : "disabled"} title="${compact ? "Show repeated components" : "Hide components shared with the call above"}" aria-label="${compact ? "Show repeated components" : "Hide repeated components"}">≈</button><button data-action="removeCallSheetIndexPlay" data-arg="${escapeAttr(bucket.id)}|${escapeAttr(row.key)}" title="Remove from this Index Card bucket only" aria-label="Remove ${label} from this Index Card bucket">×</button><button data-action="openCallSheetIndexPlayMenu" title="Edit this Call Sheet play" aria-label="Edit ${label}">⋯</button></span></li>`;
   }).join("") || (editable && bucket.categoryId
     ? `<li class="cs-index-no-calls"><button class="cs-index-empty-add" data-action="openCallSheetIndexCardBucketPicker" data-arg="${escapeAttr(bucket.id)}">＋ Add a play or drop one here</button></li>`
     : "<li class=\"cs-index-no-calls\">Drop or add plays here</li>");
   const addControl = editable && bucket.categoryId ? `<button class="cs-index-bucket-add" data-action="openCallSheetIndexCardBucketPicker" data-arg="${escapeAttr(bucket.id)}" title="Add a play to ${escapeAttr(bucket.label)}" aria-label="Add a play to ${escapeAttr(bucket.label)}">＋</button>` : "";
+  const manageControl = editable ? `<button type="button" class="cs-index-bucket-manage" data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}"><span aria-hidden="true">⋯</span><span class="cs-index-bucket-manage-label">Manage</span></button>` : "";
   const dropAttrs = bucket.categoryId ? ` data-drop="csHashDrop" data-cat="${escapeAttr(bucket.categoryId)}" data-hash="${bucket.targetHash === "right" ? "right" : "left"}"` : "";
-  return `<section class="cs-index-bucket${_csIndexPrintBucketClass(bucket)}"${dropAttrs}${editable ? ` data-cs-card-bucket="${escapeAttr(bucket.id)}"` : ""}><header${editable ? ` draggable="true" data-cs-index-bucket-drag="${escapeAttr(bucket.id)}" title="Drag this header to reorder situations"` : ""} style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading">${editable ? '<span class="cs-index-bucket-grip" aria-hidden="true">⠿</span>' : ""}<b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}<button data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}">⋯</button></span>` : ""}</header><ol class="${bucket.showSequenceNumbers ? "" : "cs-index-list--unsequenced"}">${plays}</ol></section>`;
+  return `<section class="cs-index-bucket${_csIndexPrintBucketClass(bucket)}"${dropAttrs}${editable ? ` data-cs-card-bucket="${escapeAttr(bucket.id)}"` : ""}><header${editable ? ` draggable="true" data-cs-index-bucket-drag="${escapeAttr(bucket.id)}" title="Drag this header to reorder situations"` : ""} style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading">${editable ? '<span class="cs-index-bucket-grip" aria-hidden="true">⠿</span>' : ""}<b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}${manageControl}</span>` : ""}</header><ol class="${bucket.showSequenceNumbers ? "" : "cs-index-list--unsequenced"}">${plays}</ol></section>`;
 }
 
 function _csClearIndexBucketDragFeedback() {
@@ -307,6 +309,65 @@ function moveCallSheetIndexCardPlay(arg) {
   if (index < 0 || nextIndex < 0 || nextIndex >= keys.length) return;
   [keys[index], keys[nextIndex]] = [keys[nextIndex], keys[index]];
   _csPersistCards();
+}
+function _csOpenIndexCardPlayEditor(bucket, row) {
+  if (!bucket || !row || typeof showPlayContextMenu !== "function") return;
+  const rowElement = [...document.querySelectorAll(".cs-index-card--editor .cs-index-play[data-cs-index-play-key]")]
+    .find((element) =>
+      element.dataset.csCardBucket === String(bucket.id) &&
+      element.dataset.csIndexPlayKey === _csIndexIdentity(row.play),
+    );
+  const rect = rowElement?.getBoundingClientRect();
+  showPlayContextMenu({
+    preventDefault() { },
+    clientX: rect ? rect.right : Math.max(0, window.innerWidth / 2),
+    clientY: rect ? rect.bottom + 4 : Math.max(0, window.innerHeight / 2),
+  }, bucket.categoryId, row.hash, row.index);
+}
+async function openCallSheetIndexCardPlayActions(arg) {
+  const { bucket, row } = _csIndexRowFromArg(arg);
+  if (!bucket || !row) return;
+  const rows = _csBucketRows(bucket);
+  const rowIndex = rows.findIndex((item) => item.key === row.key);
+  const family = _csIndexFamily(bucket, row);
+  const compact = _csIndexCompact(bucket, row);
+  const label = [row.play?.formation, row.play?.play].filter(Boolean).join(" ") || "this call";
+  const action = await showChoice(`Choose an action for <strong>${escapeHtml(label)}</strong>.`, {
+    title: "Index Card call", icon: "🗂️", choices: [
+      ...(rowIndex > 0 ? [{ value: "up", label: "Move call up", icon: "↑" }] : []),
+      ...(rowIndex >= 0 && rowIndex < rows.length - 1 ? [{ value: "down", label: "Move call down", icon: "↓" }] : []),
+      ...(rowIndex > 0 ? [{ value: "indent", label: family ? "Remove family indent" : "Indent related call", icon: "↳" }] : []),
+      ...(rowIndex > 0 ? [{
+        value: "compact",
+        label: compact
+          ? "Show repeated components"
+          : family
+            ? "Hide repeated components"
+            : "Indent and hide repeated components",
+        icon: "≈",
+      }] : []),
+      { value: "edit", label: "Edit live Call Sheet call", icon: "✏️" },
+      { value: "remove", label: "Remove from this card", icon: "×" },
+      { value: "cancel", label: "Cancel" },
+    ],
+  });
+  const identity = _csIndexIdentity(row.play);
+  if (action === "up" || action === "down") {
+    moveCallSheetIndexCardPlay(`${bucket.id}|${identity}|${action}`);
+  } else if (action === "indent") {
+    toggleCallSheetIndexFamily(arg);
+  } else if (action === "compact") {
+    // Compact rows are a family presentation. On touch, make the requested
+    // compact action self-sufficient instead of forcing a second hidden
+    // desktop-only control before it can take effect.
+    if (!family) _csIndexSetFamily(bucket, row, "indent");
+    _csIndexSetFamily(bucket, row, "compact");
+    _csPersistCards();
+  } else if (action === "edit") {
+    _csOpenIndexCardPlayEditor(bucket, row);
+  } else if (action === "remove") {
+    removeCallSheetIndexPlay(arg);
+  }
 }
 function _csIndexPrintColumns(buckets) {
   const columns = [[], []];
@@ -589,7 +650,7 @@ function normalizeCallSheetIndexCardPrintOptions(options = {}) {
 // passes explicit so a failed device duplex attempt never looks like lost data.
 function _csIndexManualDuplexPrompt(job) {
   const overlay = document.createElement("div");
-  overlay.className = "custom-modal-overlay";
+  overlay.className = "custom-modal-overlay cs-index-manual-duplex-overlay";
   overlay.innerHTML = `
     <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="csIndexManualDuplexTitle">
       <div class="custom-modal-header"><span class="custom-modal-icon">🗂️</span><h3 class="custom-modal-title" id="csIndexManualDuplexTitle">Fronts are ready</h3></div>
@@ -601,14 +662,28 @@ function _csIndexManualDuplexPrompt(job) {
       <div class="custom-modal-actions"><button type="button" class="btn custom-modal-btn custom-modal-cancel" data-index-manual-duplex="done">Done for now</button><button type="button" class="btn btn-primary custom-modal-btn" data-index-manual-duplex="backs">Print backs</button></div>
     </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
-  if (typeof openLayer === "function") openLayer(overlay, { id: "cs-index-manual-duplex", exclusive: false, trapFocus: false });
-  requestAnimationFrame(() => overlay.classList.add("visible"));
   const close = () => {
     if (typeof closeLayer === "function") closeLayer("cs-index-manual-duplex");
     overlay.classList.remove("visible");
     setTimeout(() => overlay.remove(), 200);
   };
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "cs-index-manual-duplex",
+      scrollElement: overlay.querySelector(".custom-modal-body") || overlay.querySelector(".custom-modal") || overlay,
+      blocking: true,
+      exclusive: false,
+      initialFocus: overlay.querySelector('[data-index-manual-duplex="done"]') || overlay.querySelector(".custom-modal") || overlay,
+      onEscape: close,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+    overlay.querySelector('[data-index-manual-duplex="done"]')?.focus();
+  }
+  requestAnimationFrame(() => {
+    overlay.classList.add("visible");
+    overlay.querySelector('[data-index-manual-duplex="done"]')?.focus({ preventScroll: true });
+  });
   overlay.querySelector('[data-index-manual-duplex="done"]').addEventListener("click", close);
   overlay.querySelector('[data-index-manual-duplex="backs"]').addEventListener("click", () => {
     close();
@@ -672,7 +747,7 @@ async function openCallSheetIndexCardPrintModal() {
   }
   const stored = getCallSheetIndexCardPrintOptions();
   const overlay = document.createElement("div");
-  overlay.className = "custom-modal-overlay";
+  overlay.className = "custom-modal-overlay cs-index-print-modal-overlay";
   overlay.innerHTML = `
     <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="csIndexPrintTitle">
       <div class="custom-modal-header"><span class="custom-modal-icon">🗂️</span><h3 class="custom-modal-title" id="csIndexPrintTitle">Print Index Cards</h3></div>
@@ -687,9 +762,6 @@ async function openCallSheetIndexCardPrintModal() {
       <div class="custom-modal-actions"><button type="button" class="btn custom-modal-btn custom-modal-cancel" data-index-print="cancel">Cancel</button><button type="button" class="btn btn-secondary custom-modal-btn" data-index-print="preview">Preview</button><button type="button" class="btn btn-primary custom-modal-btn" data-index-print="print">Print</button></div>
     </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
-  if (typeof openLayer === "function") openLayer(overlay, { id: "cs-index-print-modal", exclusive: false, trapFocus: false });
-  requestAnimationFrame(() => overlay.classList.add("visible"));
   const read = () => ({
     cards: overlay.querySelector("#csIndexPrintCards")?.value || stored.cards,
     sides: overlay.querySelector("#csIndexPrintSides")?.value || stored.sides,
@@ -715,6 +787,23 @@ async function openCallSheetIndexCardPrintModal() {
     overlay.classList.remove("visible");
     setTimeout(() => overlay.remove(), 200);
   };
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "cs-index-print-modal",
+      scrollElement: overlay.querySelector(".custom-modal-body") || overlay.querySelector(".custom-modal") || overlay,
+      blocking: true,
+      exclusive: false,
+      initialFocus: overlay.querySelector('[data-index-print="cancel"]') || overlay.querySelector(".custom-modal") || overlay,
+      onEscape: close,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+    overlay.querySelector('[data-index-print="cancel"]')?.focus();
+  }
+  requestAnimationFrame(() => {
+    overlay.classList.add("visible");
+    overlay.querySelector('[data-index-print="cancel"]')?.focus({ preventScroll: true });
+  });
   overlay.querySelectorAll("select").forEach((select) => select.addEventListener("change", update));
   overlay.querySelector('[data-index-print="cancel"]').addEventListener("click", close);
   overlay.querySelector('[data-index-print="preview"]').addEventListener("click", () => {
@@ -746,14 +835,28 @@ function openCallSheetIndexCardPrintPreview(options = {}) {
       <div class="custom-modal-actions"><button type="button" class="btn custom-modal-btn custom-modal-cancel" data-index-preview="back">Back</button><button type="button" class="btn btn-primary custom-modal-btn" data-index-preview="print">Print this job</button></div>
     </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
-  if (typeof openLayer === "function") openLayer(overlay, { id: "cs-index-print-preview", exclusive: false, trapFocus: false });
-  requestAnimationFrame(() => overlay.classList.add("visible"));
   const close = () => {
     if (typeof closeLayer === "function") closeLayer("cs-index-print-preview");
     overlay.classList.remove("visible");
     setTimeout(() => overlay.remove(), 200);
   };
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "cs-index-print-preview",
+      scrollElement: overlay.querySelector(".cs-index-print-preview-pages") || overlay.querySelector(".custom-modal") || overlay,
+      blocking: true,
+      exclusive: false,
+      initialFocus: overlay.querySelector('[data-index-preview="back"]') || overlay.querySelector(".custom-modal") || overlay,
+      onEscape: close,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+    overlay.querySelector('[data-index-preview="back"]')?.focus();
+  }
+  requestAnimationFrame(() => {
+    overlay.classList.add("visible");
+    overlay.querySelector('[data-index-preview="back"]')?.focus({ preventScroll: true });
+  });
   overlay.querySelector('[data-index-preview="back"]').addEventListener("click", close);
   overlay.querySelector('[data-index-preview="print"]').addEventListener("click", () => { close(); _runCallSheetIndexCardsPrint(job); });
   overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
@@ -1114,8 +1217,12 @@ async function manageCallSheetIndexCardBucket(id) {
   const bucket = _csIndexBucketFromArg(id);
   const card = _csActiveCard();
   if (!bucket || !card) return;
+  const buckets = Array.isArray(card[_csIndexSide]) ? card[_csIndexSide] : [];
+  const bucketIndex = buckets.findIndex((item) => item.id === bucket.id);
   const action = await showChoice(`Manage <strong>${escapeHtml(bucket.label)}</strong>. Calls remain linked to the live Call Sheet.`, {
     title: "Manage situation", icon: "🗂️", choices: [
+      ...(bucketIndex > 0 ? [{ value: "move-up", label: "Move situation up", icon: "↑" }] : []),
+      ...(bucketIndex >= 0 && bucketIndex < buckets.length - 1 ? [{ value: "move-down", label: "Move situation down", icon: "↓" }] : []),
       { value: "rename", label: "Rename situation", icon: "✏️" },
       { value: "source", label: "Change Call Sheet source", icon: "↻" },
       { value: "color", label: "Change header color", icon: "🎨" },
@@ -1133,7 +1240,11 @@ async function manageCallSheetIndexCardBucket(id) {
       { value: "cancel", label: "Cancel" },
     ],
   });
-  if (action === "rename") {
+  if (action === "move-up") {
+    moveCallSheetIndexBucket(`${id}|-1`);
+  } else if (action === "move-down") {
+    moveCallSheetIndexBucket(`${id}|1`);
+  } else if (action === "rename") {
     const name = await showPrompt("Situation label:", bucket.label || _csName(bucket.categoryId), { title: "Rename situation", icon: "✏️" });
     if (name?.trim()) { bucket.label = name.trim(); _csPersistCards(); }
   } else if (action === "source") {

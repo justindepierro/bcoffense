@@ -2105,6 +2105,8 @@ function openPlayerLeaderboardProfile(playerName) {
       id: "player-leaderboard-profile",
       scrollElement: "playerLeaderboardProfilePanel",
       blocking: true,
+      initialFocus: overlay.querySelector("[data-action='closePlayerLeaderboardProfile']") || overlay,
+      onEscape: () => closePlayerLeaderboardProfile(),
     });
   } else if (typeof trapFocus === "function") {
     trapFocus(overlay);

@@ -14,6 +14,7 @@ const appEvents = await readFile(new URL("js/app-events.js", `file://${root}/`),
 const scriptIntegrations = await readFile(new URL("js/script-integrations.js", `file://${root}/`), "utf8");
 const gamePlanIntegrations = await readFile(new URL("js/gameplan-integrations.js", `file://${root}/`), "utf8");
 const indexHtml = await readFile(new URL("index.html", `file://${root}/`), "utf8");
+const mobileViewportCheck = await readFile(new URL("scripts/mobile-viewport-check.mjs", `file://${root}/`), "utf8");
 
 assert.match(render, /const wristbandHtml = displayOptions\.showNumbers[\s\S]*?cs-wristband-number[\s\S]*?\$\{wristbandHtml\}[\s\S]*?\$\{personnelHtml\}/, "screen rows render wristband number before personnel and call text");
 assert.match(print, /const wristbandHtml = displayOptions\.showNumbers[\s\S]*?print-wristband-number[\s\S]*?\$\{wristbandHtml\}\$\{personnelHtml\}/, "print rows preserve wristband-first order");
@@ -45,11 +46,15 @@ assert.match(indexCards, /function onCallSheetIndexCardMovedPlay\(play, sourceBu
 assert.match(await readFile(new URL("js/callsheet-picker-runtime.js", `file://${root}/`), "utf8"), /let _csPickerSelectionInFlight = false;[\s\S]*?_csPickerSelectionInFlight = true;/, "one picker selection is claimed before it can mutate the Call Sheet");
 assert.match(indexCards, /showPlayContextMenu\([\s\S]*?row\.dataset\.category[\s\S]*?row\.dataset\.hash/, "index-card play actions open the canonical Call Sheet cell editor");
 assert.match(indexCards, /toggleCallSheetIndexFamily[\s\S]*?toggleCallSheetIndexCompact/, "index cards retain per-row family indentation and repeated-component controls");
+assert.match(indexCards, /if \(!editable\) return[\s\S]*?cs-index-play-touch-action/, "the persistent touch action is emitted only after print/non-editor markup returns");
+assert.match(indexCards, /cs-index-play-touch-action[\s\S]*?data-action="openCallSheetIndexCardPlayActions"/, "editable Index Card calls expose one persistent action trigger");
+assert.match(indexCards, /function openCallSheetIndexCardPlayActions\(arg\)[\s\S]*?Move call up[\s\S]*?Move call down[\s\S]*?Indent related call[\s\S]*?repeated components[\s\S]*?Edit live Call Sheet call[\s\S]*?Remove from this card/, "the touch action sheet covers move, indent, compact, edit, and remove without hover controls");
+assert.match(indexCards, /function openCallSheetIndexCardPlayActions\(arg\)[\s\S]*?_csIndexSetFamily\(bucket, row, "indent"\)[\s\S]*?_csIndexSetFamily\(bucket, row, "compact"\)[\s\S]*?_csPersistCards\(\)/, "compact touch actions create a usable related-call presentation in one tap");
 assert.match(indexCards, /function openCallSheetIndexCardPrintModal\(\)[\s\S]*?Cards[\s\S]*?Sides[\s\S]*?Copies[\s\S]*?Preview/, "index cards use a dedicated print suite with card, side, copy, and preview controls");
 assert.match(indexCards, /function previewCurrentCallSheetIndexCard\(\)[\s\S]*?cards: "current", sides: "both", copies: 1/, "Index Card editor quick preview creates a paired Front/Back job without changing saved print options");
 assert.match(indexCards, /function renderCallSheetIndexToolbarContext\(\)[\s\S]*?cs-index-main-tabs[\s\S]*?cs-index-main-sides[\s\S]*?cs-index-main-more/, "Index Card card, side, and overflow controls share one toolbar context");
 assert.doesNotMatch(indexCards, /cs-index-commandbar|cs-index-main-actions|cs-index-main-strip/, "Index Card card content does not retain a second legacy command toolbar");
-assert.match(indexCards, /openCallSheetIndexCardPrintModal\(\)[\s\S]*?requestAnimationFrame\(\(\) => overlay\.classList\.add\("visible"\)\)/, "index-card print options use the normal visible modal lifecycle");
+assert.match(indexCards, /openCallSheetIndexCardPrintModal\(\)[\s\S]*?requestAnimationFrame\(\(\) => \{?[\s\S]*?overlay\.classList\.add\("visible"\)/, "index-card print options use the normal visible modal lifecycle");
 assert.match(indexCards, /_runCallSheetIndexCardsPrint[\s\S]*?requestAnimationFrame\(\(\) => requestAnimationFrame/, "index-card printing waits for its isolated print root to paint before opening the browser dialog");
 assert.match(indexCards, /function _csIndexPrintSides[\s\S]*?\["front", "back"\][\s\S]*?function renderCallSheetIndexCardPrintPages/, "index-card duplex jobs render front then back for each card");
 assert.match(indexCards, /function _runCallSheetIndexCardsPrint[\s\S]*?setupPrintPageStyle[\s\S]*?@page \{ size: 4in 6in/, "index cards use the shared print-page setup with an exact 4×6 page");
@@ -60,6 +65,7 @@ assert.match(indexCards, /function renameCallSheetIndexCard\(\)/, "index cards s
 assert.match(indexCards, /cs-index-card-title-input[\s\S]*?data-onchange="setCallSheetIndexCardTitle"/, "the visible Index Card title can be edited in place");
 assert.match(indexCards, /function toggleCallSheetIndexCardHeader\(\)[\s\S]*?card\.hideHeader/, "Index Card title bands can be removed to reclaim printable space");
 assert.match(indexCards, /function moveCallSheetIndexBucket\(arg\)/, "index-card situations can be manually reordered");
+assert.match(indexCards, /function manageCallSheetIndexCardBucket\(id\)[\s\S]*?Move situation up[\s\S]*?Move situation down[\s\S]*?moveCallSheetIndexBucket\(`\$\{id\}\|-1`\)[\s\S]*?moveCallSheetIndexBucket\(`\$\{id\}\|1`\)/, "situation management surfaces deterministic up/down moves through the existing bucket helper");
 assert.match(indexCards, /data-cs-index-bucket-drag[\s\S]*?Drag this header to reorder situations/, "Index Card situation headers are dedicated drag handles instead of competing with play drag/drop");
 assert.match(indexCards, /cs-index-bucket-grip[\s\S]*?cs-index-bucket-actions[\s\S]*?manageCallSheetIndexCardBucket/, "Index Card situation headers keep a compact drag, add, and manage control surface");
 assert.match(indexCards, /function _csReorderIndexBuckets\(sourceId, targetId, placeAfter\)[\s\S]*?buckets\.splice\(placeAfter \? targetIndex \+ 1 : targetIndex, 0, bucket\)/, "Index Card drag/drop persists a deterministic before-or-after bucket order");
@@ -104,6 +110,11 @@ assert.match(indexCards, /cs-index-editor-stage/, "Index Card editing uses a bou
 assert.match(css, /\.callsheet-index-mode \.cs-source-bar \{ display: none; \}/, "Index Card mode removes the redundant source toolbar from the editing canvas");
 assert.match(css, /\.cs-index-grid \{ display: grid;[\s\S]*?flex: 1 1 auto; min-height: 0;[\s\S]*?overflow: auto/, "index-card bucket content stays in a constrained scroll region instead of painting over the next situation");
 assert.match(css, /\.cs-index-play-actions \{ display: inline-flex; position: absolute;[\s\S]*?pointer-events: none/, "editor-only play controls overlay on demand instead of changing the 4×6 capacity");
+assert.match(css, /@media screen \{[\s\S]*?\.cs-index-play-touch-action \{[\s\S]*?min-width: var\(--coach-workbench-control-height\);[\s\S]*?min-height: var\(--coach-workbench-control-height\)/, "staff tablets replace hover-only Index Card controls with a persistent 40px touch target");
+assert.match(css, /#csIndexCardLibraryOverlay[\s\S]*?\.cs-sort-close \{[\s\S]*?min-height: var\(--coach-workbench-control-height\)/, "the Index Card library close target remains tablet reachable");
+assert.match(indexHtml, /cs-index-close-editor[\s\S]*?data-action="switchCallSheetPage"[\s\S]*?data-arg="front"/, "the shared Call Sheet toolbar has an explicit Index Card editor exit");
+assert.match(mobileViewportCheck, /const INDEX_CARD_TABLET_VIEWPORTS = \["744x1024", "1024x768"\]/, "the focused tablet matrix covers portrait and landscape Index Card editing");
+assert.match(mobileViewportCheck, /async function probeTabletIndexCardEditor\(page\)[\s\S]*?firstBucketId[\s\S]*?secondBucketId[\s\S]*?print markup remains editor-free[\s\S]*?tabletIndexCardEditorBroken/, "the tablet harness seeds two situations and three calls, checks print isolation, and makes failures fatal");
 assert.match(render, /Index Cards are a fixed physical preview[\s\S]*?card\.scrollIntoView/, "opening Index Cards resets the old Call Sheet scroll position instead of landing mid-card");
 assert.match(css, /\.cs-index-print-preview-pages \.cs-index-card \{ width: min\(100%, 390px\); height: min\(585px,[\s\S]*?aspect-ratio: 2 \/ 3/, "index-card preview uses a fixed 4×6-proportional canvas rather than growing with content");
 assert.match(css, /\.cs-index-print-preview-pages \.cs-index-grid \{ grid-auto-rows: minmax\(max-content, 1fr\); align-content: stretch; gap: 0/, "Index Card preview preserves paired equal-width columns while stretching rows across the physical card");

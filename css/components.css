@@ -2638,6 +2638,155 @@ body.is-short-screen .auth-login-overlay--mobile .auth-login-player-shortcut,
   max-width: 400px;
 }
 
+/* Shared reorder dialog. This helper is used by Script, Call Sheet,
+   Wristband, and Game Plan, so give its dynamic layer a deliberate viewport
+   and exactly one interior scroll owner without changing print output. */
+@media screen {
+  .reorder-modal-overlay {
+    /* Some callers start above a legacy top-level modal. Keep the shared
+       reorder dialog above that surface while it owns the active layer. */
+    z-index: calc(var(--z-modal-top) + 1);
+  }
+
+  .reorder-modal-overlay.app-layer-active {
+    bottom: auto;
+    height: var(--app-visual-viewport-height);
+    max-height: var(--app-visual-viewport-height);
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+
+  .reorder-modal-dialog {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: var(--app-layer-usable-height);
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .reorder-modal-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .reorder-modal-header .modal-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .reorder-modal-close {
+    flex: 0 0 40px;
+    width: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    margin-left: auto;
+    padding: 0;
+    border: 1px solid var(--color-border-input);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-input);
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .reorder-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: var(--space-sm) var(--space-md) var(--space-md);
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .reorder-modal-body .modal-copy-note {
+    margin: 0 0 var(--space-xs);
+  }
+
+  .reorder-modal-move-hint {
+    margin: 0 0 var(--space-sm);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+  }
+
+  /* The dialog body, not the list, owns scrolling. This avoids nested scroll
+     traps when a long custom order opens above another blocking dialog. */
+  .reorder-modal-body .custom-order-list {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .reorder-modal-item {
+    min-width: 0;
+  }
+
+  .reorder-modal-item .order-value {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .reorder-modal-item-actions {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+
+  .reorder-modal-move {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    border: 1px solid var(--color-border-input);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-input);
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .reorder-modal-move:disabled {
+    cursor: default;
+    opacity: 0.4;
+  }
+
+  .reorder-modal-actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    border-top: 1px solid var(--color-border-light);
+  }
+}
+
+@media screen and (pointer: coarse),
+  screen and (max-width: 820px) {
+  .reorder-modal-close,
+  .reorder-modal-move {
+    flex-basis: 44px;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .reorder-modal-actions .btn {
+    min-height: 44px;
+  }
+}
+
 .modal-field-label {
   display: block;
   margin-bottom: var(--space-xs);
@@ -4345,6 +4494,21 @@ body.is-mobile-screen[data-auth-role="player"][data-active-tab="playbook"] .page
 body.is-mobile-screen[data-auth-role="player"][data-active-tab="playbook"] .page-actions-fab {
   display: inline-flex;
 }
+
+/* Share the tablet floating-control reservations from layout.css. Keep the
+   status dock at the edge, page actions in the middle slot, and Quick Tools in
+   the upper slot so their controls and the expanding Quick Tools menu never
+   compete for the same bottom-right target area. Phone rules remain unchanged. */
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .page-fab-cluster {
+  right: var(--tablet-floating-inline-edge);
+  bottom: var(--tablet-page-fab-bottom);
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .quick-tools {
+  right: var(--tablet-floating-inline-edge);
+  bottom: var(--tablet-quick-tools-bottom);
+}
+
 /* Desktop header Library button — warning-orange to stand out (dark text for contrast) */
 .page-library-btn {
   background: var(--color-warning);

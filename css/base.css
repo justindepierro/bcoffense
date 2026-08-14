@@ -205,6 +205,13 @@
   --coach-workbench-toolbar-gap: 4px;
   --coach-workbench-control-height: var(--coach-grid-control-height);
 
+  /* Independently tappable tablet controls use these values rather than
+     borrowing print or dense-grid measurements. `--tap-compact` is for a
+     deliberate 40px compact control; do not use it for destructive, close,
+     or primary navigation actions. */
+  --tap-min: 44px;
+  --tap-compact: 40px;
+
   /* Shadows — navy tinted */
   --shadow-xs: 0 1px 2px rgba(10, 18, 42, 0.05);
   --shadow-sm:
@@ -304,6 +311,19 @@
   --safe-area-right: env(safe-area-inset-right, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-left: env(safe-area-inset-left, 0px);
+
+  /* The shell refreshes --app-vh from visualViewport. Blocking surfaces use
+     these derived values instead of raw vh/dvh so their Close controls and
+     action footers remain above browser chrome and an on-screen keyboard. */
+  --app-visual-viewport-height: calc(var(--app-vh, 1vh) * 100);
+  --app-layer-safe-top: max(var(--space-md), var(--safe-area-top));
+  --app-layer-safe-right: max(var(--space-md), var(--safe-area-right));
+  --app-layer-safe-bottom: max(var(--space-md), var(--safe-area-bottom));
+  --app-layer-safe-left: max(var(--space-md), var(--safe-area-left));
+  --app-layer-usable-height: calc(
+    var(--app-visual-viewport-height) - var(--app-layer-safe-top) -
+      var(--app-layer-safe-bottom)
+  );
 }
 
 /* Base Styles */

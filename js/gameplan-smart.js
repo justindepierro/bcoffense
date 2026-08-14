@@ -113,6 +113,7 @@ function _gpSmartDetectCriteriaFromBox(boxId, threshold = 0.5) {
 
 async function editGamePlanBoxMatching(boxId) {
   if (!boxId) return;
+  const returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const board = _gpEnsureBoard();
   const meta = _gpGetBoxMeta(board, boxId);
   // Resolve display label
@@ -144,18 +145,19 @@ async function editGamePlanBoxMatching(boxId) {
 
   // Close any existing instance through the shared layer lifecycle before
   // creating a fresh editor for another box.
-  closeGamePlanBoxMatchingModal({ returnFocus: false });
+  closeGamePlanBoxMatchingModal({ returnFocus: false, immediate: true });
 
   const overlay = document.createElement("div");
-  overlay.className = "custom-modal-overlay visible";
+  overlay.className = "custom-modal-overlay gp-modal-layer gp-box-matching-overlay";
   overlay.id = "gpBoxMatchingOverlay";
   overlay.innerHTML = `
-    <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="gpBoxMatchingTitle" style="max-width:680px;">
+    <div class="custom-modal gp-legacy-modal gp-box-matching-modal" role="dialog" aria-modal="true" aria-labelledby="gpBoxMatchingTitle">
       <div class="custom-modal-header">
         <span class="custom-modal-icon">🧩</span>
         <h3 class="custom-modal-title" id="gpBoxMatchingTitle">Matching Rules — ${escapeHtml(labelOverride)}</h3>
+        <button type="button" class="btn gp-legacy-modal-close" id="gpMetaCloseBtn" aria-label="Close matching rules">×</button>
       </div>
-      <div class="custom-modal-body">
+      <div class="custom-modal-body gp-modal-scroll gp-box-matching-body">
         <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin:0 0 var(--space-sm);">
           Plays whose preferred fields match these rules will be auto-routed into this box (Send to Game Plan)
           and pushed to the matching Call Sheet category (Push to Call Sheet).
@@ -216,16 +218,7 @@ async function editGamePlanBoxMatching(boxId) {
     </div>
   `;
   document.body.appendChild(overlay);
-
-  // Inline styles for the meta rows so we don't need a CSS bump
-  const style = document.createElement("style");
-  style.textContent = `
-    #gpBoxMatchingOverlay .gp-meta-row { display:flex; flex-wrap:wrap; gap:var(--space-xs); margin-top:var(--space-xs); }
-    #gpBoxMatchingOverlay .gp-meta-check { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border:1px solid var(--color-border-light); border-radius:var(--radius-pill); cursor:pointer; font-size:var(--font-size-sm); background:var(--color-bg-light); }
-    #gpBoxMatchingOverlay .gp-meta-check input { margin:0; }
-    #gpBoxMatchingOverlay .gp-meta-check:has(input:checked) { background:var(--color-primary); color:var(--color-white); border-color:var(--color-primary); }
-  `;
-  overlay.appendChild(style);
+  overlay.classList.add("visible");
 
   const collectFromUI = () => {
     const out = _gpEmptyCriteria();
@@ -237,6 +230,7 @@ async function editGamePlanBoxMatching(boxId) {
     return out;
   };
 
+  overlay.querySelector("#gpMetaCloseBtn").addEventListener("click", closeGamePlanBoxMatchingModal);
   overlay.querySelector("#gpMetaCancelBtn").addEventListener("click", closeGamePlanBoxMatchingModal);
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) closeGamePlanBoxMatchingModal();
@@ -284,12 +278,24 @@ async function editGamePlanBoxMatching(boxId) {
     showToast("Box matching rules saved.", { type: "success", duration: 1800 });
   });
 
-  if (typeof openLayer === "function") {
-    openLayer(overlay, {
+  const closeButton = overlay.querySelector("#gpMetaCloseBtn");
+  const managed = typeof openLayer === "function" && openLayer(overlay, {
       id: "gpBoxMatchingOverlay",
-      scrollElement: overlay.querySelector(".custom-modal") || overlay,
+      scrollElement: overlay.querySelector(".gp-box-matching-body") || overlay,
       blocking: true,
+      safeArea: true,
+      initialFocus: closeButton || overlay.querySelector(".gp-box-matching-modal") || overlay,
       onEscape: () => closeGamePlanBoxMatchingModal(),
+      returnFocus,
+    });
+  if (!managed) {
+    if (typeof trapFocus === "function") trapFocus(overlay);
+    closeButton?.focus();
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeGamePlanBoxMatchingModal();
+      }
     });
   }
 }
@@ -299,7 +305,8 @@ function closeGamePlanBoxMatchingModal(options = {}) {
   if (!overlay) return;
   if (typeof closeLayer === "function") closeLayer("gpBoxMatchingOverlay", options);
   overlay.classList.remove("visible");
-  setTimeout(() => overlay.remove(), 180);
+  if (options.immediate) overlay.remove();
+  else setTimeout(() => overlay.remove(), 180);
 }
 /* -------------------------------------------------------------------------
    Smart Fill (per box) — opens picker pre-filtered to box intent
@@ -1045,19 +1052,21 @@ function openSmartGamePlanBuilder() {
     showToast("Import a playbook before building a smart game plan.", { type: "warning" });
     return;
   }
-  closeSmartGamePlanBuilder({ returnFocus: false });
+  const returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  closeSmartGamePlanBuilder({ returnFocus: false, immediate: true });
   const recs = _gpBuildSmartPlanRecommendations();
   const totalCandidates = recs.groups.reduce((sum, group) => sum + group.candidates.length, 0);
   const overlay = document.createElement("div");
-  overlay.className = "custom-modal-overlay visible";
+  overlay.className = "custom-modal-overlay gp-modal-layer gp-smart-builder-overlay";
   overlay.id = "gpSmartBuilderOverlay";
   overlay.innerHTML = `
-    <div class="custom-modal custom-modal-wide gp-smart-builder-modal" role="dialog" aria-modal="true" aria-labelledby="gpSmartBuilderTitle">
+    <div class="custom-modal custom-modal-wide gp-legacy-modal gp-smart-builder-modal" role="dialog" aria-modal="true" aria-labelledby="gpSmartBuilderTitle">
       <div class="custom-modal-header">
         <span class="custom-modal-icon">🧠</span>
         <h3 class="custom-modal-title" id="gpSmartBuilderTitle">Smart Game Plan Builder</h3>
+        <button type="button" class="btn gp-legacy-modal-close" id="gpSmartBuilderCloseBtn" aria-label="Close Smart Game Plan Builder">×</button>
       </div>
-      <div class="custom-modal-body">
+      <div class="custom-modal-body gp-modal-scroll gp-smart-builder-body">
         <div class="gp-smart-builder-summary">
           <strong>${totalCandidates}</strong>
           <span>recommended calls from ${recs.totalPlays} playbook plays${recs.opponent ? ` for ${escapeHtml(recs.opponent)}` : ""}</span>
@@ -1074,15 +1083,29 @@ function openSmartGamePlanBuilder() {
       </div>
     </div>`;
   document.body.appendChild(overlay);
+  overlay.classList.add("visible");
   overlay.addEventListener("click", (event) => {
     if (event.target === overlay) closeSmartGamePlanBuilder();
   });
-  if (typeof openLayer === "function") {
-    openLayer(overlay, {
+  overlay.querySelector("#gpSmartBuilderCloseBtn")?.addEventListener("click", closeSmartGamePlanBuilder);
+  const closeButton = overlay.querySelector("#gpSmartBuilderCloseBtn");
+  const managed = typeof openLayer === "function" && openLayer(overlay, {
       id: "gpSmartBuilderOverlay",
-      scrollElement: overlay.querySelector(".custom-modal") || overlay,
+      scrollElement: overlay.querySelector(".gp-smart-builder-body") || overlay,
       blocking: true,
+      safeArea: true,
+      initialFocus: closeButton || overlay.querySelector(".gp-smart-builder-modal") || overlay,
       onEscape: () => closeSmartGamePlanBuilder(),
+      returnFocus,
+    });
+  if (!managed) {
+    if (typeof trapFocus === "function") trapFocus(overlay);
+    closeButton?.focus();
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeSmartGamePlanBuilder();
+      }
     });
   }
 }
@@ -1092,7 +1115,8 @@ function closeSmartGamePlanBuilder(options = {}) {
   if (!overlay) return;
   if (typeof closeLayer === "function") closeLayer("gpSmartBuilderOverlay", options);
   overlay.classList.remove("visible");
-  setTimeout(() => overlay.remove(), 180);
+  if (options.immediate) overlay.remove();
+  else setTimeout(() => overlay.remove(), 180);
 }
 
 function _gpEnsureSmartRecommendationBoxInBoard(board, group) {

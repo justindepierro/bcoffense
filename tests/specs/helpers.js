@@ -262,6 +262,37 @@ function isExpectedReloadCancellation(request) {
   );
 }
 
+// A spec can opt into one exact prior-document request cancellation while it
+// deliberately reloads the page. Keep this separate from the global reload
+// allowance above: application/API requests remain failures unless the spec
+// names the exact URL immediately around its own page.reload() call.
+function isExplicitExpectedReloadCancellation(page, request) {
+  if (
+    request.method() !== "GET" ||
+    request.failure()?.errorText !== "net::ERR_ABORTED"
+  ) return false;
+
+  const expectedUrls = page.__bcExpectedReloadAbortUrls;
+  if (!Array.isArray(expectedUrls)) return false;
+  try {
+    const url = new URL(request.url());
+    return expectedUrls.includes(`${url.pathname}${url.search}`);
+  } catch (_err) {
+    return false;
+  }
+}
+
+async function reloadWithExpectedAbort(page, expectedUrls = [], options = {}) {
+  page.__bcExpectedReloadAbortUrls = Array.isArray(expectedUrls)
+    ? expectedUrls.slice()
+    : [];
+  try {
+    return await page.reload(options);
+  } finally {
+    page.__bcExpectedReloadAbortUrls = [];
+  }
+}
+
 // The performance telemetry beacon (js/perf-monitor.js) fires on
 // visibilitychange/pagehide via navigator.sendBeacon (or fetch keepalive).
 // When the page is torn down between tests the browsing context is destroyed
@@ -276,9 +307,28 @@ function isExpectedTelemetryBeaconAbort(request) {
   return /\/api\/telemetry(?:\?|$)/.test(request.url());
 }
 
+async function installLocalFontStubs(page) {
+  if (!E2E_LOCAL || page.__bcLocalFontStubsInstalled) return;
+  page.__bcLocalFontStubsInstalled = true;
+  // Local integration runs validate our app shell, not Google Fonts uptime.
+  // An empty stylesheet preserves system-font fallback without letting a
+  // third-party 404 make a hydration assertion flaky.
+  await page.route(/^https:\/\/fonts\.googleapis\.com\//i, (route) => route.fulfill({
+    status: 200,
+    contentType: "text/css; charset=utf-8",
+    body: "",
+  }));
+  await page.route(/^https:\/\/fonts\.gstatic\.com\//i, (route) => route.fulfill({
+    status: 204,
+    body: "",
+  }));
+}
+
 async function installRuntimeErrorGuards(page) {
   page.__bcRuntimeIssues = [];
   page.__bcMainFrameNavigations = 0;
+
+  await installLocalFontStubs(page);
 
   await page.addInitScript(() => {
     window.__bcRuntimeIssues = [];
@@ -320,9 +370,12 @@ async function installRuntimeErrorGuards(page) {
     if (/^(data|blob|about):/i.test(url)) return;
     // A test-issued page.reload() intentionally cancels prior-document work.
     // Chromium reports those cancellations as ERR_ABORTED. Only the prior
-    // /auth/me probe and Google font GETs are exempt; any app/API/local asset,
-    // other host, method, or error class remains a test failure.
+    // /auth/me probe and Google font GETs are exempt; an individual spec may
+    // also name one exact prior-document URL through reloadWithExpectedAbort.
+    // Any other app/API/local asset, host, method, or error class remains a
+    // test failure.
     if (isExpectedReloadCancellation(request)) return;
+    if (isExplicitExpectedReloadCancellation(page, request)) return;
     if (isExpectedTelemetryBeaconAbort(request)) return;
     page.__bcRuntimeIssues.push({
       type: "requestfailed",
@@ -352,6 +405,7 @@ async function installRuntimeErrorGuards(page) {
 async function resetRuntimeErrorGuards(page) {
   page.__bcRuntimeIssues = [];
   page.__bcMainFrameNavigations = 0;
+  page.__bcExpectedReloadAbortUrls = [];
   await page.evaluate(() => {
     window.__bcRuntimeIssues = [];
   }).catch(() => {});
@@ -383,6 +437,7 @@ module.exports = {
   getTouchTargetViolations,
   installRuntimeErrorGuards,
   resetRuntimeErrorGuards,
+  reloadWithExpectedAbort,
   getRuntimeIssues,
   assertRuntimeClean,
 };

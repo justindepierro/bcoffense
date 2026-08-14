@@ -535,6 +535,7 @@ const _ELEMENT_FNS = new Set([
   "moveInstallItemDown",
   "toggleIdentityCard",
   "openCallSheetIndexPlayMenu",
+  "openGamePlanPlayActionMenu",
   // Discussion actions (need both arg + element)
   "submitDiscPost",
   "deleteDiscPost",

@@ -110,9 +110,25 @@ let _gpDragSource = null; // { boxId, sig, rawIdx } for box → box / box → li
 let _gpRenderQueued = false;
 let _gpRenderDebounceTimer = null;
 let _gpOpenMultiFilter = "";
+// The staff-tablet box header keeps secondary actions behind one reachable
+// disclosure. This is presentation state only: a board render recreates the
+// menu without changing any saved Game Plan data.
+let _gpOpenBoxMoreId = "";
 // Game Plan renders replace the library DOM. Preserve an active search input
 // across that work so typing never loses focus or its caret mid-query.
 let _gpLibrarySearchRestore = null;
+
+function _gpBoxMoreDomToken(boxId) {
+  return encodeURIComponent(String(boxId || "box")).replace(/%/g, "_");
+}
+
+function _gpBoxMoreMenuId(boxId) {
+  return `gpBoxMore-${_gpBoxMoreDomToken(boxId)}`;
+}
+
+function _gpBoxMoreToggleId(boxId) {
+  return `gpBoxMoreToggle-${_gpBoxMoreDomToken(boxId)}`;
+}
 
 const GP_ADVANCED_FILTER_KEYS = [
   "basePlay",
@@ -1431,6 +1447,11 @@ function _gpHandleKeydown(e) {
     const search = document.getElementById("gpLibrarySearch");
     if (document.activeElement === search) {
       search.blur();
+      return;
+    }
+    if (_gpOpenBoxMoreId) {
+      e.preventDefault();
+      if (typeof closeGamePlanBoxMore === "function") closeGamePlanBoxMore();
       return;
     }
     // Spotlight has highest priority — clear it first if active.

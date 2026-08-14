@@ -1229,6 +1229,17 @@ body.is-mobile-screen .pb-signal-badge {
   overflow: hidden;
 }
 
+/* The player filter chooser is a true blocking layer. `inset: 0` follows the
+   layout viewport on iPad Safari, so an open keyboard could otherwise leave
+   its footer below the visible viewport. The layer lifecycle supplies
+   app-layer-active while open; bind that state to the measured visual height.
+   Safe-area padding comes from the shared app-layer-safe-area contract. */
+.pb-player-filter-overlay.app-layer-active {
+  bottom: auto;
+  height: var(--app-visual-viewport-height);
+  box-sizing: border-box;
+}
+
 .pb-player-filter-overlay.visible {
   opacity: 1;
   pointer-events: auto;
@@ -1236,7 +1247,7 @@ body.is-mobile-screen .pb-signal-badge {
 
 .pb-player-filter-dialog {
   width: min(760px, 100%);
-  max-height: min(760px, calc(100vh - 32px));
+  max-height: min(760px, var(--app-layer-usable-height));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1279,8 +1290,8 @@ body.is-mobile-screen .pb-signal-badge {
 }
 
 .pb-player-filter-close {
-  width: 40px;
-  height: 40px;
+  width: var(--tap-min);
+  height: var(--tap-min);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2214,7 +2225,7 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
 
   body.is-mobile-screen #playbook .pb-filter-drawer-close {
     min-width: 74px;
-    min-height: 40px;
+    min-height: 44px;
     justify-content: center;
   }
 
@@ -2235,6 +2246,58 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
 
   body.is-mobile-screen #playbook .pb-card-media:not(.is-loaded)::after {
     background: rgb(15 31 69 / 0.05);
+  }
+}
+
+/* Coach iPad landscape uses the app rail, not the phone's near-full-width
+   filter sheet. Keep the navigation gutter unobscured and park filters in a
+   stable right-side workspace rail at both 1024×768 and wide iPad layouts. */
+@media (min-width: 821px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #playbook.pb-filter-open
+    .pb-filter-backdrop {
+    position: fixed;
+    top: var(--app-header-height, 52px);
+    right: 0;
+    bottom: 0;
+    left: 78px;
+    z-index: var(--z-drawer-scrim);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #playbook
+    .pb-filter-drawer {
+    position: fixed;
+    top: calc(var(--app-header-height, 52px) + 8px);
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    left: auto;
+    width: min(400px, calc(100vw - 102px));
+    max-width: calc(100vw - 102px);
+    max-height: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    transform: translateX(calc(100% + 20px));
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #playbook.pb-filter-open
+    .pb-filter-drawer {
+    transform: translateX(0);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #playbook
+    .pb-filter-drawer-head {
+    min-height: 56px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+    #playbook
+    .pb-filter-drawer-close {
+    min-width: 84px;
+    min-height: 44px;
   }
 }
 
@@ -2446,6 +2509,11 @@ body.shell-phone .pb-action-sheet {
   font-size: var(--font-size-sm);
   font-weight: 700;
   color: var(--color-text);
+}
+.pb-action-sheet-head .btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
 }
 .pb-action-sheet-body {
   flex: 1;
@@ -3062,6 +3130,10 @@ body.shell-phone .pb-action-sheet {
   cursor: pointer;
   transition: all var(--transition-fast);
 }
+body.shell-tablet .pb-drawer-close {
+  width: 44px;
+  height: 44px;
+}
 @media (hover: hover) {
   .pb-drawer-close:hover {
     border-color: var(--color-danger);
@@ -3074,6 +3146,44 @@ body.shell-phone .pb-action-sheet {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 14px 16px;
+}
+
+/* Print Options keeps the drawer visual, but it is a real blocking dialog.
+   Bind the reusable overlay to the measured visual viewport and retain the
+   drawer body as its single intentional screen scroll owner. This stays
+   screen-only so the physical Playbook print output is unchanged. */
+@media screen {
+  #pbPrintPanel.app-layer-active {
+    bottom: auto;
+    box-sizing: border-box;
+    height: var(--app-visual-viewport-height);
+    min-height: 0;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+  }
+
+  #pbPrintPanel.app-layer-safe-area {
+    padding-top: max(var(--space-md), env(safe-area-inset-top));
+    padding-right: max(var(--space-md), env(safe-area-inset-right));
+    padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+    padding-left: max(var(--space-md), env(safe-area-inset-left));
+  }
+
+  #pbPrintPanel .pb-drawer {
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  #pbPrintPanel .pb-drawer-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 /* -- Collections list (inside drawer) -- */
@@ -4219,7 +4329,7 @@ body.shell-tablet #playbook .pb-card-actions {
 
   .pb-player-filter-dialog {
     width: 100%;
-    max-height: calc(100vh - env(safe-area-inset-top, 0px) - 12px);
+    max-height: var(--app-layer-usable-height);
     border-right: 0;
     border-bottom: 0;
     border-left: 0;
@@ -5219,6 +5329,95 @@ body.shell-tablet #playbook .pb-card-actions {
   max-height: min(calc(var(--app-vh, 1vh) * 72), 780px);
   overflow: auto;
   overscroll-behavior: contain;
+}
+
+/* Tablet report layers use the measured visual viewport. The report bodies
+   are the only primary scroll owners so their close/actions rows remain
+   reachable when browser chrome or the keyboard shortens an iPad viewport. */
+@media screen {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #playbookBalanceOverlay,
+      #playbookSituationOverlay,
+      #playbookTouchOverlay,
+      #playbookDataHealthOverlay
+    ).app-layer-active {
+    bottom: auto;
+    box-sizing: border-box;
+    height: calc(var(--app-vh, 1vh) * 100);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #playbookBalanceOverlay,
+      #playbookSituationOverlay,
+      #playbookTouchOverlay,
+      #playbookDataHealthOverlay
+    ).app-layer-safe-area {
+    padding-top: max(var(--space-md), env(safe-area-inset-top));
+    padding-right: max(var(--space-md), env(safe-area-inset-right));
+    padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+    padding-left: max(var(--space-md), env(safe-area-inset-left));
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #playbookBalanceOverlay,
+      #playbookSituationOverlay,
+      #playbookTouchOverlay,
+      #playbookDataHealthOverlay
+    )
+    :is(.pb-balance-modal, .pb-health-modal) {
+    min-height: 0;
+    max-height: 100%;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #playbookBalanceOverlay,
+      #playbookSituationOverlay,
+      #playbookTouchOverlay,
+      #playbookDataHealthOverlay
+    )
+    :is(.pb-balance-body, .pb-health-body) {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #playbookBalanceOverlay,
+      #playbookSituationOverlay,
+      #playbookTouchOverlay,
+      #playbookDataHealthOverlay
+    )
+    .modal-close {
+    display: inline-grid;
+    flex: 0 0 var(--tap-min);
+    width: var(--tap-min);
+    min-width: var(--tap-min);
+    height: var(--tap-min);
+    min-height: var(--tap-min);
+    place-items: center;
+    padding: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #playbookBalanceOverlay,
+      #playbookSituationOverlay,
+      #playbookTouchOverlay,
+      #playbookDataHealthOverlay
+    )
+    .custom-modal-actions
+    .btn {
+    min-height: var(--tap-min);
+  }
 }
 
 .pb-health-summary {
@@ -6342,6 +6541,99 @@ body.shell-tablet #playbook .pb-card-actions {
   overscroll-behavior: contain;
   background: var(--color-bg-body);
 }
+
+/* Category Cleanup, Constraint Map, and Identity Alignment are full blocking
+   reports—not the contextual Print drawer. On coach iPads, use the measured
+   visual viewport and give each dialog exactly one intentional scroll owner.
+   This keeps the heading and footer reachable when Safari chrome or a
+   keyboard shortens the visible area. */
+@media screen {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #playbookCatCleanupOverlay,
+      #playbookConstraintOverlay,
+      #playbookIdentityOverlay
+    ).app-layer-active {
+    bottom: auto;
+    box-sizing: border-box;
+    height: calc(var(--app-vh, 1vh) * 100);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #playbookCatCleanupOverlay,
+      #playbookConstraintOverlay,
+      #playbookIdentityOverlay
+    ).app-layer-safe-area {
+    padding-top: max(var(--space-md), env(safe-area-inset-top));
+    padding-right: max(var(--space-md), env(safe-area-inset-right));
+    padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+    padding-left: max(var(--space-md), env(safe-area-inset-left));
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #playbookCatCleanupOverlay,
+      #playbookConstraintOverlay,
+      #playbookIdentityOverlay
+    )
+    :is(.pb-category-cleanup-modal, .pb-balance-modal) {
+    min-height: 0;
+    max-height: 100%;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #playbookCatCleanupOverlay,
+      #playbookConstraintOverlay,
+      #playbookIdentityOverlay
+    )
+    :is(.cat-cleanup-body, .pb-balance-body) {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* The containing body, not the result list, owns vertical scrolling. */
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playbookCatCleanupOverlay
+    .cat-cleanup-list {
+    max-height: none;
+    overflow: visible;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #playbookCatCleanupOverlay,
+      #playbookConstraintOverlay,
+      #playbookIdentityOverlay
+    )
+    .modal-close {
+    display: inline-grid;
+    flex: 0 0 var(--tap-min);
+    width: var(--tap-min);
+    min-width: var(--tap-min);
+    height: var(--tap-min);
+    min-height: var(--tap-min);
+    place-items: center;
+    padding: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(
+      #playbookCatCleanupOverlay,
+      #playbookConstraintOverlay,
+      #playbookIdentityOverlay
+    )
+    .custom-modal-actions
+    .btn {
+    min-height: var(--tap-min);
+  }
+}
 .cat-cleanup-row {
   display: flex;
   align-items: center;
@@ -6649,6 +6941,14 @@ body.shell-tablet #playbook .pb-card-actions {
   opacity: 1;
   pointer-events: auto;
 }
+/* The LayerManager gives this blocking drawer safe insets. Tie its fixed
+   height to the app's visual-viewport token so keyboard/browser chrome cannot
+   strand the only Close action below the usable viewport. */
+.pb-wf-panel-overlay.app-layer-active {
+  bottom: auto;
+  height: calc(var(--app-vh, 1vh) * 100);
+  box-sizing: border-box;
+}
 .pb-wf-panel {
   position: absolute;
   right: 0;
@@ -6674,6 +6974,14 @@ body.shell-tablet #playbook .pb-card-actions {
   padding: var(--space-md) var(--space-md) var(--space-sm);
   border-bottom: 1px solid var(--color-border-light);
   flex-shrink: 0;
+}
+.pb-wf-panel-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  flex: 0 0 44px;
 }
 .pb-wf-panel-title {
   font-size: var(--font-size-sm);
@@ -7013,3 +7321,151 @@ body.shell-tablet #playbook .pb-card-actions {
     display: none !important;
   }
 }
+
+/* T-009 P1 — Player Playbook summary touch targets.
+   The phone study surface deliberately keeps its compact 36px summary
+   controls. A true tablet study shell has room for the player’s independent
+   actions and quick-filter pills, so restore the shared 44px target without
+   changing staff workbench density, the editor/report layers, or print. */
+@media screen and (pointer: coarse) {
+  body.shell-tablet.is-mobile-screen.is-player-mobile-shell
+    #playbook
+    #playerPlaybookSummary
+    .pb-player-summary__actions
+    .btn,
+  body.shell-tablet.is-mobile-screen.is-player-mobile-shell
+    #playbook
+    #playerPlaybookSummary
+    .pb-player-summary__filter-pill {
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+    touch-action: manipulation;
+  }
+}
+/* End T-009 P1 Player Playbook summary touch targets. */
+
+/* T-009 P1 — Playbook authoring and cleanup touch targets.
+   These are coach-only working controls that remain intentionally compact on
+   desktop and phone. A real coarse-pointer tablet needs each independent
+   editing, cleanup, and category-review action to meet the shared 44px
+   target without widening the dense Playbook table, reports, or Print UI. */
+@media screen and (pointer: coarse) and (min-width: 744px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playEditorOverlay
+    .pb-editor-nav {
+    width: var(--tap-min);
+    min-width: var(--tap-min);
+    height: var(--tap-min);
+    min-height: var(--tap-min);
+    touch-action: manipulation;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playEditorOverlay
+    .pb-personnel-variant-choice {
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+    touch-action: manipulation;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playbookSanitizeOverlay
+    .pb-sanitize-close-btn {
+    width: var(--tap-min);
+    min-width: var(--tap-min);
+    height: var(--tap-min);
+    min-height: var(--tap-min);
+    touch-action: manipulation;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playbookSanitizeOverlay
+    :is(
+      .pb-sanitize-field-picker,
+      .pb-sanitize-standardize-action select,
+      #pbSanitizeMergeTarget
+    ) {
+    /* WebKit keeps native selects at their intrinsic height when only
+       min-height is supplied inside this legacy cleanup dialog. */
+    height: var(--tap-min);
+    min-height: var(--tap-min);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playbookSanitizeOverlay
+    .pb-sanitize-input {
+    min-height: var(--tap-min);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playbookSanitizeOverlay
+    :is(
+      .pb-sanitize-toggle,
+      .pb-sanitize-edit-btn,
+      .pb-sanitize-suggest-chip,
+      .pb-sanitize-suggest-keep,
+      .pb-sanitize-focus-head .btn,
+      .pb-sanitize-standardize-action .btn
+    ) {
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+    touch-action: manipulation;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playbookCatCleanupOverlay
+    .cat-cleanup-cat-label
+    select {
+    height: var(--tap-min);
+    min-height: var(--tap-min);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playbookCatCleanupOverlay
+    .cat-cleanup-scope
+    label,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playbookCatCleanupOverlay
+    .cat-cleanup-pill,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playbookCatCleanupOverlay
+    .cat-cleanup-chip,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playbookCatCleanupOverlay
+    .cat-cleanup-bulk
+    .btn {
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+    touch-action: manipulation;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playbookCatCleanupOverlay
+    .cat-cleanup-search-wrap
+    input[type="search"] {
+    min-height: var(--tap-min);
+    padding-right: calc(var(--tap-min) + 8px);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playbookCatCleanupOverlay
+    .cat-cleanup-search-clear {
+    right: 2px;
+    width: var(--tap-min);
+    height: var(--tap-min);
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+    display: inline-grid;
+    place-items: center;
+    line-height: 1;
+    touch-action: manipulation;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #playbookCatCleanupOverlay
+    .cat-cleanup-row {
+    min-height: var(--tap-min);
+    touch-action: manipulation;
+  }
+}
+/* End T-009 P1 Playbook authoring and cleanup touch targets. */

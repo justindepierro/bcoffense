@@ -49,6 +49,18 @@ function showTab(tabName) {
     tabName = typeof getDefaultAuthTab === "function" ? getDefaultAuthTab() : "playbook";
     if (typeof canAccessTab === "function" && !canAccessTab(tabName)) return;
   }
+
+  // Phone Bulk Actions is a body-level blocking layer so Game Plan can keep
+  // re-rendering its board safely. A deliberate tab change must release it
+  // without restoring focus into the tab the coach just left.
+  if (
+    typeof currentActiveTab !== "undefined" &&
+    currentActiveTab === "gameplan" &&
+    tabName !== "gameplan" &&
+    typeof closeGamePlanBulkSheet === "function"
+  ) {
+    closeGamePlanBulkSheet({ returnFocus: false, immediate: true });
+  }
   document.querySelector("#mainApp > .tabs")?.classList.remove("mobile-more-open");
   if (typeof closeMobilePrimaryMore === "function") closeMobilePrimaryMore();
 

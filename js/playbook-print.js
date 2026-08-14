@@ -10,8 +10,16 @@ const PB_PRINT_SORT_FIELDS = [
   { value: "motion", label: "Motion" },
 ];
 
+// Print options is a blocking dialog even though it uses the familiar
+// right-hand drawer visual. It can be opened from the Playbook filter
+// workbench, so keep the parent layer alive while this dialog (and the shared
+// custom-order dialog it can launch) is active.
+const PB_PRINT_LAYER_ID = "pb-print-panel";
+const PB_PRINT_TRIGGER_ID = "pbPrintOptionsTrigger";
+
 let pbPrintSortCriteria = [{ field: "formation", direction: "asc" }];
 let _pbSortDragged = null;
+let _pbPrintFallbackReturnFocus = null;
 
 function renderPbPrintSort() {
   const container = document.getElementById("pbPrintSortList");
@@ -130,13 +138,143 @@ function _applyPbPrintSort(playsArr) {
   });
 }
 
+function _getPbPrintReturnFocus(panel, requestedFocus) {
+  if (
+    requestedFocus instanceof HTMLElement &&
+    requestedFocus.isConnected &&
+    requestedFocus !== panel &&
+    !panel.contains(requestedFocus)
+  ) {
+    return requestedFocus;
+  }
+
+  // Touch activation does not consistently move browser focus on iPad. The
+  // known Playbook Print trigger is therefore the reliable close destination,
+  // rather than whichever unrelated page element happened to be focused.
+  const trigger = document.getElementById(PB_PRINT_TRIGGER_ID);
+  if (
+    trigger instanceof HTMLElement &&
+    trigger.isConnected &&
+    trigger !== panel &&
+    !panel.contains(trigger)
+  ) {
+    return trigger;
+  }
+
+  const active = document.activeElement;
+  return active instanceof HTMLElement && active !== panel && !panel.contains(active)
+    ? active
+    : null;
+}
+
+function _restorePbPrintFallbackFocus(target) {
+  if (!(target instanceof HTMLElement) || !target.isConnected) return;
+  if (typeof focusLayerElement === "function") {
+    focusLayerElement(target);
+    return;
+  }
+  try {
+    target.focus({ preventScroll: true });
+  } catch (_error) {
+    target.focus();
+  }
+}
+
+function _focusPbPrintInitialTarget(panel, target) {
+  // On iPad a focus request made while the drawer is still transitioning in
+  // can be ignored. Keep this narrowly scoped to an open managed Print layer
+  // and never steal focus once the user has entered the dialog.
+  if (
+    !(panel instanceof HTMLElement) ||
+    panel.dataset.layerOpen !== "true" ||
+    !panel.classList.contains("open") ||
+    panel.contains(document.activeElement)
+  ) return;
+  // A nested layer (for example Custom Order) can open before the delayed
+  // handoff runs. Its focus is authoritative; never pull it back to Print.
+  if (
+    typeof getActiveLayerState === "function" &&
+    getActiveLayerState()?.element !== panel
+  ) return;
+  _restorePbPrintFallbackFocus(target);
+}
+
+function openPrintOptionsPanel(options = {}) {
+  const panel = document.getElementById("pbPrintPanel");
+  if (!panel) return;
+  const closeButton = panel.querySelector(".pb-drawer-close");
+  const returnFocus = _getPbPrintReturnFocus(panel, options.returnFocus);
+
+  panel.classList.add("open");
+  panel.setAttribute("aria-hidden", "false");
+  panel.removeAttribute("inert");
+  document
+    .getElementById(PB_PRINT_TRIGGER_ID)
+    ?.setAttribute("aria-expanded", "true");
+  _pbPrintFallbackReturnFocus = returnFocus;
+  renderPbPrintSort();
+
+  if (typeof openLayer === "function") {
+    openLayer(panel, {
+      id: PB_PRINT_LAYER_ID,
+      // The Print trigger lives in Playbook's filter workbench. Do not close
+      // that parent surface, and leave room for the shared reorder dialog to
+      // stack above this one.
+      exclusive: false,
+      blocking: true,
+      safeArea: true,
+      scrollElement: panel.querySelector(".pb-drawer-body") || panel,
+      initialFocus: closeButton || panel,
+      onEscape: () => closePrintOptionsPanel(),
+      returnFocus,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(panel);
+    _restorePbPrintFallbackFocus(closeButton || panel);
+  }
+
+  // The parent Playbook filter drawer promotes its own Close target on the
+  // next frame. iPad may also ignore a focus request during the slide-in
+  // transition, so reassert the child target after that handoff and once the
+  // transition has settled. The guard keeps deliberate in-dialog focus.
+  requestAnimationFrame(() => {
+    _focusPbPrintInitialTarget(panel, closeButton || panel);
+  });
+  window.setTimeout(() => {
+    _focusPbPrintInitialTarget(panel, closeButton || panel);
+  }, 180);
+}
+
+function closePrintOptionsPanel(options = {}) {
+  const panel = document.getElementById("pbPrintPanel");
+  if (!panel) return;
+  const shouldReturnFocus = options.returnFocus !== false;
+
+  // Release the registered layer before hiding the reusable DOM. This keeps a
+  // parent filter/reorder layer's body lock and focus lifecycle intact.
+  if (typeof closeLayer === "function") {
+    closeLayer(PB_PRINT_LAYER_ID, { returnFocus: shouldReturnFocus });
+  } else if (shouldReturnFocus) {
+    _restorePbPrintFallbackFocus(_pbPrintFallbackReturnFocus);
+  }
+
+  panel.classList.remove("open");
+  panel.setAttribute("aria-hidden", "true");
+  panel.setAttribute("inert", "");
+  document
+    .getElementById(PB_PRINT_TRIGGER_ID)
+    ?.setAttribute("aria-expanded", "false");
+  _pbPrintFallbackReturnFocus = null;
+}
+
 function togglePrintOptionsPanel() {
   const panel = document.getElementById("pbPrintPanel");
   if (!panel) return;
-  const wasOpen = panel.classList.contains("open");
-  panel.classList.toggle("open");
-  panel.setAttribute("aria-hidden", wasOpen ? "true" : "false");
-  if (!wasOpen) renderPbPrintSort();
+  if (panel.classList.contains("open") || panel.dataset.layerOpen === "true") {
+    closePrintOptionsPanel();
+    return;
+  }
+  openPrintOptionsPanel();
 }
 
 function _getPbPrintOptions() {

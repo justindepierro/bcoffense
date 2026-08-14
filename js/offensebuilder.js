@@ -443,7 +443,10 @@ function renderOffenseBuilder() {
       '<button class="btn btn-sm" data-action="exportOffenseBuilderCSV" title="Export CSV">📄 Export</button>' +
       "</div>" +
       '<div class="ob-body">' +
+      '<aside class="ob-source-rail" aria-label="Play library">' +
+      '<div class="ob-source-rail-heading">Play Library</div>' +
       '<div class="ob-play-list" id="obPlayList"></div>' +
+      "</aside>" +
       '<div class="ob-sidebar" id="obSidebar"></div>' +
       "</div>" +
       "</div>";
@@ -516,24 +519,25 @@ function obRenderPlayList() {
       });
 
     html +=
-      '<div class="ob-card' +
+      '<article class="ob-card' +
       (isActive ? " ob-card-active" : "") +
       (rating >= 4 ? " ob-card-core" : "") +
       '" data-play="' +
       obEscapeAttr(entry.name) +
       '">';
-    html += '<div class="ob-card-top">';
-    html += '<div class="ob-card-name">' + escapeHtml(entry.name) + "</div>";
     html +=
-      '<div class="ob-card-stars" data-star-target="' +
+      '<button type="button" class="ob-card-select" data-ob-select-play="' +
       obEscapeAttr(entry.name) +
-      '">';
-    html += obRenderStarPicker(entry.name, rating);
-    html += "</div></div>";
+      '" aria-label="Open details for ' +
+      obEscapeAttr(entry.name) +
+      '"' +
+      (isActive ? ' aria-current="true"' : "") +
+      ">";
+    html += '<span class="ob-card-name">' + escapeHtml(entry.name) + "</span>";
     if (basePlays) {
-      html += '<div class="ob-card-base">' + escapeHtml(basePlays) + "</div>";
+      html += '<span class="ob-card-base">' + escapeHtml(basePlays) + "</span>";
     }
-    html += '<div class="ob-card-meta">';
+    html += '<span class="ob-card-meta">';
     html +=
       '<span class="ob-meta-tag ob-meta-type">' +
       escapeHtml(typeLabels) +
@@ -549,7 +553,19 @@ function obRenderPlayList() {
         "</span>";
     if (hasGap)
       html += '<span class="ob-meta-tag ob-meta-gap">\u26A0\uFE0F Gap</span>';
-    html += "</div></div>";
+    html += "</span></button>";
+    html +=
+      '<div class="ob-card-stars" data-star-target="' +
+      obEscapeAttr(entry.name) +
+      '" role="group" aria-label="Rating for ' +
+      obEscapeAttr(entry.name) +
+      ', currently ' +
+      rating +
+      ' star' +
+      (rating === 1 ? "" : "s") +
+      '">';
+    html += obRenderStarPicker(entry.name, rating);
+    html += "</div></article>";
   }
 
   listEl.innerHTML = html;
@@ -571,40 +587,62 @@ function obRenderPlayList() {
       }
       return;
     }
-    const card = e.target.closest(".ob-card");
-    if (card) {
-      obActivePlayName = card.dataset.play;
-      obRenderPlayList();
-      obRenderSidebar();
+    const cardSelect = e.target.closest(".ob-card-select[data-ob-select-play]");
+    if (cardSelect) {
+      obSelectPlay(cardSelect.dataset.obSelectPlay);
     }
   };
 
   // Long-press context menu on mobile
   listEl.querySelectorAll(".ob-card[data-play]").forEach((card) => {
-    addLongPress(card, (ev) => _showObCardContextMenu(ev, card.dataset.play));
+    addLongPress(card, (ev) => {
+      // A press on a rating control should never be repurposed as the card
+      // context menu; those controls have their own explicit action.
+      if (ev.target?.closest?.(".ob-star, .ob-star-clear")) return;
+      _showObCardContextMenu(ev, card.dataset.play);
+    });
   });
 }
 
 // ── Star Picker ────────────────────────────────────────────────────
 function obRenderStarPicker(playName, current) {
   let html = "";
+  const safePlayName = obEscapeAttr(playName);
   for (let i = 1; i <= 5; i++) {
     const filled = i <= current;
     html +=
-      '<span class="ob-star ' +
+      '<button type="button" class="ob-star ' +
       (filled ? "ob-star-filled" : "ob-star-empty") +
       '" data-value="' +
       i +
+      '" aria-label="Set ' +
+      safePlayName +
+      " rating to " +
+      i +
+      " star" +
+      (i > 1 ? "s" : "") +
+      '" aria-pressed="' +
+      (i === current ? "true" : "false") +
       '" title="' +
       i +
       " star" +
       (i > 1 ? "s" : "") +
-      '">\u2605</span>';
+      '">\u2605</button>';
   }
   if (current > 0) {
-    html += '<span class="ob-star-clear" title="Clear rating">\u2715</span>';
+    html +=
+      '<button type="button" class="ob-star-clear" data-clear-rating="true" aria-label="Clear rating for ' +
+      safePlayName +
+      '" title="Clear rating">\u2715<span class="ob-star-clear-label"> Clear</span></button>';
   }
   return html;
+}
+
+function obSelectPlay(playName) {
+  if (!playName) return;
+  obActivePlayName = playName;
+  obRenderPlayList();
+  obRenderSidebar();
 }
 
 function obSetRating(playName, stars) {
@@ -742,18 +780,26 @@ function _obBuildDetailHtml() {
         Array.from(_obConceptMap.keys()).some(function (k) {
           return k.toLowerCase() === c.toLowerCase();
         });
+      const chipClass =
+        "ob-constraint-chip " +
+        (exists ? "ob-constraint-found" : "ob-constraint-missing");
+      const chipText = escapeHtml(c) + " " + (exists ? "\u2705" : "\u26A0\uFE0F");
       constraintParts.push(
-        '<span class="ob-constraint-chip ' +
-        (exists ? "ob-constraint-found" : "ob-constraint-missing") +
-        '"' +
-        (exists ? ' data-concept="' + obEscapeAttr(c) + '"' : "") +
-        ' title="' +
-        (exists ? "Click to explore" : "Not in playbook") +
-        '">' +
-        escapeHtml(c) +
-        " " +
-        (exists ? "\u2705" : "\u26A0\uFE0F") +
-        "</span>",
+        exists
+          ? '<button type="button" class="' +
+            chipClass +
+            '" data-concept="' +
+            obEscapeAttr(c) +
+            '" title="Open related concept" aria-label="Open concept ' +
+            obEscapeAttr(c) +
+            '">' +
+            chipText +
+            "</button>"
+          : '<span class="' +
+            chipClass +
+            '" title="Not in playbook">' +
+            chipText +
+            "</span>",
       );
     });
   }
@@ -894,12 +940,14 @@ function _obBuildDetailHtml() {
         .map(function (rn) {
           const rRating = ratings[rn] || 0;
           return (
-            '<span class="ob-constraint-chip ob-constraint-found ob-related-chip" data-related-play="' +
+            '<button type="button" class="ob-constraint-chip ob-constraint-found ob-related-chip" data-related-play="' +
+            obEscapeAttr(rn) +
+            '" aria-label="Open related play ' +
             obEscapeAttr(rn) +
             '">' +
             escapeHtml(rn) +
             (rRating > 0 ? " \u2605" + rRating : "") +
-            "</span>"
+            "</button>"
           );
         })
         .join("");
@@ -949,6 +997,12 @@ function _obBuildDetailHtml() {
     "</h3>" +
     '<div class="ob-detail-stars" data-star-target="' +
     obEscapeAttr(entry.name) +
+    '" role="group" aria-label="Rating for ' +
+    obEscapeAttr(entry.name) +
+    ', currently ' +
+    rating +
+    ' star' +
+    (rating === 1 ? "" : "s") +
     '">' +
     obRenderStarPicker(entry.name, rating) +
     "</div>" +
@@ -1017,7 +1071,6 @@ function _obAttachDetailHandlers() {
     ".ob-constraint-chip[data-concept]",
   );
   for (let i = 0; i < conceptChips.length; i++) {
-    conceptChips[i].style.cursor = "pointer";
     conceptChips[i].addEventListener("click", function () {
       const concept = this.dataset.concept;
       if (!_obPlayMap) return;
@@ -1029,9 +1082,7 @@ function _obAttachDetailHandlers() {
             return bp.toLowerCase() === concept.toLowerCase();
           })
         ) {
-          obActivePlayName = playName;
-          obRenderPlayList();
-          obRenderSidebar();
+          obSelectPlay(playName);
           return;
         }
       }
@@ -1041,11 +1092,8 @@ function _obAttachDetailHandlers() {
   // Related play chip -> jump to that play
   const relatedChips = panel.querySelectorAll("[data-related-play]");
   for (let j = 0; j < relatedChips.length; j++) {
-    relatedChips[j].style.cursor = "pointer";
     relatedChips[j].addEventListener("click", function () {
-      obActivePlayName = this.dataset.relatedPlay;
-      obRenderPlayList();
-      obRenderSidebar();
+      obSelectPlay(this.dataset.relatedPlay);
     });
   }
 

@@ -215,6 +215,18 @@ body.app-ready:not(.is-mobile-screen)
   margin-bottom: var(--space-sm);
 }
 
+.wb-library-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* The close control belongs only to the constrained tablet rail. Desktop uses
+   the existing Library command and phone keeps its dedicated view switcher. */
+.wb-library-rail-close {
+  display: none;
+}
+
 .wb-library-header h3,
 .wb-preview-header h3 {
   margin-top: 2px;
@@ -798,6 +810,24 @@ body.app-ready:not(.is-mobile-screen)
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
   font-weight: 700;
+}
+
+/* Print setup is an on-screen editor, even though its output is a physical
+   wristband. Keep its labels as full touch targets on coarse-pointer devices;
+   the print canvas and @media print rules remain intentionally compact. */
+@media screen and (pointer: coarse) {
+  #wbPrintPreviewOverlay .wb-print-check-list label,
+  #wbPrintPreviewOverlay .wb-print-toggle {
+    min-height: var(--tap-min);
+    padding: 4px 6px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  #wbPrintPreviewOverlay .wb-print-check-actions .btn {
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+  }
 }
 
 .wb-print-preview-canvas {
@@ -2211,6 +2241,18 @@ body.app-ready:not(.is-mobile-screen)
   outline-offset: 1px;
 }
 
+/* Batch colors are independent, direct-edit actions. The physical wristband
+   remains intentionally dense, but these editor controls must not inherit the
+   22px printed-swatch treatment on a staff tablet. */
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+  #wristband
+  .wb-batch-swatch {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
+}
+
 .wb-available-plays {
   max-height: min(58vh, 620px);
   overflow-y: auto;
@@ -3440,6 +3482,84 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   }
 }
 
+/* Player Wristband reset used to be a 14px overlay in the responsibility
+   textarea. On a touch editor it gets its own grid column and the affected
+   card reflows into real rows, so Reset never steals taps from the adjacent
+   rule selector or assignment input. Desktop/print retain the dense card. */
+@media screen and (pointer: coarse) {
+  #wristband .wristband-card.pc-card-active:has(.pc-grid-has-reset) {
+    height: auto;
+    aspect-ratio: auto;
+    overflow: visible;
+  }
+
+  #wristband .wristband-grid.pc-grid-active.pc-grid-has-reset {
+    height: auto !important;
+    grid-template-rows: repeat(20, minmax(var(--tap-min), auto)) !important;
+  }
+
+  #wristband .pc-assignment-cell--has-reset {
+    display: grid !important;
+    grid-template-columns: var(--tap-min) minmax(0, 1fr) var(--tap-min);
+    align-items: stretch !important;
+    min-height: var(--tap-min);
+  }
+
+  #wristband .pc-assignment-cell--has-reset .pc-rule-select {
+    grid-column: 1;
+    grid-row: 1;
+    flex: none;
+    min-height: var(--tap-min);
+    height: 100%;
+  }
+
+  #wristband .pc-assignment-cell--has-reset .pc-resp-input {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: var(--tap-min);
+    height: 100%;
+    padding-right: 5px;
+  }
+
+  #wristband .pc-assignment-cell--has-reset .pc-resp-reset {
+    position: static;
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
+    width: var(--tap-min);
+    min-width: var(--tap-min);
+    height: var(--tap-min);
+    min-height: var(--tap-min);
+    opacity: 1;
+  }
+}
+
+/* A classic wristband is physically compact when printed, but this is the
+   live iPad editor: every play cell opens a cell editor. Keep its familiar
+   four-column scan while allowing the builder pane to scroll through real
+   44px rows. Player cards use their dedicated rules above. */
+@media screen and (pointer: coarse) {
+  body.shell-tablet.is-mobile-screen #wristband .wristband-card:not(.pc-card-active) {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: auto;
+    overflow: visible;
+  }
+
+  body.shell-tablet.is-mobile-screen #wristband .wristband-grid:not(.pc-grid-active) {
+    grid-template-columns: var(--tap-min) minmax(0, 1fr) var(--tap-min) minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: minmax(var(--tap-min), auto);
+    height: auto;
+  }
+
+  body.shell-tablet.is-mobile-screen #wristband .wristband-grid:not(.pc-grid-active) .wristband-cell {
+    min-height: var(--tap-min);
+    padding: 6px 8px;
+  }
+}
+
 body.shell-phone #wristband .wb-phone-editor-card {
   width: 100%;
   height: auto;
@@ -3941,6 +4061,179 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #wristband .wb-type-card-desc {
     line-height: 1.2;
+  }
+}
+
+/* ── Staff tablet landscape: constrained Wristband editor ─────────────────
+   The fixed iPad app rail leaves less than a desktop viewport for the page.
+   Keep source plays and the card builder side by side rather than allowing the
+   generic <=1024px breakpoint to stack two long documents. The library results
+   and builder are the only intentional vertical scroll owners here. */
+@media screen {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband.panel.active {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-page-header {
+    flex: 0 0 auto;
+    margin: 6px var(--coach-workbench-padding) 4px;
+    padding: 4px var(--coach-workbench-padding);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-page-header-row {
+    grid-template-columns: minmax(0, 1fr) max-content;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wristband-container {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: row;
+    align-items: stretch;
+    min-width: 0;
+    min-height: 0;
+    gap: 0;
+    overflow: hidden;
+    grid-template-columns: unset;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wristband-plays {
+    position: static;
+    display: flex;
+    flex: 0 0 clamp(240px, 30%, 280px);
+    flex-direction: column;
+    min-width: 240px;
+    max-width: 280px;
+    min-height: 0;
+    overflow: hidden;
+    padding: var(--coach-workbench-padding);
+    border: 0;
+    border-right: 1px solid var(--coach-grid-border);
+    border-radius: 0;
+    background: var(--coach-grid-surface-muted);
+    box-shadow: none;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wristband-preview {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding: var(--coach-workbench-padding);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-library-header,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-library-search,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-library-quick-row,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    #wbFiltersContainer,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-library-status,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-load-more {
+    flex: 0 0 auto;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-library-header {
+    min-height: var(--coach-workbench-control-height);
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--coach-grid-divider);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-library-header h3 {
+    font-size: var(--font-size-md);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-library-header .btn {
+    min-height: var(--coach-workbench-control-height);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-library-rail-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    max-height: none;
+    flex: 0 0 44px;
+    padding: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-library-search,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-library-quick-row {
+    margin-bottom: 6px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-library-chips {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--coach-workbench-toolbar-gap);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-library-chip {
+    min-width: 0;
+    min-height: var(--coach-workbench-control-height);
+    padding-inline: 4px;
+    border-radius: var(--coach-grid-radius);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-available-plays {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband.wb-tablet-library-collapsed
+    .wristband-plays {
+    display: none;
   }
 }
 .wb-component-vowel-controls { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }

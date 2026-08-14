@@ -73,7 +73,12 @@ const PAGE_ACTIONS_CONFIG = {
           { icon: "📋", label: "Sideline View", run: () => _paCall("toggleCsSidelineMode") },
           { icon: "📊", label: "Stats", run: () => _paCall("toggleStatsPanel") },
           { icon: "🔍", label: "Not On Sheet", run: () => _paCall("toggleNotOnSheet") },
-          { icon: "🛡️", label: "Check Constraints", run: () => _paCall("runConstraintCheck") },
+          {
+            icon: "🛡️",
+            label: "Check Constraints",
+            handoffFocus: true,
+            run: (options) => _paCall("runConstraintCheck", options),
+          },
         ],
       },
       {
@@ -161,7 +166,12 @@ const PAGE_ACTIONS_CONFIG = {
           { icon: "🗂️", label: "Build Index Card", sublabel: "Smart 4×6 front / back", run: () => _paCall("sendGamePlanToIndexCallSheet") },
           { icon: "🃏", label: "Send to Wristband", run: () => _paCall("pushGamePlanToWristband") },
           { icon: "🃏", label: "Build WB Card", run: () => _paCall("sendGamePlanToWristbandCard") },
-          { icon: "🛡️", label: "Constraints", run: () => _paCall("runConstraintCheck") },
+          {
+            icon: "🛡️",
+            label: "Constraints",
+            handoffFocus: true,
+            run: (options) => _paCall("runConstraintCheck", options),
+          },
           { icon: "📊", label: "Variety", run: () => _paCall("openGamePlanStats") },
           { icon: "🗺️", label: "Coverage", run: () => _paCall("openGamePlanCoverageMatrix") },
           { icon: "🎯", label: "vs Defense", run: () => _paCall("openGamePlanTendencyMirror") },
@@ -205,9 +215,15 @@ function _paRunVerb(verb, options = {}) {
     openHubForKeptOpen = false,
     postCloseDelayMs = 60,
   } = options;
+  // Most Page Actions do not need a focus handoff. Blocking review dialogs do:
+  // they begin after this hub has closed, so capture the original external
+  // trigger before closeLayer restores/moves focus.
+  const handoffOptions = verb.handoffFocus
+    ? { returnFocus: getPageActionsLaunchTrigger() }
+    : undefined;
   const execute = () => {
     try {
-      verb.run();
+      verb.run(handoffOptions);
     } catch (error) {
       console.error("[BC page actions] action failed", {
         label: verb.label || "Unnamed action",
@@ -268,6 +284,23 @@ function getActivePageActionsKey() {
 }
 
 let pageActionsCloseTimer = null;
+let pageActionsLaunchTrigger = null;
+let pageActionsPendingTrigger = null;
+
+function getPageActionsLaunchTrigger() {
+  return pageActionsLaunchTrigger instanceof HTMLElement && pageActionsLaunchTrigger.isConnected
+    ? pageActionsLaunchTrigger
+    : null;
+}
+
+// Touch browsers do not consistently move focus to a tapped button. Capture
+// the actual delegated launcher before app-events opens the hub so a later
+// blocking dialog can return to this external control after the hub closes.
+document.addEventListener("click", (event) => {
+  const target = event.target instanceof Element ? event.target : null;
+  const trigger = target?.closest?.("[data-action='openPageActions']");
+  if (trigger instanceof HTMLElement) pageActionsPendingTrigger = trigger;
+}, true);
 
 function openPageActions() {
   const key = getActivePageActionsKey();
@@ -279,6 +312,19 @@ function openPageActions() {
       showToast("No quick actions on this page yet.");
     }
     return;
+  }
+  // Do not overwrite the original trigger when an already-open Actions sheet
+  // is refreshed. A dialog launched from this sheet must return to the
+  // external control that opened the sheet, never its hidden close button.
+  const captured = pageActionsPendingTrigger;
+  pageActionsPendingTrigger = null;
+  if (overlay.dataset.layerOpen !== "true") {
+    const active = document.activeElement;
+    pageActionsLaunchTrigger = captured instanceof HTMLElement && captured.isConnected
+      ? captured
+      : active instanceof HTMLElement && active !== document.body
+        ? active
+        : null;
   }
   renderPageActionsRoot(config);
   if (pageActionsCloseTimer) {
@@ -292,6 +338,7 @@ function openPageActions() {
     openLayer(overlay, {
       id: "page-actions",
       scrollElement: "pageActionsBody",
+      returnFocus: getPageActionsLaunchTrigger(),
     });
   } else if (typeof trapFocus === "function" && !overlay.dataset.focusTrapReady) {
     trapFocus(overlay);
@@ -794,8 +841,18 @@ function openPlayLibrary() {
     // The script play rail already toggles collapse/expand.
     if (typeof toggleScriptPlayRail === "function") toggleScriptPlayRail();
   } else if (key === "wristband") {
-    if (isMobile && typeof setWristbandMobileView === "function") {
+    if (
+      typeof isWristbandLandscapeLibraryRail === "function" &&
+      isWristbandLandscapeLibraryRail() &&
+      typeof toggleWristbandLibraryRail === "function"
+    ) {
+      // Staff tablet landscape keeps the source rail beside the builder;
+      // toggle that rail instead of switching into the phone-only view state.
+      toggleWristbandLibraryRail();
+    } else if (isMobile && typeof setWristbandMobileView === "function") {
       setWristbandMobileView("library");
+    } else if (typeof toggleWristbandLibraryRail === "function") {
+      toggleWristbandLibraryRail();
     } else {
       _paToggleLibraryPane("wristband", "wb-library-collapsed");
     }

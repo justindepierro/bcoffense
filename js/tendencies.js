@@ -659,6 +659,9 @@ function saveTendenciesState() {
   const opp = tendenciesOpponents[tendenciesCurrentOpponent];
   if (!opp) return;
   historyManager.saveState("tendencies", opp.plays);
+  if (typeof syncTendenciesHistoryControls === "function") {
+    syncTendenciesHistoryControls();
+  }
 }
 
 function undoTendencies() {

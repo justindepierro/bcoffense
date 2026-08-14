@@ -107,6 +107,14 @@
   grid-template-columns: 340px 1fr;
   gap: var(--space-md);
 }
+.ob-source-rail {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ob-source-rail-heading {
+  display: none;
+}
 @media (max-width: 900px) {
   .ob-body {
     grid-template-columns: 1fr;
@@ -220,18 +228,30 @@
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 10px 14px;
-  cursor: pointer;
+  overflow: clip;
   transition:
     border-color var(--transition-fast),
     box-shadow var(--transition-fast),
     background var(--transition-fast);
 }
-.ob-card:focus-visible {
+.ob-card-select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ob-card-select:focus-visible {
   outline: 2px solid var(--color-primary);
-  outline-offset: 1px;
+  outline-offset: -2px;
 }
 .ob-card-base {
+  display: block;
   font-size: var(--font-size-xs2);
   color: var(--color-secondary);
   margin-top: 2px;
@@ -257,6 +277,7 @@
   gap: var(--space-sm);
 }
 .ob-card-name {
+  display: block;
   font-weight: 600;
   font-size: var(--font-size-md);
 }
@@ -290,11 +311,23 @@
 /* Star picker */
 .ob-card-stars {
   display: flex;
+  flex-wrap: wrap;
   gap: 0;
   align-items: center;
+  padding: 4px 10px 8px;
+  border-top: 1px solid var(--color-border-light);
 }
 .ob-star {
+  display: inline-grid;
+  place-items: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
   cursor: pointer;
+  font-family: inherit;
   font-size: var(--font-size-h2);
   color: var(--color-border-med);
   transition: color var(--transition-fast);
@@ -316,6 +349,16 @@
 }
 
 .ob-star-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-family: inherit;
   font-size: var(--font-size-xs2);
   color: var(--color-secondary);
   cursor: pointer;
@@ -402,6 +445,16 @@
   padding: 3px 9px;
   border-radius: var(--radius-sm);
   cursor: pointer;
+}
+button.ob-constraint-chip {
+  border: 0;
+  font-family: inherit;
+  text-align: left;
+}
+button.ob-constraint-chip:focus-visible,
+.ob-star-clear:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 .ob-constraint-found {
   background: var(--color-success-light);
@@ -578,3 +631,285 @@
 }
 
 /* ============ Print Styles ============ */
+
+/* Staff tablet accessibility targets. The Builder is staff-only, but keep
+   this scoped to the coach tablet shell so desktop density, phone handling,
+   and the unavailable player route stay independent. */
+@media screen {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-card-select,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-star,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-star-clear,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #offensebuilder
+    button.ob-constraint-chip,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-toolbar
+    .btn {
+    min-height: 44px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-star,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-star-clear {
+    min-width: 44px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-toggle-label {
+    position: relative;
+    min-height: 44px;
+    padding: 0 10px 0 42px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-light);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-toggle-label
+    input {
+    position: absolute;
+    /* The label has a 1px border; extend the invisible native input across
+       that border so its own hit rectangle remains the promised 44px. */
+    inset: -1px;
+    width: calc(100% + 2px);
+    height: calc(100% + 2px);
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-toggle-label
+    span::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 14px;
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--color-border-input);
+    border-radius: 4px;
+    background: var(--color-surface);
+    transform: translateY(-50%);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-toggle-label
+    input:checked
+    + span::before {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    box-shadow: inset 0 0 0 3px var(--color-surface);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-toggle-label
+    input:focus-visible
+    + span::before {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+/* ============ Staff tablet landscape: Offense Builder ============
+   The persistent iPad app rail narrows the canvas enough that the desktop
+   340px source column becomes wasteful. Keep a compact source rail beside a
+   full-height detail pane, with those two panes—not the outer panel—owning
+   deliberate vertical scrolling. Portrait retains the existing document
+   stack via the strictly landscape-only selector below. */
+@media screen and (min-width: 821px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder.panel.active {
+    margin: 0;
+    padding: 8px;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    #offenseBuilderContent,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-container {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-container {
+    width: 100%;
+    max-width: none;
+    padding: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-header {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-title {
+    font-size: var(--font-size-lg);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-subtitle {
+    font-size: var(--font-size-xs);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-header-right {
+    grid-template-columns: repeat(3, minmax(44px, max-content));
+    gap: 8px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-stat-num {
+    font-size: var(--font-size-lg);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-toolbar {
+    grid-template-columns: minmax(150px, 1fr) minmax(112px, max-content) minmax(108px, max-content) max-content;
+    gap: 8px;
+    flex: 0 0 auto;
+    margin-bottom: 8px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    :is(.ob-search, .ob-filter-select) {
+    min-height: 44px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-body {
+    display: grid;
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-source-rail {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 8px;
+    border: 1px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-source-rail-heading {
+    display: flex;
+    align-items: center;
+    flex: 0 0 44px;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-play-list,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-sidebar {
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-play-list {
+    flex: 1 1 auto;
+    padding-right: 2px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-sidebar {
+    padding-right: 2px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-card-select {
+    min-height: 44px;
+    padding: 8px 10px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-card-stars {
+    gap: 0;
+    padding: 4px 6px 6px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-star {
+    flex: 0 0 44px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-star-clear {
+    flex: 1 0 44px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-detail {
+    padding: 10px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #offensebuilder
+    .ob-plays-table-wrap {
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+}

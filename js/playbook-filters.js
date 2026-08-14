@@ -667,6 +667,7 @@ function openPlayerPlaybookFilters(focusKey = "") {
       id: "player-playbook-filters",
       scrollElement: overlay.querySelector(".pb-player-filter-body"),
       blocking: true,
+      initialFocus: ".pb-player-filter-close",
       onEscape: () => closePlayerPlaybookFilters(),
     });
   } else if (typeof trapFocus === "function") {

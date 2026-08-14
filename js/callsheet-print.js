@@ -127,7 +127,7 @@ async function openCallSheetPrintModal() {
   const o = getCallSheetPrintOptions();
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
-    overlay.className = "custom-modal-overlay";
+    overlay.className = "custom-modal-overlay cs-print-modal-overlay";
     overlay.innerHTML = `
       <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="csPrintTitle">
         <div class="custom-modal-header">
@@ -192,21 +192,31 @@ async function openCallSheetPrintModal() {
         </div>
       </div>`;
     document.body.appendChild(overlay);
-    if (typeof trapFocus === "function") trapFocus(overlay);
-    if (typeof openLayer === "function")
-      openLayer(overlay, {
-        id: "cs-print-modal",
-        exclusive: false,
-        trapFocus: false,
-      });
-    requestAnimationFrame(() => overlay.classList.add("visible"));
-
     const close = (result) => {
       if (typeof closeLayer === "function") closeLayer("cs-print-modal");
       overlay.classList.remove("visible");
       setTimeout(() => overlay.remove(), 200);
       resolve(result);
     };
+    if (typeof openLayer === "function") {
+      openLayer(overlay, {
+        id: "cs-print-modal",
+        scrollElement: overlay.querySelector(".custom-modal-body") || overlay.querySelector(".custom-modal") || overlay,
+        blocking: true,
+        exclusive: false,
+        initialFocus: overlay.querySelector("#csPrintCancel") || overlay.querySelector(".custom-modal") || overlay,
+        onEscape: () => close(null),
+      });
+    } else if (typeof trapFocus === "function") {
+      trapFocus(overlay);
+      overlay.querySelector("#csPrintCancel")?.focus();
+    }
+    requestAnimationFrame(() => {
+      overlay.classList.add("visible");
+      // Custom overlays are deliberately hidden until this frame. Focus after
+      // visibility changes so LayerManager's target is an eligible control.
+      overlay.querySelector("#csPrintCancel")?.focus({ preventScroll: true });
+    });
     overlay.querySelector("#csPrintCancel").addEventListener("click", () => close(null));
     overlay.querySelector("#csPrintSmart").addEventListener("click", () => {
       _csApplyPrintSmartDefaults();
@@ -304,17 +314,28 @@ function openCallSheetPrintPreview(opts = {}) {
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  if (typeof trapFocus === "function") trapFocus(overlay);
-  if (typeof openLayer === "function") {
-    openLayer(overlay, { id: "cs-print-preview", exclusive: false, trapFocus: false });
-  }
-  requestAnimationFrame(() => overlay.classList.add("visible"));
-
   const close = () => {
     if (typeof closeLayer === "function") closeLayer("cs-print-preview");
     overlay.classList.remove("visible");
     setTimeout(() => overlay.remove(), 200);
   };
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "cs-print-preview",
+      scrollElement: overlay.querySelector(".cs-print-preview-pages") || overlay.querySelector(".custom-modal") || overlay,
+      blocking: true,
+      exclusive: false,
+      initialFocus: overlay.querySelector('[data-cs-preview-action="close"]') || overlay.querySelector(".custom-modal") || overlay,
+      onEscape: close,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+    overlay.querySelector('[data-cs-preview-action="close"]')?.focus();
+  }
+  requestAnimationFrame(() => {
+    overlay.classList.add("visible");
+    overlay.querySelector('[data-cs-preview-action="close"]')?.focus({ preventScroll: true });
+  });
   overlay.querySelector('[data-cs-preview-action="close"]').addEventListener("click", close);
   overlay.querySelector('[data-cs-preview-action="print"]').addEventListener("click", () => {
     close();

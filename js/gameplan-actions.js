@@ -378,8 +378,68 @@ async function deleteGamePlanBox(boxId) {
    Box collapse / targets / density / move / holding auto-route
    ------------------------------------------------------------------------- */
 
+function isGamePlanLandscapeLibraryRail() {
+  const body = document.body;
+  return Boolean(
+    body &&
+      body.classList.contains("shell-tablet") &&
+      body.classList.contains("is-mobile-screen") &&
+      body.classList.contains("is-staff-mobile-shell") &&
+      body.classList.contains("is-landscape-screen"),
+  );
+}
+
+function _gpSyncLibraryRailState(root) {
+  if (!root) return;
+  const collapsed = root.classList.contains("gp-library-collapsed");
+  const isTabletRail = isGamePlanLandscapeLibraryRail();
+  const pane = document.getElementById("gpLibraryPane");
+  const toggle = document.getElementById("gpLibraryRailToggle");
+
+  root.classList.toggle("gp-tablet-library-collapsed", isTabletRail && collapsed);
+  pane?.setAttribute("aria-hidden", collapsed ? "true" : "false");
+  toggle?.setAttribute("aria-expanded", collapsed ? "false" : "true");
+  const label = toggle?.querySelector(".gp-library-rail-toggle-label");
+  if (label) label.textContent = collapsed ? "Show Library" : "Hide Library";
+}
+
+// The visible tablet control shares the existing gp-library-collapsed class
+// with Page Actions, so either entry point reclaims board space consistently.
+function toggleGamePlanLibraryRail(source = "") {
+  const root = document.getElementById("gameplan");
+  if (!root) return;
+  const collapsed = !root.classList.contains("gp-library-collapsed");
+  root.classList.toggle("gp-library-collapsed", collapsed);
+  _gpSyncLibraryRailState(root);
+
+  // Hiding a rail must not strand focus on its now-hidden close control.
+  if (collapsed && source === "close") {
+    requestAnimationFrame(() => {
+      document.getElementById("gpLibraryRailToggle")?.focus({ preventScroll: true });
+    });
+  }
+}
+
+function toggleGamePlanBoxMore(boxId) {
+  if (!boxId) return;
+  _gpOpenBoxMoreId = _gpOpenBoxMoreId === boxId ? "" : boxId;
+  requestRenderGamePlan();
+}
+
+function closeGamePlanBoxMore(options = {}) {
+  const previousBoxId = _gpOpenBoxMoreId;
+  if (!previousBoxId) return;
+  _gpOpenBoxMoreId = "";
+  requestRenderGamePlan();
+  if (options.returnFocus === false) return;
+  requestAnimationFrame(() => {
+    document.getElementById(_gpBoxMoreToggleId(previousBoxId))?.focus({ preventScroll: true });
+  });
+}
+
 function toggleGamePlanBoxCollapse(boxId) {
   if (!boxId) return;
+  if (_gpOpenBoxMoreId === boxId) _gpOpenBoxMoreId = "";
   _gpUpdateBoard((board) => {
     if (!Array.isArray(board.collapsed)) board.collapsed = [];
     const idx = board.collapsed.indexOf(boxId);
@@ -626,20 +686,22 @@ function setGamePlanBoxSort(boxId, mode) {
 function openGamePlanSortAllBuckets() {
   const existing = document.getElementById("gpSortAllBucketsOverlay");
   if (existing) return;
+  const returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const board = _gpEnsureBoard();
   const boxes = _gpGetBoardBoxes(board);
   const currentModes = new Set(boxes.map((box) => (board.sort && board.sort[box.id]) || "manual"));
   const selected = currentModes.size === 1 ? [...currentModes][0] : "manual";
   const overlay = document.createElement("div");
   overlay.id = "gpSortAllBucketsOverlay";
-  overlay.className = "custom-modal-overlay";
+  overlay.className = "custom-modal-overlay gp-modal-layer gp-sort-all-overlay";
   overlay.innerHTML = `
-    <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="gpSortAllBucketsTitle">
+    <div class="custom-modal gp-legacy-modal gp-sort-all-modal" role="dialog" aria-modal="true" aria-labelledby="gpSortAllBucketsTitle">
       <div class="custom-modal-header">
         <span class="custom-modal-icon">↕️</span>
         <h3 class="custom-modal-title" id="gpSortAllBucketsTitle">Sort All Buckets</h3>
+        <button type="button" class="btn gp-legacy-modal-close" data-gp-sort-close aria-label="Close sort all buckets">×</button>
       </div>
-      <div class="custom-modal-body">
+      <div class="custom-modal-body gp-modal-scroll gp-sort-all-body">
         <p>Choose one order for every Game Plan bucket, including custom and hidden buckets. Manual restores each bucket’s drag order.</p>
         <label class="modal-field-label" for="gpSortAllBucketsSelect">Sort every bucket by</label>
         <select id="gpSortAllBucketsSelect" class="modal-field-input">
@@ -651,28 +713,44 @@ function openGamePlanSortAllBuckets() {
         <button type="button" class="btn btn-primary custom-modal-btn">Apply to All</button>
       </div>
     </div>`;
+  let closed = false;
   const close = () => {
+    if (closed) return;
+    closed = true;
     if (typeof closeLayer === "function") closeLayer("gpSortAllBucketsOverlay");
-    overlay.remove();
+    else if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
+    overlay.classList.remove("visible");
+    setTimeout(() => overlay.remove(), 180);
   };
   overlay.querySelector(".custom-modal-cancel")?.addEventListener("click", close);
+  overlay.querySelector("[data-gp-sort-close]")?.addEventListener("click", close);
   overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
   overlay.querySelector(".btn-primary")?.addEventListener("click", () => {
     applyGamePlanSortAllBuckets(overlay.querySelector("#gpSortAllBucketsSelect")?.value || "manual");
     close();
   });
   document.body.appendChild(overlay);
-  if (typeof openLayer === "function") {
-    openLayer(overlay, {
+  overlay.classList.add("visible");
+  const closeButton = overlay.querySelector("[data-gp-sort-close]");
+  const managed = typeof openLayer === "function" && openLayer(overlay, {
       id: "gpSortAllBucketsOverlay",
-      scrollElement: overlay.querySelector(".custom-modal") || overlay,
+      scrollElement: overlay.querySelector(".gp-sort-all-body") || overlay,
       blocking: true,
+      safeArea: true,
+      initialFocus: closeButton || overlay.querySelector(".gp-sort-all-modal") || overlay,
       onEscape: close,
+      returnFocus,
     });
-  } else if (typeof trapFocus === "function") {
+  if (!managed && typeof trapFocus === "function") {
     trapFocus(overlay);
+    closeButton?.focus();
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close();
+      }
+    });
   }
-  requestAnimationFrame(() => overlay.classList.add("visible"));
 }
 
 function applyGamePlanSortAllBuckets(mode) {
@@ -834,22 +912,28 @@ async function openGamePlanDuplicatePersonnelVariant(boxId, sig) {
   });
 }
 
-function _gpClosePersonnelVariantsPicker() {
+function _gpClosePersonnelVariantsPicker(options = {}) {
   const overlay = document.getElementById("gpPersonnelVariantsPickerOverlay");
   if (!overlay) return;
-  if (typeof closeLayer === "function") closeLayer("gpPersonnelVariantsPickerOverlay", { returnFocus: false });
-  overlay.remove();
+  if (typeof closeLayer === "function") {
+    closeLayer("gpPersonnelVariantsPickerOverlay", {
+      returnFocus: options.returnFocus !== false,
+    });
+  }
+  overlay.classList.remove("visible");
+  if (options.immediate) overlay.remove();
+  else setTimeout(() => overlay.remove(), 180);
 }
 
 function _gpOpenPersonnelVariantsPicker(choices) {
   return new Promise((resolve) => {
-    _gpClosePersonnelVariantsPicker();
+    const returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    // Replacement is the one path that intentionally does not send focus
+    // back to the previous picker while its successor is being mounted.
+    _gpClosePersonnelVariantsPicker({ returnFocus: false, immediate: true });
     const overlay = document.createElement("div");
     overlay.id = "gpPersonnelVariantsPickerOverlay";
-    overlay.className = "custom-modal-overlay visible gp-personnel-variants-picker-overlay";
-    overlay.setAttribute("role", "dialog");
-    overlay.setAttribute("aria-modal", "true");
-    overlay.setAttribute("aria-labelledby", "gpPersonnelVariantsPickerTitle");
+    overlay.className = "custom-modal-overlay gp-modal-layer gp-personnel-variants-picker-overlay";
     const choiceHtml = choices.map((option) => {
       const label = `${getPersonnelEmoji(option.personnel) || "●"} ${option.personnel || "Primary"}`;
       const detail = option.isBase ? "Primary version" : "Approved variant";
@@ -858,13 +942,13 @@ function _gpOpenPersonnelVariantsPicker(choices) {
         <span><strong>${escapeHtml(label)}</strong><small>${detail}</small></span>
       </label>`;
     }).join("");
-    overlay.innerHTML = `<div class="custom-modal gp-personnel-variants-picker" role="document">
+    overlay.innerHTML = `<div class="custom-modal gp-legacy-modal gp-personnel-variants-picker" role="dialog" aria-modal="true" aria-labelledby="gpPersonnelVariantsPickerTitle">
       <div class="custom-modal-header">
         <span class="custom-modal-icon">👥</span>
         <h3 class="custom-modal-title" id="gpPersonnelVariantsPickerTitle">Add Personnel Versions</h3>
-        <button type="button" class="modal-close" aria-label="Close">×</button>
+        <button type="button" class="btn gp-legacy-modal-close" data-gp-personnel-close aria-label="Close personnel variants">×</button>
       </div>
-      <div class="custom-modal-body">
+      <div class="custom-modal-body gp-modal-scroll gp-personnel-variants-picker-body">
         <p class="gp-personnel-variants-picker-intro">Choose the approved personnel versions to add alongside this call. Versions already in this box are not shown.</p>
         <div class="gp-personnel-variants-picker-list">${choiceHtml}</div>
       </div>
@@ -874,7 +958,10 @@ function _gpOpenPersonnelVariantsPicker(choices) {
         <button type="button" class="btn btn-primary" data-action="add" disabled>Add selected</button>
       </div>
     </div>`;
+    let finished = false;
     const finish = (selected) => {
+      if (finished) return;
+      finished = true;
       _gpClosePersonnelVariantsPicker();
       resolve(selected);
     };
@@ -889,7 +976,7 @@ function _gpOpenPersonnelVariantsPicker(choices) {
     };
     overlay.addEventListener("change", updateSelection);
     overlay.addEventListener("click", (event) => {
-      if (event.target === overlay || event.target.closest(".modal-close") || event.target.closest('[data-action="cancel"]')) {
+      if (event.target === overlay || event.target.closest("[data-gp-personnel-close]") || event.target.closest('[data-action="cancel"]')) {
         event.preventDefault();
         event.stopPropagation();
         finish([]);
@@ -901,19 +988,28 @@ function _gpOpenPersonnelVariantsPicker(choices) {
         finish([...overlay.querySelectorAll('input[type="checkbox"]:checked')].map((input) => input.value));
       }
     });
-    overlay.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") finish([]);
-    });
     document.body.appendChild(overlay);
-    if (typeof openLayer === "function") {
-      openLayer(overlay, {
+    overlay.classList.add("visible");
+    const closeButton = overlay.querySelector("[data-gp-personnel-close]");
+    const managed = typeof openLayer === "function" && openLayer(overlay, {
         id: "gpPersonnelVariantsPickerOverlay",
-        scrollElement: overlay.querySelector(".custom-modal") || overlay,
+        scrollElement: overlay.querySelector(".gp-personnel-variants-picker-body") || overlay,
         blocking: true,
+        safeArea: true,
+        initialFocus: closeButton || overlay.querySelector(".gp-personnel-variants-picker") || overlay,
         onEscape: () => finish([]),
+        returnFocus,
+      });
+    if (!managed) {
+      if (typeof trapFocus === "function") trapFocus(overlay);
+      closeButton?.focus();
+      overlay.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          finish([]);
+        }
       });
     }
-    overlay.querySelector('input[type="checkbox"]')?.focus();
   });
 }
 
@@ -1007,6 +1103,21 @@ function _gpOpenPlayContextMenu(e, boxId, sig, rawIdx) {
       onClick: () => _gpMoveBetweenBoxes(boxId, GP_HOLDING_ID, sig, idx >= 0 ? idx : rawIdx),
     });
   }
+  const wbOn = _gpHasFlag(play, "wb");
+  const jvOn = _gpHasFlag(play, "jv");
+  items.push({ separator: true });
+  items.push({
+    label: wbOn ? "📋 Remove wristband flag" : "📋 Mark for wristband",
+    onClick: () => toggleGamePlanPlayFlag(
+      _gpBuildBoxPlayArg(boxId, sig, idx >= 0 ? idx : rawIdx, { flag: "wb" }),
+    ),
+  });
+  items.push({
+    label: jvOn ? "🟡 Remove JV / freshmen flag" : "🟡 Mark as JV / freshmen",
+    onClick: () => toggleGamePlanPlayFlag(
+      _gpBuildBoxPlayArg(boxId, sig, idx >= 0 ? idx : rawIdx, { flag: "jv" }),
+    ),
+  });
   items.push({ separator: true });
   items.push({
     label: "👥 Change personnel / Game Plan-only override…",
@@ -1048,7 +1159,7 @@ function _gpOpenPlayContextMenu(e, boxId, sig, rawIdx) {
   });
   if (typeof showContextMenu === "function") {
     const menu = document.createElement("div");
-    menu.className = "cs-context-menu";
+    menu.className = "cs-context-menu gp-play-context-menu";
     items.forEach((item) => {
       if (item.separator) {
         const divider = document.createElement("div");
@@ -1069,6 +1180,28 @@ function _gpOpenPlayContextMenu(e, boxId, sig, rawIdx) {
     });
     showContextMenu(e, menu);
   }
+}
+
+// The compact Game Plan workbench presents one full-size Actions control per
+// assigned play. It opens the same deterministic menu as right-click and
+// long-press, so tablet users never need hover controls or native drag/drop.
+function openGamePlanPlayActionMenu(playArg, trigger) {
+  const ref = _gpParseBoxPlayArg(playArg);
+  if (!ref?.boxId || !ref?.sig) return;
+  const rect = trigger?.getBoundingClientRect?.();
+  _gpOpenPlayContextMenu(
+    {
+      preventDefault() {},
+      clientX: rect ? rect.right : Math.round(window.innerWidth / 2),
+      clientY: rect ? rect.bottom : Math.round(window.innerHeight / 2),
+    },
+    ref.boxId,
+    ref.sig,
+    ref.rawIdx,
+  );
+  requestAnimationFrame(() => {
+    document.querySelector(".gp-play-context-menu .cs-ctx-item")?.focus({ preventScroll: true });
+  });
 }
 /* -------------------------------------------------------------------------
    Box Reorder + Hide + Rename
@@ -1151,6 +1284,7 @@ async function hideGamePlanBox(boxId) {
 }
 
 async function openGamePlanManageBoxes() {
+  const returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const board = _gpEnsureBoard();
   const all = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
   const hidden = new Set(board.hiddenBoxes || []);
@@ -1166,14 +1300,16 @@ async function openGamePlanManageBoxes() {
   }).join("");
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
-    overlay.className = "custom-modal-overlay";
+    overlay.id = "gpManageBoxesOverlay";
+    overlay.className = "custom-modal-overlay gp-modal-layer gp-manage-boxes-overlay";
     overlay.innerHTML = `
-      <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="gpManageBoxesTitle">
+      <div class="custom-modal gp-legacy-modal gp-manage-boxes-modal" role="dialog" aria-modal="true" aria-labelledby="gpManageBoxesTitle">
         <div class="custom-modal-header">
           <span class="custom-modal-icon">👁️</span>
           <h3 class="custom-modal-title" id="gpManageBoxesTitle">Manage Box Visibility</h3>
+          <button type="button" class="btn gp-legacy-modal-close" data-gp-manage-boxes-close aria-label="Close manage boxes">×</button>
         </div>
-        <div class="custom-modal-body">
+        <div class="custom-modal-body gp-modal-scroll gp-manage-boxes-body">
           <p class="gp-mgb-help">Uncheck boxes to hide them from the board. Hidden boxes keep their plays — they're just out of sight.</p>
           <div class="gp-mgb-list">${rowsHtml}</div>
           <div class="gp-mgb-bulk">
@@ -1187,9 +1323,13 @@ async function openGamePlanManageBoxes() {
         </div>
       </div>`;
     document.body.appendChild(overlay);
-    if (typeof trapFocus === "function") trapFocus(overlay);
-    requestAnimationFrame(() => overlay.classList.add("visible"));
+    overlay.classList.add("visible");
+    let closed = false;
     const close = (v) => {
+      if (closed) return;
+      closed = true;
+      if (typeof closeLayer === "function") closeLayer("gpManageBoxesOverlay");
+      else if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
       overlay.classList.remove("visible");
       setTimeout(() => overlay.remove(), 200);
       resolve(v);
@@ -1205,6 +1345,7 @@ async function openGamePlanManageBoxes() {
       });
     });
     overlay.querySelector("#gpMgbCancel").addEventListener("click", () => close(false));
+    overlay.querySelector("[data-gp-manage-boxes-close]").addEventListener("click", () => close(false));
     overlay.querySelector("#gpMgbSave").addEventListener("click", () => {
       const newHidden = [];
       overlay.querySelectorAll(".gp-mgb-cb").forEach((cb) => {
@@ -1218,6 +1359,26 @@ async function openGamePlanManageBoxes() {
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) close(false);
     });
+    const closeButton = overlay.querySelector("[data-gp-manage-boxes-close]");
+    const managed = typeof openLayer === "function" && openLayer(overlay, {
+      id: "gpManageBoxesOverlay",
+      scrollElement: overlay.querySelector(".gp-manage-boxes-body") || overlay,
+      blocking: true,
+      safeArea: true,
+      initialFocus: closeButton || overlay.querySelector(".gp-manage-boxes-modal") || overlay,
+      onEscape: () => close(false),
+      returnFocus,
+    });
+    if (!managed) {
+      if (typeof trapFocus === "function") trapFocus(overlay);
+      closeButton?.focus();
+      overlay.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          close(false);
+        }
+      });
+    }
   });
 }
 

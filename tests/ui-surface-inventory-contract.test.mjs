@@ -39,7 +39,7 @@ const UI_SURFACES = Object.freeze({
   coachPublishStatusPanel: { owner: "index.html", pattern: "embedded-panel", scrollOwner: "workspace" },
   coachQuizRepairOverlay: { owner: "js/script-quiz-foundation.js", pattern: "blocking-layer", scrollOwner: "layer" },
   commandPaletteOverlay: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
-  constraintPanel: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
+  constraintPanel: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
   csAddCategoryOverlay: { owner: "js/callsheet-categories.js", pattern: "blocking-layer", scrollOwner: "layer" },
   csDisplayPanel: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
   csLayoutOverlay: { owner: "js/callsheet-layout.js", pattern: "blocking-layer", scrollOwner: "layer" },
@@ -57,10 +57,14 @@ const UI_SURFACES = Object.freeze({
   discReplySheet: { owner: "js/play-discussion.js", pattern: "blocking-layer", scrollOwner: "layer" },
   discReplySheetOverlay: { owner: "js/play-discussion.js", pattern: "blocking-layer", scrollOwner: "layer" },
   globalLoadingOverlay: { owner: "js/playbook-import.js", pattern: "blocking-layer", scrollOwner: "layer" },
+  gpBoxInfoOverlay: { owner: "js/gameplan-render.js", pattern: "blocking-layer", scrollOwner: "layer" },
   gpBoxMatchingOverlay: { owner: "js/gameplan-smart.js", pattern: "blocking-layer", scrollOwner: "layer" },
+  gpBulkSheetOverlay: { owner: "js/gameplan-render.js", pattern: "blocking-layer", scrollOwner: "layer" },
   gpDiscModalOverlay: { owner: "js/play-discussion.js", pattern: "blocking-layer", scrollOwner: "layer" },
   gpDrawer: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
+  gpManageBoxesOverlay: { owner: "js/gameplan-actions.js", pattern: "blocking-layer", scrollOwner: "layer" },
   gpPersonnelVariantsPickerOverlay: { owner: "js/gameplan-actions.js", pattern: "blocking-layer", scrollOwner: "layer" },
+  gpPrintModalOverlay: { owner: "js/gameplan-print.js", pattern: "blocking-layer", scrollOwner: "layer" },
   gpSmartBuilderOverlay: { owner: "js/gameplan-smart.js", pattern: "blocking-layer", scrollOwner: "layer" },
   gpSortAllBucketsOverlay: { owner: "js/gameplan-actions.js", pattern: "blocking-layer", scrollOwner: "layer" },
   helpOverlay: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
@@ -75,8 +79,8 @@ const UI_SURFACES = Object.freeze({
   pbActionSheet: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
   pbCollectionsPanel: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
   pbFilterDrawer: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
-  pbPrintPanel: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
-  pbWorkflowPanel: { owner: "index.html", pattern: "nonblocking-drawer", scrollOwner: "panel" },
+  pbPrintPanel: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
+  pbWorkflowPanel: { owner: "index.html", pattern: "blocking-layer", scrollOwner: "layer" },
   recoveryCenterOverlay: { owner: "js/app-session.js", pattern: "blocking-layer", scrollOwner: "layer" },
   playbookBalanceOverlay: { owner: "js/playbook-reports.js", pattern: "blocking-layer", scrollOwner: "layer" },
   playbookCatCleanupOverlay: { owner: "js/playbook-identity.js", pattern: "blocking-layer", scrollOwner: "layer" },
@@ -221,6 +225,26 @@ assert.match(callSheetSort, /closeCsSortModal\(\{ returnFocus: false \}\)/, "app
 assert.match(domHelpers, /function hasBlockingAppLayer\(\)[\s\S]*?state\.blocking/, "layer ownership distinguishes nonblocking drawers from dialogs that lock the page");
 assert.match(domHelpers, /if \(!appLayerBodyLockState \|\| hasBlockingAppLayer\(\)\) return;/, "closing a dialog above a drawer releases the page lock when no blocking layer remains");
 
+const [constraintsUi, constraintsCss, indexMarkup, responsiveCss, pageActions] = await Promise.all([
+  source("js/constraints-ui.js"),
+  source("css/callsheet.css"),
+  source("index.html"),
+  source("css/responsive.css"),
+  source("js/page-actions.js"),
+]);
+assert.match(indexMarkup, /id="constraintPanel"[\s\S]*?role="dialog"[\s\S]*?aria-modal="true"[\s\S]*?aria-labelledby="constraintPanelTitle"/, "Game Plan Constraints is exposed as a semantic blocking dialog");
+assert.match(indexMarkup, /<h3 id="constraintPanelTitle">[\s\S]*?Game Plan Constraints[\s\S]*?<button type="button" class="cr-close-btn"[\s\S]*?aria-label="Close constraints"/, "Game Plan Constraints has a stable heading and visible close control");
+assert.match(constraintsUi, /function runConstraintCheck\(options = \{\}\)[\s\S]*?const body = document\.getElementById\("constraintPanelBody"\);[\s\S]*?const closeButton = panel\.querySelector\("\.cr-close-btn"\);[\s\S]*?const returnFocus = options\?\.returnFocus instanceof HTMLElement[\s\S]*?openLayer\(panel, \{[\s\S]*?id: "constraintPanel"[\s\S]*?scrollElement: body \|\| panel,[\s\S]*?blocking: true,[\s\S]*?initialFocus: closeButton \|\| panel,[\s\S]*?returnFocus,[\s\S]*?onEscape: \(\) => closeConstraintPanel\(\)/, "Game Plan Constraints uses the shared blocking, scroll, initial-focus, return-focus, and Escape lifecycle");
+assert.match(pageActions, /label: "Check Constraints",[\s\S]*?handoffFocus: true,[\s\S]*?run: \(options\) => _paCall\("runConstraintCheck", options\)/, "Call Sheet Actions passes its launch focus through to Constraints");
+assert.match(pageActions, /function _paRunVerb\(verb, options = \{\}\)[\s\S]*?const handoffOptions = verb\.handoffFocus[\s\S]*?returnFocus: getPageActionsLaunchTrigger\(\)[\s\S]*?verb\.run\(handoffOptions\)/, "Page Actions captures the original external trigger before its delayed dialog handoff");
+assert.match(pageActions, /document\.addEventListener\("click", \(event\) => \{[\s\S]*?\[data-action='openPageActions'\][\s\S]*?pageActionsPendingTrigger = trigger;[\s\S]*?function openPageActions\(\)[\s\S]*?const captured = pageActionsPendingTrigger;[\s\S]*?if \(overlay\.dataset\.layerOpen !== "true"\)[\s\S]*?pageActionsLaunchTrigger = captured instanceof HTMLElement[\s\S]*?returnFocus: getPageActionsLaunchTrigger\(\)/, "Page Actions retains its actual touch/keyboard launcher across the delayed Constraints handoff");
+assert.match(constraintsUi, /function closeConstraintPanel\(options = \{\}\) \{[\s\S]*?closeLayer\("constraintPanel", options\);[\s\S]*?panel\.classList\.remove\("visible"\)[\s\S]*?panel\.setAttribute\("inert", ""\);/, "Game Plan Constraints releases its app layer before hiding the reusable dialog");
+assert.match(constraintsCss, /\.constraint-panel-overlay \{[\s\S]*?height: calc\(var\(--app-vh, 1vh\) \* 100\);[\s\S]*?overflow: hidden;[\s\S]*?overscroll-behavior: contain;/, "Game Plan Constraints uses measured visual viewport height and contains background scrolling");
+assert.match(constraintsCss, /\.constraint-panel \{[\s\S]*?width: min\(520px, 100%\);[\s\S]*?min-height: 0;[\s\S]*?max-height: 100%;/, "Game Plan Constraints panel fits within the shared safe-area layer padding");
+assert.match(constraintsCss, /\.constraint-panel-body \{[\s\S]*?min-height: 0;[\s\S]*?overflow-y: auto;[\s\S]*?overscroll-behavior: contain;/, "Game Plan Constraints has one deliberate inner scroll region");
+assert.match(constraintsCss, /\.cr-close-btn \{[\s\S]*?width: 44px;[\s\S]*?height: 44px;/, "Game Plan Constraints close control meets the tablet touch-target floor");
+assert.doesNotMatch(responsiveCss, /:is\(\s*\.constraint-panel-overlay,/, "the blocking Constraints dialog stays full-viewport on tablet landscape instead of becoming a contextual rail");
+
 const [scriptShared, scriptPeriods, scriptHealth] = await Promise.all([
   source("js/script-shared.js"),
   source("js/script-periods.js"),
@@ -245,6 +269,28 @@ assert.match(playersAdmin, /closeLayer\("adminBootstrapOverlay"/, "Admin bootstr
 const authClient = await source("js/auth.js");
 assert.match(authClient, /openLayer\(overlay, \{[\s\S]*?id: "accountSecurityOverlay"[\s\S]*?scrollElement: overlay\.querySelector[\s\S]*?blocking: true[\s\S]*?onEscape:/, "Account security uses the shared blocking-layer lifecycle");
 assert.match(authClient, /closeLayer\("accountSecurityOverlay"/, "Account security releases its blocking layer when it closes");
+
+const [signals, signalsCss] = await Promise.all([
+  source("js/signals.js"),
+  source("css/signals.css"),
+]);
+assert.match(signals, /function openSignalSelectorForPlay\(play, options = \{\}\)[\s\S]*?_closeSignalSelector\(\{ returnFocus: false \}\)[\s\S]*?const closeButton = overlay\.querySelector\("\.signals-play-close"\)[\s\S]*?openLayer\(overlay, \{[\s\S]*?id: "signalSelectorOverlay"[\s\S]*?scrollElement: overlay\.querySelector\("\.signals-play-dialog"\) \|\| overlay[\s\S]*?blocking: true[\s\S]*?initialFocus: closeButton[\s\S]*?onEscape: \(\) => closeSignalSelector\(\)/, "Signal selection uses the shared blocking, scroll, focus, and Escape lifecycle");
+assert.match(signals, /function _closeSignalSelector\(options = \{\}\)[\s\S]*?closeLayer\(overlay, \{ returnFocus: options\.returnFocus !== false \}\)[\s\S]*?overlay\.remove\(\)[\s\S]*?function closeSignalSelector\(\) \{[\s\S]*?_closeSignalSelector\(\);/, "Signal selection releases its layer before removing the overlay while preserving its public close action");
+assert.match(signalsCss, /\.signals-play-overlay \{[\s\S]*?safe-area-inset-top[\s\S]*?safe-area-inset-bottom[\s\S]*?height: calc\(var\(--app-vh, 1vh\) \* 100\)/, "Signal selection uses measured viewport height and safe-area insets");
+assert.match(signalsCss, /\.signals-play-dialog \{[\s\S]*?var\(--app-vh, 1vh\)/, "Signal selection dialog fits the usable visual viewport");
+assert.match(signalsCss, /\.signals-play-close \{[\s\S]*?width: 44px;[\s\S]*?height: 44px;/, "Signal selection close control meets the tablet touch-target floor");
+
+const [playbookRender, playbookCss] = await Promise.all([
+  source("js/playbook-render.js"),
+  source("css/playbook.css"),
+]);
+assert.match(indexMarkup, /id="pbWorkflowPanel"[\s\S]*?role="dialog"[\s\S]*?aria-modal="true"[\s\S]*?aria-labelledby="pbWfPanelTitle"[\s\S]*?aria-hidden="true" inert/, "Playbook Workflow is a semantic dialog while closed");
+assert.match(indexMarkup, /id="pbWfPanelClose"[\s\S]*?data-action="closePlayWorkflowPanel"[\s\S]*?aria-label="Close panel"/, "Playbook Workflow has a dedicated close control");
+assert.match(playbookRender, /function openPlayWorkflowPanel\(idx\)[\s\S]*?panel\.removeAttribute\("inert"\)[\s\S]*?panel\.setAttribute\("aria-hidden", "false"\)[\s\S]*?panel\.classList\.add\("visible"\)[\s\S]*?openLayer\(panel, \{[\s\S]*?id: "pbWorkflowPanel"[\s\S]*?blocking: true,[\s\S]*?scrollElement: drawer,[\s\S]*?initialFocus: closeButton,[\s\S]*?onEscape: \(\) => closePlayWorkflowPanel\(\)/, "Playbook Workflow uses the shared blocking, scroll, initial-focus, and Escape lifecycle");
+assert.match(playbookRender, /function closePlayWorkflowPanel\(options = \{\}\) \{[\s\S]*?closeLayer\(panel,[\s\S]*?panel\.classList\.remove\("visible"\)[\s\S]*?panel\.setAttribute\("inert", ""\);/, "Playbook Workflow releases its app layer before hiding its reusable dialog");
+assert.match(playbookCss, /\.pb-wf-panel-overlay\.app-layer-active \{[\s\S]*?height: calc\(var\(--app-vh, 1vh\) \* 100\);/, "Playbook Workflow fits the measured visual viewport when the keyboard opens");
+assert.match(playbookCss, /\.pb-wf-panel-close \{[\s\S]*?min-width: 44px;[\s\S]*?min-height: 44px;/, "Playbook Workflow close control meets the tablet touch-target floor");
+assert.doesNotMatch(responsiveCss, /body\.shell-tablet\.is-staff-mobile-shell\.is-landscape-screen\s+:is\([\s\S]{0,300}?\.pb-wf-panel-overlay/, "the blocking Workflow dialog stays full-viewport on tablet landscape instead of becoming a contextual rail");
 
 const gamePlanSmart = await source("js/gameplan-smart.js");
 for (const [name, surfaceId] of [

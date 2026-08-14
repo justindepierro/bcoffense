@@ -108,6 +108,40 @@ function toggleColumnMenu() {
 // ── Playbook filter drawer ──
 let _pbFilterDrawerOpen = false;
 
+// Portrait/phone filters are a modal viewport sheet. A coach iPad in
+// landscape, however, has a dedicated right-side workspace rail (see
+// playbook.css) and intentionally leaves its navigation visible. Keeping
+// those two models distinct avoids locking the whole tablet behind a narrow
+// contextual drawer while still preventing background scroll on a full sheet.
+function _shouldUsePbFilterModalLayer() {
+  const body = document.body;
+  if (!body?.classList.contains("is-mobile-screen")) return false;
+  return !(
+    body.classList.contains("shell-tablet") &&
+    body.classList.contains("is-landscape-screen") &&
+    body.classList.contains("is-staff-mobile-shell")
+  );
+}
+
+function _syncPbFilterDrawerLayer(drawer, isOpen, options = {}) {
+  if (!drawer) return;
+  const layerId = "pb-filter-drawer";
+  const isLayerOpen = drawer.dataset.layerOpen === "true";
+  const shouldUseLayer = isOpen && _shouldUsePbFilterModalLayer();
+
+  if (shouldUseLayer && !isLayerOpen && typeof openLayer === "function") {
+    openLayer(drawer, {
+      id: layerId,
+      scrollElement: drawer.querySelector(".pb-filter-drawer-body"),
+      blocking: true,
+      safeArea: false,
+      onEscape: () => closePbFilterDrawer(),
+    });
+  } else if (!shouldUseLayer && isLayerOpen && typeof closeLayer === "function") {
+    closeLayer(layerId, { returnFocus: options.returnFocus !== false });
+  }
+}
+
 // One entry point for the compact filter button. Players stay in the
 // player-safe filter sheet; staff retain the full playbook filter drawer.
 function openPlaybookFilters() {
@@ -169,6 +203,7 @@ function _applyPbFilterDrawerState() {
     btn.setAttribute("aria-pressed", _pbFilterDrawerOpen ? "true" : "false");
     btn.setAttribute("aria-expanded", _pbFilterDrawerOpen ? "true" : "false");
   }
+  _syncPbFilterDrawerLayer(drawer, _pbFilterDrawerOpen);
   if (_pbFilterDrawerOpen) {
     requestAnimationFrame(() => drawer.querySelector(".pb-filter-drawer-close")?.focus());
   } else if (document.activeElement && drawer.contains(document.activeElement)) {
@@ -188,7 +223,9 @@ function openPbActionSheet() {
   const sheet = document.getElementById("pbActionSheet");
   const backdrop = document.getElementById("pbActionSheetBackdrop");
   const toggle = document.getElementById("pbActionSheetToggle");
-  if (!sheet) return;
+  // The trigger is deliberately phone-only. Do not let an accidental command
+  // invocation on a tablet create an invisible, scroll-locking app layer.
+  if (!sheet || !document.body?.classList.contains("shell-phone")) return;
   _pbActionSheetOpen = true;
   sheet.removeAttribute("inert");
   sheet.classList.add("open");
@@ -202,8 +239,15 @@ function openPbActionSheet() {
     });
     sheet.dataset.autoCloseBound = "true";
   }
-  if (typeof openLayer === "function")
-    openLayer(sheet, { id: "pb-action-sheet", exclusive: false });
+  if (typeof openLayer === "function" && sheet.dataset.layerOpen !== "true") {
+    openLayer(sheet, {
+      id: "pb-action-sheet",
+      scrollElement: sheet.querySelector(".pb-action-sheet-body"),
+      blocking: true,
+      exclusive: false,
+      onEscape: () => closePbActionSheet(),
+    });
+  }
 }
 
 function closePbActionSheet() {
@@ -219,6 +263,20 @@ function closePbActionSheet() {
   toggle?.setAttribute("aria-expanded", "false");
   if (typeof closeLayer === "function") closeLayer("pb-action-sheet");
 }
+
+// A rotation or Split View resize can move an open filter surface between the
+// modal-sheet and tablet-rail layouts. Reconcile its layer state without
+// closing a coach's active filters; a phone-only action sheet must close when
+// it no longer has a visible surface.
+window.addEventListener("bc:layoutchange", () => {
+  const drawer = document.getElementById("pbFilterDrawer");
+  if (_pbFilterDrawerOpen && drawer) {
+    _syncPbFilterDrawerLayer(drawer, true, { returnFocus: false });
+  }
+  if (_pbActionSheetOpen && !document.body?.classList.contains("shell-phone")) {
+    closePbActionSheet();
+  }
+});
 
 function hideColumnMenu() {
   const wrap = document.querySelector(".column-toggle.tool-menu-wrap");

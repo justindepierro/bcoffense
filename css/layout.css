@@ -355,6 +355,37 @@ body[data-auth-role="player"] .workspace-sync-dock {
   }
 }
 
+/* Tablet floating-control reservation -------------------------------------------------
+   Staff tablets can show the workspace-sync dock, the page-action pills, and
+   Quick Tools together. Give each surface a fixed vertical slot: status nearest
+   the usable edge, page actions above it, then Quick Tools. The Quick Tools menu
+   expands upward, so it remains clear of both lower controls when opened.
+
+   The coach dock variable is present only where that dock is visible (notably
+   portrait tablet). Including it keeps this shared stack above the dock without
+   changing the phone layout rules above. */
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell {
+  --tablet-floating-inline-edge: max(16px, env(safe-area-inset-right, 0px));
+  --tablet-floating-bottom-edge: calc(
+    max(12px, env(safe-area-inset-bottom, 0px)) + var(--coach-dock-height, 0px)
+  );
+  --tablet-floating-gap: 12px;
+  --tablet-sync-dock-reserve: 44px;
+  --tablet-floating-control-height: 46px;
+  --tablet-workspace-sync-bottom: var(--tablet-floating-bottom-edge);
+  --tablet-page-fab-bottom: calc(
+    var(--tablet-workspace-sync-bottom) + var(--tablet-sync-dock-reserve) + var(--tablet-floating-gap)
+  );
+  --tablet-quick-tools-bottom: calc(
+    var(--tablet-page-fab-bottom) + var(--tablet-floating-control-height) + var(--tablet-floating-gap)
+  );
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .workspace-sync-dock {
+  right: var(--tablet-floating-inline-edge);
+  bottom: var(--tablet-workspace-sync-bottom);
+}
+
 @keyframes workspaceSyncSpin {
   to {
     transform: rotate(360deg);

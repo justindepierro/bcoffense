@@ -16,7 +16,7 @@ jobs:
   verify:
     name: Verify notification Worker release candidate
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     # This job intentionally has no production Environment or Cloudflare
     # credentials, so package install and release-quality testing are isolated.
@@ -36,8 +36,8 @@ jobs:
       - name: Install browser-test dependencies
         run: npm --prefix tests ci
 
-      - name: Install Chromium
-        run: npm --prefix tests exec -- playwright install --with-deps chromium
+      - name: Install Chromium and WebKit
+        run: npm --prefix tests exec -- playwright install --with-deps chromium webkit
 
       - name: Run the canonical release-quality gate
         run: ./scripts/release-quality-gate.sh
@@ -70,8 +70,8 @@ jobs:
       - name: Install browser-test dependencies
         run: npm --prefix tests ci
 
-      - name: Install Chromium
-        run: npm --prefix tests exec -- playwright install --with-deps chromium
+      - name: Install Chromium and WebKit
+        run: npm --prefix tests exec -- playwright install --with-deps chromium webkit
 
       - name: Confirm dedicated notification Worker credentials are configured
         env:

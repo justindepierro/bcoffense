@@ -363,9 +363,12 @@ function renderScoutOverview() {
   container.innerHTML = `
     <div class="td-detail coach-grid-tendencies-workspace">
       <div class="td-detail-header app-command-toolbar coach-grid-command-strip">
-        <button class="btn btn-secondary" data-action="tendenciesGoHome">← Back</button>
+        <div class="td-detail-nav">
+          <button class="btn btn-secondary" data-action="tendenciesGoHome">← Back</button>
+          <button class="btn btn-secondary td-tablet-landscape-only" data-action="showTdFilmLog">📋 Film Log</button>
+        </div>
         <h2>${escapeHtml(opp.name)}</h2>
-        <div class="td-detail-actions action-grid">
+        <div class="td-detail-actions td-detail-actions--desktop action-grid">
           <button class="btn btn-primary" data-action="startNewPlay">＋ Chart Play</button>
           <button class="btn btn-secondary" data-action="showTdFilmLog">📋 Film Log</button>
           <button class="btn btn-secondary" data-action="exportSingleOpponentCSV" data-idx="${tendenciesCurrentOpponent}">📄 CSV</button>
@@ -374,6 +377,20 @@ function renderScoutOverview() {
             title="${isActive ? "Active opponent for this week" : "Set as this week's opponent"}">
             ${isActive ? "✅ Active" : "🏈 Set Active"}
           </button>
+        </div>
+        <div class="td-tablet-landscape-only td-tablet-header-actions">
+          <button class="btn btn-primary td-new-play-btn" data-action="startNewPlay">＋ Chart Play</button>
+          <div class="tool-menu-wrap td-tablet-more-wrap" data-anchored>
+            <button type="button" class="btn btn-secondary td-tablet-more-trigger" data-action="toggleParentOpen"
+              aria-haspopup="true" aria-expanded="false" aria-label="More opponent actions">⋯ More</button>
+            <div class="tool-menu td-tablet-landscape-menu" data-action="removeParentOpen" aria-label="More opponent actions">
+              <button type="button" data-action="exportSingleOpponentCSV" data-idx="${tendenciesCurrentOpponent}">📄 Export CSV</button>
+              <button type="button" data-action="printTendencies">🖨️ Print report</button>
+              <button type="button" data-action="setAsActiveOpponent" data-idx="${tendenciesCurrentOpponent}">
+                ${isActive ? "✅ Active opponent" : "🏈 Set active opponent"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -484,6 +501,31 @@ function showTdFilmLog() {
   renderOpponentDetail();
 }
 
+// The desktop Undo/Redo buttons keep their established ids for the shared
+// history manager. The tablet-only controls live inside a portaled anchored
+// menu, so mirror that state by data attribute instead of introducing duplicate
+// ids or depending on a menu rerender before it can be opened.
+function syncTendenciesHistoryControls() {
+  if (typeof historyManager === "undefined") return;
+  historyManager.updateButtons("tendencies");
+  const states = {
+    undo: {
+      enabled: historyManager.canUndo("tendencies"),
+      title: historyManager.canUndo("tendencies") ? "Undo" : "Nothing to undo",
+    },
+    redo: {
+      enabled: historyManager.canRedo("tendencies"),
+      title: historyManager.canRedo("tendencies") ? "Redo" : "Nothing to redo",
+    },
+  };
+  document.querySelectorAll("[data-tendencies-history]").forEach((button) => {
+    const state = states[button.dataset.tendenciesHistory];
+    if (!state) return;
+    button.disabled = !state.enabled;
+    button.title = state.title;
+  });
+}
+
 function showTdOverview() {
   tdShowScoutOverview = true;
   renderScoutOverview();
@@ -533,14 +575,18 @@ function renderOpponentDetail() {
   const blitzPlays = opp.plays.filter(
     (p) => p.defBlitz && p.defBlitz !== "None",
   ).length;
+  const canUndo = typeof historyManager !== "undefined" && historyManager.canUndo("tendencies");
+  const canRedo = typeof historyManager !== "undefined" && historyManager.canRedo("tendencies");
 
   container.innerHTML = `
     <div class="td-detail coach-grid-tendencies-workspace">
       <div class="td-detail-header app-command-toolbar coach-grid-command-strip">
-        <button class="btn btn-secondary" data-action="tendenciesGoHome">← Back</button>
-        ${totalPlays > 0 ? `<button class="btn btn-secondary" data-action="showTdOverview">⬅ Overview</button>` : ""}
+        <div class="td-detail-nav">
+          <button class="btn btn-secondary" data-action="tendenciesGoHome">← Back</button>
+          ${totalPlays > 0 ? `<button class="btn btn-secondary" data-action="showTdOverview">⬅ Overview</button>` : ""}
+        </div>
         <h2>📋 ${escapeHtml(opp.name)} — Film Log</h2>
-        <div class="td-detail-actions">
+        <div class="td-detail-actions td-detail-actions--desktop">
           <button class="btn" id="tendenciesUndoBtn" data-action="undoTendencies" disabled title="Nothing to undo">↩️</button>
           <button class="btn" id="tendenciesRedoBtn" data-action="redoTendencies" disabled title="Nothing to redo">↪️</button>
           <button class="btn btn-primary td-new-play-btn" data-action="startNewPlay">＋ New Play</button>
@@ -552,6 +598,28 @@ function renderOpponentDetail() {
           <button class="btn btn-secondary" data-action="toggleScoutPresentation" title="Present stats dashboard fullscreen">📊 Present</button>
           <button class="btn btn-secondary" data-action="sendScoutRecsToGamePlan" title="Send scout recommendations to Game Plan boxes">🏈 → GP</button>
           <button class="btn ${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? "btn-success" : "btn-danger"}" data-action="setAsActiveOpponent" data-idx="${tendenciesCurrentOpponent}" title="Set this team as this week's opponent for scouting integration">${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? "✅ Active Opponent" : "🏈 Set Active"}</button>
+        </div>
+        <div class="td-tablet-landscape-only td-tablet-header-actions">
+          <button class="btn btn-primary td-new-play-btn" data-action="startNewPlay">＋ New Play</button>
+          <div class="tool-menu-wrap td-tablet-more-wrap" data-anchored>
+            <button type="button" class="btn btn-secondary td-tablet-more-trigger" data-action="toggleParentOpen"
+              aria-haspopup="true" aria-expanded="false" aria-label="More film log actions">⋯ More</button>
+            <div class="tool-menu td-tablet-landscape-menu" data-action="removeParentOpen" aria-label="More film log actions">
+              <button type="button" data-tendencies-history="undo" data-action="undoTendencies" ${canUndo ? "" : "disabled"} title="${canUndo ? "Undo" : "Nothing to undo"}">↩️ Undo</button>
+              <button type="button" data-tendencies-history="redo" data-action="redoTendencies" ${canRedo ? "" : "disabled"} title="${canRedo ? "Redo" : "Nothing to redo"}">↪️ Redo</button>
+              <span class="tool-divider" aria-hidden="true"></span>
+              <button type="button" data-action="exportSingleOpponentCSV" data-idx="${tendenciesCurrentOpponent}">📄 Export CSV</button>
+              <button type="button" data-action="printTendencies">🖨️ Print report</button>
+              <button type="button" data-action="printScoutSummary">📋 Print summary</button>
+              <button type="button" data-action="archiveTendenciesReport">📦 Archive report</button>
+              <button type="button" data-action="showTendenciesReportArchive">📂 Report archive</button>
+              <button type="button" data-action="toggleScoutPresentation">📊 Present</button>
+              <button type="button" data-action="sendScoutRecsToGamePlan">🏈 Send to Game Plan</button>
+              <button type="button" data-action="setAsActiveOpponent" data-idx="${tendenciesCurrentOpponent}">
+                ${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? "✅ Active opponent" : "🏈 Set active opponent"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -587,16 +655,35 @@ function renderOpponentDetail() {
           <button class="btn btn-sm ${tdShowFilters ? "btn-primary" : ""}" data-action="toggleTdFilters">
             🔽 Filters${activeFilters > 0 ? ` <span class="td-filter-badge">${activeFilters}</span>` : ""}
           </button>
-          <button class="btn btn-sm ${tdShowStats ? "btn-primary" : ""}" data-action="toggleTdStats">📊 Stats</button>
-          <button class="btn btn-sm ${tdGroupByGame ? "btn-primary" : ""}" data-action="toggleGroupByGame" title="Group plays by game">📅 By Game</button>
-          ${!tdBulkMode
-      ? '<button class="btn btn-sm" data-action="enterBulkMode">☑️ Select</button>'
-      : '<button class="btn btn-sm btn-primary" data-action="exitBulkMode">✕ Exit Select</button>'
-    }
+          <div class="td-toolbar-desktop-utilities">
+            <button class="btn btn-sm ${tdShowStats ? "btn-primary" : ""}" data-action="toggleTdStats">📊 Stats</button>
+            <button class="btn btn-sm ${tdGroupByGame ? "btn-primary" : ""}" data-action="toggleGroupByGame" title="Group plays by game">📅 By Game</button>
+            ${!tdBulkMode
+        ? '<button class="btn btn-sm" data-action="enterBulkMode">☑️ Select</button>'
+        : '<button class="btn btn-sm btn-primary" data-action="exitBulkMode">✕ Exit Select</button>'
+      }
+          </div>
+          <div class="td-tablet-landscape-only tool-menu-wrap td-toolbar-more-wrap" data-anchored>
+            <button type="button" class="btn btn-sm btn-secondary td-tablet-more-trigger" data-action="toggleParentOpen"
+              aria-haspopup="true" aria-expanded="false" aria-label="More film log tools">⋯ More</button>
+            <div class="tool-menu td-tablet-landscape-menu" data-action="removeParentOpen" aria-label="More film log tools">
+              <button type="button" class="${tdShowStats ? "td-menu-active" : ""}" data-action="toggleTdStats">📊 Stats</button>
+              <button type="button" class="${tdGroupByGame ? "td-menu-active" : ""}" data-action="toggleGroupByGame">📅 Group by game</button>
+              ${!tdBulkMode
+        ? '<button type="button" data-action="enterBulkMode">☑️ Select plays</button>'
+        : '<button type="button" class="td-menu-active" data-action="exitBulkMode">✕ Exit select mode</button>'
+      }
+              <span class="tool-divider" aria-hidden="true"></span>
+              <button type="button" data-action="toggleColumnPanel">👁️ Columns</button>
+              <button type="button" class="${tendenciesRapidMode ? "td-menu-active" : ""}" data-action="toggleRapidMode">⚡ ${tendenciesRapidMode ? "Exit quick chart" : "Quick chart"}</button>
+            </div>
+          </div>
         </div>
         <div class="td-toolbar-right toolbar-overflow">
-          <button class="btn btn-sm" data-action="toggleColumnPanel" title="Column visibility">👁️ Columns</button>
-          <button class="btn btn-sm ${tendenciesRapidMode ? "btn-primary" : ""}" data-action="toggleRapidMode" title="${tendenciesRapidMode ? 'Return to standard film log view' : 'Switch to all-fields rapid entry'}">⚡ ${tendenciesRapidMode ? "Exit Quick" : "Quick Chart"}</button>
+          <div class="td-toolbar-desktop-utilities">
+            <button class="btn btn-sm" data-action="toggleColumnPanel" title="Column visibility">👁️ Columns</button>
+            <button class="btn btn-sm ${tendenciesRapidMode ? "btn-primary" : ""}" data-action="toggleRapidMode" title="${tendenciesRapidMode ? 'Return to standard film log view' : 'Switch to all-fields rapid entry'}">⚡ ${tendenciesRapidMode ? "Exit Quick" : "Quick Chart"}</button>
+          </div>
           <span class="td-play-count">${filtered.length === totalPlays ? `${totalPlays} plays` : `${filtered.length} of ${totalPlays}`}</span>
         </div>
       </div>
@@ -631,7 +718,7 @@ function renderOpponentDetail() {
     </div>
   `;
 
-  historyManager.updateButtons("tendencies");
+  syncTendenciesHistoryControls();
 }
 
 function renderPlayLog() {
