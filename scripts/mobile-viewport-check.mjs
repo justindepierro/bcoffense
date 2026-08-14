@@ -1025,12 +1025,12 @@ async function probeTapDispatch(page) {
   return { supported: true, role, taps, ok: taps.every((tap) => tap.ok) };
 }
 
-// Tablet fixed-stack probe: staff tablets can expose the workspace sync status,
-// page-level Library/Actions pills, and Quick Tools at once. Drive the real
-// Script page, status API, and Quick Tools control, then compare the rendered
-// footprints. This deliberately measures visible DOM rects instead of relying
-// on CSS variables or expected offsets so a later layout change cannot silently
-// recreate a collision.
+// Tablet fixed-stack probe: roomy staff tablets can expose the workspace sync
+// status, page-level Library/Actions pills, and Quick Tools at once. A narrow
+// landscape Split View instead uses the compact utility fallback: page Actions
+// plus header-overflow Help. Drive the real Script page and compare rendered
+// footprints rather than relying on CSS variables, so a later layout change
+// cannot silently recreate a collision or remove the fallback path.
 async function probeTabletFixedStack(page) {
   const role = await page.evaluate(() => document.body?.dataset.authRole || "");
   const result = {
@@ -1044,6 +1044,7 @@ async function probeTabletFixedStack(page) {
     pairChecks: [],
     overlaps: [],
     missing: [],
+    interactions: {},
     restored: false,
     ok: false,
   };
@@ -1147,6 +1148,193 @@ async function probeTabletFixedStack(page) {
       .catch(() => false);
     if (!dockVisible) {
       result.reason = "workspace sync dock did not become visible";
+      return result;
+    }
+
+    // A landscape iPad can be running a narrow Split View/Stage Manager
+    // window. Its compact staff profile deliberately gives the lower-right
+    // slot to the page Actions FAB instead of stacking a second Quick Tools
+    // launcher above it. Prove that choice through the actual fallback path:
+    // Actions still opens, the header overflow exposes Help, and the Script
+    // template command remains an unobstructed live control. Roomy tablet
+    // profiles continue through the original three-surface stack below.
+    const compactTablet = await page.evaluate(() =>
+      document.body?.dataset.layoutProfile === "tablet-compact" &&
+      document.body?.classList.contains("is-staff-mobile-shell"),
+    );
+    if (compactTablet) {
+      const pageActionsFab = page.locator("#pageActionsFab").filter({ visible: true }).first();
+      const headerOverflow = page.locator(".header-overflow-btn").filter({ visible: true }).first();
+      const quickToolsFab = page.locator("#quickToolsFab").filter({ visible: true }).first();
+      const quickToolsVisible = await quickToolsFab.isVisible().catch(() => false);
+      const pageActionsVisible = await pageActionsFab.isVisible().catch(() => false);
+      const headerOverflowVisible = await headerOverflow.isVisible().catch(() => false);
+
+      if (quickToolsVisible || !pageActionsVisible || !headerOverflowVisible) {
+        result.supported = true;
+        result.layout = {
+          profile: "tablet-compact",
+          compactUtilityFallback: true,
+        };
+        result.surfaces = {
+          quickToolsVisible,
+          pageActionsVisible,
+          headerOverflowVisible,
+        };
+        result.reason = quickToolsVisible
+          ? "Quick Tools remained visible in the compact tablet profile"
+          : !pageActionsVisible
+            ? "Page Actions trigger not visible in the compact tablet profile"
+            : "Header overflow trigger not visible in the compact tablet profile";
+        return result;
+      }
+
+      await pageActionsFab.click({ timeout: 4000 });
+      const pageActionsOpened = await page
+        .waitForFunction(() => document.getElementById("pageActionsSheet")?.classList.contains("visible"), {
+          timeout: 2500,
+        })
+        .then(() => true)
+        .catch(() => false);
+      if (pageActionsOpened) {
+        await page.keyboard.press("Escape");
+        await page
+          .waitForFunction(() => !document.getElementById("pageActionsSheet")?.classList.contains("visible"), {
+            timeout: 2500,
+          })
+          .catch(() => {});
+      }
+
+      await headerOverflow.click({ timeout: 4000 });
+      const helpMenuItem = page.locator(".header-overflow-help-item").filter({ visible: true }).first();
+      const helpMenuVisible = await helpMenuItem.isVisible().catch(() => false);
+      let helpOpened = false;
+      let helpClosed = false;
+      if (helpMenuVisible) {
+        await helpMenuItem.click({ timeout: 4000 });
+        helpOpened = await page
+          .waitForFunction(() => document.getElementById("helpOverlay")?.classList.contains("visible"), {
+            timeout: 2500,
+          })
+          .then(() => true)
+          .catch(() => false);
+        if (helpOpened) {
+          await page.keyboard.press("Escape");
+          helpClosed = await page
+            .waitForFunction(() => !document.getElementById("helpOverlay")?.classList.contains("visible"), {
+              timeout: 2500,
+            })
+            .then(() => true)
+            .catch(() => false);
+        }
+      }
+
+      const geometry = await page.evaluate(() => {
+        const visibleRect = (el) => {
+          if (!el) return null;
+          const style = getComputedStyle(el);
+          if (
+            style.display === "none" ||
+            style.visibility === "hidden" ||
+            Number(style.opacity) === 0 ||
+            el.hidden
+          ) {
+            return null;
+          }
+          const rect = el.getBoundingClientRect();
+          if (rect.width <= 0 || rect.height <= 0) return null;
+          return {
+            left: Math.round(rect.left),
+            top: Math.round(rect.top),
+            right: Math.round(rect.right),
+            bottom: Math.round(rect.bottom),
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+          };
+        };
+        const overlaps = (a, b) =>
+          Boolean(a && b && a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1);
+        const receivesCenterHit = (element) => {
+          const rect = visibleRect(element);
+          if (!rect) return false;
+          const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+          return Boolean(hit && (hit === element || element.contains(hit)));
+        };
+        const dock = visibleRect(document.getElementById("workspaceSyncDock"));
+        const pageActionsFab = visibleRect(document.getElementById("pageActionsFab"));
+        const pageFabCluster = visibleRect(document.getElementById("pageFabCluster"));
+        const headerOverflow = visibleRect(document.querySelector(".header-overflow-btn"));
+        const quickTools = visibleRect(document.getElementById("quickTools"));
+        const quickToolsFab = visibleRect(document.getElementById("quickToolsFab"));
+        const quickToolsMenu = visibleRect(document.getElementById("quickToolsMenu"));
+        const scriptTemplate = document.querySelector(
+          '#script .period-buttons [data-action="insertPeriodFromTemplate"]',
+        );
+        const scriptTemplateRect = visibleRect(scriptTemplate);
+        const requiredSurfaces = {
+          dock,
+          pageFabCluster,
+          pageActionsFab,
+          headerOverflow,
+          scriptTemplate: scriptTemplateRect,
+        };
+        const pairs = [
+          ["dock/page-fab", dock, pageActionsFab],
+          ["page-fab/script-template", pageActionsFab, scriptTemplateRect],
+        ];
+        const pairChecks = pairs.map(([name, first, second]) => ({
+          name,
+          firstVisible: Boolean(first),
+          secondVisible: Boolean(second),
+          overlap: overlaps(first, second),
+        }));
+        return {
+          surfaces: {
+            dock,
+            pageFabCluster,
+            pageActionsFab,
+            headerOverflow,
+            quickTools,
+            quickToolsFab,
+            quickToolsMenu,
+            scriptTemplate: scriptTemplateRect,
+          },
+          quickToolsAbsent: !quickTools && !quickToolsFab && !quickToolsMenu,
+          missing: Object.entries(requiredSurfaces).flatMap(([name, rect]) => rect ? [] : [name]),
+          pairChecks,
+          overlaps: pairChecks.filter((check) => check.overlap).map((check) => check.name),
+          scriptTemplateReceivesHit: receivesCenterHit(scriptTemplate),
+        };
+      });
+      result.supported = true;
+      result.layout = {
+        profile: "tablet-compact",
+        compactUtilityFallback: true,
+      };
+      result.surfaces = geometry.surfaces;
+      result.missing = geometry.missing;
+      result.pairChecks = geometry.pairChecks;
+      result.overlaps = geometry.overlaps;
+      result.interactions = {
+        pageActionsOpened,
+        helpMenuVisible,
+        helpOpened,
+        helpClosed,
+        quickToolsAbsent: geometry.quickToolsAbsent,
+        scriptTemplateReceivesHit: geometry.scriptTemplateReceivesHit,
+      };
+      result.ok =
+        geometry.quickToolsAbsent &&
+        pageActionsOpened &&
+        helpMenuVisible &&
+        helpOpened &&
+        helpClosed &&
+        geometry.scriptTemplateReceivesHit &&
+        geometry.missing.length === 0 &&
+        geometry.overlaps.length === 0;
+      if (!result.ok) {
+        result.reason = "compact tablet utility fallback did not complete";
+      }
       return result;
     }
 

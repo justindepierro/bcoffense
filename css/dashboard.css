@@ -1349,6 +1349,15 @@ body.is-phone-screen[data-auth-role="player"] .player-home-card::before {
     border-radius: var(--radius-lg);
   }
 
+  /* On a compact tablet the hero becomes a vertical stack. The desktop
+     flex-basis (360px) is useful beside the greeting, but turns into blank
+     vertical space once the card is below it. Keep the phone's own compact
+     treatment intact while letting the tablet card fit its actual content. */
+  body.shell-tablet.is-mobile-screen.is-player-mobile-shell:not(.is-phone-screen)
+    .player-home-today-card {
+    flex: 0 0 auto;
+  }
+
   .player-home-today-metrics {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

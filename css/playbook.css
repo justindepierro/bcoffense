@@ -7322,11 +7322,12 @@ body.shell-tablet #playbook .pb-card-actions {
   }
 }
 
-/* T-009 P1 — Player Playbook summary touch targets.
+/* T-009 P1 — Player Playbook summary and filter touch targets.
    The phone study surface deliberately keeps its compact 36px summary
    controls. A true tablet study shell has room for the player’s independent
-   actions and quick-filter pills, so restore the shared 44px target without
-   changing staff workbench density, the editor/report layers, or print. */
+   actions, quick-filter pills, and filter-sheet choices, so restore the
+   shared 44px target without changing staff workbench density, the
+   editor/report layers, or print. */
 @media screen and (pointer: coarse) {
   body.shell-tablet.is-mobile-screen.is-player-mobile-shell
     #playbook
@@ -7341,8 +7342,16 @@ body.shell-tablet #playbook .pb-card-actions {
     min-height: var(--tap-min);
     touch-action: manipulation;
   }
+
+  body.shell-tablet.is-mobile-screen.is-player-mobile-shell:not(.is-phone-screen)
+    #playerPlaybookFilterOverlay
+    .pb-player-filter-option {
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+    touch-action: manipulation;
+  }
 }
-/* End T-009 P1 Player Playbook summary touch targets. */
+/* End T-009 P1 Player Playbook summary and filter touch targets. */
 
 /* T-009 P1 — Playbook authoring and cleanup touch targets.
    These are coach-only working controls that remain intentionally compact on

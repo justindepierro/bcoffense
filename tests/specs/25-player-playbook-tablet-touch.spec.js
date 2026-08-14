@@ -109,6 +109,12 @@ test.describe("Player Playbook tablet touch targets", () => {
     await filtersAction.click();
     const filterOverlay = page.locator("#playerPlaybookFilterOverlay");
     await expect(filterOverlay).toBeVisible();
+    const filterOptionRects = await waitForTouchTargets(
+      page,
+      "#playerPlaybookFilterOverlay .pb-player-filter-option",
+      6,
+    );
+    filterOptionRects.forEach((rect) => expectTouchTarget(rect, `Filter choice ${rect.label}`));
     await filterOverlay.getByRole("button", { name: /Close filters/i }).click();
     await expect(filterOverlay).toHaveCount(0);
 
@@ -119,5 +125,41 @@ test.describe("Player Playbook tablet touch targets", () => {
     await expect(filterOverlay).toHaveCount(0);
 
     await assertNoHorizontalOverflow(page);
+  });
+
+  test("compact iPad portrait keeps Today's work content-height after stacking the home hero", async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "ipad-portrait",
+      "This regression applies only to the compact portrait tablet shell.",
+    );
+
+    await login(page, { role: "player", username: "player", password: "password" });
+    await dismissFirstUse(page);
+    await goToTab(page, "dashboard");
+
+    const layout = await page.evaluate(() => {
+      const read = (selector) => {
+        const element = document.querySelector(selector);
+        if (!element) return null;
+        const rect = element.getBoundingClientRect();
+        return { top: rect.top, height: rect.height };
+      };
+      return {
+        shell: document.body.className,
+        viewport: { width: window.innerWidth, height: window.innerHeight },
+        hero: read("#playerDashboardHome .player-home-hero"),
+        today: read("#playerDashboardHome .player-home-today-card"),
+        command: read("#playerDashboardHome .player-home-command"),
+      };
+    });
+
+    expect(layout.shell).toContain("shell-tablet");
+    expect(layout.shell).toContain("is-player-mobile-shell");
+    expect(layout.today).not.toBeNull();
+    expect(layout.hero).not.toBeNull();
+    expect(layout.command).not.toBeNull();
+    expect(layout.today?.height || 0).toBeLessThan(240);
+    expect(layout.hero?.height || 0).toBeLessThan(360);
+    expect(layout.command?.top || 0).toBeLessThan(layout.viewport.height);
   });
 });

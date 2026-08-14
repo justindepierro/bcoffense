@@ -25,7 +25,7 @@ This file complements [MOBILE_AUDIT.md](MOBILE_AUDIT.md). It does not replace, r
 - Touch/iPadOS devices through a 1024px short side and 1366px long side become `.shell-tablet` / `.is-mobile-screen`. The shell now separates layout viewport, visual viewport, and device geometry in [js/app-shell.js](js/app-shell.js), so opening the software keyboard cannot reclassify an iPad as a phone or reverse its physical orientation.
 - Tablet profiles are now explicit: `tablet-portrait`, `tablet-landscape`, and `tablet-compact`. The compact profile keeps a narrow Split View/Stage Manager window in the document shell instead of activating the landscape coach rail.
 - Staff portrait tablets now use a document-scroll bridge in [css/responsive.css](css/responsive.css); roomy staff landscape tablets truthfully report panel scroll ownership and retain the fixed shell/rail in [css/layout.css](css/layout.css). Live verification confirms rail → More → Quiz is visible and scrollable; it is not an open defect.
-- Staff tablet floating controls now occupy named stack slots: workspace sync at the usable edge, page actions above it, and Quick Tools above that. The shared tablet matrix measures the rendered rectangles instead of relying on CSS values.
+- Staff tablet floating controls now occupy named stack slots: workspace sync at the usable edge, page actions above it, and Quick Tools above that on roomy profiles. The compact Split View profile deliberately suppresses Quick Tools and exposes Help in the existing header overflow, so two fixed launchers never compete for the same corner. The shared tablet matrix measures the rendered rectangles instead of relying on CSS values.
 - The 44px tablet target gate now covers the player Dashboard refresh control, and the fixed-stack/rail test runs in `npm run test:tablet` as part of `npm run test:quality`.
 - Player/study navigation now follows one explicit policy: narrow/short touch windows use the existing fixed bottom strip; roomy tablets retain sticky top tabs. The shell reserves only the chrome that is actually rendered.
 - The first blocking-layer P0 is complete: Signals selector, Call Sheet Constraints, and Playbook Workflow now use the same focus, Escape, scroll-lock, safe-area, and return-focus lifecycle. The remaining layer work is the P1 migration of legacy surfaces and raw viewport-unit limits.
@@ -51,6 +51,14 @@ This file complements [MOBILE_AUDIT.md](MOBILE_AUDIT.md). It does not replace, r
 - T-011e completes the two intentionally deferred blocking surfaces: Playbook Print keeps its drawer visual while using a safe-area LayerManager lifecycle with an owned inner scroller, managed Escape, delayed iPad initial-focus handoff, and nested Reorder return focus; the Game Plan phone Bulk sheet is now a body-level managed dialog that survives board re-renders and closes safely on navigation. Their focused Playwright checks and unit contracts pass.
 - T-009 Playbook authoring/Data Cleanup completion: tablet staff authoring controls, Data Cleanup fields/actions, and Category Cleanup controls now receive screen-only coarse-pointer targets. Native WebKit selects use explicit 44px heights, rather than relying on `min-height`; portrait and 1366x768 landscape flows cover editor, cleanup, suggest/Keep, merge, and category-cleanup interactions.
 - Cache version: `v1693` in both `index.html` and `sw.js` so installed/PWA clients receive the shell and CSS changes together.
+
+### Visual UX closeout — 2026-08-13
+
+- A role-by-role WebKit visual pass closed the observed collision and density defects rather than relying only on breakpoint coverage: Call Sheet page/orientation controls now remain separate 44px targets, and the short compact profile hides the redundant Game Plan pull-tab instead of letting it cover Finalize.
+- The compact staff policy now has one lower-corner primary action surface: Page Actions remains visible, Help is available from header overflow, and Quick Tools is intentionally absent. Roomy landscape reuses the vacant page-action slot for Quick Tools, clear of Script and Call Sheet commands. The required harness and [compact WebKit regression](tests/specs/29-compact-tablet-quick-tools.spec.js) prove both behaviors.
+- Player compact Dashboard no longer reserves a 360px empty “Today” card after its hero stacks; Player Playbook filter choices are 44px; and the Questions header action stays an accessible icon-only control instead of wrapping into the compact header.
+- Wristband staff-landscape Library/Actions/Save controls now take one readable row rather than splitting words inside the post-rail workspace. [Call Sheet portrait control coverage](tests/specs/28-callsheet-ipad-portrait-controls.spec.js) and the expanded WebKit release smoke prevent the regressions.
+- Final quality proof: `npm run test:quality` passed — 24/24 Chromium tablet matrix cases, 37 WebKit iPad checks with 13 intentional profile-scoped skips, and 5/5 local hydration checks. The only remaining visual note is optional Player Playbook quick-filter edge affordance; the row is functional and intentionally backed by the full Filters entry.
 
 ### Second-pass audit — 2026-08-13
 
@@ -107,7 +115,7 @@ This pass exercised real touch-emulated tablet shells after the core shell work.
   - Create named fixed slots and clearance variables, for example --fixed-bottom-clearance and --fixed-action-slot.
   - Allow only one primary launcher in a slot. Consolidate, move, or suppress Quick Tools when page actions are active; offset sync status from the interactive launcher.
   - Give every document-scroll panel bottom padding from the same clearance variable.
-  - Completed: named slots reserve the usable edge, page-action cluster, and Quick Tools stack; portrait/landscape role checks measure actual visible rectangles and restore their UI state after probing.
+  - Completed: named slots reserve the usable edge, page-action cluster, and Quick Tools stack; compact tablet deliberately uses Page Actions plus header-overflow Help instead of Quick Tools. Portrait/landscape role checks measure actual visible rectangles and restore their UI state after probing.
   - Acceptance: on 744x768, 744x1024, 768x1024, 820x1180, 834x1112, 1024x1366, and 1024x768 staff screens, Page Actions/Library, Quick Tools, sync status, toast, and any dock never overlap or obscure one another.
 
 - [x] **T-004 — Player/study navigation consistency**

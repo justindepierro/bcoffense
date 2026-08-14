@@ -523,6 +523,17 @@ body[data-auth-role="player"] .player-study-state strong {
     border-radius: var(--radius-round);
   }
 
+  /* The player Questions control is a primary portal affordance, not a
+     secondary item eligible for the overflow menu. At compact tablet widths
+     it shares the fixed 46px header target with the icon-only controls, so
+     keep its accessible name while hiding only the visual text instead of
+     letting “My Questions” wrap over the header chrome. */
+  body.is-mobile-screen[data-auth-role="player"]
+    .pport-header-btn
+    .header-action-label {
+    display: none;
+  }
+
   /* M-022: collapse secondary header actions into the overflow menu on phone */
   body.is-mobile-screen .header-action-secondary {
     display: none;

@@ -4509,6 +4509,36 @@ body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .quick-tools {
   bottom: var(--tablet-quick-tools-bottom);
 }
 
+/* A landscape iPad in Split View can be only 744px wide. In that compact
+   staff workspace the essential page Actions FAB already owns the usable
+   lower-right slot, so a second fixed utility tray makes the corner feel
+   crowded and can steal its hit area. Keep Help in the header overflow at
+   this one profile; Print is already there and Script Display lives in Page
+   Actions. Phones, roomy tablets, desktop, and player study surfaces retain
+   their established utility treatment. */
+body.is-staff-mobile-shell[data-layout-profile="tablet-compact"] #quickTools {
+  display: none;
+}
+
+.header-overflow-menu button.header-overflow-help-item {
+  display: none;
+}
+
+body.is-staff-mobile-shell[data-layout-profile="tablet-compact"]
+  .header-overflow-menu
+  button.header-overflow-help-item {
+  display: block;
+}
+
+/* Landscape staff tablets intentionally replace the phone-style page-action
+   pills with inline toolbar actions. Reclaim that now-empty middle slot for
+   Quick Tools instead of leaving it above the live workbench, where it can
+   cover Call Sheet, Script, and board controls in a short iPad viewport. */
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
+  .quick-tools {
+  bottom: var(--tablet-page-fab-bottom);
+}
+
 /* Desktop header Library button — warning-orange to stand out (dark text for contrast) */
 .page-library-btn {
   background: var(--color-warning);

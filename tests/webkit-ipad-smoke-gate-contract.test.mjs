@@ -25,6 +25,7 @@ const requiredSpecs = [
   "04-responsive.spec.js",
   "11-playbook-tablet-drawers.spec.js",
   "12-tablet-blocking-layers.spec.js",
+  "13-wristband-tablet-rail.spec.js",
   "15-gameplan-tablet-rail.spec.js",
   "16-tablet-usable-height-layers.spec.js",
   "19-player-presentation-diagram-cache.spec.js",
@@ -32,6 +33,8 @@ const requiredSpecs = [
   "24-playbook-deferred-layers.spec.js",
   "25-player-playbook-tablet-touch.spec.js",
   "26-playbook-print-layer.spec.js",
+  "28-callsheet-ipad-portrait-controls.spec.js",
+  "29-compact-tablet-quick-tools.spec.js",
 ];
 
 assert.equal(

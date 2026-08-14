@@ -103,6 +103,39 @@ async function getWristbandRailState(page) {
   });
 }
 
+async function getWristbandWorkspaceActionState(page) {
+  return page.evaluate(() => {
+    const rect = (element) => {
+      const value = element?.getBoundingClientRect();
+      return value && {
+        top: value.top,
+        right: value.right,
+        bottom: value.bottom,
+        left: value.left,
+        width: value.width,
+        height: value.height,
+      };
+    };
+    const groups = Array.from(document.querySelectorAll("#wristband .wb-command-group"));
+    const primary = document.querySelector("#wristband .wb-command-group-primary");
+    return {
+      priorGroupBottom: Math.max(
+        0,
+        ...groups.filter((group) => group !== primary).map((group) => rect(group)?.bottom || 0),
+      ),
+      primary: rect(primary),
+      buttons: Array.from(primary?.querySelectorAll(".wb-command-group-actions > .btn") || []).map((button) => ({
+        text: button.textContent?.trim() || "",
+        rect: rect(button),
+        clientWidth: button.clientWidth,
+        scrollWidth: button.scrollWidth,
+        whiteSpace: getComputedStyle(button).whiteSpace,
+        overflowWrap: getComputedStyle(button).overflowWrap,
+      })),
+    };
+  });
+}
+
 async function assertLandscapeRail(page, viewportWidth) {
   const state = await getWristbandRailState(page);
   expect(state.bodyClass).toContain("shell-tablet");
@@ -147,6 +180,16 @@ test.describe("Wristband tablet landscape rail", () => {
     const openState = await assertLandscapeRail(page, 1024);
     expect(openState.scroll.resultsHeight).toBeGreaterThan(openState.scroll.resultsClient);
     expect(openState.scroll.builderHeight).toBeGreaterThan(openState.scroll.builderClient);
+
+    const workspaceActions = await getWristbandWorkspaceActionState(page);
+    expect(workspaceActions.primary?.top || 0).toBeGreaterThan(workspaceActions.priorGroupBottom);
+    expect(workspaceActions.buttons).toHaveLength(3);
+    for (const button of workspaceActions.buttons) {
+      expect(button.rect?.width || 0).toBeGreaterThan(100);
+      expect(button.scrollWidth).toBeLessThanOrEqual(button.clientWidth);
+      expect(button.whiteSpace).toBe("nowrap");
+      expect(button.overflowWrap).toBe("normal");
+    }
 
     const deliberateScroll = await page.evaluate(() => {
       const results = document.getElementById("wbAvailablePlays");

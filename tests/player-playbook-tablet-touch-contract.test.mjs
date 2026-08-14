@@ -1,10 +1,10 @@
 /**
- * T-009 P1 Player Playbook summary touch contract.
+ * T-009 P1 Player Playbook summary and filter touch contract.
  *
  * Player and managed-coach study shells retain compact phone controls, while
- * a real tablet shell gives every independently tappable summary action and
- * quick filter its full 44px target. Keep that boundary out of staff authoring
- * surfaces, editor/report layers, and print.
+ * a real tablet shell gives every independently tappable summary action,
+ * quick filter, and filter-sheet choice its full 44px target. Keep that
+ * boundary out of staff authoring surfaces, editor/report layers, and print.
  */
 
 import assert from "node:assert/strict";
@@ -30,14 +30,19 @@ assert.match(
   "the player summary retains both immediate and full-sheet quick-filter actions",
 );
 
-const touchBlockStart = css.indexOf("/* T-009 P1 — Player Playbook summary touch targets.");
-const touchBlockEnd = css.indexOf("/* End T-009 P1 Player Playbook summary touch targets. */", touchBlockStart);
+const touchBlockStart = css.indexOf("/* T-009 P1 — Player Playbook summary and filter touch targets.");
+const touchBlockEnd = css.indexOf("/* End T-009 P1 Player Playbook summary and filter touch targets. */", touchBlockStart);
 const touchBlock = css.slice(touchBlockStart, touchBlockEnd);
 assert.ok(touchBlockStart >= 0 && touchBlockEnd > touchBlockStart, "Player Playbook defines a dedicated tablet touch block");
 assert.match(
   touchBlock,
   /@media screen and \(pointer: coarse\) \{[\s\S]*?body\.shell-tablet\.is-mobile-screen\.is-player-mobile-shell[\s\S]*?#playerPlaybookSummary[\s\S]*?\.pb-player-summary__actions[\s\S]*?\.btn,[\s\S]*?body\.shell-tablet\.is-mobile-screen\.is-player-mobile-shell[\s\S]*?#playerPlaybookSummary[\s\S]*?\.pb-player-summary__filter-pill \{[\s\S]*?min-width: var\(--tap-min\);[\s\S]*?min-height: var\(--tap-min\);[\s\S]*?touch-action: manipulation;/,
-  "only Player Playbook actions and quick-filter pills become 44px coarse-pointer tablet targets",
+  "Player Playbook actions and quick-filter pills become 44px coarse-pointer tablet targets",
+);
+assert.match(
+  touchBlock,
+  /body\.shell-tablet\.is-mobile-screen\.is-player-mobile-shell:not\(\.is-phone-screen\)[\s\S]*?#playerPlaybookFilterOverlay[\s\S]*?\.pb-player-filter-option \{[\s\S]*?min-width: var\(--tap-min\);[\s\S]*?min-height: var\(--tap-min\);[\s\S]*?touch-action: manipulation;/,
+  "only non-phone player tablet filter choices become 44px coarse-pointer targets",
 );
 assert.match(
   css,

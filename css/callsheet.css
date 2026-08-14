@@ -5981,3 +5981,154 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
     min-height: var(--coach-workbench-control-height);
   }
 }
+
+/* ── iPad Call Sheet toolbar: keep page controls discrete and touch-safe ──
+   The four page choices and the two orientation choices used to share a
+   compressed grid track at compact tablet widths. That left hidden/overlapping
+   targets at 744px and desktop-density 24px targets on portrait iPads just
+   above the mobile-shell breakpoint. Keep the groups in the normal toolbar
+   flow, give the page choices a single flexible row, and retain the regular
+   desktop density outside the iPad portrait range. */
+@media screen and (min-width: 641px) and (max-width: 820px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-toolbar-left {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    grid-template-columns: none;
+    gap: var(--coach-workbench-toolbar-gap);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-toolbar-left
+    .cs-title {
+    flex: 0 0 auto;
+    grid-column: auto;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-toolbar-left
+    .cs-toggle-group {
+    width: auto;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-toggle-group.page-toggle {
+    flex: 1 1 360px;
+    min-width: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-toggle-group.page-toggle
+    .cs-toggle {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 44px;
+    min-height: 44px;
+    padding-inline: 8px;
+    overflow: hidden;
+    overflow-wrap: normal;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .orientation-toggle {
+    flex: 0 0 auto;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .orientation-toggle
+    .cs-toggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding-inline: 0;
+  }
+}
+
+/* iPad portrait just above the compact-shell cutoff still needs actual touch
+   controls. This deliberately does not change 1024px landscape workbenches. */
+@media screen and (min-width: 821px) and (max-width: 1180px) and (min-height: 900px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-toolbar-left {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    grid-template-columns: none;
+    gap: var(--coach-workbench-toolbar-gap);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-toolbar-left
+    .cs-title {
+    flex: 0 0 auto;
+    grid-column: auto;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-toolbar-left
+    .cs-toggle-group {
+    width: auto;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-toggle-group.page-toggle {
+    flex: 1 1 420px;
+    min-width: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-toggle-group.page-toggle
+    .cs-toggle {
+    flex: 1 1 0;
+    min-width: 72px;
+    height: 44px;
+    min-height: 44px;
+    padding-inline: 9px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .orientation-toggle {
+    flex: 0 0 auto;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .orientation-toggle
+    .cs-toggle {
+    width: 48px;
+    min-width: 48px;
+    height: 44px;
+    min-height: 44px;
+    padding-inline: 0;
+  }
+}
+
+/* The fixed Game Plan pull-tab is useful on a full-height Call Sheet, but on
+   a short compact tablet it lands directly over the Finalize control. Leave
+   the normal Call Sheet and Game Plan destinations available, while removing
+   this redundant floating launcher only in that constrained height tier. */
+@media screen and (min-width: 641px) and (max-width: 820px) and (max-height: 820px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell[data-active-tab="callsheet"]
+    .gp-drawer-tab {
+    display: none;
+  }
+}

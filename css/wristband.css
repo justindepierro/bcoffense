@@ -3117,6 +3117,26 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   }
 }
 
+/* The landscape tablet rail leaves the builder narrower than the viewport.
+   Keep its three workspace actions together on their own row, rather than
+   squeezing each into a third of the shared History/Design row. */
+@media screen and (max-width: 1180px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-command-group-primary {
+    flex: 1 0 100%;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen:not([data-auth-role="player"])
+    #wristband
+    .wb-command-group-primary
+    .wb-command-group-actions
+    > .btn {
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+}
+
 /* Phase 12 #219 — Compact subtitle on tablet (641–1023px) */
 @media screen and (min-width: 641px) and (max-width: 1023px) {
   .wb-page-header p {
