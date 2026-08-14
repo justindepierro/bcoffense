@@ -218,11 +218,12 @@ assert.match(mismatchPayload.error, /restores exact matches only/i, "a mismatche
 assert.equal(fixture.env.CLIPS.calls.put.length, putsBeforeMismatch, "a mismatched recovery cannot overwrite the missing immutable key");
 assert.equal(fixture.writes, 0, "a mismatched recovery cannot advance the D1 pointer");
 
-const [filters, images, gamePlanRender, playbookRender] = await Promise.all([
+const [filters, images, gamePlanRender, playbookRender, presentation] = await Promise.all([
   source("js/playbook-filters.js"),
   source("js/play-images.js"),
   source("js/gameplan-render.js"),
   source("js/playbook-render.js"),
+  source("js/play-presentation.js"),
 ]);
 assert.match(
   filters,
@@ -253,6 +254,21 @@ assert.match(
   playbookRender,
   /\["unpublished", "unavailable"\]\.includes\(remoteImage\?\.status\)[\s\S]*?_playbookKnownCloudDiagramMediaIds\.delete/,
   "Playbook cloud markers clear when the pointer is unavailable",
+);
+assert.match(
+  playbookRender,
+  /function _playerPlaybookDiagramStatusCopy\(status\)[\s\S]*?status === "unavailable"[\s\S]*?Diagram unavailable/,
+  "the player card gives a dangling cloud file a distinct, non-recovery label",
+);
+assert.match(
+  playbookRender,
+  /`unpublished` is the authoritative no-player-diagram result[\s\S]*?No diagram yet/,
+  "an unpublished player diagram remains a calm empty state rather than a restore warning",
+);
+assert.match(
+  presentation,
+  /isPlayerStudyView[\s\S]*?Diagram unavailable[\s\S]*?cloud file needs to be restored by a coach/,
+  "player presentation hides recovery jargon while staff retain the actionable recovery diagnostic",
 );
 
 console.log("diagram cloud availability contract: dangling pointers, exact repair, and mismatch containment passed");

@@ -2040,9 +2040,9 @@ function updatePlayPresentationDiagramStatus(status, label) {
 function getPlayPresentationDiagramStatusCopy(status) {
   if (status === "unpublished") {
     return {
-      message: "Diagram has not been published for players yet.",
-      label: "Diagram unpublished",
-      pill: "unpublished",
+      message: "No diagram has been added to this play yet.",
+      label: "No diagram",
+      pill: "empty",
     };
   }
   if (status === "offline") {
@@ -2053,6 +2053,17 @@ function getPlayPresentationDiagramStatusCopy(status) {
     };
   }
   if (status === "unavailable") {
+    const currentUser =
+      typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    const isPlayerStudyView = currentUser?.role === "player" ||
+      (currentUser?.role === "coach" && currentUser?.managedCoach === true);
+    if (isPlayerStudyView) {
+      return {
+        message: "This diagram is not available right now. You can still review the call and ask your coach.",
+        label: "Diagram unavailable",
+        pill: "error",
+      };
+    }
     return {
       message: "This diagram is published, but its cloud file needs to be restored by a coach.",
       label: "Diagram needs restore",
@@ -2061,15 +2072,15 @@ function getPlayPresentationDiagramStatusCopy(status) {
   }
   if (status === "load-error") {
     return {
-      message: "Diagram is published but could not be loaded. Reload when your connection is stable.",
+      message: "Diagram could not be loaded right now. Try again when you are back online.",
       label: "Diagram issue",
       pill: "error",
     };
   }
   return {
-    message: "No player diagram is available for this play yet.",
-    label: "Needs diagram",
-    pill: "missing",
+    message: "No diagram has been added to this play yet.",
+    label: "No diagram",
+    pill: "empty",
   };
 }
 
@@ -2402,7 +2413,7 @@ async function loadPlayPresentationDiagram(play, token) {
   if (!window.playImages) {
     const copy = getPlayPresentationDiagramStatusCopy("missing");
     setPlayPresentationDiagramMessage(frame, copy.message);
-    updatePlayPresentationDiagramStatus("missing", "Needs diagram");
+    updatePlayPresentationDiagramStatus(copy.pill, copy.label);
     return;
   }
 

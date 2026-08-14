@@ -743,6 +743,12 @@ body.display-mode-installed .pp-header {
   color: var(--color-danger);
 }
 
+.pp-player-status-pill[data-status="empty"] {
+  border-color: color-mix(in srgb, var(--color-text-muted) 26%, var(--color-border-light));
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+}
+
 .pp-player-status-pill[data-status="unpublished"] {
   border-color: color-mix(in srgb, var(--color-warning) 38%, var(--color-border-light));
   background: var(--color-warning-light);

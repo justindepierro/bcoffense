@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require("@playwright/test");
-const { login } = require("./helpers");
+const { login, goToTab } = require("./helpers");
 
 const ONE_PIXEL_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9L+54AAAAASUVORK5CYII=",
@@ -259,7 +259,7 @@ test.describe("Player Presentation diagram cache", () => {
     ]));
   });
 
-  test("shows a distinct restore state when the published manifest has no R2 binary", async ({ page }) => {
+  test("shows a player-friendly unavailable state when the published manifest has no R2 binary", async ({ page }) => {
     const mediaId = "play:player-presentation-missing-r2-regression";
     const imageRequests = [];
 
@@ -315,10 +315,107 @@ test.describe("Player Presentation diagram cache", () => {
 
     const presentation = page.locator("#playPresentationOverlay");
     await expect(presentation).toBeVisible();
-    await expect(presentation.locator("#playPresentationDiagramStatus")).toContainText("Diagram needs restore");
-    await expect(presentation).toContainText(/cloud file needs to be restored by a coach/i);
+    await expect(presentation.locator("#playPresentationDiagramStatus")).toContainText("Diagram unavailable");
+    await expect(presentation).toContainText(/not available right now/i);
+    await expect(presentation).not.toContainText(/restore/i);
     await expect(presentation).not.toContainText(/connection is stable/i);
+    const coachRecoveryCopy = await page.evaluate(() => {
+      window.getCurrentAuthUser = () => ({ username: "coach", role: "coach", label: "Coach" });
+      return getPlayPresentationDiagramStatusCopy("unavailable");
+    });
+    expect(coachRecoveryCopy.label).toBe("Diagram needs restore");
+    expect(coachRecoveryCopy.message).toMatch(/cloud file needs to be restored by a coach/i);
     const encodedMediaId = encodeURIComponent(mediaId);
     expect(imageRequests).toEqual([`/images/manifest?sig=${encodedMediaId}`]);
+  });
+
+  test("uses a calm type-aware empty card for no diagram and keeps a dangling cloud file distinct", async ({ page }) => {
+    const noDiagramMediaId = "play:player-card-no-diagram";
+    const unavailableMediaId = "play:player-card-unavailable-diagram";
+    const manifests = {
+      [noDiagramMediaId]: { ok: true, published: false },
+      [unavailableMediaId]: {
+        ok: true,
+        published: true,
+        available: false,
+        version: "published-missing-r2-v1",
+      },
+    };
+
+    await login(page, { role: "player", username: "player" });
+    await page.route("**/images/**", async (route) => {
+      const requestUrl = new URL(route.request().url());
+      if (requestUrl.pathname === "/images/batch-manifest") {
+        const requestBody = JSON.parse(route.request().postData() || "{}");
+        const requested = Array.isArray(requestBody.sigs) ? requestBody.sigs : [];
+        const batch = Object.fromEntries(requested.map((sig) => [
+          sig,
+          { sig, ...(manifests[sig] || { ok: true, published: false }) },
+        ]));
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ ok: true, manifests: batch }),
+        });
+        return;
+      }
+      if (requestUrl.pathname === "/images/manifest") {
+        const sig = requestUrl.searchParams.get("sig") || "";
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ sig, ...(manifests[sig] || { ok: true, published: false }) }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
+    await goToTab(page, "playbook");
+    await page.evaluate((fixture) => {
+      plays = fixture.map((play) => ({ ...play }));
+      filteredPlays = plays.slice();
+      currentPage = 0;
+      window.playImages.clearRemoteManifestCache?.();
+      if (typeof invalidateFilterCache === "function") invalidateFilterCache();
+      if (typeof populateFilters === "function") populateFilters();
+      if (typeof renderPlaybook === "function") renderPlaybook();
+    }, [
+      {
+        id: "player-card-no-diagram-source",
+        mediaId: noDiagramMediaId,
+        type: "Run",
+        back: "Black",
+        personnel: "11",
+        formation: "Trips",
+        play: "No Diagram Run",
+      },
+      {
+        id: "player-card-unavailable-source",
+        mediaId: unavailableMediaId,
+        type: "Pass",
+        back: "Blue",
+        personnel: "10",
+        formation: "Doubles",
+        play: "Unavailable Diagram Pass",
+      },
+    ]);
+
+    const noDiagramCard = page.locator(".pb-card", { hasText: "No Diagram Run" });
+    const noDiagramMedia = noDiagramCard.locator(".pb-card-media");
+    await expect(noDiagramMedia).toHaveAttribute("data-pb-diagram-state", "unpublished");
+    await expect(noDiagramMedia).toHaveClass(/pb-card-media--empty/);
+    await expect(noDiagramMedia.locator(".pb-card-media__empty")).toContainText("🏈");
+    await expect(noDiagramMedia).toContainText("Run · Black");
+    await expect(noDiagramMedia).toContainText("No diagram yet");
+    await expect(noDiagramCard.locator("[data-pb-diagram-badge]")).toHaveText("No diagram");
+
+    const unavailableCard = page.locator(".pb-card", { hasText: "Unavailable Diagram Pass" });
+    const unavailableMedia = unavailableCard.locator(".pb-card-media");
+    await expect(unavailableMedia).toHaveAttribute("data-pb-diagram-state", "unavailable");
+    await expect(unavailableMedia).toHaveClass(/pb-card-media--unavailable/);
+    await expect(unavailableMedia).toContainText("Diagram unavailable");
+    await expect(unavailableCard.locator("[data-pb-diagram-badge]")).toHaveText("Diagram unavailable");
+    await expect(unavailableCard).not.toContainText(/restore/i);
   });
 });

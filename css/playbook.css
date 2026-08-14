@@ -3491,6 +3491,50 @@ body.shell-tablet .pb-drawer-close {
   background: var(--color-white);
 }
 
+.pb-card-media__empty {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  max-width: calc(100% - 28px);
+  color: var(--color-text-secondary);
+  text-align: left;
+  pointer-events: none;
+}
+
+.pb-card-media__empty-icon {
+  flex: 0 0 auto;
+  font-size: clamp(26px, 4vw, 38px);
+  line-height: 1;
+}
+
+.pb-card-media__empty-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pb-card-media__empty-copy strong,
+.pb-card-media__empty-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pb-card-media__empty-copy strong {
+  color: currentColor;
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+}
+
+.pb-card-media__empty-copy span {
+  color: color-mix(in srgb, currentColor 74%, var(--color-text-muted));
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+}
+
 .pb-card-media__state {
   position: relative;
   z-index: 1;
@@ -3510,31 +3554,19 @@ body.shell-tablet .pb-drawer-close {
   color: var(--color-text-inverse);
 }
 
-/* Reels-style media loading: never blank (skeleton shimmer while loading) and
-   smooth fade-in on load instead of a hard pop. The shimmer only runs until the
-   diagram loads, then stops. Theme-aware via --color-text at low opacity. */
+/* Player study cards should never read as a blank, busy loading wall. Keep a
+   quiet static wash behind the football/type marker while media resolves. */
 .pb-card-media:not(.is-loaded)::after {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 0;
   background: linear-gradient(
-    100deg,
-    transparent 30%,
-    color-mix(in srgb, var(--color-text) 12%, transparent) 50%,
-    transparent 70%
+    135deg,
+    color-mix(in srgb, var(--color-primary) 7%, transparent),
+    transparent 62%
   );
-  background-size: 220% 100%;
-  animation: pb-media-shimmer 1.25s ease-in-out infinite;
   pointer-events: none;
-}
-
-@keyframes pb-media-shimmer {
-  from {
-    background-position: 180% 0;
-  }
-  to {
-    background-position: -80% 0;
-  }
 }
 
 .pb-card-media img,
@@ -3546,6 +3578,14 @@ body.shell-tablet .pb-drawer-close {
 .pb-card-media.is-loaded img,
 .pb-card-media.is-loaded .smart-diagram-canvas {
   opacity: 1;
+}
+
+.pb-card-media.is-loaded .pb-card-media__empty {
+  visibility: hidden;
+}
+
+.pb-card-media.is-loaded::after {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3571,6 +3611,84 @@ body.shell-tablet .pb-drawer-close {
     linear-gradient(135deg, var(--color-danger-light), transparent 62%),
     var(--color-bg-light);
   cursor: default;
+}
+
+/* A play without a published diagram is still a useful study card. Reuse the
+   app's established play-type palette so the empty tile communicates the call
+   family without pretending there is a diagram to recover. */
+.pb-card-media--empty {
+  --pb-card-empty-bg: var(--color-bg-lighter);
+  --pb-card-empty-fg: var(--color-text-secondary);
+  border-color: color-mix(
+    in srgb,
+    var(--pb-card-empty-fg) 30%,
+    var(--color-border-light)
+  );
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--pb-card-empty-fg) 13%, transparent),
+      transparent 66%
+    ),
+    var(--pb-card-empty-bg);
+  color: var(--pb-card-empty-fg);
+}
+
+.pb-card-media--empty::after,
+.pb-card-media--unavailable::after {
+  display: none;
+}
+
+.pb-card-media--empty[data-pb-diagram-type="run"] {
+  --pb-card-empty-bg: var(--color-type-run-bg);
+  --pb-card-empty-fg: var(--color-type-run-fg);
+}
+
+.pb-card-media--empty[data-pb-diagram-type="pass"] {
+  --pb-card-empty-bg: var(--color-type-pass-bg);
+  --pb-card-empty-fg: var(--color-type-pass-fg);
+}
+
+.pb-card-media--empty[data-pb-diagram-type="rpo"] {
+  --pb-card-empty-bg: var(--color-type-rpo-bg);
+  --pb-card-empty-fg: var(--color-type-rpo-fg);
+}
+
+.pb-card-media--empty[data-pb-diagram-type="screen"] {
+  --pb-card-empty-bg: var(--color-type-screen-bg);
+  --pb-card-empty-fg: var(--color-type-screen-fg);
+}
+
+.pb-card-media--empty[data-pb-diagram-type="quick"] {
+  --pb-card-empty-bg: var(--color-type-quick-bg);
+  --pb-card-empty-fg: var(--color-type-quick-fg);
+}
+
+.pb-card-media--empty[data-pb-diagram-type="play-action"] {
+  --pb-card-empty-bg: var(--color-type-pa-bg);
+  --pb-card-empty-fg: var(--color-type-pa-fg);
+}
+
+.pb-card-media--empty[data-pb-diagram-type="movement"] {
+  --pb-card-empty-bg: var(--color-type-movement-bg);
+  --pb-card-empty-fg: var(--color-type-movement-fg);
+}
+
+.pb-card-media--empty[data-pb-diagram-type="run-option"] {
+  --pb-card-empty-bg: var(--color-type-runoption-bg);
+  --pb-card-empty-fg: var(--color-type-runoption-fg);
+}
+
+.pb-card-media--unavailable {
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 42%,
+    var(--color-border-light)
+  );
+  background:
+    linear-gradient(135deg, var(--color-warning-light), transparent 68%),
+    var(--color-bg-light);
+  color: color-mix(in srgb, var(--color-warning-hover) 72%, var(--color-dark));
 }
 
 .pb-card-media--error {
@@ -3684,6 +3802,26 @@ body.shell-tablet .pb-drawer-close {
   );
   background: var(--color-danger-light);
   color: var(--color-danger);
+}
+
+.pb-card-study-badge--empty {
+  border-color: color-mix(
+    in srgb,
+    var(--color-text-muted) 26%,
+    var(--color-border-light)
+  );
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+}
+
+.pb-card-study-badge--unavailable {
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 38%,
+    var(--color-border-light)
+  );
+  background: var(--color-warning-light);
+  color: color-mix(in srgb, var(--color-warning-hover) 72%, var(--color-dark));
 }
 
 .pb-card-study-badge--film {

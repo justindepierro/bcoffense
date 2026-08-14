@@ -1978,7 +1978,10 @@
       }
     }
 
-    if (remote?.status === "unavailable" || remote?.available === false) {
+    // `available` is false for an unpublished manifest by design. Only a
+    // published manifest whose immutable object is missing is a recovery
+    // condition; an unpublished play is the normal no-diagram state.
+    if (remote?.status === "unavailable" || (remote?.published && remote?.available === false)) {
       return {
         status: "unavailable",
         source: "remote",
@@ -2187,7 +2190,7 @@
     await _withConcurrency(uniquePlays, PREFETCH_CONCURRENCY, async (play) => {
       const mediaId = _remoteIdentityKey(play);
       const remote = getCachedRemoteManifestForPlay(play);
-      if (remote?.available === false || remote?.status === "unavailable") {
+      if (remote?.status === "unavailable" || (remote?.published && remote?.available === false)) {
         // A D1 pointer without its immutable R2 object is not a packet-ready
         // diagram. Do not warm a stale local cache or make packet completion
         // look successful; the coach must restore or intentionally replace it.

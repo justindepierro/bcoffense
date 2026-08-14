@@ -112,7 +112,7 @@ const PLAYER_PLAYBOOK_FILTER_GROUPS = [
     label: "Study Status",
     options: [
       { label: "Has Diagram", value: "diagram" },
-      { label: "Needs Diagram", value: "missingDiagram" },
+      { label: "No Diagram", value: "missingDiagram" },
       { label: "Has Video", value: "video" },
       { label: "Coach Notes", value: "notes" },
     ],
@@ -842,7 +842,7 @@ function updateActiveFilterBar() {
   });
   const studyFilterLabels = {
     diagram: "Diagram ready",
-    missingDiagram: "Needs diagram",
+    missingDiagram: "No diagram",
     video: "Video ready",
     notes: "Coach notes",
   };

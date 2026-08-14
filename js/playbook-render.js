@@ -240,7 +240,21 @@ function renderPlaybook() {
           _playbookKnownCloudDiagramMediaIds.has(mediaId) &&
           !["unpublished", "unavailable"].includes(remoteImage?.status)),
       );
+      // Player media is authoritative to the cloud manifest. A cached local
+      // object must not make a known-dangling remote record look diagram-ready
+      // in the player study feed; staff still retain their local copy for the
+      // admin recovery workflow.
+      const localDisplaySig =
+        isStudyPortal && remoteImage?.status === "unavailable" ? "" : localImageSig;
       const remoteImageSig = hasCloudDiagram ? mediaId : "";
+      const hasPlayerDiagram = Boolean(localDisplaySig || hasCloudDiagram);
+      const playerDiagramState = hasPlayerDiagram
+        ? "ready"
+        : remoteImage?.status === "unavailable"
+          ? "unavailable"
+          : remoteImage?.status === "unpublished"
+            ? "unpublished"
+            : "missing";
       return {
         play,
         idx: start + localIdx,
@@ -250,8 +264,9 @@ function renderPlaybook() {
         gpActive: !!(activeTags && activeTags.has(tagSig)),
         installBadge: typeof getPlayStarBadge === "function" ? getPlayStarBadge(play) : "",
         picturePill: picturePillFor(play),
-        imageSig: localImageSig || remoteImageSig,
+        imageSig: localDisplaySig || remoteImageSig,
         hasCloudDiagram,
+        playerDiagramState,
         hasClips:
           typeof _playbookHasClipForCurrentViewer === "function"
             ? _playbookHasClipForCurrentViewer(play)
@@ -394,8 +409,8 @@ function renderPlaybook() {
             ? '<span class="pb-card-study-badge pb-card-study-badge--hidden">Hidden from players</span>'
             : "",
           imageSig
-            ? '<span class="pb-card-study-badge pb-card-study-badge--diagram">Diagram</span>'
-            : '<span class="pb-card-study-badge pb-card-study-badge--missing">Needs diagram</span>',
+            ? '<span class="pb-card-study-badge pb-card-study-badge--diagram" data-pb-diagram-badge data-pb-diagram-state="ready">Diagram</span>'
+            : `<span class="pb-card-study-badge ${item.playerDiagramState === "unavailable" ? "pb-card-study-badge--unavailable" : "pb-card-study-badge--empty"}" data-pb-diagram-badge data-pb-diagram-state="${escapeAttr(item.playerDiagramState)}">${escapeHtml(_playerPlaybookDiagramStatusCopy(item.playerDiagramState).badge)}</span>`,
           item.hasClips ? '<span class="pb-card-study-badge pb-card-study-badge--film">Film</span>' : "",
           item.signalCount ? '<span class="pb-card-study-badge pb-card-study-badge--signals">Signals</span>' : "",
           hasCoachNotes ? '<span class="pb-card-study-badge pb-card-study-badge--notes">Coach note</span>' : "",
@@ -605,6 +620,76 @@ function _renderPlayerPlaybookCardActions(item) {
     </div>`;
 }
 
+function _playerPlaybookDiagramTypeMeta(play) {
+  const label = String(play?.type || "").trim() || "Play";
+  const normalized = label.toLowerCase().replace(/\s+/g, " ");
+  const typeKeys = {
+    run: "run",
+    pass: "pass",
+    rpo: "rpo",
+    screen: "screen",
+    quick: "quick",
+    "play action": "play-action",
+    "play pass": "play-action",
+    movement: "movement",
+    "run option": "run-option",
+    option: "run-option",
+    drop: "pass",
+  };
+  const context = [label, String(play?.back || "").trim()]
+    .filter(Boolean)
+    .join(" · ");
+  return {
+    label,
+    context: context || "Play",
+    key: typeKeys[normalized] || "default",
+  };
+}
+
+function _playerPlaybookDiagramStatusCopy(status) {
+  if (status === "ready") {
+    return { badge: "Diagram", label: "Diagram ready", stateClass: "diagram" };
+  }
+  if (status === "unavailable") {
+    return {
+      badge: "Diagram unavailable",
+      label: "Diagram unavailable",
+      stateClass: "unavailable",
+    };
+  }
+  if (status === "offline") {
+    return { badge: "Offline", label: "Offline", stateClass: "offline" };
+  }
+  if (status === "auth-required") {
+    return {
+      badge: "Sign in to view",
+      label: "Sign in to view diagram",
+      stateClass: "unavailable",
+    };
+  }
+  if (status === "load-error" || status === "error") {
+    return {
+      badge: "Diagram unavailable",
+      label: "Diagram unavailable",
+      stateClass: "unavailable",
+    };
+  }
+  // `unpublished` is the authoritative no-player-diagram result. `missing`
+  // is the local/legacy equivalent. Both are an intentional, calm empty
+  // study state—not a recovery warning.
+  return { badge: "No diagram", label: "No diagram yet", stateClass: "empty" };
+}
+
+function _setPlayerPlaybookDiagramBadge(media, status) {
+  const card = media?.closest?.(".pb-card");
+  const badge = card?.querySelector?.("[data-pb-diagram-badge]");
+  if (!badge) return;
+  const copy = _playerPlaybookDiagramStatusCopy(status);
+  badge.className = `pb-card-study-badge pb-card-study-badge--${copy.stateClass}`;
+  badge.dataset.pbDiagramState = status || "missing";
+  badge.textContent = copy.badge;
+}
+
 function _renderPlayerPlaybookCardMedia(item) {
   const playLabel =
     typeof getPlayPresentationPlayLabel === "function"
@@ -613,12 +698,25 @@ function _renderPlayerPlaybookCardMedia(item) {
   const thumbSig = item?.imageSig
     ? ` data-pb-thumb-sig="${escapeHtml(item.imageSig)}"`
     : "";
+  const typeMeta = _playerPlaybookDiagramTypeMeta(item?.play);
+  const initialStatus = item?.playerDiagramState || "missing";
+  const initialCopy = _playerPlaybookDiagramStatusCopy(initialStatus);
+  const initialClass = initialCopy.stateClass === "empty"
+    ? " pb-card-media--empty"
+    : initialCopy.stateClass === "unavailable"
+      ? " pb-card-media--unavailable"
+      : "";
   return `
-    <button type="button" class="pb-card-media pb-card-media--diagram" data-action="openPlaybookPresentation"
+    <button type="button" class="pb-card-media pb-card-media--diagram${initialClass}" data-action="openPlaybookPresentation"
       data-arg="${item.idx}" data-pb-thumb-idx="${item.idx}"${thumbSig}
-      aria-label="Study diagram for ${escapeHtml(playLabel)}">
+      data-pb-diagram-state="${escapeAttr(initialStatus)}" data-pb-diagram-type="${escapeAttr(typeMeta.key)}"
+      aria-label="Open ${escapeHtml(playLabel)} in Swipe View">
       <img alt="Diagram for ${escapeHtml(playLabel)}" loading="lazy" decoding="async" hidden />
-      <span class="pb-card-media__state">Checking diagram</span>
+      <span class="pb-card-media__empty" aria-hidden="true">
+        <span class="pb-card-media__empty-icon">🏈</span>
+        <span class="pb-card-media__empty-copy"><strong>${escapeHtml(typeMeta.context)}</strong><span data-pb-thumb-empty-copy>${escapeHtml(initialCopy.label)}</span></span>
+      </span>
+      <span class="pb-card-media__state sr-only">${escapeHtml(initialCopy.label)}</span>
     </button>`;
 }
 
@@ -657,25 +755,51 @@ function hydratePlayerPlaybookThumbnails(root = document) {
     const state = media.querySelector(".pb-card-media__state");
     if (!img) return;
 
-    const setState = (status, label) => {
+    const setState = (status) => {
+      const copy = _playerPlaybookDiagramStatusCopy(status);
       media.classList.remove(
         "pb-card-media--missing",
         "pb-card-media--error",
         "pb-card-media--offline",
         "pb-card-media--unpublished",
+        "pb-card-media--empty",
+        "pb-card-media--unavailable",
       );
-      if (status === "unpublished") media.classList.add("pb-card-media--unpublished");
+      media.classList.remove("is-loaded");
+      media.dataset.pbDiagramState = status || "missing";
+      if (copy.stateClass === "empty") media.classList.add("pb-card-media--empty");
+      else if (copy.stateClass === "unavailable") media.classList.add("pb-card-media--unavailable");
+      else if (status === "unpublished") media.classList.add("pb-card-media--unpublished");
       else if (status === "offline") media.classList.add("pb-card-media--offline");
       else if (status === "load-error" || status === "unavailable" || status === "error") media.classList.add("pb-card-media--error");
       else if (status === "missing") media.classList.add("pb-card-media--missing");
-      if (state) state.textContent = label;
+      if (img) {
+        img.hidden = true;
+        img.removeAttribute("src");
+      }
+      const emptyCopy = media.querySelector("[data-pb-thumb-empty-copy]");
+      if (emptyCopy) emptyCopy.textContent = copy.label;
+      if (state) {
+        state.textContent = copy.label;
+        state.classList.add("sr-only");
+      }
+      _setPlayerPlaybookDiagramBadge(media, status);
     };
 
     const setUrl = (url) => {
       if (!url || !media.isConnected) {
-        setState("error", "Diagram issue");
+        setState("load-error");
         return;
       }
+      media.classList.remove(
+        "pb-card-media--missing",
+        "pb-card-media--error",
+        "pb-card-media--offline",
+        "pb-card-media--unpublished",
+        "pb-card-media--empty",
+        "pb-card-media--unavailable",
+      );
+      media.dataset.pbDiagramState = "ready";
       img.src = url;
       img.hidden = false;
       if (typeof window.playImages.renderSmartDiagramImage === "function") {
@@ -690,12 +814,28 @@ function hydratePlayerPlaybookThumbnails(root = document) {
       }
       media.dataset.pbThumbLoaded = "true";
       media.classList.add("is-loaded");
-      if (state) state.textContent = "Open diagram";
+      if (state) {
+        state.textContent = "Open diagram";
+        state.classList.remove("sr-only");
+      }
+      _setPlayerPlaybookDiagramBadge(media, "ready");
     };
 
     const cachedUrl =
       typeof window.playImages.urlFor === "function" ? window.playImages.urlFor(sig) : null;
-    if (cachedUrl) {
+    // Preserve the instant offline/cache path for ordinary diagrams. The one
+    // exception is an already-known dangling cloud manifest: that record is
+    // authoritative evidence that its immutable binary is gone, so never let
+    // a stale local object make it look ready.
+    const knownRemote =
+      play && typeof window.playImages.getCachedRemoteManifestForPlay === "function"
+        ? window.playImages.getCachedRemoteManifestForPlay(play)
+        : null;
+    const hasKnownDanglingRemote = Boolean(
+      knownRemote?.status === "unavailable" ||
+      (knownRemote?.published && knownRemote?.available === false),
+    );
+    if (cachedUrl && !hasKnownDanglingRemote) {
       setUrl(cachedUrl);
       return;
     }
@@ -715,20 +855,20 @@ function hydratePlayerPlaybookThumbnails(root = document) {
           return;
         }
         if (readiness?.status === "unpublished") {
-          setState("unpublished", "Not published");
+          setState("unpublished");
         } else if (readiness?.status === "offline") {
-          setState("offline", "Offline");
+          setState("offline");
         } else if (readiness?.status === "unavailable") {
-          setState("unavailable", "Needs restore");
+          setState("unavailable");
         } else if (readiness?.status === "load-error") {
-          setState("load-error", "Diagram issue");
+          setState("load-error");
         } else {
-          setState("missing", "Needs diagram");
+          setState("missing");
         }
       })
       .catch(() => {
         if (!media.isConnected) return;
-        setState("error", "Diagram issue");
+        setState("error");
       })
       .finally(() => {
         if (media.isConnected) media.dataset.pbThumbLoading = "false";
