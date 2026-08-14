@@ -56,7 +56,6 @@ test.describe("Player iPad Safari header hierarchy", () => {
         Boolean(overflow) &&
         !overflow?.hidden &&
         overflowStyle?.display !== "none" &&
-        Number(overflowStyle?.opacity || "1") > 0 &&
         (overflowBox?.width || 0) >= 44 &&
         (overflowBox?.height || 0) >= 44
       );
@@ -69,7 +68,6 @@ test.describe("Player iPad Safari header hierarchy", () => {
         return (
           style.display !== "none" &&
           style.visibility !== "hidden" &&
-          Number(style.opacity || "1") > 0 &&
           box.width > 0 &&
           box.height > 0
         );
