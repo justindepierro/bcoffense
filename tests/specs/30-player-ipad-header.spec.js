@@ -405,4 +405,69 @@ test.describe("Player iPad Safari header hierarchy", () => {
       expect(activeTab?.boxShadow, "the active route has a contained underline").not.toBe("none");
     }
   });
+
+  test("opens Home immediately below the iPad shelf after a study-tab switch", async ({ page }, testInfo) => {
+    test.skip(
+      !["ipad-portrait", "ipad-landscape"].includes(testInfo.project.name),
+      "This regression requires the touch-enabled WebKit iPad projects.",
+    );
+
+    const m1Viewport = testInfo.project.name === "ipad-landscape"
+      ? M1_IPAD_LANDSCAPE
+      : M1_IPAD_PORTRAIT;
+    await page.setViewportSize(m1Viewport);
+    await login(page, { role: "player", username: "player", password: "password" });
+    await dismissFirstUse(page);
+
+    const assertHomeIsAtTheTopOfTheRoute = async (label) => {
+      await goToTab(page, "dashboard");
+      await page.waitForFunction(() => {
+        const shelf = document.querySelector("#mainApp > .tabs");
+        const home = document.getElementById("playerDashboardHome");
+        const dashboard = document.getElementById("dashboard");
+        if (!shelf || !home || !dashboard || home.hidden) return false;
+        const shelfBox = shelf.getBoundingClientRect();
+        const homeBox = home.getBoundingClientRect();
+        return (
+          dashboard.classList.contains("active") &&
+          home.textContent.trim().length > 0 &&
+          homeBox.width > 0 &&
+          homeBox.height > 0 &&
+          homeBox.top >= shelfBox.bottom - 1 &&
+          homeBox.top < window.innerHeight
+        );
+      });
+
+      const geometry = await page.evaluate(() => {
+        const shelf = document.querySelector("#mainApp > .tabs");
+        const home = document.getElementById("playerDashboardHome");
+        const dashboard = document.getElementById("dashboard");
+        const shelfBox = shelf?.getBoundingClientRect();
+        const homeBox = home?.getBoundingClientRect();
+        const dashboardBox = dashboard?.getBoundingClientRect();
+        return {
+          scrollY: window.scrollY,
+          viewportHeight: window.innerHeight,
+          shelfBottom: shelfBox?.bottom || 0,
+          homeTop: homeBox?.top || 0,
+          dashboardTop: dashboardBox?.top || 0,
+          homeText: home?.textContent.trim() || "",
+        };
+      });
+
+      expect(geometry.scrollY, `${label}: Home does not need a manual scroll to begin`).toBeLessThanOrEqual(1);
+      expect(geometry.homeText, `${label}: player Home has hydrated`).not.toBe("");
+      expect(geometry.dashboardTop, `${label}: panel begins beneath the shelf`).toBeGreaterThanOrEqual(
+        geometry.shelfBottom - 1,
+      );
+      expect(geometry.homeTop - geometry.shelfBottom, `${label}: no viewport-height spacer precedes Home`).toBeLessThanOrEqual(64);
+      expect(geometry.homeTop, `${label}: Home is visible in the initial viewport`).toBeLessThan(
+        geometry.viewportHeight,
+      );
+    };
+
+    await assertHomeIsAtTheTopOfTheRoute("initial Home");
+    await goToTab(page, "playbook");
+    await assertHomeIsAtTheTopOfTheRoute("returning from Playbook");
+  });
 });

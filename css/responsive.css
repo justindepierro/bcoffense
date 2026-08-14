@@ -1232,9 +1232,12 @@ body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player
   body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"][data-study-navigation="top"]
     #mainApp {
     min-width: 0;
-    min-height: calc(
-      (var(--app-vh, 1vh) * 100) - var(--app-header-height, 60px)
-    );
+    /* Home and Quiz remain sibling surfaces beside #mainApp in the legacy
+       shell. Giving this tab-only container a viewport-height minimum puts a
+       full blank viewport between the shelf and those routes on iPad Safari.
+       Keep its natural height so every study destination begins beneath the
+       shared shelf. */
+    min-height: 0;
     overflow: visible;
   }
 
