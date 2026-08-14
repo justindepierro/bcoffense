@@ -72,8 +72,12 @@ async function readPrintLayerState(page) {
 
 function expectTouchTarget(rect, label) {
   expect(rect, `${label} exists`).not.toBeNull();
-  expect(rect?.width || 0, `${label} width`).toBeGreaterThanOrEqual(44);
-  expect(rect?.height || 0, `${label} height`).toBeGreaterThanOrEqual(44);
+  // WebKit can report a CSS 44px box as 43.99994px after device-pixel
+  // conversion. Preserve the 44px design requirement while allowing only
+  // that sub-pixel measurement noise, not a genuinely smaller control.
+  const minimum = 44 - 0.01;
+  expect(rect?.width || 0, `${label} width`).toBeGreaterThanOrEqual(minimum);
+  expect(rect?.height || 0, `${label} height`).toBeGreaterThanOrEqual(minimum);
 }
 
 async function openFilterAndPrint(page) {

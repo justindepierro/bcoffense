@@ -148,6 +148,15 @@ async function login(page, opts = {}) {
     if (!authenticated) {
       throw new Error("Local test session did not initialize in the app shell.");
     }
+    // Auth can become available before the app's startup cover releases.
+    // Wait for the same finished-shell state a person sees before seeding or
+    // measuring an iPad surface; otherwise visibility-based assertions can
+    // sample header elements while `body.app-booting` still hides them.
+    await page.waitForFunction(
+      () => document.body.classList.contains("app-ready") && !document.body.classList.contains("app-booting"),
+      undefined,
+      { timeout: AUTH_LOGIN_COMPLETE_TIMEOUT },
+    );
     await ensureLocalWorkspaceReady(page);
     return;
   }

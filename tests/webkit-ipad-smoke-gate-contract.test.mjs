@@ -57,10 +57,10 @@ assert.match(smokeLauncher, /BCOFFENSE_E2E_LOCAL:\s*"1"/, "the WebKit smoke uses
 assert.match(smokeLauncher, /BCOFFENSE_E2E_LOCAL_DIRECT_LOGIN:\s*"1"/, "the WebKit smoke avoids visual-login setup races through the local authenticated harness");
 assert.match(smokeLauncher, /BASE_URL:\s*baseUrl/, "the WebKit smoke pins Playwright to its owned loopback server");
 assert.match(smokeLauncher, /findFreeLoopbackPort/, "the WebKit smoke avoids fixed-port stale-server reuse");
-assert.match(smokeLauncher, /SMOKE_BATCHES/, "the WebKit smoke bounds the known late-run WebKit check to a fresh strict batch");
+assert.match(smokeLauncher, /SMOKE_BATCHES = REQUIRED_SPECS\.map\(\(spec\) => \[spec\]\)/, "the WebKit smoke runs every curated spec in a fresh strict process");
 assert.match(
   smokeLauncher,
-  /const SMOKE_BATCHES = \[\s*\["specs\/19-player-presentation-diagram-cache\.spec\.js"\]/,
+  /const REQUIRED_SPECS = \[\s*"specs\/19-player-presentation-diagram-cache\.spec\.js"/,
   "the presentation-cache regression runs first in its own fresh WebKit process",
 );
 assert.match(smokeLauncher, /child\.once\("close"/, "the next WebKit batch waits for Playwright's process streams to close");
@@ -89,6 +89,11 @@ assert.match(
   helpers,
   /E2E_LOCAL_DIRECT_LOGIN[\s\S]*?page\.context\(\)\.request\.post/,
   "the WebKit local harness creates a real loopback session without visual form actionability",
+);
+assert.match(
+  helpers,
+  /app-ready[\s\S]*?!document\.body\.classList\.contains\("app-booting"\)/,
+  "the direct local session waits for the visible finished app shell before surface assertions run",
 );
 
 assert.match(

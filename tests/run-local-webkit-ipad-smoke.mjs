@@ -16,30 +16,28 @@ const testsRoot = path.dirname(fileURLToPath(import.meta.url));
 const playwrightCli = path.join(testsRoot, "node_modules", "playwright", "cli.js");
 let activeChild = null;
 
-// Playwright's macOS WebKit implementation retains a browser process for all
-// files in one invocation. The presentation-cache spec is the only required
-// check that demonstrated late-run document-state loss; run it first in its
-// own clean browser, then run the rest as one strict serial batch. This is not
-// a retry: every assertion still runs once and a failure stops the gate.
-const SMOKE_BATCHES = [
-  ["specs/19-player-presentation-diagram-cache.spec.js"],
-  [
-    "specs/04-responsive.spec.js",
-    "specs/11-playbook-tablet-drawers.spec.js",
-    "specs/12-tablet-blocking-layers.spec.js",
-    "specs/13-wristband-tablet-rail.spec.js",
-    "specs/15-gameplan-tablet-rail.spec.js",
-    "specs/16-tablet-usable-height-layers.spec.js",
-    "specs/23-reorder-modal-layers.spec.js",
-    "specs/24-playbook-deferred-layers.spec.js",
-    "specs/25-player-playbook-tablet-touch.spec.js",
-    "specs/26-playbook-print-layer.spec.js",
-    "specs/28-callsheet-ipad-portrait-controls.spec.js",
-    "specs/29-compact-tablet-quick-tools.spec.js",
-    "specs/30-player-ipad-header.spec.js",
-    "specs/31-player-ipad-study-surface.spec.js",
-  ],
+// macOS WebKit can lose document state after many unrelated app lifecycles in
+// a single browser process. Run each required spec once in a fresh, owned
+// process instead. This is not a retry or a reduced matrix: every assertion
+// still runs exactly once, and the first failing batch stops the gate.
+const REQUIRED_SPECS = [
+  "specs/19-player-presentation-diagram-cache.spec.js",
+  "specs/04-responsive.spec.js",
+  "specs/11-playbook-tablet-drawers.spec.js",
+  "specs/12-tablet-blocking-layers.spec.js",
+  "specs/13-wristband-tablet-rail.spec.js",
+  "specs/15-gameplan-tablet-rail.spec.js",
+  "specs/16-tablet-usable-height-layers.spec.js",
+  "specs/23-reorder-modal-layers.spec.js",
+  "specs/24-playbook-deferred-layers.spec.js",
+  "specs/25-player-playbook-tablet-touch.spec.js",
+  "specs/26-playbook-print-layer.spec.js",
+  "specs/28-callsheet-ipad-portrait-controls.spec.js",
+  "specs/29-compact-tablet-quick-tools.spec.js",
+  "specs/30-player-ipad-header.spec.js",
+  "specs/31-player-ipad-study-surface.spec.js",
 ];
+const SMOKE_BATCHES = REQUIRED_SPECS.map((spec) => [spec]);
 const WEBKIT_PROCESS_SETTLE_MS = 1_000;
 
 function readRequestedPort(value) {

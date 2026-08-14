@@ -48,13 +48,17 @@ async function targetRects(page, selector) {
 
 async function waitForTouchTargets(page, selector, minimumCount) {
   // Player diagram availability warms asynchronously and can render this
-  // summary again. Poll across that intentional replacement rather than
-  // retaining a detached button handle whose temporary rect is 0×0.
+  // summary again. Preserve the successful measurement: fetching a second
+  // set after the poll can land in the deliberately transient replacement
+  // frame and report a 0×0 box for an otherwise visible, live control.
+  let readyRects = [];
   await expect.poll(async () => {
     const rects = await targetRects(page, selector);
-    return rects.length >= minimumCount && rects.every((rect) => rect.width >= 44 && rect.height >= 44);
+    const ready = rects.length >= minimumCount && rects.every((rect) => rect.width >= 44 && rect.height >= 44);
+    if (ready) readyRects = rects;
+    return ready;
   }).toBe(true);
-  return targetRects(page, selector);
+  return readyRects;
 }
 
 async function seedPlayerPlaybook(page) {
