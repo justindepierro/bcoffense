@@ -3506,7 +3506,7 @@ body.shell-tablet .pb-drawer-close {
 
 .pb-card-media__empty-icon {
   flex: 0 0 auto;
-  font-size: clamp(26px, 4vw, 38px);
+  font-size: var(--font-size-4xl);
   line-height: 1;
 }
 

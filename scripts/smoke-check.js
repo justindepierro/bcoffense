@@ -4919,9 +4919,10 @@ function checkPlayerDiagramReadinessContracts() {
   if (
     /Ask your coach to sync diagrams/.test(presentation) ||
     !/function getPlayPresentationDiagramStatusCopy\(status\)/.test(presentation) ||
-    !/Diagram has not been published for players yet/.test(presentation) ||
+    !/status === "unpublished"[\s\S]*?No diagram has been added to this play yet\.[\s\S]*?label: "No diagram"[\s\S]*?pill: "empty"/.test(presentation) ||
     !/Offline\. This diagram will appear/.test(presentation) ||
-    !/Diagram is published but could not be loaded/.test(presentation) ||
+    !/status === "unavailable"[\s\S]*?isPlayerStudyView[\s\S]*?Diagram unavailable[\s\S]*?cloud file needs to be restored by a coach/.test(presentation) ||
+    !/status === "load-error"[\s\S]*?Diagram could not be loaded right now[\s\S]*?label: "Diagram issue"/.test(presentation) ||
     !/ensureDisplayReadinessForPlay\(play\)/.test(presentation) ||
     !/updatePlayPresentationDiagramStatus\(copy\.pill, copy\.label\)/.test(presentation)
   ) {
@@ -4931,9 +4932,12 @@ function checkPlayerDiagramReadinessContracts() {
   if (
     !/data-pb-thumb-idx="\$\{item\.idx\}"/.test(playbookRender) ||
     !/ensureDisplayReadinessForPlay\(play\)/.test(playbookRender) ||
-    !/Not published/.test(playbookRender) ||
-    !/setState\("offline", "Offline"\)/.test(playbookRender) ||
-    !/pb-card-media--unpublished/.test(playbookRender) ||
+    !/function _playerPlaybookDiagramStatusCopy\(status\)[\s\S]*?status === "unavailable"[\s\S]*?Diagram unavailable/.test(playbookRender) ||
+    !/`unpublished` is the authoritative no-player-diagram result[\s\S]*?No diagram yet[\s\S]*?stateClass: "empty"/.test(playbookRender) ||
+    !/pb-card-media__empty-icon">🏈/.test(playbookRender) ||
+    !/data-pb-diagram-type="\$\{escapeAttr\(typeMeta\.key\)\}"/.test(playbookRender) ||
+    !/if \(copy\.stateClass === "empty"\) media\.classList\.add\("pb-card-media--empty"\)/.test(playbookRender) ||
+    !/else if \(copy\.stateClass === "unavailable"\) media\.classList\.add\("pb-card-media--unavailable"\)/.test(playbookRender) ||
     !/pb-card-media--offline/.test(playbookRender)
   ) {
     fail("player playbook card diagram readiness states are incomplete");
@@ -4949,16 +4953,22 @@ function checkPlayerDiagramReadinessContracts() {
   }
 
   [
-    '[data-status="unpublished"]',
-    '[data-status="offline"]',
-    ".pb-card-media--unpublished",
-    ".pb-card-media--offline",
-  ].forEach((token) => {
-    const source = token.startsWith("[") ? presentationCss : playbookCss;
-    if (!source.includes(token)) {
-      fail(`diagram readiness styling missing ${token}`);
-    }
+    [presentationCss, '[data-status="empty"]'],
+    [presentationCss, '[data-status="offline"]'],
+    [presentationCss, '[data-status="error"]'],
+    [playbookCss, ".pb-card-media--empty"],
+    [playbookCss, ".pb-card-media--unavailable"],
+    [playbookCss, ".pb-card-media--offline"],
+  ].forEach(([source, token]) => {
+    if (!source.includes(token)) fail(`diagram readiness styling missing ${token}`);
   });
+
+  const playerCardLoadingWash = playbookCss.match(
+    /\/\* Player study cards should never read as a blank, busy loading wall\.[\s\S]*?\.pb-card-media:not\(\.is-loaded\)::after\s*\{([\s\S]*?)\n\}/,
+  )?.[1] || "";
+  if (!/background:/.test(playerCardLoadingWash) || /animation\s*:/.test(playerCardLoadingWash)) {
+    fail("player diagram empty state does not keep a quiet static loading wash");
+  }
 
   console.log("player diagram readiness contracts ok");
 }
