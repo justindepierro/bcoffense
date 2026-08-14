@@ -7353,6 +7353,17 @@ body.shell-tablet #playbook .pb-card-actions {
 }
 /* End T-009 P1 Player Playbook summary and filter touch targets. */
 
+/* A player already has Filters, Present Showing, and the practice route in
+   the Playbook summary, plus Search and Present in the toolbar. On a real
+   iPad, the coach-oriented fixed Actions pill duplicates those routes and can
+   sit directly over a card's Ask button. Keep the phone's thumb FAB policy
+   intact, but let the tablet study surface keep one unobstructed reading and
+   action plane. */
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)[data-active-tab="playbook"]
+  .page-fab-cluster {
+  display: none !important;
+}
+
 /* T-009 P1 — Playbook authoring and cleanup touch targets.
    These are coach-only working controls that remain intentionally compact on
    desktop and phone. A real coarse-pointer tablet needs each independent

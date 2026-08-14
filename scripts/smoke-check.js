@@ -1771,7 +1771,7 @@ function checkPlayPresentationContracts() {
     fail("presentation-grade play image optimization contracts are incomplete");
   }
   if (
-    !/async function _putRemoteImage\(identityKey, blob\)/.test(playImages) ||
+    !/async function _putRemoteImage\(identityKey, blob(?:, options = \{\})?\)/.test(playImages) ||
     !/function _remoteIdentityKey\(play\)[\s\S]*getStablePlaySourceId\(sourcePlay\)[\s\S]*play:\$\{sourceId\}/.test(playImages) ||
     !/function _remoteIdentityKeysForPlay\(play\)[\s\S]*canonical-only[\s\S]*return \[_remoteIdentityKey\(play\)\]/.test(playImages) ||
     !/legacySourceKeys = \[\s*[\s\S]*play\?\.sourceIdentityKey,[\s\S]*_sourceIdentityKeyForPlay\(play\),/.test(playImages) ||
@@ -4942,7 +4942,7 @@ function checkPlayerDiagramReadinessContracts() {
   if (
     !/const _playbookKnownCloudDiagramMediaIds = new Set\(\)/.test(playbookRender) ||
     !/_playbookKnownCloudDiagramMediaIds\.has\(mediaId\)/.test(playbookRender) ||
-    !/remoteImage\?\.status !== "unpublished"/.test(playbookRender) ||
+    !/!\["unpublished", "unavailable"\]\.includes\(remoteImage\?\.status\)/.test(playbookRender) ||
     !/\["offline", "error"\]\.includes\(manifest\.status\)/.test(playbookRender)
   ) {
     fail("playbook diagram badges do not preserve confirmed page-level cloud state");

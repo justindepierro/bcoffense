@@ -1346,6 +1346,101 @@
   }
 }
 
+/* Player Signals is a study surface, not the coach's collection workbench.
+   At the native 11-inch iPad width, the generic auto-fit stat grid collapses
+   three small counters into a tall right-hand stack. That makes the empty
+   header taller than the first category and pushes the actual clips below the
+   fold. Keep the same information, but reserve a compact horizontal metric
+   strip beside the title. */
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)
+  #signals
+  .signals-shell {
+  gap: 12px;
+  padding: 12px;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)
+  #signals
+  .signals-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)
+  #signals
+  .signals-header-intro {
+  gap: 3px;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)
+  #signals
+  .signals-eyebrow {
+  margin-bottom: 0;
+  font-size: var(--font-size-2xs);
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)
+  #signals
+  .signals-title-row {
+  gap: 6px;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)
+  #signals
+  .signals-header h1 {
+  font-size: var(--font-size-xl);
+  line-height: 1.1;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)
+  #signals
+  .signals-title-row
+  > span {
+  font-size: var(--font-size-xs);
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)
+  #signals
+  .signals-header-command {
+  align-self: center;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)
+  #signals
+  .signals-stats {
+  grid-template-columns: repeat(3, minmax(72px, 1fr));
+  gap: 6px;
+  width: 258px;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)
+  #signals
+  .signals-stat {
+  min-height: 54px;
+  padding: 7px 8px;
+}
+
+@media screen and (max-width: 760px) {
+  body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)
+    #signals
+    .signals-header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)
+    #signals
+    .signals-header-command {
+    justify-content: flex-start;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]:not(.is-phone-screen)
+    #signals
+    .signals-stats {
+    width: 100%;
+  }
+}
+
 /* ============ Coach Grid: Signals workspace ============ */
 /* Apply only to the desktop coach collection; player clip viewing stays separate. */
 @media (min-width: 821px) {

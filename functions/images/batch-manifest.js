@@ -1,7 +1,11 @@
 // POST /images/batch-manifest { sigs } — current diagram metadata in one trip.
 
 import { authJson } from "../_lib/auth.js";
-import { publicImageManifest, resolveImageManifest } from "../_lib/image-media.js";
+import {
+  imageManifestAvailability,
+  publicImageManifest,
+  resolveImageManifest,
+} from "../_lib/image-media.js";
 import { getMediaPrincipal } from "../_lib/media-access.js";
 import { releaseAllowsDiagram } from "../_lib/player-release.js";
 
@@ -27,7 +31,11 @@ export async function onRequestPost(context) {
   await Promise.all(allowedSigs.map(async (sig) => {
     try {
       const resolved = await resolveImageManifest(context.env, bucket, principal.teamId, sig);
-      manifests[sig] = publicImageManifest(sig, resolved.manifest, { legacy: resolved.legacy });
+      const available = await imageManifestAvailability(bucket, resolved.manifest);
+      manifests[sig] = publicImageManifest(sig, resolved.manifest, {
+        legacy: resolved.legacy,
+        available,
+      });
     } catch (_err) {
       manifests[sig] = { ok: false, sig, published: false, error: "manifest-read-failed" };
     }

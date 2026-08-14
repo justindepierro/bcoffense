@@ -35,6 +35,8 @@ const requiredSpecs = [
   "26-playbook-print-layer.spec.js",
   "28-callsheet-ipad-portrait-controls.spec.js",
   "29-compact-tablet-quick-tools.spec.js",
+  "30-player-ipad-header.spec.js",
+  "31-player-ipad-study-surface.spec.js",
 ];
 
 assert.equal(

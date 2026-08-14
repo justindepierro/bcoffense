@@ -143,7 +143,7 @@ function _playbookHasDiagram(play) {
   const remote = typeof window !== "undefined" && typeof window.playImages?.getCachedRemoteManifestForPlay === "function"
     ? window.playImages.getCachedRemoteManifestForPlay(play)
     : null;
-  return Boolean(remote?.published);
+  return Boolean(remote?.published && remote?.available !== false);
 }
 
 // A player or managed-coach study surface must never let an IndexedDB cache
@@ -157,7 +157,11 @@ function _playbookHasPublishedDiagram(play) {
   const remote = typeof window !== "undefined" && typeof window.playImages?.getCachedRemoteManifestForPlay === "function"
     ? window.playImages.getCachedRemoteManifestForPlay(play)
     : null;
-  return Boolean(remote?.published && remote?.status === "published");
+  return Boolean(
+    remote?.published &&
+    remote?.available !== false &&
+    remote?.status === "published",
+  );
 }
 
 function _playbookHasDiagramForCurrentViewer(play) {
@@ -171,7 +175,7 @@ function _hasDefinitivePlaybookMediaManifest(play) {
     typeof window.playImages?.getCachedRemoteManifestForPlay === "function"
     ? window.playImages.getCachedRemoteManifestForPlay(play)
     : null;
-  return Boolean(manifest && ["published", "unpublished"].includes(manifest.status));
+  return Boolean(manifest && ["published", "unpublished", "unavailable"].includes(manifest.status));
 }
 
 function _warmPlaybookMediaFilterManifests(playList) {

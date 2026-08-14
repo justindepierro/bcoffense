@@ -101,8 +101,12 @@ function ensurePlaybookRemoteImageBadgesReady(playList = []) {
         if (manifest && !["offline", "error"].includes(manifest.status)) {
           _playbookRemoteImageBadgeChecks.add(mediaId);
         }
-        if (manifest?.published) _playbookKnownCloudDiagramMediaIds.add(mediaId);
-        if (manifest?.status === "unpublished") _playbookKnownCloudDiagramMediaIds.delete(mediaId);
+        if (manifest?.published && manifest?.available !== false) {
+          _playbookKnownCloudDiagramMediaIds.add(mediaId);
+        }
+        if (["unpublished", "unavailable"].includes(manifest?.status)) {
+          _playbookKnownCloudDiagramMediaIds.delete(mediaId);
+        }
       });
       requestRenderPlaybook();
     })
@@ -221,18 +225,20 @@ function renderPlaybook() {
       const mediaId = typeof getPlayMediaId === "function"
         ? String(getPlayMediaId(play) || "").trim()
         : "";
-      if (mediaId && remoteImage?.published) _playbookKnownCloudDiagramMediaIds.add(mediaId);
-      if (mediaId && remoteImage?.status === "unpublished") {
+      if (mediaId && remoteImage?.published && remoteImage?.available !== false) {
+        _playbookKnownCloudDiagramMediaIds.add(mediaId);
+      }
+      if (mediaId && ["unpublished", "unavailable"].includes(remoteImage?.status)) {
         _playbookKnownCloudDiagramMediaIds.delete(mediaId);
       }
       // Do not remove an already-confirmed marker merely because a single
       // diagram click caused a render while this page's manifest batch is
       // still in flight. An explicit unpublished answer remains authoritative.
       const hasCloudDiagram = Boolean(
-        remoteImage?.published ||
+        (remoteImage?.published && remoteImage?.available !== false) ||
         (mediaId &&
           _playbookKnownCloudDiagramMediaIds.has(mediaId) &&
-          remoteImage?.status !== "unpublished"),
+          !["unpublished", "unavailable"].includes(remoteImage?.status)),
       );
       const remoteImageSig = hasCloudDiagram ? mediaId : "";
       return {
@@ -660,7 +666,7 @@ function hydratePlayerPlaybookThumbnails(root = document) {
       );
       if (status === "unpublished") media.classList.add("pb-card-media--unpublished");
       else if (status === "offline") media.classList.add("pb-card-media--offline");
-      else if (status === "load-error" || status === "error") media.classList.add("pb-card-media--error");
+      else if (status === "load-error" || status === "unavailable" || status === "error") media.classList.add("pb-card-media--error");
       else if (status === "missing") media.classList.add("pb-card-media--missing");
       if (state) state.textContent = label;
     };
@@ -712,6 +718,8 @@ function hydratePlayerPlaybookThumbnails(root = document) {
           setState("unpublished", "Not published");
         } else if (readiness?.status === "offline") {
           setState("offline", "Offline");
+        } else if (readiness?.status === "unavailable") {
+          setState("unavailable", "Needs restore");
         } else if (readiness?.status === "load-error") {
           setState("load-error", "Diagram issue");
         } else {

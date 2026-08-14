@@ -1056,6 +1056,158 @@ body.shell-tablet.is-mobile-screen .auth-user-badge:not([hidden]) {
   white-space: nowrap;
 }
 
+/* Player iPad chrome: the M1 Safari workspace has enough room for a steady
+   navigation hierarchy, but not a row of equally-weighted utilities. Keep the
+   two player actions that can need immediate attention (Questions and Alerts)
+   in the header; account context, refresh, and appearance remain one tap away
+   in More. This is intentionally class-scoped instead of width-scoped because
+   Safari Split View can make the same physical iPad look much narrower. */
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .app-header {
+  gap: 12px;
+  min-height: 60px;
+  padding: max(8px, env(safe-area-inset-top, 0px))
+    max(14px, env(safe-area-inset-right, 0px)) 8px
+    max(14px, env(safe-area-inset-left, 0px));
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .app-header-brand {
+  flex: 1 1 0;
+  gap: 8px;
+  min-width: 0;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .app-logo {
+  flex: 0 0 auto;
+  font-size: var(--font-size-xl);
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .app-title-group {
+  min-width: 0;
+  gap: 2px;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .app-title {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-md);
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .app-subtitle {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: var(--font-size-2xs);
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The portal context was previously a third tiny line under the team name.
+   The dedicated study tabs already communicate that context, so preserving it
+   here only made the brand feel vertically cramped. */
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .app-title-group::after {
+  display: none;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .app-header-actions {
+  flex: 0 0 auto;
+  gap: 6px;
+  max-width: none;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .app-header-actions
+  .header-action-btn {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  flex: 0 0 44px;
+  justify-content: center;
+  padding: 0;
+  border-radius: var(--radius-round);
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .pport-header-btn
+  .header-action-label,
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .auth-user-badge,
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .header-refresh-btn,
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .header-theme-btn {
+  display: none !important;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .header-overflow {
+  display: inline-flex;
+}
+
+/* These substitute for the direct utilities only in the roomy player-iPad
+   hierarchy. Phone and staff headers keep their established direct controls
+   without duplicate menu entries. */
+.header-overflow-player-tablet-item {
+  display: none;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .header-overflow-player-tablet-item {
+  display: block;
+}
+
+body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+  .header-overflow-menu
+  button {
+  min-height: 44px;
+}
+
+/* Give roomy iPad study tabs a real, compact navigation bar instead of a
+   detached group of floating pills. The narrower iPad/Split View profile
+   intentionally keeps its existing bottom navigation; it meets the player
+   mobile media contract and should not be restyled as a top bar. */
+@media (min-width: 821px) and (min-height: 641px) {
+  /* This player profile still scrolls as a document. Leaving the desktop
+     overflow boundary on #mainApp makes the sticky tab offset count the
+     header twice in Safari, which appears as an empty header-height band. */
+  body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+    #mainApp {
+    min-width: 0;
+    overflow: visible;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+    .tabs {
+    gap: 6px;
+    justify-content: center;
+    min-height: 56px;
+    padding: 6px max(14px, env(safe-area-inset-right, 0px))
+      6px max(14px, env(safe-area-inset-left, 0px));
+    border-bottom: 1px solid var(--color-border-light);
+    background: color-mix(in srgb, var(--color-surface) 94%, var(--color-bg-light));
+    box-shadow: 0 1px 0 rgb(10 18 42 / 4%);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"]
+    .tab {
+    min-height: 44px;
+    padding: 7px 14px;
+    font-size: var(--font-size-xs);
+  }
+}
+
 /* Tablet touch targets (M-023): larger iPads (834px+ / 1024px) fall outside the
    coarse-pointer <=820px media query, so keep the same reachable hit sizes here
    gated by the JS-applied shell-tablet class regardless of width. */

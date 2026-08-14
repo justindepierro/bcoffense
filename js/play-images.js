@@ -316,6 +316,23 @@
     touched.forEach(_bumpUrlVersion);
   }
 
+  // A downloaded player diagram is immediately useful even when the browser
+  // refuses persistent storage (notably Safari Private Browsing and hardened
+  // profiles). Keep this runtime-only URL separate from the durable IDB write:
+  // it is revoked on role change/pagehide just like every other object URL.
+  function _cacheBlobUrl(sig, blob, options = {}) {
+    const key = _normalizeSig(sig);
+    if (!key || !blob || typeof URL === "undefined" || typeof URL.createObjectURL !== "function") return null;
+    _revoke(key);
+    if (options.persisted === true) {
+      _knownKeys.add(key);
+      _keysPromise = null;
+    }
+    const url = URL.createObjectURL(blob);
+    _urlCache.set(key, url);
+    return url;
+  }
+
   async function _withConcurrency(items, limit, worker) {
     const list = Array.from(items || []);
     if (!list.length) return;
@@ -337,15 +354,31 @@
     const key = _normalizeSig(sig);
     if (!key || !blob) return false;
     await _put(key, blob);
-    _revoke(key);
-    _knownKeys.add(key);
-    _keysPromise = null;
-    _urlCache.set(key, URL.createObjectURL(blob));
+    _cacheBlobUrl(key, blob, { persisted: true });
     // Downloading an already-published diagram must not look like a coach
     // edit. Otherwise the cache write broadcasts a change event that can
     // rebuild an open player presentation while it is loading this same file.
     if (options.emit !== false) _emitChange(key);
     return true;
+  }
+
+  async function _cacheRemoteBlobForDisplay(sig, blob) {
+    try {
+      await set(sig, blob, { emit: false });
+      return {
+        url: _urlCache.get(_normalizeSig(sig)) || null,
+        persisted: true,
+      };
+    } catch (_err) {
+      // Persistent storage is an optimization, never a prerequisite for
+      // displaying an already-authorized network response. This URL lasts for
+      // the current page only and is deliberately not represented as a saved
+      // offline cache entry.
+      return {
+        url: _cacheBlobUrl(sig, blob, { persisted: false }),
+        persisted: false,
+      };
+    }
   }
 
   async function del(sig) {
@@ -738,7 +771,7 @@
     return detail || fallback || `HTTP ${res.status}`;
   }
 
-  async function _putRemoteImage(identityKey, blob) {
+  async function _putRemoteImage(identityKey, blob, options = {}) {
     const idempotencyKey = await _blobChecksum(blob);
     const knownManifest = _getCachedRemoteManifest(identityKey);
     const headers = {
@@ -756,6 +789,10 @@
         ? String(knownManifest.version || "")
         : "";
     }
+    // The admin-only Recovery Upload workflow is deliberately repair-only:
+    // it may put back the exact missing immutable object, but it must not turn
+    // an old browser copy into a silent replacement of the current diagram.
+    if (options.recoveryOnly === true) headers["X-BC-Recovery-Upload"] = "1";
     const response = await fetch(
       `/images/file?sig=${encodeURIComponent(identityKey)}`,
       {
@@ -1008,10 +1045,17 @@
           };
           continue;
         }
-        // Cache in IndexedDB under the identity key for future local lookups
-        await set(identityKey, blob, { emit: false });
-        const url = _urlCache.get(_normalizeSig(identityKey)) || null;
-        if (url) return { url, status: "ready", reason: "remote" };
+        // Cache under the identity key for future local lookups when possible.
+        // Safari Private Browsing may reject the IndexedDB write; a successful
+        // authenticated download must still render in the current session.
+        const cached = await _cacheRemoteBlobForDisplay(identityKey, blob);
+        if (cached.url) {
+          return {
+            url: cached.url,
+            status: "ready",
+            reason: cached.persisted ? "remote" : "remote-ephemeral",
+          };
+        }
         lastFailure = {
           url: null,
           status: "transient-error",
@@ -1087,18 +1131,7 @@
           continue;
         }
         const data = await response.json().catch(() => null);
-        const result = {
-          ok: Boolean(data?.ok),
-          status: data?.published ? "published" : "unpublished",
-          published: Boolean(data?.published),
-          sig: identityKey,
-          size: Number(data?.size || 0) || 0,
-          contentType: data?.contentType || "",
-          uploadedAt: data?.uploadedAt || "",
-          version: data?.version || "",
-          checksum: data?.checksum || "",
-          uploadedBy: data?.uploadedBy || "",
-        };
+        const result = _remoteManifestResult(identityKey, data);
         _cacheRemoteManifest(identityKey, result);
         if (result.published) return result;
         lastResult = result;
@@ -1121,15 +1154,22 @@
 
   function _remoteManifestResult(identityKey, data) {
     const receivedVersion = String(data?.version || "").trim();
+    const published = Boolean(data?.published);
+    // Older deployed endpoints did not include `available`; treat those
+    // responses as usable so a rolling deploy does not create false failures.
+    const available = published ? data?.available !== false : false;
     return {
       ok: Boolean(data?.ok),
-      status: data?.published ? "published" : "unpublished",
-      published: Boolean(data?.published),
+      status: published ? (available ? "published" : "unavailable") : "unpublished",
+      published,
+      available,
       sig: identityKey,
       size: Number(data?.size || 0) || 0,
       contentType: data?.contentType || "",
       uploadedAt: data?.uploadedAt || "",
       version: receivedVersion,
+      checksum: data?.checksum || "",
+      uploadedBy: data?.uploadedBy || "",
     };
   }
 
@@ -1305,7 +1345,10 @@
     for (const identityKey of identityKeys) {
       const cached = _getCachedRemoteManifest(identityKey);
       if (!cached) continue;
-      if (cached.published) return cached;
+      // `unavailable` is an authoritative terminal state for this manifest,
+      // not a negative-cache fallback that may accidentally yield an older
+      // compatible key on a later iteration.
+      if (cached.status === "unavailable" || cached.published) return cached;
       fallback = cached;
     }
     return fallback;
@@ -1452,22 +1495,7 @@
       ? opts.keys.map(_normalizeSig).filter(Boolean)
       : allKeys;
     const scopedKeys = [...new Set(requestedKeys)].filter((sig) => allKeys.includes(sig));
-    result.total = scopedKeys.length;
     if (!scopedKeys.length) return result;
-    const syncJobKey = typeof window.queueWorkspaceSyncJob === "function"
-      ? window.queueWorkspaceSyncJob("media", opts.keys ? "diagram-scope" : "diagram-all", {
-        queuedLabel: `${scopedKeys.length} diagram${scopedKeys.length === 1 ? "" : "s"} queued`,
-        runningLabel: `Uploading ${scopedKeys.length} diagram${scopedKeys.length === 1 ? "" : "s"}...`,
-        doneLabel: `${scopedKeys.length} diagram${scopedKeys.length === 1 ? "" : "s"} published`,
-        errorLabel: "Some media uploads need retry",
-        retry: () => syncToRemote(playsArray, opts),
-      })
-      : "";
-    if (syncJobKey && typeof window.startWorkspaceSyncJob === "function") {
-      window.startWorkspaceSyncJob(syncJobKey, {
-        label: `Uploading ${scopedKeys.length} diagram${scopedKeys.length === 1 ? "" : "s"}...`,
-      });
-    }
 
     // Build a reverse map: localSig → canonical stable source key for R2.
     // A content-derived local key can only be a fallback when it no longer maps
@@ -1491,9 +1519,47 @@
       return _isSourceIdentityKey(localSig) ? localSig : "";
     };
 
-    await _withConcurrency(scopedKeys, 2, async (localSig) => {
+    const syncEntries = scopedKeys.map((localSig) => ({
+      localSig,
+      identityKey: identityKeyFor(localSig),
+    }));
+    // Each successful cloud publish stores the exact player-facing payload at
+    // its canonical media ID. During recovery, prefer that byte-for-byte copy
+    // over a source/master key so the checksum can repair the immutable R2
+    // object without re-encoding it. One fallback source remains only when a
+    // device predates the canonical cache entry.
+    const recoveryEntries = opts.recoveryOnly === true
+      ? (() => {
+        const preferredByIdentity = new Map();
+        syncEntries.forEach((entry) => {
+          if (!entry.identityKey) return;
+          const prior = preferredByIdentity.get(entry.identityKey);
+          if (!prior || entry.localSig === entry.identityKey) {
+            preferredByIdentity.set(entry.identityKey, entry);
+          }
+        });
+        return syncEntries.filter((entry) =>
+          !entry.identityKey || preferredByIdentity.get(entry.identityKey) === entry);
+      })()
+      : syncEntries;
+    result.total = recoveryEntries.length;
+    const syncJobKey = typeof window.queueWorkspaceSyncJob === "function"
+      ? window.queueWorkspaceSyncJob("media", opts.keys ? "diagram-scope" : "diagram-all", {
+        queuedLabel: `${result.total} diagram${result.total === 1 ? "" : "s"} queued`,
+        runningLabel: `Uploading ${result.total} diagram${result.total === 1 ? "" : "s"}...`,
+        doneLabel: `${result.total} diagram${result.total === 1 ? "" : "s"} published`,
+        errorLabel: "Some media uploads need retry",
+        retry: () => syncToRemote(playsArray, opts),
+      })
+      : "";
+    if (syncJobKey && typeof window.startWorkspaceSyncJob === "function") {
+      window.startWorkspaceSyncJob(syncJobKey, {
+        label: `Uploading ${result.total} diagram${result.total === 1 ? "" : "s"}...`,
+      });
+    }
+
+    await _withConcurrency(recoveryEntries, 2, async ({ localSig, identityKey }) => {
       try {
-        const identityKey = identityKeyFor(localSig);
         if (!identityKey) {
           result.skipped += 1;
           if (result.errors.length < 5) {
@@ -1510,8 +1576,15 @@
           return;
         }
         result.attempted += 1;
-        const playerBlob = await _playerPublishBlob(blob);
-        const uploaded = await _putRemoteImage(identityKey, playerBlob);
+        // Avoid re-encoding a local canonical player copy during repair. It
+        // is the exact payload whose checksum is in the D1 manifest; changing
+        // even one byte would turn a safe restore into an unsafe replacement.
+        const playerBlob = opts.recoveryOnly === true && localSig === identityKey
+          ? blob
+          : await _playerPublishBlob(blob);
+        const uploaded = await _putRemoteImage(identityKey, playerBlob, {
+          recoveryOnly: opts.recoveryOnly === true,
+        });
         if (uploaded.ok) {
           await set(identityKey, playerBlob);
           _applyRemoteManifest(identityKey, uploaded.manifest);
@@ -1683,6 +1756,7 @@
       const identityKey = _remoteIdentityKey(play);
       const remoteStatus = identityKey ? remoteManifestMap[identityKey] : null;
       const remotePublished = Boolean(remoteStatus?.published);
+      const remoteAvailable = remoteStatus?.available !== false;
       const hasClip = Boolean(
         window.playClips &&
         typeof window.playClips.hasForPlay === "function" &&
@@ -1693,6 +1767,9 @@
       if (localSig && !identityKey) {
         diagramStatusName = "failed";
         detail = "Diagram exists locally, but this play does not have a stable cloud media key.";
+      } else if (remotePublished && !remoteAvailable) {
+        diagramStatusName = "failed";
+        detail = "Diagram pointer is published, but its cloud file is missing. Re-upload it from this device to restore players.";
       } else if (remotePublished) {
         diagramStatusName = "ready";
         detail = "Diagram is published for player devices.";
@@ -1706,7 +1783,7 @@
         diagramStatusName = "ready";
         detail = "Diagram publish is current for the player-visible scripts.";
       }
-      if (localSig && identityKey && ["unpublished", "stale"].includes(diagramStatusName)) {
+      if (localSig && identityKey && ["unpublished", "stale", "failed"].includes(diagramStatusName)) {
         publishableKeys.add(localSig);
       }
       return {
@@ -1890,7 +1967,7 @@
     let remoteFile = null;
     if (_remoteAvailable()) {
       remote = await checkRemoteForPlay(play);
-      if (remote.published) {
+      if (remote.published && remote.available !== false) {
         remoteFile = await _fetchRemoteForPlayResult(play);
         if (remoteFile.url) {
           return { status: "ready", source: "remote", url: remoteFile.url, message: "Diagram ready" };
@@ -1901,10 +1978,28 @@
       }
     }
 
+    if (remote?.status === "unavailable" || remote?.available === false) {
+      return {
+        status: "unavailable",
+        source: "remote",
+        url: "",
+        message: "Diagram is published, but its cloud file needs to be restored by a coach.",
+      };
+    }
+
     // Only a locally cached copy under this play's permanent media ID may be
     // used as an offline/temporary fallback. Content and historic signature
     // keys are intentionally excluded from player display resolution.
-    const cachedUrl = await ensureUrl(mediaId);
+    let cachedUrl = null;
+    try {
+      cachedUrl = await ensureUrl(mediaId);
+    } catch (_err) {
+      // IndexedDB can be unavailable in Safari Private Browsing. A remote
+      // fetch above may still have supplied an in-memory object URL, and a
+      // missing persistent cache should never turn into an uncaught render
+      // failure.
+      cachedUrl = urlFor(mediaId);
+    }
     if (cachedUrl && (
       !remote ||
       remote.status === "offline" ||
@@ -1988,9 +2083,10 @@
   // checkRemoteForPlays batch). Sync and cheap; a coach whose diagrams live in
   // the cloud but are not cached on this device still counts as having one.
   function hasPublishedDiagramForPlay(play) {
-    if (hasDisplayForPlayFast(play)) return true;
     const remote = getCachedRemoteManifestForPlay(play);
-    return Boolean(remote && remote.published);
+    if (remote?.available === false || remote?.status === "unavailable") return false;
+    if (hasDisplayForPlayFast(play)) return true;
+    return Boolean(remote?.published && remote?.available !== false);
   }
 
   function storedSignatureForPlay(play) {
@@ -2091,6 +2187,13 @@
     await _withConcurrency(uniquePlays, PREFETCH_CONCURRENCY, async (play) => {
       const mediaId = _remoteIdentityKey(play);
       const remote = getCachedRemoteManifestForPlay(play);
+      if (remote?.available === false || remote?.status === "unavailable") {
+        // A D1 pointer without its immutable R2 object is not a packet-ready
+        // diagram. Do not warm a stale local cache or make packet completion
+        // look successful; the coach must restore or intentionally replace it.
+        result.failed += 1;
+        return;
+      }
       let localUrl = null;
       // Check the current play's compatible local identities without falling
       // through to a second one-at-a-time remote lookup.
@@ -2100,7 +2203,7 @@
       }
 
       try {
-        if (remote?.published) {
+        if (remote?.published && remote?.available !== false) {
           // R2 is canonical. Fetch the current immutable object even when a
           // local cache exists so packet output reflects the latest diagram.
           const remoteUrl = await _fetchRemoteForPlay(play);
@@ -3253,7 +3356,10 @@
       }
       return;
     }
-    const result = await syncToRemote(scope.plays, { keys: scope.keys });
+    const result = await syncToRemote(scope.plays, {
+      keys: scope.keys,
+      recoveryOnly: true,
+    });
     // eslint-disable-next-line no-console
     console.log("[Diagrams] R2 recovery upload result:", result);
     if ((result.failed || result.skipped || result.pushed === 0) && typeof showToast === "function") {

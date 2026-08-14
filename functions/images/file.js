@@ -3,6 +3,7 @@
 
 import { authJson } from "../_lib/auth.js";
 import {
+  imageManifestAvailability,
   deleteImageManifest,
   imageVersionedR2Key,
   publicImageManifest,
@@ -46,7 +47,12 @@ export async function onRequestGet(context) {
     const resolved = await resolveImageManifest(context.env, bucket, access.teamId, sig);
     if (!resolved.manifest) return new Response(null, { status: 404 });
     const object = await bucket.get(resolved.manifest.r2key);
-    if (!object?.body) return new Response(null, { status: 404 });
+    if (!object?.body) {
+      return authJson({
+        ok: false,
+        error: "Diagram binary is unavailable. A coach can restore it from Recovery Upload.",
+      }, { status: 404 });
+    }
     return new Response(object.body, {
       status: 200,
       headers: {
@@ -86,8 +92,76 @@ export async function onRequestPut(context) {
     return authJson({ ok: false, error: "Diagram upload checksum did not match its idempotency key." }, { status: 400 });
   }
   const existing = await resolveImageManifest(context.env, bucket, access.teamId, sig);
-  if (existing.manifest?.checksum === checksum) {
-    return authJson(publicImageManifest(sig, existing.manifest, { idempotent: true }));
+  const recoveryOnly = context.request.headers.get("X-BC-Recovery-Upload") === "1";
+  const matchingExisting = existing.manifest?.checksum === checksum
+    && existing.manifest?.contentType === contentType
+    && Number(existing.manifest?.size || 0) === body.byteLength;
+  if (matchingExisting) {
+    const availability = await imageManifestAvailability(bucket, existing.manifest);
+    if (availability === true) {
+      return authJson(publicImageManifest(sig, existing.manifest, {
+        idempotent: true,
+        available: true,
+      }));
+    }
+    if (availability === false) {
+      // A D1 pointer may outlive a deleted R2 object. Restore only the exact
+      // same verified bytes at the exact existing immutable key; this cannot
+      // overwrite a newer diagram or silently advance the manifest.
+      const restored = await bucket.put(existing.manifest.r2key, body, {
+        httpMetadata: { contentType: existing.manifest.contentType },
+        customMetadata: {
+          teamId: access.teamId,
+          mediaId: sig,
+          version: existing.manifest.version,
+          checksum,
+          restoredAt: new Date().toISOString(),
+        },
+      });
+      const verified = await verifyStoredDiagram(bucket, existing.manifest.r2key, {
+        size: restored?.size || body.byteLength,
+        teamId: access.teamId,
+        mediaId: sig,
+        version: existing.manifest.version,
+        checksum,
+      }).catch(() => false);
+      if (!verified) {
+        return authJson({
+          ok: false,
+          error: "Diagram restore could not be verified yet. Retry safely from a device with the original diagram.",
+        }, { status: 502 });
+      }
+      return authJson(publicImageManifest(sig, existing.manifest, {
+        idempotent: true,
+        recovered: true,
+        available: true,
+      }));
+    }
+    return authJson({
+      ok: false,
+      error: "Diagram storage could not be verified. Retry safely before replacing this diagram.",
+    }, { status: 502 });
+  }
+  if (recoveryOnly && existing.manifest) {
+    // Recovery Upload is intentionally not a replacement workflow. If a
+    // surviving browser copy differs from the missing immutable object, keep
+    // the D1 pointer untouched and make the coach choose an explicit editor
+    // replacement instead. That prevents a broad recovery scan from silently
+    // changing a published play just because it found an older local blob.
+    const availability = await imageManifestAvailability(bucket, existing.manifest);
+    if (availability === null) {
+      return authJson({
+        ok: false,
+        error: "Diagram storage could not be verified. Retry Recovery Upload safely before replacing this diagram.",
+      }, { status: 502 });
+    }
+    return authJson({
+      ok: false,
+      error: availability
+        ? "Recovery Upload will not replace an existing cloud diagram. Open the play editor to intentionally replace it."
+        : "This local diagram does not match the missing cloud file. Recovery Upload restores exact matches only; open the play editor to intentionally replace it.",
+      current: publicImageManifest(sig, existing.manifest, { available: availability }),
+    }, { status: 409 });
   }
   const expectedHeader = context.request.headers.get("X-BC-Expected-Version");
   const expectedVersion = existing.manifest?.version || "";

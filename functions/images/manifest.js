@@ -1,7 +1,11 @@
 // GET /images/manifest?sig=<mediaId> — metadata for the current diagram.
 
 import { authJson } from "../_lib/auth.js";
-import { publicImageManifest, resolveImageManifest } from "../_lib/image-media.js";
+import {
+  imageManifestAvailability,
+  publicImageManifest,
+  resolveImageManifest,
+} from "../_lib/image-media.js";
 import { getMediaAccess } from "../_lib/media-access.js";
 
 const MAX_SIG_LENGTH = 512;
@@ -17,7 +21,11 @@ export async function onRequestGet(context) {
   if (!access.ok) return authJson({ ok: false, error: access.error }, { status: access.status });
   try {
     const resolved = await resolveImageManifest(context.env, bucket, access.teamId, sig);
-    return authJson(publicImageManifest(sig, resolved.manifest, { legacy: resolved.legacy }));
+    const available = await imageManifestAvailability(bucket, resolved.manifest);
+    return authJson(publicImageManifest(sig, resolved.manifest, {
+      legacy: resolved.legacy,
+      available,
+    }));
   } catch (_err) {
     return authJson({ ok: false, error: "Image manifest could not be read." }, { status: 502 });
   }

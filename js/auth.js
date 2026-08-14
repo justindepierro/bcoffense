@@ -233,6 +233,7 @@
     "nextScriptQuizPlay",
     "prevScriptQuizPlay",
     "closePlayPresentation",
+    "togglePlayPresentationFullscreen",
     "closePlayerPlaybookFilters",
     "setPlayPresentationMode",
     "setPlayPresentationPosition",

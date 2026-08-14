@@ -185,11 +185,20 @@ export async function deleteImageManifest(env, teamId, mediaId, opts = {}) {
 }
 
 export function publicImageManifest(mediaId, manifest, opts = {}) {
-  if (!manifest) return { ok: true, sig: mediaId, published: false };
+  if (!manifest) return { ok: true, sig: mediaId, published: false, available: false };
+  // `published` means that a team-scoped D1 pointer exists. `available` is
+  // intentionally separate: a pointer can survive an interrupted R2 restore
+  // or an accidental object deletion, and clients must never mistake that for
+  // a usable image file. `null` preserves an inconclusive storage check so a
+  // transient R2 problem is not mislabeled as a missing binary.
+  const available = Object.prototype.hasOwnProperty.call(opts, "available")
+    ? opts.available
+    : true;
   return {
     ok: true,
     sig: mediaId,
     published: true,
+    available,
     version: manifest.version,
     size: Number(manifest.size || 0),
     contentType: manifest.contentType || "image/jpeg",
@@ -198,7 +207,22 @@ export function publicImageManifest(mediaId, manifest, opts = {}) {
     uploadedBy: manifest.uploadedBy || "",
     legacy: Boolean(opts.legacy),
     idempotent: Boolean(opts.idempotent),
+    recovered: Boolean(opts.recovered),
   };
+}
+
+// Manifest reads normally avoid fetching image bytes. A small R2 HEAD lets
+// those reads distinguish a valid D1 pointer from a dangling one without
+// exposing an unavailable diagram as player-ready. `null` means the storage
+// check itself was inconclusive; callers should still attempt the authorized
+// file read rather than fabricate a missing-file result.
+export async function imageManifestAvailability(bucket, manifest) {
+  if (!manifest?.r2key || !bucket?.head) return false;
+  try {
+    return Boolean(await bucket.head(manifest.r2key));
+  } catch (_err) {
+    return null;
+  }
 }
 
 export async function resolveImageManifest(env, _bucket, teamId, mediaId) {

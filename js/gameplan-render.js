@@ -1424,15 +1424,19 @@ function _gpMediaStatusForPlay(play) {
     typeof window.playImages.hasForPlay === "function" &&
     window.playImages.hasForPlay(play)
   );
-  const remoteDiagram = !hasLocalDiagram &&
-    window.playImages &&
+  const remoteDiagram = window.playImages &&
     typeof window.playImages.getCachedRemoteManifestForPlay === "function"
     ? window.playImages.getCachedRemoteManifestForPlay(play)
     : null;
   return {
     // A canonical R2 pointer is just as player-ready as a local IndexedDB
-    // cache.  The player will fetch the published blob on demand.
-    hasDiagram: hasLocalDiagram || Boolean(remoteDiagram?.published),
+    // cache only while its immutable object exists. A dangling pointer is
+    // definitive player-media failure, even when this coach still has a
+    // browser-local authoring blob.
+    hasDiagram: Boolean(
+      remoteDiagram?.available !== false &&
+      (hasLocalDiagram || remoteDiagram?.published),
+    ),
     hasVideo: Boolean(
       play &&
       window.playClips &&
@@ -1462,8 +1466,7 @@ function _gpWarmMediaCompletionRemote(draftedPlays) {
   ) return;
 
   const unknownRemotePlays = _gpUniqueDraftedPlays(draftedPlays).filter((play) => {
-    const local = typeof playImages.hasForPlay === "function" && playImages.hasForPlay(play);
-    return !local && !playImages.getCachedRemoteManifestForPlay(play);
+    return !playImages.getCachedRemoteManifestForPlay(play);
   });
   if (unknownRemotePlays.length === 0) return;
 

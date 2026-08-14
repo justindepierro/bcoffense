@@ -18,6 +18,14 @@ const RUNTIME_IGNORE_PATTERNS = [
   /The play\(\) request was interrupted/i,
   /requestfailed net::ERR_ABORTED .*\/api\/threads\/batch-counts/i,
 ];
+// Local E2E validates our loopback app, not a third-party font CDN. Routes
+// normally stub these requests, but Chromium can surface a late stylesheet
+// subresource from the prior document while a hydration test intentionally
+// reloads. Keep that external-only flake out of the local runtime ledger; a
+// production font failure remains visible to non-local checks.
+const LOCAL_RUNTIME_IGNORE_PATTERNS = E2E_LOCAL
+  ? [/https:\/\/fonts\.(?:gstatic|googleapis)\.com\//i]
+  : [];
 
 const LOCAL_SEED_PLAYS = [
   {
@@ -246,7 +254,8 @@ function isIgnoredRuntimeIssue(issue, extraPatterns = []) {
   const text = [issue.type, issue.message, issue.url, issue.source]
     .filter(Boolean)
     .join(" ");
-  return [...RUNTIME_IGNORE_PATTERNS, ...extraPatterns].some((pattern) => pattern.test(text));
+  return [...RUNTIME_IGNORE_PATTERNS, ...LOCAL_RUNTIME_IGNORE_PATTERNS, ...extraPatterns]
+    .some((pattern) => pattern.test(text));
 }
 
 function isExpectedReloadCancellation(request) {

@@ -364,6 +364,10 @@ function togglePlayPresentationCleanView() {
 // the installed PWA. When a coach rotates to landscape in plain Safari we surface
 // a dismissible nudge that opens the Add-to-Home-Screen guide.
 function shouldShowPlayPresentationProjectorPrompt() {
+  // Players enter this as a study flow. A persistent install prompt sits over
+  // the diagram and competes with the call/rule panel; the existing fullscreen
+  // control still opens the guide when a player explicitly asks for it.
+  if (isPlayerPresentationRole()) return false;
   if (playPresentationProjectorPromptDismissed) return false;
   if (isPlayPresentationStandalone()) return false;
   if (!isPlayPresentationIPadOS()) return false;
@@ -2048,6 +2052,13 @@ function getPlayPresentationDiagramStatusCopy(status) {
       pill: "offline",
     };
   }
+  if (status === "unavailable") {
+    return {
+      message: "This diagram is published, but its cloud file needs to be restored by a coach.",
+      label: "Diagram needs restore",
+      pill: "error",
+    };
+  }
   if (status === "load-error") {
     return {
       message: "Diagram is published but could not be loaded. Reload when your connection is stable.",
@@ -3328,6 +3339,10 @@ function dismissPlayPresentationIpadHelp() {
 }
 
 function maybeShowPlayPresentationIpadHelp() {
+  // Never interrupt a player opening Swipe View with browser-install
+  // onboarding. Staff retain the existing first-use projector guidance, while
+  // players can reach the same instructions from the fullscreen control.
+  if (isPlayerPresentationRole()) return;
   if (isPlayPresentationIpadHelpDismissed()) return;
   if (!isPlayPresentationIPadOS() || isPlayPresentationStandalone()) return;
   openPlayPresentationIpadHelp();
