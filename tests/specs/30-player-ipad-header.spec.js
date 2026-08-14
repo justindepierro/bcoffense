@@ -470,4 +470,118 @@ test.describe("Player iPad Safari header hierarchy", () => {
     await goToTab(page, "playbook");
     await assertHomeIsAtTheTopOfTheRoute("returning from Playbook");
   });
+
+  test("keeps the contextual Open practice action pinned below the iPad shelf without reserving a Home spacer", async ({ page }, testInfo) => {
+    test.skip(
+      !["ipad-portrait", "ipad-landscape"].includes(testInfo.project.name),
+      "This regression requires the touch-enabled WebKit iPad projects.",
+    );
+
+    const m1Viewport = testInfo.project.name === "ipad-landscape"
+      ? M1_IPAD_LANDSCAPE
+      : M1_IPAD_PORTRAIT;
+    await page.setViewportSize(m1Viewport);
+    await login(page, { role: "player", username: "player", password: "password" });
+    await dismissFirstUse(page);
+
+    await page.evaluate(() => {
+      const today = new Date().toISOString().slice(0, 10);
+      storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, [{
+        id: "player-ipad-sticky-practice",
+        name: "M1 iPad Sticky Practice",
+        date: today,
+        playerVisible: true,
+        savedAt: new Date().toISOString(),
+        plays: Array.from({ length: 8 }, (_, index) => ({
+          id: `player-ipad-sticky-play-${index + 1}`,
+          type: index % 2 ? "Pass" : "Run",
+          play: `Sticky Practice Call ${index + 1}`,
+          reps: 2,
+          respQ: "Read the leverage, communicate, and finish the rep.",
+        })),
+      }]);
+      storageManager.set(STORAGE_KEYS.TEAM_NAME, "Burke Catholic Eagles");
+      renderPlayerDashboardHome();
+      showTab("dashboard");
+    });
+
+    await page.waitForFunction(() => {
+      const home = document.getElementById("playerDashboardHome");
+      const bar = document.getElementById("playerStickyBar");
+      const hero = home?.querySelector(".player-home-hero");
+      return Boolean(home && !home.hidden && bar && hero);
+    });
+
+    const initial = await page.evaluate(() => {
+      const shelf = document.querySelector("#mainApp > .tabs");
+      const hero = document.querySelector("#playerDashboardHome .player-home-hero");
+      const bar = document.getElementById("playerStickyBar");
+      const shelfBox = shelf?.getBoundingClientRect();
+      const heroBox = hero?.getBoundingClientRect();
+      return {
+        shelfBottom: shelfBox?.bottom || 0,
+        heroTop: heroBox?.top || 0,
+        barPosition: bar ? getComputedStyle(bar).position : "",
+      };
+    });
+
+    expect(initial.barPosition).toBe("fixed");
+    expect(
+      initial.heroTop - initial.shelfBottom,
+      "the hidden contextual action does not leave a blank Home row",
+    ).toBeLessThanOrEqual(64);
+
+    // The normal Home surface is intentionally compact. Add harmless test-only
+    // scroll room so both physical M1 orientations exercise the sticky state.
+    await page.evaluate(() => {
+      const home = document.getElementById("playerDashboardHome");
+      if (!home || document.getElementById("playerStickyBarScrollRoom")) return;
+      const scrollRoom = document.createElement("div");
+      scrollRoom.id = "playerStickyBarScrollRoom";
+      scrollRoom.setAttribute("aria-hidden", "true");
+      scrollRoom.style.height = `${Math.max(window.innerHeight, 900)}px`;
+      home.append(scrollRoom);
+    });
+    await page.evaluate(() => {
+      const hero = document.querySelector("#playerDashboardHome .player-home-hero");
+      if (!hero) return;
+      window.scrollTo(0, Math.ceil(window.scrollY + hero.getBoundingClientRect().bottom + 16));
+    });
+    await page.waitForFunction(() => {
+      const bar = document.getElementById("playerStickyBar");
+      return Boolean(
+        bar?.classList.contains("is-visible") &&
+        Number.parseFloat(getComputedStyle(bar).opacity) > 0.98,
+      );
+    });
+
+    const sticky = await page.evaluate(() => {
+      const bar = document.getElementById("playerStickyBar");
+      const header = document.querySelector(".app-header");
+      const barBox = bar?.getBoundingClientRect();
+      const headerBox = header?.getBoundingClientRect();
+      return {
+        top: barBox?.top || 0,
+        bottom: barBox?.bottom || 0,
+        viewportHeight: window.innerHeight,
+        position: bar ? getComputedStyle(bar).position : "",
+        headerBottom: headerBox?.bottom || 0,
+      };
+    });
+
+    expect(sticky.position).toBe("fixed");
+    expect(
+      sticky.top,
+      "Open practice clears the persisted Home shelf by its intended 8px gap",
+    ).toBeGreaterThanOrEqual(initial.shelfBottom + 7);
+    expect(sticky.top).toBeGreaterThan(sticky.headerBottom);
+    expect(sticky.bottom).toBeLessThanOrEqual(sticky.viewportHeight);
+
+    await goToTab(page, "playbook");
+    await expect(page.locator("#playbook.active")).toBeVisible();
+    await expect(page.locator("#tab-playbook")).toHaveAttribute("aria-selected", "true");
+    await goToTab(page, "dashboard");
+    await expect(page.locator("#playerDashboardHome")).toBeVisible();
+    await expect(page.locator("#tab-dashboard")).toHaveAttribute("aria-selected", "true");
+  });
 });

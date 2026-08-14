@@ -4143,6 +4143,34 @@ body.is-phone-screen[data-auth-role="player"] .player-home-card::before {
   color: var(--color-text);
 }
 
+/* Roomy player iPads use a document-scrolling Home route while the study
+   shelf belongs to the short legacy #mainApp wrapper above it. A normal
+   `sticky` child here therefore runs out of its containing block and can
+   drift away with the hero just when its Open practice action is needed.
+   Keep this one contextual action out of the initial flow, then pin it below
+   the persistent player chrome (header plus study shelf) only after the hero
+   has left the viewport. That prevents it from covering either destination
+   controls or the page heading.
+   Phones retain their bottom-navigation behavior and desktop retains its
+   panel-scoped sticky banner. */
+@media (min-width: 821px) and (min-height: 641px) {
+  body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"][data-study-navigation="top"]
+    #dashboard
+    .player-sticky-bar {
+    position: fixed;
+    top: calc(
+      /* The runtime tab-height token is measured before its two shelf borders
+         settle in WebKit; retain an actual 8px visual gap below that edge. */
+      var(--app-header-height, 60px) + var(--app-tabs-height, 56px) + 10px
+    );
+    right: max(14px, env(safe-area-inset-right, 0px));
+    left: max(14px, env(safe-area-inset-left, 0px));
+    z-index: calc(var(--z-header) - 1);
+    box-sizing: border-box;
+    min-height: 48px;
+  }
+}
+
 /* ======= Player Portal: empty state (item 29) ======= */
 .player-home-empty-state {
   display: grid;
