@@ -531,21 +531,22 @@ test.describe("Player iPad Safari header hierarchy", () => {
       "the hidden contextual action does not leave a blank Home row",
     ).toBeLessThanOrEqual(64);
 
-    // The normal Home surface is intentionally compact. Add harmless test-only
-    // scroll room so both physical M1 orientations exercise the sticky state.
+    // The normal Home surface is intentionally compact. Reserve test-only
+    // document scroll room (rather than appending into Home, which a routine
+    // dashboard refresh can replace) so both physical M1 orientations exercise
+    // the observer-backed sticky state deterministically.
     await page.evaluate(() => {
-      const home = document.getElementById("playerDashboardHome");
-      if (!home || document.getElementById("playerStickyBarScrollRoom")) return;
-      const scrollRoom = document.createElement("div");
-      scrollRoom.id = "playerStickyBarScrollRoom";
-      scrollRoom.setAttribute("aria-hidden", "true");
-      scrollRoom.style.height = `${Math.max(window.innerHeight, 900)}px`;
-      home.append(scrollRoom);
+      document.body.style.paddingBottom = `${Math.max(window.innerHeight, 900)}px`;
     });
-    await page.evaluate(() => {
+    await page.evaluate(async () => {
       const hero = document.querySelector("#playerDashboardHome .player-home-hero");
       if (!hero) return;
-      window.scrollTo(0, Math.ceil(window.scrollY + hero.getBoundingClientRect().bottom + 16));
+      window.scrollTo(0, Math.ceil(window.scrollY + hero.getBoundingClientRect().bottom + 24));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    });
+    await page.waitForFunction(() => {
+      const hero = document.querySelector("#playerDashboardHome .player-home-hero");
+      return Boolean(hero && hero.getBoundingClientRect().bottom < 0);
     });
     await page.waitForFunction(() => {
       const bar = document.getElementById("playerStickyBar");
