@@ -798,6 +798,11 @@ function syncMobileShellState() {
     "is-staff-mobile-shell",
     isMobile && Boolean(authRole) && !isStudyPortal && authRole !== "locked",
   );
+  if (isStudyPortal) {
+    body.dataset.studyNavigation = playerBottomNavActive ? "bottom" : "top";
+  } else {
+    delete body.dataset.studyNavigation;
+  }
   if (coachDockHeight > 0) {
     setMobileShellCssVar(root, "--coach-dock-height", `${coachDockHeight + 12}px`);
   } else {

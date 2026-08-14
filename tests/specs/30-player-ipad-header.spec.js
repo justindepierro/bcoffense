@@ -4,11 +4,12 @@
  *
  * The player study shell must keep a clear hierarchy on a roomy iPad: direct
  * access is reserved for Questions, notifications, and More. Account context
- * and lower-frequency utilities live in More so they are still available
- * without turning the app header into a row of floating pills.
+ * and lower-frequency utilities live in More so they are still available.
+ * Those three actions must be visibly contained as one small utility toolbar,
+ * not a row of floating pills.
  */
 const { test, expect } = require("@playwright/test");
-const { login, dismissFirstUse } = require("./helpers");
+const { login, dismissFirstUse, goToTab } = require("./helpers");
 
 const M1_IPAD_LANDSCAPE = { width: 1194, height: 834 };
 const M1_IPAD_PORTRAIT = { width: 834, height: 1194 };
@@ -105,8 +106,10 @@ test.describe("Player iPad Safari header hierarchy", () => {
           return { label: tab.textContent?.trim() || "", width: box.width, height: box.height };
         });
       const titleGroup = document.querySelector(".app-title-group");
+      const utilityGroup = document.querySelector(".app-header-actions");
       const headerBox = header?.getBoundingClientRect();
       const tabBox = tabs?.getBoundingClientRect();
+      const utilityGroupBox = utilityGroup?.getBoundingClientRect();
 
       return {
         viewport: { width: window.innerWidth, height: window.innerHeight },
@@ -127,6 +130,22 @@ test.describe("Player iPad Safari header hierarchy", () => {
           refresh: getComputedStyle(document.querySelector(".header-refresh-btn")).display,
           theme: getComputedStyle(document.getElementById("headerThemeToggleBtn")).display,
           questionLabel: getComputedStyle(document.querySelector(".pport-header-btn .header-action-label")).display,
+        },
+        utilityGroup: utilityGroupBox && {
+          left: utilityGroupBox.left,
+          right: utilityGroupBox.right,
+          top: utilityGroupBox.top,
+          bottom: utilityGroupBox.bottom,
+          width: utilityGroupBox.width,
+          height: utilityGroupBox.height,
+          gap: getComputedStyle(utilityGroup).gap,
+          borderTopWidth: getComputedStyle(utilityGroup).borderTopWidth,
+          borderRadius: getComputedStyle(utilityGroup).borderTopLeftRadius,
+          backgroundColor: getComputedStyle(utilityGroup).backgroundColor,
+          separators: {
+            questions: getComputedStyle(document.getElementById("playerPortalBtn")).borderInlineEndWidth,
+            notifications: getComputedStyle(document.getElementById("notifBellBtn")).borderInlineEndWidth,
+          },
         },
         tabs: tabBox && {
           top: tabBox.top,
@@ -160,12 +179,27 @@ test.describe("Player iPad Safari header hierarchy", () => {
       expect(box?.width || 0, `${selector} width`).toBeGreaterThanOrEqual(44);
       expect(box?.height || 0, `${selector} height`).toBeGreaterThanOrEqual(44);
     });
+    expect(chrome.utilityGroup).not.toBeNull();
+    expect(chrome.utilityGroup?.height || 0).toBeGreaterThanOrEqual(44);
+    expect(chrome.utilityGroup?.gap).toBe("0px");
+    expect(chrome.utilityGroup?.borderTopWidth).toBe("1px");
+    expect(chrome.utilityGroup?.borderRadius).not.toBe("0px");
+    expect(chrome.utilityGroup?.backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+    expect(chrome.utilityGroup?.separators).toEqual({
+      questions: "1px",
+      notifications: "1px",
+    });
     for (let index = 1; index < chrome.direct.length; index += 1) {
       const previous = chrome.direct[index - 1].rect;
       const current = chrome.direct[index].rect;
       expect(previous && current && !overlaps(previous, current), "header controls do not overlap").toBe(true);
-      expect((current?.left || 0) - (previous?.right || 0), "header controls retain a visible gap").toBeGreaterThanOrEqual(4);
+      expect((current?.left || 0) - (previous?.right || 0), "connected toolbar segments stay adjacent").toBeGreaterThanOrEqual(0);
+      expect((current?.left || 0) - (previous?.right || 0), "connected toolbar segments have no floating gap").toBeLessThanOrEqual(1);
+      expect(previous && current && previous.left >= (chrome.utilityGroup?.left || 0), "segment starts inside its shared toolbar").toBe(true);
+      expect(previous && current && previous.right <= (chrome.utilityGroup?.right || 0), "segment ends inside its shared toolbar").toBe(true);
     }
+    const lastDirect = chrome.direct.at(-1)?.rect;
+    expect(lastDirect && lastDirect.right <= (chrome.utilityGroup?.right || 0), "final segment ends inside its shared toolbar").toBe(true);
 
     expect(chrome.tabs).not.toBeNull();
     expect(chrome.tabRects.length).toBeGreaterThanOrEqual(5);
@@ -259,6 +293,116 @@ test.describe("Player iPad Safari header hierarchy", () => {
       const previous = standardLandscape.direct[index - 1].rect;
       const current = standardLandscape.direct[index].rect;
       expect(previous && current && !overlaps(previous, current), "1024×768 header controls do not overlap").toBe(true);
+    }
+  });
+
+  test("keeps one usable study shelf through Home, Playbook, Signals, Practice, and Quiz", async ({ page }, testInfo) => {
+    test.skip(
+      !["ipad-portrait", "ipad-landscape"].includes(testInfo.project.name),
+      "This regression requires the touch-enabled WebKit iPad projects.",
+    );
+
+    const m1Viewport = testInfo.project.name === "ipad-landscape"
+      ? M1_IPAD_LANDSCAPE
+      : M1_IPAD_PORTRAIT;
+    await page.setViewportSize(m1Viewport);
+    await login(page, { role: "player", username: "player", password: "password" });
+    await dismissFirstUse(page);
+
+    const destinations = [
+      { tab: "dashboard", id: "tab-dashboard" },
+      { tab: "playbook", id: "tab-playbook" },
+      { tab: "signals", id: "tab-signals" },
+      { tab: "script", id: "tab-script" },
+      { tab: "quiz", id: "tab-quiz" },
+    ];
+
+    for (const destination of destinations) {
+      await goToTab(page, destination.tab);
+      await page.waitForFunction((expected) => {
+        const strip = document.querySelector("#mainApp > .tabs");
+        const active = document.getElementById(expected.id);
+        const panel = document.getElementById(expected.tab);
+        if (!strip || !active || !panel) return false;
+        const style = getComputedStyle(strip);
+        const box = strip.getBoundingClientRect();
+        return (
+          document.body.dataset.studyNavigation === "top" &&
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          box.width > 0 &&
+          box.height > 0 &&
+          active.getAttribute("aria-selected") === "true" &&
+          !active.hidden &&
+          panel.classList.contains("active")
+        );
+      }, destination);
+
+      const shelf = await page.evaluate(() => {
+        const strip = document.querySelector("#mainApp > .tabs");
+        const header = document.querySelector(".app-header");
+        const visible = (element) => {
+          if (!element || element.hidden) return false;
+          const style = getComputedStyle(element);
+          const box = element.getBoundingClientRect();
+          return style.display !== "none" && style.visibility !== "hidden" && box.width > 0 && box.height > 0;
+        };
+        const rect = (element) => {
+          const box = element.getBoundingClientRect();
+          return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height };
+        };
+        const visibleTabs = Array.from(strip?.querySelectorAll(":scope > .tab") || [])
+          .filter(visible)
+          .map((tab) => {
+            const style = getComputedStyle(tab);
+            return {
+              id: tab.id,
+              selected: tab.getAttribute("aria-selected"),
+              rect: rect(tab),
+              borderRadius: style.borderTopLeftRadius,
+              borderTopWidth: style.borderTopWidth,
+              boxShadow: style.boxShadow,
+            };
+          });
+        return {
+          navigation: document.body.dataset.studyNavigation,
+          active: document.body.dataset.activeTab,
+          position: strip ? getComputedStyle(strip).position : "",
+          strip: strip && {
+            ...rect(strip),
+            backgroundColor: getComputedStyle(strip).backgroundColor,
+            borderTopWidth: getComputedStyle(strip).borderTopWidth,
+          },
+          header: header ? rect(header) : null,
+          scrollWidth: strip?.scrollWidth || 0,
+          clientWidth: strip?.clientWidth || 0,
+          visibleTabs,
+        };
+      });
+
+      expect(shelf.navigation).toBe("top");
+      expect(shelf.active).toBe(destination.tab);
+      expect(shelf.position).toBe("sticky");
+      expect(shelf.strip).not.toBeNull();
+      expect((shelf.strip?.height || 0), "the shelf remains compact").toBeGreaterThanOrEqual(52);
+      expect((shelf.strip?.height || 0), "the shelf does not grow into page chrome").toBeLessThanOrEqual(58);
+      expect((shelf.strip?.top || 0) - (shelf.header?.bottom || 0), "the shelf stays attached below the header").toBeLessThanOrEqual(1);
+      expect(shelf.strip?.borderTopWidth).toBe("1px");
+      expect(shelf.strip?.backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+      expect(shelf.scrollWidth, "all five destinations fit without a hidden horizontal route").toBeLessThanOrEqual(
+        shelf.clientWidth + 1,
+      );
+      expect(shelf.visibleTabs.map((tab) => tab.id)).toEqual(destinations.map((item) => item.id));
+      shelf.visibleTabs.forEach((tab) => {
+        expect(tab.rect.height, `${tab.id} remains touch-safe`).toBeGreaterThanOrEqual(44);
+        expect(tab.rect.top, `${tab.id} stays within the shelf`).toBeGreaterThanOrEqual((shelf.strip?.top || 0) - 1);
+        expect(tab.rect.bottom, `${tab.id} stays within the shelf`).toBeLessThanOrEqual((shelf.strip?.bottom || 0) + 1);
+        expect(tab.borderRadius, `${tab.id} is a shelf segment, not a floating pill`).toBe("0px");
+        expect(tab.borderTopWidth, `${tab.id} does not restore its old pill border`).toBe("0px");
+      });
+      const activeTab = shelf.visibleTabs.find((tab) => tab.id === destination.id);
+      expect(activeTab?.selected).toBe("true");
+      expect(activeTab?.boxShadow, "the active route has a contained underline").not.toBe("none");
     }
   });
 });

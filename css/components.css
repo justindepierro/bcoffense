@@ -4485,15 +4485,6 @@ body.is-mobile-screen .page-library-btn {
 body[data-auth-role="player"] .page-fab-cluster {
   display: none !important;
 }
-body.is-mobile-screen[data-auth-role="player"][data-active-tab="playbook"] .page-fab-cluster {
-  display: flex !important;
-}
-body.is-mobile-screen[data-auth-role="player"][data-active-tab="playbook"] .page-library-fab {
-  display: none;
-}
-body.is-mobile-screen[data-auth-role="player"][data-active-tab="playbook"] .page-actions-fab {
-  display: inline-flex;
-}
 
 /* Share the tablet floating-control reservations from layout.css. Keep the
    status dock at the edge, page actions in the middle slot, and Quick Tools in

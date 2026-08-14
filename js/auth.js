@@ -42,6 +42,16 @@
   // players. Additional coach-workspace tabs remain deliberately unavailable
   // until that authoring experience is ready to ship.
   const STUDY_PORTAL_TABS = [...AUTH_CORE_PLAYER_TABS.player, "quiz"];
+  // Keep the player study rail in one intentional order. This is separate
+  // from AUTH_ROLE_TABS because the DOM also contains coach-only tabs which
+  // are projected out by role gating.
+  const PLAYER_STUDY_TAB_IDS = [
+    "tab-dashboard",
+    "tab-playbook",
+    "tab-signals",
+    "tab-script",
+    "tab-quiz",
+  ];
 
   // D1-backed coaches can study every coaching surface by default. Workspace
   // editing and staff-management capabilities remain explicit grants.
@@ -638,6 +648,39 @@
       }
     }
     if (utilitiesWrap) utilitiesWrap.hidden = isStudyPortal;
+
+    // Auth projection runs asynchronously as player surfaces render. Keep the
+    // five study destinations together at the front of the real tab list so a
+    // Home/dashboard render can never leave the player with a partial or
+    // detached navigation strip. This deliberately applies only to players:
+    // managed coaches retain their permission-scoped study tabs.
+    if (isPlayer && tabStrip) {
+      const playerTabs = PLAYER_STUDY_TAB_IDS
+        .map((id) => document.getElementById(id))
+        .filter((tab) => tab instanceof HTMLElement);
+      const playerTabSet = new Set(playerTabs);
+      playerTabs.forEach((tab) => {
+        // A prior role projection can leave an allowed tab with a stale hidden
+        // attribute while its dashboard content is re-rendering. The normal
+        // auth scan confirms the same policy on the following frame.
+        tab.hidden = false;
+        delete tab.dataset.authHidden;
+        tab.removeAttribute("aria-hidden");
+      });
+      // Do not detach an already-correct shelf during every tab transition.
+      // Preserving the existing nodes also preserves touch focus in Safari.
+      const isAlreadyOrdered = playerTabs.every(
+        (tab, index) => tabStrip.children[index] === tab,
+      );
+      if (!isAlreadyOrdered) {
+        const firstNonPlayerTab = Array.from(tabStrip.children).find(
+          (child) => !playerTabSet.has(child),
+        );
+        const orderedPlayerTabs = document.createDocumentFragment();
+        playerTabs.forEach((tab) => orderedPlayerTabs.append(tab));
+        tabStrip.insertBefore(orderedPlayerTabs, firstNonPlayerTab || null);
+      }
+    }
     // Study-first coaches can use the same personal questions inbox as players.
     const portalBtn = document.getElementById("playerPortalBtn");
     if (portalBtn) portalBtn.hidden = !isStudyPortal;
@@ -656,6 +699,15 @@
       if (tab.textContent.trim() !== nextLabel) tab.textContent = nextLabel;
     });
   }
+
+  // `showTab()` owns panel activation while this module owns role-projected
+  // navigation. Keeping that boundary explicit makes the player shelf stable
+  // through Home, Playbook, Signals, Practice, and Quiz transitions.
+  document.addEventListener("bc:tabchange", () => {
+    if (currentAuthUser?.role === "player" || isManagedCoachUser()) {
+      syncPlayerPortalChrome();
+    }
+  });
 
   function isReadOnlyRole() {
     return Boolean(currentAuthUser && !canEditUser());
@@ -1086,6 +1138,10 @@
     _applyRoleUiRafId = requestAnimationFrame(() => {
       _applyRoleUiRafId = null;
       applyAuthToTree(document);
+      // Let the role scan complete first, then restore the player study shelf
+      // as one atomic group. This closes the short DOM-mutation window where
+      // Home used to be able to look like it had no primary navigation.
+      syncPlayerPortalChrome();
     });
 
     const userBadge = document.getElementById("authUserBadge");

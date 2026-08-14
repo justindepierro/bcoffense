@@ -76,6 +76,12 @@ function showTab(tabName) {
 
   currentActiveTab = tabName;
   if (document.body) document.body.dataset.activeTab = tabName;
+  // The player study strip is a persistent shell element. Notify the auth
+  // projection after every destination change so a dashboard/Home render or a
+  // late role mutation cannot leave a partial tab group behind.
+  document.dispatchEvent(
+    new CustomEvent("bc:tabchange", { detail: { tabName } }),
+  );
   if (typeof syncMobilePrimaryNav === "function") syncMobilePrimaryNav();
 
   document
