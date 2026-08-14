@@ -42,6 +42,9 @@ test.describe("Player iPad Safari header hierarchy", () => {
     await dismissFirstUse(page);
     await page.waitForFunction(() => {
       const body = document.body;
+      const overflow = document.getElementById("headerOverflowToggle");
+      const overflowStyle = overflow ? getComputedStyle(overflow) : null;
+      const overflowBox = overflow?.getBoundingClientRect();
       return (
         body?.dataset.authRole === "player" &&
         body.classList.contains("shell-tablet") &&
@@ -49,7 +52,13 @@ test.describe("Player iPad Safari header hierarchy", () => {
         Boolean(document.getElementById("playerPortalBtn")) &&
         !document.getElementById("playerPortalBtn")?.hidden &&
         Boolean(document.getElementById("notifBellBtn")) &&
-        !document.getElementById("notifBellBtn")?.hidden
+        !document.getElementById("notifBellBtn")?.hidden &&
+        Boolean(overflow) &&
+        !overflow?.hidden &&
+        overflowStyle?.display !== "none" &&
+        Number(overflowStyle?.opacity || "1") > 0 &&
+        (overflowBox?.width || 0) >= 44 &&
+        (overflowBox?.height || 0) >= 44
       );
     });
     const chrome = await page.evaluate(() => {
