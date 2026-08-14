@@ -1870,6 +1870,21 @@ async function probeTabletIndexCardEditor(page) {
     return { ...result, skipped: true, reason: "staff tablet probe" };
   }
 
+  // The native sheet action is what this probe is asserting. Its modal uses a
+  // short entrance/layout transition, which can leave a visible choice's box
+  // moving by a fractional pixel in Chromium. A Playwright pointer click then
+  // waits for geometry stability until the *case* watchdog wins and tears down
+  // the browser. Wait for the real visible, enabled control and invoke its
+  // normal DOM click instead; the same delegated production handler runs, but
+  // the harness does not mistake a paint-only transition for a UI failure.
+  const chooseModalAction = async (modal, value) => {
+    const choice = modal.locator(`[data-choice-value="${value}"]`).first();
+    await choice.waitFor({ state: "visible", timeout: 3000 });
+    const enabled = await choice.evaluate((button) => !button.disabled && button.getAttribute("aria-disabled") !== "true");
+    if (!enabled) throw new Error(`Modal choice ${value} was disabled`);
+    await choice.evaluate((button) => button.click());
+  };
+
   const snapshot = await page.evaluate(() => {
     const clone = (value, fallback) => {
       try { return JSON.parse(JSON.stringify(value)); } catch (_error) { return fallback; }
@@ -2032,7 +2047,7 @@ async function probeTabletIndexCardEditor(page) {
       : [];
     const callActionSheetOk = ["up", "indent", "compact", "edit", "remove"].every((value) => callActionValues.includes(value));
     if (callActionsVisible) {
-      await callActionModal.locator('[data-choice-value="up"]').click();
+      await chooseModalAction(callActionModal, "up");
       await page.waitForTimeout(240);
     }
     const callMovedUp = callActionsVisible && await page.waitForFunction(({ first, second }) => {
@@ -2049,7 +2064,7 @@ async function probeTabletIndexCardEditor(page) {
       ? await callActionModal.locator("[data-choice-value]").evaluateAll((buttons) => buttons.map((button) => button.getAttribute("data-choice-value") || ""))
       : [];
     if (callMoveDownVisible) {
-      await callActionModal.locator('[data-choice-value="down"]').click();
+      await chooseModalAction(callActionModal, "down");
       await page.waitForTimeout(240);
     }
     const callMovedDown = callMoveDownVisible && await page.waitForFunction(({ first, second }) => {
@@ -2063,7 +2078,7 @@ async function probeTabletIndexCardEditor(page) {
       .then(() => true)
       .catch(() => false);
     if (compactActionVisible) {
-      await callActionModal.locator('[data-choice-value="compact"]').click();
+      await chooseModalAction(callActionModal, "compact");
       await page.waitForTimeout(240);
     }
     const compactApplied = compactActionVisible && await page.waitForFunction(() => {
@@ -2088,7 +2103,7 @@ async function probeTabletIndexCardEditor(page) {
       ? await situationModal.locator("[data-choice-value]").evaluateAll((buttons) => buttons.map((button) => button.getAttribute("data-choice-value") || ""))
       : [];
     if (situationVisible) {
-      await situationModal.locator('[data-choice-value="move-down"]').click();
+      await chooseModalAction(situationModal, "move-down");
       await page.waitForTimeout(240);
     }
     const situationMovedDown = situationVisible && await page.waitForFunction(({ first, second }) => {
@@ -2106,7 +2121,7 @@ async function probeTabletIndexCardEditor(page) {
       ? await situationModal.locator("[data-choice-value]").evaluateAll((buttons) => buttons.map((button) => button.getAttribute("data-choice-value") || ""))
       : [];
     if (situationMoveUpVisible) {
-      await situationModal.locator('[data-choice-value="move-up"]').click();
+      await chooseModalAction(situationModal, "move-up");
       await page.waitForTimeout(240);
     }
     const situationMovedUp = situationMoveUpVisible && await page.waitForFunction(({ first, second }) => {
@@ -2842,17 +2857,36 @@ async function run() {
   let browser = null;
   let maxRunTimer = null;
   let forceExitTimer = null;
+  let aborting = false;
   const cleanup = async () => {
-    if (maxRunTimer) clearTimeout(maxRunTimer);
-    if (forceExitTimer) clearTimeout(forceExitTimer);
-    if (browser) await browser.close().catch(() => { });
-    closeServer(server);
+    if (maxRunTimer) {
+      clearTimeout(maxRunTimer);
+      maxRunTimer = null;
+    }
+    // Keep the hard shutdown watchdog alive while an expired run is closing
+    // Playwright. Previously cleanup cancelled this timer immediately, so a
+    // browser close interrupted mid-probe could itself hang for minutes.
+    if (forceExitTimer && !aborting) {
+      clearTimeout(forceExitTimer);
+      forceExitTimer = null;
+    }
+    const activeBrowser = browser;
+    browser = null;
+    if (activeBrowser) await activeBrowser.close().catch(() => { });
+    const activeServer = server;
+    server = null;
+    closeServer(activeServer);
   };
   const exitAfterCleanup = (exitCode, message) => {
+    if (aborting) return;
+    aborting = true;
     if (message) console.error(message);
     forceExitTimer = setTimeout(() => process.exit(exitCode), 2000);
-    forceExitTimer.unref?.();
-    cleanup().finally(() => process.exit(exitCode));
+    cleanup().finally(() => {
+      if (forceExitTimer) clearTimeout(forceExitTimer);
+      forceExitTimer = null;
+      process.exit(exitCode);
+    });
   };
 
   const { chromium } = await findPlaywright();
@@ -3195,9 +3229,17 @@ async function run() {
         });
       }
     }
+  } catch (error) {
+    // The watchdog intentionally closes the active browser/context. Do not
+    // replace its clear timeout message with Playwright's expected
+    // "Target page ... closed" follow-on while shutdown is already underway.
+    if (!aborting) throw error;
+    return;
   } finally {
     await cleanup();
   }
+
+  if (aborting) return;
 
   const reportPath = path.join(args.outputDir, "mobile-viewport-report.json");
   await writeFile(reportPath, JSON.stringify({ url, results }, null, 2));
