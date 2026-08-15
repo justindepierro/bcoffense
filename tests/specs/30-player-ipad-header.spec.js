@@ -233,6 +233,44 @@ test.describe("Player iPad Safari header hierarchy", () => {
       expect(target.height, `${target.id} menu height`).toBeGreaterThanOrEqual(44);
     });
 
+    // The shared anchored-menu utility portals this dropdown to <body>. On a
+    // roomy player iPad, that means it must deliberately stack above the
+    // persistent study shelf; otherwise the shelf captures the account row
+    // and the upper portion of Refresh even though the menu appears open.
+    const menuLayering = await page.evaluate(() => {
+      const menu = document.querySelector(".header-overflow-menu");
+      const shelf = document.querySelector("#mainApp .tabs");
+      const account = document.getElementById("headerOverflowAccount");
+      const refresh = document.getElementById("headerOverflowRefresh");
+      const hitWithinSharedArea = (element) => {
+        if (!menu || !shelf || !element) return null;
+        const item = element.getBoundingClientRect();
+        const shelfBox = shelf.getBoundingClientRect();
+        const left = Math.max(item.left, shelfBox.left);
+        const right = Math.min(item.right, shelfBox.right);
+        const top = Math.max(item.top, shelfBox.top);
+        const bottom = Math.min(item.bottom, shelfBox.bottom);
+        if (right <= left || bottom <= top) return null;
+        const hit = document.elementFromPoint((left + right) / 2, (top + bottom) / 2);
+        return {
+          itemId: element.id,
+          hitId: hit?.id || "",
+          isMenuHit: Boolean(hit && menu.contains(hit)),
+        };
+      };
+      return {
+        menuZ: getComputedStyle(menu).zIndex,
+        shelfZ: getComputedStyle(shelf).zIndex,
+        account: hitWithinSharedArea(account),
+        refresh: hitWithinSharedArea(refresh),
+      };
+    });
+    expect(Number(menuLayering.menuZ), "More menu stacks above the study shelf").toBeGreaterThan(
+      Number(menuLayering.shelfZ),
+    );
+    expect(menuLayering.account?.isMenuHit, "account context remains reachable above the shelf").toBe(true);
+    expect(menuLayering.refresh?.isMenuHit, "first menu action remains reachable above the shelf").toBe(true);
+
     const themeBefore = await page.evaluate(() => document.documentElement.getAttribute("data-theme") || "");
     await page.locator("#headerOverflowTheme").click();
     await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute("data-theme") || "")).toBe(

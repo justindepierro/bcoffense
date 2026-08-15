@@ -1241,6 +1241,15 @@ body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player
     overflow: visible;
   }
 
+  /* Anchored menus are portaled to body so they cannot be clipped by a
+     scroller. The shared dropdown layer normally sits below app chrome, but
+     this header-owned menu must remain above the persistent study shelf or
+     Safari hides its account row and first action behind the tabs. */
+  body.shell-tablet.is-mobile-screen.is-player-mobile-shell[data-auth-role="player"][data-study-navigation="top"]
+    .header-overflow-menu {
+    z-index: calc(var(--z-header) + 1);
+  }
+
   /* On a roomy physical iPad, the player routes share one navigation shelf
      directly below the app header. This is intentionally a full-width surface
      with connected destinations rather than five free-floating pills. The
