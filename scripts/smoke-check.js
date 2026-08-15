@@ -1338,7 +1338,7 @@ function checkCoachGridLibrarySystemContract() {
     !/wristband-plays app-library-pane coach-grid-library-controls/.test(html) ||
     !/wbFiltersContainer" class="filters-collapsible collapsed coach-grid-library-advanced/.test(html) ||
     !/let filtersCollapsed = true/.test(scriptState) ||
-    !/coachGridLibraryVersion = 1/.test(scriptDisplay) ||
+    !/coachGridLibraryVersion = 2/.test(scriptDisplay) ||
     !/btn\.setAttribute\("aria-expanded", "false"\)/.test(scriptShared) ||
     !/filtersCollapsed \? "Filters" : "Hide Filters"/.test(scriptAvailable) ||
     !/coach-grid-library-\*/.test(theme) ||
