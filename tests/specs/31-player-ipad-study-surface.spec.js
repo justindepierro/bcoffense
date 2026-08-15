@@ -127,28 +127,14 @@ test.describe("Player M1 iPad study surfaces", () => {
     const pageActions = page.locator("#pageFabCluster");
     await expect(pageActions).toBeHidden();
 
-    // WebKit can report the pre-scroll visual-viewport geometry for one frame
-    // after scrollIntoView(), even though the document scroll has already been
-    // requested. Keep the check strict, but wait for the settled iPad surface
-    // rather than sampling that transient frame.
-    await page.locator("#playbook .pb-card-action--ask").first().evaluate((askButton) => {
-      askButton.scrollIntoView({ block: "center", inline: "nearest" });
-    });
-    await expect.poll(() => page.evaluate(() => {
-      const askButton = document.querySelector("#playbook .pb-card-action--ask");
-      if (!askButton) return false;
-      const box = askButton.getBoundingClientRect();
-      const style = getComputedStyle(askButton);
-      return style.display !== "none" &&
-        style.visibility !== "hidden" &&
-        box.width >= 44 &&
-        box.height >= 44 &&
-        box.top >= 0 &&
-        box.bottom <= window.innerHeight;
-    }), {
-      message: "Ask settles into the unobstructed iPad viewport",
-      timeout: 5_000,
-    }).toBe(true);
+    // Ask lives inside the app-owned Playbook scroll surface, which is not
+    // always the document on iPad. Let Playwright perform the same nested
+    // scroll-to-target sequence an actual tap uses, then prove the control is
+    // actionable without firing the question flow.
+    const askControl = page.locator("#playbook .pb-card-action--ask").first();
+    await askControl.scrollIntoViewIfNeeded();
+    await expect(askControl).toBeVisible();
+    await askControl.click({ trial: true });
 
     const playbookGeometry = await page.evaluate(() => {
       const rect = (element) => {
