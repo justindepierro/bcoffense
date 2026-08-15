@@ -20,6 +20,34 @@ This file complements [MOBILE_AUDIT.md](MOBILE_AUDIT.md). It does not replace, r
 
 “Owner” is the accountable workstream, not a named individual. Assign a person when the item is scheduled.
 
+## Coach/admin iPad phase — next
+
+The player-study shell is now intentionally tablet-native. The next phase is not another general responsive pass: it makes the staff product a dependable iPad workbench for preparing a practice, managing a team, and publishing player material.
+
+**System rule:** `staff rail → exactly one active workspace and vertical scroll owner → contextual workbench actions → managed task layer`.
+
+| Order | Tranche | Outcome | Proof before release |
+| --- | --- | --- | --- |
+| P0.1 | **Workspace-surface isolation** | Opening Team/Admin Settings from Dashboard, Scout, Game Plan, or any sibling route hides the prior workspace completely. Settings owns the available canvas and its scroll; returning restores the original route. | 1024×768 and M1 WebKit: Dashboard → Settings leaves one visible workspace, a full-height settings scroller, and no underlying actionable panel. |
+| P0.2 | **Clear the staff shell** | Remove any roomy-iPad fixed utility that covers live work; keep utilities in rail/header/page actions instead. Make staff header More rows touch-safe and give the rail/More entry a truthful active state for secondary destinations. | Geometry probe finds no fixed launcher over an actionable control; staff More targets are at least 44px; current route is visually represented in navigation. |
+| P1.1 | **Team Ops first** | Turn Settings into a Team Ops workspace: team identity, roster, personnel, portal, and publish readiness come first. CSV replacement, backups, recovery, and destructive actions move to a clearly named Data & recovery area. Import remains the first-use path for an empty workspace, not the normal admin landing. | A 28-player iPad fixture reaches roster work in the first viewport; all independent Team Ops controls meet the tablet target policy. |
+| P1.2 | **Accounts and access as iPad tasks** | Keep the existing data/layer behavior for Player Accounts and Coach Access, but give them usable-height layouts, 44px Close/actions, a focused list/detail flow, and a pinned Save/status footer where changes matter. | Portrait and landscape WebKit flows can select, edit, save, Escape-close, and return focus without losing work or hiding the footer behind keyboard/browser chrome. |
+| P1.3 | **Coach command hierarchy** | Promote the Coach Home/Dashboard to a deliberate primary destination (recommended) and move only a lower-frequency workspace to More. Reduce mixed global/account/admin controls in the header. | A coach can identify the active destination and reach today’s next action, Script, Game Plan, Call Sheet, and Playbook without hunting through an ambiguous rail. |
+| P1.4 | **Unified Coach Inbox foundation** | Migrate the existing Questions Inbox to the managed layer contract first, then evolve it into one staff triage surface for player questions, publishing/media readiness, quiz work, and moderation. Do not create a parallel inbox. | Layer lock, Escape, focus return, one scroll owner, and list/detail behavior pass at 1024×768, M1 landscape, and portrait. |
+| P2 | **Physical-device release proof** | Complete the automated tablet evidence with a real M1 Safari and installed-PWA pass: rotation, keyboard, split view, account menu, settings, roster, accounts/access, and a live practice workflow. | Release checklist records the device/profile, tested workflow, and any intentionally unsupported narrow Split View size. |
+
+### Decisions to make deliberately
+
+- **Recommended:** make Dashboard/Coach Home a direct rail destination, then move Wristband to More. It makes the sideline workflow start with the current game week rather than a tool.
+- Keep data recovery intentionally separate from ordinary team setup. It is vital, but it should never be the first surface a coach sees when they are preparing practice.
+- Do not solve fixed-control collisions by adding more corner reservations. On roomy coach iPads, the rail and contextual actions are the calmer, more predictable home for utility actions.
+
+### Already complete — do not redo
+
+- Player navigation, Home, Presentation, diagram empty states, and the player iPad header are a separate completed track.
+- Staff Script, Game Plan, Call Sheet, Playbook, Wristband, Signals, Tendencies, Dashboard command actions, Installation, Identity, and Offense Builder already have their first tablet workbench passes.
+- Existing Player Accounts and Coach Access data behavior and blocking-layer lifecycle should be preserved; this phase changes their tablet ergonomics and task hierarchy, not their business logic.
+
 ## Current baseline
 
 - Touch/iPadOS devices through a 1024px short side and 1366px long side become `.shell-tablet` / `.is-mobile-screen`. The shell now separates layout viewport, visual viewport, and device geometry in [js/app-shell.js](js/app-shell.js), so opening the software keyboard cannot reclassify an iPad as a phone or reverse its physical orientation.
