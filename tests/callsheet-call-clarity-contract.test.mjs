@@ -37,6 +37,8 @@ assert.match(indexCards, /const addControl = editable[\s\S]*?cs-index-bucket-act
 assert.match(indexCards, /cs-index-empty-add[\s\S]*?Add a play or drop one here/, "empty Index Card buckets provide an explicit add path");
 assert.match(indexCards, /data-cs-card-bucket[\s\S]*?removeCallSheetIndexCardBucket/, "every editable bucket exposes both a drop identity and a direct remove control");
 assert.match(indexCards, /function openCallSheetIndexCardBucketPicker\(id\)[\s\S]*?_csIndexPickerBucketId = bucket\.id[\s\S]*?openCallSheetPlayPicker/, "Index Card add-play buttons retain their specific bucket destination");
+assert.match(indexCards, /async function openCallSheetIndexCardBucketPicker\(id\)[\s\S]*?if \(!bucket\.categoryId\)[\s\S]*?Add plays to custom bucket[\s\S]*?bucket\.playKeys = Array\.isArray\(bucket\.playKeys\) \? bucket\.playKeys : \[\]/, "blank custom Index Card buckets choose a source before opening the normal add-play picker");
+assert.match(indexCards, /const addControl = editable \?/, "custom Index Card buckets retain the visible add-play control");
 assert.match(callSheetRender, /moon:\s*"🌙"[\s\S]*?sun:\s*"☀️"/, "Call Sheet personnel codes include Moon and Sun everywhere the legacy fallback is used");
 assert.match(callSheetRender, /moon:\s*"#26365f"[\s\S]*?sun:\s*"#f6c344"/, "Moon and Sun have deliberate high-contrast Call Sheet colors for grouped staff views");
 assert.match(picker, /const personnelMarkup = marker[\s\S]*?cs-personnel-marker/, "Call Sheet picker uses shared personnel markers instead of reverting Moon and Sun to old code chips");
