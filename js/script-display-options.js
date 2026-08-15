@@ -53,7 +53,7 @@ function saveScriptDisplayOptions() {
     document.querySelector('input[name="scriptLayoutMode"]:checked')?.value,
   );
   opts.filtersCollapsed = filtersCollapsed;
-  opts.coachGridLibraryVersion = 1;
+  opts.coachGridLibraryVersion = 2;
   opts.playRailCollapsed = scriptPlayRailCollapsed;
   opts.libraryPinned = scriptLibraryPinned;
   // Preview rows are now a deliberate, preview-only surface. This marker lets
@@ -77,9 +77,11 @@ function restoreScriptDisplayOptions() {
     if (el && opts[id] !== undefined) el.checked = opts[id];
   });
   applyScriptLayoutMode(opts.layoutMode);
-  const needsCoachGridLibraryDefault = opts.coachGridLibraryVersion !== 1;
+  // Version 2 makes the result list the default desktop landing state. Older
+  // saved layouts could restore a fully expanded filter form above every play.
+  const needsCoachGridLibraryDefault = opts.coachGridLibraryVersion !== 2;
   filtersCollapsed = needsCoachGridLibraryDefault ? true : Boolean(opts.filtersCollapsed);
-  if (needsCoachGridLibraryDefault) opts.coachGridLibraryVersion = 1;
+  if (needsCoachGridLibraryDefault) opts.coachGridLibraryVersion = 2;
   scriptPlayRailCollapsed = Boolean(opts.playRailCollapsed);
   scriptLibraryPinned = Boolean(opts.libraryPinned);
   let shouldSaveUpdatedOptions = needsCoachGridLibraryDefault;

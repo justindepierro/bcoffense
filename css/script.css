@@ -3012,6 +3012,86 @@ body[data-auth-role="player"]
   }
 }
 
+/* Desktop Script library: get coaches to live plays first. Search and the two
+   common scope toggles stay visible; the full filter vocabulary remains behind
+   the existing Filters control without claiming the whole rail. */
+@media screen and (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-sidebar-panel {
+    overflow: hidden;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-library-search-hint {
+    display: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-gp-filters {
+    gap: 5px;
+    margin-top: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-play-rail .filters-collapsible:not(.collapsed) {
+    flex: 0 1 220px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .available-plays-actions {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 5px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .available-plays-actions .btn,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .available-plays-actions .select-all-label {
+    min-height: 34px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .available-plays-container {
+    flex: 1 1 auto;
+    min-height: 120px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+}
+
+/* The Script header used a five-column desktop grid whose intrinsic toolbar
+   width could disappear beyond the right edge. Keep the operating controls in
+   a deliberate second command row: search and sort stay visible, never clipped. */
+@media screen and (min-width: 1181px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-section-head .script-toolbar {
+    order: 10;
+    flex: 1 0 100%;
+    display: grid;
+    grid-template-columns: max-content minmax(280px, 1fr) minmax(240px, 1fr);
+    min-width: 0;
+    overflow: visible;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-toolbar-left,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-toolbar-center,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-toolbar-right {
+    min-width: 0;
+    max-width: none;
+    overflow: visible;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-toolbar-center,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-toolbar-right {
+    flex-wrap: nowrap;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-toolbar .toolbar-sort-select,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-toolbar .script-search-input {
+    min-width: 0;
+  }
+}
+
 .script-period-color-palette {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

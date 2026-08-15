@@ -11,6 +11,32 @@ test("desktop Script library keeps advanced filters compact", async ({ page }, t
   const libraryToggle = page.locator("#scriptPlayRailToggle");
   if (await libraryToggle.isVisible()) await libraryToggle.click();
   await expect(page.locator("#scriptPlayRail")).toBeVisible();
+  await expect(page.locator("#scriptFiltersContainer")).toHaveClass(/collapsed/);
+  await expect(page.locator("#availablePlays .script-library-row").first()).toBeVisible();
+
+  const commandGeometry = await page.locator("#script .script-toolbar").evaluate((toolbar) => {
+    const toolbarRect = toolbar.getBoundingClientRect();
+    const controls = Array.from(toolbar.querySelectorAll("button, input, select, label"));
+    return {
+      toolbarRight: toolbarRect.right,
+      viewportRight: window.innerWidth,
+      controls: controls.map((control) => {
+        const rect = control.getBoundingClientRect();
+        const style = getComputedStyle(control);
+        return {
+          visible: style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0,
+          right: rect.right,
+          left: rect.left,
+        };
+      }),
+    };
+  });
+  expect(commandGeometry.toolbarRight).toBeLessThanOrEqual(commandGeometry.viewportRight + 1);
+  commandGeometry.controls.filter((control) => control.visible).forEach((control) => {
+    expect(control.left).toBeGreaterThanOrEqual(-1);
+    expect(control.right).toBeLessThanOrEqual(commandGeometry.toolbarRight + 1);
+  });
+
   await page.locator("#toggleFiltersBtn").click();
   await expect(page.locator("#scriptFiltersContainer")).not.toHaveClass(/collapsed/);
 
