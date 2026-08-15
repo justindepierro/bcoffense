@@ -631,6 +631,21 @@ const _PB_KEY = "current";
 let _pbDbPromise = null;
 let _pbEstimatedBytes = 0; // cached byte size for getStorageInfo()
 
+// A normal team workspace is deliberately kept in the existing browser
+// stores. Its small pending-sync journal is different: it is device-only,
+// must not enter a portable backup, and needs a true cross-tab mutation
+// boundary. localStorage offers no compare-and-swap operation, so two tabs
+// updating one JSON map can lose an otherwise durable retry intent. Keep one
+// independently transactioned record per team in this tiny IndexedDB database
+// instead. It is intentionally separate from the playbook database so this
+// safety upgrade cannot block or migrate the large editor store.
+const _WORKSPACE_SYNC_LEDGER_DB_NAME = "bcoffense-workspace-sync-ledger";
+const _WORKSPACE_SYNC_LEDGER_DB_VERSION = 1;
+const _WORKSPACE_SYNC_LEDGER_STORE = "pendingWorkspaceSync";
+const _WORKSPACE_SYNC_LEDGER_META_STORE = "metadata";
+const _WORKSPACE_SYNC_LEDGER_LEGACY_MIGRATION_KEY = "legacy-map-v1-migrated";
+let _workspaceSyncLedgerDbPromise = null;
+
 // Player releases use a separate IDB database from the editable coach
 // workspace. A player-facing active pointer is advanced only after its exact
 // server revision has been staged, so a shared device can never interpret the
@@ -658,6 +673,212 @@ function _openPlaybookDB() {
     req.onerror = () => reject(req.error || new Error("IndexedDB open failed"));
   });
   return _pbDbPromise;
+}
+
+function _normalizeWorkspaceSyncLedgerTeamId(value) {
+  const teamId = String(value || "").trim();
+  if (
+    !teamId ||
+    teamId.length > 160 ||
+    teamId === "__proto__" ||
+    teamId === "prototype" ||
+    teamId === "constructor"
+  ) return "";
+  return teamId;
+}
+
+function _openWorkspaceSyncLedgerDB() {
+  if (_workspaceSyncLedgerDbPromise) return _workspaceSyncLedgerDbPromise;
+  _workspaceSyncLedgerDbPromise = new Promise((resolve, reject) => {
+    if (typeof indexedDB === "undefined") {
+      reject(new Error("IndexedDB is not available for the pending team-sync journal."));
+      return;
+    }
+    const req = indexedDB.open(_WORKSPACE_SYNC_LEDGER_DB_NAME, _WORKSPACE_SYNC_LEDGER_DB_VERSION);
+    req.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(_WORKSPACE_SYNC_LEDGER_STORE)) {
+        db.createObjectStore(_WORKSPACE_SYNC_LEDGER_STORE, { keyPath: "teamId" });
+      }
+      if (!db.objectStoreNames.contains(_WORKSPACE_SYNC_LEDGER_META_STORE)) {
+        db.createObjectStore(_WORKSPACE_SYNC_LEDGER_META_STORE, { keyPath: "key" });
+      }
+    };
+    req.onsuccess = () => {
+      const db = req.result;
+      db.onversionchange = () => {
+        db.close();
+        _workspaceSyncLedgerDbPromise = null;
+      };
+      resolve(db);
+    };
+    req.onerror = () => {
+      _workspaceSyncLedgerDbPromise = null;
+      reject(req.error || new Error("Could not open the pending team-sync journal."));
+    };
+  });
+  return _workspaceSyncLedgerDbPromise;
+}
+
+function _workspaceSyncLedgerError(message, cause = null) {
+  const err = new Error(message);
+  err.code = "BC_WORKSPACE_SYNC_LEDGER_UNAVAILABLE";
+  if (cause) err.cause = cause;
+  return err;
+}
+
+function _workspaceSyncLedgerClone(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch (_err) {
+    return null;
+  }
+}
+
+async function _getWorkspaceSyncLedgerRecord(teamId) {
+  const normalizedTeamId = _normalizeWorkspaceSyncLedgerTeamId(teamId);
+  if (!normalizedTeamId) return null;
+  try {
+    const db = await _openWorkspaceSyncLedgerDB();
+    return await new Promise((resolve, reject) => {
+      const request = db.transaction(_WORKSPACE_SYNC_LEDGER_STORE, "readonly")
+        .objectStore(_WORKSPACE_SYNC_LEDGER_STORE)
+        .get(normalizedTeamId);
+      request.onsuccess = () => resolve(_workspaceSyncLedgerClone(request.result));
+      request.onerror = () => reject(request.error || new Error("Could not read the pending team-sync journal."));
+    });
+  } catch (err) {
+    throw _workspaceSyncLedgerError("This browser could not protect the pending team-sync journal.", err);
+  }
+}
+
+async function _mutateWorkspaceSyncLedgerRecord(teamId, mutate) {
+  const normalizedTeamId = _normalizeWorkspaceSyncLedgerTeamId(teamId);
+  if (!normalizedTeamId || typeof mutate !== "function") return null;
+  try {
+    const db = await _openWorkspaceSyncLedgerDB();
+    return await new Promise((resolve, reject) => {
+      let result = null;
+      let mutationError = null;
+      const tx = db.transaction(_WORKSPACE_SYNC_LEDGER_STORE, "readwrite");
+      const store = tx.objectStore(_WORKSPACE_SYNC_LEDGER_STORE);
+      const request = store.get(normalizedTeamId);
+      request.onsuccess = () => {
+        try {
+          const current = _workspaceSyncLedgerClone(request.result);
+          const next = mutate(current);
+          if (next === null || next === undefined) {
+            store.delete(normalizedTeamId);
+            result = null;
+            return;
+          }
+          const normalized = _workspaceSyncLedgerClone(next);
+          if (!normalized) throw new Error("Pending team-sync journal data is invalid.");
+          result = { ...normalized, teamId: normalizedTeamId };
+          store.put(result);
+        } catch (err) {
+          mutationError = err;
+          try { tx.abort(); } catch (_abortErr) { /* transaction will report its failure */ }
+        }
+      };
+      request.onerror = () => {
+        mutationError = request.error || new Error("Could not read the pending team-sync journal.");
+        try { tx.abort(); } catch (_abortErr) { /* transaction will report its failure */ }
+      };
+      tx.oncomplete = () => resolve(_workspaceSyncLedgerClone(result));
+      tx.onerror = () => reject(mutationError || tx.error || new Error("Could not update the pending team-sync journal."));
+      tx.onabort = () => reject(mutationError || tx.error || new Error("Could not update the pending team-sync journal."));
+    });
+  } catch (err) {
+    throw _workspaceSyncLedgerError("This browser could not protect the pending team-sync journal.", err);
+  }
+}
+
+// v1 kept every team's retry intent inside cloudSyncSettings. Copy those
+// records once into the transactional ledger before new writes begin. The
+// migration marker lives in the same IndexedDB transaction, so a later clean
+// publish cannot resurrect an old map entry after it has been consumed.
+async function _migrateWorkspaceSyncLedgerRecords(legacyRecords = []) {
+  const rawCandidates = Array.isArray(legacyRecords)
+    ? legacyRecords
+      .map((record) => _workspaceSyncLedgerClone(record))
+      .filter((record) => _normalizeWorkspaceSyncLedgerTeamId(record?.teamId))
+    : [];
+  const candidatesByTeam = new Map();
+  rawCandidates.forEach((record) => {
+    const teamId = _normalizeWorkspaceSyncLedgerTeamId(record.teamId);
+    if (teamId && !candidatesByTeam.has(teamId)) candidatesByTeam.set(teamId, { ...record, teamId });
+  });
+  const candidates = [...candidatesByTeam.values()];
+  try {
+    const db = await _openWorkspaceSyncLedgerDB();
+    return await new Promise((resolve, reject) => {
+      let migrated = false;
+      let migrationError = null;
+      const tx = db.transaction(
+        [_WORKSPACE_SYNC_LEDGER_STORE, _WORKSPACE_SYNC_LEDGER_META_STORE],
+        "readwrite",
+      );
+      const intents = tx.objectStore(_WORKSPACE_SYNC_LEDGER_STORE);
+      const metadata = tx.objectStore(_WORKSPACE_SYNC_LEDGER_META_STORE);
+      const marker = metadata.get(_WORKSPACE_SYNC_LEDGER_LEGACY_MIGRATION_KEY);
+      marker.onsuccess = () => {
+        if (marker.result) return;
+        if (!candidates.length) {
+          metadata.put({ key: _WORKSPACE_SYNC_LEDGER_LEGACY_MIGRATION_KEY, migratedAt: new Date().toISOString() });
+          migrated = true;
+          return;
+        }
+        let remaining = candidates.length;
+        candidates.forEach((candidate) => {
+          const teamId = _normalizeWorkspaceSyncLedgerTeamId(candidate.teamId);
+          const current = intents.get(teamId);
+          current.onsuccess = () => {
+            if (!current.result) intents.put({ ...candidate, teamId });
+            remaining -= 1;
+            if (remaining === 0) {
+              metadata.put({ key: _WORKSPACE_SYNC_LEDGER_LEGACY_MIGRATION_KEY, migratedAt: new Date().toISOString() });
+              migrated = true;
+            }
+          };
+          current.onerror = () => {
+            migrationError = current.error || new Error("Could not migrate the pending team-sync journal.");
+            try { tx.abort(); } catch (_abortErr) { /* transaction will report its failure */ }
+          };
+        });
+      };
+      marker.onerror = () => {
+        migrationError = marker.error || new Error("Could not read the pending team-sync journal migration.");
+        try { tx.abort(); } catch (_abortErr) { /* transaction will report its failure */ }
+      };
+      tx.oncomplete = () => resolve({ migrated });
+      tx.onerror = () => reject(migrationError || tx.error || new Error("Could not migrate the pending team-sync journal."));
+      tx.onabort = () => reject(migrationError || tx.error || new Error("Could not migrate the pending team-sync journal."));
+    });
+  } catch (err) {
+    throw _workspaceSyncLedgerError("This browser could not migrate the pending team-sync journal.", err);
+  }
+}
+
+async function _clearWorkspaceSyncLedgerRecords() {
+  try {
+    const db = await _openWorkspaceSyncLedgerDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(
+        [_WORKSPACE_SYNC_LEDGER_STORE, _WORKSPACE_SYNC_LEDGER_META_STORE],
+        "readwrite",
+      );
+      tx.objectStore(_WORKSPACE_SYNC_LEDGER_STORE).clear();
+      tx.objectStore(_WORKSPACE_SYNC_LEDGER_META_STORE).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error || new Error("Could not clear the pending team-sync journal."));
+      tx.onabort = () => reject(tx.error || new Error("Could not clear the pending team-sync journal."));
+    });
+    return true;
+  } catch (err) {
+    throw _workspaceSyncLedgerError("This browser could not clear the pending team-sync journal.", err);
+  }
 }
 
 function _idbGetPlaybook() {
@@ -769,6 +990,28 @@ function _idbClearPlayerReleasePlaybooks() {
 const storageManager = {
   _lastPressureWarningAt: 0,
   _compactedThisSession: false,
+
+  // Device-only durable retry ledger for automatic canonical workspace
+  // publishes. These methods deliberately bypass storageManager.set(): the
+  // records are neither team content nor backup data, and IndexedDB gives the
+  // compare-and-swap-like transaction semantics localStorage lacks across
+  // two open tabs. Cloud sync owns the intent schema and passes a synchronous
+  // mutation function so the read/mutate/write stays inside one transaction.
+  getPendingWorkspaceSyncLedger(teamId) {
+    return _getWorkspaceSyncLedgerRecord(teamId);
+  },
+
+  mutatePendingWorkspaceSyncLedger(teamId, mutate) {
+    return _mutateWorkspaceSyncLedgerRecord(teamId, mutate);
+  },
+
+  migratePendingWorkspaceSyncLedger(legacyRecords) {
+    return _migrateWorkspaceSyncLedgerRecords(legacyRecords);
+  },
+
+  clearPendingWorkspaceSyncLedger() {
+    return _clearWorkspaceSyncLedgerRecords();
+  },
 
   get(key, defaultValue = null) {
     try {
@@ -1359,6 +1602,16 @@ const storageManager = {
       await _idbClearPlayerReleasePlaybooks();
     } catch (err) {
       console.error("clearAll: player release IDB clear failed:", err);
+    }
+    if (!_isPlayerStorageRuntime()) {
+      try {
+        await this.clearPendingWorkspaceSyncLedger();
+      } catch (err) {
+        // Clear All should still remove the editable workspace even if a
+        // browser refuses the small device-only journal database. Surface the
+        // diagnostic rather than pretending the journal was removed.
+        console.error("clearAll: pending team-sync journal clear failed:", err);
+      }
     }
 
     return true;

@@ -50,6 +50,11 @@
   let _indexPromise = null;
   let _legacyPlayMigrationPromise = null;
   const _manifestCache = new Map();
+  // A processed Blob can be retried directly by a caller before it reaches the
+  // durable outbox. Keep its request identity in-memory too, so a lost POST
+  // response cannot turn a manual retry into a second append.
+  const _preparedClipIdempotencyKeys = new WeakMap();
+  const CLIP_IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{15,127}$/;
 
   // Normal runtime reads use the permanent media ID exclusively. Historic
   // display-derived keys are recovery evidence, not an alternate selector:
@@ -109,6 +114,37 @@
 
   function normalizeManifestSig(sig) {
     return String(sig || "").trim();
+  }
+
+  function _normalizeClipIdempotencyKey(value) {
+    const key = String(value == null ? "" : value).trim();
+    return CLIP_IDEMPOTENCY_KEY_PATTERN.test(key) ? key : "";
+  }
+
+  function _newClipIdempotencyKey() {
+    const randomId = globalThis.crypto?.randomUUID?.();
+    if (!randomId) throw new Error("This browser cannot create a safe upload identity.");
+    return `clip-${randomId}`;
+  }
+
+  function _resolveClipIdempotencyKey(prepared, suppliedKey) {
+    const supplied = String(suppliedKey == null ? "" : suppliedKey).trim();
+    if (supplied) {
+      const normalized = _normalizeClipIdempotencyKey(supplied);
+      if (!normalized) throw new Error("This video upload has an invalid retry identity.");
+      if (prepared && (typeof prepared === "object" || typeof prepared === "function")) {
+        _preparedClipIdempotencyKeys.set(prepared, normalized);
+      }
+      return normalized;
+    }
+    if (prepared && (typeof prepared === "object" || typeof prepared === "function")) {
+      const remembered = _preparedClipIdempotencyKeys.get(prepared);
+      if (remembered) return remembered;
+      const created = _newClipIdempotencyKey();
+      _preparedClipIdempotencyKeys.set(prepared, created);
+      return created;
+    }
+    return _newClipIdempotencyKey();
   }
 
   function decorateManifestClips(sig, clips) {
@@ -693,9 +729,11 @@
     }
     const uploadDuration = Number(prepared?.uploadDuration || prepared?.duration || 0);
     const uploadType = String(prepared?.uploadType || uploadFile.type || "video/mp4").toLowerCase();
+    const idempotencyKey = _resolveClipIdempotencyKey(prepared || uploadFile, opts.idempotencyKey);
     const headers = { "Content-Type": uploadType };
     if (label) headers["X-Clip-Label"] = encodeURIComponent(String(label));
     if (uploadDuration) headers["X-Clip-Duration"] = String(Math.round(uploadDuration));
+    headers["X-BC-Idempotency-Key"] = idempotencyKey;
 
     const response = await fetch(manifestUrl(sig), {
       method: "POST",
@@ -737,6 +775,7 @@
   async function _queuePreparedClip(sig, prepared, label, error, opts = {}) {
     const uploadFile = prepared?.uploadFile || prepared;
     const id = crypto.randomUUID();
+    const idempotencyKey = _resolveClipIdempotencyKey(prepared || uploadFile, opts.idempotencyKey);
     let outboxId = "";
     if (window.mediaUploadOutbox?.enqueue) {
       const job = await window.mediaUploadOutbox.enqueue({
@@ -746,9 +785,12 @@
         contentType: uploadFile.type || prepared?.uploadType || "video/mp4",
         label,
         duration: Number(prepared?.uploadDuration || 0),
-        metadata: opts.outboxMetadata && typeof opts.outboxMetadata === "object"
-          ? opts.outboxMetadata
-          : {},
+        metadata: {
+          ...(opts.outboxMetadata && typeof opts.outboxMetadata === "object"
+            ? opts.outboxMetadata
+            : {}),
+          idempotencyKey,
+        },
       });
       outboxId = job.id;
     } else {
@@ -760,7 +802,7 @@
       }));
     }
     const entries = _readClipUploadQueue();
-    entries.push({ id, outboxId, sig, label: String(label || ""), uploadDuration: Number(prepared?.uploadDuration || 0), uploadType: uploadFile.type || "video/mp4", queuedAt: new Date().toISOString(), lastError: String(error || "Network unavailable") });
+    entries.push({ id, outboxId, idempotencyKey, sig, label: String(label || ""), uploadDuration: Number(prepared?.uploadDuration || 0), uploadType: uploadFile.type || "video/mp4", queuedAt: new Date().toISOString(), lastError: String(error || "Network unavailable") });
     _writeClipUploadQueue(entries);
     if (typeof window.queueWorkspaceSyncJob === "function") {
       window.queueWorkspaceSyncJob("media", "clip-auto-upload", {
@@ -782,7 +824,12 @@
             uploadFile: job.blob,
             uploadDuration: Number(job.duration || 0),
             uploadType: job.contentType,
-          }, job.label, { skipExistingCheck: true });
+          }, job.label, {
+            skipExistingCheck: true,
+            // New durable jobs retain the original preflight key. A job made
+            // by an earlier app shell safely falls back to its durable ID.
+            idempotencyKey: _normalizeClipIdempotencyKey(job.metadata?.idempotencyKey) || job.id,
+          });
           await window.mediaUploadOutbox.markComplete(job.id, { clip: receipt?.clip || null, uploadedAt: new Date().toISOString() });
           _writeClipUploadQueue(_readClipUploadQueue().filter((item) => item.outboxId !== job.id));
           try {
@@ -813,7 +860,10 @@
       if (!response) continue;
       try {
         const blob = await response.blob();
-        await uploadPreparedForSig(entry.sig, { uploadFile: blob, uploadDuration: entry.uploadDuration, uploadType: entry.uploadType }, entry.label, { skipExistingCheck: true });
+        await uploadPreparedForSig(entry.sig, { uploadFile: blob, uploadDuration: entry.uploadDuration, uploadType: entry.uploadType }, entry.label, {
+          skipExistingCheck: true,
+          idempotencyKey: _normalizeClipIdempotencyKey(entry.idempotencyKey) || entry.id,
+        });
         await cache.delete(_clipQueueRequest(entry.id));
         _writeClipUploadQueue(_readClipUploadQueue().filter((item) => item.id !== entry.id));
         pushed += 1;
@@ -835,11 +885,21 @@
   }
 
   async function uploadPreparedWithRetryForSig(sig, prepared, label, opts = {}) {
+    // Create this before the first POST, then preserve it in the durable
+    // record if the network drops after the server commits the manifest.
+    const idempotencyKey = _resolveClipIdempotencyKey(prepared, opts.idempotencyKey);
     try {
-      return await uploadPreparedForSig(sig, prepared, label, { ...opts, skipExistingCheck: true });
+      return await uploadPreparedForSig(sig, prepared, label, {
+        ...opts,
+        skipExistingCheck: true,
+        idempotencyKey,
+      });
     } catch (err) {
       if (!_isRetryableUploadError(err)) throw err;
-      await _queuePreparedClip(sig, prepared, label, err?.message || err, opts);
+      await _queuePreparedClip(sig, prepared, label, err?.message || err, {
+        ...opts,
+        idempotencyKey,
+      });
       return { ok: true, queued: true };
     }
   }

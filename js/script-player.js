@@ -1000,6 +1000,27 @@ function openMobileScriptLoader() {
 function loadSavedScriptRecord(scriptData, opts = {}) {
   if (!scriptData || isSavedScriptDeleted(scriptData)) return false;
   try {
+    // Do not replace a named script while its short autosave is still aimed at
+    // the old editor state. The flush is local and synchronous; a failed local
+    // write keeps this workspace open rather than losing the coach's edit.
+    if (
+      typeof flushPendingScriptAutosaveBeforeWorkspaceChange === "function" &&
+      !flushPendingScriptAutosaveBeforeWorkspaceChange()
+    ) {
+      showToast("Could not save the current script locally. Keep it open and try again before loading another script.", {
+        duration: 5000,
+        type: "error",
+      });
+      return false;
+    }
+    // `scriptData` was read before the flush. Re-resolve it so choosing Load
+    // on the already-open script never hydrates an older in-memory copy over
+    // the freshly persisted edit.
+    const refreshed = typeof getSavedScripts === "function"
+      ? getSavedScripts().find((candidate) =>
+        String(candidate?.id) === String(scriptData.id) && !isSavedScriptDeleted(candidate))
+      : null;
+    if (refreshed) scriptData = refreshed;
     document.getElementById("scriptName").value = scriptData.name;
     document.getElementById("scriptDate").value = scriptData.date;
     script = safeDeepClone(scriptData.plays);
@@ -1045,19 +1066,32 @@ function loadSavedScriptRecord(scriptData, opts = {}) {
   }
 }
 
-function loadScript(id) {
+async function loadScript(id) {
   try {
     const savedScripts = getSavedScripts();
     const scriptData = savedScripts.find((savedScript) => savedScript.id === id && !isSavedScriptDeleted(savedScript));
     if (!scriptData) return;
-    loadSavedScriptRecord(scriptData);
+    if (
+      typeof confirmUnnamedScriptBeforeLibraryLoad === "function" &&
+      !(await confirmUnnamedScriptBeforeLibraryLoad())
+    ) {
+      return false;
+    }
+    return loadSavedScriptRecord(scriptData);
   } catch (err) {
     console.error("loadScript error:", err);
     showToast("❌ Error loading script.", { duration: 4000, type: "error" });
+    return false;
   }
 }
 
-function duplicateSavedScript(id) {
+async function duplicateSavedScript(id) {
+  if (
+    typeof confirmUnnamedScriptBeforeLibraryLoad === "function" &&
+    !(await confirmUnnamedScriptBeforeLibraryLoad())
+  ) {
+    return null;
+  }
   const savedScripts = getSavedScripts();
   const source = savedScripts.find((record) => String(record?.id) === String(id) && !isSavedScriptDeleted(record));
   if (!source) return null;
@@ -1317,7 +1351,7 @@ async function togglePlayerScriptAccess(id, event) {
     savedScript.playerUnpublishedAt = new Date().toISOString();
   }
   storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
-  await recordPlayerPublishStatus("scripts", {
+  const publishConfirmed = await recordPlayerPublishStatus("scripts", {
     updatedAt: savedScript.playerVisible ? savedScript.playerPublishedAt : savedScript.playerUnpublishedAt,
     label: savedScript.playerVisible
       ? (savedScript.name || "Practice script")
@@ -1326,9 +1360,19 @@ async function togglePlayerScriptAccess(id, event) {
     visibility: savedScript.playerVisible ? "published" : "unpublished",
   }, { awaitCompletion: true });
   loadSavedScriptsList();
+  if (!publishConfirmed) {
+    showToast(
+      savedScript.playerVisible
+        ? `"${savedScript.name}" is saved here. Player access will update automatically when Team Sync reconnects.`
+        : `"${savedScript.name}" is saved here. The player removal will update automatically when Team Sync reconnects.`,
+      { type: "warning", duration: 6000 },
+    );
+    return false;
+  }
   showToast(
     savedScript.playerVisible
       ? `Players can now load "${savedScript.name}".`
       : `Removed "${savedScript.name}" from player logins.`,
   );
+  return true;
 }

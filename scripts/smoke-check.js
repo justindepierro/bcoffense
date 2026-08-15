@@ -1001,6 +1001,7 @@ function checkPersonnelMarkerContracts() {
     !/irish:\s*"☘️"/.test(utils) ||
     !/sky:\s*"🌤️"/.test(utils) ||
     !/gold:\s*"🏅"/.test(utils) ||
+    !/moon:\s*"🌙"/.test(utils) ||
     !/function getPersonnelEmoji\(personnel, useSquares = false\)/.test(utils)
   ) {
     fail("shared personnel emoji markers do not include the active package markers");
@@ -1025,7 +1026,7 @@ function checkPersonnelMarkerContracts() {
   ) {
     fail("Meat personnel marker is not wired through wristband, script, and game plan calls");
   }
-  if (!/Irish\s*☘️/.test(html) || !/Sky\s*🌤️/.test(html) || !/Gold\s*🏅/.test(html) || !/Irish\s*☘️/.test(help)) {
+  if (!/Irish\s*☘️/.test(html) || !/Sky\s*🌤️/.test(html) || !/Gold\s*🏅/.test(html) || !/Moon\s*🌙/.test(html) || !/Moon\s*🌙/.test(help)) {
     fail("personnel marker help copy does not document the active package markers");
   }
 
@@ -3319,7 +3320,9 @@ function checkWristbandWorkspaceContracts() {
     !/function saveWristbandAs\(/.test(storage) ||
     !/function openSavedWristbandManager\(/.test(storage) ||
     !/function duplicateSavedWristband\(/.test(storage) ||
-    !/activeSaveId:\s*activeWristbandSaveId/.test(wristband)
+    !/function getActiveSavedWristbandForAutosave\(/.test(storage) ||
+    !/function autosaveActiveSavedWristband\(/.test(storage) ||
+    !/scheduleActiveWristbandAutosave\(wristbandAutosaveTimer\)/.test(wristband)
   ) {
     fail("wristband active-save workflow or saved manager is incomplete");
   }
@@ -4512,7 +4515,7 @@ function checkWorkspaceSyncContracts() {
     !/typeof scriptDirty !== "undefined" && scriptDirty/.test(cloudSync) ||
     !/typeof wristbandDirty !== "undefined" && wristbandDirty/.test(cloudSync) ||
     !/window\.hasWorkspaceSyncWork\(\)/.test(cloudSync) ||
-    !/cloudAutoPushPending \|\| cloudAutoPushSaving \|\| cloudAutoPushDirtyKeys\.size > 0/.test(cloudSync) ||
+    !/function hasCloudAutoPushWork\(\)[\s\S]*?cloudAutoPushPending[\s\S]*?getResumablePendingWorkspaceSyncIntent/.test(cloudSync) ||
     !/Saved script newer than cloud/.test(cloudSync) ||
     !/Script draft newer than cloud/.test(cloudSync) ||
     !/Call sheet draft newer than cloud/.test(cloudSync) ||
@@ -6227,7 +6230,9 @@ function checkWorkflowPersistenceContracts() {
     !/function finalizeScriptSave\(record\)/.test(scriptStorage) ||
     !/String\(s\.id\) === String\(activeScriptSaveId\)/.test(scriptStorage) ||
     !/activeScriptSaveId = scriptData\.id \?\? null/.test(scriptPlayer) ||
-    !/activeSaveId: activeScriptSaveId/.test(scriptStorage)
+    !/function getActiveSavedScriptForAutosave\(\)/.test(scriptStorage) ||
+    !/String\(candidate\?\.id\) === String\(activeId\) && !candidate\?\.deletedAt/.test(scriptStorage) ||
+    !/function autosaveActiveSavedScript\(/.test(scriptStorage)
   ) {
     fail("Script active-save identity contract is incomplete");
   }

@@ -27,8 +27,12 @@ assert(/if \(uploadFile\.size > MAX_BYTES\)/.test(clips), "optimized output is s
 assert(/Boolean\(opts\.allowOriginalFallback\)[\s\S]*file\.size <= MAX_BYTES/.test(clips), "unsupported mobile encoders can safely retain an already-small original");
 assert(/processingMode = "original-fallback"/.test(clips), "fallback is reported to the review UI");
 assert(/async function uploadPreparedWithRetryForSig\(sig, prepared, label, opts = \{\}\)/.test(clips), "prepared uploads use the durable retry wrapper");
-assert(/metadata: opts\.outboxMetadata/.test(clips), "queued upload metadata is retained with the binary");
+assert(/metadata:\s*\{[\s\S]*opts\.outboxMetadata && typeof opts\.outboxMetadata === "object"/.test(clips), "queued upload metadata is retained with the binary");
 assert(/new CustomEvent\("play-clip-uploaded"/.test(clips), "outbox completion emits a UI reconciliation event");
+assert(/const CLIP_IDEMPOTENCY_KEY_PATTERN =/.test(clips), "clip retry identities have a strict client-side shape");
+assert(/headers\["X-BC-Idempotency-Key"\] = idempotencyKey/.test(clips), "every processed clip upload carries its stable retry identity");
+assert(/idempotencyKey,\n\s*\},\n\s*\}\);/.test(clips), "durable clip jobs retain the first-attempt retry identity");
+assert(/idempotencyKey: _normalizeClipIdempotencyKey\(job\.metadata\?\.idempotencyKey\) \|\| job\.id/.test(clips), "older durable clip jobs safely fall back to their job ID on retry");
 assert(/const SIGNAL_MAX_SOURCE_BYTES = 100 \* 1024 \* 1024/.test(signals), "signal UI states the source allowance");
 assert(/allowOriginalFallback: true/.test(signals), "signal review enables the safe mobile fallback");
 assert(/uploadPreparedWithRetryForSig/.test(signals), "signal confirmation uses durable retry");

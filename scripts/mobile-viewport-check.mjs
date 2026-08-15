@@ -1041,6 +1041,7 @@ async function probeTabletFixedStack(page) {
     scriptRoute: "",
     layout: {},
     surfaces: {},
+    saveFeedback: null,
     pairChecks: [],
     overlaps: [],
     missing: [],
@@ -1054,6 +1055,7 @@ async function probeTabletFixedStack(page) {
 
   const snapshot = await page.evaluate(() => {
     const dock = document.getElementById("workspaceSyncDock");
+    const saveStatus = document.getElementById("saveStatus");
     const quickTools = document.getElementById("quickTools");
     const menu = document.getElementById("quickToolsMenu");
     const trigger = document.getElementById("quickToolsFab");
@@ -1071,6 +1073,17 @@ async function probeTabletFixedStack(page) {
           syncChannel: dock.dataset.syncChannel || "",
           text: dock.querySelector(".workspace-sync-dock__text")?.textContent || "",
           retryHidden: Boolean(retry?.hidden),
+        }
+        : null,
+      saveStatus: saveStatus
+        ? {
+          className: saveStatus.className,
+          hidden: Boolean(saveStatus.hidden),
+          syncState: saveStatus.dataset.syncState || "",
+          syncChannel: saveStatus.dataset.syncChannel || "",
+          text: saveStatus.textContent || "",
+          title: saveStatus.getAttribute("title") || "",
+          ariaLabel: saveStatus.getAttribute("aria-label") || "",
         }
         : null,
     };
@@ -1113,29 +1126,23 @@ async function probeTabletFixedStack(page) {
       return result;
     }
 
-    const dockPrepared = await page.evaluate(() => {
+    const saveFeedback = await page.evaluate(() => {
       const dock = document.getElementById("workspaceSyncDock");
+      const status = document.getElementById("saveStatus");
       if (!dock) return { ok: false, reason: "workspace sync dock missing" };
+      if (!status) return { ok: false, reason: "workspace save-status header missing" };
       if (typeof window.setWorkspaceSyncStatus !== "function") {
         return { ok: false, reason: "workspace sync status API missing" };
       }
-      // Use the real shared status API, rather than faking a dock rectangle.
+      // Use the real shared status API. Routine staff saves intentionally live
+      // in the persistent header readout, not a second floating iPad dock.
       window.setWorkspaceSyncStatus("local", "saving", {
         label: "Checking tablet control layout",
       });
-      return { ok: true };
-    });
-    if (!dockPrepared.ok) {
-      result.reason = dockPrepared.reason;
-      return result;
-    }
-
-    const dockVisible = await page
-      .waitForFunction(() => {
-        const dock = document.getElementById("workspaceSyncDock");
-        if (!dock) return false;
-        const style = getComputedStyle(dock);
-        const rect = dock.getBoundingClientRect();
+      const isVisible = (el) => {
+        if (!el || el.hidden) return false;
+        const style = getComputedStyle(el);
+        const rect = el.getBoundingClientRect();
         return (
           style.display !== "none" &&
           style.visibility !== "hidden" &&
@@ -1143,11 +1150,35 @@ async function probeTabletFixedStack(page) {
           rect.width > 0 &&
           rect.height > 0
         );
-      }, { timeout: 2500 })
-      .then(() => true)
-      .catch(() => false);
-    if (!dockVisible) {
-      result.reason = "workspace sync dock did not become visible";
+      };
+      const headerVisible = isVisible(status);
+      const dockVisible = isVisible(dock);
+      const text = status.textContent || "";
+      const title = status.getAttribute("title") || "";
+      return {
+        headerVisible,
+        dockVisible,
+        dockHidden: !dockVisible,
+        syncState: status.dataset.syncState || "",
+        syncChannel: status.dataset.syncChannel || "",
+        text,
+        title,
+        ok:
+          headerVisible &&
+          !dockVisible &&
+          status.dataset.syncState === "syncing" &&
+          status.dataset.syncChannel === "local" &&
+          /saving/i.test(text) &&
+          /checking tablet control layout/i.test(title),
+      };
+    });
+    result.saveFeedback = saveFeedback;
+    if (!saveFeedback.ok) {
+      result.reason = !saveFeedback.headerVisible
+        ? "workspace save feedback did not appear in the staff header"
+        : !saveFeedback.dockHidden
+          ? "routine workspace save still created a floating tablet dock"
+          : "workspace save feedback did not report the local saving state";
       return result;
     }
 
@@ -1260,6 +1291,7 @@ async function probeTabletFixedStack(page) {
           return Boolean(hit && (hit === element || element.contains(hit)));
         };
         const dock = visibleRect(document.getElementById("workspaceSyncDock"));
+        const saveStatus = visibleRect(document.getElementById("saveStatus"));
         const pageActionsFab = visibleRect(document.getElementById("pageActionsFab"));
         const pageFabCluster = visibleRect(document.getElementById("pageFabCluster"));
         const headerOverflow = visibleRect(document.querySelector(".header-overflow-btn"));
@@ -1271,14 +1303,13 @@ async function probeTabletFixedStack(page) {
         );
         const scriptTemplateRect = visibleRect(scriptTemplate);
         const requiredSurfaces = {
-          dock,
+          saveStatus,
           pageFabCluster,
           pageActionsFab,
           headerOverflow,
           scriptTemplate: scriptTemplateRect,
         };
         const pairs = [
-          ["dock/page-fab", dock, pageActionsFab],
           ["page-fab/script-template", pageActionsFab, scriptTemplateRect],
         ];
         const pairChecks = pairs.map(([name, first, second]) => ({
@@ -1290,6 +1321,7 @@ async function probeTabletFixedStack(page) {
         return {
           surfaces: {
             dock,
+            saveStatus,
             pageFabCluster,
             pageActionsFab,
             headerOverflow,
@@ -1315,6 +1347,7 @@ async function probeTabletFixedStack(page) {
       result.pairChecks = geometry.pairChecks;
       result.overlaps = geometry.overlaps;
       result.interactions = {
+        saveFeedback,
         pageActionsOpened,
         helpMenuVisible,
         helpOpened,
@@ -1323,6 +1356,7 @@ async function probeTabletFixedStack(page) {
         scriptTemplateReceivesHit: geometry.scriptTemplateReceivesHit,
       };
       result.ok =
+        saveFeedback.ok &&
         geometry.quickToolsAbsent &&
         pageActionsOpened &&
         helpMenuVisible &&
@@ -1446,6 +1480,7 @@ async function probeTabletFixedStack(page) {
           return Boolean(hit && (hit === element || element.contains(hit)));
         };
         const dock = visibleRect(document.getElementById("workspaceSyncDock"));
+        const saveStatus = visibleRect(document.getElementById("saveStatus"));
         const headerOverflow = visibleRect(document.querySelector(".header-overflow-btn"));
         const contextualActions = visibleRect(document.querySelector("#script .page-actions-open-btn"));
         const quickTools = visibleRect(document.getElementById("quickTools"));
@@ -1456,7 +1491,7 @@ async function probeTabletFixedStack(page) {
         );
         const scriptTemplateRect = visibleRect(scriptTemplate);
         const requiredSurfaces = {
-          dock,
+          saveStatus,
           headerOverflow,
           contextualActions,
           scriptTemplate: scriptTemplateRect,
@@ -1464,6 +1499,7 @@ async function probeTabletFixedStack(page) {
         return {
           surfaces: {
             dock,
+            saveStatus,
             headerOverflow,
             contextualActions,
             quickTools,
@@ -1484,6 +1520,7 @@ async function probeTabletFixedStack(page) {
       result.surfaces = geometry.surfaces;
       result.missing = geometry.missing;
       result.interactions = {
+        saveFeedback,
         helpMenuVisible,
         helpOpened,
         helpClosed,
@@ -1492,6 +1529,7 @@ async function probeTabletFixedStack(page) {
         scriptTemplateReceivesHit: geometry.scriptTemplateReceivesHit,
       };
       result.ok =
+        saveFeedback.ok &&
         geometry.quickToolsAbsent &&
         helpMenuVisible &&
         helpOpened &&
@@ -1573,6 +1611,7 @@ async function probeTabletFixedStack(page) {
       const landscapeShell = document.body?.classList.contains("is-landscape-screen") ||
         shellOrientation === "landscape";
       const dock = visibleRect(document.getElementById("workspaceSyncDock"));
+      const saveStatus = visibleRect(document.getElementById("saveStatus"));
       const pageFabCluster = visibleRect(document.getElementById("pageFabCluster"));
       const quickToolsLauncher = visibleRect(document.getElementById("quickToolsFab"));
       const quickToolsMenu = visibleRect(document.getElementById("quickToolsMenu"));
@@ -1587,16 +1626,14 @@ async function probeTabletFixedStack(page) {
       const requirePageFabCluster = !landscapeShell;
       const includePageFabCluster = requirePageFabCluster || Boolean(pageFabCluster);
       const requiredSurfaces = {
-        dock,
+        saveStatus,
         quickTools,
         ...(requirePageFabCluster ? { pageFabCluster } : {}),
       };
-      const surfaces = { dock, pageFabCluster, quickTools, quickToolsLauncher, quickToolsMenu };
+      const surfaces = { dock, saveStatus, pageFabCluster, quickTools, quickToolsLauncher, quickToolsMenu };
       const pairs = [
-        ["dock/quick-tools", dock, quickTools],
         ...(includePageFabCluster
           ? [
-            ["dock/page-fab-cluster", dock, pageFabCluster],
             ["page-fab-cluster/quick-tools", pageFabCluster, quickTools],
           ]
           : []),
@@ -1629,13 +1666,14 @@ async function probeTabletFixedStack(page) {
     result.missing = geometry.missing;
     result.pairChecks = geometry.pairChecks;
     result.overlaps = geometry.overlaps;
-    result.ok = result.missing.length === 0 && result.overlaps.length === 0;
+    result.ok = saveFeedback.ok && result.missing.length === 0 && result.overlaps.length === 0;
   } catch (error) {
     result.reason = String(error?.message || error);
   } finally {
     const restore = await page
       .evaluate((state) => {
         const dock = document.getElementById("workspaceSyncDock");
+        const saveStatus = document.getElementById("saveStatus");
         const quickTools = document.getElementById("quickTools");
         const menu = document.getElementById("quickToolsMenu");
         const trigger = document.getElementById("quickToolsFab");
@@ -1661,6 +1699,17 @@ async function probeTabletFixedStack(page) {
           if (text) text.textContent = state.dock.text;
           if (retry) retry.hidden = state.dock.retryHidden;
         }
+        if (saveStatus && state.saveStatus) {
+          saveStatus.className = state.saveStatus.className;
+          saveStatus.hidden = state.saveStatus.hidden;
+          saveStatus.dataset.syncState = state.saveStatus.syncState;
+          saveStatus.dataset.syncChannel = state.saveStatus.syncChannel;
+          saveStatus.textContent = state.saveStatus.text;
+          if (state.saveStatus.title) saveStatus.setAttribute("title", state.saveStatus.title);
+          else saveStatus.removeAttribute("title");
+          if (state.saveStatus.ariaLabel) saveStatus.setAttribute("aria-label", state.saveStatus.ariaLabel);
+          else saveStatus.removeAttribute("aria-label");
+        }
 
         if (typeof window.setQuickToolsOpen === "function") {
           window.setQuickToolsOpen(state.quickToolsOpen);
@@ -1684,6 +1733,7 @@ async function probeTabletFixedStack(page) {
     const restoration = restore
       ? await page.evaluate((state) => {
         const dock = document.getElementById("workspaceSyncDock");
+        const saveStatus = document.getElementById("saveStatus");
         const quickTools = document.getElementById("quickTools");
         const tabRestored = !state.activeTab || document.body?.dataset.activeTab === state.activeTab;
         const quickToolsRestored = Boolean(quickTools?.classList.contains("open")) === state.quickToolsOpen;
@@ -1692,11 +1742,20 @@ async function probeTabletFixedStack(page) {
           (dock?.dataset.syncState || "") === state.dock.syncState &&
           (dock?.dataset.syncChannel || "") === state.dock.syncChannel
         );
-        return { tabRestored, quickToolsRestored, dockRestored };
+        const saveStatusRestored = !state.saveStatus || (
+          saveStatus?.className === state.saveStatus.className &&
+          Boolean(saveStatus?.hidden) === state.saveStatus.hidden &&
+          (saveStatus?.dataset.syncState || "") === state.saveStatus.syncState &&
+          (saveStatus?.dataset.syncChannel || "") === state.saveStatus.syncChannel &&
+          (saveStatus?.textContent || "") === state.saveStatus.text &&
+          (saveStatus?.getAttribute("title") || "") === state.saveStatus.title &&
+          (saveStatus?.getAttribute("aria-label") || "") === state.saveStatus.ariaLabel
+        );
+        return { tabRestored, quickToolsRestored, dockRestored, saveStatusRestored };
       }, snapshot)
-      : { tabRestored: false, quickToolsRestored: false, dockRestored: false };
+      : { tabRestored: false, quickToolsRestored: false, dockRestored: false, saveStatusRestored: false };
     result.restore = restoration;
-    result.restored = restoration.tabRestored && restoration.quickToolsRestored && restoration.dockRestored;
+    result.restored = restoration.tabRestored && restoration.quickToolsRestored && restoration.dockRestored && restoration.saveStatusRestored;
     if (!result.restored) {
       result.ok = false;
       result.reason = result.reason || "probe state did not restore";

@@ -7,6 +7,15 @@
   }, {});
   const workspaceSyncJobs = new Map();
   let workspaceSyncClearTimer = 0;
+  let workspaceSyncStatusSequence = 0;
+  // The bottom dock deliberately clears settled work after a short beat so it
+  // does not become another permanent floating control. The staff header has
+  // a different job: it is the quiet, durable answer to “where is my work?”
+  // Keep the last confirmed outcome per channel there after the dock clears.
+  const workspaceSyncLastSettled = WORKSPACE_SYNC_CHANNELS.reduce((acc, channel) => {
+    acc[channel] = { state: "idle", label: "", updatedAt: "" };
+    return acc;
+  }, {});
   // navigator.onLine only tells us whether the browser has a network route.
   // Keep the last lightweight authenticated probe separate so a captive
   // network, a sleeping laptop, or a temporary Worker outage is not shown as
@@ -65,7 +74,14 @@
       lastError: String(error?.message || "Team service is temporarily unavailable."),
     };
     workspaceBackgroundRequests.set(normalizedKey, record);
-    _wsSetConnectivity({ service: "unavailable", lastError: record.lastError });
+    // A failed alert-count request is not evidence that the canonical team
+    // workspace is unavailable. Treating every background endpoint as the
+    // same service made the save surface say “Team sync unavailable” while a
+    // player-release commit could be healthy (or already complete). Only the
+    // actual workspace freshness path is allowed to set that stronger state.
+    if (normalizedKey === "team-workspace-refresh") {
+      _wsSetConnectivity({ service: "unavailable", lastError: record.lastError });
+    }
     return { ...record, retryAfterMs };
   }
 
@@ -224,6 +240,187 @@
     return label || _wsDefaultLabel(channel, state);
   }
 
+  const WORKSPACE_SYNC_HEADER_CHANNEL_PRIORITY = {
+    player: 0,
+    media: 1,
+    cloud: 2,
+    local: 3,
+  };
+
+  function _wsHeaderEntryFor(states) {
+    const wanted = Array.isArray(states) ? states : [states];
+    return Object.entries(WORKSPACE_SYNC_STATES)
+      .filter(([, item]) => wanted.includes(item.state))
+      .sort(([firstChannel, first], [secondChannel, second]) => {
+        const firstPriority = WORKSPACE_SYNC_HEADER_CHANNEL_PRIORITY[firstChannel] ?? 99;
+        const secondPriority = WORKSPACE_SYNC_HEADER_CHANNEL_PRIORITY[secondChannel] ?? 99;
+        if (firstPriority !== secondPriority) return firstPriority - secondPriority;
+        return String(second.updatedAt || "").localeCompare(String(first.updatedAt || ""));
+      })[0] || null;
+  }
+
+  function _wsHasStaffHeader() {
+    // During secure login, auth.js sets the principal before it removes the
+    // blocking overlay and applies body data attributes. Read the authoritative
+    // principal first so a freshly reset status can render for Team B rather
+    // than remaining hidden until some unrelated later save.
+    if (typeof getCurrentAuthUser === "function") {
+      const authUser = getCurrentAuthUser();
+      if (!authUser) return false;
+      const role = String(authUser.role || "");
+      return Boolean(role && role !== "locked" && role !== "player");
+    }
+    const role = String(document.body?.dataset?.authRole || "");
+    return Boolean(role && role !== "locked" && role !== "player");
+  }
+
+  function _wsHeaderActiveSummary() {
+    const error = _wsHeaderEntryFor("error");
+    if (error) {
+      const [channel, item] = error;
+      return {
+        state: "error",
+        channel,
+        label: "Needs attention",
+        detail: _wsDisplayLabel(channel, item.state, item.label),
+      };
+    }
+
+    // `dirty` means a mutation exists only in the live editor. It is not
+    // interchangeable with a durable cloud queue: unnamed work, a blank
+    // title, or a failed local write must never inherit “saved here” wording.
+    const dirty = _wsHeaderEntryFor("dirty");
+    if (dirty) {
+      const [channel, item] = dirty;
+      return {
+        state: "dirty",
+        channel,
+        label: "Unsaved changes",
+        detail: _wsDisplayLabel(channel, item.state, item.label),
+      };
+    }
+
+    const running = _wsHeaderEntryFor(["syncing", "saving"]);
+    const queued = _wsHeaderEntryFor("queued");
+    const active = running || queued;
+    if (!active) return null;
+
+    const [channel, item] = active;
+    // A local `saving` callback has not yet received a successful
+    // localStorage receipt. Name that in-progress state honestly even when
+    // Safari reports that the device has no network route.
+    if (channel === "local" && item.state === "saving") {
+      return {
+        state: "syncing",
+        channel,
+        label: "Saving here",
+        detail: _wsDisplayLabel(channel, item.state, item.label),
+      };
+    }
+    const connectivityState = _wsConnectivityState();
+    if (connectivityState) {
+      return {
+        state: connectivityState,
+        channel,
+        label: connectivityState === "offline" ? "Offline · saved here" : "Team unavailable · saved here",
+        detail: _wsDisplayLabel(channel, item.state, item.label),
+      };
+    }
+
+    if (running) {
+      const label = channel === "cloud" || channel === "player"
+        ? "Syncing team"
+        : channel === "media"
+          ? "Saving media"
+          : "Saving here";
+      return {
+        state: "syncing",
+        channel,
+        label,
+        detail: _wsDisplayLabel(channel, item.state, item.label),
+      };
+    }
+
+    return {
+      state: "queued",
+      channel,
+      label: "Queued · saved here",
+      detail: _wsDisplayLabel(channel, item.state, item.label),
+    };
+  }
+
+  function _wsHeaderSettledSummary() {
+    const settled = Object.entries(workspaceSyncLastSettled)
+      .filter(([, item]) => ["saved", "synced"].includes(item.state) && item.updatedAt)
+      .sort(([, first], [, second]) => {
+        const firstSequence = Number(first.sequence || 0);
+        const secondSequence = Number(second.sequence || 0);
+        if (firstSequence !== secondSequence) return secondSequence - firstSequence;
+        return String(second.updatedAt || "").localeCompare(String(first.updatedAt || ""));
+      });
+    const latest = settled[0];
+    if (!latest) {
+      return {
+        state: "ready",
+        channel: "",
+        label: "Ready",
+        detail: "No workspace changes are waiting to sync.",
+      };
+    }
+
+    const [channel, item] = latest;
+    const detail = _wsDisplayLabel(channel, item.state, item.label);
+    // Cloud's idle status is intentionally allowed to say that the publish
+    // system is available. That is not a release receipt. Only a completed
+    // player-channel job is evidence that this browser's player update was
+    // accepted by the canonical workspace commit.
+    const playerReady = channel === "player" && item.confirmed === true;
+    if (playerReady) {
+      return { state: "player-ready", channel, label: "Player ready", detail };
+    }
+    if (channel === "cloud") {
+      return { state: "team-synced", channel, label: "Team synced", detail };
+    }
+    if (channel === "media") {
+      return { state: "saved", channel, label: "Media saved", detail };
+    }
+    return { state: "saved", channel, label: "Saved here", detail };
+  }
+
+  function getWorkspaceSyncHeaderSummary() {
+    if (!_wsHasStaffHeader()) {
+      return { state: "hidden", channel: "", label: "", detail: "" };
+    }
+    return _wsHeaderActiveSummary() || _wsHeaderSettledSummary();
+  }
+
+  function renderWorkspaceSyncHeader() {
+    const status = document.getElementById("saveStatus");
+    if (!status) return;
+    const summary = getWorkspaceSyncHeaderSummary();
+    if (summary.state === "hidden") {
+      status.hidden = true;
+      status.className = "save-status";
+      status.textContent = "";
+      status.removeAttribute("data-sync-state");
+      status.removeAttribute("data-sync-channel");
+      status.removeAttribute("title");
+      status.removeAttribute("aria-label");
+      return;
+    }
+
+    status.hidden = false;
+    status.className = `save-status workspace-save-status workspace-save-status--${summary.state}`;
+    status.dataset.syncState = summary.state;
+    status.dataset.syncChannel = summary.channel || "";
+    status.textContent = summary.label;
+    const accessibleDetail = summary.detail && summary.detail !== summary.label
+      ? `${summary.label}. ${summary.detail}`
+      : summary.label;
+    status.title = accessibleDetail;
+    status.setAttribute("aria-label", `Workspace status: ${accessibleDetail}`);
+  }
+
   function getWorkspaceSyncConnectivity() {
     return { ...workspaceConnectivity };
   }
@@ -364,6 +561,7 @@
   }
 
   function renderWorkspaceSyncDock() {
+    renderWorkspaceSyncHeader();
     const dock = ensureWorkspaceSyncDock();
     if (!dock) return;
     if (workspaceSyncClearTimer) {
@@ -393,11 +591,23 @@
 
   function setWorkspaceSyncStatus(channel, state, opts = {}) {
     const normalizedChannel = _wsNormalizeChannel(channel);
-    WORKSPACE_SYNC_STATES[normalizedChannel] = {
+    const next = {
       state: state || "idle",
       label: opts.label || "",
       updatedAt: new Date().toISOString(),
+      sequence: ++workspaceSyncStatusSequence,
+      confirmed: opts.confirmed === true,
     };
+    WORKSPACE_SYNC_STATES[normalizedChannel] = next;
+    // `renderCloudSyncStatus` also reports an idle cloud service as synced so
+    // its settings surface can stay calm. Do not let that unauthenticated,
+    // session-local heartbeat replace a receipt from an actual cloud job.
+    if (
+      ["saved", "synced"].includes(next.state) &&
+      (normalizedChannel !== "cloud" || next.confirmed)
+    ) {
+      workspaceSyncLastSettled[normalizedChannel] = { ...next };
+    }
     renderWorkspaceSyncDock();
   }
 
@@ -405,7 +615,7 @@
   // diagram and a clip upload). Do not let a successful job hide a separate
   // job that is still genuinely blocked. Conversely, a new queued job should
   // not turn a resolved channel back into an error because of a stale label.
-  function _wsReconcileChannel(channel, fallbackState = "idle", fallbackLabel = "") {
+  function _wsReconcileChannel(channel, fallbackState = "idle", fallbackLabel = "", opts = {}) {
     const normalizedChannel = _wsNormalizeChannel(channel);
     const jobs = [...workspaceSyncJobs.values()]
       .filter((job) => job.channel === normalizedChannel)
@@ -414,6 +624,7 @@
     if (error) {
       setWorkspaceSyncStatus(normalizedChannel, "error", {
         label: error.errorLabel || _wsDefaultLabel(normalizedChannel, "error"),
+        confirmed: opts.confirmed === true,
       });
       return;
     }
@@ -421,6 +632,7 @@
     if (running) {
       setWorkspaceSyncStatus(normalizedChannel, normalizedChannel === "local" ? "saving" : "syncing", {
         label: running.runningLabel || _wsDefaultLabel(normalizedChannel, "syncing"),
+        confirmed: opts.confirmed === true,
       });
       return;
     }
@@ -428,10 +640,14 @@
     if (queued) {
       setWorkspaceSyncStatus(normalizedChannel, "queued", {
         label: queued.queuedLabel || _wsDefaultLabel(normalizedChannel, "queued"),
+        confirmed: opts.confirmed === true,
       });
       return;
     }
-    setWorkspaceSyncStatus(normalizedChannel, fallbackState, { label: fallbackLabel });
+    setWorkspaceSyncStatus(normalizedChannel, fallbackState, {
+      label: fallbackLabel,
+      confirmed: opts.confirmed === true,
+    });
   }
 
   function hasWorkspaceSyncWork() {
@@ -498,10 +714,12 @@
     job.state = "done";
     job.updatedAt = new Date().toISOString();
     workspaceSyncJobs.delete(key);
+    const settledState = opts.status || (job.channel === "local" ? "saved" : "synced");
     _wsReconcileChannel(
       job.channel,
-      opts.status || (job.channel === "local" ? "saved" : "synced"),
+      settledState,
       opts.label || job.doneLabel || _wsDefaultLabel(job.channel, "synced"),
+      { confirmed: ["saved", "synced"].includes(settledState) },
     );
     return true;
   }
@@ -558,6 +776,42 @@
     return true;
   }
 
+  // Queue presentation is intentionally session-scoped. The durable media
+  // outboxes and cloud ledger own recovery; this layer only owns the current
+  // person's live header/dock. Clearing it at a secure account boundary keeps
+  // Team A's retry/error from blocking or misleading Team B on a shared iPad.
+  function resetWorkspaceSyncForAuthContext() {
+    if (workspaceSyncClearTimer) {
+      clearTimeout(workspaceSyncClearTimer);
+      workspaceSyncClearTimer = 0;
+    }
+    workspaceSyncJobs.clear();
+    workspaceSyncStatusSequence = 0;
+    WORKSPACE_SYNC_CHANNELS.forEach((channel) => {
+      WORKSPACE_SYNC_STATES[channel] = { state: "idle", label: "" };
+      workspaceSyncLastSettled[channel] = { state: "idle", label: "", updatedAt: "" };
+    });
+    workspaceBackgroundRequests.clear();
+    Object.assign(workspaceConnectivity, {
+      browserOnline: typeof navigator === "undefined" || navigator.onLine !== false,
+      reachability: "unknown",
+      service: "unknown",
+      checkedAt: new Date().toISOString(),
+      lastError: "",
+    });
+    if (typeof CustomEvent === "function") {
+      document.dispatchEvent(new CustomEvent("workspace-connectivity-changed", {
+        detail: getWorkspaceSyncConnectivity(),
+      }));
+    }
+    renderWorkspaceSyncDock();
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => renderWorkspaceSyncDock());
+    } else {
+      renderWorkspaceSyncDock();
+    }
+  }
+
   async function runWorkspaceSyncJob(channel, id, runner, opts = {}) {
     const key = queueWorkspaceSyncJob(channel, id, opts);
     startWorkspaceSyncJob(key, opts);
@@ -581,7 +835,10 @@
     // probing a signed-out session first.
     if (typeof window.whenAuthReady === "function") {
       window.whenAuthReady()
-        .then((user) => user ? checkWorkspaceSyncConnectivity({ force: true }) : null)
+        .then((user) => {
+          renderWorkspaceSyncDock();
+          return user ? checkWorkspaceSyncConnectivity({ force: true }) : null;
+        })
         .catch(() => null);
     }
   });
@@ -599,6 +856,7 @@
       detail: { type: "workspace-lease-changed", source: "storage", at: new Date().toISOString() },
     }));
   });
+  window.addEventListener("bc-auth-context-changed", resetWorkspaceSyncForAuthContext);
 
   window.workspaceSync = {
     queue: queueWorkspaceSyncJob,
@@ -612,6 +870,7 @@
     hasWork: hasWorkspaceSyncWork,
     hasBlockingWork: hasBlockingWorkspaceSyncWork,
     setStatus: setWorkspaceSyncStatus,
+    getHeaderSummary: getWorkspaceSyncHeaderSummary,
     getConnectivity: getWorkspaceSyncConnectivity,
     checkConnectivity: checkWorkspaceSyncConnectivity,
     canAttemptBackgroundRequest: canAttemptWorkspaceBackgroundRequest,

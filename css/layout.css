@@ -187,6 +187,77 @@ body[data-auth-role="player"] .save-status {
   color: var(--color-warning);
 }
 
+/* The shared workspace coordinator projects its one source of truth into the
+   existing staff header status. This is deliberately a quiet readout, not a
+   second action button or floating toast. On staff desktops and iPads it owns
+   routine save activity; the dock stays for offline and retry attention. */
+.workspace-save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 15rem;
+  min-height: 28px;
+  padding: 4px 9px;
+  overflow: hidden;
+  border: 1px solid var(--color-white-alpha-15);
+  border-radius: var(--radius-pill);
+  background: var(--color-white-alpha-10);
+  color: var(--color-white-alpha-85);
+  font-weight: 800;
+  line-height: 1;
+  text-overflow: ellipsis;
+}
+
+.workspace-save-status::before {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 16%, transparent);
+  content: "";
+}
+
+.workspace-save-status--ready {
+  color: var(--color-white-alpha-60);
+}
+
+.workspace-save-status--saved,
+.workspace-save-status--team-synced,
+.workspace-save-status--player-ready {
+  color: var(--color-success-light);
+}
+
+.workspace-save-status--syncing,
+.workspace-save-status--queued {
+  color: var(--color-accent);
+}
+
+.workspace-save-status--dirty {
+  color: var(--color-warning-light);
+}
+
+.workspace-save-status--syncing::before {
+  animation: workspaceSaveStatusPulse 0.9s ease-in-out infinite alternate;
+}
+
+.workspace-save-status--offline,
+.workspace-save-status--unavailable {
+  color: var(--color-warning-light);
+}
+
+.workspace-save-status--error {
+  color: var(--color-danger-light);
+  border-color: color-mix(in srgb, var(--color-danger-light) 55%, var(--color-white-alpha-15));
+  background: color-mix(in srgb, var(--color-danger) 20%, var(--color-white-alpha-10));
+}
+
+@keyframes workspaceSaveStatusPulse {
+  from { opacity: 0.45; transform: scale(0.82); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 .workspace-sync-dock {
   position: fixed;
   /* Status should be persistent without competing with the global header. */
@@ -344,6 +415,38 @@ body[data-auth-role="player"] .workspace-sync-dock {
 .workspace-sync-dock--offline .workspace-sync-dock__dot,
 .workspace-sync-dock--unavailable .workspace-sync-dock__dot {
   background: var(--color-primary);
+}
+
+/* Routine staff save work has a calm, persistent home in the header. Keeping
+   the same queued/saving state in a second floating dock makes an iPad
+   workbench feel busy without adding information. Phones deliberately keep
+   the dock because their header omits the text readout; errors and
+   connectivity states remain visible everywhere so Retry is never buried. */
+body[data-auth-role="admin"]:not(.is-mobile-screen) .workspace-sync-dock--dirty,
+body[data-auth-role="admin"]:not(.is-mobile-screen) .workspace-sync-dock--queued,
+body[data-auth-role="admin"]:not(.is-mobile-screen) .workspace-sync-dock--saving,
+body[data-auth-role="admin"]:not(.is-mobile-screen) .workspace-sync-dock--syncing,
+body[data-auth-role="coach"]:not(.is-mobile-screen) .workspace-sync-dock--dirty,
+body[data-auth-role="coach"]:not(.is-mobile-screen) .workspace-sync-dock--queued,
+body[data-auth-role="coach"]:not(.is-mobile-screen) .workspace-sync-dock--saving,
+body[data-auth-role="coach"]:not(.is-mobile-screen) .workspace-sync-dock--syncing,
+body[data-auth-role="assistant_coach"]:not(.is-mobile-screen) .workspace-sync-dock--dirty,
+body[data-auth-role="assistant_coach"]:not(.is-mobile-screen) .workspace-sync-dock--queued,
+body[data-auth-role="assistant_coach"]:not(.is-mobile-screen) .workspace-sync-dock--saving,
+body[data-auth-role="assistant_coach"]:not(.is-mobile-screen) .workspace-sync-dock--syncing,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell[data-auth-role="admin"] .workspace-sync-dock--dirty,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell[data-auth-role="admin"] .workspace-sync-dock--queued,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell[data-auth-role="admin"] .workspace-sync-dock--saving,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell[data-auth-role="admin"] .workspace-sync-dock--syncing,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell[data-auth-role="coach"] .workspace-sync-dock--dirty,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell[data-auth-role="coach"] .workspace-sync-dock--queued,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell[data-auth-role="coach"] .workspace-sync-dock--saving,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell[data-auth-role="coach"] .workspace-sync-dock--syncing,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell[data-auth-role="assistant_coach"] .workspace-sync-dock--dirty,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell[data-auth-role="assistant_coach"] .workspace-sync-dock--queued,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell[data-auth-role="assistant_coach"] .workspace-sync-dock--saving,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell[data-auth-role="assistant_coach"] .workspace-sync-dock--syncing {
+  display: none;
 }
 
 /* Keep the coach-facing status clear of the compact mobile command dock. */

@@ -127,6 +127,29 @@ test.describe("Player M1 iPad study surfaces", () => {
     const pageActions = page.locator("#pageFabCluster");
     await expect(pageActions).toBeHidden();
 
+    // WebKit can report the pre-scroll visual-viewport geometry for one frame
+    // after scrollIntoView(), even though the document scroll has already been
+    // requested. Keep the check strict, but wait for the settled iPad surface
+    // rather than sampling that transient frame.
+    await page.locator("#playbook .pb-card-action--ask").first().evaluate((askButton) => {
+      askButton.scrollIntoView({ block: "center", inline: "nearest" });
+    });
+    await expect.poll(() => page.evaluate(() => {
+      const askButton = document.querySelector("#playbook .pb-card-action--ask");
+      if (!askButton) return false;
+      const box = askButton.getBoundingClientRect();
+      const style = getComputedStyle(askButton);
+      return style.display !== "none" &&
+        style.visibility !== "hidden" &&
+        box.width >= 44 &&
+        box.height >= 44 &&
+        box.top >= 0 &&
+        box.bottom <= window.innerHeight;
+    }), {
+      message: "Ask settles into the unobstructed iPad viewport",
+      timeout: 5_000,
+    }).toBe(true);
+
     const playbookGeometry = await page.evaluate(() => {
       const rect = (element) => {
         if (!element) return null;
@@ -145,10 +168,6 @@ test.describe("Player M1 iPad study surfaces", () => {
         };
       };
       const askButton = document.querySelector("#playbook .pb-card-action--ask");
-      // Diagram readiness intentionally re-renders the card list. Keep the
-      // scroll and geometry read in one document turn so the test never holds a
-      // stale card handle while that non-visual status refresh settles.
-      askButton?.scrollIntoView({ block: "center", inline: "nearest" });
       const askRect = rect(askButton);
       return {
         actions: rect(document.getElementById("pageActionsFab")),
@@ -174,7 +193,30 @@ test.describe("Player M1 iPad study surfaces", () => {
     const present = summary.getByRole("button", { name: "Present Showing", exact: true });
     await expect(filters).toBeVisible();
     await expect(present).toBeVisible();
-    const actionRects = await page.locator("#playerPlaybookSummary .pb-player-summary__actions .btn").evaluateAll((buttons) =>
+    const summaryActions = page.locator("#playerPlaybookSummary .pb-player-summary__actions .btn");
+    // The player summary may refresh once when background media metadata
+    // resolves. Its actions must remain present and touch-safe after that
+    // refresh; wait for a rendered frame instead of accepting a zero-sized
+    // intermediate WebKit layout read.
+    await expect.poll(() => summaryActions.evaluateAll((buttons) => {
+      const visibleButtons = buttons.filter((button) => {
+        const box = button.getBoundingClientRect();
+        const style = getComputedStyle(button);
+        return style.display !== "none" && style.visibility !== "hidden" && box.width > 0 && box.height > 0;
+      });
+      return {
+        total: buttons.length,
+        visible: visibleButtons.length,
+        touchSafe: visibleButtons.every((button) => {
+          const box = button.getBoundingClientRect();
+          return box.width >= 44 && box.height >= 44;
+        }),
+      };
+    }), {
+      message: "player study summary actions settle as touch-safe controls",
+      timeout: 5_000,
+    }).toEqual({ total: 3, visible: 3, touchSafe: true });
+    const actionRects = await summaryActions.evaluateAll((buttons) =>
       buttons.map((button) => {
         const box = button.getBoundingClientRect();
         return { label: button.textContent?.trim() || "", width: box.width, height: box.height };

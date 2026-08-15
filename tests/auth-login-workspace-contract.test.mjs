@@ -14,8 +14,8 @@ const appBootstrapSource = await readFile(new URL("js/app-bootstrap.js", `file:/
 
 assert.match(
   cloudSource,
-  /async function autoPullLatestCloudBackup\(opts = \{\}\) \{[\s\S]*?const currentUser =[\s\S]*?if \(!currentUser\) return false;[\s\S]*?if \(opts\.bootstrap === true\) \{[\s\S]*?sessionStorage\.removeItem\(CLOUD_SYNC_AUTO_PULL_SESSION_KEY\);[\s\S]*?if \(sessionStorage\.getItem\(CLOUD_SYNC_AUTO_PULL_SESSION_KEY\) === "1"\) return false;[\s\S]*?sessionStorage\.setItem\(CLOUD_SYNC_AUTO_PULL_SESSION_KEY, "1"\);/,
-  "a completed sign-in always receives a fresh workspace bootstrap decision",
+  /async function autoPullLatestCloudBackup\(opts = \{\}\) \{[\s\S]*?const currentUser =[\s\S]*?if \(!currentUser\) return false;[\s\S]*?if \(opts\.bootstrap === true\) \{[\s\S]*?sessionStorage\.removeItem\(CLOUD_SYNC_AUTO_PULL_SESSION_KEY\);[\s\S]*?if \(sessionStorage\.getItem\(CLOUD_SYNC_AUTO_PULL_SESSION_KEY\) === "1"\) \{[\s\S]*?resumePendingWorkspaceSync\(\);[\s\S]*?return false;[\s\S]*?\}[\s\S]*?sessionStorage\.setItem\(CLOUD_SYNC_AUTO_PULL_SESSION_KEY, "1"\);/,
+  "a completed sign-in always receives a fresh workspace bootstrap decision while a normal reload re-arms any durable pending team save",
 );
 assert.match(
   cloudSource,

@@ -47,6 +47,11 @@ assert.match(
 );
 assert.match(
   scriptPlayer,
+  /const publishConfirmed = await recordPlayerPublishStatus\("scripts",[\s\S]*?if \(!publishConfirmed\)[\s\S]*?Player access will update automatically when Team Sync reconnects\./,
+  "a failed player-release handoff is saved locally but never misrepresented as available to players",
+);
+assert.match(
+  scriptPlayer,
   /const requestedId = id !== undefined && id !== null \? String\(id\)\.trim\(\) : "";[\s\S]*?if \(requestedId\) \{[\s\S]*?return presentPublishedPlayerScript\(requestedId\);[\s\S]*?if \(loadedPlayCount > 0\)/s,
   "an explicit player launcher choice loads that published script instead of reopening stale in-memory plays",
 );
@@ -72,18 +77,18 @@ assert.match(
 );
 assert.match(
   cloudSync,
-  /function flushCloudAutoPush\(\) \{[\s\S]*?if \(cloudAutoPushFlushPromise\) return cloudAutoPushFlushPromise;[\s\S]*?const run = flushCloudAutoPushInternal\(\);/,
-  "overlapping coach and player publish requests join one in-flight canonical commit",
+  /function flushCloudAutoPush\(\) \{[\s\S]*?cloudAutoPushFlushContext\?\.key === context\.key[\s\S]*?const run = flushCloudAutoPushInternal\(context\);/,
+  "overlapping coach and player publish requests join one in-flight canonical commit only within the same secure auth context",
 );
 assert.match(
   cloudSync,
-  /const playerRelease = getPlayerReleaseReceipt\(result\.release\);[\s\S]*?recordPublishActivity\([\s\S]*?releaseRevision: playerRelease\.revision[\s\S]*?async function flushCloudAutoPushInternal\(\)[\s\S]*?window\.completePlayerPublishJobs\(\{ label: playerRelease\.label \}\)/,
+  /const playerRelease = getPlayerReleaseReceipt\(result\.release\);[\s\S]*?recordPublishActivity\([\s\S]*?releaseRevision: playerRelease\.revision[\s\S]*?async function flushCloudAutoPushInternal\(context\)[\s\S]*?window\.completePlayerPublishJobs\(\{ label: playerRelease\.label \}\)/,
   "player receipts show the immutable Cloudflare release revision only after the team workspace publishes",
 );
 assert.match(
   cloudSync,
-  /PLAYER_RELEASE_REFRESH_INTERVAL_MS = 45 \* 1000/,
-  "an open player app revalidates an ETag-backed release on a short cadence",
+  /PLAYER_RELEASE_REFRESH_INTERVAL_MS = 15 \* 1000/,
+  "an open player app revalidates an ETag-backed release on a fast, ETag-backed cadence",
 );
 assert.match(
   cloudSync,

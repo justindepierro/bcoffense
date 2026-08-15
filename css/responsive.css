@@ -522,6 +522,19 @@ body[data-auth-role="player"] .player-study-state strong {
     display: none;
   }
 
+  /* Staff iPads keep one compact, always-truthful save/sync readout in the
+     header. Phones intentionally retain their simpler chrome, and player
+     status remains inside the player Home/Practice experience. */
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    .workspace-save-status {
+    display: inline-flex;
+    flex: 0 1 auto;
+    max-width: min(146px, 18vw);
+    min-height: 30px;
+    padding: 4px 8px;
+    font-size: var(--font-size-2xs);
+  }
+
   body.is-mobile-screen .header-action-btn {
     width: 46px;
     min-width: 46px;

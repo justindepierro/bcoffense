@@ -10,15 +10,18 @@
   const PLAYER_RELEASE_ETAG_KEY = "_bcPlayerReleaseEtag";
   const PLAYER_RELEASE_META_KEY = "_bcPlayerReleaseMeta";
   const MAX_KV_BACKUP_BYTES = 25 * 1024 * 1024;
-  // Routine saves should feel prompt on a staff sideline device, while still
-  // giving rapid field edits a short batching window. The earlier 30-second
-  // delay made two active browsers look out of sync for too long.
-  const CLOUD_AUTO_PUSH_DELAY_MS = 8000;
+  // Routine saves should feel effectively immediate on a staff sideline
+  // device, while still giving rapid field edits one small batching window.
+  // Local persistence happens before this timer; the timer only coalesces the
+  // canonical team write, so it never puts the edit itself at risk.
+  const CLOUD_AUTO_PUSH_DELAY_MS = 2500;
   // Player-facing media and quiz changes are meaningful handoffs, not routine
   // field edits. Give nearby writes a moment to settle, then publish the
   // canonical workspace right away instead of waiting for the normal batch.
   const CLOUD_AUTO_PUSH_CRITICAL_DELAY_MS = 1200;
-  const CLOUD_AUTO_PUSH_MAX_HOLD_MS = 2 * 60 * 1000;
+  // Continuous editing cannot keep a change local forever. Flush a bounded
+  // batch after 30 seconds even if new field edits continue arriving.
+  const CLOUD_AUTO_PUSH_MAX_HOLD_MS = 30 * 1000;
   const CLOUD_AUTO_PUSH_RETRY_MS = 60 * 1000;
   const CLOUD_AUTO_PUSH_CONFLICT_RETRY_MS = 1500;
   const CLOUD_AUTO_PUSH_TIMEOUT_RETRY_MS = 4000;
@@ -39,7 +42,10 @@
   // A player can keep the installed app open during practice. Revalidate the
   // small ETag-backed release more often than the staff workspace so a coach
   // save becomes visible without teaching players to refresh or reopen.
-  const PLAYER_RELEASE_REFRESH_INTERVAL_MS = 45 * 1000;
+  // Player-release reads are ETag-backed and return a compact 304 when no
+  // coach update exists. Keep an already-open player app close to live
+  // practice changes without turning the daily data plane into polling UI.
+  const PLAYER_RELEASE_REFRESH_INTERVAL_MS = 15 * 1000;
   // Mobile browsers can leave a fetch pending while the app is backgrounded
   // or its radio changes networks. A stuck release read must never block the
   // next foreground check indefinitely.
@@ -96,6 +102,21 @@
     lastRemoteUpdatedAt: "",
     lastRemoteSize: 0,
     lastWorkspaceRevision: "",
+    // The editable workspace itself is still one browser cache. Remember
+    // which authenticated team last hydrated or wrote that cache so an
+    // older team's durable retry is never replayed against another team's
+    // newly-hydrated local values on a shared device.
+    workspaceTeamId: "",
+    // This is deliberately device-only. It records a local team edit that
+    // has reached durable browser storage but has not yet received a matching
+    // canonical workspace commit. It must never be included in the team
+    // snapshot itself (CLOUD_SYNC_SETTINGS is excluded by storage.js and the
+    // workspace route), because it describes this browser's retry work.
+    // Kept only as a read-only migration input for the first transactional
+    // ledger build. New writes live in storage.js's device-only IndexedDB
+    // journal, where one team's record cannot overwrite another tab's intent.
+    pendingWorkspaceSync: null,
+    pendingWorkspaceSyncByTeam: {},
   };
 
   // Every field eligible for the canonical snapshot schedules the same shared
@@ -103,6 +124,54 @@
   // change merely because its module was added after the original autosave
   // list was written.
   const CLOUD_AUTO_PUSH_KEYS = new Set(["playImages", ...CANONICAL_TEAM_WORKSPACE_KEYS]);
+  const PENDING_WORKSPACE_SYNC_VERSION = 1;
+  const MAX_PENDING_WORKSPACE_SYNC_KEYS = 128;
+  const MAX_PENDING_WORKSPACE_SYNC_TEAMS = 24;
+
+  function normalizePendingWorkspaceSyncIntent(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    const teamId = normalizeWorkspaceTeamId(value.teamId);
+    const rawKeys = Array.isArray(value.keys) ? value.keys : [];
+    const keys = Array.from(new Set(rawKeys
+      .map((key) => String(key || "").trim())
+      .filter((key) => CLOUD_AUTO_PUSH_KEYS.has(key))))
+      .slice(0, MAX_PENDING_WORKSPACE_SYNC_KEYS);
+    const generation = Math.max(1, Math.floor(Number(value.generation) || 0));
+    if (
+      !teamId ||
+      !keys.length
+    ) return null;
+    return {
+      v: PENDING_WORKSPACE_SYNC_VERSION,
+      teamId,
+      baseRevision: String(value.baseRevision || "").slice(0, 512),
+      generation,
+      keys,
+      queuedAt: String(value.queuedAt || ""),
+      updatedAt: String(value.updatedAt || ""),
+      lastAttemptAt: String(value.lastAttemptAt || ""),
+    };
+  }
+
+  function getPendingWorkspaceSyncIntentTime(intent) {
+    const timestamp = Date.parse(String(intent?.updatedAt || intent?.queuedAt || ""));
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  }
+
+  function normalizePendingWorkspaceSyncByTeam(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    const entries = Object.entries(value)
+      .map(([teamId, intent]) => {
+        const normalized = normalizePendingWorkspaceSyncIntent(intent);
+        return normalized && normalized.teamId === String(teamId || "").trim()
+          ? [normalized.teamId, normalized]
+          : null;
+      })
+      .filter(Boolean)
+      .sort(([, a], [, b]) => getPendingWorkspaceSyncIntentTime(b) - getPendingWorkspaceSyncIntentTime(a))
+      .slice(0, MAX_PENDING_WORKSPACE_SYNC_TEAMS);
+    return Object.fromEntries(entries);
+  }
 
   let cloudAutoPushTimer = null;
   let cloudAutoPushCriticalTimer = null;
@@ -114,6 +183,13 @@
   let cloudAutoPushRetryCount = 0;
   let cloudAutoPushServerUnavailableUntil = 0;
   let cloudAutoPushSuppress = false;
+  // Browser storage is durable, but these scheduling variables are not. Bind
+  // every live timer/run to the authenticated team *and* auth generation so
+  // a logout/login cannot let Team A's heap state publish through Team B's
+  // newly authenticated request.
+  let cloudSyncAuthGeneration = 0;
+  let cloudAutoPushContext = null;
+  let cloudAutoPushFlushContext = null;
   // A player release replaces the complete read-only study dataset. Never do
   // that destructive-in-memory swap while the player is inside Swipe View.
   // Hold the verified response and commit it immediately after the viewer
@@ -128,6 +204,104 @@
   let teamForegroundRefreshPromise = null;
   let teamForegroundRefreshAt = 0;
   const cloudAutoPushDirtyKeys = new Set();
+  // The device-only journal itself is transactioned in storage.js. These
+  // caches only make the normal UI path synchronous after the first read;
+  // every flush re-reads the transactioned record so another tab's update is
+  // never hidden behind a stale heap copy.
+  const pendingWorkspaceSyncLedgerCache = new Map();
+  const pendingWorkspaceSyncLedgerMutationTails = new Map();
+  const pendingWorkspaceSyncLedgerErrors = new Map();
+  let pendingWorkspaceSyncLedgerMigrationPromise = null;
+
+  function normalizeWorkspaceTeamId(value) {
+    const teamId = String(value || "").trim();
+    if (
+      !teamId ||
+      teamId.length > 160 ||
+      teamId === "__proto__" ||
+      teamId === "prototype" ||
+      teamId === "constructor"
+    ) return "";
+    return teamId;
+  }
+
+  function getWorkspaceAuthContext(user = null) {
+    const currentUser = user || (typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null);
+    const teamId = normalizeWorkspaceTeamId(currentUser?.teamId);
+    const role = String(currentUser?.role || "").trim();
+    const subject = String(currentUser?.d1UserId || currentUser?.username || "").trim();
+    if (!teamId || !role || !subject) return null;
+    const session = String(currentUser?.loginAt || currentUser?.expiresAt || "").trim();
+    return {
+      teamId,
+      role,
+      subject,
+      session,
+      generation: cloudSyncAuthGeneration,
+      user: currentUser,
+      key: `${teamId}|${role}|${subject}|${session}|${cloudSyncAuthGeneration}`,
+    };
+  }
+
+  function isWorkspaceAuthContextCurrent(context) {
+    if (!context || context.generation !== cloudSyncAuthGeneration) return false;
+    const current = getWorkspaceAuthContext();
+    return Boolean(current && current.key === context.key);
+  }
+
+  function isCloudAutoPushContextActive(context) {
+    return Boolean(
+      context &&
+      cloudAutoPushContext &&
+      cloudAutoPushContext.key === context.key &&
+      isWorkspaceAuthContextCurrent(context),
+    );
+  }
+
+  function resetCloudAutoPushVolatileState(opts = {}) {
+    if (opts.bumpAuthGeneration === true) cloudSyncAuthGeneration += 1;
+    if (cloudAutoPushTimer) clearTimeout(cloudAutoPushTimer);
+    if (cloudAutoPushCriticalTimer) clearTimeout(cloudAutoPushCriticalTimer);
+    cloudAutoPushTimer = null;
+    cloudAutoPushCriticalTimer = null;
+    cloudAutoPushFirstQueuedAt = 0;
+    cloudAutoPushPending = false;
+    cloudAutoPushSaving = false;
+    cloudAutoPushFlushPromise = null;
+    cloudAutoPushFlushContext = null;
+    cloudAutoPushLastError = "";
+    cloudAutoPushRetryCount = 0;
+    cloudAutoPushServerUnavailableUntil = 0;
+    cloudAutoPushSuppress = false;
+    teamForegroundRefreshAt = 0;
+    cloudAutoPushDirtyKeys.clear();
+    cloudAutoPushContext = null;
+  }
+
+  function activateCloudAutoPushContext(context) {
+    if (!context || !isWorkspaceAuthContextCurrent(context)) return false;
+    if (cloudAutoPushContext && cloudAutoPushContext.key !== context.key) {
+      // Keep the old team's disk-backed journal, but never carry its live
+      // timers, dirty keys, error, or promise into this new auth context.
+      resetCloudAutoPushVolatileState();
+    }
+    cloudAutoPushContext = context;
+    return true;
+  }
+
+  function workspaceAuthContextChangedError(context, opts = {}) {
+    const err = new Error("The secure team session changed before this workspace save finished.");
+    err.code = "BC_WORKSPACE_AUTH_CONTEXT_CHANGED";
+    err.authContext = context || null;
+    err.committed = opts.committed === true;
+    return err;
+  }
+
+  function assertWorkspaceAuthContext(context, opts = {}) {
+    if (!isWorkspaceAuthContextCurrent(context)) {
+      throw workspaceAuthContextChangedError(context, opts);
+    }
+  }
 
   function buildCanonicalTeamWorkspace(backup) {
     const source = backup && typeof backup === "object" && !Array.isArray(backup) ? backup : {};
@@ -170,6 +344,21 @@
   function getCloudSyncSettings() {
     const stored = storageManager.get(STORAGE_KEYS.CLOUD_SYNC_SETTINGS, {});
     const source = stored && typeof stored === "object" ? stored : {};
+    const pendingWorkspaceSyncByTeam = normalizePendingWorkspaceSyncByTeam(
+      source.pendingWorkspaceSyncByTeam,
+    );
+    // v1 of this client briefly stored one intent directly at
+    // pendingWorkspaceSync. Read it once into the map so deploying the
+    // shared-device safety fix cannot strand an already-queued staff edit.
+    const legacyPendingWorkspaceSync = normalizePendingWorkspaceSyncIntent(
+      source.pendingWorkspaceSync,
+    );
+    if (
+      legacyPendingWorkspaceSync &&
+      !pendingWorkspaceSyncByTeam[legacyPendingWorkspaceSync.teamId]
+    ) {
+      pendingWorkspaceSyncByTeam[legacyPendingWorkspaceSync.teamId] = legacyPendingWorkspaceSync;
+    }
     return {
       ...DEFAULT_SETTINGS,
       lastPushAt: source.lastPushAt || "",
@@ -178,6 +367,11 @@
       lastRemoteUpdatedAt: source.lastRemoteUpdatedAt || "",
       lastRemoteSize: Number(source.lastRemoteSize || 0) || 0,
       lastWorkspaceRevision: String(source.lastWorkspaceRevision || ""),
+      workspaceTeamId: normalizeWorkspaceTeamId(source.workspaceTeamId),
+      // Keep the old property null after normalization. The next ordinary
+      // settings write persists the map and removes the obsolete single slot.
+      pendingWorkspaceSync: null,
+      pendingWorkspaceSyncByTeam: normalizePendingWorkspaceSyncByTeam(pendingWorkspaceSyncByTeam),
     };
   }
 
@@ -188,9 +382,273 @@
       provider: "cloudflare-d1-r2",
     };
     safeSettings.lastRemoteSize = Number(safeSettings.lastRemoteSize || 0) || 0;
+    safeSettings.workspaceTeamId = normalizeWorkspaceTeamId(safeSettings.workspaceTeamId);
+    safeSettings.pendingWorkspaceSyncByTeam = normalizePendingWorkspaceSyncByTeam(
+      safeSettings.pendingWorkspaceSyncByTeam,
+    );
+    // Once the map is saved, clear the legacy single-team source. It is only
+    // ever read as a migration input above, never as an active retry record.
+    safeSettings.pendingWorkspaceSync = null;
     storageManager.set(STORAGE_KEYS.CLOUD_SYNC_SETTINGS, safeSettings);
     renderCloudSyncStatus();
     return safeSettings;
+  }
+
+  function getCurrentWorkspaceSyncTeamId(user = null) {
+    const currentUser = user || (typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null);
+    return normalizeWorkspaceTeamId(currentUser?.teamId);
+  }
+
+  function getLegacyPendingWorkspaceSyncIntents() {
+    return Object.values(getCloudSyncSettings().pendingWorkspaceSyncByTeam)
+      .map((intent) => normalizePendingWorkspaceSyncIntent(intent))
+      .filter(Boolean);
+  }
+
+  function ensurePendingWorkspaceSyncLedgerMigrated() {
+    if (pendingWorkspaceSyncLedgerMigrationPromise) return pendingWorkspaceSyncLedgerMigrationPromise;
+    if (!storageManager || typeof storageManager.migratePendingWorkspaceSyncLedger !== "function") {
+      return Promise.reject(new Error("This app version cannot protect the pending team-sync journal."));
+    }
+    // storage.js places the migration-complete marker in the same IndexedDB
+    // transaction as the copied records. After that marker exists, stale v1
+    // map data is intentionally ignored so an already-published old intent
+    // can never be resurrected by a later reload.
+    pendingWorkspaceSyncLedgerMigrationPromise = storageManager
+      .migratePendingWorkspaceSyncLedger(getLegacyPendingWorkspaceSyncIntents())
+      .catch((err) => {
+        pendingWorkspaceSyncLedgerMigrationPromise = null;
+        throw err;
+      });
+    return pendingWorkspaceSyncLedgerMigrationPromise;
+  }
+
+  function cachePendingWorkspaceSyncIntent(teamId, intent) {
+    const normalizedTeamId = normalizeWorkspaceTeamId(teamId);
+    const normalizedIntent = normalizePendingWorkspaceSyncIntent(intent);
+    if (!normalizedTeamId) return null;
+    if (!normalizedIntent || normalizedIntent.teamId !== normalizedTeamId) {
+      pendingWorkspaceSyncLedgerCache.delete(normalizedTeamId);
+      return null;
+    }
+    pendingWorkspaceSyncLedgerCache.set(normalizedTeamId, normalizedIntent);
+    return normalizedIntent;
+  }
+
+  function getCachedPendingWorkspaceSyncIntent(teamId) {
+    const normalizedTeamId = normalizeWorkspaceTeamId(teamId);
+    return normalizedTeamId
+      ? normalizePendingWorkspaceSyncIntent(pendingWorkspaceSyncLedgerCache.get(normalizedTeamId))
+      : null;
+  }
+
+  function getPendingWorkspaceSyncLedgerError(teamId) {
+    const normalizedTeamId = normalizeWorkspaceTeamId(teamId);
+    return normalizedTeamId ? pendingWorkspaceSyncLedgerErrors.get(normalizedTeamId) || null : null;
+  }
+
+  function setPendingWorkspaceSyncLedgerError(teamId, error) {
+    const normalizedTeamId = normalizeWorkspaceTeamId(teamId);
+    if (!normalizedTeamId) return;
+    if (error) pendingWorkspaceSyncLedgerErrors.set(normalizedTeamId, error);
+    else pendingWorkspaceSyncLedgerErrors.delete(normalizedTeamId);
+  }
+
+  function buildNextPendingWorkspaceSyncIntent(existing, teamId, key, settings = null) {
+    const normalizedExisting = normalizePendingWorkspaceSyncIntent(existing);
+    const normalizedKey = String(key || "").trim();
+    if (!teamId || !CLOUD_AUTO_PUSH_KEYS.has(normalizedKey)) return null;
+    const now = new Date().toISOString();
+    const keys = Array.from(new Set([
+      ...(normalizedExisting?.keys || []),
+      normalizedKey,
+    ])).slice(0, MAX_PENDING_WORKSPACE_SYNC_KEYS);
+    if (!keys.length) return null;
+    return {
+      v: PENDING_WORKSPACE_SYNC_VERSION,
+      teamId,
+      baseRevision: normalizedExisting?.baseRevision || settings?.lastWorkspaceRevision || "",
+      generation: Math.max(0, Number(normalizedExisting?.generation || 0)) + 1,
+      keys,
+      queuedAt: normalizedExisting?.queuedAt || now,
+      updatedAt: now,
+      lastAttemptAt: normalizedExisting?.lastAttemptAt || "",
+    };
+  }
+
+  function getPendingWorkspaceSyncLedgerTail(teamId) {
+    const normalizedTeamId = normalizeWorkspaceTeamId(teamId);
+    return normalizedTeamId ? pendingWorkspaceSyncLedgerMutationTails.get(normalizedTeamId) || null : null;
+  }
+
+  function queuePendingWorkspaceSyncLedgerMutation(teamId, mutate) {
+    const normalizedTeamId = normalizeWorkspaceTeamId(teamId);
+    if (!normalizedTeamId || typeof mutate !== "function") return Promise.resolve(null);
+    const previous = getPendingWorkspaceSyncLedgerTail(normalizedTeamId) || Promise.resolve();
+    const next = previous
+      .catch(() => null)
+      .then(() => ensurePendingWorkspaceSyncLedgerMigrated())
+      .then(() => storageManager.mutatePendingWorkspaceSyncLedger(normalizedTeamId, (current) => {
+        const normalizedCurrent = normalizePendingWorkspaceSyncIntent(current);
+        return mutate(normalizedCurrent);
+      }))
+      .then((intent) => {
+        setPendingWorkspaceSyncLedgerError(normalizedTeamId, null);
+        return cachePendingWorkspaceSyncIntent(normalizedTeamId, intent);
+      })
+      .catch((err) => {
+        setPendingWorkspaceSyncLedgerError(normalizedTeamId, err);
+        throw err;
+      });
+    pendingWorkspaceSyncLedgerMutationTails.set(normalizedTeamId, next);
+    next.finally(() => {
+      if (pendingWorkspaceSyncLedgerMutationTails.get(normalizedTeamId) === next) {
+        pendingWorkspaceSyncLedgerMutationTails.delete(normalizedTeamId);
+      }
+    }).catch(() => null);
+    return next;
+  }
+
+  async function loadPendingWorkspaceSyncIntentForTeam(teamId) {
+    const normalizedTeamId = normalizeWorkspaceTeamId(teamId);
+    if (!normalizedTeamId) return null;
+    await ensurePendingWorkspaceSyncLedgerMigrated();
+    const tail = getPendingWorkspaceSyncLedgerTail(normalizedTeamId);
+    if (tail) await tail;
+    const intent = await storageManager.getPendingWorkspaceSyncLedger(normalizedTeamId);
+    setPendingWorkspaceSyncLedgerError(normalizedTeamId, null);
+    return cachePendingWorkspaceSyncIntent(normalizedTeamId, intent);
+  }
+
+  async function waitForPendingWorkspaceSyncLedger(teamId) {
+    const normalizedTeamId = normalizeWorkspaceTeamId(teamId);
+    if (!normalizedTeamId) return null;
+    const tail = getPendingWorkspaceSyncLedgerTail(normalizedTeamId);
+    if (tail) await tail;
+    return loadPendingWorkspaceSyncIntentForTeam(normalizedTeamId);
+  }
+
+  function getPendingWorkspaceSyncIntentForCurrentTeam(user = null) {
+    const teamId = getCurrentWorkspaceSyncTeamId(user);
+    return teamId ? getCachedPendingWorkspaceSyncIntent(teamId) : null;
+  }
+
+  function getResumablePendingWorkspaceSyncIntent(user = null, context = null) {
+    const authContext = context || getWorkspaceAuthContext(user);
+    if (!authContext || !isWorkspaceAuthContextCurrent(authContext)) return null;
+    const intent = getPendingWorkspaceSyncIntentForCurrentTeam(authContext.user);
+    if (!intent || intent.teamId !== authContext.teamId) return null;
+    const workspaceTeamId = getCloudSyncSettings().workspaceTeamId;
+    // A durable A intent must survive a shared-device handoff, but it cannot
+    // borrow Team B's current local cache when A later signs back in.
+    if (workspaceTeamId && workspaceTeamId !== authContext.teamId) return null;
+    return intent;
+  }
+
+  // Start the transaction before the debounce begins. The timer remains the
+  // same 2.5 seconds, but its eventual flush waits for this tiny IDB commit;
+  // an iPad can therefore suspend a tab between a local save and its next
+  // timer turn without losing the exact team retry intent. IndexedDB commits
+  // are inherently asynchronous: if a browser process is killed before this
+  // transaction finishes, the already-persisted local edit remains safe but
+  // no Web API can synchronously guarantee its retry journal. We never send
+  // a team publish before the transaction resolves, and a rejection stays an
+  // explicit local-only warning rather than a false synced state. The record
+  // is per-team and serializes cross-tab increment/clear operations.
+  function persistPendingWorkspaceSyncIntent(key, user = null) {
+    const normalizedKey = String(key || "").trim();
+    const context = getWorkspaceAuthContext(user);
+    const teamId = context?.teamId || "";
+    if (!context || !isWorkspaceAuthContextCurrent(context) || !CLOUD_AUTO_PUSH_KEYS.has(normalizedKey)) return null;
+
+    const settings = getCloudSyncSettings();
+    const optimistic = buildNextPendingWorkspaceSyncIntent(
+      getCachedPendingWorkspaceSyncIntent(teamId),
+      teamId,
+      normalizedKey,
+      settings,
+    );
+    if (optimistic) cachePendingWorkspaceSyncIntent(teamId, optimistic);
+    queuePendingWorkspaceSyncLedgerMutation(teamId, (current) => (
+      buildNextPendingWorkspaceSyncIntent(current, teamId, normalizedKey, settings)
+    )).catch((err) => {
+      if (!isWorkspaceAuthContextCurrent(context)) return;
+      cloudAutoPushLastError = "This browser could not secure the automatic team-sync journal. Your edit is still saved on this device.";
+      cloudAutoPushPending = true;
+      renderCloudSyncStatus();
+      console.warn("Pending team-sync journal write failed:", err);
+    });
+    // Preserve the shared-device cache marker without asking cloudSyncSettings
+    // to carry the retry record itself.
+    saveCloudSyncSettingsObject({ workspaceTeamId: teamId });
+    return optimistic;
+  }
+
+  // A successful publish may only consume the journal snapshot it started
+  // with. The conditional delete happens inside the same IDB transaction as
+  // the current-generation read, so another tab's newer local save survives.
+  async function clearPendingWorkspaceSyncIntentIfMatching(intent, user = null) {
+    const teamId = getCurrentWorkspaceSyncTeamId(user);
+    const snapshot = normalizePendingWorkspaceSyncIntent(intent);
+    if (!teamId || !snapshot || snapshot.teamId !== teamId) return false;
+    const next = await queuePendingWorkspaceSyncLedgerMutation(teamId, (current) => {
+      if (!current || current.generation !== snapshot.generation) return current;
+      return null;
+    });
+    return !next;
+  }
+
+  async function markPendingWorkspaceSyncAttempt(intent, user = null) {
+    const teamId = getCurrentWorkspaceSyncTeamId(user);
+    const snapshot = normalizePendingWorkspaceSyncIntent(intent);
+    if (!teamId || !snapshot || snapshot.teamId !== teamId) return null;
+    return queuePendingWorkspaceSyncLedgerMutation(teamId, (current) => {
+      if (!current || current.generation !== snapshot.generation) return current;
+      return {
+        ...current,
+        lastAttemptAt: new Date().toISOString(),
+      };
+    });
+  }
+
+  function getPendingWorkspaceSyncQueuedAt(intent) {
+    const timestamp = Date.parse(String(intent?.queuedAt || ""));
+    return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : Date.now();
+  }
+
+  async function hydratePendingWorkspaceSyncIntent(user = null) {
+    const context = getWorkspaceAuthContext(user);
+    if (!context || !activateCloudAutoPushContext(context)) return null;
+    const intent = await waitForPendingWorkspaceSyncLedger(context.teamId);
+    if (!isWorkspaceAuthContextCurrent(context)) return null;
+    const resumableIntent = getResumablePendingWorkspaceSyncIntent(context.user, context);
+    if (!resumableIntent || !intent) return null;
+    resumableIntent.keys.forEach((key) => cloudAutoPushDirtyKeys.add(key));
+    cloudAutoPushPending = true;
+    if (!cloudAutoPushFirstQueuedAt) {
+      cloudAutoPushFirstQueuedAt = getPendingWorkspaceSyncQueuedAt(resumableIntent);
+    }
+    return resumableIntent;
+  }
+
+  async function schedulePendingWorkspaceSyncResume(user = null) {
+    const context = getWorkspaceAuthContext(user);
+    if (cloudAutoPushSuppress || !context || !activateCloudAutoPushContext(context) || !canAutoPushCloudBackup()) return false;
+    const intent = await hydratePendingWorkspaceSyncIntent(context.user);
+    if (!intent || cloudAutoPushSaving) return Boolean(intent);
+    const age = Math.max(0, Date.now() - getPendingWorkspaceSyncQueuedAt(intent));
+    const delay = age >= CLOUD_AUTO_PUSH_MAX_HOLD_MS
+      ? 500
+      : Math.min(CLOUD_AUTO_PUSH_DELAY_MS, CLOUD_AUTO_PUSH_MAX_HOLD_MS - age);
+    _cloudQueueJob("cloud", "auto-push", {
+      queuedLabel: "Team update queued — saved here, publishing shortly",
+      runningLabel: "Publishing team update...",
+      doneLabel: "Team update published",
+      errorLabel: "Publish needs attention — saved on this device",
+    });
+    scheduleCloudAutoPushTimer(delay, context);
+    renderCloudSyncStatus();
+    return true;
   }
 
   function getPublishActivityLog() {
@@ -509,7 +967,7 @@
     });
   }
 
-  function getDirtyCloudKeyLabels() {
+  function getDirtyCloudKeyLabels(keys = cloudAutoPushDirtyKeys) {
     const labels = {
       playImages: "player-visible diagrams",
       [STORAGE_KEYS.PLAYBOOK]: "playbook",
@@ -522,21 +980,22 @@
       [STORAGE_KEYS.PLAYER_PUBLISH_STATUS]: "player publish status",
       [STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS]: "quiz source settings",
     };
-    return [...cloudAutoPushDirtyKeys].map((key) => labels[key] || key);
+    return [...(keys instanceof Set ? keys : new Set(keys || []))].map((key) => labels[key] || key);
   }
 
   function getTeamWorkspacePullRisks(remote) {
     const remoteTime = getCloudTime(remote?.summary?.exportDate || remote?.updatedAt);
     const risks = [];
 
-    if (typeof scriptDirty !== "undefined" && scriptDirty) {
+    const canUseLiveEditorDirtyState = canCurrentAuthUseLiveEditorDirtyState();
+    if (canUseLiveEditorDirtyState && typeof scriptDirty !== "undefined" && scriptDirty) {
       risks.push({
         label: "Unsaved script",
         detail: "Current Practice Script has local edits that have not been saved.",
         timestamp: Date.now(),
       });
     }
-    if (typeof wristbandDirty !== "undefined" && wristbandDirty) {
+    if (canUseLiveEditorDirtyState && typeof wristbandDirty !== "undefined" && wristbandDirty) {
       risks.push({
         label: "Unsaved wristband",
         detail: "Current Wristband has local edits that have not been saved.",
@@ -550,7 +1009,7 @@
         timestamp: Date.now(),
       });
     }
-    if (cloudAutoPushPending || cloudAutoPushSaving || cloudAutoPushDirtyKeys.size > 0) {
+    if (hasCloudAutoPushWork()) {
       const labels = getDirtyCloudKeyLabels();
       risks.push({
         label: "Team publish pending",
@@ -1186,10 +1645,17 @@
 
   async function repairCanonicalWorkspace(remote, opts = {}) {
     if (!remote?.needsCanonicalRepair || !remote?.backup || !remote?.revision) return null;
+    const authContext = opts.authContext || getWorkspaceAuthContext();
+    assertWorkspaceAuthContext(authContext);
     const payload = JSON.stringify(remote.backup);
-    return workspaceRevisionRequest("PUT", payload, remote.revision, {
+    const result = await workspaceRevisionRequest("PUT", payload, remote.revision, {
       timeoutMs: opts.timeoutMs,
+      authContext,
     });
+    // The PUT may have committed under the prior cookie. Never let the new
+    // principal consume that receipt or send a follow-up request.
+    assertWorkspaceAuthContext(authContext, { committed: true });
+    return result;
   }
 
   function workspaceRequestId(method) {
@@ -1203,9 +1669,21 @@
     const timeoutMs = Math.max(1000, Number(opts.timeoutMs || WORKSPACE_REVISION_REQUEST_TIMEOUT_MS) || WORKSPACE_REVISION_REQUEST_TIMEOUT_MS);
     const controller = typeof AbortController === "undefined" ? null : new AbortController();
     const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : 0;
+    const authContext = opts.authContext || null;
+    const abortForAuthChange = () => {
+      if (controller && authContext && !isWorkspaceAuthContextCurrent(authContext)) {
+        controller.abort();
+      }
+    };
+    if (authContext && typeof window !== "undefined") {
+      window.addEventListener("bc-auth-context-changed", abortForAuthChange);
+    }
     try {
       return await fetch(resource, { ...options, signal: controller?.signal });
     } catch (err) {
+      if (authContext && !isWorkspaceAuthContextCurrent(authContext)) {
+        throw workspaceAuthContextChangedError(authContext);
+      }
       if (controller?.signal?.aborted) {
         const timeoutError = new Error("Team sync timed out. Your changes are saved locally and will retry automatically.");
         timeoutError.code = "BC_WORKSPACE_TIMEOUT";
@@ -1216,6 +1694,9 @@
       throw err;
     } finally {
       if (timeout) clearTimeout(timeout);
+      if (authContext && typeof window !== "undefined") {
+        window.removeEventListener("bc-auth-context-changed", abortForAuthChange);
+      }
     }
   }
 
@@ -1239,7 +1720,7 @@
       headers,
       body: bodyText || undefined,
       cache: "no-store",
-    }, { timeoutMs: opts.timeoutMs });
+    }, { timeoutMs: opts.timeoutMs, authContext: opts.authContext });
     const data = response.status === 304 ? { ok: true, notModified: true } : await response.json().catch(() => ({}));
     if (!response.ok && response.status !== 304) {
       const detail = data.code ? ` (${data.code})` : "";
@@ -1282,6 +1763,7 @@
       const data = await workspaceRevisionRequest("GET", "", "", {
         ifNoneMatch: opts.ifNoneMatch || "",
         timeoutMs: opts.timeoutMs,
+        authContext: opts.authContext,
       });
       if (data.notModified) {
         return {
@@ -1547,22 +2029,32 @@
   // release as part of the server workspace commit; this does not expose a
   // daily publish button or let a player create a release by refreshing.
   async function rebuildPlayerRelease() {
+    const authContext = getWorkspaceAuthContext();
     if (!userCanOpenRecoveryTools()) {
       showToast("Player release recovery is admin-only.", { type: "warning", duration: 3500 });
       return false;
     }
+    if (!authContext || !isWorkspaceAuthContextCurrent(authContext)) {
+      showToast("Your secure session changed. Sign in again before rebuilding the player release.", {
+        type: "warning",
+        duration: 3500,
+      });
+      return false;
+    }
     try {
+      assertWorkspaceAuthContext(authContext);
       setCloudSyncBusy(true);
       updateCloudSyncModalStatus("Rebuilding the player release from recovery data...", "info");
-      const response = await fetch("/admin/player-release", {
+      const response = await workspaceFetchWithTimeout("/admin/player-release", {
         method: "POST",
         credentials: "same-origin",
         headers: {
           Accept: "application/json",
           "X-BC-Auth-Mode": "json",
         },
-      });
+      }, { authContext });
       const data = await response.json().catch(() => ({}));
+      assertWorkspaceAuthContext(authContext, { committed: response.ok && data?.ok === true });
       if (!response.ok || !data?.ok) {
         throw new Error(data?.error || `Player release rebuild failed (${response.status})`);
       }
@@ -1574,6 +2066,7 @@
       showToast("Player release rebuilt", { type: "success", duration: 3500 });
       return true;
     } catch (err) {
+      if (err?.code === "BC_WORKSPACE_AUTH_CONTEXT_CHANGED") return false;
       updateCloudSyncModalStatus(err.message || "Player release rebuild failed.", "error");
       showToast(err.message || "Player release rebuild failed.", { type: "error", duration: 5000 });
       return false;
@@ -1640,12 +2133,17 @@
   async function pushCloudBackupInternal(opts = {}) {
     const silent = opts.silent === true;
     const skipActivityLog = opts.skipActivityLog === true;
+    const authContext = opts.authContext || getWorkspaceAuthContext();
+    const dirtyKeys = opts.dirtyKeys instanceof Set
+      ? new Set(opts.dirtyKeys)
+      : new Set(cloudAutoPushDirtyKeys);
     // A normal workspace save publishes the small team-data pointer only.
     // Diagram bytes have their own source-specific durable outbox in
     // play-images.js. Do not turn every coach save into a legacy full-library
     // recovery scan, since unmatched archive blobs are review work rather
     // than upload failures and should never pin the save dock red.
     const syncDiagrams = opts.syncDiagrams === true;
+    assertWorkspaceAuthContext(authContext);
     if (!userCanPushCloudBackup()) {
       throw new Error("Coach access is required to save the team workspace.");
     }
@@ -1656,11 +2154,13 @@
       let diagramSyncResult = null;
       if (!silent) updateCloudSyncModalStatus("Preparing local data...", "info");
       let backup = await buildCloudBackupPayload({ interactive: !silent });
+      assertWorkspaceAuthContext(authContext);
       // Coordinate competing tabs before the read/rebase/write section. A
       // device in another browser still relies on the server CAS below, but
       // tabs sharing this browser now serialize their expensive workspace
       // cycle and receive the finished revision immediately.
       workspaceLease = await acquireCloudWorkspaceLease({ auto: opts.auto === true });
+      assertWorkspaceAuthContext(authContext);
       // Always read the current canonical head before an upload. The revision
       // CAS alone catches simultaneous writers, but cannot tell that this
       // browser's local Script Library predates a script saved elsewhere.
@@ -1675,11 +2175,13 @@
       const remoteBeforePush = await fetchCanonicalWorkspace({
         allowMissing: true,
         ifNoneMatch: localRevision,
+        authContext,
       });
+      assertWorkspaceAuthContext(authContext);
       if (remoteBeforePush?.backup) {
         preventEmptyPlaybookOverwrite(backup, remoteBeforePush.backup, opts);
         backup = opts.auto
-          ? rebaseCanonicalWorkspaceForAutoPush(backup, remoteBeforePush.backup, cloudAutoPushDirtyKeys)
+          ? rebaseCanonicalWorkspaceForAutoPush(backup, remoteBeforePush.backup, dirtyKeys)
           : mergeCanonicalSavedScripts(backup, remoteBeforePush.backup);
       }
       let payloadText = JSON.stringify(backup, null, 2);
@@ -1690,10 +2192,15 @@
         payloadSize,
         { interactive: !silent },
       ));
+      assertWorkspaceAuthContext(authContext);
 
       if (!silent) updateCloudSyncModalStatus("Publishing team workspace...", "info");
       const knownRevision = remoteBeforePush?.revision || getCloudSyncSettings().lastWorkspaceRevision || "";
-      const data = await workspaceRevisionRequest("PUT", payloadText, knownRevision);
+      const data = await workspaceRevisionRequest("PUT", payloadText, knownRevision, { authContext });
+      // A request already accepted under the old cookie is safe for that old
+      // team, but this new session must not inherit its revision/status or
+      // continue into a second authenticated request.
+      assertWorkspaceAuthContext(authContext, { committed: true });
       const summary = getCloudBackupSummary(backup);
       const nextSettings = saveCloudSyncSettingsObject({
         lastPushAt: new Date().toISOString(),
@@ -1701,6 +2208,7 @@
         lastRemoteUpdatedAt: data.updatedAt || "",
         lastRemoteSize: payloadSize,
         lastWorkspaceRevision: data.revision || knownRevision,
+        workspaceTeamId: authContext.teamId,
       });
       releaseCloudWorkspaceLease(workspaceLease);
       workspaceLease = null;
@@ -1713,6 +2221,7 @@
       // The legacy all-diagram scan is an explicit recovery action only. New
       // or changed diagrams publish immediately through their durable outbox.
       if (syncDiagrams && window.playImages && typeof window.playImages.syncToRemote === "function") {
+        assertWorkspaceAuthContext(authContext, { committed: true });
         const _playsRef = typeof plays !== "undefined" ? plays : [];
         if (!silent) {
           updateCloudSyncModalStatus("Workspace published. Publishing diagrams to player devices...", "info");
@@ -1721,6 +2230,7 @@
         // detached promise. The upload queue/dock remains responsive during
         // this await, and any failure flows into the same retry path.
         diagramSyncResult = await window.playImages.syncToRemote(_playsRef);
+        assertWorkspaceAuthContext(authContext, { committed: true });
       }
       if (!silent) {
         const diagramLine = formatDiagramSyncSummary(diagramSyncResult);
@@ -1754,7 +2264,7 @@
             versionId: buildPublishVersionId(nextSettings.lastPushAt),
             timestamp: nextSettings.lastPushAt,
             result: "success",
-            domains: getPublishDomainsFromBackup(backup, diagramSyncResult, { domains: getDirtyCloudKeyLabels() }),
+            domains: getPublishDomainsFromBackup(backup, diagramSyncResult, { domains: getDirtyCloudKeyLabels(dirtyKeys) }),
             summary: `Published ${summary.itemCount} workspace items`,
             size: payloadSize,
           });
@@ -1769,12 +2279,12 @@
         diagramSyncResult,
       };
     } catch (err) {
-      if (!skipActivityLog) {
+      if (!skipActivityLog && err?.code !== "BC_WORKSPACE_AUTH_CONTEXT_CHANGED") {
         recordPublishActivity({
           result: "failed",
-          domains: getDirtyCloudKeyLabels(),
+          domains: getDirtyCloudKeyLabels(dirtyKeys),
           summary: err.message || "Publish failed",
-          failedDomain: cloudAutoPushDirtyKeys.has("playImages") ? "media" : "workspace",
+          failedDomain: dirtyKeys.has("playImages") ? "media" : "workspace",
           retryAction: silent ? "Use Retry from the save status chip." : "Open Recovery Tools and retry the local workspace republish.",
         });
       }
@@ -1788,6 +2298,27 @@
   async function publishTeamWorkspace(opts = {}) {
     const silent = opts.silent === true;
     const throwOnError = opts.throwOnError === true;
+    const authContext = opts.authContext || getWorkspaceAuthContext();
+    if (!authContext || !isWorkspaceAuthContextCurrent(authContext)) {
+      return { authContextChanged: true, committed: false };
+    }
+    let pendingIntentAtStart = normalizePendingWorkspaceSyncIntent(opts.pendingWorkspaceSyncIntent);
+    if (!pendingIntentAtStart) {
+      try {
+        await waitForPendingWorkspaceSyncLedger(authContext.teamId);
+        if (!isWorkspaceAuthContextCurrent(authContext)) {
+          return { authContextChanged: true, committed: false };
+        }
+        pendingIntentAtStart = getResumablePendingWorkspaceSyncIntent(authContext.user, authContext);
+      } catch (ledgerError) {
+        // An explicit recovery publish can still safely send the current
+        // workspace if this browser's optional automatic-retry journal is
+        // unavailable. Auto-publish callers surface this as a retryable save
+        // failure below instead of claiming their intent was protected.
+        if (opts.auto === true) throw ledgerError;
+        console.warn("Pending team-sync journal was unavailable before manual publish:", ledgerError);
+      }
+    }
     const jobId = opts.jobId || (opts.auto ? "auto-publish" : "team-publish");
     const publishJobKey = _cloudQueueJob("cloud", jobId, {
       queuedLabel: opts.queuedLabel || "Team update queued — saved here, publishing shortly",
@@ -1804,9 +2335,13 @@
         auto: opts.auto === true,
         skipActivityLog: true,
         syncDiagrams: opts.syncDiagrams === true,
+        authContext,
+        dirtyKeys: opts.dirtyKeys,
       });
+      assertWorkspaceAuthContext(authContext, { committed: true });
       if (!silent) updateCloudSyncModalStatus("Checking player readiness...", "info");
       const readiness = await buildTeamPublishReadinessReport(result);
+      assertWorkspaceAuthContext(authContext, { committed: true });
       const playerRelease = getPlayerReleaseReceipt(result.release);
       const hasIssues = publishReadinessHasIssues(readiness);
       const domains = getPublishReadinessDomains(readiness);
@@ -1831,11 +2366,28 @@
         releaseScriptCount: playerRelease.scriptCount,
         releaseDiagramCount: playerRelease.diagramCount,
       });
-      cloudAutoPushLastError = "";
-      cloudAutoPushRetryCount = 0;
+      if (isCloudAutoPushContextActive(authContext)) {
+        cloudAutoPushLastError = "";
+        cloudAutoPushRetryCount = 0;
+      }
       if (!opts.auto) {
-        cloudAutoPushPending = false;
-        cloudAutoPushDirtyKeys.clear();
+        if (pendingIntentAtStart) {
+          await clearPendingWorkspaceSyncIntentIfMatching(pendingIntentAtStart, authContext.user);
+        }
+        await waitForPendingWorkspaceSyncLedger(authContext.teamId);
+        const remainingIntent = getResumablePendingWorkspaceSyncIntent(authContext.user, authContext);
+        if (remainingIntent) {
+          // A new local save can arrive while a coach is waiting on the
+          // explicit publish/readiness flow. Its generation did not belong to
+          // this request, so leave it queued rather than clearing the timer's
+          // only durable recovery record.
+          await hydratePendingWorkspaceSyncIntent(authContext.user);
+          cloudAutoPushFirstQueuedAt = getPendingWorkspaceSyncQueuedAt(remainingIntent);
+          scheduleCloudAutoPushTimer(CLOUD_AUTO_PUSH_DELAY_MS, authContext);
+        } else {
+          cloudAutoPushPending = false;
+          cloudAutoPushDirtyKeys.clear();
+        }
       }
       // The workspace did publish. A readiness warning must not become a
       // retryable publish failure: that permanently pins the red dock and
@@ -1860,6 +2412,16 @@
       }
       return { ...result, readiness };
     } catch (err) {
+      if (err?.code === "BC_WORKSPACE_AUTH_CONTEXT_CHANGED") {
+        if (err.committed && pendingIntentAtStart) {
+          try {
+            await clearPendingWorkspaceSyncIntentIfMatching(pendingIntentAtStart, authContext.user);
+          } catch (ledgerError) {
+            console.warn("Published workspace could not clear its pending team-sync journal:", ledgerError);
+          }
+        }
+        return { authContextChanged: true, committed: err.committed === true };
+      }
       const deferredToOtherTab = err?.code === "BC_WORKSPACE_LEASE_BUSY";
       // Automatic work is retried by flushCloudAutoPush. Do not briefly pin
       // the red failure dock or raise a toast while that retry is still in
@@ -1874,9 +2436,9 @@
       if (!deferredToOtherTab) {
         recordPublishActivity({
           result: "failed",
-          domains: getDirtyCloudKeyLabels(),
+          domains: getDirtyCloudKeyLabels(opts.dirtyKeys),
           summary: err.message || "Publish failed",
-          failedDomain: cloudAutoPushDirtyKeys.has("playImages") ? "media" : "workspace",
+          failedDomain: (opts.dirtyKeys instanceof Set ? opts.dirtyKeys : cloudAutoPushDirtyKeys).has("playImages") ? "media" : "workspace",
           retryAction: silent ? "Use Retry from the save status chip." : "Open Recovery Tools and retry the local workspace republish.",
         });
         updateCloudSyncModalStatus(err.message, "error");
@@ -1892,6 +2454,7 @@
   }
 
   async function applyCloudBackupImmediately(remote, opts = {}) {
+    const authContext = opts.authContext || getWorkspaceAuthContext();
     const shouldConfirm = opts.confirm !== false;
     const shouldReload = opts.reload !== false;
     const shouldNotify = opts.notify !== false;
@@ -1935,6 +2498,8 @@
       if (!ok) return false;
     }
 
+    if (authContext) assertWorkspaceAuthContext(authContext);
+
     cloudAutoPushSuppress = true;
     try {
       const canonicalKeys = Array.from(CANONICAL_TEAM_WORKSPACE_KEYS);
@@ -1947,6 +2512,7 @@
       }))) {
         return false;
       }
+      if (authContext) assertWorkspaceAuthContext(authContext);
 
       let restoredImages = 0;
       let imageWarning = "";
@@ -1957,7 +2523,9 @@
               replace: true,
               onProgress: getProgressReporter("Restoring play images"),
             });
+            if (authContext) assertWorkspaceAuthContext(authContext);
           } catch (err) {
+            if (err?.code === "BC_WORKSPACE_AUTH_CONTEXT_CHANGED") throw err;
             console.warn("Cloud image import failed:", err);
             imageWarning = "\nPlay images could not be restored.";
           }
@@ -1966,16 +2534,20 @@
         }
       }
 
+      if (authContext) assertWorkspaceAuthContext(authContext);
       if (!opts.localRollback) {
         saveCloudSyncSettingsObject({
           lastPullAt: new Date().toISOString(),
           lastRemoteExportDate: summary.exportDate,
           lastRemoteUpdatedAt: remote.updatedAt,
           lastRemoteSize: remote.size,
+          workspaceTeamId: authContext?.teamId || getCurrentWorkspaceSyncTeamId(),
         });
         saveTeamWorkspacePullSummary({ ...remote, backup, summary }, { restoredImages, imageWarning });
       }
+      if (authContext) assertWorkspaceAuthContext(authContext);
       await reloadAppFromStorage(targetTab ? { targetTab } : {});
+      if (authContext) assertWorkspaceAuthContext(authContext);
       if (targetTab && typeof setWorkspaceSurface === "function") {
         setWorkspaceSurface("app", { initModules: false });
       }
@@ -2123,9 +2695,15 @@
       return;
     }
     if (cloudAutoPushLastError) {
-      const retrying = cloudAutoPushPending && cloudAutoPushRetryCount <= CLOUD_AUTO_PUSH_MAX_RETRIES;
+      const currentContext = getWorkspaceAuthContext();
+      const journalUnavailable = Boolean(
+        currentContext && getPendingWorkspaceSyncLedgerError(currentContext.teamId),
+      );
+      const retrying = !journalUnavailable && cloudAutoPushPending && cloudAutoPushRetryCount <= CLOUD_AUTO_PUSH_MAX_RETRIES;
       const waitingForService = cloudAutoPushPending && Date.now() < cloudAutoPushServerUnavailableUntil;
-      statusEl.textContent = retrying
+      statusEl.textContent = journalUnavailable
+        ? "Automatic team sync needs attention — this browser could not protect its local sync receipt."
+        : retrying
         ? "Team sync retrying automatically..."
         : waitingForService
           ? "Team service reconnecting — changes are saved on this device."
@@ -2135,7 +2713,7 @@
         window.setWorkspaceSyncStatus(
           "cloud",
           retrying || waitingForService ? "queued" : "error",
-          { label: retrying ? "Team sync retrying automatically" : waitingForService ? "Team service reconnecting — saved on this device" : "Publish needs attention — saved on this device" },
+          { label: journalUnavailable ? "Automatic team sync needs attention" : retrying ? "Team sync retrying automatically" : waitingForService ? "Team service reconnecting — saved on this device" : "Publish needs attention — saved on this device" },
         );
       }
       return;
@@ -2166,10 +2744,15 @@
     return CLOUD_AUTO_PUSH_KEYS.has(key);
   }
 
-  function scheduleCloudAutoPushTimer(delay) {
+  function scheduleCloudAutoPushTimer(delay, context = cloudAutoPushContext) {
     if (cloudAutoPushTimer) clearTimeout(cloudAutoPushTimer);
+    const timerContext = context;
     cloudAutoPushTimer = setTimeout(() => {
       cloudAutoPushTimer = null;
+      // A timer belongs to the auth context that created it. Do not let an
+      // old private-tab timer become Team B's first write after Team A logs
+      // out, even if the browser delayed the callback until after login.
+      if (!isCloudAutoPushContextActive(timerContext)) return;
       flushCloudAutoPush();
     }, Math.max(500, delay));
   }
@@ -2191,10 +2774,12 @@
       return false;
     }
     if (!shouldAutoPushCloudKey(key)) return false;
-    if (!canAutoPushCloudBackup()) return false;
+    const context = getWorkspaceAuthContext();
+    if (!context || !activateCloudAutoPushContext(context) || !canAutoPushCloudBackup()) return false;
 
     cloudAutoPushDirtyKeys.add(key);
     cloudAutoPushPending = true;
+    const pendingIntent = persistPendingWorkspaceSyncIntent(key, context.user);
     const serviceWaitMs = cloudAutoPushServerUnavailableUntil - Date.now();
     if (serviceWaitMs <= 0) cloudAutoPushLastError = "";
     _cloudQueueJob("cloud", "auto-push", {
@@ -2203,7 +2788,11 @@
       doneLabel: "Team update published",
       errorLabel: "Publish needs attention — saved on this device",
     });
-    if (!cloudAutoPushFirstQueuedAt) cloudAutoPushFirstQueuedAt = Date.now();
+    if (!cloudAutoPushFirstQueuedAt) {
+      cloudAutoPushFirstQueuedAt = pendingIntent
+        ? getPendingWorkspaceSyncQueuedAt(pendingIntent)
+        : Date.now();
+    }
 
     if (cloudAutoPushSaving) {
       renderCloudSyncStatus();
@@ -2211,14 +2800,14 @@
     }
 
     if (serviceWaitMs > 0) {
-      scheduleCloudAutoPushTimer(serviceWaitMs);
+      scheduleCloudAutoPushTimer(serviceWaitMs, context);
       renderCloudSyncStatus();
       return true;
     }
 
     const age = Date.now() - cloudAutoPushFirstQueuedAt;
     const delay = age >= CLOUD_AUTO_PUSH_MAX_HOLD_MS ? 1000 : CLOUD_AUTO_PUSH_DELAY_MS;
-    scheduleCloudAutoPushTimer(delay);
+    scheduleCloudAutoPushTimer(delay, context);
     renderCloudSyncStatus();
 
     return true;
@@ -2226,7 +2815,7 @@
 
   // Used after a player-visible handoff (diagram, clip, quiz, or published
   // script). This remains one debounced workspace commit for a burst of work;
-  // it simply bypasses the 30-second routine-edit delay once the data has
+  // it simply bypasses the short routine-edit delay once the data has
   // settled. Offline and server failures stay in the existing durable retry
   // path, so the dock stays informational unless the system cannot recover.
   function requestImmediateTeamPublish(reason = "substantial-update", opts = {}) {
@@ -2236,6 +2825,8 @@
       `substantial:${String(reason || "update")}`,
     );
     if (!queued) return false;
+    const context = cloudAutoPushContext;
+    if (!context || !isCloudAutoPushContextActive(context)) return false;
     if (cloudAutoPushCriticalTimer) clearTimeout(cloudAutoPushCriticalTimer);
     if (opts.awaitCompletion === true) {
       cloudAutoPushCriticalTimer = null;
@@ -2243,6 +2834,7 @@
     }
     cloudAutoPushCriticalTimer = setTimeout(() => {
       cloudAutoPushCriticalTimer = null;
+      if (!isCloudAutoPushContextActive(context)) return;
       flushCloudAutoPush();
     }, CLOUD_AUTO_PUSH_CRITICAL_DELAY_MS);
     return true;
@@ -2252,18 +2844,50 @@
   // publishing. Join that canonical commit instead of returning false to the
   // second caller; both receipts describe the same immutable release.
   function flushCloudAutoPush() {
-    if (cloudAutoPushFlushPromise) return cloudAutoPushFlushPromise;
-    const run = flushCloudAutoPushInternal();
+    const context = getWorkspaceAuthContext();
+    if (!context || !activateCloudAutoPushContext(context)) {
+      if (!context) resetCloudAutoPushVolatileState();
+      renderCloudSyncStatus();
+      return Promise.resolve(false);
+    }
+    if (
+      cloudAutoPushFlushPromise &&
+      cloudAutoPushFlushContext?.key === context.key
+    ) return cloudAutoPushFlushPromise;
+    const run = flushCloudAutoPushInternal(context);
     cloudAutoPushFlushPromise = run;
+    cloudAutoPushFlushContext = context;
     const clearInFlight = () => {
-      if (cloudAutoPushFlushPromise === run) cloudAutoPushFlushPromise = null;
+      if (cloudAutoPushFlushPromise === run) {
+        cloudAutoPushFlushPromise = null;
+        cloudAutoPushFlushContext = null;
+      }
     };
     run.then(clearInFlight, clearInFlight);
     return run;
   }
 
-  async function flushCloudAutoPushInternal() {
-    if (cloudAutoPushSuppress || !cloudAutoPushPending || !canAutoPushCloudBackup()) {
+  async function flushCloudAutoPushInternal(context) {
+    if (!isCloudAutoPushContextActive(context) || cloudAutoPushSuppress || !canAutoPushCloudBackup()) {
+      renderCloudSyncStatus();
+      return false;
+    }
+    // Another tab on the same shared device can advance this team's durable
+    // generation while this tab is idle. Rehydrate through the transactional
+    // ledger on every attempt so a retry/rebase uses the current full key set
+    // rather than an old heap copy.
+    try {
+      await hydratePendingWorkspaceSyncIntent(context.user);
+    } catch (ledgerError) {
+      if (!isCloudAutoPushContextActive(context)) return false;
+      cloudAutoPushPending = true;
+      cloudAutoPushLastError = "This browser could not secure the automatic team-sync journal. Your edit is still saved on this device.";
+      renderCloudSyncStatus();
+      console.warn("Automatic team publish is waiting for its durable journal:", ledgerError);
+      return false;
+    }
+    if (!isCloudAutoPushContextActive(context)) return false;
+    if (!cloudAutoPushPending) {
       renderCloudSyncStatus();
       return false;
     }
@@ -2271,7 +2895,7 @@
 
     const serviceWaitMs = cloudAutoPushServerUnavailableUntil - Date.now();
     if (serviceWaitMs > 0) {
-      scheduleCloudAutoPushTimer(serviceWaitMs);
+      scheduleCloudAutoPushTimer(serviceWaitMs, context);
       renderCloudSyncStatus();
       return false;
     }
@@ -2281,6 +2905,21 @@
       cloudAutoPushTimer = null;
     }
 
+    const pendingIntentAtFlush = getResumablePendingWorkspaceSyncIntent(context.user, context);
+    if (!pendingIntentAtFlush) {
+      renderCloudSyncStatus();
+      return false;
+    }
+    try {
+      await markPendingWorkspaceSyncAttempt(pendingIntentAtFlush, context.user);
+    } catch (ledgerError) {
+      cloudAutoPushPending = true;
+      cloudAutoPushLastError = "This browser could not secure the automatic team-sync journal. Your edit is still saved on this device.";
+      renderCloudSyncStatus();
+      console.warn("Automatic team publish could not mark its durable journal:", ledgerError);
+      return false;
+    }
+    if (!isCloudAutoPushContextActive(context)) return false;
     cloudAutoPushSaving = true;
     cloudAutoPushPending = false;
     cloudAutoPushFirstQueuedAt = 0;
@@ -2292,6 +2931,7 @@
     });
     _cloudStartJob(cloudJobKey, { label: "Publishing team update..." });
     renderCloudSyncStatus();
+    const dirtyKeysAtFlush = new Set(cloudAutoPushDirtyKeys);
 
     try {
       const result = await publishTeamWorkspace({
@@ -2301,10 +2941,35 @@
         jobId: "auto-push",
         queuedLabel: "Team update queued — saved here, publishing shortly",
         runningLabel: "Publishing team update...",
+        authContext: context,
+        dirtyKeys: dirtyKeysAtFlush,
+        pendingWorkspaceSyncIntent: pendingIntentAtFlush,
       });
+      if (!isCloudAutoPushContextActive(context) || result?.authContextChanged) return false;
       if (!result) throw new Error("Publish did not complete.");
       const playerRelease = getPlayerReleaseReceipt(result.release);
       const moreChangesQueued = cloudAutoPushPending;
+      try {
+        await clearPendingWorkspaceSyncIntentIfMatching(pendingIntentAtFlush, context.user);
+      } catch (ledgerError) {
+        // The workspace commit is already durable on the server, but do not
+        // discard the local intent if its transactional acknowledgement could
+        // not be written. A later retry may republish harmlessly; claiming it
+        // vanished would be the unsafe behavior.
+        cloudAutoPushLastError = "Team update published, but this device could not finish its local sync receipt.";
+        cloudAutoPushPending = true;
+        _cloudFailJob(cloudJobKey, ledgerError, {
+          label: "Team updated; local sync receipt needs attention",
+        });
+        scheduleCloudAutoPushTimer(CLOUD_AUTO_PUSH_RETRY_MS, context);
+        renderCloudSyncStatus();
+        console.warn("Published workspace could not clear pending team-sync journal:", ledgerError);
+        return false;
+      }
+      await waitForPendingWorkspaceSyncLedger(context.teamId);
+      if (!isCloudAutoPushContextActive(context)) return false;
+      const remainingIntent = getResumablePendingWorkspaceSyncIntent(context.user, context);
+      const needsFollowUpPublish = Boolean(moreChangesQueued || remainingIntent);
       cloudAutoPushLastError = "";
       cloudAutoPushRetryCount = 0;
       cloudAutoPushServerUnavailableUntil = 0;
@@ -2312,14 +2977,21 @@
       if (typeof window.completePlayerPublishJobs === "function") {
         window.completePlayerPublishJobs({ label: playerRelease.label });
       }
-      if (!moreChangesQueued) {
+      if (!needsFollowUpPublish) {
         cloudAutoPushDirtyKeys.clear();
       } else {
-        cloudAutoPushFirstQueuedAt = Date.now();
-        scheduleCloudAutoPushTimer(CLOUD_AUTO_PUSH_DELAY_MS);
+        if (remainingIntent) await hydratePendingWorkspaceSyncIntent(context.user);
+        else cloudAutoPushPending = true;
+        cloudAutoPushFirstQueuedAt = remainingIntent
+          ? getPendingWorkspaceSyncQueuedAt(remainingIntent)
+          : Date.now();
+        scheduleCloudAutoPushTimer(CLOUD_AUTO_PUSH_DELAY_MS, context);
       }
       return true;
     } catch (err) {
+      if (!isCloudAutoPushContextActive(context) || err?.code === "BC_WORKSPACE_AUTH_CONTEXT_CHANGED") {
+        return false;
+      }
       const leaseBusy = err?.code === "BC_WORKSPACE_LEASE_BUSY";
       const serviceUnavailable = Number(err?.status) === 503;
       cloudAutoPushPending = true;
@@ -2336,7 +3008,7 @@
         scheduleCloudAutoPushTimer(Math.min(TEAM_FOREGROUND_REFRESH_MIN_MS, Math.max(
           TEAM_WORKSPACE_LEASE_RETRY_MS,
           Number(err?.retryAfterMs || 0) || 0,
-        )));
+        )), context);
       } else if (serviceUnavailable) {
         // A 503 is a server-side availability signal, not a conflict that a
         // client retry can resolve. Retrying it three times turned one coach
@@ -2354,7 +3026,7 @@
           doneLabel: "Team update published",
           errorLabel: "Publish needs attention — saved on this device",
         });
-        scheduleCloudAutoPushTimer(cloudAutoPushServerUnavailableUntil - Date.now());
+        scheduleCloudAutoPushTimer(cloudAutoPushServerUnavailableUntil - Date.now(), context);
         return false;
       } else if (cloudAutoPushRetryCount <= CLOUD_AUTO_PUSH_MAX_RETRIES) {
         cloudAutoPushFirstQueuedAt = Date.now();
@@ -2376,6 +3048,7 @@
               : Number(err?.status) >= 500 && Number(err?.status) < 600
                 ? getCloudServerRetryDelay(err, cloudAutoPushRetryCount)
                 : CLOUD_AUTO_PUSH_RETRY_MS,
+          context,
         );
       } else {
         _cloudFailJob(cloudJobKey, err, { label: "Publish needs attention — saved on this device" });
@@ -2385,20 +3058,43 @@
       }
       return false;
     } finally {
-      cloudAutoPushSaving = false;
-      renderCloudSyncStatus();
+      if (isCloudAutoPushContextActive(context)) {
+        cloudAutoPushSaving = false;
+        renderCloudSyncStatus();
+      }
     }
   }
 
   function hasCloudAutoPushWork() {
-    return Boolean(cloudAutoPushPending || cloudAutoPushSaving || cloudAutoPushLastError);
+    const context = getWorkspaceAuthContext();
+    if (!context) return false;
+    const hasActiveMemory = isCloudAutoPushContextActive(context) && Boolean(
+      cloudAutoPushPending ||
+      cloudAutoPushSaving ||
+      cloudAutoPushLastError,
+    );
+    return Boolean(
+      hasActiveMemory ||
+      getPendingWorkspaceSyncLedgerError(context.teamId) ||
+      getResumablePendingWorkspaceSyncIntent(context.user, context),
+    );
+  }
+
+  function canCurrentAuthUseLiveEditorDirtyState() {
+    const workspaceTeamId = getCloudSyncSettings().workspaceTeamId;
+    const currentTeamId = getCurrentWorkspaceSyncTeamId();
+    // Legacy caches without a marker retain their conservative behavior. A
+    // marked Team A cache, however, must not make Team B believe it has an
+    // in-progress editor mutation or skip its own initial hydration.
+    return !workspaceTeamId || Boolean(currentTeamId && workspaceTeamId === currentTeamId);
   }
 
   function hasLocalTeamEditInProgress() {
+    const canUseLiveEditorDirtyState = canCurrentAuthUseLiveEditorDirtyState();
     return Boolean(
       hasCloudAutoPushWork() ||
-      (typeof scriptDirty !== "undefined" && scriptDirty) ||
-      (typeof wristbandDirty !== "undefined" && wristbandDirty)
+      (canUseLiveEditorDirtyState && typeof scriptDirty !== "undefined" && scriptDirty) ||
+      (canUseLiveEditorDirtyState && typeof wristbandDirty !== "undefined" && wristbandDirty)
     );
   }
 
@@ -2421,6 +3117,7 @@
     teamForegroundRefreshPromise = (async () => {
       const currentUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
       if (!currentUser) return null;
+      const authContext = getWorkspaceAuthContext(currentUser);
       if (currentUser.role === "player") {
         return refreshPlayerRelease({ force: false, navigate: false });
       }
@@ -2434,11 +3131,24 @@
         return null;
       }
 
-      const settings = getCloudSyncSettings();
+      const storedSettings = getCloudSyncSettings();
+      const cacheBelongsToAnotherTeam = Boolean(
+        authContext &&
+        storedSettings.workspaceTeamId &&
+        storedSettings.workspaceTeamId !== authContext.teamId,
+      );
+      // A shared browser may still hold Team A's ETag. Never send that ETag
+      // for Team B: a coincidental identical revision must not turn Team B's
+      // first foreground read into a false 304 and skip hydration.
+      const settings = cacheBelongsToAnotherTeam
+        ? { ...storedSettings, lastWorkspaceRevision: "" }
+        : storedSettings;
       const remote = await fetchCanonicalWorkspace({
         allowMissing: true,
         ifNoneMatch: settings.lastWorkspaceRevision || "",
+        authContext,
       });
+      if (authContext) assertWorkspaceAuthContext(authContext);
       window.workspaceSync?.recordBackgroundRequestSuccess?.("team-workspace-refresh");
       if (!remote || remote.notModified || !remote.revision || remote.revision === settings.lastWorkspaceRevision) return remote;
 
@@ -2447,7 +3157,8 @@
       // behavior: surface metadata through normal recovery instead of ever
       // replacing substantive untracked coach work in the background.
       const hasLocalWorkspace = await hasSubstantiveLocalTeamData();
-      if (shouldProtectUntrackedLocalWorkspace(settings, hasLocalWorkspace)) {
+      if (authContext) assertWorkspaceAuthContext(authContext);
+      if (!cacheBelongsToAnotherTeam && shouldProtectUntrackedLocalWorkspace(settings, hasLocalWorkspace)) {
         saveCloudSyncSettingsObject({
           lastRemoteExportDate: remote.summary?.exportDate || "",
           lastRemoteUpdatedAt: remote.updatedAt || "",
@@ -2461,6 +3172,7 @@
         confirm: false,
         notify: false,
         navigate: false,
+        authContext,
       });
       if (restored) {
         saveCloudSyncSettingsObject({
@@ -2468,6 +3180,7 @@
           lastRemoteExportDate: remote.summary?.exportDate || "",
           lastRemoteUpdatedAt: remote.updatedAt || "",
           lastRemoteSize: remote.size || 0,
+          workspaceTeamId: authContext?.teamId || getCurrentWorkspaceSyncTeamId(currentUser),
         });
         if (!opts.quiet && typeof showToast === "function") {
           showToast("Latest team update loaded", { type: "success", duration: 2200 });
@@ -2480,7 +3193,7 @@
       // A 401 is handled centrally by auth.js, which locks the workspace and
       // opens one clear sign-in prompt. Do not add a misleading sync warning
       // after that deliberate security transition.
-      if (err?.status === 401 || err?.code === "BC_AUTH_SESSION_ENDED") return null;
+      if (err?.status === 401 || err?.code === "BC_AUTH_SESSION_ENDED" || err?.code === "BC_WORKSPACE_AUTH_CONTEXT_CHANGED") return null;
       let deferred = null;
       try {
         deferred = window.workspaceSync?.recordBackgroundRequestFailure?.("team-workspace-refresh", err);
@@ -2505,6 +3218,45 @@
     const currentUser =
       typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
     if (!currentUser) return false;
+    const authContext = getWorkspaceAuthContext(currentUser);
+    if (authContext) activateCloudAutoPushContext(authContext);
+
+    // Rebuild a durable staff-write intent before the startup read decides
+    // whether this browser is safe to replace. Do not resume a managed coach:
+    // that role is intentionally canonical-read-only on a shared device.
+    let pendingWorkspaceSyncIntent = null;
+    if (currentUser.role !== "player" && currentUser.managedCoach !== true) {
+      try {
+        pendingWorkspaceSyncIntent = await hydratePendingWorkspaceSyncIntent(currentUser);
+      } catch (ledgerError) {
+        // Do not let an automatic startup pull replace local coach work when
+        // this browser cannot first read its durable retry ledger. The local
+        // edit remains intact; the save surface accurately reports why it is
+        // waiting rather than treating an unavailable journal as empty.
+        if (authContext && isCloudAutoPushContextActive(authContext)) {
+          cloudAutoPushPending = true;
+          cloudAutoPushLastError = "This browser could not read the automatic team-sync journal. Your local work was not replaced.";
+          renderCloudSyncStatus();
+        }
+        console.warn("Cloud auto-pull deferred until the pending team-sync journal is available:", ledgerError);
+        return false;
+      }
+    }
+    const resumePendingWorkspaceSync = async () => {
+      if (!pendingWorkspaceSyncIntent) return false;
+      if (authContext && !isWorkspaceAuthContextCurrent(authContext)) return false;
+      try {
+        return await schedulePendingWorkspaceSyncResume(currentUser);
+      } catch (ledgerError) {
+        if (authContext && isCloudAutoPushContextActive(authContext)) {
+          cloudAutoPushPending = true;
+          cloudAutoPushLastError = "This browser could not secure the automatic team-sync journal. Your edit is still saved on this device.";
+          renderCloudSyncStatus();
+        }
+        console.warn("Pending team-sync resume deferred:", ledgerError);
+        return false;
+      }
+    };
 
     // Do not consume the once-per-tab workspace read before someone has
     // authenticated. A signed-out shell is expected on a shared device; if it
@@ -2517,7 +3269,13 @@
     if (opts.bootstrap === true) {
       sessionStorage.removeItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY);
     }
-    if (sessionStorage.getItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY) === "1") return false;
+    if (sessionStorage.getItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY) === "1") {
+      // sessionStorage survives a normal reload. Even when the foreground
+      // read was already completed in this tab, a recovered intent still
+      // needs its timer re-armed after the JavaScript heap was replaced.
+      await resumePendingWorkspaceSync();
+      return false;
+    }
     sessionStorage.setItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY, "1");
 
     // Players never fetch the raw recovery snapshot. Their bootstrap uses the
@@ -2539,8 +3297,13 @@
       let remote = await fetchCanonicalWorkspace({
         allowMissing: true,
         timeoutMs: opts.timeoutMs,
+        authContext,
       });
-      if (!remote) return false;
+      if (authContext) assertWorkspaceAuthContext(authContext);
+      if (!remote) {
+        await resumePendingWorkspaceSync();
+        return false;
+      }
 
       // Managed coaches are deliberately read-only. Their browser is a study
       // surface, not an independent team workspace, so always hydrate it from
@@ -2552,6 +3315,7 @@
           auto: true,
           confirm: false,
           notify: false,
+          authContext,
         });
         if (restored) {
           saveCloudSyncSettingsObject({
@@ -2559,6 +3323,7 @@
             lastRemoteExportDate: remote.summary.exportDate,
             lastRemoteUpdatedAt: remote.updatedAt,
             lastRemoteSize: remote.size,
+            workspaceTeamId: authContext?.teamId || getCurrentWorkspaceSyncTeamId(currentUser),
           });
         }
         return restored;
@@ -2571,14 +3336,18 @@
       // canonical revision without a manual publish or recovery action.
       if (remote.needsCanonicalRepair && canAutoPushCloudBackup()) {
         try {
+          if (authContext) assertWorkspaceAuthContext(authContext);
           const repaired = await repairCanonicalWorkspace(remote, {
             timeoutMs: opts.timeoutMs,
+            authContext,
           });
+          if (authContext) assertWorkspaceAuthContext(authContext, { committed: Boolean(repaired?.ok) });
           if (repaired?.ok) {
             saveCloudSyncSettingsObject({
               lastWorkspaceRevision: repaired.revision || remote.revision,
               lastRemoteUpdatedAt: repaired.updatedAt || remote.updatedAt,
               lastRemoteSize: Number(repaired.size || remote.size) || 0,
+              workspaceTeamId: authContext?.teamId || getCurrentWorkspaceSyncTeamId(currentUser),
             });
             // A just-repaired legacy workspace is still the startup source.
             // Read its new immutable revision before continuing so a fresh
@@ -2586,21 +3355,57 @@
             remote = await fetchCanonicalWorkspace({
               allowMissing: true,
               timeoutMs: opts.timeoutMs,
+              authContext,
             });
-            if (!remote) return false;
+            if (authContext) assertWorkspaceAuthContext(authContext);
+            if (!remote) {
+              await resumePendingWorkspaceSync();
+              return false;
+            }
           }
         } catch (repairError) {
           // A concurrent coach already won the same repair; the next regular
           // fetch sees that current head without turning a harmless CAS race
           // into a scary startup warning.
-          if (repairError?.status === 409) return false;
+          if (repairError?.status === 409) {
+            await resumePendingWorkspaceSync();
+            return false;
+          }
           throw repairError;
         }
       }
 
-      const settings = getCloudSyncSettings();
+      const storedSettings = getCloudSyncSettings();
+      const cacheBelongsToAnotherTeam = Boolean(
+        authContext &&
+        storedSettings.workspaceTeamId &&
+        storedSettings.workspaceTeamId !== authContext.teamId,
+      );
+      // Do not treat a previous team's last revision as this team's cache
+      // identity. In particular, avoid an If-None-Match 304 or an equal
+      // content hash preventing Team B from loading its own workspace.
+      const settings = cacheBelongsToAnotherTeam
+        ? { ...storedSettings, lastWorkspaceRevision: "" }
+        : storedSettings;
+      // Active saves always win over a background refresh, including the
+      // same-revision branch below. A durable ledger can represent a small
+      // scalar update that is not detectable through the broader content
+      // scan, so checking it first prevents startup restore from replacing
+      // that locally-persisted edit before its rebase/publish runs.
+      if (hasLocalTeamEditInProgress()) {
+        saveCloudSyncSettingsObject({
+          lastRemoteExportDate: remote.summary.exportDate,
+          lastRemoteUpdatedAt: remote.updatedAt,
+          lastRemoteSize: remote.size,
+        });
+        await resumePendingWorkspaceSync();
+        return false;
+      }
+
       const hasLocalWorkspace = await hasSubstantiveLocalTeamData();
+      if (authContext) assertWorkspaceAuthContext(authContext);
       const hasLocalCoachContent = await hasLocalCoachWorkspaceContent();
+      if (authContext) assertWorkspaceAuthContext(authContext);
       const remoteMatchesKnownRevision = hasKnownCanonicalWorkspaceRevision(settings) &&
         remote.revision === settings.lastWorkspaceRevision;
 
@@ -2614,6 +3419,7 @@
             auto: true,
             confirm: false,
             notify: false,
+            authContext,
           });
           if (restored) {
             saveCloudSyncSettingsObject({
@@ -2621,6 +3427,7 @@
               lastRemoteExportDate: remote.summary.exportDate,
               lastRemoteUpdatedAt: remote.updatedAt,
               lastRemoteSize: remote.size,
+              workspaceTeamId: authContext?.teamId || getCurrentWorkspaceSyncTeamId(currentUser),
             });
           }
           return restored;
@@ -2634,23 +3441,11 @@
         return false;
       }
 
-      // Active saves always win over a background refresh. Do not advance the
-      // locally-recorded revision here: the next clean foreground check must
-      // still see this newer remote revision and hydrate it.
-      if (hasLocalTeamEditInProgress()) {
-        saveCloudSyncSettingsObject({
-          lastRemoteExportDate: remote.summary.exportDate,
-          lastRemoteUpdatedAt: remote.updatedAt,
-          lastRemoteSize: remote.size,
-        });
-        return false;
-      }
-
       // Preserve a browser-only workspace that has never been associated with
       // the canonical head. Once a device has a known revision, however, it is
       // a managed team device and should automatically receive the newer team
       // revision instead of remaining stale until an admin opens Recovery.
-      if (shouldProtectUntrackedLocalWorkspace(settings, hasLocalWorkspace) && hasLocalCoachContent) {
+      if (!cacheBelongsToAnotherTeam && shouldProtectUntrackedLocalWorkspace(settings, hasLocalWorkspace) && hasLocalCoachContent) {
         saveCloudSyncSettingsObject({
           lastRemoteExportDate: remote.summary.exportDate,
           lastRemoteUpdatedAt: remote.updatedAt,
@@ -2668,6 +3463,7 @@
             action: canReviewWorkspace ? "openCloudSyncModal" : "",
           },
         );
+        await resumePendingWorkspaceSync();
         return false;
       }
 
@@ -2675,6 +3471,7 @@
         auto: true,
         confirm: false,
         notify: false,
+        authContext,
       });
       if (restored) {
         saveCloudSyncSettingsObject({
@@ -2682,6 +3479,7 @@
           lastRemoteExportDate: remote.summary.exportDate,
           lastRemoteUpdatedAt: remote.updatedAt,
           lastRemoteSize: remote.size,
+          workspaceTeamId: authContext?.teamId || getCurrentWorkspaceSyncTeamId(currentUser),
         });
       }
       return restored;
@@ -2691,12 +3489,14 @@
       // auth-ready retry—can recover from a transient worker/network failure.
       sessionStorage.removeItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY);
       console.warn("Cloud auto-pull failed:", err);
+      if (err?.code === "BC_WORKSPACE_AUTH_CONTEXT_CHANGED") return false;
       if (err.status !== 401 && err.status !== 404 && err.code !== "BC_WORKSPACE_TIMEOUT") {
         showToast(currentUser.role === "player" ? "Try Again" : `Team workspace update failed: ${err.message}`, {
           type: "warning",
           duration: 5000,
         });
       }
+      await resumePendingWorkspaceSync();
       return false;
     }
   }
@@ -2778,6 +3578,13 @@
         duration: 4000,
       });
     }
+  });
+
+  // auth.js emits this only after its secure principal changes. Retain the
+  // disk-backed per-team journal, but invalidate every heap-only timer, dirty
+  // set, retry, and in-flight promise so the next account starts clean.
+  window.addEventListener("bc-auth-context-changed", () => {
+    resetCloudAutoPushVolatileState({ bumpAuthGeneration: true });
   });
 
   window.addEventListener("play-images-changed", () => {

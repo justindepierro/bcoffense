@@ -166,19 +166,19 @@ function runDraftRestoreCheckForTab(tabName) {
 
 function markScriptDirty() {
   scriptDirty = true;
-  updateSaveStatus("unsaved");
+  updateSaveStatus("unsaved", "script");
   if (typeof updateScriptArtifactStatus === "function") updateScriptArtifactStatus();
 }
 
 function markScriptClean() {
   scriptDirty = false;
-  updateSaveStatus("saved");
+  updateSaveStatus("saved", "script");
   if (typeof updateScriptArtifactStatus === "function") updateScriptArtifactStatus();
 }
 
 function markWristbandDirty() {
   wristbandDirty = true;
-  updateSaveStatus("unsaved");
+  updateSaveStatus("unsaved", "wristband");
   if (typeof updateWristbandSaveChrome === "function") {
     updateWristbandSaveChrome();
   }
@@ -186,10 +186,37 @@ function markWristbandDirty() {
 
 function markWristbandClean() {
   wristbandDirty = false;
-  updateSaveStatus("saved");
+  updateSaveStatus("saved", "wristband");
   if (typeof updateWristbandSaveChrome === "function") {
     updateWristbandSaveChrome();
   }
+}
+
+// Script and Wristband editor state is intentionally browser-local, but its
+// dirty flags are only meaningful for the authenticated workspace that set
+// them.  A secure account transition already resets the sync queue; clear
+// these volatile flags as well so Team B never inherits Team A's save warning
+// while its own workspace is being hydrated.
+window.addEventListener("bc-auth-context-changed", () => {
+  // A debounce belongs to the prior authenticated workspace. Never let its
+  // callback write after a shared-device account or team transition.
+  if (typeof resetActiveScriptIdentity === "function") resetActiveScriptIdentity();
+  if (typeof resetActiveWristbandIdentity === "function") resetActiveWristbandIdentity();
+  scriptDirty = false;
+  wristbandDirty = false;
+});
+
+// iPadOS can freeze or terminate a backgrounded page without a reliable
+// beforeunload turn. Named artifacts already have an exact local destination,
+// so make their pending short debounce durable as soon as the page leaves the
+// foreground. Unnamed work remains explicitly dirty because it has no safe
+// automatic destination.
+function flushActiveArtifactAutosavesForLifecycle() {
+  const scriptFlushed = typeof flushPendingScriptAutosaveBeforeWorkspaceChange !== "function" ||
+    flushPendingScriptAutosaveBeforeWorkspaceChange();
+  const wristbandFlushed = typeof flushPendingWristbandAutosaveBeforeWorkspaceChange !== "function" ||
+    flushPendingWristbandAutosaveBeforeWorkspaceChange();
+  return Boolean(scriptFlushed && wristbandFlushed);
 }
 
 // One completion boundary for normal artifact Save actions. Storage remains
@@ -216,7 +243,15 @@ window.addEventListener("beforeunload", (e) => {
 
 // Item 33: re-render player dashboard when the page returns to foreground
 document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    flushActiveArtifactAutosavesForLifecycle();
+    return;
+  }
   if (document.visibilityState !== "visible") return;
   if (document.body?.getAttribute("data-auth-role") !== "player") return;
   if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
 });
+
+window.addEventListener("pagehide", () => {
+  flushActiveArtifactAutosavesForLifecycle();
+}, { passive: true });

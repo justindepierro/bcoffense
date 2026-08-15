@@ -68,16 +68,54 @@ function makeKv(initial = {}, events = []) {
 function makeEnvironment(initial = {}) {
   const events = [];
   const kv = makeKv(initial, events);
+  const objects = new Map();
+  function copyObject(value) {
+    if (!value) return null;
+    return {
+      key: value.key,
+      size: value.size,
+      httpMetadata: { ...(value.httpMetadata || {}) },
+      customMetadata: { ...(value.customMetadata || {}) },
+    };
+  }
   const bucket = {
     puts: [],
+    putAttempts: [],
     deletes: [],
     async put(key, value, opts = {}) {
       const size = value instanceof ArrayBuffer ? value.byteLength : Number(value?.byteLength || 0);
+      this.putAttempts.push({ key, size, opts });
+      if (opts?.onlyIf?.get?.("If-None-Match") === "*" && objects.has(key)) {
+        events.push({ type: "put-precondition", key });
+        return null;
+      }
+      const object = {
+        key,
+        size,
+        httpMetadata: { ...(opts.httpMetadata || {}) },
+        customMetadata: { ...(opts.customMetadata || {}) },
+      };
+      objects.set(key, object);
       this.puts.push({ key, size, opts });
       events.push({ type: "put", key });
-      return { key, size };
+      return copyObject(object);
+    },
+    async head(key) {
+      return copyObject(objects.get(key));
+    },
+    // Test-only escape hatch for simulating a historic/manual R2 object whose
+    // bytes may exist at a deterministic name but which lacks our immutable
+    // retry receipt metadata.
+    seedObject(key, value = {}) {
+      objects.set(key, {
+        key,
+        size: Number(value.size || 0),
+        httpMetadata: { ...(value.httpMetadata || {}) },
+        customMetadata: { ...(value.customMetadata || {}) },
+      });
     },
     async delete(key) {
+      objects.delete(key);
       this.deletes.push(key);
       events.push({ type: "delete", key });
     },
@@ -95,7 +133,7 @@ function makeEnvironment(initial = {}) {
   };
 }
 
-async function makeStaffRequest(env, method, sig, id = "") {
+async function makeStaffRequest(env, method, sig, id = "", opts = {}) {
   const sessionCookie = await createSessionCookie({
     username: "coach",
     role: "coach",
@@ -112,9 +150,11 @@ async function makeStaffRequest(env, method, sig, id = "") {
     },
   };
   if (method === "POST") {
+    const body = opts.body || new Uint8Array([1, 2, 3, 4]);
     init.headers["Content-Type"] = "video/mp4";
-    init.headers["Content-Length"] = "4";
-    init.body = new Uint8Array([1, 2, 3, 4]);
+    init.headers["Content-Length"] = String(body.byteLength);
+    init.body = body;
+    if (opts.idempotencyKey) init.headers["X-BC-Idempotency-Key"] = opts.idempotencyKey;
   }
   return new Request(url, init);
 }
@@ -132,6 +172,190 @@ function entry(id, r2key) {
 }
 
 console.log("\n▸ Clip R2 retention contract");
+
+// A response can disappear after R2/KV committed the first upload. The retry
+// must return the original clip, not append another one or fail against the
+// normal three-clip cap.
+{
+  const sig = "play/idempotent-lost-response";
+  const idempotencyKey = "clip-lost-response-retry-0001";
+  const { env, kv, bucket } = makeEnvironment();
+  const first = await onRequestPost({
+    request: await makeStaffRequest(env, "POST", sig, "", { idempotencyKey }),
+    env,
+  });
+  const firstPayload = await first.json();
+  const retry = await onRequestPost({
+    request: await makeStaffRequest(env, "POST", sig, "", { idempotencyKey }),
+    env,
+  });
+  const retryPayload = await retry.json();
+  const manifest = JSON.parse(kv.values.get(teamManifestKey(sig)));
+  assert(first.status === 200 && firstPayload.ok, "initial idempotent clip upload succeeds");
+  assert(retry.status === 200 && retryPayload.idempotent === true, "lost-response retry returns idempotent success");
+  assert(retryPayload.clip.id === firstPayload.clip.id, "retry resolves the original immutable clip ID");
+  assert(manifest.length === 1 && manifest[0].idempotencyKey === idempotencyKey, "retry key is committed once with the manifest entry");
+  assert(bucket.puts.length === 1, "lost-response retry does not upload a second R2 object");
+  assert(
+    bucket.puts[0]?.opts?.onlyIf?.get?.("If-None-Match") === "*" &&
+      bucket.puts[0]?.opts?.customMetadata?.teamId === TEAM_ID &&
+      bucket.puts[0]?.opts?.customMetadata?.mediaSig === sig &&
+      bucket.puts[0]?.opts?.customMetadata?.idempotencyKey === idempotencyKey &&
+      /^[a-f0-9]{64}$/.test(bucket.puts[0]?.opts?.customMetadata?.checksum || ""),
+    "idempotent objects carry scoped identity and byte-integrity metadata behind a conditional create",
+  );
+}
+
+// Two tabs can flush the same durable upload job concurrently. Their shared
+// retry key derives one scoped immutable ID, and their racing manifest writes
+// still converge on one active entry.
+{
+  const sig = "play/idempotent-two-tabs";
+  const idempotencyKey = "clip-two-tab-durable-job-0001";
+  const { env, kv, bucket } = makeEnvironment();
+  const [first, second] = await Promise.all([
+    onRequestPost({ request: await makeStaffRequest(env, "POST", sig, "", { idempotencyKey }), env }),
+    onRequestPost({ request: await makeStaffRequest(env, "POST", sig, "", { idempotencyKey }), env }),
+  ]);
+  const [firstPayload, secondPayload] = await Promise.all([first.json(), second.json()]);
+  const manifest = JSON.parse(kv.values.get(teamManifestKey(sig)));
+  assert(first.status === 200 && second.status === 200, "same durable job can be submitted by two tabs");
+  assert(firstPayload.clip.id === secondPayload.clip.id, "two-tab retries derive the same immutable clip ID");
+  assert(manifest.length === 1, "two-tab retries leave one active manifest entry");
+  assert(new Set(bucket.puts.map((put) => put.key)).size === 1, "two-tab retries target one scoped R2 object key");
+  assert(bucket.puts.length === 1 && bucket.putAttempts.length === 2, "two-tab retries create the immutable R2 object once and safely reject the competing write");
+}
+
+// A precondition collision must not turn a mismatched retry body into an
+// overwrite. If the first request reached R2 but died before KV, only the
+// exact bytes may later recover that missing manifest entry.
+{
+  const sig = "play/idempotent-r2-recovery";
+  const idempotencyKey = "clip-r2-recovery-body-identity-01";
+  const { env, kv, bucket } = makeEnvironment();
+  const initial = await onRequestPost({
+    request: await makeStaffRequest(env, "POST", sig, "", { idempotencyKey }),
+    env,
+  });
+  const initialPayload = await initial.json();
+  const manifestKey = teamManifestKey(sig);
+  kv.values.delete(manifestKey);
+  const writesBeforeMismatch = bucket.puts.length;
+  const mismatch = await onRequestPost({
+    request: await makeStaffRequest(env, "POST", sig, "", {
+      idempotencyKey,
+      body: new Uint8Array([9, 8, 7, 6]),
+    }),
+    env,
+  });
+  const mismatchPayload = await mismatch.json();
+  assert(mismatch.status === 409 && /different clip data/i.test(mismatchPayload.error || ""), "mismatched bytes cannot reuse an existing retry object");
+  assert(bucket.puts.length === writesBeforeMismatch && !kv.values.has(manifestKey), "mismatched recovery never overwrites R2 or publishes a manifest");
+
+  const recovery = await onRequestPost({
+    request: await makeStaffRequest(env, "POST", sig, "", { idempotencyKey }),
+    env,
+  });
+  const recoveryPayload = await recovery.json();
+  const recoveredManifest = JSON.parse(kv.values.get(manifestKey));
+  assert(recovery.status === 200 && recoveryPayload.idempotent === true && recoveryPayload.recovered === true, "matching bytes safely recover the interrupted manifest commit");
+  assert(recoveryPayload.clip?.id === initialPayload.clip?.id && recoveredManifest.length === 1, "recovery restores the original immutable clip identity exactly once");
+  assert(bucket.puts.length === writesBeforeMismatch, "manifest recovery never writes a second R2 version");
+}
+
+// Historic or manually-created objects are not receipts. Even if one happens
+// to sit at a deterministic retry key, it cannot be adopted into a missing
+// manifest unless it carries the exact scoped identity and body metadata.
+{
+  const sig = "play/idempotent-legacy-object-is-not-receipt";
+  const idempotencyKey = "clip-legacy-object-recovery-identity-01";
+  const { env, kv, bucket } = makeEnvironment();
+  await onRequestPost({
+    request: await makeStaffRequest(env, "POST", sig, "", { idempotencyKey }),
+    env,
+  });
+  const manifestKey = teamManifestKey(sig);
+  const r2key = bucket.puts[0].key;
+  kv.values.delete(manifestKey);
+  bucket.seedObject(r2key, {
+    size: 4,
+    httpMetadata: { contentType: "video/mp4" },
+    customMetadata: {},
+  });
+  const writesBeforeRetry = bucket.puts.length;
+  const response = await onRequestPost({
+    request: await makeStaffRequest(env, "POST", sig, "", { idempotencyKey }),
+    env,
+  });
+  const payload = await response.json();
+  assert(response.status === 409 && /different clip data/i.test(payload.error || ""), "unverified historic objects cannot satisfy a retry receipt");
+  assert(bucket.puts.length === writesBeforeRetry && !kv.values.has(manifestKey), "unverified historic objects are never overwritten or recovered into a manifest");
+}
+
+// Once KV has committed, the replay body must still match the original
+// receipt; a reused key cannot silently report success for different bytes.
+{
+  const sig = "play/idempotent-replay-body-mismatch";
+  const idempotencyKey = "clip-replay-body-mismatch-identity-01";
+  const { env, bucket } = makeEnvironment();
+  await onRequestPost({
+    request: await makeStaffRequest(env, "POST", sig, "", { idempotencyKey }),
+    env,
+  });
+  const writesBeforeMismatch = bucket.puts.length;
+  const response = await onRequestPost({
+    request: await makeStaffRequest(env, "POST", sig, "", {
+      idempotencyKey,
+      body: new Uint8Array([9, 8, 7, 6]),
+    }),
+    env,
+  });
+  const payload = await response.json();
+  assert(response.status === 409 && /different clip/i.test(payload.error || ""), "committed replay rejects a different body for the same retry identity");
+  assert(bucket.puts.length === writesBeforeMismatch, "committed replay mismatch cannot overwrite the immutable object");
+}
+
+// The prior-entry check happens before the normal cap check, otherwise a
+// successful upload with a lost response could appear to fail when it was the
+// third clip for a play.
+{
+  const sig = "play/idempotent-at-cap";
+  const idempotencyKey = "clip-at-cap-retry-identity-01";
+  const { env, kv, bucket } = makeEnvironment();
+  const initial = await onRequestPost({
+    request: await makeStaffRequest(env, "POST", sig, "", { idempotencyKey }),
+    env,
+  });
+  const initialPayload = await initial.json();
+  const retried = JSON.parse(kv.values.get(teamManifestKey(sig)))[0];
+  kv.values.set(teamManifestKey(sig), JSON.stringify([
+    entry("first", canonicalClipKey("first")),
+    entry("second", canonicalClipKey("second")),
+    retried,
+  ]));
+  const writesBeforeRetry = bucket.puts.length;
+  const response = await onRequestPost({
+    request: await makeStaffRequest(env, "POST", sig, "", { idempotencyKey }),
+    env,
+  });
+  const payload = await response.json();
+  assert(response.status === 200 && payload.idempotent === true, "retry at the three-clip cap remains successful");
+  assert(
+    initialPayload.clip.id === retried.id && payload.clip?.id === retried.id && bucket.puts.length === writesBeforeRetry,
+    "capped retry reuses the committed clip without another upload",
+  );
+}
+
+{
+  const sig = "play/invalid-idempotency-key";
+  const { env, bucket } = makeEnvironment();
+  const response = await onRequestPost({
+    request: await makeStaffRequest(env, "POST", sig, "", { idempotencyKey: "too-short" }),
+    env,
+  });
+  assert(response.status === 400, "malformed clip retry identities are rejected");
+  assert(bucket.puts.length === 0, "malformed retry identities never create an R2 object");
+}
 
 // Replacing a signal sourced from a legacy KV record creates a canonical
 // manifest but leaves all legacy-reachable bytes untouched for recovery.

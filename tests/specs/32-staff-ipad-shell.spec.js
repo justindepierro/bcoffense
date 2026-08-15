@@ -182,4 +182,83 @@ test.describe("staff iPad shell", () => {
       expect(row.height, `M1 portrait: ${row.label} menu row height`).toBeGreaterThanOrEqual(44);
     });
   });
+
+  test("keeps one truthful, compact save/sync readout in the staff iPad header", async ({ page }, testInfo) => {
+    test.skip(
+      !["ipad-portrait", "ipad-landscape"].includes(testInfo.project.name),
+      "Requires the touch-enabled WebKit iPad projects.",
+    );
+
+    const viewport = testInfo.project.name === "ipad-portrait"
+      ? { width: 834, height: 1194 }
+      : { width: 1194, height: 834 };
+    await page.setViewportSize(viewport);
+    await login(page, { role: "coach", username: "coach", password: "password" });
+    await dismissFirstUse(page);
+    await page.waitForFunction((expectedViewport) => {
+      const body = document.body;
+      return (
+        window.innerWidth === expectedViewport.width &&
+        window.innerHeight === expectedViewport.height &&
+        body?.classList.contains("shell-tablet") &&
+        body.classList.contains("is-staff-mobile-shell") &&
+        body.dataset.authRole === "coach"
+      );
+    }, viewport);
+
+    const headerStatus = page.locator("#saveStatus");
+    const syncDock = page.locator("#workspaceSyncDock");
+    const setStatus = async (channel, state, label) => {
+      await page.evaluate(({ channel: nextChannel, state: nextState, label: nextLabel }) => {
+        window.setWorkspaceSyncStatus(nextChannel, nextState, { label: nextLabel });
+      }, { channel, state, label });
+    };
+    const expectStatus = async (text, state) => {
+      await expect(headerStatus).toBeVisible();
+      await expect(headerStatus).toHaveText(text);
+      await expect(headerStatus).toHaveAttribute("data-sync-state", state);
+      const box = await headerStatus.boundingBox();
+      expect(box?.height || 0, `${text} remains a readable header status`).toBeGreaterThanOrEqual(28);
+    };
+
+    await setStatus("local", "saved", "Saved locally");
+    await expectStatus("Saved here", "saved");
+
+    await setStatus("cloud", "syncing", "Publishing team update...");
+    await expectStatus("Syncing team", "syncing");
+    await expect(syncDock).toBeHidden();
+
+    // A generic cloud heartbeat is intentionally not enough to claim a team
+    // commit. Model the receipt-backed completion that the runtime uses.
+    await page.evaluate(() => {
+      window.setWorkspaceSyncStatus("cloud", "synced", {
+        label: "Team update published",
+        confirmed: true,
+      });
+    });
+    await expectStatus("Team synced", "team-synced");
+
+    // Player-ready is intentionally reserved for a completed player publish
+    // receipt, not a generic idle/synced status heartbeat.
+    await page.evaluate(() => {
+      window.setWorkspaceSyncStatus("player", "synced", {
+        label: "Player update published",
+        confirmed: true,
+      });
+    });
+    await expectStatus("Player ready", "player-ready");
+
+    await setStatus("cloud", "queued", "Team update queued — saved here, publishing shortly");
+    await expect(syncDock).toBeHidden();
+    await page.evaluate(() => window.dispatchEvent(new Event("offline")));
+    await expectStatus("Offline · saved here", "offline");
+    await expect(syncDock).toBeVisible();
+
+    await setStatus("cloud", "error", "Publish needs attention — saved on this device");
+    await expectStatus("Needs attention", "error");
+    await expect(headerStatus).toHaveAttribute("title", /Publish needs attention/);
+    await expect(syncDock).toBeVisible();
+
+    await assertNoHorizontalOverflow(page);
+  });
 });

@@ -9,11 +9,50 @@ function getScriptWorkspaceCheckboxState() {
 
 let scriptAutosaveTimer = null;
 let scriptEditHistoryTimer = null;
+// A debounce belongs to the saved document that scheduled it. Keeping that
+// identity alongside the timer prevents a quick Library switch from letting
+// Script A's callback write the newly loaded Script B.
+let scriptAutosaveTargetId = null;
+// A named library record is already a durable destination, so routine edits
+// should feel faster than the retired whole-editor recovery-draft debounce.
+const SCRIPT_ACTIVE_SAVE_AUTOSAVE_DEBOUNCE_MS = 800;
+// A coach can keep typing for minutes in a note or long call. Do not let a
+// trailing debounce defer the next durable local checkpoint forever.
+const SCRIPT_ACTIVE_SAVE_AUTOSAVE_MAX_HOLD_MS = 3500;
+let scriptAutosaveQueuedAt = 0;
 
 function resetActiveScriptIdentity() {
+  cancelScriptAutosave();
   activeScriptSaveId = null;
   activeScriptSaveTitle = "";
   activeScriptSavedAt = "";
+}
+
+function cancelScriptAutosave() {
+  if (scriptAutosaveTimer) clearTimeout(scriptAutosaveTimer);
+  scriptAutosaveTimer = null;
+  scriptAutosaveTargetId = null;
+  scriptAutosaveQueuedAt = 0;
+}
+
+// Library loads are the one ordinary workspace switch that can happen while
+// the short autosave debounce is pending. Persist the old named record before
+// replacing its editor state; if local storage rejects that write, the caller
+// can keep the coach on the current script instead of silently losing it.
+function flushPendingScriptAutosaveBeforeWorkspaceChange() {
+  const scheduledId = scriptAutosaveTargetId;
+  const hadPendingTimer = Boolean(scriptAutosaveTimer);
+  cancelScriptAutosave();
+  if (!hadPendingTimer && !scriptDirty) return true;
+
+  const destination = getActiveSavedScriptForAutosave();
+  if (!destination) return true;
+  const result = autosaveActiveSavedScript({
+    expectedId: scheduledId || destination.active.id,
+  });
+  if (result === true) return true;
+  if (typeof updateSaveStatus === "function") updateSaveStatus("unsaved", "script");
+  return false;
 }
 
 function finalizeScriptSave(record) {
@@ -434,42 +473,140 @@ function restoreSavedScriptWorkspace(workspace) {
 }
 
 function scheduleScriptAutosave() {
-  // Legacy full-editor drafts are intentionally retired. The current save
-  // lifecycle owns durable script state and cloud publishing; a stale draft
-  // must not later be offered as a competing restore candidate.
+  // Legacy full-editor drafts stay retired.  A named library record is the
+  // only safe automatic destination: do not turn an unnamed working script
+  // into a surprise library entry or revive a record that was deleted.
   if (typeof discardDraftData === "function") {
     scriptAutosaveTimer = discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT, scriptAutosaveTimer);
   }
-  return;
-
+  scriptAutosaveTargetId = null;
+  const destination = getActiveSavedScriptForAutosave();
+  if (!destination) {
+    scriptAutosaveQueuedAt = 0;
+    return;
+  }
+  const scheduledId = String(destination.active.id);
+  scriptAutosaveTargetId = scheduledId;
+  const now = Date.now();
+  if (!scriptAutosaveQueuedAt) scriptAutosaveQueuedAt = now;
+  const elapsed = Math.max(0, now - scriptAutosaveQueuedAt);
+  const delay = Math.max(
+    0,
+    Math.min(SCRIPT_ACTIVE_SAVE_AUTOSAVE_DEBOUNCE_MS, SCRIPT_ACTIVE_SAVE_AUTOSAVE_MAX_HOLD_MS - elapsed),
+  );
   scriptAutosaveTimer = queueAutosave(
     scriptAutosaveTimer,
     () => {
-      const playCount = script.filter((item) => !item?.isSeparator).length;
-      if (playCount === 0) {
-        discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
-        if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
-        return;
+      scriptAutosaveTimer = null;
+      const targetId = scriptAutosaveTargetId;
+      scriptAutosaveTargetId = null;
+      scriptAutosaveQueuedAt = 0;
+      const result = autosaveActiveSavedScript({ expectedId: targetId });
+      if (result === false && typeof updateSaveStatus === "function") {
+        // A coach can briefly clear a title while renaming it, or another
+        // action can remove the active record before the debounce fires. Keep
+        // the work visibly dirty rather than claiming it was saved.
+        updateSaveStatus("unsaved", "script");
       }
-
-      persistDraftData(STORAGE_KEYS.SCRIPT_DRAFT, {
-        name: document.getElementById("scriptName")?.value || "",
-        date: document.getElementById("scriptDate")?.value || "",
-        plays: script,
-        workspace: getScriptWorkspaceState(),
-        activeSaveId: activeScriptSaveId,
-        activeTitle: activeScriptSaveTitle,
-        activeSavedAt: activeScriptSavedAt,
-      });
-      if (typeof updateSaveStatus === "function") updateSaveStatus("draft");
     },
     {
-      delay: AUTOSAVE_DEBOUNCE_MS,
+      delay,
       onQueue: () => {
-        if (typeof updateSaveStatus === "function") updateSaveStatus("saving");
+        if (typeof updateSaveStatus === "function") updateSaveStatus("saving", "script");
       },
     },
   );
+}
+
+function hasUnsavedScriptWithoutAutosaveDestination() {
+  return Boolean(scriptDirty && !getActiveSavedScriptForAutosave());
+}
+
+// An unnamed (or otherwise destination-less) editor has no safe automatic
+// destination. Loading a Library record must therefore ask before replacing
+// it; this deliberately does not create a surprise record or revive the
+// retired recovery-draft path.
+async function confirmUnnamedScriptBeforeLibraryLoad() {
+  if (!hasUnsavedScriptWithoutAutosaveDestination()) return true;
+  const choice = await showChoice(
+    "<p>This script has unsaved local work with no available Script Library save destination.</p><p><strong>Keep locally</strong> leaves it open so you can save it when ready. <strong>Discard &amp; Load</strong> replaces it with the selected script.</p>",
+    {
+      title: "Unsaved Script",
+      icon: "⚠️",
+      choices: [
+        { label: "Keep locally", value: "keep" },
+        { label: "Discard & Load", value: "discard" },
+        { label: "Cancel", value: "cancel" },
+      ],
+    },
+  );
+  if (choice === "discard") return true;
+  if (choice === "keep") {
+    showToast("Your unsaved script is still open. Save it when you're ready.", { type: "info" });
+  }
+  return false;
+}
+
+function getActiveSavedScriptForAutosave() {
+  const activeId = activeScriptSaveId;
+  if (activeId === null || activeId === undefined || activeId === "") return null;
+
+  const savedScripts = getSavedScripts();
+  const active = savedScripts.find((candidate) => (
+    String(candidate?.id) === String(activeId) && !candidate?.deletedAt
+  ));
+  if (!active) {
+    // A save destination may disappear while the editor remains open (for
+    // example after a deliberate delete).  Clear the stale identity so a
+    // later autosave cannot recreate or overwrite it.
+    resetActiveScriptIdentity();
+    if (typeof scriptDirty !== "undefined" && scriptDirty && typeof updateSaveStatus === "function") {
+      updateSaveStatus("unsaved", "script");
+    }
+    if (typeof updateScriptArtifactStatus === "function") updateScriptArtifactStatus();
+    return null;
+  }
+  if (!String(active.name || "").trim()) return null;
+  return { savedScripts, active };
+}
+
+function autosaveActiveSavedScript(opts = {}) {
+  const expectedId = opts.expectedId ?? null;
+  // A callback that belongs to a previous document must be a no-op. In
+  // particular, do not mark the newly loaded document dirty or overwrite it.
+  if (expectedId !== null && String(activeScriptSaveId) !== String(expectedId)) {
+    return null;
+  }
+  const destination = getActiveSavedScriptForAutosave();
+  if (!destination) return false;
+
+  const name = String(document.getElementById("scriptName")?.value || "").trim();
+  // Match the explicit Save guard: an incomplete rename must not replace a
+  // real library title with an empty one.
+  if (!name) return false;
+
+  const { savedScripts, active } = destination;
+  // Do not churn the bounded version archive while a coach is typing. Version
+  // snapshots remain intentional recovery boundaries (explicit save, rename,
+  // delete, and restore); routine autosave only advances this record's clock.
+  const savedAt = new Date().toISOString();
+  active.name = name;
+  active.date = document.getElementById("scriptDate")?.value || "";
+  active.plays = safeDeepClone(script);
+  active.workspace = getScriptWorkspaceState();
+  active.savedAt = savedAt;
+  active.updatedAt = savedAt;
+  const playerVisible = typeof isSavedScriptPlayerVisible === "function"
+    ? isSavedScriptPlayerVisible(active)
+    : Boolean(active.playerVisible);
+  if (playerVisible) active.playerPublishedAt = savedAt;
+
+  // `storageManager.set` is local-first and schedules the existing canonical
+  // cloud queue.  Do not call Save As or do a name-based lookup here.
+  if (!storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts)) return false;
+  if (typeof loadSavedScriptsList === "function") loadSavedScriptsList();
+  finalizeScriptSave(active);
+  return true;
 }
 
 function saveScriptState() {
@@ -631,7 +768,7 @@ async function saveScript() {
 
     const savedScripts = getSavedScripts();
     const active = savedScripts.find(
-      (s) => String(s.id) === String(activeScriptSaveId),
+      (s) => String(s.id) === String(activeScriptSaveId) && !s.deletedAt,
     );
     const sameDocumentMatches = !active && typeof getSavedScriptDocumentKey === "function"
       ? savedScripts.filter((candidate) =>

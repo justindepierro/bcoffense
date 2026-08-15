@@ -399,6 +399,20 @@
     }
   }
 
+  // The editable workspace is a single browser cache, while authenticated
+  // team identities can change on a shared device. Keep the session boundary
+  // explicit so volatile save UI/timers from the previous principal cannot
+  // publish through, or appear under, the next principal. Durable recovery
+  // records stay owned by cloud-sync and are intentionally not cleared here.
+  function announceAuthContextChange() {
+    try {
+      window.dispatchEvent(new CustomEvent("bc-auth-context-changed"));
+    } catch (_err) {
+      // Older/private browser contexts can still complete the secure auth
+      // transition. The next page load will rebuild all volatile state.
+    }
+  }
+
   function isProtectedSameOriginRequest(input) {
     try {
       const rawUrl = input instanceof Request ? input.url : input?.url || input;
@@ -1420,6 +1434,7 @@
     };
     const completeAuthenticatedLogin = async (user, source) => {
       currentAuthUser = user;
+      announceAuthContextChange();
       authSessionRecoverySignaled = false;
       saveStoredAuthUser(user, source);
       authReady = true;
@@ -1592,6 +1607,12 @@
   }
 
   async function logoutAuth() {
+    // Persist only the current named artifact locally before the authenticated
+    // context is torn down. Cloud-sync keeps the resulting team-scoped intent
+    // fenced to this principal and resumes it only after a safe return.
+    if (typeof flushActiveArtifactAutosavesForLifecycle === "function") {
+      flushActiveArtifactAutosavesForLifecycle();
+    }
     try {
       const response = await fetch("/auth/logout", {
         method: "POST",
@@ -1621,6 +1642,7 @@
       return false;
     }
     currentAuthUser = null;
+    announceAuthContextChange();
     if (typeof clearPlayPresentationResume === "function") {
       clearPlayPresentationResume();
     }
@@ -1643,10 +1665,14 @@
   // media, notification, and leaderboard requests.
   function handleExpiredServerSession(message = "Your secure session ended. Sign in to continue.") {
     if (!authReady || (!currentAuthUser && document.getElementById("authLoginOverlay"))) return;
+    if (typeof flushActiveArtifactAutosavesForLifecycle === "function") {
+      flushActiveArtifactAutosavesForLifecycle();
+    }
     if (typeof capturePlayPresentationResume === "function") {
       capturePlayPresentationResume();
     }
     currentAuthUser = null;
+    announceAuthContextChange();
     clearStoredAuthUser();
     if (typeof resetCloudSyncAutoPull === "function") {
       resetCloudSyncAutoPull();

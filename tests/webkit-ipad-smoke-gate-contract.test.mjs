@@ -44,6 +44,7 @@ const requiredSpecs = [
   "32-staff-workspace-surface.spec.js",
   "33-coach-inbox-ipad-layer.spec.js",
   "34-staff-account-task-surfaces.spec.js",
+  "35-pending-workspace-ledger.spec.js",
 ];
 
 assert.equal(

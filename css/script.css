@@ -7509,6 +7509,76 @@ body[data-active-tab="script"] .script-display-fab {
   line-height: 1.2;
 }
 
+/* Desktop Script library: filters are reference controls, not the workbench.
+   Keep the full filter vocabulary but remove the phone/tablet-sized vertical
+   stack so available plays remain the visual priority on a coach's computer. */
+@media screen and (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script
+    .script-play-rail
+    .filters-collapsible:not(.collapsed) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px 6px;
+    align-content: start;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script
+    .script-play-rail
+    .filters-collapsible
+    .filter-actions-row {
+    grid-column: 1 / -1;
+    padding: 0 0 2px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script
+    .script-play-rail
+    .filters-collapsible
+    .checkbox-filters {
+    min-width: 0;
+    margin: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script
+    .script-play-rail
+    .filters-collapsible
+    .checkbox-filters-title {
+    min-height: 28px;
+    margin: 0;
+    padding: 3px 7px;
+    border-left: 2px solid var(--coach-grid-border);
+    border-radius: var(--coach-grid-radius);
+    background: var(--coach-grid-surface-muted);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-2xs);
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script
+    .script-play-rail
+    .filters-collapsible
+    .filters.filters-compact {
+    margin: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"])
+    #script
+    .script-play-rail
+    .filters-collapsible
+    .filters.filters-compact
+    select {
+    height: 32px;
+    min-height: 32px;
+    padding: 3px 28px 3px 8px;
+    font-size: var(--font-size-xs);
+  }
+}
+
 /* Density + scroll polish (script workspace) */
 #script .play-item {
   padding: 6px 9px 6px 8px;
@@ -8603,20 +8673,20 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 .script-tools-drawer {
   position: fixed;
-  top: 12px;
-  right: 12px;
-  bottom: 12px;
+  top: 50%;
+  left: 50%;
   z-index: calc(var(--z-overlay) + 1);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  width: min(430px, calc(100% - 24px));
+  width: min(760px, calc(100vw - 48px));
   max-width: 100%;
+  max-height: min(760px, calc(var(--app-layer-usable-height, var(--app-vh, 1vh) * 100) - 48px));
   overflow: hidden;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: var(--shadow-lg);
-  transform: translateX(calc(100% + 24px));
+  transform: translate(-50%, -48%) scale(0.98);
   transition:
     transform var(--transition-normal),
     opacity var(--transition-normal);
@@ -8624,7 +8694,7 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .script-tools-drawer.open {
-  transform: translateX(0);
+  transform: translate(-50%, -50%) scale(1);
   opacity: 1;
 }
 
@@ -8834,22 +8904,17 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 @media (min-width: 821px) {
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-tools-drawer {
-    top: 6px;
-    right: 6px;
-    bottom: 6px;
-    width: min(460px, calc(100% - 12px));
+    width: min(820px, calc(100vw - 64px));
+    max-height: min(780px, calc(var(--app-layer-usable-height, var(--app-vh, 1vh) * 100) - 64px));
     border-color: var(--coach-grid-border);
     border-radius: var(--coach-grid-toolbar-radius);
     background: var(--coach-grid-surface);
     box-shadow: var(--coach-grid-shadow);
-    transform: translateX(calc(100% + 12px));
   }
 
-  /* Match the desktop selector above so the open state wins over its
-     off-canvas transform. Without this, the backdrop opens while the drawer
-     remains just outside the right edge of the viewport. */
+  /* Keep the centered dialog transform when the coach-grid selector wins. */
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-tools-drawer.open {
-    transform: translateX(0);
+    transform: translate(-50%, -50%) scale(1);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-tools-drawer-header {
@@ -9247,10 +9312,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   }
 
   #script .script-tools-drawer {
-    top: 8px;
-    right: 8px;
-    bottom: 8px;
-    width: calc(100% - 16px);
+    width: calc(100vw - 16px);
+    max-height: calc(var(--app-layer-usable-height, var(--app-vh, 1vh) * 100) - 16px);
   }
 }
 

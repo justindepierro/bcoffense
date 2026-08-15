@@ -39,6 +39,8 @@ let wbZoomLevel = "fit";
 let activeWristbandSaveId = null;
 let activeWristbandTitle = "Untitled Wristband";
 let activeWristbandSavedAt = "";
+let wristbandAutosaveTargetId = null;
+let wristbandAutosaveQueuedAt = 0;
 
 // Cell customization storage: { "cardIdx-cellIdx": { colors, markers, tags, playerRuleSources, playerAssignmentOverrides } }
 let cellCustomizations = {};
@@ -104,6 +106,7 @@ function recordRecentWristbandPlay(playIndex) {
 }
 
 function resetActiveWristbandIdentity() {
+  cancelActiveWristbandAutosave();
   activeWristbandSaveId = null;
   activeWristbandTitle = "Untitled Wristband";
   activeWristbandSavedAt = "";
@@ -1076,54 +1079,26 @@ let highlightedPlayIndex = -1;
 // Autosave timer
 let wristbandAutosaveTimer = null;
 
+function cancelActiveWristbandAutosave() {
+  if (wristbandAutosaveTimer) clearTimeout(wristbandAutosaveTimer);
+  wristbandAutosaveTimer = null;
+  wristbandAutosaveTargetId = null;
+  wristbandAutosaveQueuedAt = 0;
+}
+
 function scheduleWristbandAutosave() {
-  // See script autosave: old per-tab recovery drafts are quarantined/retired
-  // in favor of the normal saved-wristband lifecycle.
+  // `wristband-storage.js` owns the named-library write.  Keep this small
+  // bridge here because all editor mutations already route through it.
+  if (typeof scheduleActiveWristbandAutosave === "function") {
+    wristbandAutosaveTimer = scheduleActiveWristbandAutosave(wristbandAutosaveTimer);
+    return;
+  }
+
+  // During initial classic-script loading, storage may not be available yet.
+  // Retire an old draft rather than writing a competing browser-only copy.
   if (typeof discardDraftData === "function") {
     wristbandAutosaveTimer = discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT, wristbandAutosaveTimer);
   }
-  return;
-
-  wristbandAutosaveTimer = queueAutosave(
-    wristbandAutosaveTimer,
-    () => {
-      const cellsPerCard = getActiveWristbandCellCount();
-      const totalPlays = wristbandCards.reduce(
-        (sum, card) =>
-          sum +
-          (card.data
-            ? card.data.slice(0, cellsPerCard).filter((play) => play !== null).length
-            : 0),
-        0,
-      );
-
-      if (totalPlays === 0) {
-        discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
-        if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
-        return;
-      }
-
-      persistDraftData(STORAGE_KEYS.WRISTBAND_DRAFT, {
-        wristbandType: wristbandType || "classic",
-        headerColor: wristbandHeaderColor,
-        cards: safeDeepClone(wristbandCards),
-        cellStyles: safeDeepClone(cellCustomizations),
-        favorites: safeDeepClone(wbFavorites),
-        displaySettings: getWristbandDisplayOptions(),
-        currentCardIndex,
-        activeSaveId: activeWristbandSaveId,
-        activeTitle: activeWristbandTitle,
-        activeSavedAt: activeWristbandSavedAt,
-      });
-      if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
-    },
-    {
-      delay: AUTOSAVE_DEBOUNCE_MS,
-      onQueue: () => {
-        if (typeof updateSaveStatus === "function") updateSaveStatus("saving");
-      },
-    },
-  );
 }
 
 /**

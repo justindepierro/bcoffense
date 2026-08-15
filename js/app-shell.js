@@ -1378,30 +1378,73 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-function updateSaveStatus(state) {
+// Script and Wristband can both be open and dirty in the same workspace.
+// Keep a small per-artifact ledger so a clean load/save in one editor cannot
+// tell the shared header that all local work is safe while the other editor
+// still has changes waiting to be written.
+const localArtifactSaveStates = {
+  script: "idle",
+  wristband: "idle",
+  generic: "idle",
+};
+
+function getLocalArtifactSaveSource(source = "generic") {
+  return source === "script" || source === "wristband" ? source : "generic";
+}
+
+function getAggregateLocalSaveState() {
+  const states = Object.values(localArtifactSaveStates);
+  // Dirty is intentionally first: it is the only state that has not yet
+  // received a local write, so it must never be hidden by another editor's
+  // successful save or in-progress autosave.
+  if (states.includes("unsaved")) return "unsaved";
+  if (states.includes("saving")) return "saving";
+  if (states.includes("saved")) return "saved";
+  if (states.includes("draft")) return "draft";
+  return "idle";
+}
+
+function updateSaveStatus(state, source = "generic") {
+  const normalizedState = ["saved", "draft", "saving", "unsaved"].includes(state)
+    ? state
+    : "idle";
+  localArtifactSaveStates[getLocalArtifactSaveSource(source)] = normalizedState;
+  const aggregateState = getAggregateLocalSaveState();
   const el = document.getElementById("saveStatus");
   if (el) {
-    el.className = "save-status " + state;
+    el.className = "save-status " + aggregateState;
     el.textContent =
-      state === "saved"
+      aggregateState === "saved"
         ? "✓ Saved"
-        : state === "draft"
+        : aggregateState === "draft"
           ? "✓ Draft saved"
-        : state === "saving"
-          ? "⏳ Saving…"
-          : "● Unsaved";
+          : aggregateState === "saving"
+            ? "⏳ Saving…"
+            : "● Unsaved";
   }
   if (typeof window.setWorkspaceSyncStatus !== "function") return;
-  if (state === "saved") {
+  if (aggregateState === "saved") {
     window.setWorkspaceSyncStatus("local", "saved", { label: "Saved locally" });
-  } else if (state === "draft") {
+  } else if (aggregateState === "draft") {
     window.setWorkspaceSyncStatus("local", "saved", { label: "Recovery draft saved locally" });
-  } else if (state === "saving") {
+  } else if (aggregateState === "saving") {
     window.setWorkspaceSyncStatus("local", "saving", { label: "Saving workspace..." });
-  } else if (state === "unsaved") {
+  } else if (aggregateState === "unsaved") {
     window.setWorkspaceSyncStatus("local", "dirty", { label: "Unsaved local changes" });
+  } else {
+    window.setWorkspaceSyncStatus("local", "idle");
   }
 }
+
+// The header is a session-scoped readout.  Its per-editor aggregation cannot
+// survive a secure account change, otherwise the next coach could see a
+// previous coach's local dirty/saving state after the shared sync coordinator
+// has correctly reset its own queue.
+window.addEventListener("bc-auth-context-changed", () => {
+  Object.keys(localArtifactSaveStates).forEach((key) => {
+    localArtifactSaveStates[key] = "idle";
+  });
+});
 
 // Connectivity status is owned by workspace-sync.js. Keeping that state in
 // one place avoids the old full-width offline banner disagreeing with the
@@ -2003,8 +2046,9 @@ async function mobileCoachTogglePublish() {
     target.playerUnpublishedAt = new Date().toISOString();
   }
   storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, saved);
+  let publishConfirmed = true;
   if (typeof recordPlayerPublishStatus === "function") {
-    await recordPlayerPublishStatus("scripts", {
+    publishConfirmed = await recordPlayerPublishStatus("scripts", {
       updatedAt: nowPublished ? target.playerPublishedAt : target.playerUnpublishedAt,
       label: nowPublished
         ? (target.name || "Practice script")
@@ -2017,10 +2061,12 @@ async function mobileCoachTogglePublish() {
   _updateMobileCoachPublishStatus();
   if (typeof showToast === "function") {
     showToast(
-      nowPublished
-        ? `Published "${target.name}" to player logins.`
-        : `Unpublished "${target.name}" from player logins.`,
-      { type: nowPublished ? "success" : "warning", duration: 2400 },
+      !publishConfirmed
+        ? `"${target.name}" is saved here. Player access will update automatically when Team Sync reconnects.`
+        : nowPublished
+          ? `Published "${target.name}" to player logins.`
+          : `Unpublished "${target.name}" from player logins.`,
+      { type: publishConfirmed && nowPublished ? "success" : "warning", duration: publishConfirmed ? 2400 : 6000 },
     );
   }
 }

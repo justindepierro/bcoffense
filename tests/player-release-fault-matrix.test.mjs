@@ -16,7 +16,7 @@ const [cloudSync, workspaceSync, releaseRoute, workspaceRoute] = await Promise.a
 // than only happy-path rendering.
 assert.match(
   cloudSync,
-  /async function flushCloudAutoPushInternal\(\)[\s\S]*?catch \(err\) \{[\s\S]*?cloudAutoPushPending = true[\s\S]*?cloudAutoPushRetryCount \+= 1[\s\S]*?CLOUD_AUTO_PUSH_RETRY_MS/s,
+  /async function flushCloudAutoPushInternal\(context\)[\s\S]*?catch \(err\) \{[\s\S]*?cloudAutoPushPending = true[\s\S]*?cloudAutoPushRetryCount \+= 1[\s\S]*?CLOUD_AUTO_PUSH_RETRY_MS/s,
   "an offline coach retains pending work and enters the retry path instead of reporting a false publish",
 );
 assert.match(

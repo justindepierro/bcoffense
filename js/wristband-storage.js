@@ -1,3 +1,8 @@
+// A named Wristband Library record is safe to update directly. Keep this
+// short so coaching edits feel immediate without using the legacy draft delay.
+const WRISTBAND_ACTIVE_SAVE_AUTOSAVE_DEBOUNCE_MS = 800;
+const WRISTBAND_ACTIVE_SAVE_AUTOSAVE_MAX_HOLD_MS = 3500;
+
 function applyWristbandDisplaySettings(displaySettings) {
   if (!displaySettings) return;
 
@@ -181,6 +186,149 @@ function finalizeWristbandSave(record) {
     if (typeof recordArtifactModified === "function") recordArtifactModified("wristband");
   }
   updateWristbandSaveChrome();
+}
+
+function getActiveSavedWristbandForAutosave() {
+  const activeId = activeWristbandSaveId;
+  if (activeId === null || activeId === undefined || activeId === "") return null;
+
+  const stored = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
+  // A malformed local value is not a safe save destination. Treat it like a
+  // missing record so an autosave callback can never throw or recreate data.
+  const saved = Array.isArray(stored) ? stored : [];
+  const active = saved.find((record) => String(record?.id) === String(activeId));
+  if (!active) {
+    // A saved wristband can be deliberately deleted while it remains open.
+    // Drop the stale destination instead of recreating it through autosave.
+    resetActiveWristbandIdentity();
+    if (typeof wristbandDirty !== "undefined" && wristbandDirty && typeof updateSaveStatus === "function") {
+      updateSaveStatus("unsaved", "wristband");
+    }
+    return null;
+  }
+  if (!String(active.title || "").trim()) return null;
+  return { saved, active };
+}
+
+function autosaveActiveSavedWristband(opts = {}) {
+  const expectedId = opts.expectedId ?? null;
+  // A debounce from a previously open wristband must never write whatever
+  // record happens to be active after a quick Library switch.
+  if (expectedId !== null && String(activeWristbandSaveId) !== String(expectedId)) {
+    return null;
+  }
+  const destination = getActiveSavedWristbandForAutosave();
+  if (!destination) return false;
+
+  const { saved, active } = destination;
+  // This updates only the already-open record.  It intentionally does not
+  // call Save As, prompt for a name, or append a new library entry.
+  Object.assign(
+    active,
+    buildWristbandSaveRecord(active.title, { id: active.id }),
+  );
+  if (!storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved)) return false;
+  finalizeWristbandSave(active);
+  return true;
+}
+
+// A named Wristband can be switched directly from the Library while its short
+// autosave is pending. Save that current record before hydrating the next one;
+// a failed local write leaves the old workspace visible instead of dropping
+// the coach's edit on the floor.
+function flushPendingWristbandAutosaveBeforeWorkspaceChange() {
+  const scheduledId = wristbandAutosaveTargetId;
+  const hadPendingTimer = Boolean(wristbandAutosaveTimer);
+  if (typeof cancelActiveWristbandAutosave === "function") {
+    cancelActiveWristbandAutosave();
+  } else {
+    if (wristbandAutosaveTimer) clearTimeout(wristbandAutosaveTimer);
+    wristbandAutosaveTimer = null;
+    wristbandAutosaveTargetId = null;
+  }
+  if (!hadPendingTimer && !wristbandDirty) return true;
+
+  const destination = getActiveSavedWristbandForAutosave();
+  if (!destination) return true;
+  const result = autosaveActiveSavedWristband({
+    expectedId: scheduledId || destination.active.id,
+  });
+  if (result === true) return true;
+  if (typeof updateSaveStatus === "function") updateSaveStatus("unsaved", "wristband");
+  return false;
+}
+
+function scheduleActiveWristbandAutosave(existingTimer = null) {
+  // Keep old per-tab recovery data quarantined; current work saves to its
+  // named library destination rather than creating another browser draft.
+  let timer = existingTimer;
+  if (typeof discardDraftData === "function") {
+    timer = discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT, timer);
+  }
+  wristbandAutosaveTargetId = null;
+  const destination = getActiveSavedWristbandForAutosave();
+  if (!destination) {
+    wristbandAutosaveQueuedAt = 0;
+    return timer;
+  }
+  const scheduledId = String(destination.active.id);
+  wristbandAutosaveTargetId = scheduledId;
+  const now = Date.now();
+  if (!wristbandAutosaveQueuedAt) wristbandAutosaveQueuedAt = now;
+  const elapsed = Math.max(0, now - wristbandAutosaveQueuedAt);
+  const delay = Math.max(
+    0,
+    Math.min(WRISTBAND_ACTIVE_SAVE_AUTOSAVE_DEBOUNCE_MS, WRISTBAND_ACTIVE_SAVE_AUTOSAVE_MAX_HOLD_MS - elapsed),
+  );
+
+  return queueAutosave(
+    timer,
+    () => {
+      wristbandAutosaveTimer = null;
+      const targetId = wristbandAutosaveTargetId;
+      wristbandAutosaveTargetId = null;
+      wristbandAutosaveQueuedAt = 0;
+      const result = autosaveActiveSavedWristband({ expectedId: targetId });
+      if (result === false && typeof updateSaveStatus === "function") {
+        updateSaveStatus("unsaved", "wristband");
+      }
+    },
+    {
+      delay,
+      onQueue: () => {
+        if (typeof updateSaveStatus === "function") updateSaveStatus("saving", "wristband");
+      },
+    },
+  );
+}
+
+function hasUnsavedWristbandWithoutAutosaveDestination() {
+  return Boolean(wristbandDirty && !getActiveSavedWristbandForAutosave());
+}
+
+// An unnamed (or otherwise destination-less) editor has no safe automatic
+// destination. Loading a Library record must therefore ask before replacing
+// it; this deliberately does not create a surprise record or revive the
+// retired recovery-draft path.
+async function confirmUnnamedWristbandBeforeLibraryLoad() {
+  if (!hasUnsavedWristbandWithoutAutosaveDestination()) return true;
+  const choice = await showChoice(
+    "<p>This wristband has unsaved local work with no available Wristband Library save destination.</p><p><strong>Keep locally</strong> leaves it open so you can save it when ready. <strong>Discard &amp; Load</strong> replaces it with the selected wristband.</p>",
+    {
+      title: "Unsaved Wristband",
+      icon: "⚠️",
+      choices: [
+        { label: "Keep locally", value: "keep" },
+        { label: "Discard & Load", value: "discard" },
+        { label: "Cancel", value: "cancel" },
+      ],
+    },
+  );
+  if (choice === "discard") return true;
+  if (choice === "keep") {
+    showToast("Your unsaved wristband is still open. Save it when you're ready.", { type: "info" });
+  }
+  return false;
 }
 
 async function confirmWristbandHandoffPersistence(summary) {
@@ -766,7 +914,7 @@ function refreshWristbandSavedReferences() {
   populateWristbandHighlightDropdown();
 }
 
-function loadWristband(id) {
+async function loadWristband(id) {
   try {
     if (typeof traceWristbandAction === "function") {
       traceWristbandAction("load saved start", {
@@ -775,7 +923,7 @@ function loadWristband(id) {
       });
     }
     const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-    const wb = saved.find((s) => s.id === id);
+    let wb = saved.find((s) => s.id === id);
     if (!wb) {
       if (typeof traceWristbandAction === "function") {
         traceWristbandAction("load saved missing", {
@@ -785,6 +933,32 @@ function loadWristband(id) {
       }
       return;
     }
+
+    if (
+      typeof confirmUnnamedWristbandBeforeLibraryLoad === "function" &&
+      !(await confirmUnnamedWristbandBeforeLibraryLoad())
+    ) {
+      return false;
+    }
+
+    if (
+      typeof flushPendingWristbandAutosaveBeforeWorkspaceChange === "function" &&
+      !flushPendingWristbandAutosaveBeforeWorkspaceChange()
+    ) {
+      showToast("Could not save the current wristband locally. Keep it open and try again before loading another wristband.", {
+        duration: 5000,
+        type: "error",
+      });
+      return;
+    }
+
+    // The target was read before the flush. Re-read it so loading the already
+    // open wristband cannot hydrate an old object over the edit just saved.
+    const refreshedSaved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
+    const refreshed = Array.isArray(refreshedSaved)
+      ? refreshedSaved.find((record) => record.id === id)
+      : null;
+    if (refreshed) wb = refreshed;
 
     hydrateWristbandState(wb, { discardDraft: true });
     historyManager.clear("wristband");
@@ -806,6 +980,7 @@ function loadWristband(id) {
         sourceType: wb.wristbandType || "",
       });
     }
+    return true;
   } catch (err) {
     if (typeof traceWristbandAction === "function") {
       traceWristbandAction("load saved error", {
@@ -816,6 +991,7 @@ function loadWristband(id) {
     }
     console.error("loadWristband error:", err);
     showToast("❌ Error loading wristband.", { duration: 4000, type: "error" });
+    return false;
   }
 }
 

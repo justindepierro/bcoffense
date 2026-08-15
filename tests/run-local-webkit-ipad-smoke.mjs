@@ -41,6 +41,7 @@ const REQUIRED_SPECS = [
   "specs/32-staff-workspace-surface.spec.js",
   "specs/33-coach-inbox-ipad-layer.spec.js",
   "specs/34-staff-account-task-surfaces.spec.js",
+  "specs/35-pending-workspace-ledger.spec.js",
 ];
 const SMOKE_BATCHES = REQUIRED_SPECS.map((spec) => [spec]);
 const WEBKIT_PROCESS_SETTLE_MS = 1_000;

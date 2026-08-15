@@ -226,10 +226,35 @@ function setScriptToolsDrawerOpen(isOpen) {
   const backdrop = document.getElementById("scriptToolsBackdrop");
   const open = Boolean(isOpen);
   scriptToolsDrawerOpen = open;
-  drawer?.classList.toggle("open", open);
-  drawer?.toggleAttribute("inert", !open);
-  drawer?.setAttribute("aria-hidden", open ? "false" : "true");
-  if (backdrop) backdrop.hidden = !open;
+  if (!drawer) return;
+
+  if (open) {
+    // Reveal before LayerManager takes initial focus; Safari otherwise ignores
+    // focus requests for this visually hidden workspace modal.
+    drawer.classList.add("open");
+    drawer.removeAttribute("inert");
+    drawer.setAttribute("aria-hidden", "false");
+    if (backdrop) backdrop.hidden = false;
+    if (typeof openLayer === "function") {
+      openLayer(drawer, {
+        id: "scriptToolsWorkspaceModal",
+        blocking: true,
+        safeArea: true,
+        scrollElement: drawer.querySelector(".script-tools-drawer-body") || drawer,
+        initialFocus: drawer.querySelector(".script-tools-drawer-close"),
+        onEscape: closeScriptToolsDrawer,
+      });
+    } else {
+      drawer.querySelector(".script-tools-drawer-close")?.focus();
+    }
+    return;
+  }
+
+  if (typeof closeLayer === "function") closeLayer(drawer);
+  drawer.classList.remove("open");
+  drawer.setAttribute("inert", "");
+  drawer.setAttribute("aria-hidden", "true");
+  if (backdrop) backdrop.hidden = true;
 }
 
 function openScriptToolsDrawer() {
@@ -510,7 +535,7 @@ function getPeriodCallDisplayOptions(separator, baseOptions = {}) {
 }
 
 const SCRIPT_PERSONNEL_VISUAL_OPTIONS = [
-  "Red", "Blue", "Green", "Yellow", "Orange", "Purple", "Brown", "White", "Black", "Navy",
+  "Red", "Blue", "Green", "Yellow", "Orange", "Purple", "Brown", "White", "Black", "Navy", "Moon",
 ];
 
 const SCRIPT_CALL_TEXT_COLORS = [
