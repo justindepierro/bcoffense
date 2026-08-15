@@ -1002,6 +1002,7 @@ function checkPersonnelMarkerContracts() {
     !/sky:\s*"🌤️"/.test(utils) ||
     !/gold:\s*"🏅"/.test(utils) ||
     !/moon:\s*"🌙"/.test(utils) ||
+    !/sun:\s*"☀️"/.test(utils) ||
     !/function getPersonnelEmoji\(personnel, useSquares = false\)/.test(utils)
   ) {
     fail("shared personnel emoji markers do not include the active package markers");
@@ -1026,7 +1027,7 @@ function checkPersonnelMarkerContracts() {
   ) {
     fail("Meat personnel marker is not wired through wristband, script, and game plan calls");
   }
-  if (!/Irish\s*☘️/.test(html) || !/Sky\s*🌤️/.test(html) || !/Gold\s*🏅/.test(html) || !/Moon\s*🌙/.test(html) || !/Moon\s*🌙/.test(help)) {
+  if (!/Irish\s*☘️/.test(html) || !/Sky\s*🌤️/.test(html) || !/Gold\s*🏅/.test(html) || !/Moon\s*🌙/.test(html) || !/Sun\s*☀️/.test(html) || !/Moon\s*🌙/.test(help) || !/Sun\s*☀️/.test(help)) {
     fail("personnel marker help copy does not document the active package markers");
   }
 

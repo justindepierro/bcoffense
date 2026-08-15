@@ -21,6 +21,9 @@
 .cs-index-bucket button { min-width: 21px; min-height: 21px; padding: 0; border: 1px solid #72819d; border-radius: 3px; background: #fff; color: #10234c; font-weight: 800; cursor: pointer; }
 .cs-index-bucket ol { margin: 0; padding: 4px 4px 4px 20px; font-size: 9px; line-height: 1.2; }
 .cs-index-bucket li { margin: 0 0 3px; overflow-wrap: anywhere; }
+.cs-index-bucket .cs-index-divider { display: flex; align-items: center; gap: 3px; margin: 3px 0; padding: 2px 0; border-top: 1px solid #435c8a; border-bottom: 1px solid #435c8a; color: #173768; font-size: .9em; font-weight: 900; letter-spacing: .05em; list-style: none; text-transform: uppercase; }
+.cs-index-divider-label { flex: 1; padding: 0; border: 0; background: transparent; color: inherit; cursor: text; font: inherit; font-weight: inherit; letter-spacing: inherit; text-align: left; text-transform: inherit; }
+.cs-index-card--editor .cs-index-divider .cs-index-play-touch-action { margin-left: auto; }
 .cs-index-empty { grid-column: 1 / -1; display: grid; min-height: 180px; place-items: center; border: 1px dashed #8795ae; color: #5f6c80; font-style: italic; text-align: center; }
 .cs-index-add { display: block; width: min(100%, 480px); margin: var(--space-sm) auto; border-style: dashed; }
 .cs-index-print-preview-modal { width: min(980px, calc(100vw - 28px)); max-width: none; }
@@ -239,6 +242,7 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
 .cs-print-preview-pages .print-play--dense { font-size: 6.7px; }
 .cs-print-preview-pages .print-play--micro { font-size: 6.35px; }
 .cs-print-preview-pages .print-play--blank { min-height: 1em; }
+.print-play--divider { min-height: 1.6em; margin: 2px 0; padding: 2px 4px; border-top: 1px solid currentColor; border-bottom: 1px solid currentColor; color: var(--color-primary); font-size: .84em; font-weight: 900; letter-spacing: .06em; text-align: center; text-transform: uppercase; }
 .cs-print-preview-pages .print-landscape .print-play { font-size: 7.95px; }
 .cs-print-preview-pages .print-cs-cols-2 .print-category-header { font-size: 11.5px; }
 .cs-print-preview-pages .print-cs-cols-2 .print-play { font-size: 10px; line-height: 1.08; padding: 1px 1.5px; }
@@ -391,7 +395,8 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   user-select: none;
 }
 .callsheet-play:active .cs-reorder-grip,
-.cs-blank-row:active .cs-reorder-grip { cursor: grabbing; }
+.cs-blank-row:active .cs-reorder-grip,
+.cs-divider-row:active .cs-reorder-grip { cursor: grabbing; }
 
 .callsheet-play .personnel-code {
   padding: 2px 5px;
@@ -564,7 +569,8 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   flex: 1;
   margin-top: 0;
 }
-.cs-add-blank-btn {
+.cs-add-blank-btn,
+.cs-add-divider-btn {
   padding: 3px 7px;
   font-size: var(--font-size-2xs);
   color: var(--color-text-muted);
@@ -590,6 +596,35 @@ body.shell-tablet.is-mobile-screen:not([data-auth-role="player"])
   cursor: grab;
   user-select: none;
 }
+.cs-divider-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 7px;
+  border-top: 1px solid var(--color-primary);
+  border-bottom: 1px solid var(--color-primary);
+  background: var(--color-bg-blue-tint);
+  color: var(--color-primary);
+  cursor: grab;
+}
+.cs-divider-row.dragging { opacity: .5; }
+.cs-divider-label {
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: text;
+  font: inherit;
+  font-size: var(--font-size-2xs);
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-align: left;
+  text-transform: uppercase;
+}
+.cs-divider-row .cs-divider-remove { margin-left: auto; }
 .cs-blank-row.dragging { opacity: .5; background: var(--color-bg-blue-tint); }
 .cs-blank-row .cs-blank-remove { margin-left: auto; }
 .cs-blank-remove {
@@ -867,7 +902,8 @@ body.shell-phone #callSheetGrid.callsheet-phone-cards {
 }
 
 body.shell-phone #callsheet .cs-mobile-hash-actions .callsheet-dropzone,
-body.shell-phone #callsheet .cs-mobile-hash-actions .cs-add-blank-btn {
+body.shell-phone #callsheet .cs-mobile-hash-actions .cs-add-blank-btn,
+body.shell-phone #callsheet .cs-mobile-hash-actions .cs-add-divider-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -920,8 +956,10 @@ body.shell-phone #callsheet .cs-mobile-reorder-controls button {
   font: inherit;
   font-weight: 900;
 }
-body.shell-phone #callsheet .cs-blank-row { min-height: 44px; padding: 4px 8px; }
+body.shell-phone #callsheet .cs-blank-row,
+body.shell-phone #callsheet .cs-divider-row { min-height: 44px; padding: 4px 8px; }
 body.shell-phone #callsheet .cs-blank-row .cs-blank-remove { display: inline-flex; width: 44px; height: 44px; opacity: 1; }
+body.shell-phone #callsheet .cs-divider-row .cs-divider-remove { display: inline-flex; width: 44px; height: 44px; opacity: 1; }
 
 /* Tablet Call Sheet editing: HTML drag-and-drop is not a dependable touch
    interaction, so retain the dense board but give every call an explicit,
@@ -933,7 +971,10 @@ body.shell-phone #callsheet .cs-blank-row .cs-blank-remove { display: inline-fle
     .callsheet-play,
   body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
     #callsheet
-    .cs-blank-row {
+    .cs-blank-row,
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    #callsheet
+    .cs-divider-row {
     flex-wrap: wrap;
   }
 
@@ -3039,6 +3080,25 @@ body.shell-phone #callsheet .cs-empty-cat {
   cursor: default;
   margin-left: 1px;
   opacity: 0.8;
+}
+.cs-cell-note {
+  flex: 1 0 100%;
+  padding-left: 22px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-3xs);
+  font-style: italic;
+  line-height: 1.25;
+}
+.callsheet-play.cs-play-has-note {
+  flex-wrap: wrap;
+}
+.cs-index-cell-note {
+  display: block;
+  margin-top: 1px;
+  color: #52627e;
+  font-size: .88em;
+  font-style: italic;
+  line-height: 1.1;
 }
 
 /* Print cell note */

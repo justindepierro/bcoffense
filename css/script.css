@@ -3012,6 +3012,144 @@ body[data-auth-role="player"]
   }
 }
 
+/* Script workbench hierarchy: the library exists to find a play quickly;
+   period and row utilities remain available without repeating a control wall. */
+.period-header-more,
+.script-row-actions {
+  position: relative;
+}
+
+.period-header-more > summary,
+.script-row-actions > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  min-height: 34px;
+  padding: 5px 9px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-pill);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  list-style: none;
+}
+
+.period-header-more > summary::-webkit-details-marker,
+.script-row-actions > summary::-webkit-details-marker {
+  display: none;
+}
+
+.period-header-more-panel,
+.script-row-actions-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 250px;
+  padding: 8px;
+  border: 1px solid var(--color-border-med);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-md);
+}
+
+.period-header-more-panel .remove,
+.script-row-actions-panel .remove {
+  min-width: 0;
+  min-height: 34px;
+}
+
+.script-row-actions-panel {
+  grid-template-columns: 1fr;
+}
+
+.script-row-actions-panel .script-play-action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+@media screen and (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-sidebar-panel {
+    min-height: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .filters-collapsible.collapsed {
+    flex: 0 0 auto;
+    max-height: 0;
+    overflow: hidden;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .available-plays-container {
+    min-height: 180px;
+  }
+
+  /* The outer workspace switch already opens the Library. Avoid two Library
+     controls competing in the script header. */
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-section-head .script-library-toggle-btn {
+    display: none;
+  }
+
+  /* Keep the useful running totals, but remove the decorative split/meter
+     from the default operating band. Detailed period balance remains below. */
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-stats-bar .stat-item.run,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-stats-bar .stat-item.pass,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-stats-bar .stat-item.ratio {
+    display: none;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-section-head {
+    align-content: center;
+    row-gap: 5px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-toolbar {
+    min-height: 34px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .period-header-wrapper {
+    overflow: visible;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .period-header-more-panel,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-row-actions-panel {
+    position: absolute;
+    right: 0;
+    z-index: 14;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .period-header-more-panel {
+    top: calc(100% + 6px);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .play-controls {
+    position: relative;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-row-actions-panel {
+    top: calc(100% + 6px);
+    min-width: 210px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-row-actions > summary {
+    min-width: 32px;
+    min-height: 30px;
+    padding: 3px 8px;
+    color: var(--color-text-secondary);
+    border-color: var(--color-border-med);
+    background: var(--color-surface);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-timeline-actions {
+    display: block;
+    margin-top: 2px;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-3xs);
+    font-weight: 700;
+  }
+}
+
 /* Desktop Script library: get coaches to live plays first. Search and the two
    common scope toggles stay visible; the full filter vocabulary remains behind
    the existing Filters control without claiming the whole rail. */
@@ -9581,6 +9719,113 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 @media print {
   .script-save-status {
     display: none !important;
+  }
+}
+
+/* Script command hierarchy: direct work stays visible; reference controls and
+   low-frequency commands open in-place instead of consuming the workbench. */
+.script-stats-details > summary,
+.script-command-more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 5px 9px;
+  border: 1px solid var(--color-border-med);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.script-stats-details > summary::-webkit-details-marker,
+.script-command-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.script-command-more {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.script-command-more-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 8px;
+  border: 1px solid var(--color-border-med);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-md);
+}
+
+@media screen and (min-width: 821px) {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-section-head {
+    grid-template-columns: max-content max-content minmax(0, 1fr) max-content;
+    align-items: center;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-stats-details {
+    position: relative;
+    flex: 0 0 auto;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-stats-details[open] .script-stats-bar {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 20;
+    width: max-content;
+    max-width: min(540px, calc(100vw - 48px));
+    padding: 8px;
+    border: 1px solid var(--color-border-med);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: var(--shadow-md);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-section-head .script-toolbar {
+    order: 10;
+    grid-column: 1 / -1;
+    grid-row: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    width: 100%;
+    min-height: 34px;
+    padding: 0;
+    border: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-toolbar-right {
+    display: flex;
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-search-input {
+    width: min(420px, 100%);
+    min-width: 220px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-command-more-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 20;
+    width: min(500px, calc(100vw - 48px));
+    grid-template-columns: max-content minmax(260px, 1fr);
+    align-items: center;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) #script .script-command-more-panel > select {
+    grid-column: 1 / -1;
   }
 }
 

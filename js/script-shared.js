@@ -187,7 +187,14 @@ function maybeAutoCollapseScriptPlayRail() {
 }
 
 function toggleScriptPlayRail() {
+  const openingLibrary = scriptPlayRailCollapsed;
   scriptPlayRailCollapsed = !scriptPlayRailCollapsed;
+  // Library is a find-and-add surface. Reopening it returns to results first,
+  // even when an older saved layout left advanced filters expanded above them.
+  if (openingLibrary) {
+    filtersCollapsed = true;
+    applyScriptFiltersCollapsedState();
+  }
   applyScriptPlayRailState();
   saveScriptDisplayOptions();
 }
@@ -207,6 +214,8 @@ function setScriptSidebarTab(tab) {
   rail.dataset.sidebarTab = "library";
   if (scriptPlayRailCollapsed) {
     scriptPlayRailCollapsed = false;
+    filtersCollapsed = true;
+    applyScriptFiltersCollapsedState();
     applyScriptPlayRailState();
     saveScriptDisplayOptions();
   } else {
@@ -535,7 +544,7 @@ function getPeriodCallDisplayOptions(separator, baseOptions = {}) {
 }
 
 const SCRIPT_PERSONNEL_VISUAL_OPTIONS = [
-  "Red", "Blue", "Green", "Yellow", "Orange", "Purple", "Brown", "White", "Black", "Navy", "Moon",
+  "Red", "Blue", "Green", "Yellow", "Orange", "Purple", "Brown", "White", "Black", "Navy", "Moon", "Sun",
 ];
 
 const SCRIPT_CALL_TEXT_COLORS = [

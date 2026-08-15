@@ -556,6 +556,9 @@ function renderPrintPlay(play, options, printJob) {
   if (play?._blank) {
     return '<div class="print-play print-play--blank" aria-hidden="true">&nbsp;</div>';
   }
+  if (play?._divider) {
+    return `<div class="print-play print-play--divider">${escapeHtml(play.label || "Divider")}</div>`;
+  }
   if (typeof getCallSheetEffectivePlay === "function") {
     play = getCallSheetEffectivePlay(play);
   }
@@ -616,7 +619,7 @@ function renderPrintPlay(play, options, printJob) {
     ? `<span class="print-wristband-number">#${escapeHtml(play.wristbandNumber)}</span>`
     : "";
 
-  const noteHtml = play.cellNote
+  const noteHtml = displayOptions.showCellNotes && play.cellNote
     ? `<span class="print-cell-note">[${escapeHtml(play.cellNote)}]</span>`
     : "";
 

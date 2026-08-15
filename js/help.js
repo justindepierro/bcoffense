@@ -411,7 +411,7 @@ function getHelpDataForTab(tab) {
             },
             {
               key: "🔵 / ⚓ / 🥩 Personnel Marker",
-              desc: "Show personnel shorthand in each play call; Navy ⚓, Meat 🥩, Star ⭐, Irish ☘️, Sky 🌤️, Gold 🏅, and Moon 🌙 each keep their own marker",
+              desc: "Show personnel shorthand in each play call; Navy ⚓, Meat 🥩, Star ⭐, Irish ☘️, Sky 🌤️, Gold 🏅, Moon 🌙, and Sun ☀️ each keep their own marker",
             },
             { key: "💾", desc: "Save current display as custom preset" },
           ],

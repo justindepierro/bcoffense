@@ -45,10 +45,13 @@ assert.match(picker, /function moveCallSheetPlay\(arg\)/, "phone users have a de
 assert.match(render, /cs-mobile-reorder-controls/, "Call Sheet cards render accessible mobile move controls");
 assert.match(css, /body\.shell-phone #callsheet \.cs-mobile-reorder-controls/, "mobile move controls meet the phone-specific Call Sheet layout");
 assert.doesNotMatch(picker, /const otherHash = hash === "left" \? "right" : "left"/, "a blank spacer stays on the selected hash instead of adding an unrelated partner spacer");
-assert.match(picker, /\.callsheet-play, \.cs-blank-row/, "manual Call Sheet drag-and-drop includes blank spacers as well as plays");
+assert.match(picker, /\.callsheet-play, \.cs-blank-row, \.cs-divider-row/, "manual Call Sheet drag-and-drop includes blank spacers and labeled dividers as well as plays");
 assert.match(picker, /event\.dataTransfer\.setData\("text\/plain"/, "cell drags include a browser-compatible payload");
 assert.match(picker, /cs-drop-after/, "cell reordering shows a precise before-or-after insertion target");
 assert.match(render, /cs-blank-row" draggable="true"/, "blank spacers are draggable cells");
+assert.match(picker, /function addCsDivider\(arg\)[\s\S]*?showPrompt\("Divider text:/, "coaches can add a labeled divider inside any Call Sheet hash bucket");
+assert.match(render, /if \(play && play\._divider\)[\s\S]*?cs-divider-label[\s\S]*?editCallSheetDivider/, "dividers render as editable in-bucket cells rather than fake plays");
+assert.match(print, /if \(play\?\._divider\)[\s\S]*?print-play--divider/, "print output retains labeled dividers");
 assert.match(render, /cs-cat-drag-handle" draggable="true" data-drag="catDrag"/, "category moves use an explicit drag handle instead of competing with cell drags");
 assert.match(filters, /A saved wristband can change after it was loaded into the call sheet/, "new wristband entries are read live before assigning a Call Sheet number");
 assert.match(render, /const marker = typeof getPersonnelEmoji/, "additional personnel uses the shared marker language rather than raw chip text");
@@ -65,7 +68,7 @@ assert.match(printCss, /\.print-category--single .print-plays-grid/, "single-col
 assert.match(metadata, /function removeCallSheetBlankRows\(categoryId\)/, "category tools can remove accumulated blank spacers in one action");
 assert.match(render, /cs-play-touch-actions[\s\S]*?cs-mobile-reorder-controls[\s\S]*?moveCallSheetPlay[\s\S]*?cs-blank-remove/, "blank rows group deterministic tablet move and remove controls");
 assert.match(render, /const swapBtn =[\s\S]*?cs-play-touch-actions[\s\S]*?cs-mobile-reorder-controls[\s\S]*?\$\{swapBtn\}[\s\S]*?removeCallSheetPlay/, "normal Call Sheet rows group move, hash-swap, and remove controls");
-assert.match(css, /body\.shell-tablet\.is-mobile-screen\.is-staff-mobile-shell:not\(\[data-auth-role="player"\]\)[\s\S]*?\.callsheet-play,[\s\S]*?\.cs-blank-row \{[\s\S]*?flex-wrap: wrap;/, "tablet Call Sheet rows wrap before their full-width action group so controls cannot overflow horizontally");
+assert.match(css, /body\.shell-tablet\.is-mobile-screen\.is-staff-mobile-shell:not\(\[data-auth-role="player"\]\)[\s\S]*?\.callsheet-play,[\s\S]*?\.cs-blank-row[\s\S]*?\.cs-divider-row \{[\s\S]*?flex-wrap: wrap;/, "tablet Call Sheet rows wrap before their full-width action group so controls cannot overflow horizontally");
 assert.match(css, /body\.shell-tablet\.is-mobile-screen\.is-staff-mobile-shell:not\(\[data-auth-role="player"\]\)[\s\S]*?\.cs-play-touch-actions \{[\s\S]*?display: flex;[\s\S]*?flex: 0 0 100%/, "staff tablets expose an explicit full-width action row instead of relying on touch drag-and-drop");
 assert.match(css, /\.cs-mobile-reorder-controls button,[\s\S]*?\.cs-hash-swap,[\s\S]*?\.callsheet-play \.remove-play,[\s\S]*?min-height: var\(--coach-workbench-control-height\);[\s\S]*?opacity: 1;/, "tablet move, swap, and remove controls use the shared tablet target size and stay visible");
 assert.match(css, /body\.shell-tablet\.is-mobile-screen\.is-portrait-screen\.is-staff-mobile-shell[\s\S]*?#callsheet[\s\S]*?\.cs-cat-header \{[\s\S]*?top: calc\(var\(--app-header-height\) \+ var\(--app-tabs-height\)\);/, "portrait tablet sticky category headers clear the measured document chrome");

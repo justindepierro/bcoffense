@@ -32,4 +32,25 @@ const toolbar = css.slice(toolbarStart);
 assert.match(toolbar, /\.script-toolbar\s*\{[\s\S]*?order:\s*10[\s\S]*?flex:\s*1 0 100%/, "search and sort move to a full-width desktop command row");
 assert.match(toolbar, /grid-template-columns:\s*max-content minmax\(280px, 1fr\) minmax\(240px, 1fr\)/, "desktop command row reserves explicit sort and search space");
 
-console.log("script library desktop density contract: 10 assertions passed");
+const shared = await readFile(new URL("js/script-shared.js", `file://${root}/`), "utf8");
+assert.match(shared, /function toggleScriptPlayRail\(\)[\s\S]*?const openingLibrary = scriptPlayRailCollapsed;[\s\S]*?filtersCollapsed = true;[\s\S]*?applyScriptFiltersCollapsedState\(\)/, "every reopened library returns to the results-first collapsed-filter state");
+
+const timeline = await readFile(new URL("js/script-timeline.js", `file://${root}/`), "utf8");
+assert.match(timeline, /function renderScriptTimelineActions\(period\)[\s\S]*?Manage in period/, "timeline cards are navigation summaries rather than a duplicate period command strip");
+
+const render = await readFile(new URL("js/script-render.js", `file://${root}/`), "utf8");
+assert.match(render, /function renderPeriodHeaderMoreMenu[\s\S]*?data-action="duplicatePeriod"[\s\S]*?data-action="printPeriod"/, "period utilities are available from one explicit More menu");
+assert.match(render, /function renderScriptPlayControls[\s\S]*?data-action="openScriptPresentation"[\s\S]*?<details class="script-row-actions">[\s\S]*?data-action="removeFromScript"/, "row study remains direct while secondary row utilities use progressive disclosure");
+assert.match(render, /scriptStatsSummaryText[\s\S]*?statsDetails\.open = false/, "desktop Script statistics collapse to a concise live summary after render");
+
+const index = await readFile(new URL("index.html", `file://${root}/`), "utf8");
+assert.match(index, /<details id="scriptStatsDetails" class="script-stats-details" open>/, "Script totals have an explicit detail disclosure");
+assert.match(index, /<details class="script-command-more">[\s\S]*?id="scriptSortField"[\s\S]*?id="jumpToPeriod"/, "secondary Script commands stay available from one Tools disclosure");
+
+const finalHierarchyStart = css.lastIndexOf("/* Script command hierarchy:");
+assert.ok(finalHierarchyStart >= 0, "Script declares final command-hierarchy rules");
+const finalHierarchy = css.slice(finalHierarchyStart);
+assert.match(finalHierarchy, /\.script-command-more-panel[\s\S]*?position:\s*absolute/, "desktop secondary command tools overlay instead of taking permanent workbench space");
+assert.match(finalHierarchy, /\.script-stats-details\[open\] \.script-stats-bar[\s\S]*?position:\s*absolute/, "expanded statistics overlay instead of adding a permanent toolbar row");
+
+console.log("script library desktop density contract: 19 assertions passed");

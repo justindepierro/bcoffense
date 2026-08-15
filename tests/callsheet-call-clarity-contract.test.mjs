@@ -10,6 +10,8 @@ const callSheet = await readFile(new URL("js/callsheet.js", `file://${root}/`), 
 const gamePlanRender = await readFile(new URL("js/gameplan-render.js", `file://${root}/`), "utf8");
 const notifications = await readFile(new URL("js/app-notifications.js", `file://${root}/`), "utf8");
 const indexCards = await readFile(new URL("js/callsheet-index-cards.js", `file://${root}/`), "utf8");
+const callSheetRender = await readFile(new URL("js/callsheet-render.js", `file://${root}/`), "utf8");
+const picker = await readFile(new URL("js/callsheet-picker-runtime.js", `file://${root}/`), "utf8");
 const appEvents = await readFile(new URL("js/app-events.js", `file://${root}/`), "utf8");
 const scriptIntegrations = await readFile(new URL("js/script-integrations.js", `file://${root}/`), "utf8");
 const gamePlanIntegrations = await readFile(new URL("js/gameplan-integrations.js", `file://${root}/`), "utf8");
@@ -35,6 +37,13 @@ assert.match(indexCards, /const addControl = editable[\s\S]*?cs-index-bucket-act
 assert.match(indexCards, /cs-index-empty-add[\s\S]*?Add a play or drop one here/, "empty Index Card buckets provide an explicit add path");
 assert.match(indexCards, /data-cs-card-bucket[\s\S]*?removeCallSheetIndexCardBucket/, "every editable bucket exposes both a drop identity and a direct remove control");
 assert.match(indexCards, /function openCallSheetIndexCardBucketPicker\(id\)[\s\S]*?_csIndexPickerBucketId = bucket\.id[\s\S]*?openCallSheetPlayPicker/, "Index Card add-play buttons retain their specific bucket destination");
+assert.match(callSheetRender, /moon:\s*"🌙"[\s\S]*?sun:\s*"☀️"/, "Call Sheet personnel codes include Moon and Sun everywhere the legacy fallback is used");
+assert.match(callSheetRender, /moon:\s*"#26365f"[\s\S]*?sun:\s*"#f6c344"/, "Moon and Sun have deliberate high-contrast Call Sheet colors for grouped staff views");
+assert.match(picker, /const personnelMarkup = marker[\s\S]*?cs-personnel-marker/, "Call Sheet picker uses shared personnel markers instead of reverting Moon and Sun to old code chips");
+assert.match(callSheetRender, /"callsheetShowCellNotes"/, "Call Sheet display preferences persist the cell-note visibility choice");
+assert.match(callSheetRender, /showCellNotes:[\s\S]*?callsheetShowCellNotes/, "Call Sheet renderer reads the cell-note display choice");
+assert.match(callSheetRender, /cs-cell-note[\s\S]*?displayOptions\.showCellNotes/, "Call Sheet displays note text only when the coach requests it");
+assert.match(indexCards, /options\.showCellNotes[\s\S]*?cs-index-cell-note/, "Index Cards share the Call Sheet cell-note visibility setting");
 assert.match(indexCards, /function onCallSheetIndexCardPickerPlayAdded\(play\)[\s\S]*?bucket\.playKeys\.push\(identity\)[\s\S]*?saveCallSheetSettings\(\)/, "new picker calls are persisted in smart Index Card bucket scopes");
 assert.match(indexCards, /const seen = new Set\(\);[\s\S]*?seen\.has\(identity\)/, "scoped Index Card buckets render one row per play identity even if the source Call Sheet has duplicates");
 assert.match(indexCards, /function resolveCallSheetIndexCardPickerPlay\(play, categoryId, hash\)[\s\S]*?find\(\(candidate\)/, "Index Card picker additions re-use an existing canonical call when available");

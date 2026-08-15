@@ -14,6 +14,19 @@ test("desktop Script library keeps advanced filters compact", async ({ page }, t
   await expect(page.locator("#scriptFiltersContainer")).toHaveClass(/collapsed/);
   await expect(page.locator("#availablePlays .script-library-row").first()).toBeVisible();
 
+  const stats = page.locator("#scriptStatsDetails");
+  await expect(stats).not.toHaveAttribute("open", "");
+  await expect(stats.locator("summary")).toBeVisible();
+  await stats.locator("summary").click();
+  await expect(stats).toHaveAttribute("open", "");
+
+  const tools = page.locator(".script-command-more");
+  await expect(page.locator("#scriptSearchBox")).toBeVisible();
+  await expect(tools).not.toHaveAttribute("open", "");
+  await tools.locator("summary").click();
+  await expect(tools).toHaveAttribute("open", "");
+  await expect(page.locator("#scriptSortField")).toBeVisible();
+
   const commandGeometry = await page.locator("#script .script-toolbar").evaluate((toolbar) => {
     const toolbarRect = toolbar.getBoundingClientRect();
     const controls = Array.from(toolbar.querySelectorAll("button, input, select, label"));
@@ -37,6 +50,16 @@ test("desktop Script library keeps advanced filters compact", async ({ page }, t
     expect(control.right).toBeLessThanOrEqual(commandGeometry.toolbarRight + 1);
   });
 
+  await page.locator("#toggleFiltersBtn").click();
+  await expect(page.locator("#scriptFiltersContainer")).not.toHaveClass(/collapsed/);
+
+  // A prior expanded filter session must never turn a newly opened library
+  // back into a wall of controls above the results.
+  await libraryToggle.click();
+  await expect(page.locator("#scriptPlayRail")).not.toBeVisible();
+  await libraryToggle.click();
+  await expect(page.locator("#scriptPlayRail")).toBeVisible();
+  await expect(page.locator("#scriptFiltersContainer")).toHaveClass(/collapsed/);
   await page.locator("#toggleFiltersBtn").click();
   await expect(page.locator("#scriptFiltersContainer")).not.toHaveClass(/collapsed/);
 

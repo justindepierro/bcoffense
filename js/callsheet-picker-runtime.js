@@ -435,9 +435,13 @@ function populateCallSheetPlayList() {
   container.innerHTML = filtered
     .slice(0, 150)
     .map((play, index) => {
+      const marker = typeof getPersonnelEmoji === "function" ? getPersonnelEmoji(play.personnel) : "";
       const code = getPersonnelCode(play.personnel);
       const bgColor = getPersonnelBgColor(play.personnel);
       const textColor = getPersonnelTextColor(play.personnel);
+      const personnelMarkup = marker
+        ? `<span class="personnel-code cs-personnel-marker" title="${escapeHtml(play.personnel || "")}">${marker}</span>`
+        : `<span class="personnel-code" style="background: ${bgColor}; color: ${textColor};">${escapeHtml(code)}</span>`;
       const wristbandNum = play.wristbandNumber
         ? `<span class="wristband-badge">#${play.wristbandNumber}</span>`
         : "";
@@ -466,7 +470,7 @@ function populateCallSheetPlayList() {
       return `
       <div class="picker-play cs-picker-row app-library-row" data-action="csPickerAddPlay" data-idx="${index}">
         ${wristbandNum}
-        <span class="personnel-code" style="background: ${bgColor}; color: ${textColor};">${code}</span>
+        ${personnelMarkup}
         <span class="cs-picker-play-text">${escapeHtml(play.formation || "")} ${escapeHtml(play.protection || "")} <strong>${escapeHtml(play.play || "")}</strong></span>
         ${chipHtml}
       </div>
@@ -741,6 +745,32 @@ function addCsBlankRow(arg) {
   saveCallSheet();
 }
 
+async function addCsDivider(arg) {
+  const [catId, hash] = String(arg || "").split(":");
+  if (!catId || !hash || !callSheet?.[catId]) return;
+  const label = await showPrompt("Divider text:", "", { title: "Add call-sheet divider", icon: "—" });
+  if (label === null || !label.trim()) return;
+  if (!Array.isArray(callSheet[catId][hash])) callSheet[catId][hash] = [];
+  callSheet[catId][hash].push({ _divider: true, id: `cs-divider-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, label: label.trim() });
+  renderCallSheet();
+  saveCallSheet();
+}
+
+async function editCallSheetDivider(arg) {
+  const [catId, hash, rawIndex] = String(arg || "").split("|");
+  const divider = callSheet?.[catId]?.[hash]?.[Number(rawIndex)];
+  if (!divider?._divider) return;
+  const label = await showPrompt("Divider text:", divider.label || "", { title: "Edit call-sheet divider", icon: "—" });
+  if (label === null) return;
+  if (!label.trim()) {
+    callSheet[catId][hash].splice(Number(rawIndex), 1);
+  } else {
+    divider.label = label.trim();
+  }
+  renderCallSheet();
+  saveCallSheet();
+}
+
 function handleCallSheetDragStart(event, categoryId, hash, index, indexCardBucketId = "") {
   draggedCallSheetPlay = { categoryId, hash, index, indexCardBucketId };
   event.dataTransfer.setData("source", "callsheet");
@@ -748,7 +778,7 @@ function handleCallSheetDragStart(event, categoryId, hash, index, indexCardBucke
   // drag, even though the source data above is what our drop handler uses.
   event.dataTransfer.setData("text/plain", `${categoryId}:${hash}:${index}`);
   event.dataTransfer.effectAllowed = "move";
-  event.target.closest(".callsheet-play, .cs-blank-row")?.classList.add("dragging");
+  event.target.closest(".callsheet-play, .cs-blank-row, .cs-divider-row")?.classList.add("dragging");
 }
 
 function handleCallSheetDragOver(event) {
@@ -759,7 +789,7 @@ function handleCallSheetDragOver(event) {
   const allowed = event.dataTransfer?.effectAllowed || "";
   event.dataTransfer.dropEffect = allowed === "copy" ? "copy" : "move";
 
-  const target = event.target.closest(".callsheet-play, .cs-blank-row");
+  const target = event.target.closest(".callsheet-play, .cs-blank-row, .cs-divider-row");
   const hashColumn = event.target.closest("[data-drop='csHashDrop']");
   clearCallSheetDropIndicators();
   if (target) {
@@ -774,7 +804,7 @@ function handleCallSheetDragOver(event) {
 function handleCallSheetDrop(event, targetCategory, targetHash, indexCardBucketId = "") {
   event.preventDefault();
 
-  const targetPlay = event.target.closest(".callsheet-play, .cs-blank-row");
+  const targetPlay = event.target.closest(".callsheet-play, .cs-blank-row, .cs-divider-row");
   const placeAfter = Boolean(targetPlay?.classList.contains("cs-drop-after"));
   let insertIdx = -1;
   if (targetPlay) {
@@ -826,7 +856,7 @@ function handleCallSheetDrop(event, targetCategory, targetHash, indexCardBucketI
     // does NOT bubble to document, so any cleanup deferred to dragend would
     // be lost.
     draggedCallSheetPlay = null;
-    document.querySelectorAll(".callsheet-play.dragging, .cs-blank-row.dragging").forEach((el) => el.classList.remove("dragging"));
+    document.querySelectorAll(".callsheet-play.dragging, .cs-blank-row.dragging, .cs-divider-row.dragging").forEach((el) => el.classList.remove("dragging"));
     clearCallSheetDropIndicators();
 
     renderCallSheet();
@@ -920,7 +950,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     grid.addEventListener("contextmenu", (event) => {
-      const play = event.target.closest(".callsheet-play, .cs-blank-row");
+      const play = event.target.closest(".callsheet-play, .cs-blank-row, .cs-divider-row");
       if (!play) return;
       const { category, hash, index } = play.dataset;
       if (category && hash && index !== undefined) {
@@ -964,7 +994,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       const hashCol = event.target.closest("[data-drop='csHashDrop']");
-      if (hashCol || event.target.closest(".callsheet-play, .cs-blank-row")) {
+      if (hashCol || event.target.closest(".callsheet-play, .cs-blank-row, .cs-divider-row")) {
         handleCallSheetDragOver(event);
       }
     });
@@ -987,13 +1017,13 @@ document.addEventListener("DOMContentLoaded", () => {
     grid.addEventListener("dragend", (event) => {
       const catDrag = event.target.closest("[data-drag='catDrag']");
       if (catDrag) handleCatDragEnd(event);
-      const play = event.target.closest(".callsheet-play, .cs-blank-row");
+      const play = event.target.closest(".callsheet-play, .cs-blank-row, .cs-divider-row");
       if (play) {
         play.classList.remove("dragging");
         draggedCallSheetPlay = null;
       }
       document
-        .querySelectorAll(".callsheet-play.dragging, .cs-blank-row.dragging")
+        .querySelectorAll(".callsheet-play.dragging, .cs-blank-row.dragging, .cs-divider-row.dragging")
         .forEach((element) => element.classList.remove("dragging"));
       clearCallSheetDropIndicators();
     });

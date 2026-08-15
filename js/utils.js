@@ -1315,6 +1315,7 @@ function getPersonnelEmoji(personnel, useSquares = false) {
     sky: "🌤️",
     gold: "🏅",
     moon: "🌙",
+    sun: "☀️",
   };
 
   const squareMap = {
@@ -1335,6 +1336,7 @@ function getPersonnelEmoji(personnel, useSquares = false) {
     sky: "🌤️",
     gold: "🏅",
     moon: "🌙",
+    sun: "☀️",
   };
 
   const map = useSquares ? squareMap : circleMap;

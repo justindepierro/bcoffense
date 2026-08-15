@@ -41,12 +41,15 @@ function _csBucketRows(bucket) {
   const hasScopedKeys = Array.isArray(bucket?.playKeys);
   const keys = hasScopedKeys ? new Set(bucket.playKeys) : null;
   const excluded = new Set(Array.isArray(bucket?.excludedPlayKeys) ? bucket.excludedPlayKeys : []);
-  const scoped = hasScopedKeys ? rows.filter((row) => keys.has(_csIndexIdentity(row.play))) : rows;
+  const scoped = hasScopedKeys
+    ? rows.filter((row) => row.play?._divider || keys.has(_csIndexIdentity(row.play)))
+    : rows;
   // A scoped bucket represents a call, not every accidental duplicate copy of
   // that call in the full Call Sheet. Keep the first canonical occurrence so
   // one picker selection always occupies one row on the compact card.
   const seen = new Set();
   const uniqueRows = scoped.filter((row) => {
+    if (row.play?._divider) return true;
     const identity = _csIndexIdentity(row.play);
     if (excluded.has(identity) || seen.has(identity)) return false;
     seen.add(identity);
@@ -55,8 +58,15 @@ function _csBucketRows(bucket) {
   // A scoped card owns its display order. Filtering canonical Call Sheet rows
   // preserves membership, but not a coach's manual card order.
   if (!hasScopedKeys) return uniqueRows;
-  const rowsByIdentity = new Map(uniqueRows.map((row) => [_csIndexIdentity(row.play), row]));
-  return bucket.playKeys.map((identity) => rowsByIdentity.get(identity)).filter(Boolean);
+  const rowsByIdentity = new Map(uniqueRows.filter((row) => !row.play?._divider).map((row) => [_csIndexIdentity(row.play), row]));
+  const ordered = bucket.playKeys.map((identity) => rowsByIdentity.get(identity)).filter(Boolean);
+  // Keep an authored divider near the same calls even when this card has its
+  // own manual call order. Dividers are layout metadata, never card members.
+  uniqueRows.filter((row) => row.play?._divider).forEach((divider) => {
+    const before = rows.slice(0, rows.indexOf(divider)).filter((row) => !row.play?._divider && keys.has(_csIndexIdentity(row.play))).length;
+    ordered.splice(Math.min(before, ordered.length), 0, divider);
+  });
+  return ordered;
 }
 function _csIndexFamily(bucket, row) { return Boolean(bucket?.family?.[row.key]?.indent); }
 function _csIndexCompact(bucket, row) { return Boolean(bucket?.family?.[row.key]?.compact); }
@@ -83,6 +93,7 @@ function _csIndexDisplayPlay(play, previous, compact) {
   return copy;
 }
 function _csIndexCall(play, previous, compact) {
+  if (play?._divider) return escapeHtml(play.label || "Divider");
   const shownPlay = _csIndexDisplayPlay(play, previous, compact);
   const options = typeof getCallSheetPlayDisplayOptions === "function"
     ? getCallSheetPlayDisplayOptions(shownPlay, getCallSheetDisplayOptions())
@@ -92,9 +103,12 @@ function _csIndexCall(play, previous, compact) {
   const wristbandNumber = options.showNumbers
     ? (shownPlay?.wristbandNumber || (typeof getWristbandNumberForPlay === "function" ? getWristbandNumberForPlay(shownPlay) : null))
     : null;
+  const note = options.showCellNotes && shownPlay?.cellNote
+    ? `<span class="cs-index-cell-note">${escapeHtml(shownPlay.cellNote)}</span>`
+    : "";
   return wristbandNumber
-    ? `<span class="cs-index-wristband-number">#${escapeHtml(wristbandNumber)}</span>${call}`
-    : call;
+    ? `<span class="cs-index-wristband-number">#${escapeHtml(wristbandNumber)}</span>${call}${note}`
+    : `${call}${note}`;
 }
 function _csIndexPrintBucketClass(bucket) {
   const height = String(bucket?.printHeight || "");
@@ -102,12 +116,18 @@ function _csIndexPrintBucketClass(bucket) {
 }
 function _csIndexBucketMarkup(bucket, editable) {
   const rows = _csBucketRows(bucket);
+  const callCount = rows.filter((row) => !row.play?._blank && !row.play?._divider).length;
   const category = CALLSHEET_CATEGORIES.find((item) => item.id === bucket.categoryId);
   const configuredColor = /^#[0-9a-fA-F]{3,8}$/.test(String(bucket?.color || "")) ? bucket.color : "";
   const headerColor = configuredColor || (category && typeof getCategoryColor === "function" ? getCategoryColor(category) : "#173768");
   const headerText = typeof getCategoryHeaderTextColor === "function" ? getCategoryHeaderTextColor(headerColor) : "#fff";
   let previous = null;
   const plays = rows.map((row) => {
+    if (row.play?._divider) {
+      const text = escapeHtml(row.play.label || "Divider");
+      if (!editable) return `<li class="cs-index-divider">${text}</li>`;
+      return `<li class="cs-index-divider callsheet-play" data-category="${escapeAttr(bucket.categoryId || "")}" data-hash="${row.hash}" data-index="${row.index}"><span class="cs-index-play-grip" draggable="true" aria-hidden="true">⠿</span><button type="button" class="cs-index-divider-label" data-action="editCallSheetDivider" data-arg="${escapeAttr(bucket.categoryId || "")}|${row.hash}|${row.index}" title="Edit divider">${text}</button><button type="button" class="cs-index-play-touch-action" data-action="editCallSheetDivider" data-arg="${escapeAttr(bucket.categoryId || "")}|${row.hash}|${row.index}">Edit</button></li>`;
+    }
     const family = _csIndexFamily(bucket, row);
     const compact = family && _csIndexCompact(bucket, row);
     const text = _csIndexCall(row.play, previous, compact);
@@ -129,7 +149,7 @@ function _csIndexBucketMarkup(bucket, editable) {
   const addControl = editable && bucket.categoryId ? `<button class="cs-index-bucket-add" data-action="openCallSheetIndexCardBucketPicker" data-arg="${escapeAttr(bucket.id)}" title="Add a play to ${escapeAttr(bucket.label)}" aria-label="Add a play to ${escapeAttr(bucket.label)}">＋</button>` : "";
   const manageControl = editable ? `<button type="button" class="cs-index-bucket-manage" data-action="manageCallSheetIndexCardBucket" data-arg="${escapeAttr(bucket.id)}" title="Manage situation" aria-label="Manage ${escapeAttr(bucket.label)}"><span aria-hidden="true">⋯</span><span class="cs-index-bucket-manage-label">Manage</span></button>` : "";
   const dropAttrs = bucket.categoryId ? ` data-drop="csHashDrop" data-cat="${escapeAttr(bucket.categoryId)}" data-hash="${bucket.targetHash === "right" ? "right" : "left"}"` : "";
-  return `<section class="cs-index-bucket${_csIndexPrintBucketClass(bucket)}"${dropAttrs}${editable ? ` data-cs-card-bucket="${escapeAttr(bucket.id)}"` : ""}><header${editable ? ` draggable="true" data-cs-index-bucket-drag="${escapeAttr(bucket.id)}" title="Drag this header to reorder situations"` : ""} style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading">${editable ? '<span class="cs-index-bucket-grip" aria-hidden="true">⠿</span>' : ""}<b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${rows.length}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}${manageControl}</span>` : ""}</header><ol class="${bucket.showSequenceNumbers ? "" : "cs-index-list--unsequenced"}">${plays}</ol></section>`;
+  return `<section class="cs-index-bucket${_csIndexPrintBucketClass(bucket)}"${dropAttrs}${editable ? ` data-cs-card-bucket="${escapeAttr(bucket.id)}"` : ""}><header${editable ? ` draggable="true" data-cs-index-bucket-drag="${escapeAttr(bucket.id)}" title="Drag this header to reorder situations"` : ""} style="--cs-index-category: ${escapeAttr(headerColor)}; --cs-index-category-text: ${escapeAttr(headerText)}"><span class="cs-index-bucket-heading">${editable ? '<span class="cs-index-bucket-grip" aria-hidden="true">⠿</span>' : ""}<b>${escapeHtml(bucket.label)}</b><span class="cs-index-bucket-count">${callCount}</span></span>${editable ? `<span class="cs-index-bucket-actions">${addControl}${manageControl}</span>` : ""}</header><ol class="${bucket.showSequenceNumbers ? "" : "cs-index-list--unsequenced"}">${plays}</ol></section>`;
 }
 
 function _csClearIndexBucketDragFeedback() {

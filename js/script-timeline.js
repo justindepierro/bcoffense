@@ -183,56 +183,9 @@ function renderScriptTimelineBalance(period) {
 
 function renderScriptTimelineActions(period) {
   const label = period.label || "Period";
-  const protectionLabel = period.hideProtection ? "Prot Off" : "Prot On";
-  const protectionTitle = period.hideProtection
-    ? `Show protection for ${label}`
-    : `Hide protection for ${label}`;
-  const personnelState = period.personnelVisibility || { total: 0, visible: 0, mode: "empty" };
-  const personnelLabel = personnelState.mode === "shown"
-    ? "Lineup On"
-    : personnelState.mode === "hidden"
-      ? "Lineup Off"
-      : personnelState.mode === "mixed"
-        ? "Lineup Mix"
-        : "Lineup";
-  const personnelTitle = personnelState.mode === "shown"
-    ? `Hide lineup assignments (sub package and player names) for all ${personnelState.total} plays in ${label}`
-    : personnelState.mode === "hidden"
-      ? `Show lineup assignments (sub package and player names) for all ${personnelState.total} plays in ${label}`
-      : personnelState.mode === "mixed"
-        ? `Show lineup assignments for all plays in ${label}; ${personnelState.visible} of ${personnelState.total} are currently shown`
-        : `No plays in ${label} yet`;
-
-  const actions = [
-    ["duplicatePeriod", "Dup", `Duplicate ${label}`],
-    ["savePeriodAsTemplate", "Save", `Save ${label} as a template`],
-    [
-      "togglePeriodProtection",
-      protectionLabel,
-      protectionTitle,
-      period.hideProtection ? " is-active" : "",
-    ],
-    [
-      "togglePeriodPersonnelVisibility",
-      personnelLabel,
-      personnelTitle,
-      personnelState.mode === "shown" ? " is-active" : personnelState.mode === "mixed" ? " is-mixed" : "",
-      !personnelState.total,
-    ],
-    ["printPeriod", "Print", `Print ${label}`],
-  ];
-
-  return `
-    <span class="script-timeline-actions" aria-label="${escapeHtml(label)} timeline actions">
-      ${actions
-      .map(
-        ([action, actionLabel, title, activeClass = "", disabled = false]) => `
-        <button type="button" class="script-timeline-action${activeClass}" data-action="${action}" data-arg="${period.index}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}"${disabled ? " disabled" : ""}>
-          ${escapeHtml(actionLabel)}
-        </button>`,
-      )
-      .join("")}
-    </span>`;
+  // Timeline cards navigate. Their editing actions live with the actual
+  // period, avoiding a second dense command strip for every period.
+  return `<span class="script-timeline-actions" aria-label="${escapeHtml(label)} timeline status">Manage in period</span>`;
 }
 
 function renderScriptTimeline(renderContext) {

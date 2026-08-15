@@ -1825,11 +1825,14 @@ function _renderCsNosPlays(missing, emptyMsg, heading) {
     .forEach(([type, typePlays]) => {
       html += `<details><summary>${escapeHtml(type)} (${typePlays.length})</summary><div class="cs-nos-list">`;
       typePlays.forEach((p) => {
+        const marker = typeof getPersonnelEmoji === "function" ? getPersonnelEmoji(p.personnel) : "";
         const code = getPersonnelCode(p.personnel);
         const bg = getPersonnelBgColor(p.personnel);
         const tc = getPersonnelTextColor(p.personnel);
         html += `<div class="cs-nos-play">
-          <span class="personnel-code" style="background: ${bg}; color: ${tc};">${escapeHtml(code)}</span>
+          ${marker
+            ? `<span class="personnel-code cs-personnel-marker" title="${escapeHtml(p.personnel || "")}">${marker}</span>`
+            : `<span class="personnel-code" style="background: ${bg}; color: ${tc};">${escapeHtml(code)}</span>`}
           ${escapeHtml(p.formation || "")} ${escapeHtml(p.play || "")}
         </div>`;
       });

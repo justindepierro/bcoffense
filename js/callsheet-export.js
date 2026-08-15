@@ -78,7 +78,7 @@ function exportCallSheetCSV() {
     const catName = getCategoryDisplayName(cat);
     ["left", "right"].forEach((side) => {
       (bucket[side] || []).forEach((p) => {
-        if (!p || p._blank) return;
+        if (!p || p._blank || p._divider) return;
         rows.push(
           [
             esc(catName),

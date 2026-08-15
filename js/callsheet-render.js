@@ -527,6 +527,7 @@ const CALLSHEET_DISPLAY_IDS = [
   "callsheetShowTags",
   "callsheetShowMotion",
   "callsheetShowLineCall",
+  "callsheetShowCellNotes",
   "callsheetShowEmoji",
   "callsheetUseSquares",
   "callsheetUnderEmoji",
@@ -669,6 +670,11 @@ function getPersonnelCode(personnel) {
     meat: "🥩",
     marc: "☠️",
     star: "ST",
+    irish: "☘️",
+    sky: "🌤️",
+    gold: "🏅",
+    moon: "🌙",
+    sun: "☀️",
   };
   return codes[p] || personnel.substring(0, 2).toUpperCase();
 }
@@ -691,6 +697,11 @@ function getPersonnelBgColor(personnel) {
     navy: "#192a51",
     meat: "#7f1d1d",
     star: CS_COLORS.yellow,
+    irish: "#166534",
+    sky: "#0f6b9f",
+    gold: "#b77900",
+    moon: "#26365f",
+    sun: "#f6c344",
   };
   return colors[p] || UI_COLORS.textMuted;
 }
@@ -701,7 +712,7 @@ function getPersonnelBgColor(personnel) {
 function getPersonnelTextColor(personnel) {
   if (!personnel) return UI_COLORS.textWhite;
   const p = personnel.toLowerCase().trim();
-  const darkText = ["yellow", "white", "star"];
+  const darkText = ["yellow", "white", "star", "sun"];
   return darkText.includes(p) ? UI_COLORS.textBlack : UI_COLORS.textWhite;
 }
 
@@ -1188,7 +1199,7 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
   const headerColor = getCategoryColor(cat);
   const textColor = getCategoryHeaderTextColor(headerColor);
 
-  const playCount = leftPlays.length + rightPlays.length;
+  const playCount = [...leftPlays, ...rightPlays].filter((play) => play && !play._blank && !play._divider).length;
   const target = csTargets[cat.id];
   let countDisplay = "";
   if (target) {
@@ -1262,6 +1273,7 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
     html += `<div class="cs-col-footer">
       <div class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${cat.id}" data-hash="left" role="button" aria-label="Add play to left hash">+ Add</div>
       <button class="cs-add-blank-btn" data-action="addCsBlankRow" data-arg="${cat.id}:left" title="Insert blank spacer row" aria-label="Add blank spacer row">+ blank</button>
+      <button class="cs-add-divider-btn" data-action="addCsDivider" data-arg="${cat.id}:left" title="Insert labeled divider row" aria-label="Add labeled divider row">+ divider</button>
     </div>`;
 
     html += `
@@ -1284,6 +1296,7 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
     html += `<div class="cs-col-footer">
       <div class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${cat.id}" data-hash="right" role="button" aria-label="Add play to right hash">+ Add</div>
       <button class="cs-add-blank-btn" data-action="addCsBlankRow" data-arg="${cat.id}:right" title="Insert blank spacer row" aria-label="Add blank spacer row">+ blank</button>
+      <button class="cs-add-divider-btn" data-action="addCsDivider" data-arg="${cat.id}:right" title="Insert labeled divider row" aria-label="Add labeled divider row">+ divider</button>
     </div>`;
 
     html += `
@@ -1306,7 +1319,7 @@ function renderCallSheetPhoneCategory(cat, data, dupeMap, displayOptions) {
   const columnMode = typeof getCallSheetCategoryColumnMode === "function"
     ? getCallSheetCategoryColumnMode(cat.id)
     : "hashes";
-  const playCount = leftPlays.length + rightPlays.length;
+  const playCount = [...leftPlays, ...rightPlays].filter((play) => play && !play._blank && !play._divider).length;
   const target = csTargets[cat.id];
   let countDisplay = "";
   if (target) {
@@ -1384,6 +1397,7 @@ function renderCallSheetPhoneSequenceGroup(categoryId, leftPlays, rightPlays, du
         <button type="button" class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${categoryId}" data-hash="left">+ Add Left</button>
         <button type="button" class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${categoryId}" data-hash="right">+ Add Right</button>
         <button type="button" class="cs-add-blank-btn" data-action="addCsBlankRow" data-arg="${categoryId}:left">+ Blank</button>
+        <button type="button" class="cs-add-divider-btn" data-action="addCsDivider" data-arg="${categoryId}:left">+ Divider</button>
       </div>
     </section>`;
   return html;
@@ -1418,6 +1432,7 @@ function renderCallSheetPhoneHashGroup(categoryId, hash, label, plays, dupeMap, 
       <div class="cs-mobile-hash-actions">
         <button type="button" class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${categoryId}" data-hash="${hash}" aria-label="Add play to ${label}">+ Add Play</button>
         <button type="button" class="cs-add-blank-btn" data-action="addCsBlankRow" data-arg="${categoryId}:${hash}" title="Insert blank spacer row" aria-label="Add blank spacer row">+ Blank</button>
+        <button type="button" class="cs-add-divider-btn" data-action="addCsDivider" data-arg="${categoryId}:${hash}" title="Insert labeled divider row" aria-label="Add labeled divider row">+ Divider</button>
       </div>
     </section>`;
   return html;
@@ -1449,6 +1464,8 @@ function getCallSheetDisplayOptions() {
       document.getElementById("callsheetShowMotion")?.checked ?? false,
     showLineCall:
       document.getElementById("callsheetShowLineCall")?.checked ?? true,
+    showCellNotes:
+      document.getElementById("callsheetShowCellNotes")?.checked ?? false,
     // Formatting options
     showEmoji: document.getElementById("callsheetShowEmoji")?.checked ?? false,
     useSquares:
@@ -1608,6 +1625,21 @@ function csBuildPlayCellStyle(play, options = {}) {
  * Render a single play in the call sheet
  */
 function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
+  if (play && play._divider) {
+    const label = escapeHtml(play.label || "Divider");
+    return `<div class="cs-divider-row" draggable="true" role="row" aria-label="Divider: ${label}"
+         data-category="${categoryId}" data-hash="${hash}" data-index="${index}">
+      <span class="cs-reorder-grip" aria-hidden="true" title="Drag to reorder">⠿</span>
+      <button type="button" class="cs-divider-label" data-action="editCallSheetDivider" data-arg="${categoryId}|${hash}|${index}" title="Edit divider">${label}</button>
+      <span class="cs-play-touch-actions">
+        <span class="cs-mobile-reorder-controls" aria-label="Move divider">
+          <button data-action="moveCallSheetPlay" data-arg="${categoryId}|${hash}|${index}|-1" aria-label="Move divider up">↑</button>
+          <button data-action="moveCallSheetPlay" data-arg="${categoryId}|${hash}|${index}|1" aria-label="Move divider down">↓</button>
+        </span>
+        <button class="remove-play cs-divider-remove" data-action="removeCallSheetPlay" data-category="${categoryId}" data-hash="${hash}" data-index="${index}" aria-label="Remove divider" title="Remove divider">×</button>
+      </span>
+    </div>`;
+  }
   // Blank spacer row
   if (play && play._blank) {
     return `<div class="cs-blank-row" draggable="true" role="row" aria-label="Blank spacer — drag to reorder"
@@ -1670,9 +1702,13 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
     ? `<span class="cs-wristband-number" title="Wristband ${escapeHtml(play.wristbandNumber)}">#${escapeHtml(play.wristbandNumber)}</span>`
     : "";
 
-  // Cell note badge
-  const noteBadge = play.cellNote
+  // A note stays discoverable in compact mode, and can be expanded into the
+  // actual call cell from Display options (which Index Cards share too).
+  const noteBadge = play.cellNote && !displayOptions.showCellNotes
     ? `<span class="cs-cell-note-badge" title="${escapeHtml(play.cellNote)}">📝</span>`
+    : "";
+  const noteText = play.cellNote && displayOptions.showCellNotes
+    ? `<span class="cs-cell-note">${escapeHtml(play.cellNote)}</span>`
     : "";
 
   // Duplicate badge
@@ -1702,7 +1738,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
   const discWarn = discPlayId ? `<span class="cs-disc-warning hidden" title="Open player questions">❓</span>` : "";
 
   return `
-    <div class="callsheet-play ${highlightClass} ${tempoClass}${deadVsBadgeHtml ? " cs-play-has-warning" : ""}" draggable="true"
+    <div class="callsheet-play ${highlightClass} ${tempoClass}${noteText ? " cs-play-has-note" : ""}${deadVsBadgeHtml ? " cs-play-has-warning" : ""}" draggable="true"
          style="${cellStyleStr}"
          role="row" aria-label="${escapeHtml(playLabel.trim())}"
          data-category="${categoryId}" data-hash="${hash}" data-index="${index}"${discAttr}>
@@ -1711,6 +1747,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
       ${personnelHtml}
       ${additionalPersonnelHtml}
       <span class="play-text" role="cell">${visiblePlayText}</span>
+      ${noteText}
       ${displayIndicator}
       ${formatIndicator}
       ${noteBadge}

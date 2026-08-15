@@ -317,10 +317,6 @@ function renderScriptEmptyPeriodHeaders() {
     const periodLabel = period.label || "Period";
     const periodNotes = period.notes || "";
     const periodId = escapeHtml(String(period.id));
-    const protectionButtonLabel = period.hideProtection ? "Prot Off" : "Prot On";
-    const protectionButtonTitle = period.hideProtection
-      ? `Show protection for ${periodLabel}`
-      : `Hide protection for ${periodLabel}`;
     periodHeaders += `
       <div class="script-item period-header" data-period-id="${periodId}" data-period-drop-id="${periodId}" style="background: ${periodColor}; color: ${periodTextColor};" role="group" aria-label="${escapeHtml(periodLabel)} period header">
         <div class="ph-top">
@@ -334,8 +330,7 @@ function renderScriptEmptyPeriodHeaders() {
             <input type="number" class="ph-minutes-input" value="${period.minutes || ""}" data-field="periodMinutes" data-idx="${index}" placeholder="min" title="Time in minutes" aria-label="Minutes for ${escapeHtml(periodLabel)}">
           </div>
           <div class="ph-right">
-            <button class="ph-btn ph-period-setting ${period.hideProtection ? "ph-btn-active" : ""}" data-action="togglePeriodProtection" data-idx="${index}" title="${escapeHtml(protectionButtonTitle)}" aria-label="${escapeHtml(protectionButtonTitle)}">${protectionButtonLabel}</button>
-            <button class="remove btn-inline-offset" data-action="removeFromScript" data-idx="${index}" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
+            ${renderPeriodHeaderMoreMenu(index, periodLabel, Boolean(period.hideProtection))}
           </div>
         </div>
       </div>
@@ -350,6 +345,26 @@ function renderPeriodActionButton(action, index, label, icon, title, extraClass 
   const shortcutAttr = shortcut ? ` aria-keyshortcuts="${shortcut.aria}"` : "";
 
   return `<button class="pat-btn ${extraClass}" data-action="${action}" data-idx="${index}" title="${escapeHtml(titleText)}" aria-label="${escapeHtml(title)}"${shortcutAttr}><span class="pat-btn-icon" aria-hidden="true">${icon}</span><span class="pat-btn-label">${escapeHtml(label)}</span></button>`;
+}
+
+function renderPeriodHeaderMoreMenu(index, periodLabel, hideProtection) {
+  const protectionTitle = hideProtection
+    ? `Show protection for ${periodLabel}`
+    : `Hide protection for ${periodLabel}`;
+  const protectionLabel = hideProtection ? "Show protection" : "Hide protection";
+  return `
+    <details class="period-header-more">
+      <summary title="More actions for ${escapeHtml(periodLabel)}" aria-label="More actions for ${escapeHtml(periodLabel)}">⋯ <span>More</span></summary>
+      <div class="period-header-more-panel" role="group" aria-label="More actions for ${escapeHtml(periodLabel)}">
+        <button type="button" class="ph-btn" data-action="movePeriod" data-idx="${index}" data-dir="-1" title="Move period up" aria-label="Move ${escapeHtml(periodLabel)} up">▲</button>
+        <button type="button" class="ph-btn" data-action="movePeriod" data-idx="${index}" data-dir="1" title="Move period down" aria-label="Move ${escapeHtml(periodLabel)} down">▼</button>
+        <button type="button" class="ph-btn" data-action="duplicatePeriod" data-idx="${index}" title="Duplicate period" aria-label="Duplicate ${escapeHtml(periodLabel)}">⧉</button>
+        <button type="button" class="ph-btn" data-action="savePeriodAsTemplate" data-idx="${index}" title="Save as template" aria-label="Save ${escapeHtml(periodLabel)} as a template">💾</button>
+        <button type="button" class="ph-btn ph-period-setting${hideProtection ? " ph-btn-active" : ""}" data-action="togglePeriodProtection" data-idx="${index}" title="${escapeHtml(protectionTitle)}" aria-label="${escapeHtml(protectionTitle)}">${escapeHtml(protectionLabel)}</button>
+        <button type="button" class="remove btn-inline-offset" data-action="removeFromScript" data-idx="${index}" aria-label="Delete ${escapeHtml(periodLabel)}">✕ Delete</button>
+        <button type="button" class="ph-btn" data-action="printPeriod" data-arg="${index}" title="Print ${escapeHtml(periodLabel)}" aria-label="Print ${escapeHtml(periodLabel)}">🖨</button>
+      </div>
+    </details>`;
 }
 
 function renderPeriodActionsToolbar(index, periodLabel) {
@@ -477,10 +492,6 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
   const periodLabel = separator.label || "Period";
   const periodNotes = separator.notes || "";
   const metaText = formatPeriodMetaText(playCount, periodReps, separator.minutes, runCount, passCount);
-  const protectionButtonLabel = separator.hideProtection ? "Prot Off" : "Prot On";
-  const protectionButtonTitle = separator.hideProtection
-    ? `Show protection for ${periodLabel}`
-    : `Hide protection for ${periodLabel}`;
   const periodId = escapeHtml(String(separator.id));
 
   return `
@@ -500,12 +511,7 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
             ${(runCount || passCount) ? `<div class="ph-ratio-bar ratio-bar-wrap" aria-hidden="true"><div class="ratio-bar-run" style="width:${runCount + passCount > 0 ? Math.round((runCount / (runCount + passCount)) * 100) : 50}%"></div><div class="ratio-bar-pass"></div></div>` : ""}
           </div>
           <div class="ph-right">
-            <button class="ph-btn" data-action="movePeriod" data-idx="${index}" data-dir="-1" title="Move period up" aria-label="Move ${escapeHtml(periodLabel)} up">▲</button>
-            <button class="ph-btn" data-action="movePeriod" data-idx="${index}" data-dir="1" title="Move period down" aria-label="Move ${escapeHtml(periodLabel)} down">▼</button>
-            <button class="ph-btn" data-action="duplicatePeriod" data-idx="${index}" title="Duplicate period" aria-label="Duplicate ${escapeHtml(periodLabel)}">⧉</button>
-            <button class="ph-btn" data-action="savePeriodAsTemplate" data-idx="${index}" title="Save as template" aria-label="Save ${escapeHtml(periodLabel)} as a template">💾</button>
-            <button class="ph-btn ph-period-setting ${separator.hideProtection ? "ph-btn-active" : ""}" data-action="togglePeriodProtection" data-idx="${index}" title="${escapeHtml(protectionButtonTitle)}" aria-label="${escapeHtml(protectionButtonTitle)}">${protectionButtonLabel}</button>
-            <button class="remove btn-inline-offset" data-action="removeFromScript" data-idx="${index}" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
+            ${renderPeriodHeaderMoreMenu(index, periodLabel, Boolean(separator.hideProtection))}
           </div>
         </div>
       </div>
@@ -558,23 +564,18 @@ function renderScriptPlayControls(play, index, playLabel, reps, signalCount = 0)
           <input class="play-reps-input" type="number" value="${reps}" min="1" data-field="reps" data-idx="${index}" title="Reps" aria-label="Reps for ${escapeHtml(playLabel)}">
         </div>
         <div class="play-control-actions" aria-label="Actions for ${escapeHtml(playLabel)}">
-          <div class="script-play-action-group script-play-action-group--study" aria-label="Study media">
-            ${signalBtn}
-            ${clipBtn}
-            <button class="script-present-btn" data-action="openScriptPresentation" data-idx="${index}" title="Open player study view" aria-label="Open player study view for ${escapeHtml(playLabel)}">▶</button>
-          </div>
-          ${discussionBtn || askCoachBtn ? `<div class="script-play-action-group script-play-action-group--discussion" aria-label="Discussion">${discussionBtn}${askCoachBtn}</div>` : ""}
-          ${personnelBtn ? `<div class="script-play-action-group script-play-action-group--personnel" aria-label="Script personnel">${personnelBtn}</div>` : ""}
-          <div class="script-play-action-group script-play-action-group--call" aria-label="Script call wording">
-            ${typeof renderScriptCallOverrideButton === "function" ? renderScriptCallOverrideButton(play, index, playLabel) : ""}
-          </div>
-          <div class="script-play-action-group script-play-action-group--edit" aria-label="Playbook and script actions">
-            <button class="script-edit-play-btn" data-action="openPlayEditorFromScript" data-arg="${index}" title="Edit this play in the playbook" aria-label="Edit play ${escapeHtml(playLabel)}">✏️</button>
-            <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate this script play" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
-          </div>
-          <div class="script-play-action-group script-play-action-group--remove" aria-label="Remove from script">
-            <button class="remove" data-action="removeFromScript" data-idx="${index}" title="Remove from this script" aria-label="Remove ${escapeHtml(playLabel)}">✕</button>
-          </div>
+          <button class="script-present-btn" data-action="openScriptPresentation" data-idx="${index}" title="Open player study view" aria-label="Open player study view for ${escapeHtml(playLabel)}">▶</button>
+          <details class="script-row-actions">
+            <summary title="More actions for ${escapeHtml(playLabel)}" aria-label="More actions for ${escapeHtml(playLabel)}">⋯</summary>
+            <div class="script-row-actions-panel">
+              <div class="script-play-action-group script-play-action-group--study" aria-label="Study media">${signalBtn}${clipBtn}</div>
+              ${discussionBtn || askCoachBtn ? `<div class="script-play-action-group script-play-action-group--discussion" aria-label="Discussion">${discussionBtn}${askCoachBtn}</div>` : ""}
+              ${personnelBtn ? `<div class="script-play-action-group script-play-action-group--personnel" aria-label="Script personnel">${personnelBtn}</div>` : ""}
+              <div class="script-play-action-group script-play-action-group--call" aria-label="Script call wording">${typeof renderScriptCallOverrideButton === "function" ? renderScriptCallOverrideButton(play, index, playLabel) : ""}</div>
+              <div class="script-play-action-group script-play-action-group--edit" aria-label="Playbook and script actions"><button class="script-edit-play-btn" data-action="openPlayEditorFromScript" data-arg="${index}" title="Edit this play in the playbook" aria-label="Edit play ${escapeHtml(playLabel)}">✏️</button><button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate this script play" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button></div>
+              <div class="script-play-action-group script-play-action-group--remove" aria-label="Remove from script"><button class="remove" data-action="removeFromScript" data-idx="${index}" title="Remove from this script" aria-label="Remove ${escapeHtml(playLabel)}">✕ Remove</button></div>
+            </div>
+          </details>
         </div>
       </div>`;
 }
@@ -1110,6 +1111,9 @@ window.debouncedFilterScriptItems = debouncedFilterScriptItems;
 function updateScriptStats(renderSummary) {
   const summary = renderSummary || buildScriptRenderSummary(script);
   const { playCount, totalReps, runCount, passCount, totalTime } = summary;
+  const timeText = totalTime >= 60
+    ? `${Math.floor(totalTime / 60)}:${String(totalTime % 60).padStart(2, "0")}h`
+    : String(totalTime);
 
   const el = (id) => document.getElementById(id);
   if (el("scriptCount")) el("scriptCount").textContent = playCount;
@@ -1118,13 +1122,18 @@ function updateScriptStats(renderSummary) {
   if (el("statRun")) el("statRun").textContent = runCount;
   if (el("statPass")) el("statPass").textContent = passCount;
   if (el("statTime")) {
-    if (totalTime >= 60) {
-      const h = Math.floor(totalTime / 60);
-      const m = totalTime % 60;
-      el("statTime").textContent = `${h}:${String(m).padStart(2, "0")}h`;
-    } else {
-      el("statTime").textContent = totalTime;
-    }
+    el("statTime").textContent = timeText;
+  }
+  if (el("scriptStatsSummaryText")) {
+    el("scriptStatsSummaryText").textContent = `${playCount} plays · ${totalReps} reps · ${timeText}`;
+  }
+  const statsDetails = el("scriptStatsDetails");
+  const isDesktopCoach = !document.body.classList.contains("is-mobile-screen")
+    && document.body.dataset.authRole !== "player"
+    && window.matchMedia?.("(min-width: 821px)").matches;
+  if (statsDetails && isDesktopCoach && !statsDetails.dataset.compacted) {
+    statsDetails.open = false;
+    statsDetails.dataset.compacted = "true";
   }
   updateRunPassRatio();
   updateScriptHealthBadge();
