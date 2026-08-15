@@ -1025,12 +1025,12 @@ async function probeTapDispatch(page) {
   return { supported: true, role, taps, ok: taps.every((tap) => tap.ok) };
 }
 
-// Tablet fixed-stack probe: roomy staff tablets can expose the workspace sync
-// status, page-level Library/Actions pills, and Quick Tools at once. A narrow
-// landscape Split View instead uses the compact utility fallback: page Actions
-// plus header-overflow Help. Drive the real Script page and compare rendered
-// footprints rather than relying on CSS variables, so a later layout change
-// cannot silently recreate a collision or remove the fallback path.
+// Tablet utility-path probe: compact staff tablets reserve the lower-right for
+// page Actions, while roomy staff landscape workspaces keep fixed Quick Tools
+// out of the live canvas entirely. The latter relies on header More/Help and
+// contextual Script Actions instead. Drive the real Script page and compare
+// rendered controls rather than relying on CSS variables, so a later layout
+// change cannot silently recreate a collision or remove the fallback path.
 async function probeTabletFixedStack(page) {
   const role = await page.evaluate(() => document.body?.dataset.authRole || "");
   const result = {
@@ -1156,8 +1156,7 @@ async function probeTabletFixedStack(page) {
     // slot to the page Actions FAB instead of stacking a second Quick Tools
     // launcher above it. Prove that choice through the actual fallback path:
     // Actions still opens, the header overflow exposes Help, and the Script
-    // template command remains an unobstructed live control. Roomy tablet
-    // profiles continue through the original three-surface stack below.
+    // template command remains an unobstructed live control.
     const compactTablet = await page.evaluate(() =>
       document.body?.dataset.layoutProfile === "tablet-compact" &&
       document.body?.classList.contains("is-staff-mobile-shell"),
@@ -1334,6 +1333,174 @@ async function probeTabletFixedStack(page) {
         geometry.overlaps.length === 0;
       if (!result.ok) {
         result.reason = "compact tablet utility fallback did not complete";
+      }
+      return result;
+    }
+
+    // A full-width staff iPad landscape workspace has its own dense command
+    // bars and panel-owned scroll surface. A fixed Quick Tools launcher there
+    // is not a third stack participant: it must be absent. Its utility routes
+    // are intentionally covered by Header More/Help and the contextual Script
+    // Actions control, both of which must remain genuinely operable.
+    const roomyStaffLandscape = await page.evaluate(() =>
+      document.body?.dataset.layoutProfile === "tablet-landscape" &&
+      document.body?.classList.contains("is-staff-mobile-shell"),
+    );
+    if (roomyStaffLandscape) {
+      const quickToolsFab = page.locator("#quickToolsFab").filter({ visible: true }).first();
+      const headerOverflow = page.locator(".header-overflow-btn").filter({ visible: true }).first();
+      const contextualActions = page
+        .locator("#script .page-actions-open-btn")
+        .filter({ visible: true })
+        .first();
+      const quickToolsVisible = await quickToolsFab.isVisible().catch(() => false);
+      const headerOverflowVisible = await headerOverflow.isVisible().catch(() => false);
+      const contextualActionsVisible = await contextualActions.isVisible().catch(() => false);
+
+      if (quickToolsVisible || !headerOverflowVisible || !contextualActionsVisible) {
+        result.supported = true;
+        result.layout = {
+          profile: "tablet-landscape",
+          roomyLandscapeUtilityPath: true,
+        };
+        result.surfaces = {
+          quickToolsVisible,
+          headerOverflowVisible,
+          contextualActionsVisible,
+        };
+        result.reason = quickToolsVisible
+          ? "Quick Tools remained visible in the roomy staff landscape workspace"
+          : !headerOverflowVisible
+            ? "Header overflow trigger not visible in the roomy staff landscape workspace"
+            : "Contextual Script Actions trigger not visible in the roomy staff landscape workspace";
+        return result;
+      }
+
+      await headerOverflow.click({ timeout: 4000 });
+      const helpMenuItem = page.locator(".header-overflow-help-item").filter({ visible: true }).first();
+      const helpMenuVisible = await helpMenuItem.isVisible().catch(() => false);
+      let helpOpened = false;
+      let helpClosed = false;
+      if (helpMenuVisible) {
+        await helpMenuItem.click({ timeout: 4000 });
+        helpOpened = await page
+          .waitForFunction(() => document.getElementById("helpOverlay")?.classList.contains("visible"), {
+            timeout: 2500,
+          })
+          .then(() => true)
+          .catch(() => false);
+        if (helpOpened) {
+          await page.keyboard.press("Escape");
+          helpClosed = await page
+            .waitForFunction(() => !document.getElementById("helpOverlay")?.classList.contains("visible"), {
+              timeout: 2500,
+            })
+            .then(() => true)
+            .catch(() => false);
+        }
+      }
+
+      await contextualActions.click({ timeout: 4000 });
+      const contextualActionsOpened = await page
+        .waitForFunction(() => document.getElementById("pageActionsSheet")?.classList.contains("visible"), {
+          timeout: 2500,
+        })
+        .then(() => true)
+        .catch(() => false);
+      if (contextualActionsOpened) {
+        await page.keyboard.press("Escape");
+        await page
+          .waitForFunction(() => !document.getElementById("pageActionsSheet")?.classList.contains("visible"), {
+            timeout: 2500,
+          })
+          .catch(() => {});
+      }
+
+      const geometry = await page.evaluate(() => {
+        const visibleRect = (el) => {
+          if (!el) return null;
+          const style = getComputedStyle(el);
+          if (
+            style.display === "none" ||
+            style.visibility === "hidden" ||
+            Number(style.opacity) === 0 ||
+            el.hidden
+          ) {
+            return null;
+          }
+          const rect = el.getBoundingClientRect();
+          if (rect.width <= 0 || rect.height <= 0) return null;
+          return {
+            left: Math.round(rect.left),
+            top: Math.round(rect.top),
+            right: Math.round(rect.right),
+            bottom: Math.round(rect.bottom),
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+          };
+        };
+        const receivesCenterHit = (element) => {
+          const rect = visibleRect(element);
+          if (!rect) return false;
+          const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+          return Boolean(hit && (hit === element || element.contains(hit)));
+        };
+        const dock = visibleRect(document.getElementById("workspaceSyncDock"));
+        const headerOverflow = visibleRect(document.querySelector(".header-overflow-btn"));
+        const contextualActions = visibleRect(document.querySelector("#script .page-actions-open-btn"));
+        const quickTools = visibleRect(document.getElementById("quickTools"));
+        const quickToolsFab = visibleRect(document.getElementById("quickToolsFab"));
+        const quickToolsMenu = visibleRect(document.getElementById("quickToolsMenu"));
+        const scriptTemplate = document.querySelector(
+          '#script .period-buttons [data-action="insertPeriodFromTemplate"]',
+        );
+        const scriptTemplateRect = visibleRect(scriptTemplate);
+        const requiredSurfaces = {
+          dock,
+          headerOverflow,
+          contextualActions,
+          scriptTemplate: scriptTemplateRect,
+        };
+        return {
+          surfaces: {
+            dock,
+            headerOverflow,
+            contextualActions,
+            quickTools,
+            quickToolsFab,
+            quickToolsMenu,
+            scriptTemplate: scriptTemplateRect,
+          },
+          quickToolsAbsent: !quickTools && !quickToolsFab && !quickToolsMenu,
+          missing: Object.entries(requiredSurfaces).flatMap(([name, rect]) => rect ? [] : [name]),
+          scriptTemplateReceivesHit: receivesCenterHit(scriptTemplate),
+        };
+      });
+      result.supported = true;
+      result.layout = {
+        profile: "tablet-landscape",
+        roomyLandscapeUtilityPath: true,
+      };
+      result.surfaces = geometry.surfaces;
+      result.missing = geometry.missing;
+      result.interactions = {
+        helpMenuVisible,
+        helpOpened,
+        helpClosed,
+        contextualActionsOpened,
+        quickToolsAbsent: geometry.quickToolsAbsent,
+        scriptTemplateReceivesHit: geometry.scriptTemplateReceivesHit,
+      };
+      result.ok =
+        geometry.quickToolsAbsent &&
+        helpMenuVisible &&
+        helpOpened &&
+        helpClosed &&
+        contextualActionsOpened &&
+        geometry.scriptTemplateReceivesHit &&
+        geometry.missing.length === 0;
+      if (!result.ok) {
+        result.reason = "roomy staff landscape utility path did not complete";
       }
       return result;
     }

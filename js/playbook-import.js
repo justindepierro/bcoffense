@@ -7,8 +7,12 @@ function showUpload() {
     return;
   }
 
+  const returnTab =
+    typeof getCurrentWorkspaceSurfaceTab === "function"
+      ? getCurrentWorkspaceSurfaceTab()
+      : "";
   if (typeof setWorkspaceSurface === "function") {
-    setWorkspaceSurface("upload");
+    setWorkspaceSurface("upload", { returnTab });
   } else {
     document.getElementById("mainApp").classList.add("hidden");
     document.getElementById("uploadSection").classList.remove("hidden");
@@ -28,8 +32,16 @@ function backToApp() {
     typeof canReturnToEmptyWorkspaceShell === "function" &&
     canReturnToEmptyWorkspaceShell();
   if (plays.length > 0 || canReturnToEmptyShell) {
+    const returnTab =
+      typeof getWorkspaceSurfaceReturnTab === "function"
+        ? getWorkspaceSurfaceReturnTab()
+        : "";
     if (typeof setWorkspaceSurface === "function") {
-      setWorkspaceSurface("app", { initModules: plays.length === 0 });
+      setWorkspaceSurface("app", {
+        initModules: plays.length === 0,
+        clearReturnTab: true,
+      });
+      if (returnTab && typeof showTab === "function") showTab(returnTab);
       if (plays.length === 0 && typeof ensureMobileStartupSurface === "function") {
         ensureMobileStartupSurface();
       }
@@ -37,6 +49,7 @@ function backToApp() {
     }
     document.getElementById("uploadSection").classList.add("hidden");
     document.getElementById("mainApp").classList.remove("hidden");
+    if (returnTab && typeof showTab === "function") showTab(returnTab);
   }
 }
 

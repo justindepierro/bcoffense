@@ -24,6 +24,7 @@ let _qLoading = false;
 let _qHasMore = false;
 let _qCardRefreshTimer = null;
 let _qSummary = null;        // last summary from API
+let _qInboxCloseTimer = null;
 
 const Q_PAGE_SIZE = 25;
 
@@ -176,7 +177,7 @@ async function refreshQuestionsCard() {
 }
 
 // ── Overlay open/close ─────────────────────────────────────────────────────────
-function openQuestionInbox(state) {
+function openQuestionInbox(state, trigger) {
   const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
   if (!user || (user.role !== "coach" && user.role !== "admin")) return;
 
@@ -188,6 +189,11 @@ function openQuestionInbox(state) {
 
   const overlay = document.getElementById("qInboxOverlay");
   if (!overlay) return;
+  const bodyEl = document.getElementById("qInboxBody");
+  const closeButton = overlay.querySelector(".q-inbox-close");
+
+  clearTimeout(_qInboxCloseTimer);
+  _qInboxCloseTimer = null;
 
   // Sync select elements
   const stateSelect = document.getElementById("qInboxStateFilter");
@@ -200,18 +206,48 @@ function openQuestionInbox(state) {
   overlay.classList.add("is-open");
   overlay.hidden = false;
   overlay.setAttribute("aria-hidden", "false");
+  overlay.removeAttribute("inert");
   document.body.classList.add("q-inbox-open");
+
+  // The Inbox is a blocking coach task surface, not a decorative side panel.
+  // Register it before loading results so focus, Escape, body locking, and its
+  // one deliberate scroll owner all survive slow list fetches and iPad keyboard
+  // changes. The explicit trigger preserves return focus on touch browsers,
+  // where tapping a button does not consistently move DOM focus first.
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "qInboxOverlay",
+      blocking: true,
+      safeArea: true,
+      scrollElement: bodyEl || overlay,
+      initialFocus: closeButton || overlay,
+      onEscape: () => closeQuestionInbox(),
+      returnFocus: trigger instanceof HTMLElement ? trigger : undefined,
+    });
+  } else {
+    closeButton?.focus?.({ preventScroll: true });
+  }
 
   _loadQInbox();
 }
 
-function closeQuestionInbox() {
+function closeQuestionInbox(options = {}) {
   const overlay = document.getElementById("qInboxOverlay");
   if (!overlay) return;
+  clearTimeout(_qInboxCloseTimer);
+  _qInboxCloseTimer = null;
+  if (typeof closeLayer === "function") {
+    // Release the managed layer before making this persistent DOM inert so the
+    // original coach action remains a valid return-focus target.
+    closeLayer("qInboxOverlay", { returnFocus: options.returnFocus !== false });
+  }
   overlay.classList.remove("is-open");
   overlay.setAttribute("aria-hidden", "true");
+  overlay.setAttribute("inert", "");
   document.body.classList.remove("q-inbox-open");
-  setTimeout(() => { overlay.hidden = true; }, 280);
+  _qInboxCloseTimer = setTimeout(() => {
+    if (!overlay.classList.contains("is-open")) overlay.hidden = true;
+  }, 280);
 }
 
 // ── Load questions ─────────────────────────────────────────────────────────────
@@ -332,7 +368,7 @@ function qInboxOpenPlay(arg) {
   if (!arg) return;
   const sep = arg.indexOf("::");
   const playId = sep >= 0 ? arg.slice(sep + 2) : arg;
-  closeQuestionInbox();
+  closeQuestionInbox({ returnFocus: false });
   setTimeout(() => {
     if (typeof openDiscussionForPlayId === "function") {
       openDiscussionForPlayId(playId);

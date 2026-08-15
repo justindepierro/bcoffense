@@ -36,6 +36,11 @@ const REQUIRED_SPECS = [
   "specs/29-compact-tablet-quick-tools.spec.js",
   "specs/30-player-ipad-header.spec.js",
   "specs/31-player-ipad-study-surface.spec.js",
+  "specs/32-staff-ipad-shell.spec.js",
+  "specs/32-team-ops-ipad.spec.js",
+  "specs/32-staff-workspace-surface.spec.js",
+  "specs/33-coach-inbox-ipad-layer.spec.js",
+  "specs/34-staff-account-task-surfaces.spec.js",
 ];
 const SMOKE_BATCHES = REQUIRED_SPECS.map((spec) => [spec]);
 const WEBKIT_PROCESS_SETTLE_MS = 1_000;

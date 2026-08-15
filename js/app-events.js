@@ -113,6 +113,9 @@ const _ELEMENT_FNS = new Set([
   "toggleIdentityCard",
   "openCallSheetIndexPlayMenu",
   "openGamePlanPlayActionMenu",
+  "openPlayersAdmin",
+  "openCoachAccessManager",
+  "openQuestionInbox",
   // Discussion actions (need both arg + element)
   "submitDiscPost",
   "deleteDiscPost",

@@ -85,7 +85,14 @@ function renderPlayerAccountRosterLink(p, context) {
 
 // ── Open / close ──────────────────────────────────────────────────────────────
 
-function openPlayersAdmin(rosterPlayerId = "") {
+function openPlayersAdmin(rosterPlayerId = "", trigger) {
+  // Delegated no-argument actions pass the real trigger as the first value.
+  // Preserve a requested roster id when one is supplied, while giving touch
+  // activation a stable return-focus target when it is not.
+  if (rosterPlayerId instanceof HTMLElement) {
+    trigger = rosterPlayerId;
+    rosterPlayerId = "";
+  }
   const overlay = document.getElementById("playersAdminOverlay");
   if (!overlay) return;
   _paRosterFocusId = String(rosterPlayerId || "").trim();
@@ -93,11 +100,17 @@ function openPlayersAdmin(rosterPlayerId = "") {
   overlay.removeAttribute("inert");
   overlay.removeAttribute("aria-hidden");
   if (typeof openLayer === "function") {
+    const panel = overlay.querySelector(".pa-panel");
+    const body = overlay.querySelector(".pa-body");
+    const closeButton = overlay.querySelector(".pa-close-btn");
     openLayer(overlay, {
       id: "playersAdminOverlay",
-      scrollElement: overlay.querySelector(".pa-panel") || overlay,
+      scrollElement: body || panel || overlay,
       blocking: true,
+      safeArea: true,
+      initialFocus: closeButton || panel || overlay,
       onEscape: () => closePlayersAdmin(),
+      returnFocus: trigger instanceof HTMLElement ? trigger : undefined,
     });
   }
   loadPlayersAdminList();
@@ -108,10 +121,10 @@ function closePlayersAdmin(options = {}) {
   if (!overlay) return;
   _paLoadController?.abort();
   _paLoadController = null;
+  if (typeof closeLayer === "function") closeLayer("playersAdminOverlay", options);
   overlay.classList.remove("visible");
   overlay.setAttribute("inert", "");
   overlay.setAttribute("aria-hidden", "true");
-  if (typeof closeLayer === "function") closeLayer("playersAdminOverlay", options);
 }
 
 // ── Load & render ─────────────────────────────────────────────────────────────

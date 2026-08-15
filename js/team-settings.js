@@ -380,6 +380,55 @@ function buildTeamSettingsSwapSummary(groups) {
   return `${formatTeamCountLabel(groups.length, "sub package")} | ${formatTeamCountLabel(assignedCount, "assigned slot")} | ${formatTeamCountLabel(backupCount, "backup")} | ${names}`;
 }
 
+// Settings is also the first screen a coach reaches after opening the admin
+// surface. Treat an imported playbook, a configured roster, team metadata, or
+// a saved practice as a live workspace. A truly blank device still leads with
+// CSV import, while a real team lands on the work coaches return to every day.
+function getTeamWorkspaceState(roster = [], packages = [], swapGroups = []) {
+  const playbookCount = typeof plays !== "undefined" && Array.isArray(plays) ? plays.length : 0;
+  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  const savedTeamName = String(storageManager.get(STORAGE_KEYS.TEAM_NAME, "") || "").trim();
+  const motd = String(storageManager.get(STORAGE_KEYS.MOTD, "") || "").trim();
+  const branding = storageManager.get(STORAGE_KEYS.PLAYER_PORTAL_BRANDING, {});
+  const hasBranding = Boolean(
+    branding && typeof branding === "object" &&
+    [branding.welcomeMessage, branding.accent, branding.logoUrl].some((value) => String(value || "").trim()),
+  );
+  const hasSavedScripts = Array.isArray(savedScripts) && savedScripts.length > 0;
+  const hasTeamName = Boolean(savedTeamName && savedTeamName !== "My Team Football");
+  const populated = Boolean(
+    playbookCount || roster.length || packages.length || swapGroups.length ||
+    hasSavedScripts || hasTeamName || motd || hasBranding,
+  );
+  return populated ? "populated" : "empty";
+}
+
+function getTeamSettingsDisplaySurface(settingsState, workspaceState) {
+  // `home` was the old implicit initial state and has no direct navigation
+  // target. Preserve deliberate surface choices, but upgrade that legacy
+  // landing to Roster once a real team workspace exists.
+  if (settingsState?.surface === "home" && workspaceState === "populated") return "roster";
+  return settingsState?.surface || "home";
+}
+
+function buildTeamSettingsReadinessSummary(roster = [], packages = [], swapGroups = []) {
+  const workspaceState = getTeamWorkspaceState(roster, packages, swapGroups);
+  if (workspaceState === "empty") {
+    return "Start by importing a playbook. Team Ops will be ready for your roster and packages next.";
+  }
+
+  const health = getTeamRosterHealth(roster);
+  const parts = [
+    formatTeamCountLabel(health.total, "player"),
+    `${health.linked}/${health.total} linked`,
+    formatTeamCountLabel(packages.length, "personnel package"),
+  ];
+  if (swapGroups.length) parts.push(formatTeamCountLabel(swapGroups.length, "preset lineup"));
+  if (health.unlinked.length) parts.push(`${health.unlinked.length} account link${health.unlinked.length === 1 ? "" : "s"} needed`);
+  if (health.missingPosition.length) parts.push(`${health.missingPosition.length} position${health.missingPosition.length === 1 ? "" : "s"} needed`);
+  return parts.join(" · ");
+}
+
 function applyTeamSettingsCollapsedState() {
   const state = getTeamSettingsCollapsedState();
   document
@@ -470,16 +519,6 @@ function syncTeamSettingsDependents() {
 
 function renderTeamSettings() {
   teamSettingsViewState = captureTeamSettingsViewState();
-  const shell = document.querySelector(".team-settings-shell");
-  const settingsState = getTeamSettingsCollapsedState();
-  if (shell) {
-    shell.dataset.teamSettingsSurface = settingsState.surface;
-    shell.querySelectorAll("[data-action=\"setTeamSettingsSurface\"]").forEach((button) => {
-      const active = button.dataset.arg === settingsState.surface;
-      button.classList.toggle("is-active", active);
-      button.setAttribute("aria-pressed", active ? "true" : "false");
-    });
-  }
   const rosterContainer = document.getElementById("teamRosterList");
   const packageContainer = document.getElementById("teamPersonnelPackages");
   const swapContainer = document.getElementById("teamSwapGroups");
@@ -488,9 +527,25 @@ function renderTeamSettings() {
   const roster = getTeamRoster();
   const packages = getTeamPersonnelPackages();
   const swapGroups = getTeamSwapGroups();
+  const workspaceState = getTeamWorkspaceState(roster, packages, swapGroups);
+  const settingsState = getTeamSettingsCollapsedState();
+  const activeSurface = getTeamSettingsDisplaySurface(settingsState, workspaceState);
+  const shell = document.querySelector(".team-settings-shell");
+  const settingsRoot = document.querySelector(".coach-grid-admin-settings");
+  if (settingsRoot) settingsRoot.dataset.teamWorkspaceState = workspaceState;
+  if (shell) {
+    shell.dataset.teamSettingsSurface = activeSurface;
+    shell.querySelectorAll("[data-action=\"setTeamSettingsSurface\"]").forEach((button) => {
+      const active = button.dataset.arg === activeSurface;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  }
   const rosterBadge = document.getElementById("teamRosterCountBadge");
   const packagesBadge = document.getElementById("teamPackagesCountBadge");
   const swapGroupsBadge = document.getElementById("teamSwapGroupsCountBadge");
+  const readinessSummary = document.getElementById("teamSettingsReadinessSummary");
+  const dataRecoveryNote = document.getElementById("adminSettingsDataRecoveryNote");
   const rosterHealth = document.getElementById("teamRosterHealth");
   const rosterSummary = document.getElementById("teamRosterSummary");
   const packagesSummary = document.getElementById("teamPackagesSummary");
@@ -524,6 +579,12 @@ function renderTeamSettings() {
   if (rosterHealth) rosterHealth.innerHTML = buildTeamRosterHealthMarkup(roster);
   if (packagesSummary) packagesSummary.textContent = buildTeamSettingsPackagesSummary(packages);
   if (swapGroupsSummary) swapGroupsSummary.textContent = buildTeamSettingsSwapSummary(swapGroups);
+  if (readinessSummary) readinessSummary.textContent = buildTeamSettingsReadinessSummary(roster, packages, swapGroups);
+  if (dataRecoveryNote) {
+    dataRecoveryNote.textContent = workspaceState === "empty"
+      ? "Start here"
+      : "Team Ops stays above";
+  }
   const renderAssignmentRow = (
     slots,
     assignments,

@@ -88,6 +88,15 @@ body.shell-tablet.is-staff-mobile-shell.is-landscape-screen .page-library-btn {
   display: inline-flex;
 }
 
+/* A roomy iPad coach workspace owns its own dense action bars. Keep fixed
+   Quick Tools out of that canvas: Help and Print remain in header More, while
+   page-specific work stays in the existing inline Actions/Library controls.
+   This removes a floating hit target from the lower-right work area instead
+   of merely moving it to another place it can cover live controls. */
+body.shell-tablet.is-staff-mobile-shell.is-landscape-screen #quickTools {
+  display: none;
+}
+
 /* Playbook toolbar: the 6-track grid wraps into two rows on tablet, leaving a
    big empty gap. Flow it as a single flex row (search absorbs the slack, the
    utility + action buttons sit right) so it reads as one clean toolbar. */

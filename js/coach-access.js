@@ -53,7 +53,7 @@ function isCoachAccessAdmin() {
   return typeof isAdminUser === "function" && isAdminUser();
 }
 
-function openCoachAccessManager() {
+function openCoachAccessManager(trigger) {
   if (!isCoachAccessAdmin()) {
     if (typeof showBlockedToast === "function") showBlockedToast();
     return;
@@ -66,11 +66,17 @@ function openCoachAccessManager() {
   coachAccessDrafts.clear();
   coachAccessSelectedId = "";
   if (typeof openLayer === "function") {
+    const panel = overlay.querySelector(".pa-panel");
+    const body = overlay.querySelector(".pa-body");
+    const closeButton = overlay.querySelector(".pa-close-btn");
     openLayer(overlay, {
       id: "coachAccessOverlay",
-      scrollElement: overlay.querySelector(".pa-panel") || overlay,
+      scrollElement: body || panel || overlay,
       blocking: true,
+      safeArea: true,
+      initialFocus: closeButton || panel || overlay,
       onEscape: () => closeCoachAccessManager(),
+      returnFocus: trigger instanceof HTMLElement ? trigger : undefined,
     });
   }
   loadCoachAccessAccounts();
@@ -81,10 +87,10 @@ function closeCoachAccessManager(options = {}) {
   if (!overlay) return;
   coachAccessLoadController?.abort();
   coachAccessLoadController = null;
+  if (typeof closeLayer === "function") closeLayer("coachAccessOverlay", options);
   overlay.classList.remove("visible");
   overlay.setAttribute("inert", "");
   overlay.setAttribute("aria-hidden", "true");
-  if (typeof closeLayer === "function") closeLayer("coachAccessOverlay", options);
 }
 
 async function loadCoachAccessAccounts() {

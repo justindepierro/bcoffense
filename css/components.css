@@ -4486,10 +4486,10 @@ body[data-auth-role="player"] .page-fab-cluster {
   display: none !important;
 }
 
-/* Share the tablet floating-control reservations from layout.css. Keep the
-   status dock at the edge, page actions in the middle slot, and Quick Tools in
-   the upper slot so their controls and the expanding Quick Tools menu never
-   compete for the same bottom-right target area. Phone rules remain unchanged. */
+/* Portrait staff tablets retain the thumb-reachable actions/utility stack.
+   Roomy landscape workspaces use their inline toolbar actions, header More,
+   and the left rail instead; a fixed utility tray there can cover live board
+   controls as the panel scrolls. */
 body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .page-fab-cluster {
   right: var(--tablet-floating-inline-edge);
   bottom: var(--tablet-page-fab-bottom);
@@ -4500,13 +4500,9 @@ body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .quick-tools {
   bottom: var(--tablet-quick-tools-bottom);
 }
 
-/* A landscape iPad in Split View can be only 744px wide. In that compact
-   staff workspace the essential page Actions FAB already owns the usable
-   lower-right slot, so a second fixed utility tray makes the corner feel
-   crowded and can steal its hit area. Keep Help in the header overflow at
-   this one profile; Print is already there and Script Display lives in Page
-   Actions. Phones, roomy tablets, desktop, and player study surfaces retain
-   their established utility treatment. */
+/* Compact staff tablets also reserve the corner for page Actions. Both
+   compact and roomy landscape workspaces surface Help in the header overflow;
+   Print is already there and Script Display lives in the page Actions path. */
 body.is-staff-mobile-shell[data-layout-profile="tablet-compact"] #quickTools {
   display: none;
 }
@@ -4515,19 +4511,116 @@ body.is-staff-mobile-shell[data-layout-profile="tablet-compact"] #quickTools {
   display: none;
 }
 
+/* The staff header menu becomes the dependable utility path on iPad. Give
+   every visible action a full touch-safe row instead of inheriting the
+   desktop dropdown's compact 32px button height. */
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell
+  .header-overflow-menu
+  > button {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 body.is-staff-mobile-shell[data-layout-profile="tablet-compact"]
   .header-overflow-menu
   button.header-overflow-help-item {
-  display: block;
+  display: flex;
+  align-items: center;
 }
 
-/* Landscape staff tablets intentionally replace the phone-style page-action
-   pills with inline toolbar actions. Reclaim that now-empty middle slot for
-   Quick Tools instead of leaving it above the live workbench, where it can
-   cover Call Sheet, Script, and board controls in a short iPad viewport. */
 body.shell-tablet.is-mobile-screen.is-staff-mobile-shell.is-landscape-screen
-  .quick-tools {
-  bottom: var(--tablet-page-fab-bottom);
+  .header-overflow-menu
+  button.header-overflow-help-item {
+  display: flex;
+  align-items: center;
+}
+
+/* ── Staff iPad account workbenches ───────────────────────────────────────
+   Player Accounts and Coach Access are operational coach tasks.  On a tablet
+   they use the shared LayerManager safe viewport, one `.pa-body` scroll owner,
+   and a persistent save affordance instead of inheriting a short desktop
+   popup.  Desktop, phone, and player portal surfaces keep their own density. */
+@media screen and (pointer: coarse) and (min-width: 744px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    .pa-overlay.app-layer-active {
+    height: var(--app-visual-viewport-height);
+    bottom: auto;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    .pa-overlay.app-layer-active
+    .pa-panel {
+    width: min(1120px, 100%);
+    max-height: var(--app-layer-usable-height);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    .pa-overlay.app-layer-active
+    .pa-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    .pa-close-btn {
+    width: var(--tap-min);
+    height: var(--tap-min);
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+    flex: 0 0 var(--tap-min);
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(.pa-auto-link, .pa-action-btn, .pa-row-actions .btn, .pa-invite-form .btn,
+      .pa-roster-focus .btn, .coach-access-list-head .btn, .coach-access-save .btn) {
+    min-height: var(--tap-min);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(.pa-roster-link select, .pa-input) {
+    min-height: var(--tap-min);
+    height: var(--tap-min);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    .coach-access-layout {
+    grid-template-columns: minmax(240px, 0.72fr) minmax(0, 1.28fr);
+    align-items: start;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    :is(.coach-access-person, .coach-access-toggle) {
+    min-height: var(--tap-min);
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    .coach-access-toggle input {
+    width: 22px;
+    height: 22px;
+    margin-top: 0;
+    flex: 0 0 22px;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell:not([data-auth-role="player"])
+    .coach-access-save {
+    position: sticky;
+    bottom: calc(var(--space-md) * -1);
+    z-index: 1;
+    margin: var(--space-sm) calc(var(--space-sm) * -1) calc(var(--space-md) * -1);
+    padding: var(--space-sm) var(--space-md);
+    border-top: 1px solid var(--color-border);
+    background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+    box-shadow: 0 -6px 14px rgb(13 24 48 / 8%);
+  }
 }
 
 /* Desktop header Library button — warning-orange to stand out (dark text for contrast) */

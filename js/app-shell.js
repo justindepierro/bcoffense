@@ -690,6 +690,7 @@ function syncMobileShellState() {
   const activeTab =
     body.dataset.activeTab ||
     (typeof currentActiveTab !== "undefined" ? currentActiveTab : "");
+  const workspaceSurface = body.dataset.workspaceSurface || "app";
   const previousShellSize = body.dataset.shellSize || "";
   const previousShellOrientation = body.dataset.shellOrientation || "";
   const layoutProfile = shellTablet
@@ -729,6 +730,7 @@ function syncMobileShellState() {
     isStudyPortal ? "study" : "workspace",
     playerBottomNavActive ? "study-bottom-nav" : "study-top-nav",
     activeTab,
+    workspaceSurface,
     isMobile ? "mobile" : "desktop",
     shellSize,
     appDevice,
@@ -839,13 +841,21 @@ function syncMobileShellState() {
     Boolean(authRole) &&
     !isStudyPortal &&
     authRole !== "locked";
+  // The roomy coach workspace deliberately has no fixed Quick Tools tray.
+  // If the device rotated from a portrait/compact profile while it was open,
+  // reset its inert/expanded state before CSS removes it from the workbench.
+  if (staffTabletPanelShell && typeof closeQuickToolsMenu === "function") {
+    closeQuickToolsMenu();
+  }
   body.dataset.scrollOwner = body.classList.contains("app-layer-locked")
     ? "layer"
-    : staffTabletPanelShell
-      ? "panel"
-    : isMobile
-      ? "document"
-      : "panel";
+    : workspaceSurface === "upload"
+      ? "workspace"
+      : staffTabletPanelShell
+        ? "panel"
+      : isMobile
+        ? "document"
+        : "panel";
   if (body.dataset.scrollOwner === "panel") {
     queueDesktopDocumentScrollRepair("shell sync");
   }
@@ -1014,11 +1024,50 @@ function observeMobileShellChrome() {
 syncMobileShellState();
 
 // ── iPad app rail (left icon sidebar) runtime ──────────────────────────────
-// The rail buttons route through the standard showTab() nav; these helpers only
-// drive the "More" popover and let a selection close it.
+// The rail buttons route through the standard showTab() nav. Keep the active
+// section explicit even when the current destination lives inside More: the
+// closed rail and the opened sheet both need to tell the coach where they are.
+function syncIpadRailOrientation() {
+  const rail = document.getElementById("ipadRail");
+  const moreTrigger = rail?.querySelector(".ipad-rail-more-btn");
+  const activeTab = document.body?.dataset.activeTab || "";
+  if (!rail || !moreTrigger) return;
+
+  rail.querySelectorAll("[data-rail-tab]").forEach((button) => {
+    const isActive = button.dataset.railTab === activeTab;
+    button.classList.toggle("is-active", isActive);
+    if (isActive) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
+
+  const moreItems = Array.from(
+    document.querySelectorAll("#ipadRailMore [data-rail-more-tab]"),
+  );
+  const isMoreDestination = moreItems.some(
+    (button) => button.dataset.railMoreTab === activeTab,
+  );
+  moreTrigger.classList.toggle("is-active", isMoreDestination);
+  if (isMoreDestination) moreTrigger.dataset.activeDestination = activeTab;
+  else delete moreTrigger.dataset.activeDestination;
+  moreTrigger.setAttribute(
+    "aria-label",
+    isMoreDestination
+      ? `More destinations — current: ${moreItems.find((button) => button.dataset.railMoreTab === activeTab)?.textContent?.trim() || activeTab}`
+      : "More destinations",
+  );
+
+  moreItems.forEach((button) => {
+    const isActive = button.dataset.railMoreTab === activeTab;
+    button.classList.toggle("is-active", isActive);
+    if (isActive) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
+}
+
 function toggleIpadRailMore() {
   const el = document.getElementById("ipadRailMore");
   if (!el) return;
+  syncIpadRailOrientation();
   const open = el.classList.toggle("visible");
   document
     .querySelector(".ipad-rail-more-btn")
@@ -1034,6 +1083,15 @@ function ipadRailGo(tab) {
   if (typeof showTab === "function") showTab(tab);
   closeIpadRailMore();
 }
+
+document.addEventListener("bc:tabchange", () => {
+  syncIpadRailOrientation();
+  closeIpadRailMore();
+});
+window.addEventListener("bc:layoutchange", syncIpadRailOrientation);
+document.addEventListener("DOMContentLoaded", () => {
+  requestAnimationFrame(syncIpadRailOrientation);
+});
 
 // The installed app has no address bar, so this is the one-tap "restart":
 // startup re-pulls the latest team workspace (playbook, scripts, media).

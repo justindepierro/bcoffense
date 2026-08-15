@@ -40,25 +40,25 @@
     href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Oswald:wght@500;600;700&display=swap"
     rel="stylesheet" />
   <!-- Modular CSS: base → layout → components → features → print → responsive -->
-  <link rel="stylesheet" href="css/base.css?v=1697" />
-  <link rel="stylesheet" href="css/layout.css?v=1697" />
-  <link rel="stylesheet" href="css/components.css?v=1697" />
-  <link rel="stylesheet" href="css/playbook.css?v=1697" />
-  <link rel="stylesheet" href="css/discussion.css?v=1697" />
-  <link rel="stylesheet" href="css/signals.css?v=1697" />
-  <link rel="stylesheet" href="css/script.css?v=1697" />
-  <link rel="stylesheet" href="css/script-quiz.css?v=1697" />
-  <link rel="stylesheet" href="css/play-presentation.css?v=1697" />
-  <link rel="stylesheet" href="css/wristband.css?v=1697" />
-  <link rel="stylesheet" href="css/callsheet.css?v=1697" />
-  <link rel="stylesheet" href="css/tendencies.css?v=1697" />
-  <link rel="stylesheet" href="css/offense-builder.css?v=1697" />
-  <link rel="stylesheet" href="css/dashboard.css?v=1697" />
-  <link rel="stylesheet" href="css/gameplan.css?v=1697" />
-  <link rel="stylesheet" href="css/installation.css?v=1697" />
-  <link rel="stylesheet" href="css/identity.css?v=1697" />
-  <link rel="stylesheet" href="css/print.css?v=1697" />
-  <link rel="stylesheet" href="css/responsive.css?v=1697" />
+  <link rel="stylesheet" href="css/base.css?v=1698" />
+  <link rel="stylesheet" href="css/layout.css?v=1698" />
+  <link rel="stylesheet" href="css/components.css?v=1698" />
+  <link rel="stylesheet" href="css/playbook.css?v=1698" />
+  <link rel="stylesheet" href="css/discussion.css?v=1698" />
+  <link rel="stylesheet" href="css/signals.css?v=1698" />
+  <link rel="stylesheet" href="css/script.css?v=1698" />
+  <link rel="stylesheet" href="css/script-quiz.css?v=1698" />
+  <link rel="stylesheet" href="css/play-presentation.css?v=1698" />
+  <link rel="stylesheet" href="css/wristband.css?v=1698" />
+  <link rel="stylesheet" href="css/callsheet.css?v=1698" />
+  <link rel="stylesheet" href="css/tendencies.css?v=1698" />
+  <link rel="stylesheet" href="css/offense-builder.css?v=1698" />
+  <link rel="stylesheet" href="css/dashboard.css?v=1698" />
+  <link rel="stylesheet" href="css/gameplan.css?v=1698" />
+  <link rel="stylesheet" href="css/installation.css?v=1698" />
+  <link rel="stylesheet" href="css/identity.css?v=1698" />
+  <link rel="stylesheet" href="css/print.css?v=1698" />
+  <link rel="stylesheet" href="css/responsive.css?v=1698" />
 </head>
 
 <body class="app-booting">
@@ -261,77 +261,25 @@
       <button id="backToAppBtn" class="back-btn hidden" data-action="backToApp" data-testid="back-to-app">
         ← Back to Dashboard
       </button>
-      <section class="admin-settings-import" aria-labelledby="adminSettingsImportTitle">
-        <div>
-          <span class="admin-settings-kicker">Admin control center</span>
-          <h2 id="adminSettingsImportTitle">📁 Import playbook data</h2>
-          <p>Upload a CSV without headers to replace this device’s playbook.</p>
-        </div>
-        <div class="admin-settings-import-actions">
-          <input type="file" id="csvFile" accept=".csv" aria-label="Upload playbook CSV file"
-            data-onchange="handleFileUpload" data-pass="event" data-testid="csv-upload" />
-          <button class="btn btn-primary" data-action="triggerClick" data-target="csvFile">Choose CSV File</button>
-          <button class="btn btn-outline" data-action="showCSVTemplateModal">📋 CSV Template</button>
-          <span class="hint">or drag and drop a file here</span>
-        </div>
-      </section>
-
-      <div class="admin-settings-utility-grid">
-      <section class="backup-section" data-auth-player-hide="true">
-        <h3>💾 Backup & Restore</h3>
-        <p>
-          Export your playbook, scripts, and wristbands to a file for backup
-        </p>
-        <div class="backup-buttons">
-          <button class="btn btn-secondary" data-action="exportBackup" data-testid="export-backup">
-            ⬇️ Export Backup
-          </button>
-          <input type="file" id="backupFile" accept=".json" data-onchange="importBackup" data-pass="event"
-            class="hidden" />
-          <button class="btn btn-secondary" data-action="triggerClick" data-target="backupFile">
-            ⬆️ Import Backup
-          </button>
-        </div>
-        <p id="cloudSyncStatus" class="cloud-sync-status cloud-sync-status-muted">Not connected</p>
-        <p>
-          Backup includes your roster, personnel packages, sub packages, package-specific slot labels, depth charts, and
-          other saved team settings.
-        </p>
-      </section>
-      <section class="backup-section" data-auth-admin-only="true">
-        <h3>🛟 Admin tools &amp; recovery</h3>
-        <p>Only use these when something is missing, a device is behind, or you need to review an old local draft.</p>
-        <div class="backup-buttons">
-          <button class="btn btn-secondary" data-action="openRecoveryCenter" data-auth-admin-only="true">
-            Review old drafts
-          </button>
-          <button class="btn btn-secondary" data-action="openCloudSyncModal" data-auth-admin-only="true">
-            Advanced admin tools
-          </button>
-        </div>
-      </section>
-      </div>
-
       <section class="backup-section team-settings-section">
         <div class="team-settings-shell coach-grid-team-workspace">
           <div class="team-settings-hero">
             <div class="team-settings-hero-copy">
               <span class="team-settings-eyebrow">Team Ops</span>
               <h3>Team Workspace</h3>
-              <p>Choose one focused area at a time. Your roster, packages, portal, and recovery data remain in the same
-                team workspace and autosave as you work.</p>
+              <p>Set up the team your coaches and players use every day: identity, roster, personnel, and the player
+                portal all autosave here.</p>
             </div>
             <div class="team-settings-hero-notes">
-              <span class="team-settings-chip">Roster identity</span>
-              <span class="team-settings-chip">Portal account links</span>
+              <span class="team-settings-chip">Team identity</span>
+              <span class="team-settings-chip">Roster links</span>
               <span class="team-settings-chip">Package readiness</span>
-              <span class="team-settings-chip">Script-ready depth charts</span>
               <span id="teamSettingsSaveStatus" class="team-settings-chip team-settings-chip--status"
                 aria-live="polite">Autosave on</span>
             </div>
           </div>
 
-          <nav class="team-settings-surface-nav" aria-label="Team workspace areas">
+          <nav class="team-settings-surface-nav team-settings-surface-nav--primary" aria-label="Team workspace areas">
             <button type="button" class="team-settings-surface-nav__item" data-action="setTeamSettingsSurface" data-arg="identity">
               <span>🏷️</span><strong>Team identity</strong><small>Name &amp; print headers</small>
             </button>
@@ -339,24 +287,17 @@
               <span>👥</span><strong>Roster &amp; links</strong><small>Players, tags &amp; accounts</small>
             </button>
             <button type="button" class="team-settings-surface-nav__item" data-action="setTeamSettingsSurface" data-arg="personnel">
-              <span>📋</span><strong>Personnel</strong><small>Packages &amp; sub packages</small>
+              <span>📋</span><strong>Personnel</strong><small>Packages &amp; script readiness</small>
             </button>
             <button type="button" class="team-settings-surface-nav__item" data-action="setTeamSettingsSurface" data-arg="portal">
               <span>📱</span><strong>Player portal</strong><small>Welcome &amp; branding</small>
             </button>
-            <button type="button" class="team-settings-surface-nav__item" data-action="openPlayersAdmin" data-auth-player-hide="true">
-              <span>🔗</span><strong>Player accounts</strong><small>Review account links</small>
-            </button>
-            <button type="button" class="team-settings-surface-nav__item" data-action="openCoachAccessManager" data-auth-admin-only="true">
-              <span>🧭</span><strong>Coach access</strong><small>View-only permissions</small>
-            </button>
-            <button type="button" class="team-settings-surface-nav__item" id="adminBootstrapTrigger" data-auth-admin-only="true">
-              <span>🔐</span><strong>Admin security</strong><small>Set up your personal admin login</small>
-            </button>
-            <button type="button" class="team-settings-surface-nav__item" data-action="openCloudSyncModal" data-auth-admin-only="true">
-              <span>🛟</span><strong>Admin &amp; recovery</strong><small>Draft review, device repair &amp; diagnostics</small>
-            </button>
           </nav>
+
+          <div class="team-settings-readiness" aria-live="polite">
+            <span class="team-settings-readiness__label">Team readiness</span>
+            <span id="teamSettingsReadinessSummary" class="team-settings-readiness__summary">Checking team setup…</span>
+          </div>
 
           <div class="team-settings-topbar">
             <div class="team-settings-name-card">
@@ -550,6 +491,78 @@
               </div>
             </div>
           </div>
+
+          <nav class="team-settings-surface-nav team-settings-surface-nav--support team-settings-surface-nav--after-workspace" aria-label="Team administration">
+            <button type="button" class="team-settings-surface-nav__item" data-action="openPlayersAdmin" data-auth-player-hide="true">
+              <span>🔗</span><strong>Player accounts</strong><small>Review account links</small>
+            </button>
+            <button type="button" class="team-settings-surface-nav__item" data-action="openCoachAccessManager" data-auth-admin-only="true">
+              <span>🧭</span><strong>Coach access</strong><small>View-only permissions</small>
+            </button>
+            <button type="button" class="team-settings-surface-nav__item" id="adminBootstrapTrigger" data-auth-admin-only="true">
+              <span>🔐</span><strong>Admin security</strong><small>Set up your personal admin login</small>
+            </button>
+            <button type="button" class="team-settings-surface-nav__item" data-action="openCloudSyncModal" data-auth-admin-only="true">
+              <span>🛟</span><strong>Admin &amp; recovery</strong><small>Draft review, device repair &amp; diagnostics</small>
+            </button>
+          </nav>
+        </div>
+      </section>
+
+      <section class="admin-settings-data-recovery" aria-labelledby="adminSettingsDataRecoveryTitle">
+        <header class="admin-settings-data-recovery__header">
+          <div>
+            <span class="admin-settings-kicker">Data &amp; recovery</span>
+            <h2 id="adminSettingsDataRecoveryTitle">Import, backup &amp; recovery</h2>
+            <p>Use these tools when you are starting a new workspace, moving it to a device, or recovering a saved draft.</p>
+          </div>
+          <span id="adminSettingsDataRecoveryNote" class="admin-settings-data-recovery__note">Team Ops stays above</span>
+        </header>
+
+        <section class="admin-settings-import" aria-labelledby="adminSettingsImportTitle">
+          <div>
+            <span class="admin-settings-kicker">Playbook import</span>
+            <h3 id="adminSettingsImportTitle">📁 Import playbook data</h3>
+            <p>Upload a CSV without headers to replace this device’s playbook.</p>
+          </div>
+          <div class="admin-settings-import-actions">
+            <input type="file" id="csvFile" accept=".csv" aria-label="Upload playbook CSV file"
+              data-onchange="handleFileUpload" data-pass="event" data-testid="csv-upload" />
+            <button class="btn btn-primary" data-action="triggerClick" data-target="csvFile">Choose CSV File</button>
+            <button class="btn btn-outline" data-action="showCSVTemplateModal">📋 CSV Template</button>
+            <span class="hint">or drag and drop a file here</span>
+          </div>
+        </section>
+
+        <div class="admin-settings-utility-grid">
+          <section class="backup-section" data-auth-player-hide="true">
+            <h3>💾 Backup &amp; Restore</h3>
+            <p>Export your playbook, scripts, and wristbands to a file for backup.</p>
+            <div class="backup-buttons">
+              <button class="btn btn-secondary" data-action="exportBackup" data-testid="export-backup">
+                ⬇️ Export Backup
+              </button>
+              <input type="file" id="backupFile" accept=".json" data-onchange="importBackup" data-pass="event"
+                class="hidden" />
+              <button class="btn btn-secondary" data-action="triggerClick" data-target="backupFile">
+                ⬆️ Import Backup
+              </button>
+            </div>
+            <p id="cloudSyncStatus" class="cloud-sync-status cloud-sync-status-muted">Not connected</p>
+            <p>Backup includes your roster, personnel packages, sub packages, package-specific slot labels, depth charts, and other saved team settings.</p>
+          </section>
+          <section class="backup-section" data-auth-admin-only="true">
+            <h3>🛟 Admin tools &amp; recovery</h3>
+            <p>Only use these when something is missing, a device is behind, or you need to review an old local draft.</p>
+            <div class="backup-buttons">
+              <button class="btn btn-secondary" data-action="openRecoveryCenter" data-auth-admin-only="true">
+                Review old drafts
+              </button>
+              <button class="btn btn-secondary" data-action="openCloudSyncModal" data-auth-admin-only="true">
+                Advanced admin tools
+              </button>
+            </div>
+          </section>
         </div>
       </section>
     </div>
@@ -563,6 +576,11 @@
   <!-- iPad app rail (coach, landscape) — primary destinations as an icon
        sidebar. Shown/hidden purely via CSS on the tablet app shell. -->
   <nav id="ipadRail" class="ipad-rail" aria-label="Primary navigation" data-auth-player-hide="true">
+    <button type="button" class="ipad-rail-btn" data-action="showTab" data-arg="dashboard" data-rail-tab="dashboard"
+      title="Dashboard">
+      <span class="ipad-rail-icon" aria-hidden="true">⌂</span>
+      <span class="ipad-rail-label">Home</span>
+    </button>
     <button type="button" class="ipad-rail-btn" data-action="showTab" data-arg="script" data-rail-tab="script"
       title="Practice Script">
       <span class="ipad-rail-icon" aria-hidden="true">📋</span>
@@ -583,11 +601,6 @@
       <span class="ipad-rail-icon" aria-hidden="true">📖</span>
       <span class="ipad-rail-label">Playbook</span>
     </button>
-    <button type="button" class="ipad-rail-btn" data-action="showTab" data-arg="wristband" data-rail-tab="wristband"
-      title="Wristband">
-      <span class="ipad-rail-icon" aria-hidden="true">⌚</span>
-      <span class="ipad-rail-label">Wrist</span>
-    </button>
     <span class="ipad-rail-spacer" aria-hidden="true"></span>
     <button type="button" class="ipad-rail-btn ipad-rail-more-btn" data-action="toggleIpadRailMore"
       aria-haspopup="menu" aria-expanded="false" title="More">
@@ -597,14 +610,15 @@
   </nav>
   <div class="ipad-rail-more-overlay" id="ipadRailMore" data-action="closeIpadRailMoreOverlay">
     <div class="ipad-rail-more-sheet" role="menu" aria-label="More destinations">
-      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="tendencies">🔎 Opponent Scout</button>
-      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="signals">📡 Signals</button>
-      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="quiz">🧩 Quiz</button>
-      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="dashboard">📊 Dashboard</button>
+      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="wristband" data-rail-more-tab="wristband">⌚ Wristband</button>
       <div class="ipad-rail-more-divider"></div>
-      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="installation">📦 Installation</button>
-      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="identity">🧭 Identity</button>
-      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="offensebuilder">🧠 Offense Builder</button>
+      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="tendencies" data-rail-more-tab="tendencies">🔎 Opponent Scout</button>
+      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="signals" data-rail-more-tab="signals">📡 Signals</button>
+      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="quiz" data-rail-more-tab="quiz">🧩 Quiz</button>
+      <div class="ipad-rail-more-divider"></div>
+      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="installation" data-rail-more-tab="installation">📦 Installation</button>
+      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="identity" data-rail-more-tab="identity">🧭 Identity</button>
+      <button type="button" role="menuitem" data-action="ipadRailGo" data-arg="offensebuilder" data-rail-more-tab="offensebuilder">🧠 Offense Builder</button>
     </div>
   </div>
   <div id="mainApp" class="hidden" role="main">
@@ -4476,130 +4490,130 @@
   </div>
 
   <!-- JavaScript Files -->
-  <script defer src="js/utils.js?v=1697"></script>
-  <script defer src="js/app-diagnostics.js?v=1697"></script>
-  <script defer src="js/perf-monitor.js?v=1697"></script>
-  <script defer src="js/feature-loader.js?v=1697"></script>
-  <script defer src="js/startup-orchestrator.js?v=1697"></script>
-  <script defer src="js/history.js?v=1697"></script>
-  <script defer src="js/dom-helpers.js?v=1697"></script>
-  <script defer src="js/lz-string.min.js?v=1697"></script>
-  <script defer src="js/storage.js?v=1697"></script>
-  <script defer src="js/storage-ui.js?v=1697"></script>
-  <script defer src="js/workspace-sync.js?v=1697"></script>
-  <script defer src="js/media-upload-outbox.js?v=1697"></script>
-  <script defer src="js/play-images.js?v=1697"></script>
-  <script defer src="js/cloud-sync.js?v=1697"></script>
-  <script defer src="js/staged-restore.js?v=1697"></script>
-  <script defer src="js/auth.js?v=1697"></script>
-  <script defer src="js/play-clips.js?v=1697"></script>
-  <script defer src="js/signals.js?v=1697"></script>
-  <script defer src="js/vision.js?v=1697"></script>
-  <script defer src="js/team-settings.js?v=1697"></script>
-  <script defer src="js/players-admin.js?v=1697"></script>
-  <script defer src="js/coach-access.js?v=1697"></script>
-  <script defer src="js/discussion-outbox.js?v=1697"></script>
-  <script defer src="js/play-discussion.js?v=1697"></script>
-  <script defer src="js/discussion-media.js?v=1697"></script>
-  <script defer src="js/playbook.js?v=1697"></script>
-  <script defer src="js/playbook-collections.js?v=1697"></script>
-  <script defer src="js/playbook-editor.js?v=1697"></script>
-  <script defer src="js/playbook-import.js?v=1697"></script>
-  <script defer src="js/playbook-export.js?v=1697"></script>
-  <script defer src="js/playbook-chrome.js?v=1697"></script>
-  <script defer src="js/playbook-state.js?v=1697"></script>
-  <script defer src="js/playbook-filters.js?v=1697"></script>
-  <script defer src="js/playbook-navigation.js?v=1697"></script>
-  <script defer src="js/playbook-actions.js?v=1697"></script>
-  <script defer src="js/playbook-render.js?v=1697"></script>
-  <script defer src="js/script-state.js?v=1697"></script>
-  <script defer src="js/script-shared.js?v=1697"></script>
-  <script defer src="js/script-players.js?v=1697"></script>
-  <script defer src="js/script-display-options.js?v=1697"></script>
-  <script defer src="js/play-readiness.js?v=1697"></script>
-  <script defer src="js/script-add.js?v=1697"></script>
-  <script defer src="js/script-sort.js?v=1697"></script>
-  <script defer src="js/script-export.js?v=1697"></script>
-  <script defer src="js/script-available.js?v=1697"></script>
-  <script defer src="js/script-selection.js?v=1697"></script>
-  <script defer src="js/script-timeline.js?v=1697"></script>
-  <script defer src="js/script-render.js?v=1697"></script>
-  <script defer src="js/script-health.js?v=1697"></script>
-  <script defer src="js/script-periods.js?v=1697"></script>
-  <script defer src="js/script-period-sync.js?v=1697"></script>
-  <script defer src="js/script-smart.js?v=1697"></script>
-  <script defer src="js/script-storage.js?v=1697"></script>
-  <script defer src="js/script-player.js?v=1697"></script>
-  <script defer src="js/script-integrations.js?v=1697"></script>
-  <script defer src="js/play-presentation.js?v=1697"></script>
-  <script defer src="js/wristband.js?v=1697"></script>
-  <script defer src="js/wristband-library.js?v=1697"></script>
-  <script defer src="js/wristband-render.js?v=1697"></script>
-  <script defer src="js/wristband-cards.js?v=1697"></script>
-  <script defer src="js/wristband-export.js?v=1697"></script>
-  <script defer src="js/wristband-chrome.js?v=1697"></script>
-  <script defer src="js/wristband-logo.js?v=1697"></script>
-  <script defer src="js/wristband-search.js?v=1697"></script>
-  <script defer src="js/wristband-modals.js?v=1697"></script>
-  <script defer src="js/wristband-cell-popup.js?v=1697"></script>
-  <script defer src="js/wristband-cell-actions.js?v=1697"></script>
-  <script defer src="js/wristband-sort.js?v=1697"></script>
-  <script defer src="js/wristband-storage.js?v=1697"></script>
-  <script defer src="js/wristband-runtime.js?v=1697"></script>
-  <script defer src="js/callsheet-render.js?v=1697"></script>
-  <script defer src="js/callsheet.js?v=1697"></script>
-  <script defer src="js/callsheet-print.js?v=1697"></script>
-  <script defer src="js/callsheet-sort.js?v=1697"></script>
-  <script defer src="js/callsheet-filters.js?v=1697"></script>
-  <script defer src="js/callsheet-smart.js?v=1697"></script>
-  <script defer src="js/callsheet-export.js?v=1697"></script>
-  <script defer src="js/callsheet-display.js?v=1697"></script>
-  <script defer src="js/callsheet-categories.js?v=1697"></script>
-  <script defer src="js/callsheet-metadata.js?v=1697"></script>
-  <script defer src="js/callsheet-layout.js?v=1697"></script>
-  <script defer src="js/callsheet-templates.js?v=1697"></script>
-  <script defer src="js/callsheet-picker-runtime.js?v=1697"></script>
-  <script defer src="js/callsheet-index-cards.js?v=1697"></script>
-  <script defer src="js/callsheet-gameplan-drawer.js?v=1697"></script>
-  <script defer src="js/constraints.js?v=1697"></script>
-  <script defer src="js/constraints-ui.js?v=1697"></script>
-  <script defer src="js/script-vision.js?v=1697"></script>
-  <script defer src="js/tendencies-render.js?v=1697"></script>
-  <script defer src="js/tendencies.js?v=1697"></script>
-  <script defer src="js/tendencies-print.js?v=1697"></script>
-  <script defer src="js/installation-render.js?v=1697"></script>
-  <script defer src="js/installation.js?v=1697"></script>
-  <script defer src="js/installation-print.js?v=1697"></script>
-  <script defer src="js/identity.js?v=1697"></script>
-  <script defer src="js/offensebuilder.js?v=1697"></script>
-  <script defer src="js/help.js?v=1697"></script>
-  <script defer src="js/dashboard-render.js?v=1697"></script>
-  <script defer src="js/dashboard.js?v=1697"></script>
-  <script defer src="js/gameplan.js?v=1697"></script>
-  <script defer src="js/gameplan-render.js?v=1697"></script>
-  <script defer src="js/gameplan-dnd.js?v=1697"></script>
-  <script defer src="js/gameplan-actions.js?v=1697"></script>
-  <script defer src="js/gameplan-smart.js?v=1697"></script>
-  <script defer src="js/gameplan-health.js?v=1697"></script>
-  <script defer src="js/gameplan-index-cards.js?v=1697"></script>
-  <script defer src="js/gameplan-integrations.js?v=1697"></script>
-  <script defer src="js/gameplan-snapshots.js?v=1697"></script>
-  <script defer src="js/script-events.js?v=1697"></script>
-  <script defer src="js/anchored-menu.js?v=1697"></script>
-  <script defer src="js/app-events.js?v=1697"></script>
-  <script defer src="js/app-command.js?v=1697"></script>
-  <script defer src="js/page-actions.js?v=1697"></script>
-  <script defer src="js/app-notifications.js?v=1697"></script>
-  <script defer src="js/push-notifications.js?v=1697"></script>
-  <script defer src="js/player-portal.js?v=1697"></script>
-  <script defer src="js/dashboard-questions.js?v=1697"></script>
-  <script defer src="js/app-shell.js?v=1697"></script>
-  <script defer src="js/app-session.js?v=1697"></script>
-  <script defer src="js/app-navigation.js?v=1697"></script>
-  <script defer src="js/app-module-init.js?v=1697"></script>
-  <script defer src="js/app-bootstrap.js?v=1697"></script>
-  <script defer src="js/app-init.js?v=1697"></script>
-  <script defer src="js/app.js?v=1697"></script>
+  <script defer src="js/utils.js?v=1698"></script>
+  <script defer src="js/app-diagnostics.js?v=1698"></script>
+  <script defer src="js/perf-monitor.js?v=1698"></script>
+  <script defer src="js/feature-loader.js?v=1698"></script>
+  <script defer src="js/startup-orchestrator.js?v=1698"></script>
+  <script defer src="js/history.js?v=1698"></script>
+  <script defer src="js/dom-helpers.js?v=1698"></script>
+  <script defer src="js/lz-string.min.js?v=1698"></script>
+  <script defer src="js/storage.js?v=1698"></script>
+  <script defer src="js/storage-ui.js?v=1698"></script>
+  <script defer src="js/workspace-sync.js?v=1698"></script>
+  <script defer src="js/media-upload-outbox.js?v=1698"></script>
+  <script defer src="js/play-images.js?v=1698"></script>
+  <script defer src="js/cloud-sync.js?v=1698"></script>
+  <script defer src="js/staged-restore.js?v=1698"></script>
+  <script defer src="js/auth.js?v=1698"></script>
+  <script defer src="js/play-clips.js?v=1698"></script>
+  <script defer src="js/signals.js?v=1698"></script>
+  <script defer src="js/vision.js?v=1698"></script>
+  <script defer src="js/team-settings.js?v=1698"></script>
+  <script defer src="js/players-admin.js?v=1698"></script>
+  <script defer src="js/coach-access.js?v=1698"></script>
+  <script defer src="js/discussion-outbox.js?v=1698"></script>
+  <script defer src="js/play-discussion.js?v=1698"></script>
+  <script defer src="js/discussion-media.js?v=1698"></script>
+  <script defer src="js/playbook.js?v=1698"></script>
+  <script defer src="js/playbook-collections.js?v=1698"></script>
+  <script defer src="js/playbook-editor.js?v=1698"></script>
+  <script defer src="js/playbook-import.js?v=1698"></script>
+  <script defer src="js/playbook-export.js?v=1698"></script>
+  <script defer src="js/playbook-chrome.js?v=1698"></script>
+  <script defer src="js/playbook-state.js?v=1698"></script>
+  <script defer src="js/playbook-filters.js?v=1698"></script>
+  <script defer src="js/playbook-navigation.js?v=1698"></script>
+  <script defer src="js/playbook-actions.js?v=1698"></script>
+  <script defer src="js/playbook-render.js?v=1698"></script>
+  <script defer src="js/script-state.js?v=1698"></script>
+  <script defer src="js/script-shared.js?v=1698"></script>
+  <script defer src="js/script-players.js?v=1698"></script>
+  <script defer src="js/script-display-options.js?v=1698"></script>
+  <script defer src="js/play-readiness.js?v=1698"></script>
+  <script defer src="js/script-add.js?v=1698"></script>
+  <script defer src="js/script-sort.js?v=1698"></script>
+  <script defer src="js/script-export.js?v=1698"></script>
+  <script defer src="js/script-available.js?v=1698"></script>
+  <script defer src="js/script-selection.js?v=1698"></script>
+  <script defer src="js/script-timeline.js?v=1698"></script>
+  <script defer src="js/script-render.js?v=1698"></script>
+  <script defer src="js/script-health.js?v=1698"></script>
+  <script defer src="js/script-periods.js?v=1698"></script>
+  <script defer src="js/script-period-sync.js?v=1698"></script>
+  <script defer src="js/script-smart.js?v=1698"></script>
+  <script defer src="js/script-storage.js?v=1698"></script>
+  <script defer src="js/script-player.js?v=1698"></script>
+  <script defer src="js/script-integrations.js?v=1698"></script>
+  <script defer src="js/play-presentation.js?v=1698"></script>
+  <script defer src="js/wristband.js?v=1698"></script>
+  <script defer src="js/wristband-library.js?v=1698"></script>
+  <script defer src="js/wristband-render.js?v=1698"></script>
+  <script defer src="js/wristband-cards.js?v=1698"></script>
+  <script defer src="js/wristband-export.js?v=1698"></script>
+  <script defer src="js/wristband-chrome.js?v=1698"></script>
+  <script defer src="js/wristband-logo.js?v=1698"></script>
+  <script defer src="js/wristband-search.js?v=1698"></script>
+  <script defer src="js/wristband-modals.js?v=1698"></script>
+  <script defer src="js/wristband-cell-popup.js?v=1698"></script>
+  <script defer src="js/wristband-cell-actions.js?v=1698"></script>
+  <script defer src="js/wristband-sort.js?v=1698"></script>
+  <script defer src="js/wristband-storage.js?v=1698"></script>
+  <script defer src="js/wristband-runtime.js?v=1698"></script>
+  <script defer src="js/callsheet-render.js?v=1698"></script>
+  <script defer src="js/callsheet.js?v=1698"></script>
+  <script defer src="js/callsheet-print.js?v=1698"></script>
+  <script defer src="js/callsheet-sort.js?v=1698"></script>
+  <script defer src="js/callsheet-filters.js?v=1698"></script>
+  <script defer src="js/callsheet-smart.js?v=1698"></script>
+  <script defer src="js/callsheet-export.js?v=1698"></script>
+  <script defer src="js/callsheet-display.js?v=1698"></script>
+  <script defer src="js/callsheet-categories.js?v=1698"></script>
+  <script defer src="js/callsheet-metadata.js?v=1698"></script>
+  <script defer src="js/callsheet-layout.js?v=1698"></script>
+  <script defer src="js/callsheet-templates.js?v=1698"></script>
+  <script defer src="js/callsheet-picker-runtime.js?v=1698"></script>
+  <script defer src="js/callsheet-index-cards.js?v=1698"></script>
+  <script defer src="js/callsheet-gameplan-drawer.js?v=1698"></script>
+  <script defer src="js/constraints.js?v=1698"></script>
+  <script defer src="js/constraints-ui.js?v=1698"></script>
+  <script defer src="js/script-vision.js?v=1698"></script>
+  <script defer src="js/tendencies-render.js?v=1698"></script>
+  <script defer src="js/tendencies.js?v=1698"></script>
+  <script defer src="js/tendencies-print.js?v=1698"></script>
+  <script defer src="js/installation-render.js?v=1698"></script>
+  <script defer src="js/installation.js?v=1698"></script>
+  <script defer src="js/installation-print.js?v=1698"></script>
+  <script defer src="js/identity.js?v=1698"></script>
+  <script defer src="js/offensebuilder.js?v=1698"></script>
+  <script defer src="js/help.js?v=1698"></script>
+  <script defer src="js/dashboard-render.js?v=1698"></script>
+  <script defer src="js/dashboard.js?v=1698"></script>
+  <script defer src="js/gameplan.js?v=1698"></script>
+  <script defer src="js/gameplan-render.js?v=1698"></script>
+  <script defer src="js/gameplan-dnd.js?v=1698"></script>
+  <script defer src="js/gameplan-actions.js?v=1698"></script>
+  <script defer src="js/gameplan-smart.js?v=1698"></script>
+  <script defer src="js/gameplan-health.js?v=1698"></script>
+  <script defer src="js/gameplan-index-cards.js?v=1698"></script>
+  <script defer src="js/gameplan-integrations.js?v=1698"></script>
+  <script defer src="js/gameplan-snapshots.js?v=1698"></script>
+  <script defer src="js/script-events.js?v=1698"></script>
+  <script defer src="js/anchored-menu.js?v=1698"></script>
+  <script defer src="js/app-events.js?v=1698"></script>
+  <script defer src="js/app-command.js?v=1698"></script>
+  <script defer src="js/page-actions.js?v=1698"></script>
+  <script defer src="js/app-notifications.js?v=1698"></script>
+  <script defer src="js/push-notifications.js?v=1698"></script>
+  <script defer src="js/player-portal.js?v=1698"></script>
+  <script defer src="js/dashboard-questions.js?v=1698"></script>
+  <script defer src="js/app-shell.js?v=1698"></script>
+  <script defer src="js/app-session.js?v=1698"></script>
+  <script defer src="js/app-navigation.js?v=1698"></script>
+  <script defer src="js/app-module-init.js?v=1698"></script>
+  <script defer src="js/app-bootstrap.js?v=1698"></script>
+  <script defer src="js/app-init.js?v=1698"></script>
+  <script defer src="js/app.js?v=1698"></script>
 
   <!-- Screen reader live region for toast announcements -->
   <div id="liveAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
@@ -4651,7 +4665,7 @@
   </div>
 
   <!-- Player Inbox overlay (coaches) -->
-  <div id="qInboxOverlay" class="q-inbox-overlay" data-action="closeQuestionInboxOverlay" aria-hidden="true" hidden>
+  <div id="qInboxOverlay" class="q-inbox-overlay" data-action="closeQuestionInboxOverlay" aria-hidden="true" inert hidden>
     <div class="q-inbox-panel" role="dialog" aria-modal="true" aria-label="Player Inbox">
       <header class="q-inbox-head">
         <h2 class="q-inbox-title">❓ Player Inbox</h2>

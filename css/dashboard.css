@@ -4245,6 +4245,20 @@ body.is-phone-screen[data-auth-role="player"] .player-home-card::before {
   transform: translateX(0);
 }
 
+/* Player Inbox is a real blocking coach work surface.  The shared layer
+   manager supplies safe-area padding, so the outer overlay stays fixed to the
+   measured visual viewport while only the named body below can scroll. */
+.q-inbox-overlay.app-layer-active {
+  height: var(--app-visual-viewport-height);
+  bottom: auto;
+  overflow: hidden;
+}
+.q-inbox-overlay.app-layer-active .q-inbox-panel {
+  height: 100%;
+  max-height: var(--app-layer-usable-height);
+  overflow: hidden;
+}
+
 .q-inbox-head {
   display: flex;
   align-items: center;
@@ -4260,8 +4274,11 @@ body.is-phone-screen[data-auth-role="player"] .player-home-card::before {
   margin: 0;
 }
 .q-inbox-close {
+  width: 44px;
+  height: 44px;
   min-width: 44px;
   min-height: 44px;
+  flex: 0 0 44px;
   background: none;
   border: none;
   color: var(--color-text-muted);
@@ -4342,6 +4359,21 @@ body.is-phone-screen[data-auth-role="player"] .player-home-card::before {
   border-radius: var(--radius-sm);
   background: var(--color-bg-input);
   color: var(--color-text);
+}
+
+/* The iPad Inbox is coach triage, not a compact desktop toolbar. */
+@media screen and (pointer: coarse) and (min-width: 744px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .q-inbox-panel {
+    width: min(640px, 100%);
+  }
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .q-inbox-select {
+    min-height: var(--tap-min);
+    height: var(--tap-min);
+  }
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .q-inbox-toolbar {
+    gap: var(--space-md);
+    padding: var(--space-md);
+  }
 }
 
 .q-inbox-body {

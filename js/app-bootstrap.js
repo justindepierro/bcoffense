@@ -1,5 +1,93 @@
 let mobileEmptyShellInitialized = false;
 let pendingRestoredStartupTab = "";
+let workspaceSurfaceReturnTab = "";
+
+function isRestorableWorkspaceSurfaceTab(tabName) {
+  const tab = String(tabName || "").trim();
+  if (!tab || !document.getElementById(tab)?.classList.contains("panel")) {
+    return false;
+  }
+  return typeof canAccessTab !== "function" || canAccessTab(tab);
+}
+
+function getCurrentWorkspaceSurfaceTab() {
+  const current =
+    typeof currentActiveTab !== "undefined"
+      ? currentActiveTab
+      : document.body?.dataset.activeTab || "";
+  return isRestorableWorkspaceSurfaceTab(current) ? current : "";
+}
+
+function rememberWorkspaceSurfaceReturnTab(tabName = "") {
+  const tab = isRestorableWorkspaceSurfaceTab(tabName)
+    ? String(tabName).trim()
+    : "";
+  if (!tab) return "";
+  workspaceSurfaceReturnTab = tab;
+  if (document.body) document.body.dataset.workspaceReturnTab = tab;
+  return tab;
+}
+
+function getWorkspaceSurfaceReturnTab() {
+  const remembered = workspaceSurfaceReturnTab || document.body?.dataset.workspaceReturnTab || "";
+  if (isRestorableWorkspaceSurfaceTab(remembered)) return remembered;
+
+  const fallback =
+    typeof getDefaultAuthTab === "function" ? getDefaultAuthTab() : "playbook";
+  return isRestorableWorkspaceSurfaceTab(fallback) ? fallback : "";
+}
+
+function clearWorkspaceSurfaceReturnTab() {
+  workspaceSurfaceReturnTab = "";
+  if (document.body) delete document.body.dataset.workspaceReturnTab;
+}
+
+// The startup restore harness intentionally supplies a very small DOM shim.
+// Keep the production accessibility state, while allowing that restore path to
+// exercise the surface transition without requiring every Element API.
+function setWorkspaceSurfaceBooleanAttribute(element, attribute, enabled) {
+  if (!element) return;
+  if (typeof element.toggleAttribute === "function") {
+    element.toggleAttribute(attribute, Boolean(enabled));
+    return;
+  }
+  if (enabled && typeof element.setAttribute === "function") {
+    element.setAttribute(attribute, "");
+  } else if (!enabled && typeof element.removeAttribute === "function") {
+    element.removeAttribute(attribute);
+  }
+}
+
+function setWorkspaceSurfaceAriaHidden(element, hidden) {
+  if (element && typeof element.setAttribute === "function") {
+    element.setAttribute("aria-hidden", hidden ? "true" : "false");
+  }
+}
+
+function getWorkspaceSurfaceTabLabel(tabName = "") {
+  const labels = {
+    playbook: "Playbook",
+    signals: "Signals",
+    script: "Practice Script",
+    wristband: "Wristband",
+    tendencies: "Opponent Scout",
+    gameplan: "Game Plan",
+    callsheet: "Call Sheet",
+    installation: "Installation",
+    identity: "Offensive Identity",
+    offensebuilder: "Offense Builder",
+    dashboard: "Dashboard",
+    quiz: "Quiz",
+  };
+  return labels[tabName] || "workspace";
+}
+
+function closeWorkspaceSurfaceControls() {
+  if (typeof closeIpadRailMore === "function") closeIpadRailMore();
+  if (typeof closeQuickToolsMenu === "function") closeQuickToolsMenu();
+  if (typeof closeGameplanDrawer === "function") closeGameplanDrawer();
+  if (typeof closePageActions === "function") closePageActions();
+}
 
 function isMobileStartupShell() {
   if (document.body?.classList.contains("is-mobile-screen")) return true;
@@ -27,14 +115,30 @@ function setWorkspaceSurface(surface, opts = {}) {
   if (!uploadSection || !mainApp) return;
 
   const showApp = surface === "app";
+  const wasUploadSurface = document.body?.dataset.workspaceSurface === "upload";
+  if (!showApp && !wasUploadSurface) {
+    const returnTab = opts.returnTab || getCurrentWorkspaceSurfaceTab();
+    rememberWorkspaceSurfaceReturnTab(returnTab);
+    closeWorkspaceSurfaceControls();
+    uploadSection.scrollTop = 0;
+  }
+
   uploadSection.classList.toggle("hidden", showApp);
   mainApp.classList.toggle("hidden", !showApp);
+  setWorkspaceSurfaceBooleanAttribute(uploadSection, "inert", showApp);
+  setWorkspaceSurfaceBooleanAttribute(mainApp, "inert", !showApp);
+  setWorkspaceSurfaceAriaHidden(uploadSection, showApp);
+  setWorkspaceSurfaceAriaHidden(mainApp, !showApp);
   document.body.dataset.workspaceSurface = showApp ? "app" : "upload";
 
   const backBtn = document.getElementById("backToAppBtn");
   if (backBtn) {
     const canBackToEmptyShell = canReturnToEmptyWorkspaceShell() && showApp === false;
     backBtn.classList.toggle("hidden", !(plays.length > 0 || canBackToEmptyShell));
+    if (!showApp) {
+      const returnTab = getWorkspaceSurfaceReturnTab();
+      backBtn.textContent = `← Back to ${getWorkspaceSurfaceTabLabel(returnTab)}`;
+    }
   }
 
   if (showApp && opts.initModules) {
@@ -42,6 +146,10 @@ function setWorkspaceSurface(surface, opts = {}) {
       initAllModules();
       mobileEmptyShellInitialized = plays.length === 0;
     }
+  }
+
+  if (showApp && opts.clearReturnTab !== false) {
+    clearWorkspaceSurfaceReturnTab();
   }
 
   if (typeof queueMobileShellMeasuredSync === "function") {

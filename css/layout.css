@@ -852,6 +852,47 @@ body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tab {
     top: 0;
     flex: 0 0 auto;
   }
+
+  /* Admin Settings is a first-class workspace, not a panel layered over the
+     last coach route. Once the app surface yields to it, reclaim the rail
+     gutter and let this one section own the remaining vertical canvas. */
+  body.app-ready.shell-tablet.is-landscape-screen.is-staff-mobile-shell[data-workspace-surface="upload"] {
+    padding-left: 0;
+  }
+
+  body.app-ready.shell-tablet.is-landscape-screen.is-staff-mobile-shell[data-workspace-surface="upload"]
+    #uploadSection {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+  }
+}
+
+/* The Settings surface keeps the global header, but no prior workspace chrome
+   remains visible or tappable behind it. This also covers controls created
+   after the surface opens, such as the shared workspace-sync status dock. */
+body[data-workspace-surface="upload"] #ipadRail,
+body[data-workspace-surface="upload"] #ipadRailMore,
+body[data-workspace-surface="upload"] #pageFabCluster,
+body[data-workspace-surface="upload"] #mobileCoachDock,
+body[data-workspace-surface="upload"] #mobileCoachLockBanner,
+body[data-workspace-surface="upload"] #gpDrawerToggleBtn,
+body[data-workspace-surface="upload"] #gpDrawer,
+body[data-workspace-surface="upload"] #quickTools,
+body[data-workspace-surface="upload"] #workspaceSyncDock {
+  display: none !important;
+}
+
+/* A few legacy workspace panels are DOM siblings of #mainApp. They still
+   carry the common `.panel.active` display rule, so hiding #mainApp alone
+   leaves the last route consuming the lower part of the iPad flex shell.
+   Settings owns this surface; every application panel is suppressed until
+   the coach returns. */
+body[data-workspace-surface="upload"] > .panel,
+body[data-workspace-surface="upload"] #mainApp > .panel {
+  display: none !important;
 }
 
 /* ============================================================
@@ -940,13 +981,26 @@ body[data-auth-role="player"]:not(.is-mobile-screen) #mainApp .tab {
   }
 
   /* Active destination (driven by body[data-active-tab]). */
+  body[data-active-tab="dashboard"] .ipad-rail [data-rail-tab="dashboard"],
   body[data-active-tab="script"] .ipad-rail [data-rail-tab="script"],
   body[data-active-tab="gameplan"] .ipad-rail [data-rail-tab="gameplan"],
   body[data-active-tab="callsheet"] .ipad-rail [data-rail-tab="callsheet"],
-  body[data-active-tab="playbook"] .ipad-rail [data-rail-tab="playbook"],
-  body[data-active-tab="wristband"] .ipad-rail [data-rail-tab="wristband"] {
+  body[data-active-tab="playbook"] .ipad-rail [data-rail-tab="playbook"] {
     background: color-mix(in srgb, var(--color-primary) 14%, transparent);
     color: var(--color-primary);
+  }
+
+  /* A route inside the More sheet still needs to orient the coach when the
+     sheet is closed. Keep the parent rail button selected, then mark the
+     exact destination inside the sheet when it opens. */
+  .ipad-rail .ipad-rail-more-btn.is-active,
+  .ipad-rail-more-overlay .ipad-rail-more-sheet button.is-active {
+    background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+    color: var(--color-primary);
+  }
+
+  .ipad-rail-more-overlay .ipad-rail-more-sheet button[aria-current="page"] {
+    box-shadow: inset 3px 0 0 var(--color-primary);
   }
 
   /* Hide the website top tab bar (the rail replaces it). */
@@ -1259,6 +1313,37 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
   background: var(--color-bg-blue-tint);
   box-shadow: var(--shadow-focus);
   transform: translateY(-1px);
+}
+
+.team-settings-readiness {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-border-light));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.35;
+}
+
+.team-settings-readiness__label {
+  flex: 0 0 auto;
+  color: var(--color-primary-dark);
+  font-weight: 900;
+}
+
+.team-settings-readiness__summary {
+  min-width: 0;
+  font-weight: 700;
+}
+
+.team-settings-surface-nav--after-workspace {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border-light);
 }
 
 .team-settings-shell[data-team-settings-surface="home"] .team-settings-topbar,
@@ -2381,6 +2466,146 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
     0 0 0 4px var(--color-primary-light);
 }
 
+/* Settings has two deliberate levels: Team Ops is the everyday coach
+   workspace; Data & recovery is an occasional maintenance task. The DOM
+   follows that hierarchy for assistive technology too. A blank device flips
+   the visual order so import remains the clear first-use path. */
+.coach-grid-admin-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  text-align: left;
+}
+
+.coach-grid-admin-settings > .team-settings-section {
+  order: 1;
+  margin: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.coach-grid-admin-settings > .admin-settings-data-recovery {
+  order: 2;
+}
+
+.coach-grid-admin-settings[data-team-workspace-state="empty"] > .admin-settings-data-recovery {
+  order: 0;
+}
+
+.admin-settings-data-recovery {
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-settings-data-recovery__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.admin-settings-data-recovery__header h2,
+.admin-settings-import h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  line-height: 1.2;
+}
+
+.admin-settings-data-recovery__header p,
+.admin-settings-import p {
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.admin-settings-data-recovery__note {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.coach-grid-admin-settings[data-team-workspace-state="empty"] .admin-settings-data-recovery {
+  border-color: color-mix(in srgb, var(--color-primary) 44%, var(--color-border-light));
+  background: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface));
+}
+
+.coach-grid-admin-settings[data-team-workspace-state="empty"] .admin-settings-data-recovery__note {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.admin-settings-import {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+}
+
+.admin-settings-import-actions,
+.admin-settings-data-recovery .backup-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.admin-settings-import-actions .btn,
+.admin-settings-data-recovery .backup-buttons .btn {
+  min-height: 42px;
+}
+
+.admin-settings-utility-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.admin-settings-data-recovery .backup-section {
+  display: grid;
+  align-content: start;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+}
+
+.admin-settings-data-recovery .backup-section h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  line-height: 1.2;
+}
+
+.admin-settings-data-recovery .backup-section p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.35;
+}
+
 /* Admin settings is an operations surface, not a first-run upload card. The
    compact desktop treatment shares the Coach Grid's square, scan-first
    geometry while phone layouts keep their existing comfortable spacing. */
@@ -2401,6 +2626,30 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
     background: var(--coach-grid-surface-muted);
     box-shadow: var(--coach-grid-shadow);
     text-align: left;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .admin-settings-data-recovery {
+    gap: var(--coach-grid-gap);
+    padding: 6px;
+    border-color: var(--coach-grid-border);
+    border-radius: var(--coach-grid-toolbar-radius);
+    background: var(--coach-grid-surface-muted);
+    box-shadow: var(--coach-grid-shadow);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .admin-settings-data-recovery__header {
+    align-items: center;
+    gap: var(--coach-grid-gap);
+    padding: 2px 4px;
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .admin-settings-data-recovery__header h2 {
+    font-size: var(--font-size-md);
+  }
+
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .admin-settings-data-recovery__header p {
+    margin-top: 2px;
+    font-size: var(--font-size-xs);
   }
 
   body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings .back-btn {
@@ -2431,7 +2680,8 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
     text-transform: uppercase;
   }
 
-  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings .admin-settings-import h2,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings .admin-settings-data-recovery__header h2,
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings .admin-settings-import h3,
   body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings .backup-section h3 {
     margin: 0;
     color: var(--color-text);
@@ -2469,13 +2719,13 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
     font-size: var(--font-size-2xs);
   }
 
-  body:not(.is-mobile-screen):not([data-auth-role="player"]) .admin-settings-utility-grid {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .admin-settings-data-recovery .admin-settings-utility-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--coach-grid-gap);
   }
 
-  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings > .admin-settings-utility-grid > .backup-section {
+  body:not(.is-mobile-screen):not([data-auth-role="player"]) .coach-grid-admin-settings .admin-settings-data-recovery .admin-settings-utility-grid > .backup-section {
     display: grid;
     align-content: start;
     gap: 6px;
@@ -2524,8 +2774,182 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
 }
 
 @media (max-width: 820px) {
-  .admin-settings-utility-grid {
-    display: contents;
+  .admin-settings-data-recovery .admin-settings-utility-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* iPad Team Ops deliberately favors the work a coach returns to: four direct
+   setup areas, a compact readiness line, then a full-size roster command row.
+   It is scoped to the staff tablet shell so desktop density, player settings,
+   phone layouts, and print remain untouched. */
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .coach-grid-admin-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(100%, 1120px);
+  max-width: none;
+  padding: 12px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-muted);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .coach-grid-admin-settings > .team-settings-section {
+  order: 1;
+  margin: 0;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .coach-grid-admin-settings > .admin-settings-data-recovery {
+  order: 2;
+  margin: 0;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .coach-grid-admin-settings[data-team-workspace-state="empty"] > .admin-settings-data-recovery {
+  order: 0;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-shell {
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--radius-lg);
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-hero {
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 10px 12px;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-hero h3 {
+  font-size: var(--font-size-lg);
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-hero-notes {
+  margin-left: auto;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-hero-notes > .team-settings-chip:not(#teamSettingsSaveStatus) {
+  display: none;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-surface-nav--primary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-surface-nav--support {
+  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+  gap: 8px;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-surface-nav__item {
+  min-height: 56px;
+  padding: 8px;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-surface-nav__item > span {
+  font-size: 1rem;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-surface-nav__item strong {
+  font-size: var(--font-size-sm);
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-readiness {
+  min-height: var(--tap-min);
+  margin-top: 8px;
+  padding: 8px 10px;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-surface-nav--after-workspace {
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-grid {
+  margin-top: 8px;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-panel--roster {
+  padding: 12px;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-health {
+  align-items: stretch;
+  gap: 8px;
+  margin: 6px 0 8px;
+  padding: 8px;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-health-chip--action,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-health-link {
+  min-height: var(--tap-min);
+  padding: 7px 10px;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-command-bar {
+  grid-template-columns: minmax(220px, 1fr) minmax(152px, 0.6fr) max-content minmax(120px, max-content);
+  gap: 8px;
+  align-items: stretch;
+  margin: 8px 0;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-search-field,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-search-field input,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-command-bar select,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-command-bar .btn {
+  min-height: var(--tap-min);
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-command-bar .btn {
+  min-width: 120px;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-add-tools > summary {
+  min-height: var(--tap-min);
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-account-link,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-edit-toggle {
+  min-height: var(--tap-min);
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .admin-settings-data-recovery {
+  gap: 10px;
+  padding: 12px;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .admin-settings-data-recovery__header {
+  align-items: center;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .admin-settings-import {
+  gap: 10px;
+  padding: 10px;
+}
+
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .admin-settings-import-actions .btn,
+body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .admin-settings-data-recovery .backup-buttons .btn {
+  min-height: var(--tap-min);
+}
+
+@media (max-width: 760px) {
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-settings-surface-nav--primary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-command-bar {
+    grid-template-columns: minmax(0, 1fr) minmax(148px, 0.55fr) auto;
+  }
+
+  body.shell-tablet.is-mobile-screen.is-staff-mobile-shell .team-roster-command-bar .btn {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 }
 

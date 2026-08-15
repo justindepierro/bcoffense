@@ -20,27 +20,34 @@ This file complements [MOBILE_AUDIT.md](MOBILE_AUDIT.md). It does not replace, r
 
 “Owner” is the accountable workstream, not a named individual. Assign a person when the item is scheduled.
 
-## Coach/admin iPad phase — next
+## Coach/admin iPad phase — implemented; physical proof pending
 
 The player-study shell is now intentionally tablet-native. The next phase is not another general responsive pass: it makes the staff product a dependable iPad workbench for preparing a practice, managing a team, and publishing player material.
 
 **System rule:** `staff rail → exactly one active workspace and vertical scroll owner → contextual workbench actions → managed task layer`.
 
-| Order | Tranche | Outcome | Proof before release |
-| --- | --- | --- | --- |
-| P0.1 | **Workspace-surface isolation** | Opening Team/Admin Settings from Dashboard, Scout, Game Plan, or any sibling route hides the prior workspace completely. Settings owns the available canvas and its scroll; returning restores the original route. | 1024×768 and M1 WebKit: Dashboard → Settings leaves one visible workspace, a full-height settings scroller, and no underlying actionable panel. |
-| P0.2 | **Clear the staff shell** | Remove any roomy-iPad fixed utility that covers live work; keep utilities in rail/header/page actions instead. Make staff header More rows touch-safe and give the rail/More entry a truthful active state for secondary destinations. | Geometry probe finds no fixed launcher over an actionable control; staff More targets are at least 44px; current route is visually represented in navigation. |
-| P1.1 | **Team Ops first** | Turn Settings into a Team Ops workspace: team identity, roster, personnel, portal, and publish readiness come first. CSV replacement, backups, recovery, and destructive actions move to a clearly named Data & recovery area. Import remains the first-use path for an empty workspace, not the normal admin landing. | A 28-player iPad fixture reaches roster work in the first viewport; all independent Team Ops controls meet the tablet target policy. |
-| P1.2 | **Accounts and access as iPad tasks** | Keep the existing data/layer behavior for Player Accounts and Coach Access, but give them usable-height layouts, 44px Close/actions, a focused list/detail flow, and a pinned Save/status footer where changes matter. | Portrait and landscape WebKit flows can select, edit, save, Escape-close, and return focus without losing work or hiding the footer behind keyboard/browser chrome. |
-| P1.3 | **Coach command hierarchy** | Promote the Coach Home/Dashboard to a deliberate primary destination (recommended) and move only a lower-frequency workspace to More. Reduce mixed global/account/admin controls in the header. | A coach can identify the active destination and reach today’s next action, Script, Game Plan, Call Sheet, and Playbook without hunting through an ambiguous rail. |
-| P1.4 | **Unified Coach Inbox foundation** | Migrate the existing Questions Inbox to the managed layer contract first, then evolve it into one staff triage surface for player questions, publishing/media readiness, quiz work, and moderation. Do not create a parallel inbox. | Layer lock, Escape, focus return, one scroll owner, and list/detail behavior pass at 1024×768, M1 landscape, and portrait. |
-| P2 | **Physical-device release proof** | Complete the automated tablet evidence with a real M1 Safari and installed-PWA pass: rotation, keyboard, split view, account menu, settings, roster, accounts/access, and a live practice workflow. | Release checklist records the device/profile, tested workflow, and any intentionally unsupported narrow Split View size. |
+| Order | Tranche | Status | Outcome | Proof before release |
+| --- | --- | --- | --- | --- |
+| P0.1 | **Workspace-surface isolation** | [x] | Opening Team/Admin Settings from Dashboard, Scout, Game Plan, or any sibling route hides the prior workspace completely. Settings owns the available canvas and its scroll; returning restores the original route. | Focused WebKit at 1024×768 and M1 1194×834 verifies one visible workspace, a full-height Settings scroller, zero stray workspace chrome, and exact route restoration. |
+| P0.2 | **Clear the staff shell** | [x] | Roomy-iPad fixed Quick Tools is removed from live staff work; utilities remain in rail/header/page actions. Header More rows are touch-safe and rail/More routes have a truthful active state. | Focused WebKit verifies no fixed launcher covers an actionable control, 44px staff More rows, and an accessible current route. |
+| P1.1 | **Team Ops first** | [x] | Settings is a Team Ops workspace: identity, roster, personnel, portal, and publish readiness lead; CSV replacement, backup, recovery, and destructive work sit in Data & recovery. Empty workspaces still begin at Import. | A 28-player fixture reaches roster work in the first viewport; focused Chromium and WebKit portrait/landscape flows verify the hierarchy and independent 44px Team Ops controls. |
+| P1.2 | **Accounts and access as iPad tasks** | [x] | Player Accounts and Coach Access retain their data behavior but now use usable-height task surfaces, 44px Close/actions, focused list/detail work, and a pinned save/status footer. | Portrait and landscape WebKit flows select, edit, save, Escape-close, and restore focus without hiding the footer. |
+| P1.3 | **Coach command hierarchy** | [x] | Dashboard/Coach Home is a direct rail destination; Wristband moved to More. The rail and More sheet expose the current destination accessibly. | Focused staff WebKit verifies the active destination, no ambiguous rail state, and the direct workflow path. |
+| P1.4 | **Unified Coach Inbox foundation** | [x] | The existing Questions Inbox is now a managed layer rather than a new parallel inbox. | WebKit portrait and landscape verify lock, Escape, focus return, one scroll owner, and list/detail behavior. |
+| P2 | **Physical-device release proof** | [~] | Complete the automated tablet evidence with a real M1 Safari and installed-PWA pass: rotation, keyboard, split view, account menu, settings, roster, accounts/access, and a live practice workflow. | Record the device/profile, tested workflow, and any intentionally unsupported narrow Split View size. |
 
-### Decisions to make deliberately
+### Decisions implemented deliberately
 
-- **Recommended:** make Dashboard/Coach Home a direct rail destination, then move Wristband to More. It makes the sideline workflow start with the current game week rather than a tool.
-- Keep data recovery intentionally separate from ordinary team setup. It is vital, but it should never be the first surface a coach sees when they are preparing practice.
-- Do not solve fixed-control collisions by adding more corner reservations. On roomy coach iPads, the rail and contextual actions are the calmer, more predictable home for utility actions.
+- Dashboard/Coach Home is a direct rail destination and Wristband is in More, so the sideline workflow starts with the current game week rather than a tool.
+- Data & recovery is intentionally separate from ordinary team setup. It remains available without becoming the first surface a coach sees while preparing practice.
+- Roomy coach iPads use the rail, header More, and contextual actions rather than a competing fixed Quick Tools tray.
+
+### Coach/admin iPad implementation — 2026-08-14
+
+- Settings now acts as one isolated workspace: its entry suppresses sibling panels, rail/FAB chrome, and stale panel-scroll state; Back returns to the originating workspace.
+- Team Ops uses a populated-workspace Roster landing and an empty-workspace Import landing. Roster health, filtering, player management, account links, and Team Ops summary actions are tablet-sized.
+- Player Accounts, Coach Access, and Questions Inbox now share the blocking-layer contract: safe usable height, one named body scroller, close focus, Escape, and trigger-focus restoration.
+- The staff iPad release smoke now includes the shell, workspace, Team Ops, Inbox, and account-task-surface WebKit regressions. The remaining release criterion is an actual M1 Safari/installed-PWA walkthrough, not another emulation-only patch.
 
 ### Already complete — do not redo
 
@@ -59,6 +66,13 @@ The player-study shell is now intentionally tablet-native. The next phase is not
 - The first blocking-layer P0 is complete: Signals selector, Call Sheet Constraints, and Playbook Workflow now use the same focus, Escape, scroll-lock, safe-area, and return-focus lifecycle. The remaining layer work is the P1 migration of legacy surfaces and raw viewport-unit limits.
 - Playbook now has a modal, locked filter sheet in portrait/compact tablet modes and a contextual, non-locking right rail in staff landscape. Call Sheet staff tablets now have persistent move/swap/remove controls rather than depending on drag-and-drop or hover.
 - Container-driven Wristband, Game Plan, Signals, Tendencies, and Offense Builder workbenches now each have a named staff-tablet-landscape layout. The Chromium tablet matrix and curated Playwright WebKit iPad-emulation smoke are fail-closed release requirements; remaining work is legacy-layer semantics, residual target exceptions, uncovered secondary surfaces, and the separate physical-device Safari/PWA check.
+
+### Coach/admin iPad release validation — 2026-08-14
+
+- `npm run test:quality` passed after the coach/admin workbench pass and cache refresh: smoke checks, all unit contracts, the 24-case Chromium tablet matrix, all 20 isolated WebKit iPad smoke batches, and 5/5 local hydration cases.
+- The enforced staff evidence now includes: roomy/compact shell behavior; Dashboard/Scout → Settings → Back workspace replacement; populated and empty Team Ops hierarchy; managed Questions Inbox; and Player Accounts/Coach Access editing, save, Escape, focus return, and one-scroller geometry in portrait and landscape.
+- Cache version is now `v1698` in both `index.html` and `sw.js`, so Safari and installed PWA clients receive the matching CSS, script, and service-worker shell together.
+- The only remaining release-proof item is manual: run an actual M1 iPad Safari **and** installed-PWA walkthrough through rotation, keyboard open/close, normal and compact Split View, Header More, Dashboard → Settings → Back, Roster, Player Accounts, Coach Access, Player Inbox, and one live practice workflow. Record any intentionally unsupported width rather than treating WebKit emulation as a substitute.
 
 ### Latest verified implementation run — 2026-08-13
 
