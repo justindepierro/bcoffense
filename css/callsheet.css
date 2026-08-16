@@ -23,6 +23,12 @@
 .cs-index-bucket li { margin: 0 0 3px; overflow-wrap: anywhere; }
 .cs-index-bucket .cs-index-divider { display: flex; align-items: center; gap: 3px; margin: 3px 0; padding: 2px 0; border-top: 1px solid #435c8a; border-bottom: 1px solid #435c8a; color: #173768; font-size: .9em; font-weight: 900; letter-spacing: .05em; list-style: none; text-transform: uppercase; }
 .cs-index-divider-label { flex: 1; padding: 0; border: 0; background: transparent; color: inherit; cursor: text; font: inherit; font-weight: inherit; letter-spacing: inherit; text-align: left; text-transform: inherit; }
+.cs-index-manual-row { position: relative; }
+.cs-index-manual-row-label { flex: 1; padding: 0; border: 0; background: transparent; color: inherit; cursor: text; font: inherit; font-weight: inherit; letter-spacing: inherit; text-align: left; text-transform: inherit; }
+.cs-index-writein { display: flex; align-items: center; gap: 4px; min-height: 1.7em; margin: 3px 0; padding: 3px 5px; border: 1px dashed #94a3b8; color: #64748b; font-style: italic; list-style: none; }
+.cs-index-writein .cs-index-manual-row-label { font-style: inherit; }
+.cs-index-manual-row-remove { padding: 0 3px; border: 0; background: transparent; color: #64748b; cursor: pointer; font: inherit; line-height: 1; }
+.cs-index-card--editor .cs-index-manual-row .cs-index-play-touch-action { margin-left: auto; }
 .cs-index-card--editor .cs-index-divider .cs-index-play-touch-action { margin-left: auto; }
 .cs-index-empty { grid-column: 1 / -1; display: grid; min-height: 180px; place-items: center; border: 1px dashed #8795ae; color: #5f6c80; font-style: italic; text-align: center; }
 .cs-index-add { display: block; width: min(100%, 480px); margin: var(--space-sm) auto; border-style: dashed; }

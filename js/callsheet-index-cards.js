@@ -57,7 +57,10 @@ function _csBucketRows(bucket) {
   });
   // A scoped card owns its display order. Filtering canonical Call Sheet rows
   // preserves membership, but not a coach's manual card order.
-  if (!hasScopedKeys) return uniqueRows;
+  const manualRows = _csSafeList(bucket?.manualRows)
+    .filter((row) => row && (row.kind === "divider" || row.kind === "writein"))
+    .map((manualRow, index) => ({ manualRow, key: `manual:${manualRow.id || index}`, hash: "", index }));
+  if (!hasScopedKeys) return [...uniqueRows, ...manualRows];
   const rowsByIdentity = new Map(uniqueRows.filter((row) => !row.play?._divider).map((row) => [_csIndexIdentity(row.play), row]));
   const ordered = bucket.playKeys.map((identity) => rowsByIdentity.get(identity)).filter(Boolean);
   // Keep an authored divider near the same calls even when this card has its
@@ -66,7 +69,7 @@ function _csBucketRows(bucket) {
     const before = rows.slice(0, rows.indexOf(divider)).filter((row) => !row.play?._divider && keys.has(_csIndexIdentity(row.play))).length;
     ordered.splice(Math.min(before, ordered.length), 0, divider);
   });
-  return ordered;
+  return [...ordered, ...manualRows];
 }
 function _csIndexFamily(bucket, row) { return Boolean(bucket?.family?.[row.key]?.indent); }
 function _csIndexCompact(bucket, row) { return Boolean(bucket?.family?.[row.key]?.compact); }
@@ -116,13 +119,21 @@ function _csIndexPrintBucketClass(bucket) {
 }
 function _csIndexBucketMarkup(bucket, editable) {
   const rows = _csBucketRows(bucket);
-  const callCount = rows.filter((row) => !row.play?._blank && !row.play?._divider).length;
+  const callCount = rows.filter((row) => !row.manualRow && !row.play?._blank && !row.play?._divider).length;
   const category = CALLSHEET_CATEGORIES.find((item) => item.id === bucket.categoryId);
   const configuredColor = /^#[0-9a-fA-F]{3,8}$/.test(String(bucket?.color || "")) ? bucket.color : "";
   const headerColor = configuredColor || (category && typeof getCategoryColor === "function" ? getCategoryColor(category) : "#173768");
   const headerText = typeof getCategoryHeaderTextColor === "function" ? getCategoryHeaderTextColor(headerColor) : "#fff";
   let previous = null;
   const plays = rows.map((row) => {
+    if (row.manualRow) {
+      const manual = row.manualRow;
+      const text = escapeHtml(manual.label || (manual.kind === "writein" ? "Write in…" : "Divider"));
+      const actionArg = `${bucket.id}|${manual.id}`;
+      const className = manual.kind === "divider" ? "cs-index-divider cs-index-manual-row" : "cs-index-writein cs-index-manual-row";
+      if (!editable) return `<li class="${className}">${text}</li>`;
+      return `<li class="${className}"><button type="button" class="cs-index-manual-row-label" data-action="editCallSheetIndexManualRow" data-arg="${escapeAttr(actionArg)}" title="Edit ${manual.kind === "divider" ? "divider" : "write-in row"}">${text}</button><button type="button" class="cs-index-play-touch-action" data-action="editCallSheetIndexManualRow" data-arg="${escapeAttr(actionArg)}">Edit</button><button type="button" class="cs-index-manual-row-remove" data-action="removeCallSheetIndexManualRow" data-arg="${escapeAttr(actionArg)}" aria-label="Remove ${manual.kind === "divider" ? "divider" : "write-in row"}">×</button></li>`;
+    }
     if (row.play?._divider) {
       const text = escapeHtml(row.play.label || "Divider");
       if (!editable) return `<li class="cs-index-divider">${text}</li>`;
@@ -652,6 +663,40 @@ function _csIndexRowFromArg(arg) {
 function toggleCallSheetIndexFamily(arg) { const { bucket, row } = _csIndexRowFromArg(arg); if (!bucket || !row || _csBucketRows(bucket).findIndex((item) => item.key === row.key) < 1) return; _csIndexSetFamily(bucket, row, "indent"); _csPersistCards(); }
 function toggleCallSheetIndexCompact(arg) { const { bucket, row } = _csIndexRowFromArg(arg); if (!bucket || !row || !_csIndexFamily(bucket, row)) return; _csIndexSetFamily(bucket, row, "compact"); _csPersistCards(); }
 function toggleCallSheetIndexSequenceNumbers(id) { const bucket = _csIndexBucketFromArg(id); if (!bucket) return; bucket.showSequenceNumbers = !bucket.showSequenceNumbers; _csPersistCards(); }
+async function addCallSheetIndexManualRow(arg) {
+  const [bucketId, kind] = String(arg || "").split("|");
+  const bucket = _csIndexBucketFromArg(bucketId);
+  if (!bucket || !["divider", "writein"].includes(kind)) return;
+  const label = await showPrompt(kind === "divider" ? "Divider label:" : "Write-in text (leave blank for a blank row):", kind === "divider" ? "Divider" : "", {
+    title: kind === "divider" ? "Add divider" : "Add write-in row",
+    icon: kind === "divider" ? "—" : "✎",
+  });
+  if (label === null) return;
+  bucket.manualRows = _csSafeList(bucket.manualRows);
+  bucket.manualRows.push({ id: `manual-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`, kind, label: String(label).trim() });
+  _csPersistCards();
+}
+async function editCallSheetIndexManualRow(arg) {
+  const [bucketId, manualId] = String(arg || "").split("|");
+  const bucket = _csIndexBucketFromArg(bucketId);
+  const row = _csSafeList(bucket?.manualRows).find((item) => item.id === manualId);
+  if (!bucket || !row) return;
+  const label = await showPrompt(row.kind === "divider" ? "Divider label:" : "Write-in text (leave blank for a blank row):", row.label || "", {
+    title: row.kind === "divider" ? "Edit divider" : "Edit write-in row",
+    icon: row.kind === "divider" ? "—" : "✎",
+  });
+  if (label === null) return;
+  row.label = String(label).trim();
+  _csPersistCards();
+}
+function removeCallSheetIndexManualRow(arg) {
+  const [bucketId, manualId] = String(arg || "").split("|");
+  const bucket = _csIndexBucketFromArg(bucketId);
+  if (!bucket) return;
+  const before = _csSafeList(bucket.manualRows).length;
+  bucket.manualRows = _csSafeList(bucket.manualRows).filter((item) => item.id !== manualId);
+  if (bucket.manualRows.length !== before) _csPersistCards();
+}
 function removeCallSheetIndexPlay(arg) {
   const { bucket, row } = _csIndexRowFromArg(arg);
   if (!bucket || !row) return;
@@ -1264,6 +1309,8 @@ async function manageCallSheetIndexCardBucket(id) {
       ...(bucketIndex >= 0 && bucketIndex < buckets.length - 1 ? [{ value: "move-down", label: "Move situation down", icon: "↓" }] : []),
       { value: "rename", label: "Rename situation", icon: "✏️" },
       { value: "source", label: bucket.categoryId ? "Change Call Sheet source" : "Choose Call Sheet source", icon: "↻" },
+      { value: "add-divider", label: "Add divider", icon: "—" },
+      { value: "add-writein", label: "Add write-in row", icon: "✎" },
       { value: "color", label: "Change header color", icon: "🎨" },
       { value: "sequence", label: bucket.showSequenceNumbers ? "Turn sequence numbers off" : "Turn sequence numbers on", icon: "#" },
       { value: "balance", label: "Place in shortest column automatically", icon: "↕" },
@@ -1288,6 +1335,8 @@ async function manageCallSheetIndexCardBucket(id) {
     if (name?.trim()) { bucket.label = name.trim(); _csPersistCards(); }
   } else if (action === "source") {
     await _csChangeSource(id);
+  } else if (action === "add-divider" || action === "add-writein") {
+    await addCallSheetIndexManualRow(`${id}|${action === "add-divider" ? "divider" : "writein"}`);
   } else if (action === "color") {
     await setCallSheetIndexBucketColor(id);
   } else if (action === "sequence") {
