@@ -34,9 +34,11 @@ assert.match(gamePlanRender, /id="gpLibrarySearch"[\s\S]*?placeholder="Search li
 assert.match(notifications, /const matchIndex = plays\.findIndex[\s\S]*?openPlayWorkflowPanel\(matchIndex\)/, "staff question notifications resolve a play then open its workflow panel by index");
 assert.match(indexCards, /data-action="openCallSheetIndexCardBucketPicker"[\s\S]*?data-drop="csHashDrop"/, "index-card buckets accept the normal Call Sheet drag/drop and picker pipeline");
 assert.match(indexCards, /const addControl = editable[\s\S]*?cs-index-bucket-actions[\s\S]*?\$\{addControl\}/, "index-card add-play control stays in the editor header rather than consuming printable bucket height");
-assert.match(indexCards, /cs-index-empty-add[\s\S]*?Add a play or drop one here/, "empty Index Card buckets provide an explicit add path");
+assert.match(indexCards, /cs-index-empty-add[\s\S]*?Add play, divider, or write-in row/, "empty Index Card buckets provide an explicit multi-row add path");
 assert.match(indexCards, /data-cs-card-bucket[\s\S]*?removeCallSheetIndexCardBucket/, "every editable bucket exposes both a drop identity and a direct remove control");
 assert.match(indexCards, /function openCallSheetIndexCardBucketPicker\(id\)[\s\S]*?_csIndexPickerBucketId = bucket\.id[\s\S]*?openCallSheetPlayPicker/, "Index Card add-play buttons retain their specific bucket destination");
+assert.match(indexCards, /title: "Add to Index Card"[\s\S]*?value: "play", label: "Add play"[\s\S]*?value: "divider", label: "Add divider"[\s\S]*?value: "writein", label: "Add write-in row"/, "Index Card add controls clearly offer play, divider, and write-in actions");
+assert.match(indexCards, /if \(addType === "divider" \|\| addType === "writein"\)[\s\S]*?addCallSheetIndexManualRow/, "Index Card add control routes divider and write-in choices directly into the bucket");
 assert.match(indexCards, /async function openCallSheetIndexCardBucketPicker\(id\)[\s\S]*?if \(!bucket\.categoryId\)[\s\S]*?Add plays to custom bucket[\s\S]*?bucket\.playKeys = Array\.isArray\(bucket\.playKeys\) \? bucket\.playKeys : \[\]/, "blank custom Index Card buckets choose a source before opening the normal add-play picker");
 assert.match(indexCards, /const addControl = editable \?/, "custom Index Card buckets retain the visible add-play control");
 assert.match(indexCards, /manualRows[\s\S]*?row\.kind === "divider" \|\| row\.kind === "writein"/, "Index Card buckets preserve their own divider and write-in rows without creating fake plays");
